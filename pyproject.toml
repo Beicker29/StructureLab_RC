@@ -1,0 +1,119 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "structurelab-rc"
+description = "Verificación, diseño, despiece y dibujo de elementos de concreto reforzado."
+readme = "README.md"
+requires-python = ">=3.12"
+dynamic = ["version"]
+dependencies = ["pydantic==2.14.2"]
+
+[project.optional-dependencies]
+pdf = ["fpdf2==2.9.0"]
+cad = ["ezdxf==1.4.5"]
+dev = [
+    "build==1.6.1",
+    "hypothesis==6.170.14",
+    "import-linter==2.15",
+    "mypy==2.4.1",
+    "pytest==9.2.0",
+    "ruff==0.17.3",
+]
+
+[project.scripts]
+structurelab-rc = "structurelab_rc.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "structurelab_rc.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"structurelab_rc.data" = ["*.csv", "*.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib --basetemp=.tmp-pytest"
+
+[tool.ruff]
+line-length = 140
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "C90", "SIM", "RET", "PLR"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["PLR2004"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src", "tests"]
+mypy_path = "src"
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = [
+    "structurelab_rc.codes.*",
+    "structurelab_rc.mechanics.*",
+    "structurelab_rc.domain.*",
+]
+# Equivale a `strict`, que mypy no admite por módulo.
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_reexport = true
+strict_equality = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.importlinter]
+root_package = "structurelab_rc"
+
+[[tool.importlinter.contracts]]
+name = "Capas del paquete"
+type = "layers"
+containers = ["structurelab_rc"]
+exhaustive = true
+exhaustive_ignores = ["data"]
+layers = [
+    "cli",
+    "(engine) : (execution)",
+    "reporting | io | setup",
+    "domain : design : detailing : drawing",
+    "codes | mechanics",
+    "model",
+    "errors",
+]
+
+[[tool.importlinter.contracts]]
+name = "Perfiles normativos independientes"
+type = "independence"
+modules = ["structurelab_rc.codes.aci_318_25", "structurelab_rc.codes.nsr_10"]
+
+[[tool.importlinter.contracts]]
+name = "codes no importa otras capas"
+type = "forbidden"
+source_modules = ["structurelab_rc.codes"]
+forbidden_modules = [
+    "structurelab_rc.cli",
+    "structurelab_rc.data",
+    "structurelab_rc.design",
+    "structurelab_rc.detailing",
+    "structurelab_rc.domain",
+    "structurelab_rc.drawing",
+    "structurelab_rc.errors",
+    "structurelab_rc.io",
+    "structurelab_rc.mechanics",
+    "structurelab_rc.model",
+    "structurelab_rc.reporting",
+    "structurelab_rc.setup",
+]

@@ -1,0 +1,1 @@
+"""Verificación normativa de vigas."""
