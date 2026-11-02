@@ -1,0 +1,116 @@
+{
+  "source": "Derivado a mano con solución cerrada (derive_flexure_cases.py); no proviene de un manual. Unidades: mm, MPa.",
+  "tolerance_rel": 1e-06,
+  "cases": [
+    {
+      "id": "t_bloque_en_alma",
+      "fc": 28.0,
+      "fy": 420.0,
+      "section": {
+        "bw": 300.0,
+        "h": 600.0,
+        "bf": 800.0,
+        "hf": 100.0
+      },
+      "top_in_compression": true,
+      "layers": [
+        {
+          "designation": "#8",
+          "count": 12,
+          "depth": 530.0
+        }
+      ],
+      "beta1": 0.85,
+      "expected": {
+        "c": 227.45098039215688,
+        "a": 193.33333333333334,
+        "extreme_strain": 0.00399051724137931,
+        "Mn_Nmm": 1169373333.3333333
+      }
+    },
+    {
+      "id": "doble_refuerzo",
+      "fc": 35.0,
+      "fy": 420.0,
+      "section": {
+        "bw": 300.0,
+        "h": 500.0
+      },
+      "top_in_compression": true,
+      "layers": [
+        {
+          "designation": "#5",
+          "count": 3,
+          "depth": 60.0
+        },
+        {
+          "designation": "#8",
+          "count": 5,
+          "depth": 440.0
+        }
+      ],
+      "beta1": 0.8,
+      "expected": {
+        "c": 126.17571877515269,
+        "a": 100.94057502012215,
+        "extreme_strain": 0.007461600796205987,
+        "Mn_Nmm": 415565266.82720953
+      }
+    },
+    {
+      "id": "t_momento_negativo_doble_refuerzo",
+      "fc": 35.0,
+      "fy": 420.0,
+      "section": {
+        "bw": 300.0,
+        "h": 600.0,
+        "bf": 800.0,
+        "hf": 100.0
+      },
+      "top_in_compression": false,
+      "layers": [
+        {
+          "designation": "#8",
+          "count": 8,
+          "depth": 60.0
+        },
+        {
+          "designation": "#5",
+          "count": 2,
+          "depth": 540.0
+        }
+      ],
+      "beta1": 0.8,
+      "expected": {
+        "c": 218.24656862745098,
+        "a": 174.5972549019608,
+        "extreme_strain": 0.00442279711515353,
+        "Mn_Nmm": 779989081.1663727
+      }
+    },
+    {
+      "id": "acero_a_traccion_elastico",
+      "fc": 21.0,
+      "fy": 420.0,
+      "section": {
+        "bw": 250.0,
+        "h": 460.0
+      },
+      "top_in_compression": true,
+      "layers": [
+        {
+          "designation": "#9",
+          "count": 8,
+          "depth": 400.0
+        }
+      ],
+      "beta1": 0.85,
+      "expected": {
+        "c": 294.05884591205336,
+        "a": 249.95001902524535,
+        "extreme_strain": 0.001080815852616432,
+        "Mn_Nmm": 306763413.4111427
+      }
+    }
+  ]
+}

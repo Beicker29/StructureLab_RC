@@ -1,0 +1,70 @@
+{
+  "description": "Viga T con el ala en la cara superior, apoyo y centro de luz. Unidades: mm y MPa; demandas mayoradas en kN y kN·m; depth se mide desde la fibra superior.",
+  "profile": "nsr-10",
+  "seismic": {
+    "level": "DMO",
+    "justification": "Capacidad moderada de disipación declarada por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0
+  },
+  "members": [
+    {
+      "id": "V-1",
+      "length": 6000.0,
+      "section": {
+        "bw": 300.0,
+        "h": 500.0,
+        "bf": 1000.0,
+        "hf": 100.0
+      },
+      "stations": [
+        {
+          "x": 0.0,
+          "layout": {
+            "layers": [
+              {
+                "designation": "#6",
+                "count": 4,
+                "depth": 60.0
+              },
+              {
+                "designation": "#5",
+                "count": 2,
+                "depth": 440.0
+              }
+            ]
+          },
+          "demands": {
+            "Mu_kNm": -150.0,
+            "Vu_kN": 120.0,
+            "Tu_kNm": 5.0
+          }
+        },
+        {
+          "x": 3000.0,
+          "layout": {
+            "layers": [
+              {
+                "designation": "#5",
+                "count": 2,
+                "depth": 60.0
+              },
+              {
+                "designation": "#8",
+                "count": 3,
+                "depth": 440.0
+              }
+            ]
+          },
+          "demands": {
+            "Mu_kNm": 180.0,
+            "Vu_kN": 10.0,
+            "Tu_kNm": 0.0
+          }
+        }
+      ]
+    }
+  ]
+}

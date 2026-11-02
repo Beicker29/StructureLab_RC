@@ -4,8 +4,8 @@ Herramienta de oficina para verificar, diseñar, despiezar y dibujar elementos d
 reforzado. La v1 cubrirá vigas con dos perfiles normativos, `aci-318-25` (ACI CODE-318-25)
 y `nsr-10` (NSR-10 Título C). Cada proyecto declara un solo perfil.
 
-**Estado:** Fase 0, andamiaje. Todavía no hay fórmulas normativas ni verificación de
-elementos; ver la [hoja de ruta](docs/ROADMAP.md).
+**Estado:** Fase 1, modelo y mecánica. Carga y valida proyectos, pero todavía no verifica
+elementos ni emite memorias; ver la [hoja de ruta](docs/ROADMAP.md).
 
 ## Instalación
 
@@ -25,10 +25,19 @@ Extras opcionales: `pdf` (fpdf2) y `cad` (ezdxf).
 ```console
 structurelab-rc --version
 structurelab-rc catalog
+structurelab-rc validate examples/nsr_10/beam_t.json
 ```
 
 `catalog` lista la designación, el diámetro nominal (mm), el área (mm²) y la masa (kg/m) de
 las barras del catálogo.
+
+`validate` comprueba que un proyecto en JSON sea coherente con su perfil normativo y con el
+catálogo, e informa `PASS`, `INCOMPLETE` (faltan datos) o `FAIL` (entrada inválida, con código
+de salida 1). No verifica la resistencia de la viga.
+
+El proyecto declara su perfil y un nivel sísmico que exista en ese perfil, con una
+justificación: `none`, `ordinary`, `intermediate` o `special` en `aci-318-25`, y `DMI`, `DMO` o
+`DES` en `nsr-10`. Los valores normativos, como εcu y β1, salen del perfil y no se declaran.
 
 ## Ejemplos y resultados
 

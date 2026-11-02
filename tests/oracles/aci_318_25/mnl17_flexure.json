@@ -1,0 +1,53 @@
+{
+  "source": "ACI MNL-17(21), Reinforced Concrete Design Handbook, vol. 1, cap. 7 (basado en ACI 318-19). Unidades del manual: in, psi.",
+  "notes": "Valida la mecánica, no la norma: beta1 = 0.80, Es, 0.85 y 0.003 se toman del propio manual. Entradas y resultados se convierten con 25.4 mm/in y 6.894757e-3 MPa/psi. Tolerancia de 1 % porque el manual redondea en pasos intermedios. h no controla en estos casos porque el bloque no la alcanza.",
+  "tolerance_rel": 0.01,
+  "fc_psi": 5000.0,
+  "fy_psi": 60000.0,
+  "es_psi": 29000000.0,
+  "beta1": 0.8,
+  "stress_factor": 0.85,
+  "max_strain": 0.003,
+  "cases": [
+    {
+      "id": "ejemplo_2_centro_de_luz",
+      "page": 176,
+      "bw_in": 18.0, "h_in": 28.0, "bf_in": 46.5, "hf_in": 7.0,
+      "flange_in_compression": true,
+      "area_in2": 2.64, "d_in": 25.7,
+      "expected": {"a_in": 0.80, "c_in": 1.0, "extreme_strain": 0.074}
+    },
+    {
+      "id": "ejemplo_2_apoyo",
+      "page": 176,
+      "bw_in": 18.0, "h_in": 28.0, "bf_in": 46.5, "hf_in": 7.0,
+      "flange_in_compression": false,
+      "area_in2": 1.32, "d_in": 25.7,
+      "expected": {"a_in": 1.03, "c_in": 1.29, "extreme_strain": 0.057}
+    },
+    {
+      "id": "ejemplo_3_centro_de_luz",
+      "page": 191,
+      "bw_in": 18.0, "h_in": 30.0, "bf_in": 44.5, "hf_in": 7.0,
+      "flange_in_compression": true,
+      "area_in2": 2.64, "d_in": 27.7,
+      "expected": {"a_in": 0.84, "c_in": 1.05, "extreme_strain": 0.076}
+    },
+    {
+      "id": "ejemplo_3_apoyo",
+      "page": 191,
+      "bw_in": 18.0, "h_in": 30.0, "bf_in": 44.5, "hf_in": 7.0,
+      "flange_in_compression": false,
+      "area_in2": 2.64, "d_in": 27.7,
+      "expected": {"a_in": 2.07, "c_in": 2.59, "extreme_strain": 0.029}
+    },
+    {
+      "id": "ejemplo_5_apoyo_barras_principales",
+      "page": 234,
+      "bw_in": 24.0, "h_in": 48.0, "bf_in": 102.0, "hf_in": 7.0,
+      "flange_in_compression": false,
+      "area_in2": 8.0, "d_in": 45.3,
+      "expected": {"a_in": 4.7, "c_in": 5.9, "extreme_strain": 0.020}
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "source": "ACI CODE-318-25: 22.2.2.1 (0.003), 22.2.2.4.1 (0.85), Tabla 22.2.2.4.3 (beta1), 20.2.2.2 (Es). Valores de beta1 calculados a mano; la fila (c) rige desde 55 MPa.",
+  "max_concrete_strain": 0.003,
+  "stress_block_factor": 0.85,
+  "steel_modulus": 200000.0,
+  "beta1": [
+    {"fc": 16.9, "value": null},
+    {"fc": 17.0, "value": 0.85},
+    {"fc": 28.0, "value": 0.85},
+    {"fc": 35.0, "value": 0.80},
+    {"fc": 42.0, "value": 0.75},
+    {"fc": 49.0, "value": 0.70},
+    {"fc": 54.0, "value": 0.6642857142857143},
+    {"fc": 55.0, "value": 0.65},
+    {"fc": 55.5, "value": 0.65},
+    {"fc": 70.0, "value": 0.65}
+  ],
+  "seismic_levels": ["intermediate", "none", "ordinary", "special"]
+}

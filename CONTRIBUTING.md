@@ -24,3 +24,6 @@ Todo cambio de cálculo requiere casos en el oráculo independiente del perfil a
 - El oráculo no importa el paquete `structurelab_rc`.
 - No se modifican valores de referencia para hacer pasar un cambio.
 - Cada perfil tiene sus propios casos, con el numeral de su propia norma.
+- Los casos son archivos JSON que indican su fuente. `tests/test_oracles.py` los compara con el paquete.
+- Los casos derivados a mano se generan con `python tests/oracles/derive_flexure_cases.py`, que
+  usa solución cerrada y comprueba sus hipótesis. Se marcan como derivados, no como de un manual.

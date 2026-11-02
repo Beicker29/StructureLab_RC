@@ -42,9 +42,11 @@ jobs:
       - name: Probar el wheel en un entorno limpio
         run: |
           wheel="$PWD/$(ls dist/*.whl)"
+          example="$PWD/examples/nsr_10/beam_t.json"
           cd "$RUNNER_TEMP"
           python -m venv clean
           if [ "$RUNNER_OS" = "Windows" ]; then bin=clean/Scripts; else bin=clean/bin; fi
           "$bin/python" -m pip install "$wheel"
           "$bin/structurelab-rc" --version
           "$bin/structurelab-rc" catalog
+          "$bin/structurelab-rc" validate "$example"
