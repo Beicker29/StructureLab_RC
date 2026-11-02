@@ -7,9 +7,6 @@ y `nsr-10` (NSR-10 Título C). Cada proyecto declara un solo perfil.
 **Estado:** Fase 0, andamiaje. Todavía no hay fórmulas normativas ni verificación de
 elementos; ver la [hoja de ruta](docs/ROADMAP.md).
 
-Los valores de `data/rebar.csv` están pendientes de confirmación contra NSR-10/NTC 2289
-([decisiones](docs/decisions.md)).
-
 ## Instalación
 
 Requiere Python 3.12 o superior.

@@ -45,19 +45,22 @@
 - **Fecha:** 2026-11-02
 - **Decisión:** `FAIL` prevalece sobre `INCOMPLETE`, este sobre `BLOCKED` y este sobre `PASS`. `aggregate([])` devuelve `INCOMPLETE`, porque sin verificaciones no hay obligaciones cumplidas.
 
+### D-007: valores de `data/rebar.csv`
+
+- **Fecha:** 2026-11-02
+- **Problema:** el catálogo de barras necesita valores confirmados antes de usarse en cálculo.
+- **Referencia:** valores nominales propuestos a partir de ASTM A615/A615M y A706/A706M; el cotejo con NSR-10 y NTC 2289 lo hizo el usuario.
+- **Consecuencias:** el área nominal de la #4 (129 mm²) difiere 1.8 % de la geométrica (126.7 mm²). Se conserva el valor nominal.
+- **Decisión:** se aceptan los valores del archivo. Confirmado por el usuario.
+
+### D-008: `Check` vive en `domain/`
+
+- **Fecha:** 2026-11-02
+- **Problema:** la hoja de ruta ponía `Check` en `model/`, pero `Check` necesita `Status`, que vive en `domain/status.py`, y `model` no puede importar `domain`.
+- **Alternativas:** mover `Check` a `domain/`, o mover `Status` a `model/`. La segunda contradice que la agregación esté en `domain/status.py`, salvo que se separe el enum de la función.
+- **Consecuencias:** `model` queda libre de estados y el contrato de capas no cambia. `AGENTS.md` ya ubica el armado de `Check` en `domain/`.
+- **Decisión:** `Check` se define en `domain/`. Confirmado por el usuario.
+
 ## Consultas abiertas
 
-### C-001: valores de `data/rebar.csv`
-
-- **Fecha:** 2026-11-02
-- **Problema:** los valores propuestos no están confirmados y no se dan por buenos.
-- **Referencia:** valores nominales de ASTM A615/A615M y A706/A706M, escritos de memoria y sin cotejar con ningún documento. Falta contrastarlos con NSR-10 y NTC 2289.
-- **Pendiente:** confirmación del usuario. Hasta entonces no deben usarse para cálculo definitivo.
-
-### C-002: ubicación de `Check` (Fase 1)
-
-- **Fecha:** 2026-11-02
-- **Problema:** la hoja de ruta pone `Check` en `model/`, pero `Check` necesita `Status`, que vive en `domain/status.py`, y `model` no puede importar `domain`.
-- **Alternativas:** mover `Check` a `domain/`, o mover `Status` a `model/`. La segunda contradice que la agregación esté en `domain/status.py`, salvo que se separe el enum de la función.
-- **Recomendación:** mover `Check` a `domain/`, donde `AGENTS.md` ya ubica su armado.
-- **Pendiente:** decidir antes de abrir la Fase 1.
+Ninguna.

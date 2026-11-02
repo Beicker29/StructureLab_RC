@@ -11,8 +11,8 @@ Estructura de carpetas, `pyproject.toml`, CI, `.gitignore`, `errors.py`, `domain
 Aceptación: el wheel instalado fuera del repositorio arranca y carga el catálogo.
 
 ### Fase 1: modelo y mecánica
-`model/` (Project, Member, Section, Demands, ReinforcementLayout, SeismicFacts, Check),
-carga de JSON con conversión de unidades, `mechanics/` (compatibilidad de deformaciones
+`model/` (Project, Member, Section, Demands, ReinforcementLayout, SeismicFacts),
+`Check` en `domain/`, carga de JSON con conversión de unidades, `mechanics/` (compatibilidad de deformaciones
 en sección rectangular y T), registro de perfiles y prueba de conformidad.
 Aceptación: los ejemplos cargan y validan; los resultados de mecánica coinciden con el oráculo.
 
