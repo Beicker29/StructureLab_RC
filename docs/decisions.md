@@ -294,6 +294,11 @@
 - **Causa:** el libro usa 5√f'c (psi), que equivale a 0.415√f'c en MPa; ambas normas en SI usan 0.42√f'c, y la resta de At/s·ph amplía la diferencia relativa.
 - **Decisión del usuario:** la diferencia es aceptable. El oráculo de torsión de Wight compara Aℓ,min con 4 %.
 
+### D-039: orden de las subfases
+
+- **Fecha:** 2026-11-05
+- **Decisión del usuario:** después de 2C siguen 2E (ETABS) y 2F (memorias y huella). La subfase 2D (servicio) queda pendiente.
+
 ## Consultas abiertas
 
 Ninguna.

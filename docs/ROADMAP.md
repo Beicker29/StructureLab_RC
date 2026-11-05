@@ -24,7 +24,8 @@ Por estación y en ambos perfiles. Se entrega en subfases, cada una con su orác
   (Tu ≥ φTth), el cortante queda `BLOCKED` hasta 2C (D-032).
 - **2C Torsión:** umbral con alas, sección, At, Aℓ, distribución e interacción con el cortante. Cada capa
   declara su función; las barras de Aℓ no cuentan como As de flexión (D-027, D-034 a D-037).
-- **2D Servicio:** control de fisuración y espesor mínimo. Las deflexiones quedan pendientes (D-017).
+- **2D Servicio:** control de fisuración y espesor mínimo. Pendiente: se hará después de 2E y 2F (D-039);
+  las deflexiones también quedan pendientes (D-017).
 - **2E ETABS:** importación de fuerzas mayoradas desde el archivo exportado.
 - **2F Memorias:** resultados en JSON, memoria en texto y PDF; huella.
 
