@@ -94,7 +94,7 @@
 - **Referencia:** las normas exigen equilibrio y compatibilidad (ACI 22.2.1, NSR-10 C.10.2.1), sin tratar este detalle numérico.
 - **Alternativas:** no descontar el concreto desplazado, lo que sobrestima la compresión, o descontarlo.
 - **Consecuencias:** solo cambia el resultado con acero a compresión dentro del bloque.
-- **Decisión:** descontarlo y tomar la menor raíz. Pendiente de confirmación del usuario.
+- **Decisión:** descontarlo y tomar la menor raíz. Confirmado por el usuario.
 
 ### D-013: límites de la validación de entrada
 
@@ -104,12 +104,93 @@
 - **Consecuencias:** por debajo de 17 MPa ningún perfil define β1 y la entrada se rechaza, en lugar de suponer un valor. Una demanda ausente da `INCOMPLETE`.
 - **Decisión:** `model` valida la forma y `domain` la coherencia con el perfil. El usuario declara el perfil y el nivel; εcu, β1, 0.85 y Es salen del perfil. Confirmado por el usuario.
 
+### D-014: referencias de NSR-10 para la Fase 2
+
+- **Fecha:** 2026-11-04
+- **Problema:** la Fase 2 pide ejemplos de referencia en ambos perfiles, y no hay una fuente con ejemplos resueltos de NSR-10.
+- **Referencia:** Wight, *Reinforced Concrete: Mechanics and Design*, 9.ª ed. (`references/`). Se basa en ACI CODE-318-25 y trae la mayoría de sus ejemplos en unidades inglesas.
+- **Alternativas:** conseguir una fuente publicada de NSR-10, usar casos derivados a mano, o tomar los resultados de Wight.
+- **Consecuencias:** Wight no aplica NSR-10. Donde NSR-10 difiere de ACI 318-25 (por ejemplo φ, β1 entre 55 y 56 MPa o Vc), sus resultados no tienen por qué coincidir con el perfil.
+- **Decisión:** tomar los resultados de Wight como referencia del perfil `nsr-10`. Si un resultado no coincide, se reporta al usuario con la cláusula, el valor del libro y el valor del perfil, antes de modificar código o casos para hacerlo coincidir. Confirmado por el usuario.
+
+### D-015: unidades y tolerancia de los ejemplos de Wight
+
+- **Fecha:** 2026-11-04
+- **Problema:** la mayoría de los ejemplos de Wight están en unidades inglesas.
+- **Referencia:** D-011 y D-014.
+- **Decisión:** igual que D-011: convertir solo datos y resultados de cada ejemplo (25.4 mm/in, 6.894757e-3 MPa/psi), sin convertir constantes normativas, y comparar con ±1 % sobre el valor impreso. Confirmado por el usuario.
+
+### D-016: la Fase 2 se entrega en subfases
+
+- **Fecha:** 2026-11-04
+- **Decisión:** dividir la Fase 2 en 2A (flexión), 2B (cortante), 2C (torsión), 2D (servicio), 2E (ETABS) y 2F (memorias y huella). Cada subfase se cierra con su oráculo y la CI en verde. La huella empieza en 2F, sobre el JSON de resultados y la memoria en texto. Confirmado por el usuario.
+
+### D-017: deflexiones pendientes
+
+- **Fecha:** 2026-11-04
+- **Problema:** las deflexiones requieren momentos de servicio, y la entrada solo trae fuerzas mayoradas.
+- **Alternativas:** ampliar la entrada con momentos de servicio, o dejar las deflexiones para después.
+- **Decisión:** dejarlas pendientes y anotarlas en la hoja de ruta. 2D cubre solo control de fisuración y espesor mínimo. Confirmado por el usuario.
+
+### D-018: el archivo de ETABS llega en Excel
+
+- **Fecha:** 2026-11-04
+- **Decisión:** la importación de 2E lee el archivo de ETABS en formato Excel, porque es el formato en que el usuario siempre lo tiene. Confirmado por el usuario.
+
+### D-019: tope de fy en As,min de ACI
+
+- **Fecha:** 2026-11-04
+- **Problema:** el PDF de ACI CODE-318-25, que está en SI, limita fy en 9.6.1.2 a "80,000 psi".
+- **Alternativas:** convertir a 551.6 MPa, o usar 550 MPa, el valor que el mismo documento usa en SI en sus demás límites.
+- **Decisión:** 550 MPa. Confirmado por el usuario.
+
+### D-020: deformación de fluencia εty
+
+- **Fecha:** 2026-11-04
+- **Referencia:** ACI 21.2.2.1; NSR-10 C.10.3.3.
+- **Decisión:** εty = fy/Es en ambos perfiles, que es la regla general. No se usa el valor 0.002 que ambas normas permiten para acero de 420 MPa. Confirmado por el usuario.
+
+### D-021: viga isostática con el ala a tracción
+
+- **Fecha:** 2026-11-04
+- **Referencia:** ACI 9.6.1.2; NSR-10 C.10.5.2.
+- **Decisión:** el miembro declara de forma opcional si es isostático. Solo se exige en vigas T con momento negativo; si falta en ese caso, As,min queda `INCOMPLETE`. Confirmado por el usuario.
+
+### D-022: excepción del tercio adicional de As,min
+
+- **Fecha:** 2026-11-04
+- **Referencia:** ACI 9.6.1.3; NSR-10 C.10.5.3.
+- **Decisión:** no se implementa por ahora y queda pendiente en la hoja de ruta. Si As < As,min, la verificación devuelve `BLOCKED` ("no implementado"), porque la excepción podría levantar el incumplimiento. Confirmado por el usuario.
+
+### D-023: lectura del Excel de ETABS
+
+- **Fecha:** 2026-11-04
+- **Decisión:** leer el `.xlsx` con la biblioteca estándar (`zipfile` y `xml`), sin añadir dependencias. Se versiona `examples/etabs/Element Forces - Beams.xlsx` como ejemplo real de entrada, y `AGENTS.md` aclara que la regla "Nada de Excel versionado" aplica a las tablas de `data/`. Confirmado por el usuario.
+
+### D-024: carga axial en la flexión de vigas
+
+- **Fecha:** 2026-11-04
+- **Problema:** cómo incluir la carga axial mayorada en la resistencia a flexión de una viga.
+- **Referencia:** ACI 9.5.1.1, 9.5.2.1, 21.2.2 y 22.2.1.1; NSR-10 C.10.3.1 y C.10.3.5.
+- **Alternativas:** Pn = Pu/φ, iterando φ, o Pn = Pu.
+- **Consecuencias:** con tracción axial, Pn = Pu sobrestima Mn frente a Pu/φ (cerca de 2 % en el ejemplo revisado); con compresión, lo subestima un poco.
+- **Decisión del usuario:** en vigas, el equilibrio usa Pn = Pu, porque se busca el momento resistente del miembro sometido a la carga P. No se itera φ. Se aplica en ambos perfiles. Pu siempre es dato (si falta, `INCOMPLETE`); compresión positiva en el JSON (ETABS se invierte al importar); los momentos se toman respecto al centroide de la sección bruta, donde ETABS aplica P. Si Pu ≥ 0.10 f'c·Ag, la estación queda `BLOCKED`, porque el miembro no puede tratarse como viga. Cada miembro declara su tipo (`beam`, `column`, `footing`, `wall` o `slab`); los tipos distintos de viga quedan `BLOCKED` hasta que se implementen.
+- **Para columnas (v2):** el diagrama de interacción usará Pn = Pu/φ, por indicación del usuario.
+
+### D-025: refuerzo de tracción para As,min
+
+- **Fecha:** 2026-11-04
+- **Problema:** con el eje neutro muy alto (vigas T a momento positivo), las barras cercanas a la cara comprimida quedan a tracción y bajarían la d usada en As,min.
+- **Referencia:** ACI 9.6.1.2; NSR-10 C.10.5.1. Ambas usan d, la distancia al centroide del refuerzo de tracción.
+- **Decisión:** para As,min cuentan las capas a tracción situadas en la mitad traccionada de la sección. Pendiente de confirmación del usuario.
+
+### D-026: As,min frente a los ejemplos de Wight
+
+- **Fecha:** 2026-11-04
+- **Problema:** cuando rige la expresión 1.4·bw·d/fy, As,min difiere de +1.1 % a +1.8 % de Wight (ejemplos 4-1, 4-3 vigas 1 y 3, 4-4, 4-6 y 5-3).
+- **Causa:** Wight usa 200 psi (1.379 MPa) y la versión SI de ambas normas usa 1.4 MPa, más el redondeo del libro.
+- **Decisión del usuario:** la diferencia es aceptable. El oráculo de Wight compara As,min con 2 % y el resto de magnitudes con 1 % (D-015).
+
 ## Consultas abiertas
 
-### C-003: referencias de NSR-10 para la Fase 2
-
-- **Fecha:** 2026-11-02
-- **Problema:** la Fase 2 pide ejemplos de referencia en ambos perfiles, y `references/` no tiene ninguno para NSR-10 ni el libro de Wight. Los ejemplos de ACI no validan NSR-10, porque φ y otras cláusulas pueden diferir.
-- **Alternativas:** conseguir una fuente con ejemplos resueltos de NSR-10, o usar casos derivados a mano.
-- **Recomendación:** conseguir una fuente publicada y usar derivaciones solo donde no cubra.
-- **Pendiente:** decidir antes de abrir la Fase 2.
+Ninguna.

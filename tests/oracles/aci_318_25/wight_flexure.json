@@ -1,0 +1,222 @@
+{
+  "source": "Wight, Reinforced Concrete: Mechanics and Design, 9.a ed. (basado en ACI CODE-318-25), ejemplos 4-1, 4-1M, 4-3, 4-4, 4-6 y 5-3.",
+  "notes": "Unidades 'in': in, in2, ksi y kip-in; 'si': mm, mm2, MPa y kN-m. Se convierten solo datos y resultados (D-015). beta1 y Es se toman del libro; phi, As,min y la deformación mínima salen del perfil. As,min usa el centroide del acero a tracción. La armadura de las vigas 3 de 4-3 y del 4-4 se concentra en su centroide, como hace el libro, y εt se calcula en dt. En el 4-4 se usa el resultado refinado del libro (c = 6.2 in, Mn = 428 k-ft). El h del 5-3 no influye en As,min. As,min se compara con 2 %: Wight usa 200 psi y la norma en SI 1.4 MPa; el usuario acepta esa diferencia (D-026).",
+  "tolerance_rel": 0.01,
+  "cases": [
+    {
+      "id": "4-1",
+      "page": 426,
+      "units": "in",
+      "fc": 4.0,
+      "fy": 60.0,
+      "es": 29000.0,
+      "beta1": 0.85,
+      "section": {
+        "bw": 12,
+        "h": 20
+      },
+      "layers": [
+        [
+          17.5,
+          3.16
+        ]
+      ],
+      "expected": {
+        "a": 4.66,
+        "c": 5.48,
+        "et": 0.00658,
+        "Mn": 2880,
+        "As_min": 0.7
+      }
+    },
+    {
+      "id": "4-1M",
+      "page": 430,
+      "units": "si",
+      "fc": 20.0,
+      "fy": 420.0,
+      "es": 200000.0,
+      "beta1": 0.85,
+      "section": {
+        "bw": 250,
+        "h": 565
+      },
+      "layers": [
+        [
+          500,
+          1530
+        ]
+      ],
+      "expected": {
+        "a": 151,
+        "c": 178,
+        "et": 0.00543,
+        "Mn": 273
+      }
+    },
+    {
+      "id": "4-3 viga 1",
+      "page": 449,
+      "units": "in",
+      "fc": 4.0,
+      "fy": 60.0,
+      "es": 29000.0,
+      "beta1": 0.85,
+      "section": {
+        "bw": 12,
+        "h": 20
+      },
+      "layers": [
+        [
+          17.5,
+          4.0
+        ]
+      ],
+      "expected": {
+        "a": 5.88,
+        "c": 6.92,
+        "et": 0.00459,
+        "Mn": 3490,
+        "As_min": 0.7,
+        "phi": 0.86
+      }
+    },
+    {
+      "id": "4-3 viga 2",
+      "page": 452,
+      "units": "in",
+      "fc": 6.0,
+      "fy": 60.0,
+      "es": 29000.0,
+      "beta1": 0.75,
+      "section": {
+        "bw": 12,
+        "h": 20
+      },
+      "layers": [
+        [
+          17.5,
+          4.0
+        ]
+      ],
+      "expected": {
+        "a": 3.92,
+        "c": 5.23,
+        "et": 0.00704,
+        "Mn": 3730,
+        "As_min": 0.81,
+        "phi": 0.9
+      }
+    },
+    {
+      "id": "4-3 viga 3",
+      "page": 455,
+      "units": "in",
+      "fc": 4.0,
+      "fy": 60.0,
+      "es": 29000.0,
+      "beta1": 0.85,
+      "section": {
+        "bw": 12,
+        "h": 20
+      },
+      "layers": [
+        [
+          16.8,
+          6.0
+        ]
+      ],
+      "dt": 17.5,
+      "expected": {
+        "a": 8.59,
+        "c": 10.1,
+        "et": 0.0022,
+        "Mn": 4350,
+        "As_min": 0.67,
+        "phi": 0.66
+      }
+    },
+    {
+      "id": "4-4",
+      "page": 478,
+      "units": "in",
+      "fc": 4.0,
+      "fy": 60.0,
+      "es": 29000.0,
+      "beta1": 0.85,
+      "section": {
+        "bw": 12,
+        "h": 20
+      },
+      "layers": [
+        [
+          2.5,
+          3.0
+        ],
+        [
+          16.8,
+          6.0
+        ]
+      ],
+      "dt": 17.5,
+      "expected": {
+        "c": 6.2,
+        "Mn": 5136,
+        "As_min": 0.67,
+        "phi": 0.9
+      }
+    },
+    {
+      "id": "4-6",
+      "page": 505,
+      "units": "in",
+      "fc": 3.0,
+      "fy": 60.0,
+      "es": 29000.0,
+      "beta1": 0.85,
+      "section": {
+        "bw": 10,
+        "h": 28,
+        "bf": 18,
+        "hf": 5
+      },
+      "layers": [
+        [
+          24.5,
+          4.74
+        ]
+      ],
+      "expected": {
+        "a": 7.15,
+        "c": 8.42,
+        "Mn": 6060,
+        "phi": 0.9
+      }
+    },
+    {
+      "id": "5-3",
+      "page": 572,
+      "units": "in",
+      "fc": 4.0,
+      "fy": 60.0,
+      "es": 29000.0,
+      "beta1": 0.85,
+      "section": {
+        "bw": 12,
+        "h": 23.5
+      },
+      "layers": [
+        [
+          20.0,
+          0.88
+        ]
+      ],
+      "expected": {
+        "As_min": 0.8
+      }
+    }
+  ],
+  "tolerance_overrides": {
+    "As_min": 0.02
+  }
+}

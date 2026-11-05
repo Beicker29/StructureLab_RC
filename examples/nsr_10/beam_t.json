@@ -1,5 +1,5 @@
 {
-  "description": "Viga T con el ala en la cara superior, apoyo y centro de luz. Unidades: mm y MPa; demandas mayoradas en kN y kN·m; depth se mide desde la fibra superior.",
+  "description": "Viga T con el ala en la cara superior, apoyo y centro de luz. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DMO",
@@ -12,6 +12,8 @@
   "members": [
     {
       "id": "V-1",
+      "type": "beam",
+      "statically_determinate": false,
       "length": 6000.0,
       "section": {
         "bw": 300.0,
@@ -37,6 +39,7 @@
             ]
           },
           "demands": {
+            "Pu_kN": 0.0,
             "Mu_kNm": -150.0,
             "Vu_kN": 120.0,
             "Tu_kNm": 5.0
@@ -59,6 +62,7 @@
             ]
           },
           "demands": {
+            "Pu_kN": 25.0,
             "Mu_kNm": 180.0,
             "Vu_kN": 10.0,
             "Tu_kNm": 0.0

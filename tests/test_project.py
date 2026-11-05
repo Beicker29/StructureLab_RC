@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from structurelab_rc.codes.registry import PROFILES
-from structurelab_rc.domain.beam.nominal_flexure import nominal_flexure
+from structurelab_rc.domain.beam.flexure import nominal_flexure
 from structurelab_rc.domain.check import check_from_errors
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
@@ -14,7 +14,7 @@ from structurelab_rc.engine import validate_file
 from structurelab_rc.errors import ErrorCode, StructuredError, blocked, incomplete, invalid_input
 from structurelab_rc.mechanics.flexure import SteelLayer
 from structurelab_rc.model.loader import ProjectLoadError, load_project
-from structurelab_rc.model.project import Materials, Project, Section
+from structurelab_rc.model.project import Demands, Materials, Project, Section
 from structurelab_rc.setup import load_engine
 
 EXAMPLES = sorted((Path(__file__).parent.parent / "examples").glob("*/*.json"))
@@ -27,13 +27,14 @@ BASE: dict[str, Any] = {
     "members": [
         {
             "id": "V1",
+            "type": "beam",
             "length": 6000.0,
             "section": {"bw": 300.0, "h": 500.0},
             "stations": [
                 {
                     "x": 3000.0,
                     "layout": {"layers": [{"designation": "#8", "count": 3, "depth": 440.0}]},
-                    "demands": {"Mu_kNm": 180.0, "Vu_kN": 40.0, "Tu_kNm": 0.0},
+                    "demands": {"Pu_kN": 0.0, "Mu_kNm": 180.0, "Vu_kN": 40.0, "Tu_kNm": 0.0},
                 }
             ],
         }
@@ -96,7 +97,7 @@ def test_concrete_outside_the_beta1_table_is_rejected() -> None:
 
 
 def test_missing_demand_is_incomplete_and_not_assumed() -> None:
-    status, errors = _validate(_project(members=_member_with(demands={"Mu_kNm": 180.0, "Vu_kN": 40.0})))
+    status, errors = _validate(_project(members=_member_with(demands={"Pu_kN": 0.0, "Mu_kNm": 180.0, "Vu_kN": 40.0})))
     assert status is Status.INCOMPLETE
     assert errors[0].code is ErrorCode.INCOMPLETE
     assert "Tu" in errors[0].message
@@ -159,7 +160,7 @@ def test_nominal_flexure_rejects_concrete_outside_the_table() -> None:
         Materials(fc=14.0, fy=420.0),
         Section(bw=300.0, h=500.0),
         (SteelLayer(440.0, 1530.0),),
-        top_in_compression=True,
+        Demands.model_validate({"Mu_kNm": 100.0, "Pu_kN": 0.0}),
     )
     assert isinstance(result, StructuredError)
     assert result.code is ErrorCode.INVALID_INPUT

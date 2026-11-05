@@ -1,9 +1,16 @@
-"""Equilibrio y compatibilidad de deformaciones a flexión, en N, mm y MPa."""
+"""Equilibrio y compatibilidad de deformaciones a flexión con carga axial, en N, mm y MPa.
+
+La carga axial es positiva en compresión y actúa en el centroide de la sección bruta.
+"""
 
 import math
 from dataclasses import dataclass
 
 _BISECTION_STEPS = 100
+
+
+class NoEquilibrium(ValueError):
+    """La sección no puede equilibrar la carga axial."""
 
 
 @dataclass(frozen=True)
@@ -40,13 +47,14 @@ class SteelModel:
 @dataclass(frozen=True)
 class LayerState:
     depth: float
+    area: float
     strain: float
     stress: float
 
 
 @dataclass(frozen=True)
 class FlexureState:
-    """Las deformaciones y esfuerzos del acero son positivos en tracción."""
+    """Las deformaciones y esfuerzos del acero son positivos en tracción; el momento es respecto al centroide."""
 
     c: float
     a: float
@@ -78,7 +86,7 @@ def _block(strips: tuple[CompressionStrip, ...], a: float) -> tuple[float, float
 def _layer_state(layer: SteelLayer, c: float, concrete: ConcreteBlock, steel: SteelModel) -> LayerState:
     strain = concrete.max_strain * (layer.depth - c) / c
     stress = math.copysign(min(abs(steel.modulus * strain), steel.fy), strain)
-    return LayerState(layer.depth, strain, stress)
+    return LayerState(layer.depth, layer.area, strain, stress)
 
 
 def _layer_force(layer: SteelLayer, c: float, concrete: ConcreteBlock, steel: SteelModel) -> float:
@@ -98,42 +106,60 @@ def _section_forces(
 
 
 def _neutral_axis(
-    strips: tuple[CompressionStrip, ...], layers: tuple[SteelLayer, ...], concrete: ConcreteBlock, steel: SteelModel
+    strips: tuple[CompressionStrip, ...], layers: tuple[SteelLayer, ...], concrete: ConcreteBlock, steel: SteelModel, axial: float
 ) -> float:
     """Menor raíz del equilibrio; la fuerza salta hacia abajo cuando el bloque alcanza una capa."""
+
+    def residual(c: float) -> float:
+        return _section_forces(strips, layers, c, concrete, steel) - axial
+
     deepest = max(strips[-1].end, *(layer.depth for layer in layers))
     ceiling = 2 * deepest / concrete.beta1
     jumps = sorted({layer.depth / concrete.beta1 for layer in layers if layer.depth / concrete.beta1 < ceiling})
     low = ceiling * 1e-9
+    if residual(low) >= 0:
+        raise NoEquilibrium("la tracción axial supera la capacidad del acero")
     for high in (*jumps, ceiling):
-        if _section_forces(strips, layers, high * (1 - 1e-12), concrete, steel) >= 0:
+        if residual(high * (1 - 1e-12)) >= 0:
             break
         low = high * (1 + 1e-12)
     else:
-        raise ValueError("no hay equilibrio para la sección")
+        raise NoEquilibrium("la compresión axial supera la capacidad de la sección")
     high = high * (1 - 1e-12)
     for _ in range(_BISECTION_STEPS):
         middle = (low + high) / 2
-        if _section_forces(strips, layers, middle, concrete, steel) >= 0:
+        if residual(middle) >= 0:
             high = middle
         else:
             low = middle
     return (low + high) / 2
 
 
+def gross_centroid(strips: tuple[CompressionStrip, ...]) -> float:
+    """Profundidad del centroide de la sección bruta, medida desde la cara comprimida."""
+    area, moment = _block(strips, strips[-1].end)
+    return moment / area
+
+
 def flexure_state(
-    strips: tuple[CompressionStrip, ...], layers: tuple[SteelLayer, ...], concrete: ConcreteBlock, steel: SteelModel
+    strips: tuple[CompressionStrip, ...],
+    layers: tuple[SteelLayer, ...],
+    concrete: ConcreteBlock,
+    steel: SteelModel,
+    axial: float = 0.0,
 ) -> FlexureState:
     if not layers:
         raise ValueError("la sección no tiene acero")
-    c = _neutral_axis(strips, layers, concrete, steel)
+    c = _neutral_axis(strips, layers, concrete, steel, axial)
     a = concrete.beta1 * c
     _, block_moment = _block(strips, a)
     steel_moment = sum(_layer_force(layer, c, concrete, steel) * layer.depth for layer in layers)
+    face_moment = steel_moment - concrete.stress_factor * concrete.fc * block_moment
     return FlexureState(
         c=c,
         a=a,
         extreme_strain=_layer_state(max(layers, key=lambda layer: layer.depth), c, concrete, steel).strain,
-        nominal_moment=steel_moment - concrete.stress_factor * concrete.fc * block_moment,
+        # Trasladar el momento de la cara comprimida al centroide suma la carga axial por su brazo.
+        nominal_moment=face_moment + axial * gross_centroid(strips),
         layers=tuple(_layer_state(layer, c, concrete, steel) for layer in layers),
     )

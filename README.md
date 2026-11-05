@@ -4,8 +4,9 @@ Herramienta de oficina para verificar, diseñar, despiezar y dibujar elementos d
 reforzado. La v1 cubrirá vigas con dos perfiles normativos, `aci-318-25` (ACI CODE-318-25)
 y `nsr-10` (NSR-10 Título C). Cada proyecto declara un solo perfil.
 
-**Estado:** Fase 1, modelo y mecánica. Carga y valida proyectos, pero todavía no verifica
-elementos ni emite memorias; ver la [hoja de ruta](docs/ROADMAP.md).
+**Estado:** Fase 2A, flexión de vigas. Verifica la resistencia a flexión, la deformación neta de
+tracción y el acero mínimo por estación; cortante, torsión, servicio y memorias vienen en las
+siguientes subfases ([hoja de ruta](docs/ROADMAP.md)).
 
 ## Instalación
 
@@ -26,6 +27,7 @@ Extras opcionales: `pdf` (fpdf2) y `cad` (ezdxf).
 structurelab-rc --version
 structurelab-rc catalog
 structurelab-rc validate examples/nsr_10/beam_t.json
+structurelab-rc verify examples/nsr_10/beam_t.json
 ```
 
 `catalog` lista la designación, el diámetro nominal (mm), el área (mm²) y la masa (kg/m) de
@@ -35,9 +37,17 @@ las barras del catálogo.
 catálogo, e informa `PASS`, `INCOMPLETE` (faltan datos) o `FAIL` (entrada inválida, con código
 de salida 1). No verifica la resistencia de la viga.
 
+`verify` valida el proyecto y verifica cada estación a flexión: φMn ≥ |Mu|, la deformación neta de
+tracción mínima y As,min. Muestra demanda, capacidad, estado y numeral, y sale con 1 si algo falla.
+
 El proyecto declara su perfil y un nivel sísmico que exista en ese perfil, con una
 justificación: `none`, `ordinary`, `intermediate` o `special` en `aci-318-25`, y `DMI`, `DMO` o
 `DES` en `nsr-10`. Los valores normativos, como εcu y β1, salen del perfil y no se declaran.
+
+Cada miembro declara su tipo (`beam`, `column`, `footing`, `wall` o `slab`); por ahora solo se
+verifican vigas. Cada estación lleva `Pu_kN` (compresión positiva, también cuando es 0), `Mu_kNm`
+(positivo con la fibra superior comprimida), `Vu_kN` y `Tu_kNm`. Una viga T con momento negativo
+declara `statically_determinate`.
 
 ## Ejemplos y resultados
 

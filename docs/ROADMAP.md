@@ -17,9 +17,20 @@ en sección rectangular y T), registro de perfiles y prueba de conformidad.
 Aceptación: los ejemplos cargan y validan; los resultados de mecánica coinciden con el oráculo.
 
 ### Fase 2: verificación de vigas
-Flexión, cortante, torsión y servicio en ambos perfiles, por estación. Importación de
-fuerzas desde ETABS. Memoria en texto, JSON y PDF.
+Por estación y en ambos perfiles. Se entrega en subfases, cada una con su oráculo y la CI en verde:
+
+- **2A Flexión:** φMn, φ según εt, εt mínima y As,min.
+- **2B Cortante:** Vc, Vs, Av,min, separación máxima y límite de sección.
+- **2C Torsión:** umbral, sección, At, Al e interacción con el cortante.
+- **2D Servicio:** control de fisuración y espesor mínimo. Las deflexiones quedan pendientes (D-017).
+- **2E ETABS:** importación de fuerzas mayoradas desde el archivo exportado.
+- **2F Memorias:** resultados en JSON, memoria en texto y PDF; huella.
+
 Aceptación: ejemplos de referencia (Wight, ACI MNL-17) dentro de tolerancia; huella estable.
+
+**Pendientes:**
+- Deflexiones. Requieren cargas de servicio, que la entrada aún no trae (D-017).
+- Excepción de As,min cuando As supera en un tercio al requerido (ACI 9.6.1.3, NSR-10 C.10.5.3). Mientras no exista, la verificación devuelve `BLOCKED` si As < As,min (D-022).
 
 ### Fase 3: requisitos sísmicos de vigas
 Según el nivel declarado: Ve con momentos probables, zonas de confinamiento, límites de
@@ -35,5 +46,5 @@ Marcas, longitudes de corte, doblado, empalmes ubicados, cartilla y cantidades.
 Modelo de dibujo neutro, DXF y SVG de vista previa.
 
 ## v2
-Columnas (P-M biaxial y confinamiento), luego losas, zapatas y muros, sobre el mismo
+Columnas (P-M biaxial y confinamiento; el diagrama de interacción usará Pn = Pu/φ, D-024), luego losas, zapatas y muros, sobre el mismo
 `ReinforcementLayout`. Interfaz web y API cuando la v1 esté cerrada.

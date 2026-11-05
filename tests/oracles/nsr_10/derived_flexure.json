@@ -89,6 +89,83 @@
       }
     },
     {
+      "id": "rectangular_compresion_axial",
+      "fc": 28.0,
+      "fy": 420.0,
+      "section": {
+        "bw": 300.0,
+        "h": 500.0
+      },
+      "top_in_compression": true,
+      "Pu_N": 300000.0,
+      "layers": [
+        {
+          "designation": "#8",
+          "count": 3,
+          "depth": 440.0
+        }
+      ],
+      "beta1": 0.85,
+      "expected": {
+        "c": 155.31389026198715,
+        "a": 132.01680672268907,
+        "extreme_strain": 0.0054989178866963724,
+        "Mn_Nmm": 295524478.99159664
+      }
+    },
+    {
+      "id": "rectangular_traccion_axial",
+      "fc": 28.0,
+      "fy": 420.0,
+      "section": {
+        "bw": 300.0,
+        "h": 500.0
+      },
+      "top_in_compression": true,
+      "Pu_N": -200000.0,
+      "layers": [
+        {
+          "designation": "#8",
+          "count": 3,
+          "depth": 440.0
+        }
+      ],
+      "beta1": 0.85,
+      "expected": {
+        "c": 72.92799472730269,
+        "a": 61.98879551820728,
+        "extreme_strain": 0.01510004518752824,
+        "Mn_Nmm": 219025879.55182073
+      }
+    },
+    {
+      "id": "t_compresion_axial_centroide_bruto",
+      "fc": 35.0,
+      "fy": 420.0,
+      "section": {
+        "bw": 300.0,
+        "h": 600.0,
+        "bf": 800.0,
+        "hf": 100.0
+      },
+      "top_in_compression": true,
+      "Pu_N": 400000.0,
+      "layers": [
+        {
+          "designation": "#8",
+          "count": 4,
+          "depth": 530.0
+        }
+      ],
+      "beta1": 0.8,
+      "expected": {
+        "c": 66.00840336134453,
+        "a": 52.80672268907563,
+        "extreme_strain": 0.021087842138765116,
+        "Mn_Nmm": 519181125.0274023
+      }
+    },
+    {
       "id": "acero_a_traccion_elastico",
       "fc": 42.0,
       "fy": 420.0,

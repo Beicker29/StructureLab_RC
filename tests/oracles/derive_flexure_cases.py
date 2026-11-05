@@ -59,6 +59,23 @@ def tension_steel_elastic(fc: float, fy: float, b: float, area: float, d: float,
     return {"c": c, "a": a, "extreme_strain": strain, "Mn_Nmm": ALPHA * fc * b * a * (d - a / 2)}
 
 
+def with_axial(fc: float, fy: float, section: dict[str, float], area: float, d: float, axial: float, beta1: float) -> dict[str, float]:
+    """Una capa a tracción en fluencia, bloque en el ala o en sección rectangular; Pn = Pu en el centroide bruto."""
+    bw, h = section["bw"], section["h"]
+    bf, hf = section.get("bf", bw), section.get("hf", h)
+    gross = bw * h + (bf - bw) * hf
+    centroid = (bw * h * h / 2 + (bf - bw) * hf * hf / 2) / gross
+    tension = area * fy
+    compression = tension + axial
+    a = compression / (ALPHA * fc * bf)
+    c = a / beta1
+    strain = ECU * (d - c) / c
+    assert a <= hf
+    assert strain > fy / ES
+    moment = compression * (centroid - a / 2) + tension * (d - centroid)
+    return {"c": c, "a": a, "extreme_strain": strain, "Mn_Nmm": moment}
+
+
 def layer(designation: str, count: int, depth: float) -> dict[str, object]:
     return {"designation": designation, "count": count, "depth": depth}
 
@@ -103,6 +120,39 @@ def cases(fc_t: float, beta_t: float, fc_d: float, beta_d: float, fc_e: float, b
             "layers": [layer("#8", 8, 60.0), layer("#5", 2, 540.0)],
             "beta1": beta_d,
             "expected": doubly_reinforced(fc_d, 420.0, 300.0, (area("#8", 8), 540.0), (area("#5", 2), 60.0), beta_d),
+        },
+        {
+            "id": "rectangular_compresion_axial",
+            "fc": fc_d,
+            "fy": 420.0,
+            "section": RECTANGLE,
+            "top_in_compression": True,
+            "Pu_N": 300e3,
+            "layers": [layer("#8", 3, 440.0)],
+            "beta1": beta_d,
+            "expected": with_axial(fc_d, 420.0, RECTANGLE, area("#8", 3), 440.0, 300e3, beta_d),
+        },
+        {
+            "id": "rectangular_traccion_axial",
+            "fc": fc_d,
+            "fy": 420.0,
+            "section": RECTANGLE,
+            "top_in_compression": True,
+            "Pu_N": -200e3,
+            "layers": [layer("#8", 3, 440.0)],
+            "beta1": beta_d,
+            "expected": with_axial(fc_d, 420.0, RECTANGLE, area("#8", 3), 440.0, -200e3, beta_d),
+        },
+        {
+            "id": "t_compresion_axial_centroide_bruto",
+            "fc": fc_t,
+            "fy": 420.0,
+            "section": T_SECTION,
+            "top_in_compression": True,
+            "Pu_N": 400e3,
+            "layers": [layer("#8", 4, 530.0)],
+            "beta1": beta_t,
+            "expected": with_axial(fc_t, 420.0, T_SECTION, area("#8", 4), 530.0, 400e3, beta_t),
         },
         {
             "id": "acero_a_traccion_elastico",

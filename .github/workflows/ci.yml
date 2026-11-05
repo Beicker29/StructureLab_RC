@@ -50,3 +50,4 @@ jobs:
           "$bin/structurelab-rc" --version
           "$bin/structurelab-rc" catalog
           "$bin/structurelab-rc" validate "$example"
+          "$bin/structurelab-rc" verify "$example"

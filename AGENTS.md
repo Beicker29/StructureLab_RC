@@ -43,7 +43,8 @@ Una fuente de verdad por concepto ([arquitectura](docs/architecture.md)).
 - Unidades: entrada en mm, MPa, kN y kN·m; interno en N, mm y MPa. La conversión ocurre
   solo al cargar (`model/`) y al presentar (`reporting/`, con `kN()` y `kNm()`).
 - Tablas (barras, ganchos, materiales) en `src/structurelab_rc/data/` como CSV o TOML,
-  cargadas por `setup.load_engine()`. Nada de Excel versionado.
+  cargadas por `setup.load_engine()`. Nada de Excel versionado en `data/`; la excepción son
+  los ejemplos reales de ETABS en `examples/etabs/`.
 - No añadir clases, servicios, registros o dependencias sin necesidad demostrada.
 - Eliminar el código sustituido en la misma tarea; sin fachadas sin consumidores.
 

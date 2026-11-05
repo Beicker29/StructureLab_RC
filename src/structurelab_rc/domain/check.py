@@ -15,9 +15,19 @@ _STATUS_BY_CODE = {
 
 @dataclass(frozen=True)
 class Check:
+    """Demanda y capacidad en unidades internas; unit las nombra para la presentación."""
+
     name: str
     status: Status
     errors: tuple[StructuredError, ...] = ()
+    clause: str = ""
+    member: str = ""
+    x: float | None = None
+    demand: float | None = None
+    capacity: float | None = None
+    unit: str = ""
+    values: tuple[tuple[str, float], ...] = ()
+    note: str = ""
 
 
 def check_from_errors(name: str, errors: Iterable[StructuredError]) -> Check:

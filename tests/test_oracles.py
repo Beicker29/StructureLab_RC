@@ -5,9 +5,9 @@ from typing import Any
 import pytest
 
 from structurelab_rc.codes.registry import PROFILES
-from structurelab_rc.domain.beam.nominal_flexure import nominal_flexure, steel_layers
+from structurelab_rc.domain.beam.flexure import nominal_flexure, steel_layers
 from structurelab_rc.mechanics.flexure import ConcreteBlock, FlexureState, SteelLayer, SteelModel, compression_strips, flexure_state
-from structurelab_rc.model.project import Materials, Section
+from structurelab_rc.model.project import Demands, Materials, Section
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 from structurelab_rc.setup import load_engine
 
@@ -62,7 +62,9 @@ def test_profile_flexure_matches_closed_form(profile: str, case: dict[str, Any])
     materials = Materials(fc=case["fc"], fy=case["fy"])
     section = Section.model_validate(case["section"])
 
-    state = nominal_flexure(PROFILES[profile], materials, section, layers, top_in_compression=case["top_in_compression"])
+    demands = Demands.model_validate({"Mu_kNm": 1.0 if case["top_in_compression"] else -1.0, "Pu_kN": case.get("Pu_N", 0.0) / 1e3})
+
+    state = nominal_flexure(PROFILES[profile], materials, section, layers, demands)
 
     assert isinstance(state, FlexureState)
     expected = case["expected"]
@@ -87,3 +89,5 @@ def test_strength_assumptions_match_the_code(profile: str, folder: str) -> None:
         else:
             assert value == pytest.approx(row["value"], rel=1e-12)
     assert sorted(PROFILES[profile].seismic.seismic_levels()) == oracle["seismic_levels"]
+    for row in oracle["phi_moment_ety_0.0021"]:
+        assert PROFILES[profile].flexure.strength_reduction_moment(row["et"], 0.0021) == pytest.approx(row["value"], rel=1e-12)

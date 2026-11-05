@@ -28,7 +28,8 @@ def _station_errors(member: Member, station: Station, designations: set[str]) ->
             yield invalid_input(f"La barra '{layer.designation}' no esta en el catalogo", **where)
         if layer.depth >= member.section.h:
             yield invalid_input(f"La capa a {layer.depth} mm esta fuera de la seccion", **where)
-    for label, value in (("Mu", station.demands.mu), ("Vu", station.demands.vu), ("Tu", station.demands.tu)):
+    demands = station.demands
+    for label, value in (("Pu", demands.pu), ("Mu", demands.mu), ("Vu", demands.vu), ("Tu", demands.tu)):
         if value is None:
             yield incomplete(f"Falta la demanda {label}", **where)
 

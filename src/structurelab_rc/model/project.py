@@ -1,6 +1,6 @@
 """Proyecto de entrada. Geometría en mm y esfuerzos en MPa; las demandas se convierten a N y N·mm."""
 
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
@@ -42,10 +42,17 @@ class Section(_Input):
             raise ValueError("hf debe ser menor que h")
         return self
 
+    @property
+    def area(self) -> float:
+        """Área bruta, en mm²."""
+        flange = 0.0 if self.bf is None or self.hf is None else (self.bf - self.bw) * self.hf
+        return self.bw * self.h + flange
+
 
 class Demands(_Input):
-    """Fuerzas mayoradas. Momento positivo: fibra superior comprimida."""
+    """Fuerzas mayoradas. Momento positivo: fibra superior comprimida. Axial positiva: compresión."""
 
+    pu: float | None = Field(default=None, validation_alias="Pu_kN")
     mu: float | None = Field(default=None, validation_alias="Mu_kNm")
     vu: float | None = Field(default=None, validation_alias="Vu_kN")
     tu: float | None = Field(default=None, validation_alias="Tu_kNm")
@@ -55,7 +62,7 @@ class Demands(_Input):
     def _knm_to_nmm(cls, value: float | None) -> float | None:
         return None if value is None else value * NMM_PER_KNM
 
-    @field_validator("vu")
+    @field_validator("pu", "vu")
     @classmethod
     def _kn_to_n(cls, value: float | None) -> float | None:
         return None if value is None else value * N_PER_KN
@@ -68,7 +75,11 @@ class Station(_Input):
 
 
 class Member(_Input):
+    """type declara el tipo de miembro; statically_determinate solo se exige para As,min con el ala a tracción (D-021)."""
+
     id: str = Field(min_length=1)
+    type: Literal["beam", "column", "footing", "wall", "slab"]
+    statically_determinate: bool | None = None
     length: PositiveFloat
     section: Section
     stations: tuple[Station, ...] = Field(min_length=1)

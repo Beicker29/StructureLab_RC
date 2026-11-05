@@ -75,3 +75,7 @@ Las unidades se convierten solo al cargar y al presentar.
 `model` comprueba la forma de la entrada, sin conocer la norma. `domain` la compara con el
 perfil, por ejemplo que el nivel sísmico exista en él, y toma de `codes` los valores que
 `mechanics` recibe como números (εcu, 0.85, β1 y Es).
+
+En flexión, `domain/beam/flexure.py` decide por estación si aplica el alcance de viga (tipo de
+miembro y Pu < 0.10 f'c·Ag), pide a `mechanics` el estado con Pn = Pu y momentos respecto al
+centroide bruto, y arma los `Check` con φ, εt mínima y As,min tomados de `codes/<perfil>/flexure.py`.
