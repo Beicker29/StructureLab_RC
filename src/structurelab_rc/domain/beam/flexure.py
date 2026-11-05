@@ -73,8 +73,8 @@ def _min_reinforcement(profile: Profile, materials: Materials, member: Member, s
             return check_from_errors(MIN_REINFORCEMENT, [incomplete("Falta declarar si el miembro es isostatico (ala a traccion)")])
         if member.statically_determinate:
             bw = profile.flexure.determinate_flange_width(section.bw, section.bf)
-    # Refuerzo de tracción por flexión: capas a tracción en la mitad traccionada de la sección (D-025).
-    tension = [layer for layer in state.layers if layer.strain > 0 and layer.depth > section.h / 2]
+    # Cuenta todo el acero a tracción en el estado nominal; d es su centroide (D-025).
+    tension = [layer for layer in state.layers if layer.strain > 0]
     provided = sum(layer.area for layer in tension)
     depth = sum(layer.depth * layer.area for layer in tension) / provided if provided else 0.0
     required = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, bw, depth)

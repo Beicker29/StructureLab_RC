@@ -182,7 +182,8 @@
 - **Fecha:** 2026-11-04
 - **Problema:** con el eje neutro muy alto (vigas T a momento positivo), las barras cercanas a la cara comprimida quedan a tracción y bajarían la d usada en As,min.
 - **Referencia:** ACI 9.6.1.2; NSR-10 C.10.5.1. Ambas usan d, la distancia al centroide del refuerzo de tracción.
-- **Decisión:** para As,min cuentan las capas a tracción situadas en la mitad traccionada de la sección. Pendiente de confirmación del usuario.
+- **Alternativas:** contar solo las capas a tracción de la mitad traccionada, o todo el acero a tracción.
+- **Decisión del usuario:** para As,min cuenta todo el acero a tracción en el estado nominal, y d es su centroide. En la viga T de ejemplo a momento positivo, As = 1928 mm² y As,min = 362 mm².
 
 ### D-026: As,min frente a los ejemplos de Wight
 
@@ -190,6 +191,13 @@
 - **Problema:** cuando rige la expresión 1.4·bw·d/fy, As,min difiere de +1.1 % a +1.8 % de Wight (ejemplos 4-1, 4-3 vigas 1 y 3, 4-4, 4-6 y 5-3).
 - **Causa:** Wight usa 200 psi (1.379 MPa) y la versión SI de ambas normas usa 1.4 MPa, más el redondeo del libro.
 - **Decisión del usuario:** la diferencia es aceptable. El oráculo de Wight compara As,min con 2 % y el resto de magnitudes con 1 % (D-015).
+
+### D-027: el refuerzo longitudinal de torsión no es As de flexión
+
+- **Fecha:** 2026-11-04
+- **Problema:** en 2C aparecerán barras longitudinales de torsión (Al), que no deben confundirse con el refuerzo de flexión.
+- **Referencia:** ACI 9.5.4.3 (el refuerzo de torsión se suma al requerido por Vu, Mu y Pu) y 9.5.4.5 (reducción de Al en la zona comprimida por flexión). El numeral equivalente de NSR-10 se verificará en 2C.
+- **Decisión del usuario:** las barras de Al no cuentan como As en ninguna verificación de flexión (φMn, εt y As,min). Se implementa en 2C: cada capa del armado declarará su función (flexión o torsión) y la flexión solo usará las capas de flexión.
 
 ## Consultas abiertas
 

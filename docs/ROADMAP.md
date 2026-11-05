@@ -21,7 +21,8 @@ Por estación y en ambos perfiles. Se entrega en subfases, cada una con su orác
 
 - **2A Flexión:** φMn, φ según εt, εt mínima y As,min.
 - **2B Cortante:** Vc, Vs, Av,min, separación máxima y límite de sección.
-- **2C Torsión:** umbral, sección, At, Al e interacción con el cortante.
+- **2C Torsión:** umbral, sección, At, Al e interacción con el cortante. Cada capa del armado declara su
+  función; las barras de Al no cuentan como As de flexión (D-027).
 - **2D Servicio:** control de fisuración y espesor mínimo. Las deflexiones quedan pendientes (D-017).
 - **2E ETABS:** importación de fuerzas mayoradas desde el archivo exportado.
 - **2F Memorias:** resultados en JSON, memoria en texto y PDF; huella.

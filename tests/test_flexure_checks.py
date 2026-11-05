@@ -115,9 +115,12 @@ def test_aci_caps_fy_at_550_mpa_for_minimum_reinforcement() -> None:
     assert nsr.min_flexural_reinforcement(28.0, 690.0, 300.0, 440.0) < nsr.min_flexural_reinforcement(28.0, 550.0, 300.0, 440.0)
 
 
-def test_minimum_reinforcement_ignores_bars_on_the_compression_side() -> None:
+def test_minimum_reinforcement_counts_every_bar_in_tension() -> None:
+    # El eje neutro queda por encima de las 2#5 superiores, que también trabajan a tracción (D-025).
     layers = [{"designation": "#5", "count": 2, "depth": 60.0}, {"designation": "#8", "count": 3, "depth": 440.0}]
     member = _member(layers, {"Pu_kN": 0.0, "Mu_kNm": 180.0}, section=T_SECTION, statically_determinate=False)
     check = _checks(member)[MIN_REINFORCEMENT]
-    assert check.capacity == pytest.approx(3 * 510.0)
-    assert check.demand == pytest.approx(1.4 * 300.0 * 440.0 / 420.0)
+    area = 2 * 199.0 + 3 * 510.0
+    depth = (2 * 199.0 * 60.0 + 3 * 510.0 * 440.0) / area
+    assert check.capacity == pytest.approx(area)
+    assert check.demand == pytest.approx(1.4 * 300.0 * depth / 420.0)
