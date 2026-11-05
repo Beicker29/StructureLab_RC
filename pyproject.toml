@@ -50,6 +50,8 @@ max-complexity = 15
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["PLR2004"]
 "tests/oracles/*" = ["PLR0913", "PLR0917"]
+# Las funciones normativas reciben las variables de su ecuación.
+"src/structurelab_rc/codes/**" = ["PLR0913", "PLR0917"]
 
 [tool.mypy]
 python_version = "3.12"

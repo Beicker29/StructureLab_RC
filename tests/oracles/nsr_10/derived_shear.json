@@ -1,0 +1,76 @@
+{
+  "source": "Derivado a mano con las ecuaciones de cada perfil (derive_shear_cases.py); no proviene de un libro. N, mm, MPa.",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "simple_rige",
+      "fc": 28.0,
+      "bw": 300.0,
+      "d": 440.0,
+      "h": 500.0,
+      "rho_w": 0.0086,
+      "nu": 0.0,
+      "ag": 150000.0,
+      "vu": 120000.0,
+      "mu": 150000000.0,
+      "av_ge_min": true,
+      "expected_Vc_N": 118741.31884057884
+    },
+    {
+      "id": "detallado_rige",
+      "fc": 28.0,
+      "bw": 300.0,
+      "d": 440.0,
+      "h": 500.0,
+      "rho_w": 0.03,
+      "nu": 0.0,
+      "ag": 150000.0,
+      "vu": 200000.0,
+      "mu": 40000000.0,
+      "av_ge_min": true,
+      "expected_Vc_N": 179076.5353793683
+    },
+    {
+      "id": "compresion_mm_positivo",
+      "fc": 28.0,
+      "bw": 300.0,
+      "d": 440.0,
+      "h": 500.0,
+      "rho_w": 0.0086,
+      "nu": 500000.0,
+      "ag": 150000.0,
+      "vu": 120000.0,
+      "mu": 150000000.0,
+      "av_ge_min": true,
+      "expected_Vc_N": 147013.06142166906
+    },
+    {
+      "id": "compresion_mm_negativo",
+      "fc": 28.0,
+      "bw": 300.0,
+      "d": 440.0,
+      "h": 500.0,
+      "rho_w": 0.0086,
+      "nu": 500000.0,
+      "ag": 150000.0,
+      "vu": 120000.0,
+      "mu": 50000000.0,
+      "av_ge_min": true,
+      "expected_Vc_N": 284064.0817843749
+    },
+    {
+      "id": "traccion",
+      "fc": 28.0,
+      "bw": 300.0,
+      "d": 440.0,
+      "h": 500.0,
+      "rho_w": 0.0086,
+      "nu": -400000.0,
+      "ag": 150000.0,
+      "vu": 120000.0,
+      "mu": 150000000.0,
+      "av_ge_min": true,
+      "expected_Vc_N": 26914.698937197885
+    }
+  ]
+}

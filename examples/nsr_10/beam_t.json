@@ -1,5 +1,5 @@
 {
-  "description": "Viga T con el ala en la cara superior, apoyo y centro de luz. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior.",
+  "description": "Viga T con el ala en la cara superior, apoyo y centro de luz. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior; cover es el recubrimiento libre a los estribos.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DMO",
@@ -7,7 +7,9 @@
   },
   "materials": {
     "fc": 28.0,
-    "fy": 420.0
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight"
   },
   "members": [
     {
@@ -18,6 +20,7 @@
       "section": {
         "bw": 300.0,
         "h": 500.0,
+        "cover": 40.0,
         "bf": 1000.0,
         "hf": 100.0
       },
@@ -36,13 +39,18 @@
                 "count": 2,
                 "depth": 440.0
               }
-            ]
+            ],
+            "stirrups": {
+              "designation": "#3",
+              "legs": 2,
+              "spacing": 150.0
+            }
           },
           "demands": {
             "Pu_kN": 0.0,
             "Mu_kNm": -150.0,
             "Vu_kN": 120.0,
-            "Tu_kNm": 5.0
+            "Tu_kNm": 3.0
           }
         },
         {
@@ -59,7 +67,12 @@
                 "count": 3,
                 "depth": 440.0
               }
-            ]
+            ],
+            "stirrups": {
+              "designation": "#3",
+              "legs": 2,
+              "spacing": 175.0
+            }
           },
           "demands": {
             "Pu_kN": 25.0,

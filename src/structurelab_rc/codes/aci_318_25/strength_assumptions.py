@@ -1,4 +1,4 @@
-"""Suposiciones de diseño para resistencia según ACI CODE-318-25 (22.2.2 y 20.2.2)."""
+"""Suposiciones de diseño para resistencia según ACI CODE-318-25 (22.2.2, 20.2.2 y 19.2.4)."""
 
 _FC_MIN = 17.0
 _FC_UPPER_PLATEAU = 28.0
@@ -29,3 +29,8 @@ def beta1(fc: float) -> float | None:
 def steel_modulus() -> float:
     """20.2.2.2, en MPa."""
     return 200_000.0
+
+
+def concrete_lambda(concrete: str) -> float | None:
+    """19.2.4: λ = 1.0 para concreto de peso normal; el concreto liviano no está implementado (D-028)."""
+    return 1.0 if concrete == "normalweight" else None

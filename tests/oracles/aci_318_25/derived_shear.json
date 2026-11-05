@@ -1,0 +1,90 @@
+{
+  "source": "Derivado a mano con las ecuaciones de cada perfil (derive_shear_cases.py); no proviene de un libro. N, mm, MPa.",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "a_rige",
+      "fc": 28.0,
+      "bw": 300.0,
+      "d": 440.0,
+      "h": 500.0,
+      "rho_w": 0.0086,
+      "nu": 0.0,
+      "ag": 150000.0,
+      "vu": 120000.0,
+      "mu": 150000000.0,
+      "av_ge_min": true,
+      "expected_Vc_N": 118741.31884057884
+    },
+    {
+      "id": "b_rige_cuantia_alta",
+      "fc": 28.0,
+      "bw": 300.0,
+      "d": 440.0,
+      "h": 500.0,
+      "rho_w": 0.03,
+      "nu": 0.0,
+      "ag": 150000.0,
+      "vu": 120000.0,
+      "mu": 150000000.0,
+      "av_ge_min": true,
+      "expected_Vc_N": 143242.08503696675
+    },
+    {
+      "id": "c_efecto_de_tamano",
+      "fc": 28.0,
+      "bw": 300.0,
+      "d": 900.0,
+      "h": 1000.0,
+      "rho_w": 0.01,
+      "nu": 0.0,
+      "ag": 300000.0,
+      "vu": 120000.0,
+      "mu": 150000000.0,
+      "av_ge_min": false,
+      "expected_Vc_N": 133954.13697614425
+    },
+    {
+      "id": "compresion_con_tope_de_axial",
+      "fc": 21.0,
+      "bw": 300.0,
+      "d": 440.0,
+      "h": 500.0,
+      "rho_w": 0.0086,
+      "nu": 3000000.0,
+      "ag": 150000.0,
+      "vu": 120000.0,
+      "mu": 150000000.0,
+      "av_ge_min": true,
+      "expected_Vc_N": 241432.9985948091
+    },
+    {
+      "id": "traccion_sin_minimo_de_tabla",
+      "fc": 28.0,
+      "bw": 300.0,
+      "d": 440.0,
+      "h": 500.0,
+      "rho_w": 0.0086,
+      "nu": -400000.0,
+      "ag": 150000.0,
+      "vu": 120000.0,
+      "mu": 150000000.0,
+      "av_ge_min": true,
+      "expected_Vc_N": 60074.652173912174
+    },
+    {
+      "id": "raiz_de_fc_limitada",
+      "fc": 81.0,
+      "bw": 300.0,
+      "d": 400.0,
+      "h": 500.0,
+      "rho_w": 0.02,
+      "nu": 0.0,
+      "ag": 150000.0,
+      "vu": 120000.0,
+      "mu": 150000000.0,
+      "av_ge_min": false,
+      "expected_Vc_N": 156497.80947433415
+    }
+  ]
+}

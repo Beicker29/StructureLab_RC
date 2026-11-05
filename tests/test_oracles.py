@@ -56,11 +56,11 @@ DERIVED = [
 
 @pytest.mark.parametrize(("profile", "case"), DERIVED)
 def test_profile_flexure_matches_closed_form(profile: str, case: dict[str, Any]) -> None:
-    layout = ReinforcementLayout.model_validate({"layers": case["layers"]})
+    layout = ReinforcementLayout.model_validate({"layers": case["layers"], "stirrups": None})
     layers = steel_layers(layout, load_engine().bars)
     assert isinstance(layers, tuple)
-    materials = Materials(fc=case["fc"], fy=case["fy"])
-    section = Section.model_validate(case["section"])
+    materials = Materials(fc=case["fc"], fy=case["fy"], fyt=420.0, concrete="normalweight")
+    section = Section.model_validate(case["section"] | {"cover": 40.0})
 
     demands = Demands.model_validate({"Mu_kNm": 1.0 if case["top_in_compression"] else -1.0, "Pu_kN": case.get("Pu_N", 0.0) / 1e3})
 
@@ -91,3 +91,19 @@ def test_strength_assumptions_match_the_code(profile: str, folder: str) -> None:
     assert sorted(PROFILES[profile].seismic.seismic_levels()) == oracle["seismic_levels"]
     for row in oracle["phi_moment_ety_0.0021"]:
         assert PROFILES[profile].flexure.strength_reduction_moment(row["et"], 0.0021) == pytest.approx(row["value"], rel=1e-12)
+
+
+DERIVED_SHEAR = [
+    pytest.param(profile, case, id=f"{profile}-{case['id']}")
+    for profile, folder in FOLDERS.items()
+    for case in _oracle(folder, "derived_shear.json")["cases"]
+]
+
+
+@pytest.mark.parametrize(("profile", "case"), DERIVED_SHEAR)
+def test_concrete_shear_matches_hand_derivation(profile: str, case: dict[str, Any]) -> None:
+    vc = PROFILES[profile].shear.concrete_shear(
+        fc=case["fc"], lam=1.0, bw=case["bw"], d=case["d"], h=case["h"], rho_w=case["rho_w"], nu=case["nu"], ag=case["ag"],
+        vu=case["vu"], mu=case["mu"], av_ge_min=case["av_ge_min"],
+    )
+    assert vc == pytest.approx(case["expected_Vc_N"], rel=1e-9)

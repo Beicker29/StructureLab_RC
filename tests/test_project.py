@@ -23,17 +23,17 @@ BASE: dict[str, Any] = {
     "description": "Prueba",
     "profile": "nsr-10",
     "seismic": {"level": "DMO", "justification": "Declarado para la prueba"},
-    "materials": {"fc": 28.0, "fy": 420.0},
+    "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight"},
     "members": [
         {
             "id": "V1",
             "type": "beam",
             "length": 6000.0,
-            "section": {"bw": 300.0, "h": 500.0},
+            "section": {"bw": 300.0, "h": 500.0, "cover": 40.0},
             "stations": [
                 {
                     "x": 3000.0,
-                    "layout": {"layers": [{"designation": "#8", "count": 3, "depth": 440.0}]},
+                    "layout": {"layers": [{"designation": "#8", "count": 3, "depth": 440.0}], "stirrups": None},
                     "demands": {"Pu_kN": 0.0, "Mu_kNm": 180.0, "Vu_kN": 40.0, "Tu_kNm": 0.0},
                 }
             ],
@@ -93,7 +93,7 @@ def test_unknown_profile_is_rejected() -> None:
 
 
 def test_concrete_outside_the_beta1_table_is_rejected() -> None:
-    assert _validate(_project(materials={"fc": 14.0, "fy": 420.0}))[0] is Status.FAIL
+    assert _validate(_project(materials={"fc": 14.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight"}))[0] is Status.FAIL
 
 
 def test_missing_demand_is_incomplete_and_not_assumed() -> None:
@@ -104,12 +104,12 @@ def test_missing_demand_is_incomplete_and_not_assumed() -> None:
 
 
 def test_unknown_bar_is_rejected() -> None:
-    members = _member_with(layout={"layers": [{"designation": "#99", "count": 1, "depth": 440.0}]})
+    members = _member_with(layout={"layers": [{"designation": "#99", "count": 1, "depth": 440.0}], "stirrups": None})
     assert _validate(_project(members=members))[0] is Status.FAIL
 
 
 def test_layer_outside_the_section_is_rejected() -> None:
-    members = _member_with(layout={"layers": [{"designation": "#8", "count": 1, "depth": 500.0}]})
+    members = _member_with(layout={"layers": [{"designation": "#8", "count": 1, "depth": 500.0}], "stirrups": None})
     assert _validate(_project(members=members))[0] is Status.FAIL
 
 
@@ -120,10 +120,10 @@ def test_station_outside_the_member_is_rejected() -> None:
 @pytest.mark.parametrize(
     "section",
     [
-        {"bw": 300.0, "h": 500.0, "bf": 800.0},
-        {"bw": 300.0, "h": 500.0, "hf": 100.0},
-        {"bw": 300.0, "h": 500.0, "bf": 200.0, "hf": 100.0},
-        {"bw": 300.0, "h": 500.0, "bf": 800.0, "hf": 500.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "hf": 100.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 200.0, "hf": 100.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0, "hf": 500.0},
     ],
 )
 def test_inconsistent_t_sections_are_rejected(section: dict[str, float]) -> None:
@@ -157,8 +157,8 @@ def test_check_status_comes_from_its_errors() -> None:
 def test_nominal_flexure_rejects_concrete_outside_the_table() -> None:
     result = nominal_flexure(
         PROFILES["nsr-10"],
-        Materials(fc=14.0, fy=420.0),
-        Section(bw=300.0, h=500.0),
+        Materials(fc=14.0, fy=420.0, fyt=420.0, concrete="normalweight"),
+        Section(bw=300.0, h=500.0, cover=40.0),
         (SteelLayer(440.0, 1530.0),),
         Demands.model_validate({"Mu_kNm": 100.0, "Pu_kN": 0.0}),
     )

@@ -16,6 +16,5 @@ def display(value: float | None, unit: str) -> str:
         return f"{kNm(value):.1f} kN-m"
     if unit == "N":
         return f"{kN(value):.1f} kN"
-    if unit == "mm2":
-        return f"{value:.0f} mm2"
-    return f"{value:.5f}"
+    decimals = {"mm2": 0, "mm": 0, "mm2/mm": 3}.get(unit)
+    return f"{value:.5f}" if decimals is None else f"{value:.{decimals}f} {unit}"

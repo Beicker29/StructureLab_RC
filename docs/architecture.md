@@ -76,6 +76,11 @@ Las unidades se convierten solo al cargar y al presentar.
 perfil, por ejemplo que el nivel sísmico exista en él, y toma de `codes` los valores que
 `mechanics` recibe como números (εcu, 0.85, β1 y Es).
 
-En flexión, `domain/beam/flexure.py` decide por estación si aplica el alcance de viga (tipo de
-miembro y Pu < 0.10 f'c·Ag), pide a `mechanics` el estado con Pn = Pu y momentos respecto al
-centroide bruto, y arma los `Check` con φ, εt mínima y As,min tomados de `codes/<perfil>/flexure.py`.
+Por estación, `domain/beam/station.py` comprueba el alcance de viga (tipo de miembro y
+Pu < 0.10 f'c·Ag) y reúne las verificaciones de flexión y cortante:
+
+- `domain/beam/flexure.py` pide a `mechanics` el estado con Pn = Pu y momentos respecto al centroide
+  bruto, y arma los `Check` con φ, εt mínima y As,min de `codes/<perfil>/flexure.py`.
+- `domain/beam/shear.py` comprueba que la torsión sea despreciable (`codes/<perfil>/torsion.py`),
+  toma d y ρw del acero a tracción del estado a flexión, y arma los `Check` con Vc, Vs, Av,min y
+  separaciones de `codes/<perfil>/shear.py`.

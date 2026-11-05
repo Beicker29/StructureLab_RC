@@ -1,7 +1,6 @@
 """Verificación a flexión de vigas por estación, con Pn = Pu (D-024)."""
 
 from collections.abc import Sequence
-from dataclasses import replace
 
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.check import Check, check_from_errors
@@ -20,7 +19,6 @@ from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.project import Demands, Materials, Member, Section, Station
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 
-SCOPE = "Flexion: alcance de viga"
 STRENGTH = "Flexion: resistencia"
 NET_TENSILE_STRAIN = "Flexion: deformacion neta de traccion"
 MIN_REINFORCEMENT = "Flexion: acero minimo"
@@ -85,28 +83,14 @@ def _min_reinforcement(profile: Profile, materials: Materials, member: Member, s
     return Check(MIN_REINFORCEMENT, Status.BLOCKED, (error,), clause, demand=required, capacity=provided, unit="mm2")
 
 
-def _out_of_scope(profile: Profile, materials: Materials, member: Member, demands: Demands) -> Check | None:
-    """Verificación que impide evaluar la flexión de la estación, si la hay."""
-    if member.type != "beam":
-        return check_from_errors(SCOPE, [blocked(f"El tipo de miembro '{member.type}' no esta implementado")])
-    if demands.mu is None or demands.pu is None:
-        return check_from_errors(STRENGTH, [incomplete("La flexion requiere Mu y Pu")])
-    limit = profile.flexure.beam_axial_limit(materials.fc, member.section.area)
-    if demands.pu >= limit:
-        error = blocked("Pu >= 0.10 f'c Ag: el miembro no puede tratarse como viga")
-        clause = profile.flexure.clauses()["axial_limit"]
-        return Check(SCOPE, Status.BLOCKED, (error,), clause, demand=demands.pu, capacity=limit, unit="N")
-    return None
-
-
-def _station_checks(
+def flexure_checks(
     profile: Profile, materials: Materials, member: Member, station: Station, bars: Sequence[RebarSpec]
 ) -> tuple[Check, ...]:
+    """Verificaciones a flexión de una estación que ya está dentro del alcance de viga."""
     clauses = profile.flexure.clauses()
     demands = station.demands
-    blocking = _out_of_scope(profile, materials, member, demands)
-    if blocking is not None or demands.mu is None:
-        return () if blocking is None else (blocking,)
+    if demands.mu is None or demands.pu is None:
+        return (check_from_errors(STRENGTH, [incomplete("La flexion requiere Mu y Pu")]),)
     layers = steel_layers(station.layout, bars)
     if isinstance(layers, StructuredError):
         return (check_from_errors(STRENGTH, [layers]),)
@@ -127,10 +111,3 @@ def _station_checks(
     strain = Check(NET_TENSILE_STRAIN, Status.PASS if state.extreme_strain >= et_min else Status.FAIL,
                    clause=clauses["net_tensile_strain"], demand=et_min, capacity=state.extreme_strain)
     return strength, strain, _min_reinforcement(profile, materials, member, state, demands.mu)
-
-
-def flexure_checks(
-    profile: Profile, materials: Materials, member: Member, station: Station, bars: Sequence[RebarSpec]
-) -> tuple[Check, ...]:
-    checks = _station_checks(profile, materials, member, station, bars)
-    return tuple(replace(check, member=member.id, x=station.x) for check in checks)

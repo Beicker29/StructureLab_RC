@@ -20,15 +20,20 @@ class SeismicFacts(_Input):
 
 
 class Materials(_Input):
+    """fy del refuerzo longitudinal y fyt de los estribos; concrete declara el tipo de concreto (D-028)."""
+
     fc: PositiveFloat
     fy: PositiveFloat
+    fyt: PositiveFloat
+    concrete: Literal["normalweight", "lightweight"]
 
 
 class Section(_Input):
-    """Rectangular sin bf ni hf; en T con el ala en la cara superior."""
+    """Rectangular sin bf ni hf; en T con el ala en la cara superior. cover es el recubrimiento libre a los estribos."""
 
     bw: PositiveFloat
     h: PositiveFloat
+    cover: PositiveFloat
     bf: PositiveFloat | None = None
     hf: PositiveFloat | None = None
 

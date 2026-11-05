@@ -1,0 +1,121 @@
+{
+  "source": "Wight, Reinforced Concrete: Mechanics and Design, 9.a ed., ejemplos 6-1, 6-1M, 6-2 y 6-3.",
+  "notes": "Unidades 'in': in, in2, ksi y kips; 'si': mm, mm2, MPa y kN. Se convierten solo datos y resultados (D-015). Concreto de peso normal, sin carga axial; Vc con la expresión simple. 'Av_min_threshold' es Vu/φ a partir del cual se exige Av,min (ACI 9.6.3.1); 's_max_Av_min' es Av/(Av,min/s) con el Av del campo 'Av_s_max'; 's_strength' lista [Av, s] con s = Av·fyt·d/(Vu/φ − Vc). Vc y la separación por resistencia se comparan con 4 % y la separación por Av,min con 5 %: el libro usa 2√f'c (psi) o 1/6 y 1/3 MPa o 50 psi, y la norma en SI 0.17 y 0.35; el usuario acepta esa diferencia (D-033).",
+  "tolerance_rel": 0.01,
+  "cases": [
+    {
+      "id": "6-1M",
+      "page": 752,
+      "units": "si",
+      "fc": 25.0,
+      "bw": 300.0,
+      "d": 610.0,
+      "fyt": 300.0,
+      "vu_over_phi": 373.0,
+      "expected": {
+        "Vc": 153.0,
+        "Av_min_threshold": 76.3,
+        "Vu_over_phi_max": 763.0,
+        "half_spacing_threshold": 459.0,
+        "s_max_Av_min": 426.0,
+        "s_strength": [
+          [
+            142.0,
+            118.0
+          ],
+          [
+            258.0,
+            215.0
+          ]
+        ],
+        "Vs": [
+          [
+            142.0,
+            300.0,
+            86.6
+          ]
+        ],
+        "Av_s_max": 142.0
+      }
+    },
+    {
+      "id": "6-1",
+      "page": 744,
+      "units": "in",
+      "fc": 4.0,
+      "bw": 12.0,
+      "d": 23.5,
+      "fyt": 40.0,
+      "vu_over_phi": 73.3,
+      "expected": {
+        "Vc": 35.7,
+        "Av_min_threshold": 17.8,
+        "Vu_over_phi_max": 178.0,
+        "s_max_Av_min": 14.7,
+        "Av_s_max": 0.22,
+        "s_strength": [
+          [
+            0.22,
+            5.5
+          ],
+          [
+            0.4,
+            10.0
+          ]
+        ]
+      }
+    },
+    {
+      "id": "6-2",
+      "page": 762,
+      "units": "in",
+      "fc": 4.5,
+      "bw": 16.0,
+      "d": 31.6,
+      "fyt": 40.0,
+      "vu_over_phi": 116.0,
+      "expected": {
+        "Vc": 67.8,
+        "Av_min_threshold": 33.9,
+        "s_max_Av_min": 10.9,
+        "Av_s_max": 0.22,
+        "s_strength": [
+          [
+            0.22,
+            5.77
+          ],
+          [
+            0.4,
+            10.5
+          ]
+        ]
+      }
+    },
+    {
+      "id": "6-3",
+      "page": 771,
+      "units": "in",
+      "fc": 5.0,
+      "bw": 16.0,
+      "d": 23.5,
+      "fyt": 40.0,
+      "vu_over_phi": 90.7,
+      "expected": {
+        "Vc": 53.2,
+        "s_max_Av_min": 18.9,
+        "Av_s_max": 0.4,
+        "s_strength": [
+          [
+            0.4,
+            10.0
+          ]
+        ]
+      }
+    }
+  ],
+  "tolerance_overrides": {
+    "Vc": 0.04,
+    "s_strength": 0.04,
+    "s_max_Av_min": 0.05
+  }
+}

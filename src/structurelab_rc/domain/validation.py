@@ -28,6 +28,9 @@ def _station_errors(member: Member, station: Station, designations: set[str]) ->
             yield invalid_input(f"La barra '{layer.designation}' no esta en el catalogo", **where)
         if layer.depth >= member.section.h:
             yield invalid_input(f"La capa a {layer.depth} mm esta fuera de la seccion", **where)
+    stirrups = station.layout.stirrups
+    if stirrups is not None and stirrups.designation not in designations:
+        yield invalid_input(f"El estribo '{stirrups.designation}' no esta en el catalogo", **where)
     demands = station.demands
     for label, value in (("Pu", demands.pu), ("Mu", demands.mu), ("Vu", demands.vu), ("Tu", demands.tu)):
         if value is None:

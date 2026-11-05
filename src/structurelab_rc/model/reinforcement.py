@@ -13,7 +13,20 @@ class BarLayer(BaseModel):
     depth: PositiveFloat
 
 
+class Stirrups(BaseModel):
+    """Estribos verticales: barra, número de ramas y separación a lo largo del miembro, en mm."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    designation: str
+    legs: int = Field(ge=2)
+    spacing: PositiveFloat
+
+
 class ReinforcementLayout(BaseModel):
+    """stirrups es obligatorio: null declara explícitamente que no hay refuerzo a cortante."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     layers: tuple[BarLayer, ...] = Field(min_length=1)
+    stirrups: Stirrups | None

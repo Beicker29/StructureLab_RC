@@ -4,9 +4,9 @@ Herramienta de oficina para verificar, diseñar, despiezar y dibujar elementos d
 reforzado. La v1 cubrirá vigas con dos perfiles normativos, `aci-318-25` (ACI CODE-318-25)
 y `nsr-10` (NSR-10 Título C). Cada proyecto declara un solo perfil.
 
-**Estado:** Fase 2A, flexión de vigas. Verifica la resistencia a flexión, la deformación neta de
-tracción y el acero mínimo por estación; cortante, torsión, servicio y memorias vienen en las
-siguientes subfases ([hoja de ruta](docs/ROADMAP.md)).
+**Estado:** Fase 2B, flexión y cortante de vigas. Verifica por estación la flexión (φMn, εt mínima y
+As,min) y el cortante (φVn, límite de la sección, Av,min y separación de estribos). Torsión, servicio y
+memorias vienen en las siguientes subfases ([hoja de ruta](docs/ROADMAP.md)).
 
 ## Instalación
 
@@ -37,8 +37,10 @@ las barras del catálogo.
 catálogo, e informa `PASS`, `INCOMPLETE` (faltan datos) o `FAIL` (entrada inválida, con código
 de salida 1). No verifica la resistencia de la viga.
 
-`verify` valida el proyecto y verifica cada estación a flexión: φMn ≥ |Mu|, la deformación neta de
-tracción mínima y As,min. Muestra demanda, capacidad, estado y numeral, y sale con 1 si algo falla.
+`verify` valida el proyecto y verifica cada estación a flexión (φMn ≥ |Mu|, deformación neta de
+tracción mínima y As,min) y a cortante (φVn ≥ |Vu|, límite de la sección, Av,min y separación).
+Muestra demanda, capacidad, estado y numeral, y sale con 1 si algo falla. Si la torsión no es
+despreciable, el cortante queda `BLOCKED` hasta la subfase 2C.
 
 El proyecto declara su perfil y un nivel sísmico que exista en ese perfil, con una
 justificación: `none`, `ordinary`, `intermediate` o `special` en `aci-318-25`, y `DMI`, `DMO` o
@@ -48,6 +50,10 @@ Cada miembro declara su tipo (`beam`, `column`, `footing`, `wall` o `slab`); por
 verifican vigas. Cada estación lleva `Pu_kN` (compresión positiva, también cuando es 0), `Mu_kNm`
 (positivo con la fibra superior comprimida), `Vu_kN` y `Tu_kNm`. Una viga T con momento negativo
 declara `statically_determinate`.
+
+Los materiales llevan `fc`, `fy`, `fyt` (estribos) y `concrete` (`normalweight`; el liviano aún no se
+verifica). La sección lleva `cover`, el recubrimiento libre a los estribos. Cada estación declara
+`stirrups` (`designation`, `legs`, `spacing`), o `null` si no tiene refuerzo a cortante.
 
 ## Ejemplos y resultados
 
