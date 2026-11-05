@@ -28,6 +28,8 @@ def _station_errors(member: Member, station: Station, designations: set[str]) ->
             yield invalid_input(f"La barra '{layer.designation}' no esta en el catalogo", **where)
         if layer.depth >= member.section.h:
             yield invalid_input(f"La capa a {layer.depth} mm esta fuera de la seccion", **where)
+    if not any(layer.role == "flexure" for layer in station.layout.layers):
+        yield invalid_input("El armado no tiene capas de flexion", **where)
     stirrups = station.layout.stirrups
     if stirrups is not None and stirrups.designation not in designations:
         yield invalid_input(f"El estribo '{stirrups.designation}' no esta en el catalogo", **where)

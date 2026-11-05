@@ -25,10 +25,12 @@ MIN_REINFORCEMENT = "Flexion: acero minimo"
 
 
 def steel_layers(layout: ReinforcementLayout, bars: Sequence[RebarSpec]) -> tuple[SteelLayer, ...] | StructuredError:
-    """Capas con su área total; la profundidad sigue medida desde la fibra superior."""
+    """Capas de flexión con su área total; la profundidad sigue medida desde la fibra superior (D-027)."""
     areas = {bar.designation: bar.area_mm2 for bar in bars}
     layers = []
     for layer in layout.layers:
+        if layer.role != "flexure":
+            continue
         area = areas.get(layer.designation)
         if area is None:
             return invalid_input(f"La barra '{layer.designation}' no esta en el catalogo")

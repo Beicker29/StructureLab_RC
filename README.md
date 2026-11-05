@@ -4,8 +4,7 @@ Herramienta de oficina para verificar, diseñar, despiezar y dibujar elementos d
 reforzado. La v1 cubrirá vigas con dos perfiles normativos, `aci-318-25` (ACI CODE-318-25)
 y `nsr-10` (NSR-10 Título C). Cada proyecto declara un solo perfil.
 
-**Estado:** Fase 2B, flexión y cortante de vigas. Verifica por estación la flexión (φMn, εt mínima y
-As,min) y el cortante (φVn, límite de la sección, Av,min y separación de estribos). Torsión, servicio y
+**Estado:** Fase 2C, flexión, cortante y torsión de vigas macizas. Servicio, importación desde ETABS y
 memorias vienen en las siguientes subfases ([hoja de ruta](docs/ROADMAP.md)).
 
 ## Instalación
@@ -39,8 +38,9 @@ de salida 1). No verifica la resistencia de la viga.
 
 `verify` valida el proyecto y verifica cada estación a flexión (φMn ≥ |Mu|, deformación neta de
 tracción mínima y As,min) y a cortante (φVn ≥ |Vu|, límite de la sección, Av,min y separación).
-Muestra demanda, capacidad, estado y numeral, y sale con 1 si algo falla. Si la torsión no es
-despreciable, el cortante queda `BLOCKED` hasta la subfase 2C.
+Si la torsión no es despreciable (Tu ≥ φTth), el cortante se reemplaza por la verificación combinada de
+torsión: límite de la sección, refuerzo transversal, mínimo, Aℓ, separación y distribución de barras.
+Muestra demanda, capacidad, estado y numeral, y sale con 1 si algo falla.
 
 El proyecto declara su perfil y un nivel sísmico que exista en ese perfil, con una
 justificación: `none`, `ordinary`, `intermediate` o `special` en `aci-318-25`, y `DMI`, `DMO` o
@@ -53,7 +53,9 @@ declara `statically_determinate`.
 
 Los materiales llevan `fc`, `fy`, `fyt` (estribos) y `concrete` (`normalweight`; el liviano aún no se
 verifica). La sección lleva `cover`, el recubrimiento libre a los estribos. Cada estación declara
-`stirrups` (`designation`, `legs`, `spacing`), o `null` si no tiene refuerzo a cortante.
+`stirrups` (`designation`, `legs`, `spacing`, `closed`), o `null` si no tiene refuerzo a cortante. Cada
+capa declara `role`: `flexure`, o `torsion` para las barras de Aℓ, que no cuentan como As. Las secciones
+con ala declaran `flange_sides` (1 para viga L, 2 para viga T).
 
 ## Ejemplos y resultados
 

@@ -29,13 +29,17 @@ class Materials(_Input):
 
 
 class Section(_Input):
-    """Rectangular sin bf ni hf; en T con el ala en la cara superior. cover es el recubrimiento libre a los estribos."""
+    """Rectangular sin bf ni hf; en T con el ala en la cara superior. cover es el recubrimiento libre a los estribos.
+
+    flange_sides indica si el ala sobresale a un lado (viga L) o a ambos (viga T); se exige en secciones con ala.
+    """
 
     bw: PositiveFloat
     h: PositiveFloat
     cover: PositiveFloat
     bf: PositiveFloat | None = None
     hf: PositiveFloat | None = None
+    flange_sides: Literal[1, 2] | None = None
 
     @model_validator(mode="after")
     def _check_flange(self) -> Self:
@@ -45,6 +49,8 @@ class Section(_Input):
             raise ValueError("bf no puede ser menor que bw")
         if self.hf is not None and self.hf >= self.h:
             raise ValueError("hf debe ser menor que h")
+        if (self.bf is None) != (self.flange_sides is None):
+            raise ValueError("flange_sides se declara solo, y siempre, en secciones con ala (bf y hf)")
         return self
 
     @property

@@ -77,7 +77,7 @@ def with_axial(fc: float, fy: float, section: dict[str, float], area: float, d: 
 
 
 def layer(designation: str, count: int, depth: float) -> dict[str, object]:
-    return {"designation": designation, "count": count, "depth": depth}
+    return {"designation": designation, "count": count, "depth": depth, "role": "flexure"}
 
 
 def area(designation: str, count: int) -> float:

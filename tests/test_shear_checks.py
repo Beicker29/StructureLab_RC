@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 
 from structurelab_rc.codes.registry import PROFILES
-from structurelab_rc.domain.beam.shear import MIN_REINFORCEMENT, SECTION, SPACING, STRENGTH, TORSION
+from structurelab_rc.domain.beam.shear import MIN_REINFORCEMENT, SECTION, SPACING, STRENGTH
 from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status
@@ -13,8 +13,8 @@ from structurelab_rc.setup import load_engine
 BARS = load_engine().bars
 MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight")
 SECTION_300X500 = {"bw": 300.0, "h": 500.0, "cover": 40.0}
-BOTTOM = [{"designation": "#8", "count": 3, "depth": 440.0}]
-STIRRUPS = {"designation": "#3", "legs": 2, "spacing": 150.0}
+BOTTOM = [{"designation": "#8", "count": 3, "depth": 440.0, "role": "flexure"}]
+STIRRUPS = {"designation": "#3", "legs": 2, "spacing": 150.0, "closed": True}
 DEMANDS = {"Pu_kN": 0.0, "Mu_kNm": 100.0, "Vu_kN": 120.0, "Tu_kNm": 0.0}
 
 
@@ -53,7 +53,7 @@ def test_insufficient_strength_fails() -> None:
 
 def test_oversized_shear_fails_the_section_limit() -> None:
     # Vs = 1907 kN supera 0.66√f'c·bw·d = 461 kN: la resistencia solo cuenta Vs hasta ese límite.
-    checks = _checks(_member({"designation": "#4", "legs": 4, "spacing": 50.0}, Vu_kN=500.0))
+    checks = _checks(_member({"designation": "#4", "legs": 4, "spacing": 50.0, "closed": True}, Vu_kN=500.0))
     assert checks[SECTION].status is Status.FAIL
     assert checks[STRENGTH].status is Status.FAIL
 
@@ -73,13 +73,13 @@ def test_minimum_thresholds_differ_between_profiles() -> None:
 
 def test_shallow_beams_are_exempt_from_minimum_shear_reinforcement() -> None:
     shallow = {"bw": 300.0, "h": 250.0, "cover": 25.0}
-    layers = [{"designation": "#5", "count": 3, "depth": 200.0}]
+    layers = [{"designation": "#5", "count": 3, "depth": 200.0, "role": "flexure"}]
     member = _member(None, shallow, layers, Mu_kNm=20.0, Vu_kN=20.0)
     assert _checks(member)[MIN_REINFORCEMENT].status is Status.PASS
 
 
 def test_spacing_is_halved_for_high_steel_shear() -> None:
-    checks = _checks(_member({"designation": "#4", "legs": 2, "spacing": 150.0}, Vu_kN=330.0))
+    checks = _checks(_member({"designation": "#4", "legs": 2, "spacing": 150.0, "closed": True}, Vu_kN=330.0))
     assert checks[SPACING].capacity == pytest.approx(440.0 / 4)
     assert checks[SPACING].status is Status.FAIL
 
@@ -90,15 +90,15 @@ def test_leg_spacing_across_the_width_only_limits_aci() -> None:
     assert _checks(member, "nsr-10")[SPACING].status is Status.PASS
 
 
-def test_non_negligible_torsion_blocks_shear_until_2c() -> None:
-    checks = _checks(_member(Tu_kNm=10.0))
-    assert list(checks) == [TORSION]
-    assert checks[TORSION].status is Status.BLOCKED
+def test_non_negligible_torsion_replaces_the_shear_checks() -> None:
+    names = set(_checks(_member(Tu_kNm=10.0)))
+    assert STRENGTH not in names
+    assert SPACING in names
 
 
 def test_axial_tension_lowers_the_torsion_threshold() -> None:
-    assert _checks(_member(Tu_kNm=3.0))[STRENGTH].status is Status.PASS
-    assert _checks(_member(Tu_kNm=3.0, Pu_kN=-400.0)).keys() == {TORSION}
+    assert STRENGTH in _checks(_member(Tu_kNm=3.0))
+    assert STRENGTH not in _checks(_member(Tu_kNm=3.0, Pu_kN=-400.0))
 
 
 def test_lightweight_concrete_is_blocked() -> None:

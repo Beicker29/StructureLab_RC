@@ -244,6 +244,56 @@
 - **Causa:** el libro usa 2√f'c en psi (0.166√f'c en MPa) o 1/6 para Vc, y 1/3 MPa o 50 psi para Av,min; la versión SI de ambas normas usa 0.17 y 0.35.
 - **Decisión del usuario:** la diferencia es aceptable. El oráculo de cortante de Wight compara Vc y la separación por resistencia con 4 %, la separación por Av,min con 5 % y el resto con 1 % (D-015).
 
+### D-034: entrada para torsión
+
+- **Fecha:** 2026-11-05
+- **Decisión:**
+  - Cada capa del armado declara su función (`role`: `flexure` o `torsion`). La flexión solo usa las capas de flexión, y Aℓ solo las de torsión (D-027).
+  - Cada estribo declara si es cerrado (`closed`). La torsión exige estribos cerrados (ACI 9.7.6.3.1, NSR-10 C.11.5.4.1); si no lo son, la verificación transversal da `FAIL`.
+  - θ = 45° en ambos perfiles (ACI 22.7.6.1.2, NSR-10 C.11.5.3.6).
+  - Las reducciones permitidas (Tu a φTcr en torsión de compatibilidad, y Aℓ en la zona comprimida) y las secciones huecas quedan pendientes en la hoja de ruta.
+
+  Confirmado por el usuario.
+
+### D-035: barras de esquina y área de Aℓ
+
+- **Fecha:** 2026-11-05
+- **Problema:** ACI 9.7.5.1 y NSR-10 C.11.5.6.2 piden al menos una barra longitudinal en cada esquina de los estribos, y con D-027 esas barras suelen ser de flexión.
+- **Alternativas:** (A) cumplir las esquinas con cualquier barra longitudinal y contar para Aℓ solo las barras de torsión; (B) acreditar a Aℓ el sobrante de As en las esquinas; (C) exigir barras de torsión en las esquinas, lo que es físicamente imposible.
+- **Decisión del usuario:** opción A. La distribución se verifica con todas las capas: al menos dos barras en las capas extremas, separación ≤ 300 mm en esas capas y entre capas consecutivas. El diámetro mínimo se exige a las barras de torsión.
+
+### D-036: alas en torsión
+
+- **Fecha:** 2026-11-05
+- **Referencia:** ACI 9.2.4.4; NSR-10 C.11.5.1.1 y C.13.2.4.
+- **Decisión:**
+  - Las secciones con ala declaran `flange_sides` (1 para viga L, 2 para viga T).
+  - Acp y pcp se calculan con el saliente efectivo por lado, el menor entre el saliente real, h − hf y 4hf. Las alas se ignoran si reducen Acp²/pcp.
+  - Así se calculan el umbral de torsión, que reemplaza el umbral solo con el alma de D-032, y Aℓ,min.
+  - Aoh y ph salen solo del alma, porque los estribos cerrados están en ella.
+
+  Confirmado por el usuario.
+
+### D-037: combinación de cortante y torsión en los estribos
+
+- **Fecha:** 2026-11-05
+- **Referencia:** ACI 9.5.4.3 y 22.7.6.1; NSR-10 C.11.5.3.8 y CR11.5.3.8.
+- **Decisión:**
+  - Si Tu ≥ φTth, la resistencia a cortante, Av,min y la separación de 2B se reemplazan por sus versiones combinadas.
+  - Se exige Av/s + 2At/s ≤ n·Ab/s, y At/s ≤ Ab/s, porque solo las ramas exteriores resisten torsión.
+  - La separación es la menor entre la de cortante y la de torsión (ph/8 y 300 mm).
+  - Aℓ requerido usa la formulación de cada perfil: ACI 22.7.6.1(b) y NSR-10 (C.11-22), que coinciden con θ = 45°.
+  - Aℓ,min usa el At/s requerido, como Wight.
+
+  Confirmado por el usuario.
+
+### D-038: Aℓ,min frente al ejemplo 7-2 de Wight
+
+- **Fecha:** 2026-11-05
+- **Problema:** Aℓ,min sale 0.526 in² frente a 0.51 in² del libro (+3.2 %).
+- **Causa:** el libro usa 5√f'c (psi), que equivale a 0.415√f'c en MPa; ambas normas en SI usan 0.42√f'c, y la resta de At/s·ph amplía la diferencia relativa.
+- **Decisión del usuario:** la diferencia es aceptable. El oráculo de torsión de Wight compara Aℓ,min con 4 %.
+
 ## Consultas abiertas
 
 Ninguna.

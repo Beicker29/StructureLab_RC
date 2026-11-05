@@ -22,8 +22,8 @@ Por estación y en ambos perfiles. Se entrega en subfases, cada una con su orác
 - **2A Flexión:** φMn, φ según εt, εt mínima y As,min.
 - **2B Cortante:** Vc, Vs, Av,min, separación máxima y límite de sección. Si la torsión no es despreciable
   (Tu ≥ φTth), el cortante queda `BLOCKED` hasta 2C (D-032).
-- **2C Torsión:** umbral, sección, At, Al e interacción con el cortante. Cada capa del armado declara su
-  función; las barras de Al no cuentan como As de flexión (D-027).
+- **2C Torsión:** umbral con alas, sección, At, Aℓ, distribución e interacción con el cortante. Cada capa
+  declara su función; las barras de Aℓ no cuentan como As de flexión (D-027, D-034 a D-037).
 - **2D Servicio:** control de fisuración y espesor mínimo. Las deflexiones quedan pendientes (D-017).
 - **2E ETABS:** importación de fuerzas mayoradas desde el archivo exportado.
 - **2F Memorias:** resultados en JSON, memoria en texto y PDF; huella.
@@ -32,6 +32,9 @@ Aceptación: ejemplos de referencia (Wight, ACI MNL-17) dentro de tolerancia; hu
 
 **Pendientes:**
 - Deflexiones. Requieren cargas de servicio, que la entrada aún no trae (D-017).
+- Reducciones permitidas en torsión: Tu a φTcr en torsión de compatibilidad (ACI 22.7.3.2, NSR-10 C.11.5.2.2)
+  y Aℓ en la zona comprimida por flexión (ACI 9.5.4.5, NSR-10 C.11.5.3.9).
+- Secciones huecas a torsión (ACI 22.7.7.1(b), NSR-10 C.11.5.3.1(b)); la v1 verifica secciones macizas.
 - Excepción de As,min cuando As supera en un tercio al requerido (ACI 9.6.1.3, NSR-10 C.10.5.3). Mientras no exista, la verificación devuelve `BLOCKED` si As < As,min (D-022).
 
 ### Fase 3: requisitos sísmicos de vigas

@@ -33,7 +33,7 @@ BASE: dict[str, Any] = {
             "stations": [
                 {
                     "x": 3000.0,
-                    "layout": {"layers": [{"designation": "#8", "count": 3, "depth": 440.0}], "stirrups": None},
+                    "layout": {"layers": [{"designation": "#8", "count": 3, "depth": 440.0, "role": "flexure"}], "stirrups": None},
                     "demands": {"Pu_kN": 0.0, "Mu_kNm": 180.0, "Vu_kN": 40.0, "Tu_kNm": 0.0},
                 }
             ],
@@ -104,12 +104,12 @@ def test_missing_demand_is_incomplete_and_not_assumed() -> None:
 
 
 def test_unknown_bar_is_rejected() -> None:
-    members = _member_with(layout={"layers": [{"designation": "#99", "count": 1, "depth": 440.0}], "stirrups": None})
+    members = _member_with(layout={"layers": [{"designation": "#99", "count": 1, "depth": 440.0, "role": "flexure"}], "stirrups": None})
     assert _validate(_project(members=members))[0] is Status.FAIL
 
 
 def test_layer_outside_the_section_is_rejected() -> None:
-    members = _member_with(layout={"layers": [{"designation": "#8", "count": 1, "depth": 500.0}], "stirrups": None})
+    members = _member_with(layout={"layers": [{"designation": "#8", "count": 1, "depth": 500.0, "role": "flexure"}], "stirrups": None})
     assert _validate(_project(members=members))[0] is Status.FAIL
 
 
@@ -120,14 +120,16 @@ def test_station_outside_the_member_is_rejected() -> None:
 @pytest.mark.parametrize(
     "section",
     [
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0},
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "hf": 100.0},
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 200.0, "hf": 100.0},
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0, "hf": 500.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0, "flange_sides": 2},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "hf": 100.0, "flange_sides": 2},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 200.0, "hf": 100.0, "flange_sides": 2},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0, "hf": 500.0, "flange_sides": 2},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0, "hf": 100.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "flange_sides": 1},
     ],
 )
 def test_inconsistent_t_sections_are_rejected(section: dict[str, float]) -> None:
-    with pytest.raises(ValueError, match=r"bf|hf"):
+    with pytest.raises(ValueError, match=r"bf|hf|flange_sides"):
         Section.model_validate(section)
 
 

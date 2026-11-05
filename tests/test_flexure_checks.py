@@ -31,7 +31,7 @@ def _checks(member: Member, profile: str = "nsr-10") -> dict[str, Check]:
     return {check.name: check for check in checks if not check.name.startswith("Cortante")}
 
 
-BOTTOM = [{"designation": "#8", "count": 3, "depth": 440.0}]
+BOTTOM = [{"designation": "#8", "count": 3, "depth": 440.0, "role": "flexure"}]
 
 
 def test_a_well_reinforced_beam_passes_every_check() -> None:
@@ -81,7 +81,7 @@ def test_other_member_types_are_blocked() -> None:
 
 def test_net_tensile_strain_limit_differs_between_profiles() -> None:
     # εt queda entre 0.004 (NSR-10 C.10.3.5) y εty + 0.003 (ACI 9.3.3.1).
-    layers = [{"designation": "#8", "count": 5, "depth": 440.0}]
+    layers = [{"designation": "#8", "count": 5, "depth": 440.0, "role": "flexure"}]
     member = _member(layers, {"Pu_kN": 0.0, "Mu_kNm": 250.0})
     nsr, aci = _checks(member, "nsr-10")[NET_TENSILE_STRAIN], _checks(member, "aci-318-25")[NET_TENSILE_STRAIN]
     assert 0.004 < nsr.capacity < 0.0051  # type: ignore[operator]
@@ -90,14 +90,14 @@ def test_net_tensile_strain_limit_differs_between_profiles() -> None:
 
 
 def test_below_minimum_reinforcement_is_blocked_until_the_exception_exists() -> None:
-    layers = [{"designation": "#4", "count": 2, "depth": 440.0}]
+    layers = [{"designation": "#4", "count": 2, "depth": 440.0, "role": "flexure"}]
     check = _checks(_member(layers, {"Pu_kN": 0.0, "Mu_kNm": 20.0}))[MIN_REINFORCEMENT]
     assert check.status is Status.BLOCKED
     assert "C.10.5.3" in check.errors[0].message
 
 
-T_SECTION = {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 1000.0, "hf": 100.0}
-TOP = [{"designation": "#6", "count": 4, "depth": 60.0}]
+T_SECTION = {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 1000.0, "hf": 100.0, "flange_sides": 2}
+TOP = [{"designation": "#6", "count": 4, "depth": 60.0, "role": "flexure"}]
 
 
 def test_flange_in_tension_needs_the_determinacy_declared() -> None:
@@ -120,7 +120,10 @@ def test_aci_caps_fy_at_550_mpa_for_minimum_reinforcement() -> None:
 
 def test_minimum_reinforcement_counts_every_bar_in_tension() -> None:
     # El eje neutro queda por encima de las 2#5 superiores, que también trabajan a tracción (D-025).
-    layers = [{"designation": "#5", "count": 2, "depth": 60.0}, {"designation": "#8", "count": 3, "depth": 440.0}]
+    layers = [
+        {"designation": "#5", "count": 2, "depth": 60.0, "role": "flexure"},
+        {"designation": "#8", "count": 3, "depth": 440.0, "role": "flexure"},
+    ]
     member = _member(layers, {"Pu_kN": 0.0, "Mu_kNm": 180.0}, section=T_SECTION, statically_determinate=False)
     check = _checks(member)[MIN_REINFORCEMENT]
     area = 2 * 199.0 + 3 * 510.0

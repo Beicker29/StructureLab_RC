@@ -81,6 +81,7 @@ Pu < 0.10 f'c·Ag) y reúne las verificaciones de flexión y cortante:
 
 - `domain/beam/flexure.py` pide a `mechanics` el estado con Pn = Pu y momentos respecto al centroide
   bruto, y arma los `Check` con φ, εt mínima y As,min de `codes/<perfil>/flexure.py`.
-- `domain/beam/shear.py` comprueba que la torsión sea despreciable (`codes/<perfil>/torsion.py`),
-  toma d y ρw del acero a tracción del estado a flexión, y arma los `Check` con Vc, Vs, Av,min y
-  separaciones de `codes/<perfil>/shear.py`.
+- `domain/beam/torsion.py` calcula el umbral de torsión con las alas efectivas. Si Tu < φTth, la
+  estación sigue con `domain/beam/shear.py` (Vc, Vs, Av,min y separaciones de `codes/<perfil>/shear.py`);
+  si no, arma la verificación combinada con `codes/<perfil>/torsion.py`. Ambos toman d y ρw del acero a
+  tracción del estado a flexión.

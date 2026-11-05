@@ -1,0 +1,45 @@
+{
+  "source": "Wight, Reinforced Concrete: Mechanics and Design, 9.a ed., ejemplo 7-2 (sección maciza).",
+  "notes": "Unidades: in, in2, ksi, kips, kip-in y psi para los esfuerzos. Se convierten solo datos y resultados (D-015). phi_Tth en kip-in; Vc con la expresión simple; At/s con θ = 45°; Al,min con el At/s requerido, como el libro. Tolerancias de D-033: 4 % para Vc y el refuerzo transversal que depende de Vc (Av/s y Av/s + 2At/s), 5 % para el mínimo transversal. Para nsr-10 se usan los mismos valores del libro (D-014). Aℓ,min se compara con 4 %: el libro usa 5√f'c (psi) y la norma en SI 0.42√f'c; el usuario acepta esa diferencia (D-038).",
+  "tolerance_rel": 0.01,
+  "tolerance_overrides": {
+    "Vc": 0.04,
+    "Av_s": 0.04,
+    "Av_plus_2At_s": 0.04,
+    "min_transverse": 0.05,
+    "Al_min": 0.04
+  },
+  "cases": [
+    {
+      "id": "7-2",
+      "page": 890,
+      "units": "in",
+      "fc": 4.0,
+      "fy": 60.0,
+      "fyt": 60.0,
+      "bw": 14.0,
+      "h": 24.0,
+      "d": 21.5,
+      "cover": 1.5,
+      "stirrup_diameter": 0.5,
+      "Vu": 57.0,
+      "Tu_kip_ft": 28.0,
+      "stirrup_spacing": 5.0,
+      "expected": {
+        "phi_Tth": 70.5,
+        "Aoh": 215.0,
+        "ph": 62.0,
+        "Vc": 38.1,
+        "combined_stress": 326.0,
+        "combined_limit": 474.0,
+        "At_s": 0.0204,
+        "Av_s": 0.0295,
+        "Av_plus_2At_s": 0.0703,
+        "min_transverse": 0.012,
+        "s_max": 7.75,
+        "Al": 1.27,
+        "Al_min": 0.51
+      }
+    }
+  ]
+}

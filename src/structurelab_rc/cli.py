@@ -38,7 +38,7 @@ def _verify(path: Path) -> int:
     for check in checks:
         where = f"{check.member} x={check.x:.0f}" if check.x is not None else ""
         demand, capacity = display(check.demand, check.unit), display(check.capacity, check.unit)
-        print(f"{where:<16}{check.name:<40}{check.status:<11}{demand:>16}{capacity:>16}  {check.clause}")
+        print(f"{where:<16}{check.name:<50}{check.status:<11}{demand:>16}{capacity:>16}  {check.clause}")
         _print_errors(check)
     overall = aggregate(check.status for check in checks)
     print(f"Resultado: {overall}")

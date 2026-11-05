@@ -1,0 +1,65 @@
+{
+  "description": "Viga en voladizo con torsión de equilibrio (Tu ≥ φTth): estribos cerrados #4 y dos barras #6 de torsión (role = torsion) a media altura, que no cuentan como As. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior; cover es el recubrimiento libre a los estribos.",
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "ordinary",
+    "justification": "Pórtico ordinario declarado por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight"
+  },
+  "members": [
+    {
+      "id": "V-T",
+      "type": "beam",
+      "length": 4000.0,
+      "section": {
+        "bw": 300.0,
+        "h": 500.0,
+        "cover": 40.0
+      },
+      "stations": [
+        {
+          "x": 0.0,
+          "layout": {
+            "layers": [
+              {
+                "designation": "#5",
+                "count": 3,
+                "depth": 60.0,
+                "role": "flexure"
+              },
+              {
+                "designation": "#6",
+                "count": 2,
+                "depth": 250.0,
+                "role": "torsion"
+              },
+              {
+                "designation": "#8",
+                "count": 3,
+                "depth": 440.0,
+                "role": "flexure"
+              }
+            ],
+            "stirrups": {
+              "designation": "#4",
+              "legs": 2,
+              "spacing": 100.0,
+              "closed": true
+            }
+          },
+          "demands": {
+            "Pu_kN": 0.0,
+            "Mu_kNm": 100.0,
+            "Vu_kN": 120.0,
+            "Tu_kNm": 20.0
+          }
+        }
+      ]
+    }
+  ]
+}

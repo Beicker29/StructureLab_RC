@@ -29,18 +29,21 @@
               {
                 "designation": "#6",
                 "count": 4,
-                "depth": 60.0
+                "depth": 60.0,
+                "role": "flexure"
               },
               {
                 "designation": "#5",
                 "count": 2,
-                "depth": 440.0
+                "depth": 440.0,
+                "role": "flexure"
               }
             ],
             "stirrups": {
               "designation": "#3",
               "legs": 2,
-              "spacing": 150.0
+              "spacing": 150.0,
+              "closed": true
             }
           },
           "demands": {
@@ -57,18 +60,21 @@
               {
                 "designation": "#5",
                 "count": 2,
-                "depth": 60.0
+                "depth": 60.0,
+                "role": "flexure"
               },
               {
                 "designation": "#8",
                 "count": 3,
-                "depth": 440.0
+                "depth": 440.0,
+                "role": "flexure"
               }
             ],
             "stirrups": {
               "designation": "#3",
               "legs": 2,
-              "spacing": 200.0
+              "spacing": 200.0,
+              "closed": true
             }
           },
           "demands": {

@@ -17,7 +17,8 @@
         {
           "designation": "#8",
           "count": 12,
-          "depth": 530.0
+          "depth": 530.0,
+          "role": "flexure"
         }
       ],
       "beta1": 0.85,
@@ -41,12 +42,14 @@
         {
           "designation": "#5",
           "count": 3,
-          "depth": 60.0
+          "depth": 60.0,
+          "role": "flexure"
         },
         {
           "designation": "#8",
           "count": 5,
-          "depth": 440.0
+          "depth": 440.0,
+          "role": "flexure"
         }
       ],
       "beta1": 0.8,
@@ -72,12 +75,14 @@
         {
           "designation": "#8",
           "count": 8,
-          "depth": 60.0
+          "depth": 60.0,
+          "role": "flexure"
         },
         {
           "designation": "#5",
           "count": 2,
-          "depth": 540.0
+          "depth": 540.0,
+          "role": "flexure"
         }
       ],
       "beta1": 0.8,
@@ -102,7 +107,8 @@
         {
           "designation": "#8",
           "count": 3,
-          "depth": 440.0
+          "depth": 440.0,
+          "role": "flexure"
         }
       ],
       "beta1": 0.8,
@@ -127,7 +133,8 @@
         {
           "designation": "#8",
           "count": 3,
-          "depth": 440.0
+          "depth": 440.0,
+          "role": "flexure"
         }
       ],
       "beta1": 0.8,
@@ -154,7 +161,8 @@
         {
           "designation": "#8",
           "count": 4,
-          "depth": 530.0
+          "depth": 530.0,
+          "role": "flexure"
         }
       ],
       "beta1": 0.85,
@@ -178,7 +186,8 @@
         {
           "designation": "#9",
           "count": 8,
-          "depth": 400.0
+          "depth": 400.0,
+          "role": "flexure"
         }
       ],
       "beta1": 0.85,

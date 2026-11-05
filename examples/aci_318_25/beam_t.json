@@ -22,7 +22,8 @@
         "h": 500.0,
         "cover": 40.0,
         "bf": 1000.0,
-        "hf": 100.0
+        "hf": 100.0,
+        "flange_sides": 2
       },
       "stations": [
         {
@@ -32,18 +33,21 @@
               {
                 "designation": "#6",
                 "count": 4,
-                "depth": 60.0
+                "depth": 60.0,
+                "role": "flexure"
               },
               {
                 "designation": "#5",
                 "count": 2,
-                "depth": 440.0
+                "depth": 440.0,
+                "role": "flexure"
               }
             ],
             "stirrups": {
               "designation": "#3",
               "legs": 2,
-              "spacing": 150.0
+              "spacing": 150.0,
+              "closed": true
             }
           },
           "demands": {
@@ -60,18 +64,21 @@
               {
                 "designation": "#5",
                 "count": 2,
-                "depth": 60.0
+                "depth": 60.0,
+                "role": "flexure"
               },
               {
                 "designation": "#8",
                 "count": 3,
-                "depth": 440.0
+                "depth": 440.0,
+                "role": "flexure"
               }
             ],
             "stirrups": {
               "designation": "#3",
               "legs": 2,
-              "spacing": 175.0
+              "spacing": 175.0,
+              "closed": true
             }
           },
           "demands": {
