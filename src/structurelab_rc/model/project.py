@@ -80,9 +80,12 @@ class Demands(_Input):
 
 
 class Station(_Input):
+    """case nombra el estado de carga de la estación, por ejemplo la combinación de ETABS; es solo informativo."""
+
     x: NonNegativeFloat
     layout: ReinforcementLayout
     demands: Demands
+    case: str | None = None
 
 
 class Member(_Input):

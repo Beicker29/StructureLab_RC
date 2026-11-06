@@ -27,6 +27,7 @@ structurelab-rc --version
 structurelab-rc catalog
 structurelab-rc validate examples/nsr_10/beam_t.json
 structurelab-rc verify examples/nsr_10/beam_t.json
+structurelab-rc import-etabs "examples/etabs/Element Forces - Beams.xlsx" examples/etabs/plantilla_nsr10.json --output results/etabs.json
 ```
 
 `catalog` lista la designación, el diámetro nominal (mm), el área (mm²) y la masa (kg/m) de
@@ -58,6 +59,13 @@ capa declara `depth`, `role` (`flexure`, o `torsion` para las barras de Aℓ, qu
 `bars`, de izquierda a derecha: solo designaciones, como `["#8", "#6", "#8"]`, que se reparten entre las
 esquinas del estribo, o barras con posición, como `{"designation": "#8", "z": 62}` (mm desde la cara
 izquierda del alma). Las secciones con ala declaran `flange_sides` (1 para viga L, 2 para viga T).
+
+`import-etabs` genera el proyecto JSON a partir de la tabla "Element Forces - Beams" exportada de ETABS
+a Excel y de una plantilla con lo que ETABS no trae: perfil, nivel sísmico, materiales, secciones y armado
+por tramos (`segments`, en mm desde la estación 0 de ETABS). Cada viga se identifica por su Unique Name;
+se importan todas las combinaciones, o las listadas en `combinations`, y las filas Max y Min de una
+envolvente se tratan como dos estados de carga. La tabla debe venir en m, kN y kN-m. El proyecto generado
+se verifica después con `verify`.
 
 ## Ejemplos y resultados
 

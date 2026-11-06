@@ -178,3 +178,10 @@ def test_torsion_yield_strengths_are_capped_at_420_mpa() -> None:
     capped = station_checks(PROFILES["nsr-10"], high, member, member.stations[0], BARS)
     longitudinal = next(check for check in capped if check.name == LONGITUDINAL)
     assert longitudinal.demand == pytest.approx(_checks(member)[LONGITUDINAL].demand)
+
+
+def test_zero_torsion_never_triggers_the_torsion_checks() -> None:
+    # Con Pu = −300 kN el factor de carga axial del umbral es negativo y φTth = 0; con Tu = 0 no hay torsión que verificar.
+    names = set(_checks(_member(Tu_kNm=0.0, Pu_kN=-300.0, Mu_kNm=5.0, Vu_kN=20.0)))
+    assert THRESHOLD not in names
+    assert TRANSVERSE not in names

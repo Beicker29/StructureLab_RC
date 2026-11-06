@@ -40,7 +40,8 @@ def threshold_check(profile: Profile, materials: Materials, member: Member, stat
     assert demands.tu is not None and demands.pu is not None
     acp, pcp = gross_torsion_section(profile, section)
     limit = torsion.strength_reduction() * torsion.threshold_torsion(materials.fc, lam, acp, pcp, demands.pu, section.area)
-    if abs(demands.tu) < limit:
+    # Sin torsión no hay nada que verificar, aunque la tracción axial lleve el umbral a cero.
+    if demands.tu == 0 or abs(demands.tu) < limit:
         return None
     return Check(THRESHOLD, Status.PASS, clause=torsion.clauses()["threshold"], demand=abs(demands.tu), capacity=limit,
                  unit="N*mm", note="Tu >= phi Tth: se verifica la torsion combinada con el cortante")

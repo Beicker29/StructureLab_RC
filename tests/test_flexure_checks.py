@@ -127,6 +127,7 @@ def test_minimum_reinforcement_counts_every_bar_in_tension() -> None:
     member = _member(layers, {"Pu_kN": 0.0, "Mu_kNm": 180.0}, section=T_SECTION, statically_determinate=False)
     check = _checks(member)[MIN_REINFORCEMENT]
     area = 2 * 199.0 + 3 * 510.0
-    depth = (2 * 199.0 * 60.0 + 3 * 510.0 * 440.0) / area
+    # El centroide del acero a tracción queda a 361.5 mm, pero d no se toma menor que 0.8h = 400 mm (D-043).
+    depth = max((2 * 199.0 * 60.0 + 3 * 510.0 * 440.0) / area, 0.8 * 500.0)
     assert check.capacity == pytest.approx(area)
     assert check.demand == pytest.approx(1.4 * 300.0 * depth / 420.0)

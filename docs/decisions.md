@@ -183,7 +183,7 @@
 - **Problema:** con el eje neutro muy alto (vigas T a momento positivo), las barras cercanas a la cara comprimida quedan a tracción y bajarían la d usada en As,min.
 - **Referencia:** ACI 9.6.1.2; NSR-10 C.10.5.1. Ambas usan d, la distancia al centroide del refuerzo de tracción.
 - **Alternativas:** contar solo las capas a tracción de la mitad traccionada, o todo el acero a tracción.
-- **Decisión del usuario:** para As,min cuenta todo el acero a tracción en el estado nominal, y d es su centroide. En la viga T de ejemplo a momento positivo, As = 1928 mm² y As,min = 362 mm².
+- **Decisión del usuario:** para As,min cuenta todo el acero a tracción en el estado nominal, y d es su centroide, pero no menor que 0.8h (D-043). En la viga T de ejemplo a momento positivo, As = 1928 mm², el centroide queda a 361.5 mm y d = 0.8h = 400 mm, así que As,min = 400 mm².
 
 ### D-026: As,min frente a los ejemplos de Wight
 
@@ -336,6 +336,14 @@
   - Las unidades se leen de la fila de unidades de la tabla, y se exigen m, kN y kN-m.
   - P se invierte para que la compresión sea positiva, y m se convierte a mm.
   - Toda estación debe quedar dentro de un tramo de armado de la plantilla; si no, la importación da error.
+
+### D-043: d no menor que 0.8h
+
+- **Fecha:** 2026-11-06
+- **Problema:** con tracción axial y momento pequeño, casi toda la sección queda a tracción. Con D-025, d es el centroide de las barras superiores e inferiores juntas: en el ejemplo de ETABS, 192 mm en lugar de 440 mm. Eso reducía a la mitad el límite de separación d/2, y también Vc y el límite de la sección.
+- **Referencia:** ACI 22.5 y NSR-10 C.11 definen d hasta el centroide del refuerzo a tracción, sin tratar secciones casi toda a tracción. ACI 22.5.2.1(a) permite d = 0.8h en columnas rectangulares.
+- **Alternativas:** d de las barras de la mitad opuesta a la cara comprimida; mantener D-025; o d no menor que 0.8h.
+- **Decisión del usuario:** en As,min, en el cortante y en la torsión, d es el centroide del acero a tracción del estado a flexión, pero no menor que 0.8h, en secciones rectangulares, T y L y en ambos perfiles. ρw usa esa misma d. El acero que cuenta sigue siendo todo el acero a tracción (D-025).
 
 ## Consultas abiertas
 

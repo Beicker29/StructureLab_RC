@@ -1,13 +1,14 @@
 """Interfaz de línea de comandos."""
 
 import argparse
+import json
 from collections.abc import Sequence
 from pathlib import Path
 
 from structurelab_rc import __version__
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
-from structurelab_rc.engine import validate_file, verify_file
+from structurelab_rc.engine import import_etabs, validate_file, verify_file
 from structurelab_rc.reporting.units import display
 from structurelab_rc.setup import load_engine
 
@@ -45,6 +46,20 @@ def _verify(path: Path) -> int:
     return 1 if overall is Status.FAIL else 0
 
 
+def _import_etabs(workbook: Path, template: Path, output: Path) -> int:
+    project, summary, check = import_etabs(workbook, template)
+    print(f"{check.name}: {check.status}")
+    _print_errors(check)
+    if project is None or summary is None or check.status is Status.FAIL:
+        return 1
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Miembros: {summary.members}; estaciones: {summary.stations}; estados de carga: {len(summary.cases)}")
+    print(f"Filas omitidas (no son combinaciones o no se pidieron): {summary.skipped_rows}")
+    print(f"Proyecto escrito en {output}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="structurelab-rc", description="Concreto reforzado: verificación, diseño y despiece.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -54,7 +69,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     validate.add_argument("project", type=Path, help="ruta del archivo JSON")
     verify = commands.add_parser("verify", help="verifica las vigas de un proyecto en JSON")
     verify.add_argument("project", type=Path, help="ruta del archivo JSON")
+    importer = commands.add_parser("import-etabs", help="genera un proyecto JSON desde el Excel de ETABS y una plantilla")
+    importer.add_argument("workbook", type=Path, help="Excel exportado de ETABS (Element Forces - Beams)")
+    importer.add_argument("template", type=Path, help="plantilla JSON con secciones y tramos de armado")
+    importer.add_argument("--output", type=Path, required=True, help="ruta del proyecto JSON a escribir")
     args = parser.parse_args(argv)
+    if args.command == "import-etabs":
+        return _import_etabs(args.workbook, args.template, args.output)
     if args.command == "validate":
         return _validate(args.project)
     if args.command == "verify":

@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from structurelab_rc.codes.registry import Profile
-from structurelab_rc.domain.beam.flexure import nominal_flexure, steel_layers
+from structurelab_rc.domain.beam.flexure import MIN_DEPTH_RATIO, nominal_flexure, steel_layers
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.status import Status
@@ -48,7 +48,7 @@ def concrete_lambda(profile: Profile, materials: Materials) -> float | Check:
 def _tension_steel(
     profile: Profile, materials: Materials, member: Member, station: Station, bars: Sequence[RebarSpec]
 ) -> tuple[float, float] | Check:
-    """Área y profundidad del acero a tracción por flexión en la estación (d y ρw)."""
+    """Área del acero a tracción y d del cortante: su centroide, no menor que 0.8h (D-043)."""
     layers = steel_layers(station.layout, bars)
     if isinstance(layers, StructuredError):
         return check_from_errors(STRENGTH, [layers])
@@ -62,7 +62,8 @@ def _tension_steel(
     area = sum(layer.area for layer in tension)
     if area == 0:
         return check_from_errors(STRENGTH, [blocked("No hay acero a traccion para definir d")])
-    return area, sum(layer.depth * layer.area for layer in tension) / area
+    centroid = sum(layer.depth * layer.area for layer in tension) / area
+    return area, max(centroid, MIN_DEPTH_RATIO * member.section.h)
 
 
 def shear_terms(given: StationInput, minimum: float) -> ShearTerms | Check:

@@ -27,7 +27,7 @@ de una misma capa que no pueden hacerlo.
 | `cli` | Interfaz. Llama a `engine`/`execution`; nunca calcula capacidades. |
 | `engine`, `execution` | Orquestación, sin reglas de cálculo. |
 | `reporting` | Presentación. Convierte unidades de salida con `kN()` y `kNm()`. |
-| `io/etabs` | Importación de fuerzas mayoradas desde ETABS. |
+| `io/etabs` | Lee el Excel de ETABS con la biblioteca estándar y arma el proyecto JSON desde una plantilla (D-042). Convierte el formato de ETABS al de entrada: m a mm y la compresión positiva. |
 | `setup` | `load_engine()`: carga las tablas de `data/` con `importlib.resources`. |
 | `domain/<elemento>` | Elige la cláusula y arma cada `Check`. `domain/status.py` tiene la única agregación de estados. |
 | `design/<elemento>` | Produce `ReinforcementLayout`. |

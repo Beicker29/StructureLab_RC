@@ -22,6 +22,8 @@ from structurelab_rc.model.reinforcement import ReinforcementLayout
 STRENGTH = "Flexion: resistencia"
 NET_TENSILE_STRAIN = "Flexion: deformacion neta de traccion"
 MIN_REINFORCEMENT = "Flexion: acero minimo"
+# d de As,min, del cortante y de la torsión: no menor que 0.8h (D-043).
+MIN_DEPTH_RATIO = 0.8
 
 
 def steel_layers(layout: ReinforcementLayout, bars: Sequence[RebarSpec]) -> tuple[SteelLayer, ...] | StructuredError:
@@ -74,10 +76,11 @@ def _min_reinforcement(profile: Profile, materials: Materials, member: Member, s
             return check_from_errors(MIN_REINFORCEMENT, [incomplete("Falta declarar si el miembro es isostatico (ala a traccion)")])
         if member.statically_determinate:
             bw = profile.flexure.determinate_flange_width(section.bw, section.bf)
-    # Cuenta todo el acero a tracción en el estado nominal; d es su centroide (D-025).
+    # Cuenta todo el acero a tracción en el estado nominal (D-025); d es su centroide, no menor que 0.8h (D-043).
     tension = [layer for layer in state.layers if layer.strain > 0]
     provided = sum(layer.area for layer in tension)
-    depth = sum(layer.depth * layer.area for layer in tension) / provided if provided else 0.0
+    centroid = sum(layer.depth * layer.area for layer in tension) / provided if provided else 0.0
+    depth = max(centroid, MIN_DEPTH_RATIO * section.h)
     required = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, bw, depth)
     if provided >= required:
         return Check(MIN_REINFORCEMENT, Status.PASS, clause=clause, demand=required, capacity=provided, unit="mm2")

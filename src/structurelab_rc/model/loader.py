@@ -3,10 +3,11 @@
 import json
 from pathlib import Path
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.model.project import Project
+from structurelab_rc.model.template import EtabsTemplate
 
 
 class ProjectLoadError(Exception):
@@ -15,15 +16,27 @@ class ProjectLoadError(Exception):
         self.errors = errors
 
 
-def load_project(path: Path) -> Project:
+def _load[T: BaseModel](path: Path, model: type[T], what: str) -> T:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
-        raise ProjectLoadError((invalid_input(f"No se pudo leer el proyecto: {error}", path=str(path)),)) from error
+        raise ProjectLoadError((invalid_input(f"No se pudo leer {what}: {error}", path=str(path)),)) from error
+    return validate_input(raw, model)
+
+
+def validate_input[T: BaseModel](raw: object, model: type[T]) -> T:
     try:
-        return Project.model_validate(raw)
+        return model.model_validate(raw)
     except ValidationError as error:
         errors = tuple(
             invalid_input(detail["msg"], location=".".join(str(part) for part in detail["loc"])) for detail in error.errors()
         )
         raise ProjectLoadError(errors) from error
+
+
+def load_project(path: Path) -> Project:
+    return _load(path, Project, "el proyecto")
+
+
+def load_template(path: Path) -> EtabsTemplate:
+    return _load(path, EtabsTemplate, "la plantilla")

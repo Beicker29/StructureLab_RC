@@ -43,6 +43,8 @@ jobs:
         run: |
           wheel="$PWD/$(ls dist/*.whl)"
           example="$PWD/examples/nsr_10/beam_t.json"
+          workbook="$PWD/examples/etabs/Element Forces - Beams.xlsx"
+          template="$PWD/examples/etabs/plantilla_nsr10.json"
           cd "$RUNNER_TEMP"
           python -m venv clean
           if [ "$RUNNER_OS" = "Windows" ]; then bin=clean/Scripts; else bin=clean/bin; fi
@@ -51,3 +53,5 @@ jobs:
           "$bin/structurelab-rc" catalog
           "$bin/structurelab-rc" validate "$example"
           "$bin/structurelab-rc" verify "$example"
+          "$bin/structurelab-rc" import-etabs "$workbook" "$template" --output etabs.json
+          "$bin/structurelab-rc" validate etabs.json

@@ -123,3 +123,11 @@ def test_torsion_threshold_matches_hand_value() -> None:
     for profile in ("aci-318-25", "nsr-10"):
         torsion = PROFILES[profile].torsion
         assert torsion.threshold_torsion(28.0, 1.0, 150000.0, 1600.0, 0.0, 150000.0) == pytest.approx(expected)
+
+
+def test_shear_depth_is_not_less_than_0_8h() -> None:
+    # Con tracción axial casi toda la sección trabaja a tracción; d no se toma menor que 0.8h = 400 mm (D-043).
+    layers = [{"bars": ["#6", "#6", "#6", "#6"], "depth": 62.0, "role": "flexure"}, BOTTOM[0]]
+    checks = _checks(_member(layers=layers, Mu_kNm=5.0, Pu_kN=-300.0, Vu_kN=20.0))
+    assert dict(checks[STRENGTH].values)["d"] == pytest.approx(400.0)
+    assert dict(_checks(_member())[STRENGTH].values)["d"] == pytest.approx(440.0)
