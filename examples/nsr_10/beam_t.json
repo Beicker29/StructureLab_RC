@@ -1,5 +1,5 @@
 {
-  "description": "Viga T con el ala en la cara superior (flange_sides = 2): en el apoyo (x = 0) hay torsión (Tu ≥ φTth, umbral calculado con las alas efectivas), con estribos cerrados #4 y dos barras #8 de torsión, porque Aℓ,min crece con el ala; en el centro de luz solo flexión y cortante. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior; cover es el recubrimiento libre a los estribos.",
+  "description": "Viga T con el ala en la cara superior (salientes de 350 mm a cada lado): en el apoyo (x = 0) hay torsión (Tu ≥ φTth, umbral calculado con las alas efectivas), con estribos cerrados #4 y dos barras #8 de torsión, porque Aℓ,min crece con el ala; en el centro de luz solo flexión y cortante. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior; cover es el recubrimiento libre a los estribos.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DMO",
@@ -21,13 +21,13 @@
         "bw": 300.0,
         "h": 500.0,
         "cover": 40.0,
-        "bf": 1000.0,
         "hf": 100.0,
-        "flange_sides": 2
+        "overhang_x_neg": 350.0,
+        "overhang_x_pos": 350.0
       },
       "stations": [
         {
-          "x": 0.0,
+          "z": 0.0,
           "layout": {
             "layers": [
               {
@@ -67,12 +67,14 @@
           "demands": {
             "Pu_kN": 0.0,
             "Mu_kNm": -150.0,
+            "M2_kNm": 0.0,
             "Vu_kN": 120.0,
+            "V3_kN": 0.0,
             "Tu_kNm": 15.0
           }
         },
         {
-          "x": 3000.0,
+          "z": 3000.0,
           "layout": {
             "layers": [
               {
@@ -103,7 +105,9 @@
           "demands": {
             "Pu_kN": 25.0,
             "Mu_kNm": 180.0,
+            "M2_kNm": 0.0,
             "Vu_kN": 10.0,
+            "V3_kN": 0.0,
             "Tu_kNm": 0.0
           }
         }

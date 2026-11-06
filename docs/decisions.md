@@ -267,7 +267,7 @@
 - **Fecha:** 2026-11-05
 - **Referencia:** ACI 9.2.4.4; NSR-10 C.11.5.1.1 y C.13.2.4.
 - **Decisión:**
-  - Las secciones con ala declaran `flange_sides` (1 para viga L, 2 para viga T).
+  - Las secciones con ala declaraban `flange_sides` (1 para viga L, 2 para viga T); desde D-045 declaran los salientes a cada lado.
   - Acp y pcp se calculan con el saliente efectivo por lado, el menor entre el saliente real, h − hf y 4hf. Las alas se ignoran si reducen Acp²/pcp.
   - Así se calculan el umbral de torsión, que reemplaza el umbral solo con el alma de D-032, y Aℓ,min.
   - Aoh y ph salen solo del alma, porque los estribos cerrados están en ella.
@@ -344,6 +344,37 @@
 - **Referencia:** ACI 22.5 y NSR-10 C.11 definen d hasta el centroide del refuerzo a tracción, sin tratar secciones casi toda a tracción. ACI 22.5.2.1(a) permite d = 0.8h en columnas rectangulares.
 - **Alternativas:** d de las barras de la mitad opuesta a la cara comprimida; mantener D-025; o d no menor que 0.8h.
 - **Decisión del usuario:** en As,min, en el cortante y en la torsión, d es el centroide del acero a tracción del estado a flexión, pero no menor que 0.8h, en secciones rectangulares, T y L y en ambos perfiles. ρw usa esa misma d. El acero que cuenta sigue siendo todo el acero a tracción (D-025).
+
+### D-044: ejes y signos de ETABS
+
+- **Fecha:** 2026-11-06
+- **Decisión del usuario:**
+  - Se usan los ejes locales de ETABS: Y = eje 2 (vertical, hacia arriba), X = eje 3 (horizontal) y Z = eje 1 (eje del miembro), con Z = Y × X por la regla de la mano derecha de 2 a 3.
+  - La posición de una estación a lo largo del miembro es `z`. La posición horizontal de una barra es `x`, medida sobre el eje 3 desde la cara del alma del lado −3; `depth` sigue midiéndose desde la cara superior.
+  - M3 (`Mu_kNm`) positivo comprime la cara +2 (superior), comprobado con los datos del usuario. M2 (`M2_kNm`) positivo comprime la cara +3 (x = bw), comprobado por el usuario en ETABS.
+  - Vu es V2 y `V3_kN` es el cortante horizontal. M2 y V3 son obligatorios como Pu (0 si no hay).
+  - La importación pasa M2 y V3 con el signo de ETABS; solo P cambia de signo.
+
+### D-045: salientes del ala y barras en el ala
+
+- **Fecha:** 2026-11-06
+- **Decisión del usuario:**
+  - Una sección con ala declara `hf`, `overhang_x_neg` (saliente hacia −3) y `overhang_x_pos` (hacia +3), con 0 en el lado sin ala; reemplazan a `bf` y `flange_sides` (D-036).
+  - La torsión aplica el saliente efectivo, el menor entre el real, h − hf y 4hf, a cada lado por separado.
+  - Una barra de flexión puede quedar fuera del alma si está a la altura del ala (depth ≤ hf) y dentro de ella, con el recubrimiento en sus bordes. Las barras de torsión van dentro de los estribos.
+  - Nueva forma de capa por separación, para la malla del ala: `{"designation": "#4", "spacing": 200, "from": x0, "to": x1}`.
+  - Las barras del ala con `role: flexure` cuentan como As.
+
+### D-046: flexión y cortante en los dos ejes
+
+- **Fecha:** 2026-11-06
+- **Decisión del usuario:**
+  - La resistencia a flexión se verifica siempre con un motor biaxial por fibras: el polígono real de la sección, con sus alas, y las barras en su posición, con Pn = Pu (D-024), en la dirección de (Mu3, Mu2).
+  - La εt mínima se verifica en tres estados: M3 solo, M2 solo y el biaxial.
+  - As,min se verifica en los dos ejes. En el eje débil el ancho es h y d es el del estado girado, no menor que 0.8 veces el ancho total en esa dirección (bw, o bw más los salientes).
+  - El cortante se verifica en las dos direcciones: V2 con ancho bw y ramas verticales, y V3 con ancho h y ramas horizontales. En ACI se aplica la interacción de 22.5.1.10 y 22.5.1.11; NSR-10 verifica cada dirección por separado.
+  - La separación del eje débil se compara con su propia d. En ACI, la separación vertical entre ramas horizontales se compara con esa d.
+  - Con torsión, las ramas horizontales cumplen Av3/s + 2At/s ≤ (ramas horizontales)·Ab/s.
 
 ## Consultas abiertas
 

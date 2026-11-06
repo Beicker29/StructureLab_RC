@@ -48,17 +48,22 @@ justificación: `none`, `ordinary`, `intermediate` o `special` en `aci-318-25`, 
 `DES` en `nsr-10`. Los valores normativos, como εcu y β1, salen del perfil y no se declaran.
 
 Cada miembro declara su tipo (`beam`, `column`, `footing`, `wall` o `slab`); por ahora solo se
-verifican vigas. Cada estación lleva `Pu_kN` (compresión positiva, también cuando es 0), `Mu_kNm`
-(positivo con la fibra superior comprimida), `Vu_kN` y `Tu_kNm`. Una viga T con momento negativo
+verifican vigas. Cada estación lleva `Pu_kN` (compresión positiva, también cuando es 0), `Mu_kNm`,
+`M2_kNm`, `Vu_kN`, `V3_kN` y `Tu_kNm`. Una viga T con momento negativo
 declara `statically_determinate`.
 
 Los materiales llevan `fc`, `fy`, `fyt` (estribos) y `concrete` (`normalweight`; el liviano aún no se
 verifica). La sección lleva `cover`, el recubrimiento libre a los estribos. Cada estación declara
 `stirrups` (`designation`, `legs`, `spacing`, `closed`), o `null` si no tiene refuerzo a cortante. Cada
 capa declara `depth`, `role` (`flexure`, o `torsion` para las barras de Aℓ, que no cuentan como As) y
-`bars`, de izquierda a derecha: solo designaciones, como `["#8", "#6", "#8"]`, que se reparten entre las
-esquinas del estribo, o barras con posición, como `{"designation": "#8", "z": 62}` (mm desde la cara
-izquierda del alma). Las secciones con ala declaran `flange_sides` (1 para viga L, 2 para viga T).
+`bars`, en orden de x creciente: solo designaciones, como `["#8", "#6", "#8"]`, que se reparten entre las
+esquinas del estribo; barras con posición, como `{"designation": "#8", "x": 62}`; o barras iguales por
+separación, como `{"designation": "#4", "spacing": 200, "from": -300, "to": 600}`, útil para la malla
+del ala. Las secciones con ala declaran `hf`, `overhang_x_neg` y `overhang_x_pos` (0 en el lado sin ala).
+
+Ejes (los de ETABS): Y = eje 2 hacia arriba, X = eje 3 y Z = eje 1, a lo largo del miembro. La estación se
+ubica con `z` y las barras con `x`, desde la cara del alma del lado −3. `Mu_kNm` (M3) positivo comprime la
+cara superior y `M2_kNm` positivo comprime la cara +3; cada estación lleva también `V3_kN`.
 
 `import-etabs` genera el proyecto JSON a partir de la tabla "Element Forces - Beams" exportada de ETABS
 a Excel y de una plantilla con lo que ETABS no trae: perfil, nivel sísmico, materiales, secciones y armado

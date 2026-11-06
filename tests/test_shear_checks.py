@@ -15,7 +15,7 @@ MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight")
 SECTION_300X500 = {"bw": 300.0, "h": 500.0, "cover": 40.0}
 BOTTOM = [{"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}]
 STIRRUPS = {"designation": "#3", "legs": 2, "spacing": 150.0, "closed": True}
-DEMANDS = {"Pu_kN": 0.0, "Mu_kNm": 100.0, "Vu_kN": 120.0, "Tu_kNm": 0.0}
+DEMANDS = {"Pu_kN": 0.0, "Mu_kNm": 100.0, "M2_kNm": 0.0, "Vu_kN": 120.0, "V3_kN": 0.0, "Tu_kNm": 0.0}
 
 
 def _member(
@@ -24,7 +24,7 @@ def _member(
     layers: list[dict[str, Any]] = BOTTOM,
     **demands: float,
 ) -> Member:
-    station = {"x": 0.0, "layout": {"layers": layers, "stirrups": stirrups}, "demands": DEMANDS | demands}
+    station = {"z": 0.0, "layout": {"layers": layers, "stirrups": stirrups}, "demands": DEMANDS | demands}
     return Member.model_validate({"id": "V", "type": "beam", "length": 6000.0, "section": section, "stations": [station]})
 
 
@@ -107,7 +107,8 @@ def test_lightweight_concrete_is_blocked() -> None:
 
 
 def test_missing_torsion_is_incomplete() -> None:
-    station = {"x": 0.0, "layout": {"layers": BOTTOM, "stirrups": STIRRUPS}, "demands": {"Pu_kN": 0.0, "Mu_kNm": 100.0, "Vu_kN": 120.0}}
+    demands = {"Pu_kN": 0.0, "Mu_kNm": 100.0, "M2_kNm": 0.0, "Vu_kN": 120.0, "V3_kN": 0.0}
+    station = {"z": 0.0, "layout": {"layers": BOTTOM, "stirrups": STIRRUPS}, "demands": demands}
     member = Member.model_validate({"id": "V", "type": "beam", "length": 6000.0, "section": SECTION_300X500, "stations": [station]})
     assert _checks(member)[STRENGTH].status is Status.INCOMPLETE
 

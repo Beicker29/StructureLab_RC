@@ -60,8 +60,11 @@ def test_profile_flexure_matches_closed_form(profile: str, case: dict[str, Any])
     layers = steel_layers(layout, load_engine().bars)
     assert isinstance(layers, tuple)
     materials = Materials(fc=case["fc"], fy=case["fy"], fyt=420.0, concrete="normalweight")
-    sides = {"flange_sides": 2} if "bf" in case["section"] else {}
-    section = Section.model_validate(case["section"] | {"cover": 40.0} | sides)
+    geometry = dict(case["section"])
+    bf = geometry.pop("bf", None)
+    if bf is not None:
+        geometry |= {"overhang_x_neg": (bf - geometry["bw"]) / 2, "overhang_x_pos": (bf - geometry["bw"]) / 2}
+    section = Section.model_validate(geometry | {"cover": 40.0})
 
     demands = Demands.model_validate({"Mu_kNm": 1.0 if case["top_in_compression"] else -1.0, "Pu_kN": case.get("Pu_N", 0.0) / 1e3})
 

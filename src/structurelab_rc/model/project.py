@@ -29,60 +29,80 @@ class Materials(_Input):
 
 
 class Section(_Input):
-    """Rectangular sin bf ni hf; en T con el ala en la cara superior. cover es el recubrimiento libre a los estribos.
+    """Ejes de ETABS (D-044): X = eje 3 (horizontal), Y = eje 2 (vertical, hacia arriba), Z = eje 1 (eje del miembro).
 
-    flange_sides indica si el ala sobresale a un lado (viga L) o a ambos (viga T); se exige en secciones con ala.
+    El alma va de x = 0 (cara del lado −3) a x = bw. Una sección con ala declara hf y los salientes a cada lado
+    (overhang_x_neg hacia −3 y overhang_x_pos hacia +3; 0 si no hay): T con ambos, L con uno. El ala está en la
+    cara superior. cover es el recubrimiento libre a los estribos.
     """
 
     bw: PositiveFloat
     h: PositiveFloat
     cover: PositiveFloat
-    bf: PositiveFloat | None = None
     hf: PositiveFloat | None = None
-    flange_sides: Literal[1, 2] | None = None
+    overhang_x_neg: NonNegativeFloat | None = None
+    overhang_x_pos: NonNegativeFloat | None = None
 
     @model_validator(mode="after")
     def _check_flange(self) -> Self:
-        if (self.bf is None) != (self.hf is None):
-            raise ValueError("una sección en T requiere bf y hf")
-        if self.bf is not None and self.bf < self.bw:
-            raise ValueError("bf no puede ser menor que bw")
-        if self.hf is not None and self.hf >= self.h:
+        overhangs = (self.overhang_x_neg, self.overhang_x_pos)
+        if self.hf is None:
+            if any(overhang is not None for overhang in overhangs):
+                raise ValueError("los salientes del ala requieren hf")
+            return self
+        if any(overhang is None for overhang in overhangs):
+            raise ValueError("una sección con ala declara overhang_x_neg y overhang_x_pos (0 si no hay)")
+        if self.flange_width == self.bw:
+            raise ValueError("una sección con ala necesita al menos un saliente mayor que cero")
+        if self.hf >= self.h:
             raise ValueError("hf debe ser menor que h")
-        if (self.bf is None) != (self.flange_sides is None):
-            raise ValueError("flange_sides se declara solo, y siempre, en secciones con ala (bf y hf)")
         return self
+
+    @property
+    def flange_width(self) -> float:
+        """Ancho total en la cara superior: bw más los salientes."""
+        return self.bw + (self.overhang_x_neg or 0.0) + (self.overhang_x_pos or 0.0)
+
+    @property
+    def bf(self) -> float | None:
+        """Ancho del ala, o None en secciones rectangulares."""
+        return None if self.hf is None else self.flange_width
 
     @property
     def area(self) -> float:
         """Área bruta, en mm²."""
-        flange = 0.0 if self.bf is None or self.hf is None else (self.bf - self.bw) * self.hf
-        return self.bw * self.h + flange
+        return self.bw * self.h + (self.flange_width - self.bw) * (self.hf or 0.0)
 
 
 class Demands(_Input):
-    """Fuerzas mayoradas. Momento positivo: fibra superior comprimida. Axial positiva: compresión."""
+    """Fuerzas mayoradas con la convención de ETABS (D-044).
+
+    Pu positiva en compresión. Mu (M3) positivo comprime la cara +2 (superior); M2 positivo comprime la cara +3
+    (x = bw). Vu es V2 (vertical) y V3 es el cortante horizontal; Tu es la torsión.
+    """
 
     pu: float | None = Field(default=None, validation_alias="Pu_kN")
     mu: float | None = Field(default=None, validation_alias="Mu_kNm")
+    m2: float | None = Field(default=None, validation_alias="M2_kNm")
     vu: float | None = Field(default=None, validation_alias="Vu_kN")
+    v3: float | None = Field(default=None, validation_alias="V3_kN")
     tu: float | None = Field(default=None, validation_alias="Tu_kNm")
 
-    @field_validator("mu", "tu")
+    @field_validator("mu", "m2", "tu")
     @classmethod
     def _knm_to_nmm(cls, value: float | None) -> float | None:
         return None if value is None else value * NMM_PER_KNM
 
-    @field_validator("pu", "vu")
+    @field_validator("pu", "vu", "v3")
     @classmethod
     def _kn_to_n(cls, value: float | None) -> float | None:
         return None if value is None else value * N_PER_KN
 
 
 class Station(_Input):
-    """case nombra el estado de carga de la estación, por ejemplo la combinación de ETABS; es solo informativo."""
+    """z es la posición a lo largo del miembro (eje 1), en mm. case nombra el estado de carga; es solo informativo."""
 
-    x: NonNegativeFloat
+    z: NonNegativeFloat
     layout: ReinforcementLayout
     demands: Demands
     case: str | None = None

@@ -33,7 +33,7 @@ def steel_layers(layout: ReinforcementLayout, bars: Sequence[RebarSpec]) -> tupl
     for layer in layout.layers:
         if layer.role != "flexure":
             continue
-        names = [bar if isinstance(bar, str) else bar.designation for bar in layer.bars]
+        names = layer.designations()
         missing = [name for name in names if name not in areas]
         if missing:
             return invalid_input(f"La barra '{missing[0]}' no esta en el catalogo")

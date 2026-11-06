@@ -47,9 +47,9 @@ def _case_label(row: dict[str, str]) -> str:
     return f"{row['Output Case']} ({step})" if step else row["Output Case"]
 
 
-def _segment_layout(member: TemplateMember, x: float) -> dict[str, Any] | None:
+def _segment_layout(member: TemplateMember, z: float) -> dict[str, Any] | None:
     for segment in member.segments:
-        if segment.start - 1e-6 <= x <= segment.end + 1e-6:
+        if segment.start - 1e-6 <= z <= segment.end + 1e-6:
             return segment.layout.model_dump(mode="json", exclude_none=False)
     return None
 
@@ -69,16 +69,24 @@ def _member_rows(template: EtabsTemplate, table: Table) -> tuple[dict[str, list[
 def _stations(member: TemplateMember, rows: list[dict[str, str]], errors: list[StructuredError]) -> list[dict[str, Any]]:
     stations = []
     for row in rows:
-        x = float(row["Station"]) * _MM_PER_M
-        layout = _segment_layout(member, x)
+        z = float(row["Station"]) * _MM_PER_M
+        layout = _segment_layout(member, z)
         if layout is None:
-            errors.append(invalid_input("La estacion de ETABS no cae en ningun tramo de armado", member=member.id, x=x))
+            errors.append(invalid_input("La estacion de ETABS no cae en ningun tramo de armado", member=member.id, z=z))
             continue
-        if x > member.length + 1e-6:
-            errors.append(invalid_input("La estacion de ETABS supera la longitud del miembro", member=member.id, x=x))
+        if z > member.length + 1e-6:
+            errors.append(invalid_input("La estacion de ETABS supera la longitud del miembro", member=member.id, z=z))
             continue
-        demands = {"Pu_kN": -float(row["P"]), "Mu_kNm": float(row["M3"]), "Vu_kN": float(row["V2"]), "Tu_kNm": float(row["T"])}
-        stations.append({"x": x, "case": _case_label(row), "layout": layout, "demands": demands})
+        # Los ejes de la sección son los de ETABS (D-044): solo P cambia de signo, para que la compresión sea positiva.
+        demands = {
+            "Pu_kN": -float(row["P"]),
+            "Mu_kNm": float(row["M3"]),
+            "M2_kNm": float(row["M2"]),
+            "Vu_kN": float(row["V2"]),
+            "V3_kN": float(row["V3"]),
+            "Tu_kNm": float(row["T"]),
+        }
+        stations.append({"z": z, "case": _case_label(row), "layout": layout, "demands": demands})
     return stations
 
 

@@ -3,7 +3,7 @@
 from collections.abc import Iterator, Sequence
 
 from structurelab_rc.codes.registry import PROFILES, Profile
-from structurelab_rc.domain.beam.geometry import interior_limits
+from structurelab_rc.domain.beam.geometry import flange_limits, interior_limits, placed_bars
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.errors import StructuredError, incomplete, invalid_input
 from structurelab_rc.model.catalog import RebarSpec
@@ -20,22 +20,30 @@ def _profile_errors(project: Project, profile: Profile) -> Iterator[StructuredEr
         yield invalid_input(f"{profile.id} no define beta1 para fc = {project.materials.fc} MPa")
 
 
-def _bar_errors(member: Member, station: Station, specs: dict[str, RebarSpec]) -> Iterator[StructuredError]:
-    """Barras con posición explícita: dentro de las caras interiores del estribo y en orden de izquierda a derecha."""
-    where = {"member": member.id, "x": station.x}
-    for layer in station.layout.layers:
-        positions = [bar for bar in layer.bars if not isinstance(bar, str)]
-        for bar in positions:
-            left, right = interior_limits(member.section, station.layout, specs, specs[bar.designation].diameter_mm)
-            if not left - 1e-6 <= bar.z <= right + 1e-6:
-                yield invalid_input(f"La barra {bar.designation} en z = {bar.z} mm queda fuera del estribo", **where)
-        if any(second.z <= first.z for first, second in zip(positions, positions[1:], strict=False)):
-            yield invalid_input(f"Las barras de la capa a {layer.depth} mm no estan en orden de izquierda a derecha", **where)
+def _bar_errors(member: Member, station: Station, bars: Sequence[RebarSpec]) -> Iterator[StructuredError]:
+    """Cada barra dentro del estribo del alma, o dentro del ala si es de flexión y está a la altura del ala (D-045)."""
+    where = {"member": member.id, "z": station.z}
+    section, layout = member.section, station.layout
+    specs = {bar.designation: bar for bar in bars}
+    placed = placed_bars(layout, section, bars)
+    for bar in placed:
+        left, right = interior_limits(section, layout, specs, bar.diameter)
+        if left - 1e-6 <= bar.x <= right + 1e-6:
+            continue
+        flange = flange_limits(section, bar.diameter)
+        in_flange = flange is not None and section.hf is not None and bar.depth <= section.hf
+        if bar.role == "flexure" and in_flange and flange is not None and flange[0] - 1e-6 <= bar.x <= flange[1] + 1e-6:
+            continue
+        yield invalid_input(f"La barra {bar.designation} en x = {bar.x:.1f} mm queda fuera del estribo y del ala", **where)
+    for depth in sorted({bar.depth for bar in placed}):
+        row = [bar.x for bar in placed if bar.depth == depth]
+        if any(second <= first for first, second in zip(row, row[1:], strict=False)):
+            yield invalid_input(f"Las barras de la capa a {depth} mm no estan en orden de x creciente", **where)
 
 
 def _station_errors(member: Member, station: Station, specs: dict[str, RebarSpec]) -> Iterator[StructuredError]:
-    where = {"member": member.id, "x": station.x}
-    if station.x > member.length:
+    where = {"member": member.id, "z": station.z}
+    if station.z > member.length:
         yield invalid_input("La estacion esta fuera de la longitud del miembro", **where)
     missing = sorted(station.layout.designations() - set(specs))
     for name in missing:
@@ -46,9 +54,10 @@ def _station_errors(member: Member, station: Station, specs: dict[str, RebarSpec
     if not any(layer.role == "flexure" for layer in station.layout.layers):
         yield invalid_input("El armado no tiene capas de flexion", **where)
     if not missing:
-        yield from _bar_errors(member, station, specs)
+        yield from _bar_errors(member, station, list(specs.values()))
     demands = station.demands
-    for label, value in (("Pu", demands.pu), ("Mu", demands.mu), ("Vu", demands.vu), ("Tu", demands.tu)):
+    labels = (("Pu", demands.pu), ("Mu", demands.mu), ("M2", demands.m2), ("Vu", demands.vu), ("V3", demands.v3), ("Tu", demands.tu))
+    for label, value in labels:
         if value is None:
             yield incomplete(f"Falta la demanda {label}", **where)
 

@@ -68,17 +68,18 @@ def test_real_workbook_imports_every_combination_state() -> None:
 def test_units_and_signs_are_converted_to_the_input_format() -> None:
     project, _, _ = import_etabs(WORKBOOK, TEMPLATE)
     assert project is not None
-    station = next(s for s in project["members"][0]["stations"] if s["case"] == "0.9DT+S.R.A.X+FZ (Max)" and s["x"] == pytest.approx(175.0))
-    # Fila de ETABS: P = 7.5301 kN (tracción), V2 = −16.3732 kN, T = 0.6645 kN-m, M3 = −2.5491 kN-m.
-    assert station["demands"] == pytest.approx({"Pu_kN": -7.5301, "Mu_kNm": -2.5491, "Vu_kN": -16.3732, "Tu_kNm": 0.6645})
+    station = next(s for s in project["members"][0]["stations"] if s["case"] == "0.9DT+S.R.A.X+FZ (Max)" and s["z"] == pytest.approx(175.0))
+    # Fila de ETABS: P = 7.5301 kN (tracción), V2 = −16.3732, V3 = 0.0518 kN, T = 0.6645, M2 = 0.1317, M3 = −2.5491 kN-m.
+    expected = {"Pu_kN": -7.5301, "Mu_kNm": -2.5491, "M2_kNm": 0.1317, "Vu_kN": -16.3732, "V3_kN": 0.0518, "Tu_kNm": 0.6645}
+    assert station["demands"] == pytest.approx(expected)
 
 
 def test_each_station_takes_the_layout_of_its_segment() -> None:
     project, _, _ = import_etabs(WORKBOOK, TEMPLATE)
     assert project is not None
     stations = project["members"][0]["stations"]
-    support = next(s for s in stations if s["x"] == pytest.approx(175.0))
-    midspan = next(s for s in stations if s["x"] == pytest.approx(2312.5))
+    support = next(s for s in stations if s["z"] == pytest.approx(175.0))
+    midspan = next(s for s in stations if s["z"] == pytest.approx(2312.5))
     assert support["layout"]["stirrups"]["spacing"] == 100.0
     assert midspan["layout"]["stirrups"]["spacing"] == 150.0
 

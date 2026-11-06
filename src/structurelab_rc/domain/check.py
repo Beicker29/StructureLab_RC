@@ -22,7 +22,7 @@ class Check:
     errors: tuple[StructuredError, ...] = ()
     clause: str = ""
     member: str = ""
-    x: float | None = None
+    z: float | None = None
     demand: float | None = None
     capacity: float | None = None
     unit: str = ""

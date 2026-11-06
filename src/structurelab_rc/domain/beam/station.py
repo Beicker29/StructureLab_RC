@@ -53,4 +53,4 @@ def station_checks(
     else:
         flexure = flexure_checks(profile, materials, member, station, bars)
         checks = (*flexure, *_shear_and_torsion(profile, materials, member, station, bars))
-    return tuple(replace(check, member=member.id, x=station.x) for check in checks)
+    return tuple(replace(check, member=member.id, z=station.z) for check in checks)

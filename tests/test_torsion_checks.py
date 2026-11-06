@@ -28,7 +28,7 @@ TOP = {"bars": ["#5", "#5", "#5"], "depth": 60.0, "role": "flexure"}
 BOTTOM = {"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}
 TORSION_BARS = {"bars": ["#6", "#6"], "depth": 250.0, "role": "torsion"}
 STIRRUPS = {"designation": "#4", "legs": 2, "spacing": 100.0, "closed": True}
-DEMANDS = {"Pu_kN": 0.0, "Mu_kNm": 100.0, "Vu_kN": 120.0, "Tu_kNm": 20.0}
+DEMANDS = {"Pu_kN": 0.0, "Mu_kNm": 100.0, "M2_kNm": 0.0, "Vu_kN": 120.0, "V3_kN": 0.0, "Tu_kNm": 20.0}
 TORSION_NAMES = {THRESHOLD, SECTION, TRANSVERSE, MIN_TRANSVERSE, LONGITUDINAL, SPACING, DETAILING}
 
 
@@ -39,7 +39,7 @@ def _member(
     **demands: float,
 ) -> Member:
     layout = {"layers": layers if layers is not None else [TOP, BOTTOM, TORSION_BARS], "stirrups": stirrups}
-    station = {"x": 0.0, "layout": layout, "demands": DEMANDS | demands}
+    station = {"z": 0.0, "layout": layout, "demands": DEMANDS | demands}
     return Member.model_validate({"id": "V", "type": "beam", "length": 6000.0, "section": section, "stations": [station]})
 
 
@@ -142,11 +142,11 @@ def test_both_profiles_require_the_same_longitudinal_steel_at_45_degrees() -> No
     ("section", "expected"),
     [
         # T: el saliente se limita a 4hf = 400 mm (menor que h − hf = 500 mm); las alas aumentan Acp²/pcp.
-        ({"bw": 300.0, "h": 600.0, "bf": 1500.0, "hf": 100.0, "flange_sides": 2}, (260000.0, 3400.0)),
+        ({"bw": 300.0, "h": 600.0, "hf": 100.0, "overhang_x_neg": 600.0, "overhang_x_pos": 600.0}, (260000.0, 3400.0)),
         # L: un solo saliente, limitado a 480 mm aunque el ala mida 500 mm.
-        ({"bw": 300.0, "h": 600.0, "bf": 800.0, "hf": 120.0, "flange_sides": 1}, (237600.0, 2760.0)),
+        ({"bw": 300.0, "h": 600.0, "hf": 120.0, "overhang_x_neg": 0.0, "overhang_x_pos": 500.0}, (237600.0, 2760.0)),
         # Ala delgada: con alas Acp²/pcp baja, así que se ignoran.
-        ({"bw": 300.0, "h": 700.0, "bf": 1500.0, "hf": 60.0, "flange_sides": 2}, (210000.0, 2000.0)),
+        ({"bw": 300.0, "h": 700.0, "hf": 60.0, "overhang_x_neg": 600.0, "overhang_x_pos": 600.0}, (210000.0, 2000.0)),
     ],
 )
 @pytest.mark.parametrize("profile", ["nsr-10", "aci-318-25"])

@@ -32,9 +32,9 @@ BASE: dict[str, Any] = {
             "section": {"bw": 300.0, "h": 500.0, "cover": 40.0},
             "stations": [
                 {
-                    "x": 3000.0,
+                    "z": 3000.0,
                     "layout": {"layers": [{"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}], "stirrups": None},
-                    "demands": {"Pu_kN": 0.0, "Mu_kNm": 180.0, "Vu_kN": 40.0, "Tu_kNm": 0.0},
+                    "demands": {"Pu_kN": 0.0, "Mu_kNm": 180.0, "M2_kNm": 0.0, "Vu_kN": 40.0, "V3_kN": 0.0, "Tu_kNm": 0.0},
                 }
             ],
         }
@@ -97,7 +97,8 @@ def test_concrete_outside_the_beta1_table_is_rejected() -> None:
 
 
 def test_missing_demand_is_incomplete_and_not_assumed() -> None:
-    status, errors = _validate(_project(members=_member_with(demands={"Pu_kN": 0.0, "Mu_kNm": 180.0, "Vu_kN": 40.0})))
+    demands = {"Pu_kN": 0.0, "Mu_kNm": 180.0, "M2_kNm": 0.0, "Vu_kN": 40.0, "V3_kN": 0.0}
+    status, errors = _validate(_project(members=_member_with(demands=demands)))
     assert status is Status.INCOMPLETE
     assert errors[0].code is ErrorCode.INCOMPLETE
     assert "Tu" in errors[0].message
@@ -114,22 +115,21 @@ def test_layer_outside_the_section_is_rejected() -> None:
 
 
 def test_station_outside_the_member_is_rejected() -> None:
-    assert _validate(_project(members=_member_with(x=6000.1)))[0] is Status.FAIL
+    assert _validate(_project(members=_member_with(z=6000.1)))[0] is Status.FAIL
 
 
 @pytest.mark.parametrize(
     "section",
     [
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0, "flange_sides": 2},
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "hf": 100.0, "flange_sides": 2},
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 200.0, "hf": 100.0, "flange_sides": 2},
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0, "hf": 500.0, "flange_sides": 2},
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "bf": 800.0, "hf": 100.0},
-        {"bw": 300.0, "h": 500.0, "cover": 40.0, "flange_sides": 1},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "overhang_x_neg": 250.0, "overhang_x_pos": 250.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "hf": 100.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "hf": 100.0, "overhang_x_pos": 250.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "hf": 100.0, "overhang_x_neg": 0.0, "overhang_x_pos": 0.0},
+        {"bw": 300.0, "h": 500.0, "cover": 40.0, "hf": 500.0, "overhang_x_neg": 250.0, "overhang_x_pos": 250.0},
     ],
 )
 def test_inconsistent_t_sections_are_rejected(section: dict[str, float]) -> None:
-    with pytest.raises(ValueError, match=r"bf|hf|flange_sides"):
+    with pytest.raises(ValueError, match=r"hf|saliente|overhang"):
         Section.model_validate(section)
 
 
@@ -162,7 +162,7 @@ def test_nominal_flexure_rejects_concrete_outside_the_table() -> None:
         Materials(fc=14.0, fy=420.0, fyt=420.0, concrete="normalweight"),
         Section(bw=300.0, h=500.0, cover=40.0),
         (SteelLayer(440.0, 1530.0),),
-        Demands.model_validate({"Mu_kNm": 100.0, "Pu_kN": 0.0}),
+        Demands.model_validate({"Mu_kNm": 100.0, "M2_kNm": 0.0, "Pu_kN": 0.0}),
     )
     assert isinstance(result, StructuredError)
     assert result.code is ErrorCode.INVALID_INPUT
