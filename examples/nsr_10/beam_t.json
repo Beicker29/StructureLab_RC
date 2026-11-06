@@ -1,5 +1,5 @@
 {
-  "description": "Viga T con el ala en la cara superior, apoyo y centro de luz. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior; cover es el recubrimiento libre a los estribos.",
+  "description": "Viga T con el ala en la cara superior (flange_sides = 2): en el apoyo (x = 0) hay torsión (Tu ≥ φTth, umbral calculado con las alas efectivas), con estribos cerrados #4 y dos barras #8 de torsión, porque Aℓ,min crece con el ala; en el centro de luz solo flexión y cortante. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior; cover es el recubrimiento libre a los estribos.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DMO",
@@ -31,22 +31,36 @@
           "layout": {
             "layers": [
               {
-                "designation": "#6",
-                "count": 4,
                 "depth": 60.0,
-                "role": "flexure"
+                "role": "flexure",
+                "bars": [
+                  "#6",
+                  "#6",
+                  "#6",
+                  "#6"
+                ]
               },
               {
-                "designation": "#5",
-                "count": 2,
+                "depth": 250.0,
+                "role": "torsion",
+                "bars": [
+                  "#8",
+                  "#8"
+                ]
+              },
+              {
                 "depth": 440.0,
-                "role": "flexure"
+                "role": "flexure",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
               }
             ],
             "stirrups": {
-              "designation": "#3",
+              "designation": "#4",
               "legs": 2,
-              "spacing": 150.0,
+              "spacing": 100.0,
               "closed": true
             }
           },
@@ -54,7 +68,7 @@
             "Pu_kN": 0.0,
             "Mu_kNm": -150.0,
             "Vu_kN": 120.0,
-            "Tu_kNm": 3.0
+            "Tu_kNm": 15.0
           }
         },
         {
@@ -62,16 +76,21 @@
           "layout": {
             "layers": [
               {
-                "designation": "#5",
-                "count": 2,
                 "depth": 60.0,
-                "role": "flexure"
+                "role": "flexure",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
               },
               {
-                "designation": "#8",
-                "count": 3,
                 "depth": 440.0,
-                "role": "flexure"
+                "role": "flexure",
+                "bars": [
+                  "#8",
+                  "#8",
+                  "#8"
+                ]
               }
             ],
             "stirrups": {

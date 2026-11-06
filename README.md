@@ -54,8 +54,10 @@ declara `statically_determinate`.
 Los materiales llevan `fc`, `fy`, `fyt` (estribos) y `concrete` (`normalweight`; el liviano aún no se
 verifica). La sección lleva `cover`, el recubrimiento libre a los estribos. Cada estación declara
 `stirrups` (`designation`, `legs`, `spacing`, `closed`), o `null` si no tiene refuerzo a cortante. Cada
-capa declara `role`: `flexure`, o `torsion` para las barras de Aℓ, que no cuentan como As. Las secciones
-con ala declaran `flange_sides` (1 para viga L, 2 para viga T).
+capa declara `depth`, `role` (`flexure`, o `torsion` para las barras de Aℓ, que no cuentan como As) y
+`bars`, de izquierda a derecha: solo designaciones, como `["#8", "#6", "#8"]`, que se reparten entre las
+esquinas del estribo, o barras con posición, como `{"designation": "#8", "z": 62}` (mm desde la cara
+izquierda del alma). Las secciones con ala declaran `flange_sides` (1 para viga L, 2 para viga T).
 
 ## Ejemplos y resultados
 

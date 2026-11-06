@@ -24,9 +24,9 @@ from structurelab_rc.setup import load_engine
 BARS = load_engine().bars
 MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight")
 SECTION_300X500 = {"bw": 300.0, "h": 500.0, "cover": 40.0}
-TOP = {"designation": "#5", "count": 3, "depth": 60.0, "role": "flexure"}
-BOTTOM = {"designation": "#8", "count": 3, "depth": 440.0, "role": "flexure"}
-TORSION_BARS = {"designation": "#6", "count": 2, "depth": 250.0, "role": "torsion"}
+TOP = {"bars": ["#5", "#5", "#5"], "depth": 60.0, "role": "flexure"}
+BOTTOM = {"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}
+TORSION_BARS = {"bars": ["#6", "#6"], "depth": 250.0, "role": "torsion"}
 STIRRUPS = {"designation": "#4", "legs": 2, "spacing": 100.0, "closed": True}
 DEMANDS = {"Pu_kN": 0.0, "Mu_kNm": 100.0, "Vu_kN": 120.0, "Tu_kNm": 20.0}
 TORSION_NAMES = {THRESHOLD, SECTION, TRANSVERSE, MIN_TRANSVERSE, LONGITUDINAL, SPACING, DETAILING}
@@ -101,7 +101,7 @@ def test_interior_legs_do_not_resist_torsion() -> None:
 
 
 def test_thin_torsion_bars_fail_the_detailing() -> None:
-    thin = TORSION_BARS | {"designation": "#3", "count": 4}
+    thin = TORSION_BARS | {"bars": ["#3", "#3", "#3", "#3"]}
     check = _checks(_member([TOP, BOTTOM, thin], stirrups=STIRRUPS | {"spacing": 150.0}))[DETAILING]
     assert check.status is Status.FAIL
     assert "diametro" in check.note
@@ -110,7 +110,7 @@ def test_thin_torsion_bars_fail_the_detailing() -> None:
 def test_corner_bars_can_be_flexural_bars() -> None:
     # Opción A (D-035): las esquinas se cumplen con cualquier barra longitudinal.
     assert _checks(_member())[DETAILING].status is Status.PASS
-    single_top = TOP | {"count": 1}
+    single_top = TOP | {"bars": ["#5"]}
     assert _checks(_member([single_top, BOTTOM, TORSION_BARS]))[DETAILING].status is Status.FAIL
 
 

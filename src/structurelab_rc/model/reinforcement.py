@@ -2,21 +2,31 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveFloat
 
 
-class BarLayer(BaseModel):
-    """Capa de barras iguales; depth es la distancia a la fibra superior, en mm.
-
-    role declara su función: las capas de torsión (Aℓ) no cuentan como As de flexión (D-027).
-    """
+class BarPosition(BaseModel):
+    """Barra con posición propia; z es la distancia de la cara izquierda del alma al centro de la barra, en mm."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     designation: str
-    count: PositiveInt
+    z: PositiveFloat
+
+
+class BarLayer(BaseModel):
+    """Capa de barras a la profundidad depth (centros, desde la fibra superior), listadas de izquierda a derecha.
+
+    bars admite dos formas (D-040): solo designaciones, repartidas de forma uniforme entre las esquinas
+    interiores del estribo, o barras con posición z. role declara su función: las capas de torsión (Aℓ)
+    no cuentan como As de flexión (D-027).
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     depth: PositiveFloat
     role: Literal["flexure", "torsion"]
+    bars: tuple[str, ...] | tuple[BarPosition, ...] = Field(min_length=1)
 
 
 class Stirrups(BaseModel):
@@ -37,3 +47,8 @@ class ReinforcementLayout(BaseModel):
 
     layers: tuple[BarLayer, ...] = Field(min_length=1)
     stirrups: Stirrups | None
+
+    def designations(self) -> set[str]:
+        """Designaciones de todas las barras longitudinales y del estribo."""
+        names = {bar if isinstance(bar, str) else bar.designation for layer in self.layers for bar in layer.bars}
+        return names if self.stirrups is None else names | {self.stirrups.designation}

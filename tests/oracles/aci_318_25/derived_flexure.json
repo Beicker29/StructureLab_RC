@@ -15,8 +15,20 @@
       "top_in_compression": true,
       "layers": [
         {
-          "designation": "#8",
-          "count": 12,
+          "bars": [
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8"
+          ],
           "depth": 530.0,
           "role": "flexure"
         }
@@ -40,14 +52,22 @@
       "top_in_compression": true,
       "layers": [
         {
-          "designation": "#5",
-          "count": 3,
+          "bars": [
+            "#5",
+            "#5",
+            "#5"
+          ],
           "depth": 60.0,
           "role": "flexure"
         },
         {
-          "designation": "#8",
-          "count": 5,
+          "bars": [
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8"
+          ],
           "depth": 440.0,
           "role": "flexure"
         }
@@ -73,14 +93,24 @@
       "top_in_compression": false,
       "layers": [
         {
-          "designation": "#8",
-          "count": 8,
+          "bars": [
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8",
+            "#8"
+          ],
           "depth": 60.0,
           "role": "flexure"
         },
         {
-          "designation": "#5",
-          "count": 2,
+          "bars": [
+            "#5",
+            "#5"
+          ],
           "depth": 540.0,
           "role": "flexure"
         }
@@ -105,8 +135,11 @@
       "Pu_N": 300000.0,
       "layers": [
         {
-          "designation": "#8",
-          "count": 3,
+          "bars": [
+            "#8",
+            "#8",
+            "#8"
+          ],
           "depth": 440.0,
           "role": "flexure"
         }
@@ -131,8 +164,11 @@
       "Pu_N": -200000.0,
       "layers": [
         {
-          "designation": "#8",
-          "count": 3,
+          "bars": [
+            "#8",
+            "#8",
+            "#8"
+          ],
           "depth": 440.0,
           "role": "flexure"
         }
@@ -159,8 +195,12 @@
       "Pu_N": 400000.0,
       "layers": [
         {
-          "designation": "#8",
-          "count": 4,
+          "bars": [
+            "#8",
+            "#8",
+            "#8",
+            "#8"
+          ],
           "depth": 530.0,
           "role": "flexure"
         }
@@ -184,8 +224,16 @@
       "top_in_compression": true,
       "layers": [
         {
-          "designation": "#9",
-          "count": 8,
+          "bars": [
+            "#9",
+            "#9",
+            "#9",
+            "#9",
+            "#9",
+            "#9",
+            "#9",
+            "#9"
+          ],
           "depth": 400.0,
           "role": "flexure"
         }

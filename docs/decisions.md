@@ -299,6 +299,44 @@
 - **Fecha:** 2026-11-05
 - **Decisión del usuario:** después de 2C siguen 2E (ETABS) y 2F (memorias y huella). La subfase 2D (servicio) queda pendiente.
 
+### D-040: formato de las barras de cada capa
+
+- **Fecha:** 2026-11-06
+- **Problema:** una capa debe admitir diámetros distintos y posiciones libres, y el eje débil necesita la posición horizontal de cada barra.
+- **Decisión:**
+  - Cada capa lista sus barras de izquierda a derecha en `bars`, con dos formas.
+  - Forma corta: solo las designaciones, repartidas de forma uniforme entre las esquinas interiores del estribo, a recubrimiento + estribo + db/2 de cada cara. Una barra sola va centrada.
+  - Forma explícita: cada barra con su `z`, la distancia de la cara izquierda del alma a su centro.
+  - Una capa usa una sola forma. Desaparecen `designation` y `count`.
+  - `depth` es la profundidad de los centros de la capa.
+  - La validación exige barras dentro del estribo y en orden.
+  - La distribución de Aℓ (D-035) usa ahora las posiciones reales. Una barra ocupa la esquina si su centro está a no más de un diámetro de la posición de esquina.
+
+  Confirmado por el usuario.
+
+### D-041: eje débil (M2 y V3)
+
+- **Fecha:** 2026-11-06
+- **Decisión del usuario:**
+  - Se verifican también M2 y V3.
+  - La flexión se resuelve con un análisis biaxial por fibras: el polígono real de la sección, con sus alas, y el bloque equivalente con el eje neutro inclinado (c perpendicular al eje neutro, ACI 22.2.2.4.2 y NSR-10 C.10.2.7.2). Se verifica a carga axial constante (Pn = Pu, D-024), en la dirección del momento demandado. El mismo motor servirá para columnas.
+  - El cortante V3 usa ancho h, d hasta el acero a tracción del estado girado y las ramas horizontales del estribo (2 si es cerrado, 1 si es abierto). En ACI se aplica la interacción de 22.5.1.10 y 22.5.1.11; NSR-10 verifica cada dirección por separado.
+  - Con torsión, las ramas horizontales cumplen Av3/s + 2At/s ≤ (ramas horizontales)·Ab/s.
+  - Las estaciones llevan `M2_kNm` y `V3_kN`, obligatorios como Pu (0 si no hay).
+  - Se implementa en 2E.2, después de la importación desde ETABS (2E.1).
+
+### D-042: importación desde ETABS
+
+- **Fecha:** 2026-11-06
+- **Decisión del usuario:**
+  - Comando `import-etabs`: genera el JSON del proyecto a partir del Excel de ETABS y de una plantilla con perfil, nivel sísmico, materiales, secciones y tramos de armado.
+  - Cada viga se identifica por su Unique Name.
+  - Se usan todas las filas de tipo "Combination", con la opción de dar una lista; otros tipos de caso se rechazan.
+  - Las filas "Max" y "Min" de las combinaciones con envolvente se tratan como dos estados de carga, como en el diseño de ETABS.
+  - Las unidades se leen de la fila de unidades de la tabla, y se exigen m, kN y kN-m.
+  - P se invierte para que la compresión sea positiva, y m se convierte a mm.
+  - Toda estación debe quedar dentro de un tramo de armado de la plantilla; si no, la importación da error.
+
 ## Consultas abiertas
 
 Ninguna.

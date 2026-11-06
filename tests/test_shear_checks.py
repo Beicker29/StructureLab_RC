@@ -13,7 +13,7 @@ from structurelab_rc.setup import load_engine
 BARS = load_engine().bars
 MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight")
 SECTION_300X500 = {"bw": 300.0, "h": 500.0, "cover": 40.0}
-BOTTOM = [{"designation": "#8", "count": 3, "depth": 440.0, "role": "flexure"}]
+BOTTOM = [{"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}]
 STIRRUPS = {"designation": "#3", "legs": 2, "spacing": 150.0, "closed": True}
 DEMANDS = {"Pu_kN": 0.0, "Mu_kNm": 100.0, "Vu_kN": 120.0, "Tu_kNm": 0.0}
 
@@ -73,7 +73,7 @@ def test_minimum_thresholds_differ_between_profiles() -> None:
 
 def test_shallow_beams_are_exempt_from_minimum_shear_reinforcement() -> None:
     shallow = {"bw": 300.0, "h": 250.0, "cover": 25.0}
-    layers = [{"designation": "#5", "count": 3, "depth": 200.0, "role": "flexure"}]
+    layers = [{"bars": ["#5", "#5", "#5"], "depth": 200.0, "role": "flexure"}]
     member = _member(None, shallow, layers, Mu_kNm=20.0, Vu_kN=20.0)
     assert _checks(member)[MIN_REINFORCEMENT].status is Status.PASS
 

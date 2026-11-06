@@ -33,7 +33,7 @@ BASE: dict[str, Any] = {
             "stations": [
                 {
                     "x": 3000.0,
-                    "layout": {"layers": [{"designation": "#8", "count": 3, "depth": 440.0, "role": "flexure"}], "stirrups": None},
+                    "layout": {"layers": [{"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}], "stirrups": None},
                     "demands": {"Pu_kN": 0.0, "Mu_kNm": 180.0, "Vu_kN": 40.0, "Tu_kNm": 0.0},
                 }
             ],
@@ -104,12 +104,12 @@ def test_missing_demand_is_incomplete_and_not_assumed() -> None:
 
 
 def test_unknown_bar_is_rejected() -> None:
-    members = _member_with(layout={"layers": [{"designation": "#99", "count": 1, "depth": 440.0, "role": "flexure"}], "stirrups": None})
+    members = _member_with(layout={"layers": [{"bars": ["#99"], "depth": 440.0, "role": "flexure"}], "stirrups": None})
     assert _validate(_project(members=members))[0] is Status.FAIL
 
 
 def test_layer_outside_the_section_is_rejected() -> None:
-    members = _member_with(layout={"layers": [{"designation": "#8", "count": 1, "depth": 500.0, "role": "flexure"}], "stirrups": None})
+    members = _member_with(layout={"layers": [{"bars": ["#8"], "depth": 500.0, "role": "flexure"}], "stirrups": None})
     assert _validate(_project(members=members))[0] is Status.FAIL
 
 

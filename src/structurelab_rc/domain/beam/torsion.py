@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 
 from structurelab_rc.codes.registry import Profile
+from structurelab_rc.domain.beam.geometry import interior_limits, placed_bars
 from structurelab_rc.domain.beam.shear import SPACING, ShearTerms, concrete_lambda, leg_spacing_across, shear_terms
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
@@ -47,23 +48,27 @@ def threshold_check(profile: Profile, materials: Materials, member: Member, stat
 
 def _longitudinal_detailing(profile: Profile, member: Member, station: Station, bars: Sequence[RebarSpec]) -> Check:
     """Barra en cada esquina y separación ≤ 300 mm con todas las capas; diámetro mínimo en las de torsión (D-034, D-035)."""
-    torsion, section, stirrups = profile.torsion, member.section, station.layout.stirrups
-    assert stirrups is not None
+    torsion, section, layout = profile.torsion, member.section, station.layout
+    assert layout.stirrups is not None
     specs = {bar.designation: bar for bar in bars}
-    layers = sorted(station.layout.layers, key=lambda layer: layer.depth)
+    placed = placed_bars(layout, section, bars)
+    depths = sorted({bar.depth for bar in placed})
     limit = torsion.max_longitudinal_spacing()
     problems = []
-    for outer in (layers[0], layers[-1]):
-        if outer.count < _CORNER_BARS:
-            problems.append(f"la capa a {outer.depth:.0f} mm no tiene barras en ambas esquinas")
-        inner_width = section.bw - 2 * (section.cover + specs[stirrups.designation].diameter_mm) - specs[outer.designation].diameter_mm
-        if outer.count > 1 and inner_width / (outer.count - 1) > limit:
-            problems.append(f"la capa a {outer.depth:.0f} mm separa sus barras mas de {limit:.0f} mm")
-    gaps = [lower.depth - upper.depth for upper, lower in zip(layers, layers[1:], strict=False)]
+    for depth in (depths[0], depths[-1]):
+        row = sorted((bar for bar in placed if bar.depth == depth), key=lambda bar: bar.z)
+        left_corner = interior_limits(section, layout, specs, row[0].diameter)[0]
+        right_corner = interior_limits(section, layout, specs, row[-1].diameter)[1]
+        # Una barra ocupa la esquina si su centro está a no más de un diámetro de la posición de esquina.
+        if len(row) < _CORNER_BARS or row[0].z - left_corner > row[0].diameter or right_corner - row[-1].z > row[-1].diameter:
+            problems.append(f"la capa a {depth:.0f} mm no tiene barras en ambas esquinas")
+        if any(second.z - first.z > limit for first, second in zip(row, row[1:], strict=False)):
+            problems.append(f"la capa a {depth:.0f} mm separa sus barras mas de {limit:.0f} mm")
+    gaps = [lower - upper for upper, lower in zip(depths, depths[1:], strict=False)]
     if gaps and max(gaps) > limit:
         problems.append(f"hay capas separadas {max(gaps):.0f} mm en altura")
-    minimum = torsion.min_longitudinal_diameter(stirrups.spacing)
-    thin = [layer for layer in layers if layer.role == "torsion" and specs[layer.designation].diameter_mm < minimum]
+    minimum = torsion.min_longitudinal_diameter(layout.stirrups.spacing)
+    thin = [bar for bar in placed if bar.role == "torsion" and bar.diameter < minimum]
     if thin:
         problems.append(f"barras de torsion con diametro menor que {minimum:.1f} mm")
     clause = torsion.clauses()["detailing"]
@@ -96,7 +101,7 @@ def _checks(given: StationInput, terms: ShearTerms) -> list[Check]:
         torsion.required_longitudinal(tu, at_s, a0, ph, fyt, fy),
         torsion.min_longitudinal(materials.fc, acp, fy, at_s, ph, fyt, section.bw),
     )
-    al_provided = sum(layer.count * specs[layer.designation].area_mm2 for layer in station.layout.layers if layer.role == "torsion")
+    al_provided = sum(bar.area for bar in placed_bars(station.layout, section, bars) if bar.role == "torsion")
     minimum = torsion.min_transverse(materials.fc, section.bw, fyt)
     required_vs = max(vu / phi - terms.vc, 0.0)
     along = min(torsion.max_spacing(ph), shear.max_spacing(required_vs, materials.fc, section.bw, terms.d))
