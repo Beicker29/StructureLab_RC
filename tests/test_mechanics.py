@@ -2,7 +2,8 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from structurelab_rc.mechanics.flexure import ConcreteBlock, SteelLayer, SteelModel, compression_strips, flexure_state
+from structurelab_rc.mechanics.flexure import SteelLayer, compression_strips, flexure_state
+from structurelab_rc.mechanics.materials import ConcreteBlock, SteelModel
 
 CONCRETE = ConcreteBlock(28.0, 0.85, 0.85, 0.003)
 STEEL = SteelModel(420.0, 200_000.0)

@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from structurelab_rc.mechanics.section import Point, SteelPoint
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.project import Section
 from structurelab_rc.model.reinforcement import BarLayer, BarPosition, BarSpacing, ReinforcementLayout
@@ -64,3 +65,17 @@ def flange_limits(section: Section, diameter: float) -> tuple[float, float] | No
 
 def inside_web(bar: Bar, section: Section) -> bool:
     return 0.0 <= bar.x <= section.bw
+
+
+def section_polygon(section: Section) -> tuple[Point, ...]:
+    """Contorno de la sección en coordenadas (x, y): x sobre el eje 3 desde la cara −3 del alma, y hacia arriba desde la base."""
+    bw, h = section.bw, section.h
+    if section.hf is None:
+        return ((0.0, 0.0), (bw, 0.0), (bw, h), (0.0, h))
+    neg, pos, base = section.overhang_x_neg or 0.0, section.overhang_x_pos or 0.0, h - section.hf
+    return ((0.0, 0.0), (bw, 0.0), (bw, base), (bw + pos, base), (bw + pos, h), (-neg, h), (-neg, base), (0.0, base))
+
+
+def flexure_points(layout: ReinforcementLayout, section: Section, bars: Sequence[RebarSpec]) -> tuple[SteelPoint, ...]:
+    """Barras de flexión como puntos de la mecánica; las de torsión no cuentan como As (D-027)."""
+    return tuple(SteelPoint(bar.x, section.h - bar.depth, bar.area) for bar in placed_bars(layout, section, bars) if bar.role == "flexure")

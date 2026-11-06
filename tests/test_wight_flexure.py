@@ -5,7 +5,8 @@ from typing import Any
 import pytest
 
 from structurelab_rc.codes.registry import PROFILES
-from structurelab_rc.mechanics.flexure import ConcreteBlock, SteelLayer, SteelModel, compression_strips, flexure_state
+from structurelab_rc.mechanics.flexure import SteelLayer, compression_strips, flexure_state
+from structurelab_rc.mechanics.materials import ConcreteBlock, SteelModel
 
 ORACLES = Path(__file__).parent / "oracles"
 FOLDERS = {"aci-318-25": "aci_318_25", "nsr-10": "nsr_10"}

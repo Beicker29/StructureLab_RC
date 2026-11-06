@@ -7,6 +7,8 @@ _SQRT_FC_MAX = 8.3
 _FYT_MAX = 420.0
 _SHALLOW_DEPTH = 250.0
 _INTEGRAL_DEPTH_MAX = 600.0
+_INTERACTION_FREE = 0.5
+_INTERACTION_SUM = 1.5
 
 
 def clauses() -> dict[str, str]:
@@ -15,6 +17,7 @@ def clauses() -> dict[str, str]:
         "section": "22.5.1.2",
         "min_reinforcement": "9.6.3.1 y Tabla 9.6.3.4",
         "spacing": "Tabla 9.7.6.2.2",
+        "biaxial": "22.5.1.10 y 22.5.1.11",
         "concrete": "Tabla 22.5.5.1",
     }
 
@@ -94,3 +97,10 @@ def max_spacing(vs: float, fc: float, bw: float, d: float) -> float:
 def max_leg_spacing_across(vs: float, fc: float, bw: float, d: float) -> float | None:
     """Tabla 9.7.6.2.2, a lo ancho del miembro, con el Vs requerido."""
     return d if vs <= 0.33 * math.sqrt(fc) * bw * d else d / 2
+
+
+def biaxial_interaction(ratio_2: float, ratio_3: float) -> bool | None:
+    """22.5.1.10 y 22.5.1.11: si ambos Vu/φVn superan 0.5, su suma no debe superar 1.5."""
+    if ratio_2 <= _INTERACTION_FREE or ratio_3 <= _INTERACTION_FREE:
+        return True
+    return ratio_2 + ratio_3 <= _INTERACTION_SUM

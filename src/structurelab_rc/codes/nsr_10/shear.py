@@ -15,6 +15,7 @@ def clauses() -> dict[str, str]:
         "section": "C.11.4.7.9",
         "min_reinforcement": "C.11.4.6.1 y C.11.4.6.3",
         "spacing": "C.11.4.5.1 y C.11.4.5.3",
+        "biaxial": "no aplica en NSR-10",
         "concrete": "C.11.2.1 y C.11.2.2",
     }
 
@@ -101,4 +102,9 @@ def max_spacing(vs: float, fc: float, bw: float, d: float) -> float:
 
 def max_leg_spacing_across(vs: float, fc: float, bw: float, d: float) -> float | None:
     """NSR-10 no limita la separación de las ramas a lo ancho del miembro."""
+    return None
+
+
+def biaxial_interaction(ratio_2: float, ratio_3: float) -> bool | None:
+    """NSR-10 no tiene regla de interacción del cortante en dos direcciones: cada una se verifica por separado (D-046)."""
     return None

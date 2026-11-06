@@ -1,0 +1,232 @@
+"""Equilibrio y compatibilidad de una sección poligonal con eje neutro de cualquier inclinación, en N, mm y MPa.
+
+Coordenadas de la sección: x sobre el eje 3 y y sobre el eje 2 (hacia arriba). La compresión se mide en la dirección
+u = (cos θ, sin θ); el bloque equivalente ocupa los puntos a menos de a = β1·c de la fibra extrema comprimida, con c
+medido perpendicular al eje neutro. La carga axial es positiva en compresión y actúa en el centroide de la sección
+bruta. Los momentos siguen la convención de ETABS: M3 positivo comprime la cara +y y M2 positivo la cara +x.
+"""
+
+import math
+from dataclasses import dataclass
+
+from structurelab_rc.mechanics.materials import ConcreteBlock, NoEquilibrium, SteelModel
+
+Point = tuple[float, float]
+
+_BISECTION_STEPS = 100
+_DIRECTION_STEPS = 72
+_DIRECTION_BISECTION_STEPS = 60
+_TOLERANCE = 1e-12
+
+
+@dataclass(frozen=True)
+class SteelPoint:
+    x: float
+    y: float
+    area: float
+
+
+@dataclass(frozen=True)
+class PointState:
+    """Barra en el estado nominal; depth es su distancia a la fibra extrema comprimida, y strain y stress son positivos en tracción."""
+
+    x: float
+    y: float
+    area: float
+    depth: float
+    strain: float
+    stress: float
+
+
+@dataclass(frozen=True)
+class SectionState:
+    theta: float
+    c: float
+    a: float
+    extreme_strain: float
+    mn3: float
+    mn2: float
+    bars: tuple[PointState, ...]
+
+
+def area_centroid(polygon: tuple[Point, ...]) -> tuple[float, float, float]:
+    """Área y centroide de un polígono simple (fórmula del área de Gauss); área cero si es degenerado."""
+    area = cx = cy = 0.0
+    for (x1, y1), (x2, y2) in zip(polygon, (*polygon[1:], polygon[0]), strict=True):
+        cross = x1 * y2 - x2 * y1
+        area += cross
+        cx += (x1 + x2) * cross
+        cy += (y1 + y2) * cross
+    if abs(area) < _TOLERANCE:
+        return 0.0, 0.0, 0.0
+    return abs(area) / 2, cx / (3 * area), cy / (3 * area)
+
+
+def _clip(polygon: tuple[Point, ...], u: Point, level: float) -> tuple[Point, ...]:
+    """Parte del polígono con u·p ≥ level (algoritmo de Sutherland-Hodgman con un solo semiplano)."""
+    kept: list[Point] = []
+    for current, following in zip(polygon, (*polygon[1:], polygon[0]), strict=True):
+        p1 = u[0] * current[0] + u[1] * current[1] - level
+        p2 = u[0] * following[0] + u[1] * following[1] - level
+        if p1 >= 0:
+            kept.append(current)
+        if (p1 >= 0) != (p2 >= 0):
+            t = p1 / (p1 - p2)
+            kept.append((current[0] + t * (following[0] - current[0]), current[1] + t * (following[1] - current[1])))
+    return tuple(kept)
+
+
+@dataclass(frozen=True)
+class _Frame:
+    """Geometría de una orientación: dirección de compresión, nivel de la fibra extrema y distancias de las barras."""
+
+    u: Point
+    top: float
+    depths: tuple[float, ...]
+
+
+def _frame(polygon: tuple[Point, ...], steel: tuple[SteelPoint, ...], theta: float) -> _Frame:
+    u = (math.cos(theta), math.sin(theta))
+    top = max(u[0] * x + u[1] * y for x, y in polygon)
+    return _Frame(u, top, tuple(top - (u[0] * bar.x + u[1] * bar.y) for bar in steel))
+
+
+def _bar_state(bar: SteelPoint, depth: float, c: float, concrete: ConcreteBlock, model: SteelModel) -> PointState:
+    strain = concrete.max_strain * (depth - c) / c
+    stress = math.copysign(min(abs(model.modulus * strain), model.fy), strain)
+    return PointState(bar.x, bar.y, bar.area, depth, strain, stress)
+
+
+def _bar_force(depth: float, area: float, stress: float, c: float, concrete: ConcreteBlock) -> float:
+    """Fuerza neta en tracción; una barra dentro del bloque descuenta el concreto que desplaza."""
+    displaced = concrete.stress_factor * concrete.fc if depth < concrete.beta1 * c else 0.0
+    return area * (stress + displaced)
+
+
+def _block(polygon: tuple[Point, ...], frame: _Frame, a: float) -> tuple[float, float, float]:
+    return area_centroid(_clip(polygon, frame.u, frame.top - a))
+
+
+def _residual(
+    polygon: tuple[Point, ...], steel: tuple[SteelPoint, ...], frame: _Frame, c: float, materials: tuple[ConcreteBlock, SteelModel]
+) -> float:
+    concrete, model = materials
+    area, _, _ = _block(polygon, frame, concrete.beta1 * c)
+    steel_force = 0.0
+    for bar, depth in zip(steel, frame.depths, strict=True):
+        state = _bar_state(bar, depth, c, concrete, model)
+        steel_force += _bar_force(depth, bar.area, state.stress, c, concrete)
+    return concrete.stress_factor * concrete.fc * area - steel_force
+
+
+def _neutral_axis(
+    polygon: tuple[Point, ...], steel: tuple[SteelPoint, ...], frame: _Frame, materials: tuple[ConcreteBlock, SteelModel], axial: float
+) -> float:
+    """Menor raíz del equilibrio; la fuerza salta hacia abajo cuando el bloque alcanza una barra."""
+    beta1 = materials[0].beta1
+    deepest = max(*(frame.top - (frame.u[0] * x + frame.u[1] * y) for x, y in polygon), *frame.depths)
+    ceiling = 2 * deepest / beta1
+    jumps = sorted({depth / beta1 for depth in frame.depths if 0 < depth / beta1 < ceiling})
+    low = ceiling * 1e-9
+
+    def residual(c: float) -> float:
+        return _residual(polygon, steel, frame, c, materials) - axial
+
+    if residual(low) >= 0:
+        raise NoEquilibrium("la tracción axial supera la capacidad del acero")
+    for high in (*jumps, ceiling):
+        if residual(high * (1 - 1e-12)) >= 0:
+            break
+        low = high * (1 + 1e-12)
+    else:
+        raise NoEquilibrium("la compresión axial supera la capacidad de la sección")
+    high = high * (1 - 1e-12)
+    for _ in range(_BISECTION_STEPS):
+        middle = (low + high) / 2
+        if residual(middle) >= 0:
+            high = middle
+        else:
+            low = middle
+    return (low + high) / 2
+
+
+def section_state(
+    polygon: tuple[Point, ...],
+    steel: tuple[SteelPoint, ...],
+    materials: tuple[ConcreteBlock, SteelModel],
+    axial: float,
+    theta: float,
+) -> SectionState:
+    """Estado nominal con la dirección de compresión θ fija (θ = 90° comprime la cara +y; θ = 0 la cara +x)."""
+    if not steel:
+        raise ValueError("la sección no tiene acero")
+    concrete, model = materials
+    frame = _frame(polygon, steel, theta)
+    c = _neutral_axis(polygon, steel, frame, materials, axial)
+    a = concrete.beta1 * c
+    _, gx, gy = area_centroid(polygon)
+    area, bx, by = _block(polygon, frame, a)
+    block = concrete.stress_factor * concrete.fc * area
+    mn3, mn2 = block * (by - gy), block * (bx - gx)
+    states = []
+    for bar, depth in zip(steel, frame.depths, strict=True):
+        state = _bar_state(bar, depth, c, concrete, model)
+        force = _bar_force(depth, bar.area, state.stress, c, concrete)
+        mn3 -= force * (bar.y - gy)
+        mn2 -= force * (bar.x - gx)
+        states.append(state)
+    extreme = max(states, key=lambda state: state.depth).strain
+    return SectionState(theta, c, a, extreme, mn3, mn2, tuple(states))
+
+
+def _angle_gap(state: SectionState, target: float) -> float:
+    gap = math.atan2(state.mn2, state.mn3) - target
+    return (gap + math.pi) % (2 * math.pi) - math.pi
+
+
+def biaxial_state(
+    polygon: tuple[Point, ...],
+    steel: tuple[SteelPoint, ...],
+    materials: tuple[ConcreteBlock, SteelModel],
+    axial: float,
+    moments: tuple[float, float],
+) -> SectionState:
+    """Estado nominal cuyo momento resistente tiene la dirección de (M3, M2), a carga axial constante."""
+    mu3, mu2 = moments
+    if mu3 == 0 and mu2 == 0:
+        return section_state(polygon, steel, materials, axial, math.pi / 2)
+    target = math.atan2(mu2, mu3)
+    guess = math.pi / 2 - target
+    step = math.pi / _DIRECTION_STEPS
+    previous_theta, previous = guess - math.pi / 2, None
+    for index in range(_DIRECTION_STEPS + 1):
+        theta = guess - math.pi / 2 + index * step
+        state = section_state(polygon, steel, materials, axial, theta)
+        gap = _angle_gap(state, target)
+        if abs(gap) < _TOLERANCE:
+            return state
+        if previous is not None and (previous > 0) != (gap > 0) and abs(previous - gap) < math.pi:
+            return _refine(polygon, steel, materials, axial, (previous_theta, theta, target))
+        previous_theta, previous = theta, gap
+    raise NoEquilibrium("no se encontró un eje neutro con la dirección del momento demandado")
+
+
+def _refine(
+    polygon: tuple[Point, ...],
+    steel: tuple[SteelPoint, ...],
+    materials: tuple[ConcreteBlock, SteelModel],
+    axial: float,
+    bracket: tuple[float, float, float],
+) -> SectionState:
+    low, high, target = bracket
+    low_gap = _angle_gap(section_state(polygon, steel, materials, axial, low), target)
+    state = section_state(polygon, steel, materials, axial, (low + high) / 2)
+    for _ in range(_DIRECTION_BISECTION_STEPS):
+        middle = (low + high) / 2
+        state = section_state(polygon, steel, materials, axial, middle)
+        gap = _angle_gap(state, target)
+        if (gap > 0) == (low_gap > 0):
+            low, low_gap = middle, gap
+        else:
+            high = middle
+    return state

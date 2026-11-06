@@ -1,9 +1,17 @@
+import math
 from typing import Any
 
 import pytest
 
 from structurelab_rc.codes.registry import PROFILES
-from structurelab_rc.domain.beam.flexure import MIN_REINFORCEMENT, NET_TENSILE_STRAIN, STRENGTH
+from structurelab_rc.domain.beam.flexure import (
+    MIN_REINFORCEMENT,
+    MIN_REINFORCEMENT_M2,
+    NET_TENSILE_STRAIN,
+    NET_TENSILE_STRAIN_BIAXIAL,
+    NET_TENSILE_STRAIN_M2,
+    STRENGTH,
+)
 from structurelab_rc.domain.beam.station import SCOPE, station_checks
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status
@@ -39,10 +47,13 @@ def test_a_well_reinforced_beam_passes_every_check() -> None:
     assert {name: check.status for name, check in checks.items()} == {
         STRENGTH: Status.PASS,
         NET_TENSILE_STRAIN: Status.PASS,
+        NET_TENSILE_STRAIN_M2: Status.PASS,
+        NET_TENSILE_STRAIN_BIAXIAL: Status.PASS,
         MIN_REINFORCEMENT: Status.PASS,
+        MIN_REINFORCEMENT_M2: Status.PASS,
     }
     phi = dict(checks[STRENGTH].values)["phi"]
-    assert checks[STRENGTH].capacity == pytest.approx(phi * dict(checks[STRENGTH].values)["Mn"])
+    assert checks[STRENGTH].capacity == pytest.approx(phi * dict(checks[STRENGTH].values)["Mn3"])
     assert checks[STRENGTH].member == "V"
     assert checks[STRENGTH].z == 0.0
 
@@ -61,7 +72,7 @@ def test_axial_compression_at_the_limit_is_blocked_as_not_a_beam() -> None:
 def test_axial_tension_is_carried_in_equilibrium() -> None:
     no_axial = _checks(_member(BOTTOM, {"Pu_kN": 0.0, "Mu_kNm": 100.0, "M2_kNm": 0.0}))[STRENGTH]
     tension = _checks(_member(BOTTOM, {"Pu_kN": -200.0, "Mu_kNm": 100.0, "M2_kNm": 0.0}))[STRENGTH]
-    assert dict(tension.values)["Mn"] < dict(no_axial.values)["Mn"]
+    assert dict(tension.values)["Mn3"] < dict(no_axial.values)["Mn3"]
 
 
 def test_tension_beyond_the_steel_capacity_fails() -> None:
@@ -131,3 +142,22 @@ def test_minimum_reinforcement_counts_every_bar_in_tension() -> None:
     depth = max((2 * 199.0 * 60.0 + 3 * 510.0 * 440.0) / area, 0.8 * 500.0)
     assert check.capacity == pytest.approx(area)
     assert check.demand == pytest.approx(1.4 * 300.0 * depth / 420.0)
+
+
+def test_weak_axis_moment_reduces_the_biaxial_capacity_and_is_checked() -> None:
+    layers = [{"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}, {"bars": ["#5", "#5"], "depth": 60.0, "role": "flexure"}]
+    alone = _checks(_member(layers, {"Pu_kN": 0.0, "Mu_kNm": 150.0, "M2_kNm": 0.0}))
+    combined = _checks(_member(layers, {"Pu_kN": 0.0, "Mu_kNm": 150.0, "M2_kNm": 60.0}))
+    assert combined[STRENGTH].demand == pytest.approx(math.hypot(150e6, 60e6))
+    assert dict(combined[STRENGTH].values)["Mn3"] < dict(alone[STRENGTH].values)["Mn3"]
+    assert combined[NET_TENSILE_STRAIN_M2].capacity is not None
+    assert combined[MIN_REINFORCEMENT_M2].demand is not None
+    assert _checks(_member(layers, {"Pu_kN": 0.0, "Mu_kNm": 150.0, "M2_kNm": 200.0}))[STRENGTH].status is Status.FAIL
+
+
+def test_weak_axis_minimum_reinforcement_uses_h_and_the_total_width() -> None:
+    layers = [{"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}, {"bars": ["#5", "#5"], "depth": 60.0, "role": "flexure"}]
+    check = _checks(_member(layers, {"Pu_kN": 0.0, "Mu_kNm": 50.0, "M2_kNm": 20.0}))[MIN_REINFORCEMENT_M2]
+    # Ancho h = 500 mm y d no menor que 0.8·bw = 240 mm: el mayor entre 0.25√f'c/fy y 1.4/fy por h·d.
+    depth = check.demand / (1.4 / 420.0 * 500.0)  # type: ignore[operator]
+    assert depth >= 240.0 - 1e-6

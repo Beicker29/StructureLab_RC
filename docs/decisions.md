@@ -376,6 +376,19 @@
   - La separación del eje débil se compara con su propia d. En ACI, la separación vertical entre ramas horizontales se compara con esa d.
   - Con torsión, las ramas horizontales cumplen Av3/s + 2At/s ≤ (ramas horizontales)·Ab/s.
 
+### D-047: d del cortante V3
+
+- **Fecha:** 2026-11-06
+- **Problema:** con la regla de As,min del eje débil (d ≥ 0.8 veces el ancho total), una viga T con salientes grandes tendría una d del cortante V3 mucho mayor que la real, porque los estribos solo están en el alma. Eso aumentaría Vs, del lado inseguro.
+- **Decisión:** en el cortante V3, d es el centroide del acero a tracción del estado de M2 solo, no menor que 0.8bw (el alma). As,min del eje débil mantiene 0.8 veces el ancho total (D-046), que solo aumenta el acero exigido. Confirmado por el usuario.
+
+### D-048: separación de estribos en el eje débil
+
+- **Fecha:** 2026-11-06
+- **Problema:** con d del eje débil cercana a 0.8bw, el límite d/2 es de unos 120 mm en una viga de 300 mm de ancho. Aplicarlo siempre haría fallar casi cualquier viga aunque V3 sea 0.
+- **Referencia:** ACI 9.7.6.2.2 y NSR-10 C.11.4.5 limitan la separación del refuerzo a cortante.
+- **Decisión:** la separación y el Av,min del eje débil se verifican solo si V3 exige refuerzo, es decir, si |V3| supera el umbral de Av,min de esa dirección. Confirmado por el usuario.
+
 ## Consultas abiertas
 
 Ninguna.

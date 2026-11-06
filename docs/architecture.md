@@ -33,7 +33,7 @@ de una misma capa que no pueden hacerlo.
 | `design/<elemento>` | Produce `ReinforcementLayout`. |
 | `detailing`, `drawing` | Neutros: usan límites ya calculados por el perfil; sin fórmulas normativas. |
 | `codes/<perfil>` | Fórmulas y constantes como funciones puras con el nombre de su ecuación o numeral. |
-| `mechanics` | Equilibrio, compatibilidad, fibras, Icr. No conoce φ ni numerales. |
+| `mechanics` | Equilibrio y compatibilidad de una sección poligonal con eje neutro de cualquier inclinación (`section.py`); `flexure.py` describe la flexión uniaxial por franjas sobre el mismo motor. No conoce φ ni numerales. |
 | `model` | Datos del proyecto y `ReinforcementLayout`. Convierte unidades al cargar. |
 | `errors` | Errores estructurados con código estable. |
 | `data` | Tablas CSV o TOML, sin código. |

@@ -6,7 +6,8 @@ import pytest
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.beam.flexure import nominal_flexure, steel_layers
-from structurelab_rc.mechanics.flexure import ConcreteBlock, FlexureState, SteelLayer, SteelModel, compression_strips, flexure_state
+from structurelab_rc.mechanics.flexure import FlexureState, SteelLayer, compression_strips, flexure_state
+from structurelab_rc.mechanics.materials import ConcreteBlock, SteelModel
 from structurelab_rc.model.project import Demands, Materials, Section
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 from structurelab_rc.setup import load_engine

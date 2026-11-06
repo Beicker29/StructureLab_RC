@@ -4,8 +4,8 @@ Herramienta de oficina para verificar, diseñar, despiezar y dibujar elementos d
 reforzado. La v1 cubrirá vigas con dos perfiles normativos, `aci-318-25` (ACI CODE-318-25)
 y `nsr-10` (NSR-10 Título C). Cada proyecto declara un solo perfil.
 
-**Estado:** Fase 2C, flexión, cortante y torsión de vigas macizas. Servicio, importación desde ETABS y
-memorias vienen en las siguientes subfases ([hoja de ruta](docs/ROADMAP.md)).
+**Estado:** Fase 2E, flexión, cortante y torsión de vigas macizas en los dos ejes, e importación desde ETABS.
+Las memorias (2F) y el servicio (2D) vienen después ([hoja de ruta](docs/ROADMAP.md)).
 
 ## Instalación
 
@@ -37,8 +37,10 @@ las barras del catálogo.
 catálogo, e informa `PASS`, `INCOMPLETE` (faltan datos) o `FAIL` (entrada inválida, con código
 de salida 1). No verifica la resistencia de la viga.
 
-`verify` valida el proyecto y verifica cada estación a flexión (φMn ≥ |Mu|, deformación neta de
-tracción mínima y As,min) y a cortante (φVn ≥ |Vu|, límite de la sección, Av,min y separación).
+`verify` valida el proyecto y verifica cada estación a flexión biaxial (φMn ≥ |Mu| en la dirección de
+(M3, M2), con la sección completa), εt mínima en tres estados (M3, M2 y biaxial) y As,min en los dos ejes;
+y a cortante en las dos direcciones (V2 y V3: resistencia, límite de la sección, Av,min y separación),
+con la interacción V2-V3 en ACI.
 Si la torsión no es despreciable (Tu ≥ φTth), el cortante se reemplaza por la verificación combinada de
 torsión: límite de la sección, refuerzo transversal, mínimo, Aℓ, separación y distribución de barras.
 Muestra demanda, capacidad, estado y numeral, y sale con 1 si algo falla.

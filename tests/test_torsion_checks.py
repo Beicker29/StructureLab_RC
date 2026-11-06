@@ -70,8 +70,8 @@ def test_hand_values_for_the_reference_beam() -> None:
 
 
 def test_torsion_bars_do_not_count_as_flexural_steel() -> None:
-    with_torsion = dict(_checks(_member())[FLEXURE_STRENGTH].values)["Mn"]
-    without = dict(_checks(_member([TOP, BOTTOM]))[FLEXURE_STRENGTH].values)["Mn"]
+    with_torsion = dict(_checks(_member())[FLEXURE_STRENGTH].values)["Mn3"]
+    without = dict(_checks(_member([TOP, BOTTOM]))[FLEXURE_STRENGTH].values)["Mn3"]
     assert with_torsion == pytest.approx(without)
 
 
@@ -185,3 +185,15 @@ def test_zero_torsion_never_triggers_the_torsion_checks() -> None:
     names = set(_checks(_member(Tu_kNm=0.0, Pu_kN=-300.0, Mu_kNm=5.0, Vu_kN=20.0)))
     assert THRESHOLD not in names
     assert TRANSVERSE not in names
+
+
+def test_horizontal_legs_carry_v3_and_torsion_together() -> None:
+    # Con Tu ≥ φTth, las ramas horizontales cumplen Av3/s + 2At/s ≤ 2·Ab/s (D-046).
+    checks = _checks(_member(V3_kN=60.0))
+    at_s = dict(checks[TRANSVERSE].values)["At/s"]
+    weak = checks["Cortante V3: resistencia"]
+    values = dict(weak.values)
+    assert values["At/s"] == pytest.approx(at_s)
+    av_s = max(60e3 / 0.75 - values["Vc"], 0.0) / (420.0 * values["d"])
+    assert weak.demand == pytest.approx(av_s + 2 * at_s)
+    assert weak.capacity == pytest.approx(2 * 129.0 / 100.0)

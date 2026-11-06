@@ -5,9 +5,9 @@ from dataclasses import replace
 
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.beam.flexure import flexure_checks
-from structurelab_rc.domain.beam.shear import missing_demands, shear_checks
+from structurelab_rc.domain.beam.shear import interaction_check, missing_demands, shear_checks, weak_shear_checks
 from structurelab_rc.domain.beam.station_input import StationInput
-from structurelab_rc.domain.beam.torsion import threshold_check, torsion_checks
+from structurelab_rc.domain.beam.torsion import TRANSVERSE, threshold_check, torsion_checks
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import blocked
@@ -36,12 +36,17 @@ def _shear_and_torsion(
     missing = missing_demands(station)
     if missing is not None:
         return (missing,)
+    given = StationInput(profile, materials, member, station, bars)
     threshold = threshold_check(profile, materials, member, station)
     if threshold is None:
-        return shear_checks(profile, materials, member, station, bars)
+        checks = (*shear_checks(profile, materials, member, station, bars), *weak_shear_checks(given))
+        interaction = interaction_check(profile, checks)
+        return checks if interaction is None else (*checks, interaction)
     if threshold.status is not Status.PASS:
         return (threshold,)
-    return threshold, *torsion_checks(StationInput(profile, materials, member, station, bars))
+    torsion = torsion_checks(given)
+    at_s = next((dict(check.values).get("At/s", 0.0) for check in torsion if check.name == TRANSVERSE), 0.0)
+    return threshold, *torsion, *weak_shear_checks(given, at_s)
 
 
 def station_checks(
