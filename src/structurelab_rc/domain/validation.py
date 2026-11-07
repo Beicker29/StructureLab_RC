@@ -81,6 +81,9 @@ def _footing_errors(footing: Footing, specs: dict[str, RebarSpec]) -> Iterator[S
         thickness += sum(diameters)
     if thickness >= footing.h:
         yield invalid_input("Las mallas y los recubrimientos no caben en el espesor de la zapata", **where)
+    dowels = footing.column.dowels
+    if dowels is not None and dowels.designation not in specs:
+        yield invalid_input(f"La barra '{dowels.designation}' de los pasadores no esta en el catalogo", **where)
 
 
 def validate_project(project: Project, bars: Sequence[RebarSpec]) -> Check:

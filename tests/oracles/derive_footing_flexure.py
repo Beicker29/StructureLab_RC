@@ -27,7 +27,7 @@ _SPEC.loader.exec_module(_PRESSURE)
 
 FC, FY, ES, BETA1 = 28.0, 420.0, 200000.0, 0.85
 GAMMA_C, GAMMA_F = 24e-6, 18e-6  # N/mm³
-BARS = {"#4": (12.7, 129.0), "#5": (15.9, 199.0), "#6": (19.1, 284.0), "#7": (22.2, 387.0)}  # diámetro, área
+BARS = {"#4": (12.7, 129.0), "#5": (15.9, 199.0), "#6": (19.1, 284.0), "#7": (22.2, 387.0), "#8": (25.4, 510.0)}  # diámetro, área
 PROFILES = {
     "aci_318_25": {"min_ratio": 0.0018, "spacing": lambda h: min(2 * h, 450.0), "tension": FY / ES + 0.003,
                    "strain_min": FY / ES + 0.003, "depth": lambda h, c, d1, d2: h - c - d1 - d2 / 2,

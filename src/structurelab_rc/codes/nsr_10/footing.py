@@ -6,6 +6,7 @@ _MAX_SPACING = 450.0
 _SPACING_THICKNESS = 3.0
 _MIN_DEPTH = 150.0
 _SIZE_FACTOR = 1.0
+_DOWEL_RATIO = 0.005
 _GRADE_350 = 350.0
 _GRADE_420 = 420.0
 _RATIO_LOW_GRADE = 0.0020
@@ -24,6 +25,8 @@ def clauses() -> dict[str, str]:
         "min_depth": "C.15.7",
         "one_way_shear": "C.15.5.1, C.15.5.2 y C.11.2",
         "punching_min_reinforcement": "no aplica en NSR-10",
+        "dowels": "C.15.8.2.1",
+        "dowel_excess": "C.15.8.1.2(a)",
     }
 
 
@@ -66,3 +69,9 @@ def one_way_concrete_shear(*, fc: float, lam: float, bw: float, d: float, h: flo
 def punching_size_factor() -> float:
     """NSR-10 no tiene factor de efecto de tamaño en el cortante en dos direcciones: λs = 1.0."""
     return _SIZE_FACTOR
+
+
+def dowel_min_ratio() -> float:
+    """C.15.8.2.1: el refuerzo que cruza la interfaz entre columna o pedestal y zapata es al menos 0.005Ag del elemento
+    soportado."""
+    return _DOWEL_RATIO

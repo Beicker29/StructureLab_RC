@@ -69,12 +69,13 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
 - **V3C Verificación geotécnica (hecha, D-056):** con los casos de servicio, pmax ≤ qa, región, fracción de contacto mínima y
   equilibrio.
 - **V3D Verificación estructural** (V3D.1 flexión, As,min, separación, franja y altura: hecha, D-061; V3D.2 cortante y
-  punzonamiento: hecha, D-063; sigue V3D.3 desarrollo, aplastamiento y pasadores): con la presión mayorada, flexión en las caras de la columna (mallas inferior y
+  punzonamiento: hecha, D-063; V3D.3 desarrollo, aplastamiento y pasadores: hecha, D-065): con la presión mayorada, flexión en las caras de la columna (mallas inferior y
   superior), As,min y separación, cortante en una dirección, punzonamiento con γv·Msc, distribución γs, altura
   mínima, desarrollo de las barras, aplastamiento y pasadores.
 - **V3E Memoria y huella:** memoria, resultados y huella de zapatas.
 - **V3F Diseño:** dimensiones en planta, altura y barras del catálogo; soluciones ordenadas y verificadas con V3C y V3D.
 
-Pendientes de la v3: revisión geotécnica a deslizamiento y a volcamiento (complementan la de capacidad de soporte de
+Pendientes de la v3: reducciones opcionales del desarrollo (As requerido/As suministrado, factores de gancho por
+recubrimiento y confinamiento) y refuerzo con recubrimiento epóxico (D-065), revisión geotécnica a deslizamiento y a volcamiento (complementan la de capacidad de soporte de
 V3C; ACI 13.2.6.1 y NSR-10 C.15.2 remiten al reglamento general), diseño en concreto simple (momento negativo sin malla superior, D-059), zapatas combinadas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas
 escalonadas, zapatas rotadas, pedestal de sección distinta a la columna y muros (D-052, D-055).

@@ -22,9 +22,13 @@ EQUILIBRIUM = "Zapata: equilibrio con cargas mayoradas"
 class FactoredCase:
     """Presión del suelo y carga uniforme hacia abajo (N/mm²) de un caso mayorado."""
 
-    case: str
+    load: FootingLoad
     pressure: SoilPressure
     net_load: float
+
+    @property
+    def case(self) -> str:
+        return self.load.case
 
     def net(self, polygon: tuple[Point, ...]) -> tuple[float, float, float]:
         """Carga neta hacia arriba sobre el polígono y sus momentos estáticos: ∫q dA, ∫x·q dA, ∫y·q dA, en N y N·mm.
@@ -70,7 +74,7 @@ def factored_cases(footing: Footing, soil: Soil) -> tuple[list[FactoredCase], li
             failure = invalid_input(f"La resultante mayorada sale de la base: {error}", member=footing.id, case=load.case)
             failures.append(Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", member=footing.id, case=load.case))
             continue
-        cases.append(FactoredCase(load.case, pressure, _net_load(footing, soil, load)))
+        cases.append(FactoredCase(load, pressure, _net_load(footing, soil, load)))
     return cases, failures
 
 

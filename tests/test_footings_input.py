@@ -114,13 +114,14 @@ def test_domain_validation(changes: dict[str, Any], message: str) -> None:
     assert any(message in error.message for error in check.errors)
 
 
-def test_structural_part_is_blocked_until_v3d(tmp_path: Path) -> None:
+def test_missing_dowels_are_incomplete(tmp_path: Path) -> None:
+    """Sin pasadores declarados, su verificación es INCOMPLETE: no se suponen (D-059)."""
     path = tmp_path / "zapata.json"
     path.write_text(json.dumps(_project()), encoding="utf-8")
     _, checks = run_project(path)
     assert checks[0].status is Status.PASS
-    structural = [check for check in checks if check.name == "Zapata: verificaciones pendientes"]
-    assert [(check.member, check.status) for check in structural] == [("Z1", Status.BLOCKED)]
+    dowels = [check for check in checks if check.name == "Pasadores: area minima"]
+    assert [(check.member, check.status) for check in dowels] == [("Z1", Status.INCOMPLETE)]
 
 
 def _row(case: str, step: str, forces: tuple[float, float, float, float, float]) -> dict[str, str]:

@@ -39,13 +39,24 @@ class Soil(_Input):
         return value * N_MM3_PER_KN_M3
 
 
+class Dowels(_Input):
+    """Pasadores entre la columna (o el pedestal) y la zapata: designación y número de barras (D-059, punto 7)."""
+
+    designation: str = Field(min_length=1)
+    count: int = Field(ge=1)
+
+
 class Column(_Input):
-    """Columna rectangular cx × cy (cx a lo largo de X); offset_x y offset_y ubican su eje respecto al centroide de la base."""
+    """Columna rectangular cx × cy (cx a lo largo de X); offset_x y offset_y ubican su eje respecto al centroide de la base.
+
+    dowels son los pasadores; si faltan, sus verificaciones quedan INCOMPLETE (no se suponen).
+    """
 
     cx: PositiveFloat
     cy: PositiveFloat
     offset_x: float
     offset_y: float
+    dowels: Dowels | None = None
 
 
 class BarSet(_Input):

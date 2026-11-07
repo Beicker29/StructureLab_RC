@@ -7,6 +7,7 @@ _MAX_SPACING = 450.0
 _SPACING_THICKNESS = 2.0
 _MIN_DEPTH = 150.0
 _SIZE_FACTOR = 1.0
+_DOWEL_RATIO = 0.005
 
 
 def clauses() -> dict[str, str]:
@@ -20,6 +21,8 @@ def clauses() -> dict[str, str]:
         "min_depth": "13.3.1.2",
         "one_way_shear": "13.2.6.2(a) y 13.2.7.2",
         "punching_min_reinforcement": "8.6.1.2",
+        "dowels": "16.3.4.1",
+        "dowel_excess": "16.3.3.4",
     }
 
 
@@ -59,3 +62,9 @@ def one_way_concrete_shear(*, fc: float, lam: float, bw: float, d: float, h: flo
 def punching_size_factor() -> float:
     """13.2.6.2(b): λs = 1.0 en el cortante en dos direcciones de zapatas apoyadas en el suelo."""
     return _SIZE_FACTOR
+
+
+def dowel_min_ratio() -> float:
+    """16.3.4.1: el refuerzo que cruza la interfaz entre columna o pedestal y zapata es al menos 0.005Ag del elemento
+    soportado."""
+    return _DOWEL_RATIO

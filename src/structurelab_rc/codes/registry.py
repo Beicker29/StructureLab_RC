@@ -3,12 +3,16 @@
 from dataclasses import dataclass
 from typing import Protocol
 
+from structurelab_rc.codes.aci_318_25 import bearing as aci_bearing
+from structurelab_rc.codes.aci_318_25 import development as aci_development
 from structurelab_rc.codes.aci_318_25 import flexure as aci_flexure
 from structurelab_rc.codes.aci_318_25 import footing as aci_footing
 from structurelab_rc.codes.aci_318_25 import seismic as aci_seismic
 from structurelab_rc.codes.aci_318_25 import shear as aci_shear
 from structurelab_rc.codes.aci_318_25 import strength_assumptions as aci_strength_assumptions
 from structurelab_rc.codes.aci_318_25 import torsion as aci_torsion
+from structurelab_rc.codes.nsr_10 import bearing as nsr_bearing
+from structurelab_rc.codes.nsr_10 import development as nsr_development
 from structurelab_rc.codes.nsr_10 import flexure as nsr_flexure
 from structurelab_rc.codes.nsr_10 import footing as nsr_footing
 from structurelab_rc.codes.nsr_10 import seismic as nsr_seismic
@@ -152,6 +156,28 @@ class Footing(Protocol):
 
     def punching_size_factor(self) -> float: ...
 
+    def dowel_min_ratio(self) -> float: ...
+
+
+class Development(Protocol):
+    def clauses(self) -> dict[str, str]: ...
+
+    def tension_development_length(
+        self, *, fy: float, fc: float, lam: float, db: float, cb: float, concrete_below: float
+    ) -> float: ...
+
+    def hook_development_length(self, *, fy: float, fc: float, lam: float, db: float) -> float: ...
+
+    def compression_development_length(self, *, fy: float, fc: float, lam: float, db: float) -> float: ...
+
+
+class Bearing(Protocol):
+    def clauses(self) -> dict[str, str]: ...
+
+    def strength_reduction(self) -> float: ...
+
+    def nominal_bearing(self, fc: float, a1: float, a2: float) -> float: ...
+
 
 class Seismic(Protocol):
     def seismic_levels(self) -> frozenset[str]: ...
@@ -166,9 +192,13 @@ class Profile:
     torsion: Torsion
     seismic: Seismic
     footing: Footing
+    development: Development
+    bearing: Bearing
 
 
 PROFILES = {
-    "aci-318-25": Profile("aci-318-25", aci_strength_assumptions, aci_flexure, aci_shear, aci_torsion, aci_seismic, aci_footing),
-    "nsr-10": Profile("nsr-10", nsr_strength_assumptions, nsr_flexure, nsr_shear, nsr_torsion, nsr_seismic, nsr_footing),
+    "aci-318-25": Profile("aci-318-25", aci_strength_assumptions, aci_flexure, aci_shear, aci_torsion, aci_seismic, aci_footing,
+                          aci_development, aci_bearing),
+    "nsr-10": Profile("nsr-10", nsr_strength_assumptions, nsr_flexure, nsr_shear, nsr_torsion, nsr_seismic, nsr_footing,
+                      nsr_development, nsr_bearing),
 }

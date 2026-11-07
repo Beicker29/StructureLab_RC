@@ -27,7 +27,7 @@ from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.footing import Footing
 from structurelab_rc.model.project import Materials
 
-_MATS = {"bottom": "inferior", "top": "superior"}
+MAT_NAMES = {"bottom": "inferior", "top": "superior"}
 _FACES = {"x": ("+X", "-X"), "y": ("+Y", "-Y")}
 _AXES = {"x": 0, "y": 1}
 _NEGLIGIBLE = 1e-6  # N·mm
@@ -55,7 +55,7 @@ def _strength(profile: Profile, materials: Materials, footing: Footing, row: Bar
 
 
 def _name(kind: str, mat: str, direction: str) -> str:
-    return f"{kind} malla {_MATS[mat]} (barras {direction})"
+    return f"{kind} malla {MAT_NAMES[mat]} (barras {direction})"
 
 
 def _strength_checks(
@@ -93,7 +93,7 @@ def _strength_checks(
     return checks
 
 
-def _negative(cases: list[FaceMoments], direction: str) -> bool:
+def has_negative_moment(cases: list[FaceMoments], direction: str) -> bool:
     return any(min(case.moments[direction]) < -_NEGLIGIBLE for case in cases)
 
 
@@ -114,7 +114,7 @@ def _section_checks(
                 checks.append(replace(net_tensile_strain_check(_name("Deformacion neta de traccion", mat, direction),
                                                                clauses["net_tensile_strain"], profile, materials,
                                                                strength.state.extreme_strain), member=member))
-            if mat == "bottom" or _negative(cases, direction):
+            if mat == "bottom" or has_negative_moment(cases, direction):
                 required = ratio * row.width * footing.h
                 checks.append(Check(_name("Acero minimo", mat, direction), Status.PASS if row.area >= required else Status.FAIL,
                                     clause=clauses["min_reinforcement"], demand=required, capacity=row.area, unit="mm2",
@@ -125,7 +125,7 @@ def _section_checks(
             largest = max(spacings)
             checks.append(Check(_name("Separacion maxima", mat, direction), Status.PASS if largest <= max_spacing else Status.FAIL,
                                 clause=clauses["spacing"], demand=largest, capacity=max_spacing, unit="mm", member=member))
-            if row.band is not None and (mat == "bottom" or _negative(cases, direction)):
+            if row.band is not None and (mat == "bottom" or has_negative_moment(cases, direction)):
                 checks.append(_band_check(profile, materials, footing, (mat, row), cases))
     bottom = rows["bottom"]
     first = bottom[footing.bottom.first]

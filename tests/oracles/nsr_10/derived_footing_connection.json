@@ -1,0 +1,589 @@
+{
+  "description": "Desarrollo de las mallas, aplastamiento y pasadores de zapatas (D-059, D-065).",
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0
+  },
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "barras-rectas",
+      "description": "zapata cuadrada con barras rectas, pasadores y aplastamiento holgados",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 550.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 8
+          }
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 1500.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Desarrollo malla inferior (barras x)",
+          "status": "PASS",
+          "demand": 367.13407283718095,
+          "capacity": 900.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Desarrollo malla inferior (barras y)",
+          "status": "PASS",
+          "demand": 367.13407283718095,
+          "capacity": 900.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "PASS",
+          "demand": 1012.5,
+          "capacity": 2272.0
+        },
+        {
+          "name": "Pasadores: anclaje a compresion",
+          "status": "PASS",
+          "demand": 363.8437202976025,
+          "capacity": 443.20000000000005,
+          "clause": "C.12.3.1 y C.12.3.2"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "1.2D+1.6L",
+          "status": "PASS",
+          "demand": 1500000.0,
+          "capacity": 6265350.0,
+          "clause": "C.10.14.1 y C.9.3.2.4"
+        }
+      ]
+    },
+    {
+      "id": "ganchos-y-malla-superior",
+      "description": "voladizo corto con barras #8 en gancho y malla superior con momento negativo (ψt = 1.3)",
+      "footing": {
+        "id": "Z",
+        "lx": 1600.0,
+        "ly": 2400.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 4
+          }
+        },
+        "bottom": {
+          "first": "x",
+          "end": "hook",
+          "x": {
+            "designation": "#8",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#6",
+            "spacing": 200.0
+          }
+        },
+        "top": {
+          "first": "y",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        },
+        "loads": [
+          {
+            "case": "0.9D+E",
+            "kind": "factored",
+            "dead_factor": 0.9,
+            "live_factor": 0.0,
+            "P_kN": 250.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 180.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Desarrollo malla inferior (barras x)",
+          "status": "PASS",
+          "demand": 483.8549997674923,
+          "capacity": 525.0,
+          "clause": "C.12.5.1 y C.12.5.2"
+        },
+        {
+          "name": "Desarrollo malla inferior (barras y)",
+          "status": "PASS",
+          "demand": 363.8437202976025,
+          "capacity": 925.0,
+          "clause": "C.12.5.1 y C.12.5.2"
+        },
+        {
+          "name": "Desarrollo malla superior (barras y)",
+          "status": "PASS",
+          "demand": 477.27429468833526,
+          "capacity": 925.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "PASS",
+          "demand": 800.0,
+          "capacity": 1136.0
+        },
+        {
+          "name": "Pasadores: anclaje a compresion",
+          "status": "PASS",
+          "demand": 363.8437202976025,
+          "capacity": 580.5,
+          "clause": "C.12.3.1 y C.12.3.2"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "0.9D+E",
+          "status": "PASS",
+          "demand": 250000.0,
+          "capacity": 4950400.0,
+          "clause": "C.10.14.1 y C.9.3.2.4"
+        }
+      ]
+    },
+    {
+      "id": "rectas-insuficientes",
+      "description": "barras #8 rectas a 110 mm en un voladizo corto: cb = s/2 gobierna y el desarrollo no cabe",
+      "footing": {
+        "id": "Z",
+        "lx": 1500.0,
+        "ly": 1500.0,
+        "h": 600.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 8
+          }
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#8",
+            "spacing": 110.0
+          },
+          "y": {
+            "designation": "#8",
+            "spacing": 110.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 0.0,
+            "P_kN": 600.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Desarrollo malla inferior (barras x)",
+          "status": "FAIL",
+          "demand": 846.4130161221971,
+          "capacity": 450.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Desarrollo malla inferior (barras y)",
+          "status": "FAIL",
+          "demand": 846.4130161221971,
+          "capacity": 450.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "PASS",
+          "demand": 1012.5,
+          "capacity": 2272.0
+        },
+        {
+          "name": "Pasadores: anclaje a compresion",
+          "status": "PASS",
+          "demand": 363.8437202976025,
+          "capacity": 474.20000000000005,
+          "clause": "C.12.3.1 y C.12.3.2"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "1.2D",
+          "status": "PASS",
+          "demand": 600000.0,
+          "capacity": 6265350.0,
+          "clause": "C.10.14.1 y C.9.3.2.4"
+        }
+      ]
+    },
+    {
+      "id": "aplastamiento-excedido",
+      "description": "columna pequeña cerca del borde (A2 limitada por el borde, √(A2/A1) < 2) y carga alta: excede φBn",
+      "footing": {
+        "id": "Z",
+        "lx": 2000.0,
+        "ly": 2000.0,
+        "h": 600.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 250.0,
+          "cy": 250.0,
+          "offset_x": 760.0,
+          "offset_y": 0.0,
+          "dowels": {
+            "designation": "#7",
+            "count": 6
+          }
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 2600.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          },
+          {
+            "case": "1.4D",
+            "kind": "factored",
+            "dead_factor": 1.4,
+            "live_factor": 0.0,
+            "P_kN": 2200.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Desarrollo malla inferior (barras x)",
+          "status": "FAIL",
+          "demand": 367.13407283718095,
+          "capacity": 40.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Desarrollo malla inferior (barras y)",
+          "status": "PASS",
+          "demand": 367.13407283718095,
+          "capacity": 800.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "PASS",
+          "demand": 312.5,
+          "capacity": 2322.0
+        },
+        {
+          "name": "Pasadores: anclaje a compresion",
+          "status": "PASS",
+          "demand": 422.89688956056415,
+          "capacity": 493.20000000000005,
+          "clause": "C.12.3.1 y C.12.3.2"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "1.2D+1.6L",
+          "status": "FAIL",
+          "demand": 2600000.0,
+          "capacity": 1856399.9999999998,
+          "clause": "C.10.14.1 y C.9.3.2.4"
+        },
+        {
+          "name": "Pasadores: compresion sobre el aplastamiento",
+          "case": "1.2D+1.6L",
+          "status": "FAIL",
+          "demand": 2723.8095238095248,
+          "capacity": 2322.0
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "1.4D",
+          "status": "FAIL",
+          "demand": 2200000.0,
+          "capacity": 1856399.9999999998,
+          "clause": "C.10.14.1 y C.9.3.2.4"
+        },
+        {
+          "name": "Pasadores: compresion sobre el aplastamiento",
+          "case": "1.4D",
+          "status": "PASS",
+          "demand": 1258.6080586080595,
+          "capacity": 2322.0
+        }
+      ]
+    },
+    {
+      "id": "sin-pasadores",
+      "description": "sin pasadores declarados: INCOMPLETE, también para el exceso de aplastamiento",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 550.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 250.0,
+          "cy": 250.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 2600.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Desarrollo malla inferior (barras x)",
+          "status": "PASS",
+          "demand": 367.13407283718095,
+          "capacity": 1000.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Desarrollo malla inferior (barras y)",
+          "status": "PASS",
+          "demand": 367.13407283718095,
+          "capacity": 1000.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "INCOMPLETE"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "1.2D+1.6L",
+          "status": "FAIL",
+          "demand": 2600000.0,
+          "capacity": 1933749.9999999998,
+          "clause": "C.10.14.1 y C.9.3.2.4"
+        },
+        {
+          "name": "Pasadores: compresion sobre el aplastamiento",
+          "case": "1.2D+1.6L",
+          "status": "INCOMPLETE"
+        }
+      ]
+    },
+    {
+      "id": "pasadores-largos",
+      "description": "zapata delgada con pasadores #8: el anclaje a compresión no cabe",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 400.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0,
+          "dowels": {
+            "designation": "#8",
+            "count": 4
+          }
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 0.0,
+            "P_kN": 700.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Desarrollo malla inferior (barras x)",
+          "status": "PASS",
+          "demand": 367.13407283718095,
+          "capacity": 900.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Desarrollo malla inferior (barras y)",
+          "status": "PASS",
+          "demand": 367.13407283718095,
+          "capacity": 900.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4"
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "PASS",
+          "demand": 1012.5,
+          "capacity": 2040.0
+        },
+        {
+          "name": "Pasadores: anclaje a compresion",
+          "status": "FAIL",
+          "demand": 483.8549997674923,
+          "capacity": 293.20000000000005,
+          "clause": "C.12.3.1 y C.12.3.2"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "1.2D",
+          "status": "PASS",
+          "demand": 700000.0,
+          "capacity": 6265350.0,
+          "clause": "C.10.14.1 y C.9.3.2.4"
+        }
+      ]
+    }
+  ]
+}

@@ -52,6 +52,7 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 | `surcharge_live_kNm2` | kN/m² | Sobrecarga superimpuesta viva sobre el relleno (0 si no hay). |
 | `column.cx`, `column.cy` | mm | Dimensiones de la columna a lo largo de X y de Y. |
 | `column.offset_x`, `column.offset_y` | mm | Posición del eje de la columna respecto al centroide de la base. |
+| `column.dowels.designation`, `column.dowels.count` | -, - | Pasadores entre la columna y la zapata: barra del catálogo y número. Si faltan, sus verificaciones salen `INCOMPLETE`. |
 | `bottom` | objeto | Malla inferior (abajo). |
 | `top` | objeto o `null` | Malla superior, o `null` si no hay. |
 | `loads` | lista | Casos de carga (abajo). |
@@ -63,7 +64,7 @@ El relleno y las sobrecargas ocupan el área de la base menos la de la columna.
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `first` | texto | Dirección de las barras más cercanas a la cara de la zapata: `x` o `y`. Define la d de cada dirección. |
-| `end` | texto | Cómo terminan las barras: `straight` (rectas) o `hook` (gancho estándar). Se usará para el desarrollo (V3D.3). |
+| `end` | texto | Cómo terminan las barras: `straight` (rectas) o `hook` (gancho estándar); define la longitud de desarrollo. |
 | `x.designation`, `x.spacing` | -, mm | Barras paralelas a X: designación del catálogo y separación centro a centro. |
 | `y.designation`, `y.spacing` | -, mm | Barras paralelas a Y. |
 | `x.band_spacing` o `y.band_spacing` | mm | Opcional, solo en la dirección corta de una zapata rectangular: separación en la franja central de ancho igual al lado corto, centrada en la columna; fuera de ella rige `spacing`. |
@@ -129,7 +130,11 @@ H = h + altura del pedestal. Las excentricidades son ex = My base/N y ey = −Mx
 | Cortante en una dirección (barras x o y) | Por caso mayorado: Vu de la carga neta más allá de la sección a d de cada cara frente a φVc, con la d de esa dirección. | ACI 13.2.6.2(a) y 13.2.7.2; NSR-10 C.15.5 y C.11.2 |
 | Punzonamiento | Por caso mayorado: esfuerzo máximo vu = Vu/(b0·d) + γv·Msc·c/Jc en los dos ejes, en el perímetro a d/2 (recortado con la base: αs = 40, 30 o 20), frente a φvc. Valores: Vu, b0, d, αs, γv y vuv. | ACI 22.6.5.2, 22.6.5.3 y 8.4.4.2; NSR-10 C.11.11.2.1 y C.11.11.7 |
 | Acero mínimo por punzonamiento (barras x o y) | Solo ACI, cuando vuv > φ0.17√f'c: As,min de 8.6.1.2 frente a las barras de la malla inferior dentro de bslab. | ACI 8.6.1.2 |
-| Zapata: verificaciones pendientes | Desarrollo, aplastamiento y pasadores (V3D.3); sale `BLOCKED`. | - |
+| Desarrollo malla … (barras x o y) | Longitud de desarrollo (recta o con gancho) frente a la disponible desde la cara de la columna hasta el extremo de la barra. La superior, solo con momento negativo. | ACI 25.4.2 y 25.4.3; NSR-10 C.12.2 y C.12.5 |
+| Pasadores: área mínima | Área de los pasadores frente a 0.005 por el área de la columna. | ACI 16.3.4.1; NSR-10 C.15.8.2.1 |
+| Pasadores: anclaje a compresión | ldc frente al espacio hasta la malla inferior. | ACI 25.4.9; NSR-10 C.12.3 |
+| Aplastamiento en la zapata | Por caso mayorado: Pu frente a φ·0.85f'c·A1·√(A2/A1) ≤ 2 (A2 del tronco de pirámide 1:2). | ACI 22.8.3.2; NSR-10 C.10.14.1 |
+| Pasadores: compresión sobre el aplastamiento | Si Pu > φBn: área de los pasadores frente a (Pu − φBn)/(φ·fy). | ACI 16.3.3.4; NSR-10 C.15.8.1.2(a) |
 
 Si la resultante cae fuera de la base o N no es de compresión, ambas verificaciones del caso son FAIL ("Sin
 equilibrio con el suelo"). Sin casos de servicio, la presión admisible sale INCOMPLETE.

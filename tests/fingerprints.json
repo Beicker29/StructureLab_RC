@@ -8,8 +8,8 @@
     "memoria.txt": "6eeacb932cb67b360ab978e6f54b78457fd9930a4df219ff71e5d8bec37e1c2e"
   },
   "examples/aci_318_25/zapatas/zapata_aislada.json": {
-    "resultado.json": "8a76334e2d9e4565dc46be356f6a1558fc361c5075baf98eefcaf25859bbda53",
-    "memoria.txt": "c2a26365793723076f5137aa981582c9a7b67b6cb8848a8f919fdf355ac5760b"
+    "resultado.json": "1629d16fec813f9d2d75e8a94af477d046591817a3036fb555392cbccbd92344",
+    "memoria.txt": "6325bcb2b01c3ab45b5130da66b020c368de3216638023c2aa1e57fd7903595f"
   },
   "examples/etabs/vigas/plantilla_vigas_nsr10.json": {
     "resultado.json": "9d5f00f7bdfe9fa0e318de13cab6bd0d8d24543c478c5eab531a7bbd48d875b9",
@@ -24,7 +24,7 @@
     "memoria.txt": "c7b0de5187e338cee497fce6a443a5869c1531ecf3b891acfb6b3ecf20eede8f"
   },
   "examples/nsr_10/zapatas/zapata_aislada.json": {
-    "resultado.json": "0e68926177ff2378776a1b71abfcf3820b97b3a21d5d0c5de423ef7867a24a57",
-    "memoria.txt": "e6fc1f5a542a5c8bdf91b829d26a55a90f97b058df2c9ac0206b9999259fa8e9"
+    "resultado.json": "7c0189f69d6ef0448be1671c12dfffbbc9d1f797057deee5274428db613ac588",
+    "memoria.txt": "41e570d7330e54fa47bad524bedb1ad9ebbc980998245e514bdee698c1c126fd"
   }
 }

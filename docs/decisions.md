@@ -542,6 +542,27 @@
 - **Diferencias reportadas:** punzonamiento dentro de ±1 % (Vu = 712.4 frente a 712 kips, b0 = 200 in, vu = 111.3 frente a 111 psi, φvc = 176.3 frente a 177 psi). Una dirección: Vu = 163.4 y 169.35 kips frente a 166 (−1.6 % y +2.02 %) y φVc = 407.4 y 394.9 kips frente a 392 (+3.9 % y +0.7 %). Causas: la d de cada capa frente a la d promedio (D-062); el ACI en SI usa 0.17√f'c (MPa) y Wight 2√f'c (psi) = 0.166√f'c (+2.4 %; D-015 no convierte constantes); y Wight imprime 166 kips aunque su cálculo da 166.37.
 - **Decisión del usuario:** el ejemplo se compara en `tests/oracles/<perfil>/wight_footing.json` con ±1 % en el punzonamiento, ±2.5 % en Vu de una dirección y ±4 % en φVc de una dirección. El valor impreso del libro no se modifica.
 
+### D-065: desarrollo, aplastamiento y pasadores de zapatas (V3D.3)
+
+- **Fecha:** 2026-11-07
+- **Decisión del usuario (recomendaciones aprobadas):**
+  1. ld con la ecuación detallada (ACI 25.4.2.4, NSR-10 C.12.2.3) y Ktr = 0; cb es el menor entre la distancia del centro de la barra a la superficie más cercana y la mitad de la separación.
+  2. Sin reducciones opcionales en la v3: ni As requerido/As suministrado (ACI 25.4.10.1, NSR-10 C.12.2.5) ni los factores de gancho por recubrimiento o confinamiento (ACI ψcc = ψr = 1.0, permitido por 25.4.3.2; NSR-10 sin C.12.5.3). Quedan pendientes en la hoja de ruta.
+  3. Longitud disponible: la menor distancia de una cara de la columna al borde, menos el recubrimiento del extremo; malla superior solo con momento negativo en esa dirección y ψt = 1.3 si hay más de 300 mm de concreto debajo.
+  4. La compresión que excede φBn la toman los pasadores: As ≥ (Pu − φBn)/(φ·fy) con φ = 0.65.
+  5. Los pasadores llegan a la malla inferior: espacio para ldc = h − recubrimiento − db1 − db2; el gancho no cuenta a compresión.
+- **Implementación (DRY):** las longitudes de desarrollo están en `codes/<perfil>/development.py` y el aplastamiento en `codes/<perfil>/bearing.py`, reutilizables por vigas y columnas; `domain/development.py` elige la ecuación (recta, gancho o compresión) y arma el Check; `domain/footing/connection.py` solo calcula longitudes disponibles, A2 y los pasadores. A2 es la base del tronco de pirámide 1:2 bajo la columna contenido en la zapata: (cx + 2k)(cy + 2k), con k el menor entre 2h y las distancias de la columna a los bordes. El refuerzo se toma sin recubrimiento epóxico (ψe = 1); la entrada aún no lo declara.
+- **Oráculo:** `tests/oracles/derive_footing_connection.py`, sin importar el paquete; 6 casos por perfil.
+
+### D-066: constante de la ecuación de ganchos del ACI 318-25 (C-014)
+
+- **Fecha:** 2026-11-07
+- **Problema:** el PDF de `references/` imprime en 25.4.3.1(a) ldh = fy·ψe·ψs·ψcc·ψr/(21λ√f'c)·db, que en SI da 3.8db (96 mm para una barra #8), cinco veces menos que el ACI 318-19 y que la NSR-10 C.12.5.2. El comentario R25.4.3.1 dice que la expresión restaura la del ACI 318-14 con modificaciones menores; en SI, esa ecuación es (0.24ψe·fy/(λ√f'c))·db = fy/(4.17λ√f'c)·db.
+- **Decisión del usuario:** se usa ldh = fy·ψe·ψs·ψcc·ψr/(4.2λ√f'c)·db (constante `_HOOK_CONSTANT` en `codes/aci_318_25/development.py`). Con ella, una barra #8 da 480 mm (NSR-10: 484 mm).
+
 ## Consultas abiertas
 
-Ninguna.
+### C-015: fe de erratas del ACI 318-25 (SI)
+
+- **Problema:** el usuario compartió la fe de erratas del ACI 318-25 (SI) en Scribd (https://es.scribd.com/document/1076078086/Aci-318-25-Errata-Si), pero el sitio solo muestra la portada sin iniciar sesión; no se pudo leer ningún numeral.
+- **Pendiente:** obtener el PDF (por ejemplo en `references/`, sin versionar) y revisar cada corrección que afecte a lo implementado: capítulos 7, 8, 9, 13, 16, 20 a 22, 24 y 25.
