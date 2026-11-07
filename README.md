@@ -29,6 +29,7 @@ structurelab-rc validate examples/nsr_10/beam_t.json
 structurelab-rc verify examples/nsr_10/beam_t.json
 structurelab-rc import-etabs "examples/etabs/Element Forces - Beams.xlsx" examples/etabs/plantilla_nsr10.json --output results/etabs.json
 structurelab-rc report results/etabs.json --output results/etabs
+structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/etabs/zapatas/plantilla_zapatas_nsr10.json --output results/zapatas.json
 ```
 
 `report` verifica el proyecto y escribe en la carpeta de salida `resultado.json` (todo el detalle, en kN, kN·m, mm
@@ -79,6 +80,15 @@ por tramos (`segments`, en mm desde la estación 0 de ETABS). Cada viga se ident
 se importan todas las combinaciones, o las listadas en `combinations`, y las filas Max y Min de una
 envolvente se tratan como dos estados de carga. La tabla debe venir en m, kN y kN-m. El proyecto generado
 se verifica después con `verify`.
+
+`import-etabs-footings` genera un proyecto de zapatas (v3, en curso) a partir de dos tablas "Joint Reactions" de
+ETABS, una con las combinaciones de servicio y otra con las mayoradas, y de una plantilla con el perfil, los
+materiales, el suelo (`allowable_pressure_kPa`, `min_contact_fraction` y los pesos unitarios en kN/m³), el factor
+de carga muerta de cada combinación mayorada (`dead_load_factors`) y los tipos de zapata. Cada tipo lista sus nudos
+por Unique Name y declara solo dimensiones primarias (lx, ly, h, columna, relleno y pedestal) y las mallas
+inferior y superior; el área, las inercias, los módulos, el núcleo central y los pesos se calculan. La reacción
+de ETABS se convierte en la acción sobre la zapata: P = FZ, Vx = −FX, Vy = −FY, Mx = −MX y My = −MY. Las
+verificaciones de zapatas aún no existen y el resultado es `BLOCKED`. La plantilla de ejemplo usa datos supuestos.
 
 ## Ejemplos y resultados
 

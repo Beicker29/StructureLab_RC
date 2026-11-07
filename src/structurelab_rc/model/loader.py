@@ -7,7 +7,7 @@ from pydantic import BaseModel, ValidationError
 
 from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.model.project import Project
-from structurelab_rc.model.template import EtabsTemplate
+from structurelab_rc.model.template import EtabsFootingTemplate, EtabsTemplate
 
 
 class ProjectLoadError(Exception):
@@ -40,3 +40,7 @@ def load_project(path: Path) -> Project:
 
 def load_template(path: Path) -> EtabsTemplate:
     return _load(path, EtabsTemplate, "la plantilla")
+
+
+def load_footing_template(path: Path) -> EtabsFootingTemplate:
+    return _load(path, EtabsFootingTemplate, "la plantilla de zapatas")

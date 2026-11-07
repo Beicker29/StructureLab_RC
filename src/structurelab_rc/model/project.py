@@ -4,6 +4,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
+from structurelab_rc.model.footing import Footing, Soil
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 
 N_PER_KN = 1e3
@@ -120,8 +121,25 @@ class Member(_Input):
 
 
 class Project(_Input):
+    """Vigas (members), zapatas (footings) o ambas; las zapatas requieren los datos del suelo (D-052)."""
+
     description: str
     profile: str
     seismic: SeismicFacts
     materials: Materials
-    members: tuple[Member, ...] = Field(min_length=1)
+    members: tuple[Member, ...] = ()
+    soil: Soil | None = None
+    footings: tuple[Footing, ...] = ()
+
+    @model_validator(mode="after")
+    def _check_content(self) -> Self:
+        if not self.members and not self.footings:
+            raise ValueError("el proyecto debe tener al menos un miembro o una zapata")
+        if self.footings and self.soil is None:
+            raise ValueError("las zapatas requieren los datos del suelo (soil)")
+        if self.soil is not None and not self.footings:
+            raise ValueError("soil solo se declara con zapatas")
+        ids = [member.id for member in self.members] + [footing.id for footing in self.footings]
+        if len(ids) != len(set(ids)):
+            raise ValueError("los identificadores de miembros y zapatas deben ser únicos")
+        return self

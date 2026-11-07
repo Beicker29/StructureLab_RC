@@ -46,6 +46,7 @@ jobs:
           example="$PWD/examples/nsr_10/beam_t.json"
           workbook="$PWD/examples/etabs/Element Forces - Beams.xlsx"
           template="$PWD/examples/etabs/plantilla_nsr10.json"
+          footings="$PWD/examples/etabs/zapatas"
           cd "$RUNNER_TEMP"
           python -m venv clean
           if [ "$RUNNER_OS" = "Windows" ]; then bin=clean/Scripts; else bin=clean/bin; fi
@@ -56,5 +57,7 @@ jobs:
           "$bin/structurelab-rc" verify "$example"
           "$bin/structurelab-rc" import-etabs "$workbook" "$template" --output etabs.json
           "$bin/structurelab-rc" validate etabs.json
+          "$bin/structurelab-rc" import-etabs-footings "$footings/Joint Reactions - Servicio.xlsx" "$footings/Joint Reactions - Ultimas.xlsx" "$footings/plantilla_zapatas_nsr10.json" --output zapatas.json
+          "$bin/structurelab-rc" validate zapatas.json
           "$bin/structurelab-rc" report "$example" --output reporte
           test -s reporte/resultado.json && test -s reporte/memoria.txt && test -s reporte/memoria.pdf

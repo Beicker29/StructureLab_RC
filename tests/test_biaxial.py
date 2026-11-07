@@ -4,7 +4,8 @@ import pytest
 
 from structurelab_rc.mechanics.flexure import SteelLayer, compression_strips, flexure_state
 from structurelab_rc.mechanics.materials import ConcreteBlock, SteelModel
-from structurelab_rc.mechanics.section import SteelPoint, area_centroid, biaxial_state, section_state
+from structurelab_rc.mechanics.polygon import area_centroid
+from structurelab_rc.mechanics.section import SteelPoint, biaxial_state, section_state
 
 CONCRETE = ConcreteBlock(28.0, 0.85, 0.85, 0.003)
 STEEL = SteelModel(420.0, 200_000.0)

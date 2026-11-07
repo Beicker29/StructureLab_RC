@@ -5,6 +5,7 @@ from typing import Any
 
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
+from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, Soil
 from structurelab_rc.model.project import Project
 from structurelab_rc.reporting.units import kN, kNm
 
@@ -67,6 +68,38 @@ def check_data(check: Check) -> dict[str, Any]:
     }
 
 
+_MM2_PER_M2 = 1e6
+_MM3_PER_M3 = 1e9
+_MM4_PER_M4 = 1e12
+
+
+def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str, Any]:
+    """Zapata con sus propiedades derivadas de las dimensiones (nunca declaradas) y sus verificaciones."""
+    footing_weight, pedestal_weight, fill_weight = footing.weights(soil)
+    kern_x, kern_y = footing.kern
+    properties = {
+        "A [m2]": footing.area / _MM2_PER_M2,
+        "Ix [m4]": footing.inertia_x / _MM4_PER_M4,
+        "Iy [m4]": footing.inertia_y / _MM4_PER_M4,
+        "Sx [m3]": footing.modulus_x / _MM3_PER_M3,
+        "Sy [m3]": footing.modulus_y / _MM3_PER_M3,
+        "nucleo lx/6 [mm]": kern_x,
+        "nucleo ly/6 [mm]": kern_y,
+        "W zapata [kN]": kN(footing_weight),
+        "W pedestal [kN]": kN(pedestal_weight),
+        "W relleno [kN]": kN(fill_weight),
+    }
+    geometry = footing.model_dump(mode="json", include={"lx", "ly", "h", "cover", "fill_height", "pedestal_height", "column"})
+    return {
+        "id": footing.id,
+        "geometry [mm]": geometry,
+        "properties": {key: significant(value) for key, value in properties.items()},
+        "loads": len(footing.loads),
+        "status": _status(checks),
+        "checks": [check_data(check) for check in checks],
+    }
+
+
 def _status(checks: list[Check]) -> str:
     return str(aggregate(check.status for check in checks)) if checks else str(Status.PASS)
 
@@ -105,4 +138,12 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
             "stations": stations,
         })
     results["members"] = members
+    if project.footings and project.soil is not None:
+        soil = project.soil
+        results["soil"] = {"qa [kPa]": significant(soil.allowable_pressure / MPA_PER_KPA),
+                           "contacto minimo [-]": soil.min_contact_fraction,
+                           "gamma concreto [kN/m3]": significant(soil.unit_weight_concrete / N_MM3_PER_KN_M3),
+                           "gamma relleno [kN/m3]": significant(soil.unit_weight_fill / N_MM3_PER_KN_M3)}
+        results["footings"] = [footing_data(footing, soil, [check for check in station_checks if check.member == footing.id])
+                               for footing in project.footings]
     return results

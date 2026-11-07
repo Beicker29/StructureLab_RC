@@ -3,6 +3,9 @@
 Herramienta de oficina. La v1 cubre vigas con los perfiles `aci-318-25` y `nsr-10`.
 Cada fase se cierra con pruebas, huella y decisiones registradas antes de abrir la siguiente.
 
+**Orden vigente:** cerradas las subfases 2A, 2B, 2C, 2E y 2F, sigue la v3 (zapatas). Quedan pendientes
+la subfase 2D, las Fases 3 a 5 de vigas, las mejoras de la memoria y la v2.
+
 ## v1: vigas
 
 ### Fase 0: andamiaje
@@ -51,6 +54,25 @@ Entrega las mejores soluciones ordenadas, cada una verificada con la Fase 2 y la
 Marcas, longitudes de corte, doblado, empalmes ubicados, cartilla y cantidades.
 Modelo de dibujo neutro, DXF y SVG de vista previa.
 
-## v2
-Columnas (P-M biaxial y confinamiento; el diagrama de interacción usará Pn = Pu/φ, D-024), luego losas, zapatas y muros, sobre el mismo
+## v2 (pendiente)
+Columnas (P-M biaxial y confinamiento; el diagrama de interacción usará Pn = Pu/φ, D-024), luego losas y muros, sobre el mismo
 `ReinforcementLayout`. Interfaz web y API cuando la v1 esté cerrada.
+
+## v3: zapatas (en curso)
+Diseño de zapatas en ambos perfiles. La presión del suelo bajo la zapata rígida se calcula con la
+solución analítica de Bellos y Bakas (2017), `references/bellos2017.pdf`. Alcance y criterios en D-052.
+Se entrega en subfases, cada una con su oráculo y la CI en verde:
+
+- **V3A Presión del suelo (hecha):** regiones A a E de Bellos e integración exacta de la presión sobre polígonos (D-053).
+- **V3B Modelo y entrada (hecha):** zapata con columna y su desplazamiento, datos del suelo, mallas inferior y
+  superior, propiedades derivadas, casos de servicio y mayorados desde dos Excel de ETABS (D-054, D-055).
+- **V3C Verificación geotécnica:** con los casos de servicio, pmax ≤ qa, región, fracción de contacto mínima y
+  equilibrio.
+- **V3D Verificación estructural:** con la presión mayorada, flexión en las caras de la columna (mallas inferior y
+  superior), As,min y separación, cortante en una dirección, punzonamiento con γv·Msc, distribución γs, altura
+  mínima, desarrollo de las barras, aplastamiento y pasadores.
+- **V3E Memoria y huella:** memoria, resultados y huella de zapatas.
+- **V3F Diseño:** dimensiones en planta, altura y barras del catálogo; soluciones ordenadas y verificadas con V3C y V3D.
+
+Pendientes de la v3: zapatas combinadas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas
+escalonadas, zapatas rotadas, pedestal de sección distinta a la columna y muros (D-052, D-055).

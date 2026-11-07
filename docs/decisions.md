@@ -410,6 +410,52 @@
 - **Fecha:** 2026-11-06
 - **Decisión del usuario:** la huella es el SHA-256 de `resultado.json` y `memoria.txt`, sin fecha, para los ejemplos de `examples/<perfil>/` y para el proyecto importado de ETABS. Se guarda en `tests/fingerprints.json` y la compara `tests/test_fingerprints.py`. Solo se actualiza (`STRUCTURELAB_UPDATE_FINGERPRINTS=1 pytest tests/test_fingerprints.py`) después de reportar un cambio de cálculo intencional.
 
+### D-052: alcance y criterios de la v3 (zapatas)
+
+- **Fecha:** 2026-11-07
+- **Referencias:** ACI 318-25 cap. 13 (13.2.6, 13.2.7, 13.3) y NSR-10 C.15; presión del suelo según Bellos y Bakas (2017), `references/bellos2017.pdf`.
+- **Decisión del usuario:**
+  1. Alcance: zapata aislada rectangular de espesor constante sobre suelo, con una columna rectangular (las circulares o poligonales como cuadradas de igual área, ACI 13.2.7.3 y NSR-10 C.15.3), que puede ir desplazada del centro. Quedan pendientes las zapatas combinadas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas escalonadas y muros.
+  2. Las cargas de servicio llegan en un Excel de ETABS distinto del de cargas mayoradas. Las de servicio se usan para la presión admisible y el contacto (ACI 13.3.1.1, NSR-10 C.15.2.2); las mayoradas, para el diseño estructural. No se generan combinaciones.
+  3. En resistencia, la presión neta sale de las cargas de la columna: el peso de la zapata y del relleno se cancela con la reacción uniforme que produce. En servicio se suman; el usuario declara el peso unitario del concreto y del relleno y la altura del relleno, sin valores por defecto.
+  4. Las fuerzas se declaran en la base de la columna y se trasladan al centroide de la base: M_base = M + V·(h + altura del pedestal) + P·desplazamiento de la columna. Convención global de ETABS: Z hacia arriba, ex = My/P y ey = −Mx/P.
+  5. El contacto se verifica solo con las cargas de servicio: se reportan la región de Bellos y la fracción de contacto, y la verificación es FAIL si no hay equilibrio (la resultante sale de la base) o si la fracción de contacto es menor que el mínimo declarado por el usuario, que es un dato obligatorio. Gobierna la condición más exigente.
+  6. El punzonamiento incluye la fracción γv·Msc del momento en los dos ejes (ACI 8.4.4.2 y 22.6, NSR-10 C.11.11.7); Msc es el momento de la columna menos el de la presión dentro del perímetro crítico.
+  7. La presión para resistencia también sigue la distribución de Bellos con las cargas mayoradas, con levantamiento si lo hay (ACI R13.2.6.3, NSR-10 CR15.2), no la presión uniforme P/A.
+  8. La malla superior se incluye desde la v3.
+
+### D-053: implementación de la presión del suelo
+
+- **Fecha:** 2026-11-07
+- **Decisión:** `mechanics/soil_pressure.py` aplica las Ecs. 8 y 13 a 31 de Bellos y Bakas (2017) y describe la presión como el plano p0 + gx·x + gy·y recortado en cero, con origen en el centroide de la base. Usa 1/xn y 1/yn en lugar de los interceptos, que son infinitos cuando el eje neutro es paralelo a un lado. En la región B, la Ec. 28 se resuelve con Newton (1 a 4 iteraciones) en lugar de la iteración directa del artículo, que cerca del borde con la región C no llega a 10⁻⁶ en 500 pasos. `mechanics/polygon.py` reúne el recorte y las integrales exactas que usan la sección y la presión del suelo.
+- **Verificación:** las fórmulas de las cinco regiones coinciden con un equilibrio resuelto por Newton, independiente del paquete, con error relativo de 10⁻¹¹ (`tests/oracles/derive_soil_pressure.py`), y con los casos frontera 1 a 5 del artículo.
+- **Erratas del artículo, reportadas al usuario:**
+  - En la Ec. 25 aparece (1/2 − |ex|/ly); por simetría con la Ec. 21 es (1/2 − |ex|/lx), y así se implementa.
+  - La Tabla 1 no se usa como oráculo: en la combinación B, ey = −0.003 m no corresponde a las presiones de las esquinas, que implican |ey| ≈ 0.022 m (probablemente 0.023).
+
+### D-054: peso propio en la presión mayorada y casos sin equilibrio (C-010)
+
+- **Fecha:** 2026-11-07
+- **Problema:** con la malla superior (D-052, punto 8), el momento negativo lo produce el peso de la zapata y del relleno sobre la zona sin contacto. Ese peso entra en la presión mayorada con el factor de carga muerta de cada combinación, que la aplicación no genera.
+- **Decisión del usuario:**
+  - La plantilla declara, para cada combinación mayorada, su factor de carga muerta; es un dato obligatorio. La presión mayorada sale de las cargas de la columna más el peso factorado de la zapata y del relleno. Con contacto total, el resultado en la malla inferior es el mismo que con la presión neta (D-052, punto 3), porque el peso uniforme se cancela.
+  - Un caso mayorado cuya resultante sale de la base, o cuya carga total no es de compresión, es FAIL ("la resultante mayorada sale de la base").
+
+### D-055: entrada de zapatas e importación de ETABS
+
+- **Fecha:** 2026-11-07
+- **Decisión del usuario:**
+  1. La presión admisible se declara en kPa y los pesos unitarios en kN/m³; se convierten a MPa y N/mm³ al cargar.
+  2. Las filas Max y Min de una combinación con envolvente son estados de carga distintos, como en vigas (D-042).
+  3. lx va a lo largo de X global y ly a lo largo de Y global; las zapatas rotadas quedan pendientes.
+  4. La plantilla agrupa los nudos en tipos de zapata: cada tipo lista sus Unique Name y declara dimensiones, columna, relleno, pedestal y mallas. El importador crea una zapata por nudo, con id `<tipo>-<Label de ETABS>`.
+  5. Las propiedades que se derivan de las dimensiones (área, inercias, módulos de sección, núcleo central, volúmenes y pesos) se calculan y se reportan; nunca se declaran.
+- **Implementación:**
+  - Las tablas "Joint Reactions" dan la fuerza del apoyo sobre la estructura; la acción sobre la zapata es la opuesta: P = FZ, Vx = −FX, Vy = −FY, Mx = −MX y My = −MY, en la base de la columna.
+  - El pedestal tiene la sección de la columna y el relleno ocupa el área de la base menos la de la columna en toda su altura.
+  - Cada malla declara qué dirección va más cerca de la cara (`first`), porque eso define la d de cada dirección.
+  - Mientras no existan V3C y V3D, cada zapata devuelve una verificación `BLOCKED`.
+
 ## Consultas abiertas
 
 Ninguna.

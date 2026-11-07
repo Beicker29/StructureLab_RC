@@ -11,8 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from structurelab_rc.mechanics.materials import ConcreteBlock, NoEquilibrium, SteelModel
-
-Point = tuple[float, float]
+from structurelab_rc.mechanics.polygon import Point, area_centroid, clip
 
 _BISECTION_STEPS = 100
 _RELATIVE_TOLERANCE = 1e-13
@@ -53,33 +52,6 @@ class SectionState:
     bars: tuple[PointState, ...]
 
 
-def area_centroid(polygon: tuple[Point, ...]) -> tuple[float, float, float]:
-    """Área y centroide de un polígono simple (fórmula del área de Gauss); área cero si es degenerado."""
-    area = cx = cy = 0.0
-    for (x1, y1), (x2, y2) in zip(polygon, (*polygon[1:], polygon[0]), strict=True):
-        cross = x1 * y2 - x2 * y1
-        area += cross
-        cx += (x1 + x2) * cross
-        cy += (y1 + y2) * cross
-    if abs(area) < _TOLERANCE:
-        return 0.0, 0.0, 0.0
-    return abs(area) / 2, cx / (3 * area), cy / (3 * area)
-
-
-def _clip(polygon: tuple[Point, ...], u: Point, level: float) -> tuple[Point, ...]:
-    """Parte del polígono con u·p ≥ level (algoritmo de Sutherland-Hodgman con un solo semiplano)."""
-    kept: list[Point] = []
-    for current, following in zip(polygon, (*polygon[1:], polygon[0]), strict=True):
-        p1 = u[0] * current[0] + u[1] * current[1] - level
-        p2 = u[0] * following[0] + u[1] * following[1] - level
-        if p1 >= 0:
-            kept.append(current)
-        if (p1 >= 0) != (p2 >= 0):
-            t = p1 / (p1 - p2)
-            kept.append((current[0] + t * (following[0] - current[0]), current[1] + t * (following[1] - current[1])))
-    return tuple(kept)
-
-
 @dataclass(frozen=True)
 class _Frame:
     """Geometría de una orientación: dirección de compresión, nivel de la fibra extrema y distancias de las barras."""
@@ -108,7 +80,7 @@ def _bar_force(depth: float, area: float, stress: float, c: float, concrete: Con
 
 
 def _block(polygon: tuple[Point, ...], frame: _Frame, a: float) -> tuple[float, float, float]:
-    return area_centroid(_clip(polygon, frame.u, frame.top - a))
+    return area_centroid(clip(polygon, frame.u, frame.top - a))
 
 
 def _residual(

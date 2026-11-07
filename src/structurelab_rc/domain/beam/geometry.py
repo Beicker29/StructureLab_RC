@@ -3,7 +3,8 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from structurelab_rc.mechanics.section import Point, SteelPoint
+from structurelab_rc.mechanics.polygon import Point
+from structurelab_rc.mechanics.section import SteelPoint
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.project import Section
 from structurelab_rc.model.reinforcement import BarLayer, BarPosition, BarSpacing, ReinforcementLayout

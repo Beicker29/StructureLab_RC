@@ -1,0 +1,751 @@
+{
+  "description": "Presión del suelo bajo zapata rígida rectangular sin tracción (Bellos y Bakas 2017). Esquinas en el orden (−x, −y), (+x, −y), (+x, +y), (−x, +y); MPa.",
+  "lx": 2000.0,
+  "ly": 1500.0,
+  "load": 1000000.0,
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "caso1",
+      "source": "Bellos caso 1, Ec. 33",
+      "ex": 200.0,
+      "ey": 0.0,
+      "region": "C",
+      "corners": [
+        0.13333333333333333,
+        0.5333333333333333,
+        0.5333333333333333,
+        0.13333333333333333
+      ],
+      "contact_fraction": 1.0
+    },
+    {
+      "id": "caso2",
+      "source": "Bellos caso 2, Ec. 36",
+      "ex": -500.0,
+      "ey": 0.0,
+      "region": "E",
+      "corners": [
+        0.8888888888888888,
+        0.0,
+        0.0,
+        0.8888888888888888
+      ],
+      "contact_fraction": 0.75
+    },
+    {
+      "id": "caso3",
+      "source": "Bellos caso 3, Ec. 40",
+      "ex": 333.3333333333333,
+      "ey": 0.0,
+      "region": "C",
+      "corners": [
+        0.0,
+        0.6666666666666666,
+        0.6666666666666666,
+        0.0
+      ],
+      "contact_fraction": 1.0
+    },
+    {
+      "id": "caso4",
+      "source": "Bellos caso 4, Ecs. 42 y 43",
+      "ex": 500.0,
+      "ey": 375.0,
+      "region": "A",
+      "corners": [
+        0.0,
+        0.0,
+        2.0,
+        0.0
+      ],
+      "contact_fraction": 0.5
+    },
+    {
+      "id": "caso5",
+      "source": "Bellos caso 5, Ecs. 46 y 47",
+      "ex": -222.22222222222223,
+      "ey": -83.33333333333333,
+      "region": "C",
+      "corners": [
+        0.6666666666666666,
+        0.2222222222222222,
+        0.0,
+        0.4444444444444444
+      ],
+      "contact_fraction": 1.0
+    },
+    {
+      "id": "newton00",
+      "source": "equilibrio por Newton",
+      "ex": 315.88715942468457,
+      "ey": 687.1510318292433,
+      "region": "D",
+      "corners": [
+        0.0,
+        0.0,
+        8.588013694969,
+        2.74285402257
+      ],
+      "contact_fraction": 0.108085040317
+    },
+    {
+      "id": "newton01",
+      "source": "equilibrio por Newton",
+      "ex": 573.5686878590709,
+      "ey": 234.1852645259274,
+      "region": "E",
+      "corners": [
+        0.0,
+        0.546171107095,
+        1.677584713853,
+        0.0
+      ],
+      "contact_fraction": 0.551959102317
+    },
+    {
+      "id": "newton02",
+      "source": "equilibrio por Newton",
+      "ex": 288.6409446733744,
+      "ey": -370.2374426168512,
+      "region": "D",
+      "corners": [
+        0.497721300331,
+        1.359579913014,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.669810431608
+    },
+    {
+      "id": "newton03",
+      "source": "equilibrio por Newton",
+      "ex": 874.6667407389243,
+      "ey": 324.8490513484507,
+      "region": "E",
+      "corners": [
+        0.0,
+        0.858841228081,
+        7.027736088172,
+        0.0
+      ],
+      "contact_fraction": 0.140424526042
+    },
+    {
+      "id": "newton04",
+      "source": "equilibrio por Newton",
+      "ex": 705.0204938731359,
+      "ey": -199.4701826181027,
+      "region": "E",
+      "corners": [
+        0.0,
+        2.250523739656,
+        0.913210880579,
+        0.0
+      ],
+      "contact_fraction": 0.397753213372
+    },
+    {
+      "id": "newton05",
+      "source": "equilibrio por Newton",
+      "ex": 890.8695785066989,
+      "ey": -326.47378419399763,
+      "region": "E",
+      "corners": [
+        0.0,
+        8.103036793016,
+        0.96002570041,
+        0.0
+      ],
+      "contact_fraction": 0.121880919204
+    },
+    {
+      "id": "newton06",
+      "source": "equilibrio por Newton",
+      "ex": -174.75475923475702,
+      "ey": -304.5439846661245,
+      "region": "B",
+      "corners": [
+        0.970217463399,
+        0.55883038894,
+        0.0,
+        0.072785961938
+      ],
+      "contact_fraction": 0.844727404196
+    },
+    {
+      "id": "newton07",
+      "source": "equilibrio por Newton",
+      "ex": 767.738416952128,
+      "ey": -508.63678594738917,
+      "region": "A",
+      "corners": [
+        0.0,
+        6.689332839475,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.149491739161
+    },
+    {
+      "id": "newton08",
+      "source": "equilibrio por Newton",
+      "ex": -76.89799025002175,
+      "ey": -330.1648399098817,
+      "region": "D",
+      "corners": [
+        0.889864977604,
+        0.705070726894,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.8322552239
+    },
+    {
+      "id": "newton09",
+      "source": "equilibrio por Newton",
+      "ex": 148.71326958631116,
+      "ey": -317.6853573546092,
+      "region": "B",
+      "corners": [
+        0.605772337759,
+        0.961407412241,
+        0.0245991636,
+        0.0
+      ],
+      "contact_fraction": 0.835538241708
+    },
+    {
+      "id": "newton10",
+      "source": "equilibrio por Newton",
+      "ex": 737.4462333884109,
+      "ey": -194.57303134159167,
+      "region": "E",
+      "corners": [
+        0.0,
+        2.502396617563,
+        1.044424159187,
+        0.0
+      ],
+      "contact_fraction": 0.35587875061
+    },
+    {
+      "id": "newton11",
+      "source": "equilibrio por Newton",
+      "ex": 607.2168056593791,
+      "ey": 203.0370723080322,
+      "region": "E",
+      "corners": [
+        0.0,
+        0.676739203639,
+        1.702991535413,
+        0.0
+      ],
+      "contact_fraction": 0.527581936779
+    },
+    {
+      "id": "newton12",
+      "source": "equilibrio por Newton",
+      "ex": -545.624736294741,
+      "ey": -401.1575167666201,
+      "region": "A",
+      "corners": [
+        2.365850066269,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.422681054162
+    },
+    {
+      "id": "newton13",
+      "source": "equilibrio por Newton",
+      "ex": 857.0556741467512,
+      "ey": -525.8861335828618,
+      "region": "A",
+      "corners": [
+        0.0,
+        11.705652271555,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.085428814798
+    },
+    {
+      "id": "newton14",
+      "source": "equilibrio por Newton",
+      "ex": 429.53441681304616,
+      "ey": 618.6548935882989,
+      "region": "D",
+      "corners": [
+        0.0,
+        0.0,
+        4.996835373526,
+        0.641507959925
+      ],
+      "contact_fraction": 0.197245523022
+    },
+    {
+      "id": "newton15",
+      "source": "equilibrio por Newton",
+      "ex": -36.17790011767252,
+      "ey": -163.6477543750807,
+      "region": "C",
+      "corners": [
+        0.587708239284,
+        0.515352439049,
+        0.078958427382,
+        0.151314227618
+      ],
+      "contact_fraction": 1.0
+    },
+    {
+      "id": "newton16",
+      "source": "equilibrio por Newton",
+      "ex": 253.95919774180965,
+      "ey": -114.00498485558275,
+      "region": "B",
+      "corners": [
+        0.230852750295,
+        0.741326859479,
+        0.434893903808,
+        0.0
+      ],
+      "contact_fraction": 0.981741001638
+    },
+    {
+      "id": "newton17",
+      "source": "equilibrio por Newton",
+      "ex": 677.0907955461696,
+      "ey": 596.298871137879,
+      "region": "A",
+      "corners": [
+        0.0,
+        0.0,
+        7.555683994062,
+        0.0
+      ],
+      "contact_fraction": 0.132350691319
+    },
+    {
+      "id": "newton18",
+      "source": "equilibrio por Newton",
+      "ex": -614.3507039743034,
+      "ey": 42.97168504192156,
+      "region": "E",
+      "corners": [
+        1.055752971802,
+        0.0,
+        0.0,
+        1.254822998049
+      ],
+      "contact_fraction": 0.575632415747
+    },
+    {
+      "id": "newton19",
+      "source": "equilibrio por Newton",
+      "ex": 624.593212434773,
+      "ey": -610.1109150512525,
+      "region": "A",
+      "corners": [
+        0.0,
+        7.14077448551,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.140040831989
+    },
+    {
+      "id": "newton20",
+      "source": "equilibrio por Newton",
+      "ex": -939.6167492099214,
+      "ey": -580.4739428317381,
+      "region": "A",
+      "corners": [
+        36.633491806354,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.027297425135
+    },
+    {
+      "id": "newton21",
+      "source": "equilibrio por Newton",
+      "ex": 722.1675362581652,
+      "ey": -438.91624779649595,
+      "region": "A",
+      "corners": [
+        0.0,
+        4.338813161943,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.230477774146
+    },
+    {
+      "id": "newton22",
+      "source": "equilibrio por Newton",
+      "ex": -879.4807640726128,
+      "ey": -40.73627353708936,
+      "region": "E",
+      "corners": [
+        3.997670931951,
+        0.0,
+        0.0,
+        3.394105654425
+      ],
+      "contact_fraction": 0.179980636413
+    },
+    {
+      "id": "newton23",
+      "source": "equilibrio por Newton",
+      "ex": 305.59798805211244,
+      "ey": -130.17873926891798,
+      "region": "B",
+      "corners": [
+        0.197033095418,
+        0.825494193501,
+        0.463006126851,
+        0.0
+      ],
+      "contact_fraction": 0.939916180688
+    },
+    {
+      "id": "newton24",
+      "source": "equilibrio por Newton",
+      "ex": -155.05852063259195,
+      "ey": 326.17806753401936,
+      "region": "B",
+      "corners": [
+        0.011096592183,
+        0.0,
+        0.610757697447,
+        0.990059802736
+      ],
+      "contact_fraction": 0.817442805272
+    },
+    {
+      "id": "newton25",
+      "source": "equilibrio por Newton",
+      "ex": -182.02327660529338,
+      "ey": -253.5130508864119,
+      "region": "B",
+      "corners": [
+        0.878401261218,
+        0.485119189993,
+        0.0,
+        0.16788815728
+      ],
+      "contact_fraction": 0.909097017165
+    },
+    {
+      "id": "newton26",
+      "source": "equilibrio por Newton",
+      "ex": 714.4497247642423,
+      "ey": 181.23528959320933,
+      "region": "E",
+      "corners": [
+        0.0,
+        1.0053745149,
+        2.237293954893,
+        0.0
+      ],
+      "contact_fraction": 0.392309829598
+    },
+    {
+      "id": "newton27",
+      "source": "equilibrio por Newton",
+      "ex": -44.571457860574256,
+      "ey": -686.8291291288369,
+      "region": "D",
+      "corners": [
+        5.638381707291,
+        4.93070623579,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.125965812454
+    },
+    {
+      "id": "newton28",
+      "source": "equilibrio por Newton",
+      "ex": 52.808123874928945,
+      "ey": -312.9408149837154,
+      "region": "D",
+      "corners": [
+        0.703598758996,
+        0.82493126615,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.870469507529
+    },
+    {
+      "id": "newton29",
+      "source": "equilibrio por Newton",
+      "ex": -11.272188260256112,
+      "ey": 288.06586189933773,
+      "region": "D",
+      "corners": [
+        0.0,
+        0.0,
+        0.709468948919,
+        0.733875754866
+      ],
+      "contact_fraction": 0.923692209836
+    },
+    {
+      "id": "newton30",
+      "source": "equilibrio por Newton",
+      "ex": -544.6313477423735,
+      "ey": -592.9620051437049,
+      "region": "A",
+      "corners": [
+        5.244008610074,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.190693813523
+    },
+    {
+      "id": "newton31",
+      "source": "equilibrio por Newton",
+      "ex": 554.6670516466044,
+      "ey": -716.3431986097839,
+      "region": "A",
+      "corners": [
+        0.0,
+        25.019210424866,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.039969286921
+    },
+    {
+      "id": "newton32",
+      "source": "equilibrio por Newton",
+      "ex": -452.95267724325083,
+      "ey": 450.156984081972,
+      "region": "D",
+      "corners": [
+        0.0,
+        0.0,
+        0.200364620483,
+        2.284914017767
+      ],
+      "contact_fraction": 0.434580900633
+    },
+    {
+      "id": "newton33",
+      "source": "equilibrio por Newton",
+      "ex": -814.8913587919133,
+      "ey": 284.32983072114143,
+      "region": "E",
+      "corners": [
+        0.922601928186,
+        0.0,
+        0.0,
+        4.324470569938
+      ],
+      "contact_fraction": 0.222881293127
+    },
+    {
+      "id": "newton34",
+      "source": "equilibrio por Newton",
+      "ex": -170.54386720867143,
+      "ey": -612.4700016411969,
+      "region": "D",
+      "corners": [
+        3.123069615762,
+        1.827685891068,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.263310189803
+    },
+    {
+      "id": "newton35",
+      "source": "equilibrio por Newton",
+      "ex": -115.54871785806175,
+      "ey": -448.93010976740464,
+      "region": "D",
+      "corners": [
+        1.313915330713,
+        0.922356776902,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.590198920359
+    },
+    {
+      "id": "newton36",
+      "source": "equilibrio por Newton",
+      "ex": -684.5860879711332,
+      "ey": -662.6463082547583,
+      "region": "A",
+      "corners": [
+        13.610345780872,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.073473519049
+    },
+    {
+      "id": "newton37",
+      "source": "equilibrio por Newton",
+      "ex": -303.12353448046423,
+      "ey": 423.7892576786923,
+      "region": "D",
+      "corners": [
+        0.0,
+        0.0,
+        0.55278688649,
+        1.620387217093
+      ],
+      "contact_fraction": 0.567859574021
+    },
+    {
+      "id": "newton38",
+      "source": "equilibrio por Newton",
+      "ex": -393.24179174935125,
+      "ey": -484.38746742886156,
+      "region": "D",
+      "corners": [
+        2.31651804221,
+        0.439493972128,
+        0.0,
+        0.0
+      ],
+      "contact_fraction": 0.419005592967
+    },
+    {
+      "id": "newton39",
+      "source": "equilibrio por Newton",
+      "ex": -920.2091647789534,
+      "ey": -101.4332105262249,
+      "region": "E",
+      "corners": [
+        6.806883773893,
+        0.0,
+        0.0,
+        4.48402279163
+      ],
+      "contact_fraction": 0.116446297677
+    },
+    {
+      "id": "region-C",
+      "source": "equilibrio por Newton",
+      "ex": 160.0,
+      "ey": -75.0,
+      "region": "C",
+      "corners": [
+        0.273333333333,
+        0.593333333333,
+        0.393333333333,
+        0.073333333333
+      ],
+      "contact_fraction": 1.0
+    },
+    {
+      "id": "region-A",
+      "source": "equilibrio por Newton",
+      "ex": -600.0,
+      "ey": 525.0,
+      "region": "A",
+      "corners": [
+        0.0,
+        0.0,
+        0.0,
+        4.166666666667
+      ],
+      "contact_fraction": 0.24
+    },
+    {
+      "id": "region-D",
+      "source": "equilibrio por Newton",
+      "ex": 200.0,
+      "ey": 450.0,
+      "region": "D",
+      "corners": [
+        0.0,
+        0.0,
+        1.497351811548,
+        0.789407246191
+      ],
+      "contact_fraction": 0.565015990762
+    },
+    {
+      "id": "region-E",
+      "source": "equilibrio por Newton",
+      "ex": -700.0,
+      "ey": -150.0,
+      "region": "E",
+      "corners": [
+        1.996469082064,
+        0.0,
+        0.0,
+        1.052542994921
+      ],
+      "contact_fraction": 0.423761993072
+    },
+    {
+      "id": "region-B",
+      "source": "equilibrio por Newton",
+      "ex": 240.0,
+      "ey": 180.0,
+      "region": "B",
+      "corners": [
+        0.0,
+        0.330282358403,
+        0.825539285823,
+        0.330282358403
+      ],
+      "contact_fraction": 0.944519177432
+    },
+    {
+      "id": "region-B-borde-C",
+      "source": "equilibrio por Newton",
+      "ex": 20.0,
+      "ey": 239.25,
+      "region": "B",
+      "corners": [
+        0.0,
+        0.034331902119,
+        0.672339029774,
+        0.632332378049
+      ],
+      "contact_fraction": 0.999369179679
+    },
+    {
+      "id": "region-B-borde-D",
+      "source": "equilibrio por Newton",
+      "ex": 400.0,
+      "ey": 367.5,
+      "region": "B",
+      "corners": [
+        0.0,
+        0.024447307711,
+        1.627784978797,
+        0.29038252821
+      ],
+      "contact_fraction": 0.598040154698
+    },
+    {
+      "id": "region-D-u0",
+      "source": "equilibrio por Newton",
+      "ex": 0.0,
+      "ey": 450.0,
+      "region": "D",
+      "corners": [
+        0.0,
+        0.0,
+        1.111111111111,
+        1.111111111111
+      ],
+      "contact_fraction": 0.6
+    }
+  ]
+}

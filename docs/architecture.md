@@ -27,14 +27,14 @@ de una misma capa que no pueden hacerlo.
 | `cli` | Interfaz. Llama a `engine`/`execution`; nunca calcula capacidades. |
 | `engine`, `execution` | Orquestación, sin reglas de cálculo. |
 | `reporting` | Presentación: `results.py` arma el resultado en unidades de salida (`kN()`, `kNm()`, 6 cifras), `memoir.py` la memoria en texto desde ese resultado y `pdf.py` el PDF. No calcula capacidades. |
-| `io/etabs` | Lee el Excel de ETABS con la biblioteca estándar y arma el proyecto JSON desde una plantilla (D-042). Convierte el formato de ETABS al de entrada: m a mm y la compresión positiva. |
+| `io/etabs` | Lee el Excel de ETABS con la biblioteca estándar y arma el proyecto JSON desde una plantilla (D-042). Convierte el formato de ETABS al de entrada: m a mm y la compresión positiva. `footings.py` cruza las reacciones de servicio y mayoradas y las convierte en acciones sobre la zapata (D-055). |
 | `setup` | `load_engine()`: carga las tablas de `data/` con `importlib.resources`. |
-| `domain/<elemento>` | Elige la cláusula y arma cada `Check`. `domain/status.py` tiene la única agregación de estados. |
+| `domain/<elemento>` | Elige la cláusula y arma cada `Check` (`beam/`, `footing/`). `domain/status.py` tiene la única agregación de estados. |
 | `design/<elemento>` | Produce `ReinforcementLayout`. |
 | `detailing`, `drawing` | Neutros: usan límites ya calculados por el perfil; sin fórmulas normativas. |
 | `codes/<perfil>` | Fórmulas y constantes como funciones puras con el nombre de su ecuación o numeral. |
-| `mechanics` | Equilibrio y compatibilidad de una sección poligonal con eje neutro de cualquier inclinación (`section.py`); `flexure.py` describe la flexión uniaxial por franjas sobre el mismo motor. No conoce φ ni numerales. |
-| `model` | Datos del proyecto y `ReinforcementLayout`. Convierte unidades al cargar. |
+| `mechanics` | Equilibrio y compatibilidad de una sección poligonal con eje neutro de cualquier inclinación (`section.py`); `flexure.py` describe la flexión uniaxial por franjas sobre el mismo motor. `soil_pressure.py` da la presión lineal del suelo bajo una zapata rígida (Bellos y Bakas 2017, D-053) y `polygon.py` el recorte y las integrales exactas que ambos usan. No conoce φ ni numerales. |
+| `model` | Datos del proyecto y `ReinforcementLayout`; `footing.py` describe la zapata y calcula sus propiedades derivadas (área, inercias, módulos, núcleo central y pesos). Convierte unidades al cargar. |
 | `errors` | Errores estructurados con código estable. |
 | `data` | Tablas CSV o TOML, sin código. |
 

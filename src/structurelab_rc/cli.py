@@ -8,7 +8,7 @@ from pathlib import Path
 from structurelab_rc import __version__
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
-from structurelab_rc.engine import import_etabs, report_file, validate_file, verify_file
+from structurelab_rc.engine import import_etabs, import_etabs_footings, report_file, validate_file, verify_file
 from structurelab_rc.reporting.units import display
 from structurelab_rc.setup import load_engine
 
@@ -60,6 +60,21 @@ def _import_etabs(workbook: Path, template: Path, output: Path) -> int:
     return 0
 
 
+def _import_etabs_footings(service: Path, factored: Path, template: Path, output: Path) -> int:
+    project, summary, check = import_etabs_footings(service, factored, template)
+    print(f"{check.name}: {check.status}")
+    _print_errors(check)
+    if project is None or summary is None or check.status is Status.FAIL:
+        return 1
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Zapatas: {summary.footings}; casos de servicio: {len(summary.service_cases)}; "
+          f"casos mayorados: {len(summary.factored_cases)}")
+    print(f"Filas omitidas (no son combinaciones): {summary.skipped_rows}")
+    print(f"Proyecto escrito en {output}")
+    return 0
+
+
 def _report(project: Path, output: Path, full: bool) -> int:
     report = report_file(project, output, full=full)
     print(f"Resultado: {report.status}")
@@ -83,6 +98,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     importer.add_argument("workbook", type=Path, help="Excel exportado de ETABS (Element Forces - Beams)")
     importer.add_argument("template", type=Path, help="plantilla JSON con secciones y tramos de armado")
     importer.add_argument("--output", type=Path, required=True, help="ruta del proyecto JSON a escribir")
+    footings = commands.add_parser("import-etabs-footings",
+                                   help="genera un proyecto de zapatas desde las reacciones de ETABS y una plantilla")
+    footings.add_argument("service", type=Path, help="Excel de ETABS con las reacciones de servicio (Joint Reactions)")
+    footings.add_argument("factored", type=Path, help="Excel de ETABS con las reacciones mayoradas (Joint Reactions)")
+    footings.add_argument("template", type=Path, help="plantilla JSON con los tipos de zapata y el suelo")
+    footings.add_argument("--output", type=Path, required=True, help="ruta del proyecto JSON a escribir")
     reporter = commands.add_parser("report", help="verifica un proyecto y escribe resultado.json, memoria.txt y memoria.pdf")
     reporter.add_argument("project", type=Path, help="ruta del archivo JSON")
     reporter.add_argument("--output", type=Path, required=True, help="carpeta de salida, por ejemplo results/mi_proyecto")
@@ -90,6 +111,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "report":
         return _report(args.project, args.output, args.full)
+    if args.command == "import-etabs-footings":
+        return _import_etabs_footings(args.service, args.factored, args.template, args.output)
     if args.command == "import-etabs":
         return _import_etabs(args.workbook, args.template, args.output)
     if args.command == "validate":

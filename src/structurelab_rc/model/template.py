@@ -4,6 +4,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, model_validator
 
+from structurelab_rc.model.footing import Column, Mat
 from structurelab_rc.model.project import Materials, Section, SeismicFacts
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 
@@ -52,3 +53,48 @@ class EtabsTemplate(_Input):
     materials: Materials
     combinations: tuple[str, ...] | None = None
     members: tuple[TemplateMember, ...] = Field(min_length=1)
+
+
+class TemplateFooting(_Input):
+    """Tipo de zapata: sus dimensiones y mallas se aplican a cada nudo de apoyo de ETABS listado (D-055)."""
+
+    id: str = Field(min_length=1)
+    etabs_unique_names: tuple[str, ...] = Field(min_length=1)
+    lx: PositiveFloat
+    ly: PositiveFloat
+    h: PositiveFloat
+    cover: PositiveFloat
+    fill_height: NonNegativeFloat
+    pedestal_height: NonNegativeFloat
+    column: Column
+    bottom: Mat
+    top: Mat | None
+
+    @model_validator(mode="after")
+    def _check_names(self) -> Self:
+        if len(set(self.etabs_unique_names)) != len(self.etabs_unique_names):
+            raise ValueError(f"el tipo de zapata '{self.id}' repite un Unique Name")
+        return self
+
+
+class EtabsFootingTemplate(_Input):
+    """Plantilla de zapatas: lo que las tablas de reacciones de ETABS no traen.
+
+    dead_load_factors da el factor de carga muerta de cada combinación mayorada (D-054); las combinaciones de
+    servicio no lo llevan.
+    """
+
+    description: str
+    profile: str
+    seismic: SeismicFacts
+    materials: Materials
+    soil: dict[str, float]
+    dead_load_factors: dict[str, PositiveFloat] = Field(min_length=1)
+    footings: tuple[TemplateFooting, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _check_names(self) -> Self:
+        names = [name for footing in self.footings for name in footing.etabs_unique_names]
+        if len(set(names)) != len(names):
+            raise ValueError("un Unique Name aparece en dos tipos de zapata")
+        return self

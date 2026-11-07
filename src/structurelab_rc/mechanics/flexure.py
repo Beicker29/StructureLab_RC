@@ -9,7 +9,8 @@ import math
 from dataclasses import dataclass
 
 from structurelab_rc.mechanics.materials import ConcreteBlock, SteelModel
-from structurelab_rc.mechanics.section import Point, SteelPoint, section_state
+from structurelab_rc.mechanics.polygon import Point
+from structurelab_rc.mechanics.section import SteelPoint, section_state
 
 
 @dataclass(frozen=True)

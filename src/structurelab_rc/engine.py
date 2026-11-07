@@ -9,12 +9,15 @@ from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check, check_from_errors
+from structurelab_rc.domain.footing.checks import footing_checks
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.errors import invalid_input
+from structurelab_rc.io.etabs import footings as etabs_footings
+from structurelab_rc.io.etabs.footings import FootingImportSummary, build_footing_project
 from structurelab_rc.io.etabs.importer import SHEET, EtabsImportError, ImportSummary, build_project
 from structurelab_rc.io.etabs.xlsx import XlsxError, read_table
-from structurelab_rc.model.loader import ProjectLoadError, load_project, load_template, validate_input
+from structurelab_rc.model.loader import ProjectLoadError, load_footing_template, load_project, load_template, validate_input
 from structurelab_rc.model.project import Project
 from structurelab_rc.reporting.memoir import render_memoir
 from structurelab_rc.reporting.pdf import write_pdf
@@ -45,6 +48,8 @@ def run_project(path: Path) -> tuple[Project | None, tuple[Check, ...]]:
     for member in project.members:
         for station in member.stations:
             checks.extend(station_checks(profile, project.materials, member, station, bars))
+    for footing in project.footings:
+        checks.extend(footing_checks(footing))
     return project, tuple(checks)
 
 
@@ -84,4 +89,20 @@ def import_etabs(workbook: Path, template_path: Path) -> tuple[dict[str, Any] | 
         return None, None, check_from_errors(CHECK_NAME, error.errors)
     except XlsxError as error:
         return None, None, check_from_errors(CHECK_NAME, [invalid_input(str(error), path=str(workbook))])
+    return project, summary, validation
+
+
+def import_etabs_footings(
+    service: Path, factored: Path, template_path: Path
+) -> tuple[dict[str, Any] | None, FootingImportSummary | None, Check]:
+    """Proyecto de zapatas a partir de las reacciones de servicio y mayoradas de ETABS y la plantilla (D-055)."""
+    try:
+        template = load_footing_template(template_path)
+        tables = [read_table(path, etabs_footings.SHEET) for path in (service, factored)]
+        project, summary = build_footing_project(template, *tables)
+        validation = validate_project(validate_input(project, Project), load_engine().bars)
+    except (ProjectLoadError, EtabsImportError) as error:
+        return None, None, check_from_errors(CHECK_NAME, error.errors)
+    except XlsxError as error:
+        return None, None, check_from_errors(CHECK_NAME, [invalid_input(str(error))])
     return project, summary, validation

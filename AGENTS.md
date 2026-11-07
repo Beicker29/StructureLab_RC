@@ -39,8 +39,11 @@ Una fuente de verdad por concepto ([arquitectura](docs/architecture.md)).
 - El nivel sísmico es un hecho declarado por el usuario en el vocabulario de su perfil
   (`DMI`/`DMO`/`DES`; `none`/`ordinary`/`intermediate`/`special`), con una justificación
   textual que sale en la memoria. La app no lo deriva; solo valida que exista en el perfil.
-- Las fuerzas llegan mayoradas (JSON o ETABS). No se generan combinaciones en la v1.
-- Unidades: entrada en mm, MPa, kN y kN·m; interno en N, mm y MPa. La conversión ocurre
+- Las fuerzas llegan mayoradas (JSON o ETABS). No se generan combinaciones. En zapatas llegan además
+  las cargas de servicio, en un Excel aparte, para la presión admisible y el contacto (D-052).
+- Las propiedades que se derivan de las dimensiones (área, inercias, módulos, pesos) se calculan; nunca se declaran.
+- Unidades: entrada en mm, MPa, kN y kN·m (en zapatas, además, presión admisible en kPa y pesos unitarios en
+  kN/m³, D-055); interno en N, mm y MPa. La conversión ocurre
   solo al cargar (`model/`) y al presentar (`reporting/`, con `kN()` y `kNm()`).
 - Tablas (barras, ganchos, materiales) en `src/structurelab_rc/data/` como CSV o TOML,
   cargadas por `setup.load_engine()`. Nada de Excel versionado en `data/`; la excepción son

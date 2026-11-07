@@ -41,7 +41,7 @@ def _check_table(table: Table) -> list[StructuredError]:
     return errors
 
 
-def _case_label(row: dict[str, str]) -> str:
+def case_label(row: dict[str, str]) -> str:
     """Las filas Max y Min de una combinación con envolvente son dos estados de carga distintos."""
     step = row["Step Type"].strip()
     return f"{row['Output Case']} ({step})" if step else row["Output Case"]
@@ -86,7 +86,7 @@ def _stations(member: TemplateMember, rows: list[dict[str, str]], errors: list[S
             "V3_kN": float(row["V3"]),
             "Tu_kNm": float(row["T"]),
         }
-        stations.append({"z": z, "case": _case_label(row), "layout": layout, "demands": demands})
+        stations.append({"z": z, "case": case_label(row), "layout": layout, "demands": demands})
     return stations
 
 
