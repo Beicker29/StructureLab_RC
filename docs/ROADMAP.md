@@ -27,7 +27,7 @@ Por estación y en ambos perfiles. Se entrega en subfases, cada una con su orác
 - **2D Servicio:** control de fisuración y espesor mínimo. Pendiente: se hará después de 2E y 2F (D-039);
   las deflexiones también quedan pendientes (D-017).
 - **2E ETABS:** importación de fuerzas mayoradas desde el archivo exportado.
-- **2F Memorias:** resultados en JSON, memoria en texto y PDF; huella.
+- **2F Memorias:** resultados en JSON, memoria en texto y PDF; huella (D-050, D-051).
 
 Aceptación: ejemplos de referencia (Wight, ACI MNL-17) dentro de tolerancia; huella estable.
 

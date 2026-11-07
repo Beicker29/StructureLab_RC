@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Instalar
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev,pdf]"
       - name: Ruff
         run: ruff check .
       - name: Mypy
@@ -41,17 +41,20 @@ jobs:
         run: python -m zipfile -l dist/*.whl | grep "structurelab_rc/data/rebar.csv"
       - name: Probar el wheel en un entorno limpio
         run: |
-          wheel="$PWD/$(ls dist/*.whl)"
+          # Ruta nativa del wheel (en Windows, Git Bash no convierte una ruta que termina en [pdf]).
+          wheel=$(python -c "import glob, os; print(os.path.abspath(glob.glob('dist/*.whl')[0]))")
           example="$PWD/examples/nsr_10/beam_t.json"
           workbook="$PWD/examples/etabs/Element Forces - Beams.xlsx"
           template="$PWD/examples/etabs/plantilla_nsr10.json"
           cd "$RUNNER_TEMP"
           python -m venv clean
           if [ "$RUNNER_OS" = "Windows" ]; then bin=clean/Scripts; else bin=clean/bin; fi
-          "$bin/python" -m pip install "$wheel"
+          "$bin/python" -m pip install "$wheel[pdf]"
           "$bin/structurelab-rc" --version
           "$bin/structurelab-rc" catalog
           "$bin/structurelab-rc" validate "$example"
           "$bin/structurelab-rc" verify "$example"
           "$bin/structurelab-rc" import-etabs "$workbook" "$template" --output etabs.json
           "$bin/structurelab-rc" validate etabs.json
+          "$bin/structurelab-rc" report "$example" --output reporte
+          test -s reporte/resultado.json && test -s reporte/memoria.txt && test -s reporte/memoria.pdf

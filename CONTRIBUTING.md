@@ -14,7 +14,12 @@ lint-imports
 python -m build
 ```
 
-Cuando existan ejemplos, también debe mantenerse estable su huella.
+La huella de los ejemplos (`tests/test_fingerprints.py`) debe mantenerse estable. Si un cambio de cálculo la
+modifica a propósito, se reporta la diferencia y solo entonces se actualiza:
+
+```console
+STRUCTURELAB_UPDATE_FINGERPRINTS=1 pytest tests/test_fingerprints.py
+```
 
 ## Oráculos
 

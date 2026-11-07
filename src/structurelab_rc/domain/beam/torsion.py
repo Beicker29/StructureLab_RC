@@ -43,8 +43,8 @@ def threshold_check(profile: Profile, materials: Materials, member: Member, stat
     # Sin torsión no hay nada que verificar, aunque la tracción axial lleve el umbral a cero.
     if demands.tu == 0 or abs(demands.tu) < limit:
         return None
-    return Check(THRESHOLD, Status.PASS, clause=torsion.clauses()["threshold"], demand=abs(demands.tu), capacity=limit,
-                 unit="N*mm", note="Tu >= phi Tth: se verifica la torsion combinada con el cortante")
+    return Check(THRESHOLD, Status.PASS, clause=torsion.clauses()["threshold"], values=(("Tu", abs(demands.tu)), ("phi Tth", limit)),
+                 note="Tu >= phi Tth: se verifica la torsion combinada con el cortante")
 
 
 def _longitudinal_detailing(profile: Profile, member: Member, station: Station, bars: Sequence[RebarSpec]) -> Check:

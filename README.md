@@ -4,8 +4,8 @@ Herramienta de oficina para verificar, diseñar, despiezar y dibujar elementos d
 reforzado. La v1 cubrirá vigas con dos perfiles normativos, `aci-318-25` (ACI CODE-318-25)
 y `nsr-10` (NSR-10 Título C). Cada proyecto declara un solo perfil.
 
-**Estado:** Fase 2E, flexión, cortante y torsión de vigas macizas en los dos ejes, e importación desde ETABS.
-Las memorias (2F) y el servicio (2D) vienen después ([hoja de ruta](docs/ROADMAP.md)).
+**Estado:** Fase 2, sin la subfase de servicio (2D). Verifica vigas macizas a flexión, cortante y torsión en los
+dos ejes, importa fuerzas desde ETABS y genera memorias ([hoja de ruta](docs/ROADMAP.md)).
 
 ## Instalación
 
@@ -28,7 +28,13 @@ structurelab-rc catalog
 structurelab-rc validate examples/nsr_10/beam_t.json
 structurelab-rc verify examples/nsr_10/beam_t.json
 structurelab-rc import-etabs "examples/etabs/Element Forces - Beams.xlsx" examples/etabs/plantilla_nsr10.json --output results/etabs.json
+structurelab-rc report results/etabs.json --output results/etabs
 ```
+
+`report` verifica el proyecto y escribe en la carpeta de salida `resultado.json` (todo el detalle, en kN, kN·m, mm
+y MPa), `memoria.txt` y `memoria.pdf`. La memoria resume cada miembro con la estación crítica de cada
+verificación y detalla lo que no cumple; `--full` agrega todas las estaciones. El PDF requiere el extra `pdf`
+(`pip install structurelab-rc[pdf]`).
 
 `catalog` lista la designación, el diámetro nominal (mm), el área (mm²) y la masa (kg/m) de
 las barras del catálogo.

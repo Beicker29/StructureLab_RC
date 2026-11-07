@@ -1,8 +1,11 @@
 """Orquestación de los casos de uso."""
 
+import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check, check_from_errors
@@ -13,6 +16,9 @@ from structurelab_rc.io.etabs.importer import SHEET, EtabsImportError, ImportSum
 from structurelab_rc.io.etabs.xlsx import XlsxError, read_table
 from structurelab_rc.model.loader import ProjectLoadError, load_project, load_template, validate_input
 from structurelab_rc.model.project import Project
+from structurelab_rc.reporting.memoir import render_memoir
+from structurelab_rc.reporting.pdf import write_pdf
+from structurelab_rc.reporting.results import build_results
 from structurelab_rc.setup import load_engine
 
 
@@ -24,22 +30,47 @@ def validate_file(path: Path) -> Check:
     return validate_project(project, load_engine().bars)
 
 
-def verify_file(path: Path) -> tuple[Check, ...]:
-    """Validación seguida de las verificaciones por estación; si la entrada es inválida, solo la validación."""
+def run_project(path: Path) -> tuple[Project | None, tuple[Check, ...]]:
+    """Proyecto cargado y sus verificaciones: primero la validación; si la entrada es inválida, solo ella."""
     try:
         project = load_project(path)
     except ProjectLoadError as error:
-        return (check_from_errors(CHECK_NAME, error.errors),)
+        return None, (check_from_errors(CHECK_NAME, error.errors),)
     bars = load_engine().bars
     validation = validate_project(project, bars)
     if validation.status is Status.FAIL:
-        return (validation,)
+        return project, (validation,)
     profile = PROFILES[project.profile]
     checks = [validation]
     for member in project.members:
         for station in member.stations:
             checks.extend(station_checks(profile, project.materials, member, station, bars))
-    return tuple(checks)
+    return project, tuple(checks)
+
+
+def verify_file(path: Path) -> tuple[Check, ...]:
+    return run_project(path)[1]
+
+
+@dataclass(frozen=True)
+class Report:
+    status: str
+    files: tuple[Path, ...]
+    pdf_written: bool
+
+
+def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
+    """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050)."""
+    project, checks = run_project(path)
+    results = build_results(project, checks, __version__)
+    text = render_memoir(results, full=full)
+    output.mkdir(parents=True, exist_ok=True)
+    result_path, memoir_path, pdf_path = output / "resultado.json", output / "memoria.txt", output / "memoria.pdf"
+    result_path.write_text(json.dumps(results, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    memoir_path.write_text(text, encoding="utf-8", newline="\n")
+    pdf_written = write_pdf(text, pdf_path)
+    files = (result_path, memoir_path, pdf_path) if pdf_written else (result_path, memoir_path)
+    return Report(results["status"], files, pdf_written)
 
 
 def import_etabs(workbook: Path, template_path: Path) -> tuple[dict[str, Any] | None, ImportSummary | None, Check]:

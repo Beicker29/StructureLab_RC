@@ -8,7 +8,7 @@ from pathlib import Path
 from structurelab_rc import __version__
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
-from structurelab_rc.engine import import_etabs, validate_file, verify_file
+from structurelab_rc.engine import import_etabs, report_file, validate_file, verify_file
 from structurelab_rc.reporting.units import display
 from structurelab_rc.setup import load_engine
 
@@ -60,6 +60,16 @@ def _import_etabs(workbook: Path, template: Path, output: Path) -> int:
     return 0
 
 
+def _report(project: Path, output: Path, full: bool) -> int:
+    report = report_file(project, output, full=full)
+    print(f"Resultado: {report.status}")
+    for path in report.files:
+        print(f"  {path}")
+    if not report.pdf_written:
+        print("  memoria.pdf no se genero: instale el extra con  pip install structurelab-rc[pdf]")
+    return 1 if report.status == Status.FAIL else 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="structurelab-rc", description="Concreto reforzado: verificación, diseño y despiece.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -73,7 +83,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     importer.add_argument("workbook", type=Path, help="Excel exportado de ETABS (Element Forces - Beams)")
     importer.add_argument("template", type=Path, help="plantilla JSON con secciones y tramos de armado")
     importer.add_argument("--output", type=Path, required=True, help="ruta del proyecto JSON a escribir")
+    reporter = commands.add_parser("report", help="verifica un proyecto y escribe resultado.json, memoria.txt y memoria.pdf")
+    reporter.add_argument("project", type=Path, help="ruta del archivo JSON")
+    reporter.add_argument("--output", type=Path, required=True, help="carpeta de salida, por ejemplo results/mi_proyecto")
+    reporter.add_argument("--full", action="store_true", help="incluye en la memoria el detalle de todas las estaciones")
     args = parser.parse_args(argv)
+    if args.command == "report":
+        return _report(args.project, args.output, args.full)
     if args.command == "import-etabs":
         return _import_etabs(args.workbook, args.template, args.output)
     if args.command == "validate":

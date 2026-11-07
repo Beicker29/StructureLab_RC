@@ -389,6 +389,27 @@
 - **Referencia:** ACI 9.7.6.2.2 y NSR-10 C.11.4.5 limitan la separación del refuerzo a cortante.
 - **Decisión:** la separación y el Av,min del eje débil se verifican solo si V3 exige refuerzo, es decir, si |V3| supera el umbral de Av,min de esa dirección. Confirmado por el usuario.
 
+### D-049: orientación del eje neutro cuando hay varias soluciones
+
+- **Fecha:** 2026-11-06
+- **Problema:** con M2 casi nulo, varias orientaciones del eje neutro, separadas menos de 0.3°, dan la misma dirección de momento. Ocurre por los saltos de fuerza cuando el bloque alcanza o deja una barra. La resistencia es la misma, pero εt del estado biaxial cambia un poco: en el ejemplo de ETABS, 0.01529 o 0.01560.
+- **Decisión:** la búsqueda parte de la orientación estimada (θ = 90° − dirección del momento) y toma la solución que encuentra al avanzar desde ella, en pasos de 5° y con refinamiento por regula falsi. Si no encuentra un cambio de signo, recorre media vuelta. Así la búsqueda es 19 veces más rápida (94 s → 5 s en las 638 estaciones de ETABS) y elige la solución más cercana en los casos casi uniaxiales.
+
+### D-050: memorias y resultados
+
+- **Fecha:** 2026-11-06
+- **Decisión del usuario:**
+  - El comando `report` escribe en la carpeta de salida `resultado.json` (todo el detalle), `memoria.txt` y `memoria.pdf`.
+  - El JSON y la memoria usan unidades de presentación (kN, kN·m, mm, MPa) y redondean a 6 cifras significativas; el cálculo interno no se redondea.
+  - La memoria tiene datos y supuestos (con el nivel sísmico y su justificación), un resumen por miembro con la estación crítica de cada verificación, el detalle de todo lo que no cumple y el detalle de las estaciones críticas; `--full` agrega todas las estaciones.
+  - La memoria se construye solo desde el resultado, así que φ, las capacidades y los numerales no se escriben como literales.
+  - El PDF requiere el extra `pdf` (fpdf2); si no está, se generan los otros dos archivos con un aviso. Sus fuentes básicas solo admiten Latin-1, así que los caracteres fuera de ese rango se escriben con equivalentes en ASCII.
+
+### D-051: huella de los ejemplos
+
+- **Fecha:** 2026-11-06
+- **Decisión del usuario:** la huella es el SHA-256 de `resultado.json` y `memoria.txt`, sin fecha, para los ejemplos de `examples/<perfil>/` y para el proyecto importado de ETABS. Se guarda en `tests/fingerprints.json` y la compara `tests/test_fingerprints.py`. Solo se actualiza (`STRUCTURELAB_UPDATE_FINGERPRINTS=1 pytest tests/test_fingerprints.py`) después de reportar un cambio de cálculo intencional.
+
 ## Consultas abiertas
 
 Ninguna.

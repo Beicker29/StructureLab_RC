@@ -1,0 +1,22 @@
+{
+  "examples/aci_318_25/beam_rectangular.json": {
+    "resultado.json": "569d9532d9d0bb1849b673233578aac9f90cabfe28330eae1c4bedd28a4b546a",
+    "memoria.txt": "0f4399c5359953042650378cadb094cec2ca4e91ecd68e8593933a4dfe9474bf"
+  },
+  "examples/aci_318_25/beam_t.json": {
+    "resultado.json": "2f1cee66e1df841dc7bff17fe6044cf77815bef2332265871531d1fa65f54d7b",
+    "memoria.txt": "6eeacb932cb67b360ab978e6f54b78457fd9930a4df219ff71e5d8bec37e1c2e"
+  },
+  "examples/etabs/plantilla_nsr10.json": {
+    "resultado.json": "9d5f00f7bdfe9fa0e318de13cab6bd0d8d24543c478c5eab531a7bbd48d875b9",
+    "memoria.txt": "30668153dec94120e0320a35b8798c32cce020063815cf8f708221ced0d81078"
+  },
+  "examples/nsr_10/beam_rectangular.json": {
+    "resultado.json": "64f51a17f468c9ef412ee2679fd7949d4fd050d26973c97b51bf1ca6acb053c9",
+    "memoria.txt": "2ca2ae0e3d41cf2caffbc5a240542f36a8eed43c51b988f23a57dfaee536faeb"
+  },
+  "examples/nsr_10/beam_t.json": {
+    "resultado.json": "6c63852aedaafe7e3c54656ab69c419fe39a8c5346e1a02b0b073a5c0dc8377e",
+    "memoria.txt": "c7b0de5187e338cee497fce6a443a5869c1531ecf3b891acfb6b3ecf20eede8f"
+  }
+}

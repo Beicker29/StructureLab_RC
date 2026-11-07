@@ -23,6 +23,7 @@ class Check:
     clause: str = ""
     member: str = ""
     z: float | None = None
+    case: str | None = None
     demand: float | None = None
     capacity: float | None = None
     unit: str = ""

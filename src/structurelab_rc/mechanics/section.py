@@ -7,6 +7,7 @@ bruta. Los momentos siguen la convención de ETABS: M3 positivo comprime la cara
 """
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from structurelab_rc.mechanics.materials import ConcreteBlock, NoEquilibrium, SteelModel
@@ -14,8 +15,11 @@ from structurelab_rc.mechanics.materials import ConcreteBlock, NoEquilibrium, St
 Point = tuple[float, float]
 
 _BISECTION_STEPS = 100
+_RELATIVE_TOLERANCE = 1e-13
+_DIRECTION_STEP = math.radians(5.0)
+_DIRECTION_WALK = 36
 _DIRECTION_STEPS = 72
-_DIRECTION_BISECTION_STEPS = 60
+_DIRECTION_REFINE_STEPS = 100
 _TOLERANCE = 1e-12
 
 
@@ -142,6 +146,8 @@ def _neutral_axis(
         raise NoEquilibrium("la compresión axial supera la capacidad de la sección")
     high = high * (1 - 1e-12)
     for _ in range(_BISECTION_STEPS):
+        if high - low <= _RELATIVE_TOLERANCE * high:
+            break
         middle = (low + high) / 2
         if residual(middle) >= 0:
             high = middle
@@ -191,42 +197,73 @@ def biaxial_state(
     axial: float,
     moments: tuple[float, float],
 ) -> SectionState:
-    """Estado nominal cuyo momento resistente tiene la dirección de (M3, M2), a carga axial constante."""
+    """Estado nominal cuyo momento resistente tiene la dirección de (M3, M2), a carga axial constante.
+
+    Parte de la orientación estimada y avanza en pasos de 5° hasta encontrar el cambio de signo; si no lo encuentra,
+    recorre media vuelta completa. Luego refina por regula falsi (variante de Illinois) con respaldo de bisección.
+    """
     mu3, mu2 = moments
     if mu3 == 0 and mu2 == 0:
         return section_state(polygon, steel, materials, axial, math.pi / 2)
     target = math.atan2(mu2, mu3)
-    guess = math.pi / 2 - target
+
+    def evaluate(theta: float) -> tuple[SectionState, float]:
+        state = section_state(polygon, steel, materials, axial, theta)
+        return state, _angle_gap(state, target)
+
+    theta = math.pi / 2 - target
+    state, gap = evaluate(theta)
+    if abs(gap) < _TOLERANCE:
+        return state
+    # El ángulo del momento resistente disminuye al aumentar θ: con gap > 0 se avanza hacia θ mayores.
+    step = _DIRECTION_STEP if gap > 0 else -_DIRECTION_STEP
+    for _ in range(_DIRECTION_WALK):
+        following_state, following_gap = evaluate(theta + step)
+        if abs(following_gap) < _TOLERANCE:
+            return following_state
+        if (following_gap > 0) != (gap > 0) and abs(following_gap - gap) < math.pi:
+            return _refine(evaluate, (theta, gap), (theta + step, following_gap))
+        theta, gap = theta + step, following_gap
+    return _scan(evaluate, math.pi / 2 - target)
+
+
+def _scan(evaluate: Callable[[float], tuple[SectionState, float]], guess: float) -> SectionState:
+    """Recorrido completo de media vuelta alrededor de la orientación estimada."""
     step = math.pi / _DIRECTION_STEPS
-    previous_theta, previous = guess - math.pi / 2, None
+    previous: tuple[float, float] | None = None
     for index in range(_DIRECTION_STEPS + 1):
         theta = guess - math.pi / 2 + index * step
-        state = section_state(polygon, steel, materials, axial, theta)
-        gap = _angle_gap(state, target)
+        state, gap = evaluate(theta)
         if abs(gap) < _TOLERANCE:
             return state
-        if previous is not None and (previous > 0) != (gap > 0) and abs(previous - gap) < math.pi:
-            return _refine(polygon, steel, materials, axial, (previous_theta, theta, target))
-        previous_theta, previous = theta, gap
+        if previous is not None and (previous[1] > 0) != (gap > 0) and abs(previous[1] - gap) < math.pi:
+            return _refine(evaluate, previous, (theta, gap))
+        previous = (theta, gap)
     raise NoEquilibrium("no se encontró un eje neutro con la dirección del momento demandado")
 
 
 def _refine(
-    polygon: tuple[Point, ...],
-    steel: tuple[SteelPoint, ...],
-    materials: tuple[ConcreteBlock, SteelModel],
-    axial: float,
-    bracket: tuple[float, float, float],
+    evaluate: Callable[[float], tuple[SectionState, float]], low: tuple[float, float], high: tuple[float, float]
 ) -> SectionState:
-    low, high, target = bracket
-    low_gap = _angle_gap(section_state(polygon, steel, materials, axial, low), target)
-    state = section_state(polygon, steel, materials, axial, (low + high) / 2)
-    for _ in range(_DIRECTION_BISECTION_STEPS):
-        middle = (low + high) / 2
-        state = section_state(polygon, steel, materials, axial, middle)
-        gap = _angle_gap(state, target)
-        if (gap > 0) == (low_gap > 0):
-            low, low_gap = middle, gap
+    """Regula falsi de Illinois entre dos orientaciones con gaps de signo contrario."""
+    (theta_a, gap_a), (theta_b, gap_b) = low, high
+    side = 0
+    state, gap = evaluate(theta_a)
+    for _ in range(_DIRECTION_REFINE_STEPS):
+        theta = (theta_a * gap_b - theta_b * gap_a) / (gap_b - gap_a)
+        if not min(theta_a, theta_b) < theta < max(theta_a, theta_b):
+            theta = (theta_a + theta_b) / 2
+        state, gap = evaluate(theta)
+        if abs(gap) < _TOLERANCE or abs(theta_b - theta_a) < _TOLERANCE:
+            return state
+        if (gap > 0) == (gap_a > 0):
+            theta_a, gap_a = theta, gap
+            if side == -1:
+                gap_b /= 2
+            side = -1
         else:
-            high = middle
+            theta_b, gap_b = theta, gap
+            if side == 1:
+                gap_a /= 2
+            side = 1
     return state
