@@ -571,6 +571,18 @@
   - 19.2.3.1: el módulo de rotura es fr = 0.62λ√f'c (el PDF imprime 0.062). No se usa todavía; aplicará en la subfase 2D (fisuración y deflexiones).
   - Las demás son de capítulos no implementados (losas en dos direcciones, anclajes, sísmico, muros, evaluación de estructuras existentes) o del comentario.
 
+### D-068: memoria de cálculo con el formato de StructureLab_HFS (V3E)
+
+- **Fecha:** 2026-11-07
+- **Decisión del usuario:** la memoria de cálculo sigue el formato y estilo de StructureLab_HFS, adaptado a este repositorio. Reemplaza el formato de memoria de D-050 (las salidas `resultado.json`, `memoria.txt` y `memoria.pdf` se mantienen).
+- **Implementación (DRY):**
+  - `reporting/document.py` construye, solo a partir de `resultado.json`, una memoria por elemento como bloques neutros (título, resumen, capítulos, tablas, pares, notas y alertas); `reporting/text.py` y `reporting/pdf.py` dibujan los mismos bloques. `reporting/glossary.py` da el capítulo, los símbolos y el nombre en palabras de cada verificación y de cada valor. Vigas y zapatas comparten la verificación gobernante, el detalle de cada revisión, la tabla de requisitos y los índices DCR.
+  - Un archivo por proyecto con la memoria de cada elemento, como el `multi_member` de StructureLab_HFS. Arriba, `RESULTADO: <estado> (<CUMPLE…>)` y el DCR máximo; después, la revisión de mayor DCR de cada capítulo.
+  - Capítulos fijos de viga: materiales, geometría y armado por estación, solicitaciones, requerimientos técnicos, servicio (falta implementación), flexión, cortante, torsión, índices DCR, notas y limitaciones. De zapata: materiales, geometría, suelo y armado, solicitaciones de servicio y mayoradas, revisión geotécnica, requerimientos técnicos, flexión, cortante en una dirección, punzonamiento, desarrollo, aplastamiento y pasadores, índices DCR, notas y limitaciones. Lo que no corresponde dice "No aplica"; lo que no está programado, "Falta implementación".
+  - `resultado.json` trae lo que la memoria imprime: las propiedades del perfil que usa el cálculo (β1, εcu, 0.85, Es, εty, λ), las solicitaciones y el armado de cada estación, los casos de carga y las mallas de cada zapata, y el caso de cada verificación de zapata.
+  - Texto con Unicode (φ, ², ·, —), en lugar de la regla Latin-1 de D-050. El PDF usa una fuente TrueType del sistema (Segoe UI, Arial o DejaVu); sin ninguna, escribe equivalentes en ASCII. Las 65 zapatas de ETABS generan su PDF en unos 4 s.
+  - La huella de todos los ejemplos cambió por el formato nuevo (cambio intencional); el cálculo no cambió.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

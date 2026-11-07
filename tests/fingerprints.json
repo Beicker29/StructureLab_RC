@@ -1,30 +1,30 @@
 {
   "examples/aci_318_25/vigas/viga_rectangular.json": {
-    "resultado.json": "569d9532d9d0bb1849b673233578aac9f90cabfe28330eae1c4bedd28a4b546a",
-    "memoria.txt": "0f4399c5359953042650378cadb094cec2ca4e91ecd68e8593933a4dfe9474bf"
+    "resultado.json": "c38bba2dfff6ea516a39de71ea89f24aebd3accddac5607178417817e8a9ff43",
+    "memoria.txt": "2b298d6635c6f79ba10241b9bc1f74ded1656068ed2cb728c302f2806681672c"
   },
   "examples/aci_318_25/vigas/viga_t.json": {
-    "resultado.json": "2f1cee66e1df841dc7bff17fe6044cf77815bef2332265871531d1fa65f54d7b",
-    "memoria.txt": "6eeacb932cb67b360ab978e6f54b78457fd9930a4df219ff71e5d8bec37e1c2e"
+    "resultado.json": "bbc20b1b65eb8994ea967a9fd3cecf4fe3d68e0f7c7fdf0df174debe20bc366d",
+    "memoria.txt": "47e7b7aa9fb75536599f9d62c756522d61ae06a19db364c886a4f96c4371e481"
   },
   "examples/aci_318_25/zapatas/zapata_aislada.json": {
-    "resultado.json": "1629d16fec813f9d2d75e8a94af477d046591817a3036fb555392cbccbd92344",
-    "memoria.txt": "6325bcb2b01c3ab45b5130da66b020c368de3216638023c2aa1e57fd7903595f"
+    "resultado.json": "d3bcf6b401141ca50bab7220f6860187c771c222a661d82db95fa45e7dcb2568",
+    "memoria.txt": "7ba8a75eb51dfea0f8df356dcf7ff0f4d9581cbf420829894c2578decebdd8ac"
   },
   "examples/etabs/vigas/plantilla_vigas_nsr10.json": {
-    "resultado.json": "9d5f00f7bdfe9fa0e318de13cab6bd0d8d24543c478c5eab531a7bbd48d875b9",
-    "memoria.txt": "30668153dec94120e0320a35b8798c32cce020063815cf8f708221ced0d81078"
+    "resultado.json": "32595488ae7d6e3dc18f6e08a78c81ebb7200d4e5f41a36c5ae464d57ac6156c",
+    "memoria.txt": "48a0ee743def9d986e37b690c3909bb27d7a48b11f365dea36cb5f049323fee2"
   },
   "examples/nsr_10/vigas/viga_rectangular.json": {
-    "resultado.json": "64f51a17f468c9ef412ee2679fd7949d4fd050d26973c97b51bf1ca6acb053c9",
-    "memoria.txt": "2ca2ae0e3d41cf2caffbc5a240542f36a8eed43c51b988f23a57dfaee536faeb"
+    "resultado.json": "1e0b706b38de575ae6864e34ff368728c9622e8d228ff3df1119a82909af4bb1",
+    "memoria.txt": "89274c85fb0a80b2cfd5dfc51629f567e9e504ba3bb94cc6f4a8507a00aee6f9"
   },
   "examples/nsr_10/vigas/viga_t.json": {
-    "resultado.json": "6c63852aedaafe7e3c54656ab69c419fe39a8c5346e1a02b0b073a5c0dc8377e",
-    "memoria.txt": "c7b0de5187e338cee497fce6a443a5869c1531ecf3b891acfb6b3ecf20eede8f"
+    "resultado.json": "73871768445987f6a55555941d1c48c20b80b517e8426f7b7742729d72d53dd8",
+    "memoria.txt": "f430df408d601cd4894d40789f4ff0bc2018cfcdc52d65bed7c74f959f4dd969"
   },
   "examples/nsr_10/zapatas/zapata_aislada.json": {
-    "resultado.json": "7c0189f69d6ef0448be1671c12dfffbbc9d1f797057deee5274428db613ac588",
-    "memoria.txt": "41e570d7330e54fa47bad524bedb1ad9ebbc980998245e514bdee698c1c126fd"
+    "resultado.json": "e770c806f8d6a85fd4bb3c89d1b4db3da61887f25c12ba2b022e76f17b915dd0",
+    "memoria.txt": "9dc50bbc8db8bc60b2db464ada24984854204f1143db161f88955a891aecd732"
   }
 }

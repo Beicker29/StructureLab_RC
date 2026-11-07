@@ -26,7 +26,7 @@ de una misma capa que no pueden hacerlo.
 | --- | --- |
 | `cli` | Interfaz. Llama a `engine`/`execution`; nunca calcula capacidades. |
 | `engine`, `execution` | Orquestación, sin reglas de cálculo. |
-| `reporting` | Presentación: `results.py` arma el resultado en unidades de salida (`kN()`, `kNm()`, 6 cifras), `memoir.py` la memoria en texto desde ese resultado y `pdf.py` el PDF. No calcula capacidades. |
+| `reporting` | Presentación: `results.py` arma el resultado en unidades de salida (`kN()`, `kNm()`, 6 cifras); `document.py` construye desde ese resultado la memoria de cada elemento como bloques neutros (capítulos fijos), con los nombres de `glossary.py`; `text.py` y `pdf.py` dibujan los mismos bloques (D-068). No calcula capacidades. |
 | `io/etabs` | Lee el Excel de ETABS con la biblioteca estándar y arma el proyecto JSON desde una plantilla (D-042). Convierte el formato de ETABS al de entrada: m a mm y la compresión positiva. `footings.py` cruza las reacciones de servicio y mayoradas y las convierte en acciones sobre la zapata (D-055). |
 | `setup` | `load_engine()`: carga las tablas de `data/` con `importlib.resources`. |
 | `domain/<elemento>` | Elige la cláusula y arma cada `Check` (`beam/`, `footing/`). `domain/status.py` tiene la única agregación de estados y `domain/flexure_strength.py`, `domain/shear_strength.py` y `domain/development.py` la resistencia a flexión, a cortante y el desarrollo comunes a todos los elementos (D-060, D-063, D-065). |

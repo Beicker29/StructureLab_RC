@@ -72,7 +72,8 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
   punzonamiento: hecha, D-063; V3D.3 desarrollo, aplastamiento y pasadores: hecha, D-065): con la presión mayorada, flexión en las caras de la columna (mallas inferior y
   superior), As,min y separación, cortante en una dirección, punzonamiento con γv·Msc, distribución γs, altura
   mínima, desarrollo de las barras, aplastamiento y pasadores.
-- **V3E Memoria y huella:** memoria, resultados y huella de zapatas.
+- **V3E Memoria y huella (hecha, D-068):** memoria de cálculo por elemento con el formato de StructureLab_HFS, para
+  vigas y zapatas, en texto y PDF; huella de zapatas.
 - **V3F Diseño:** dimensiones en planta, altura y barras del catálogo; soluciones ordenadas y verificadas con V3C y V3D.
 
 Pendientes de la v3: reducciones opcionales del desarrollo (As requerido/As suministrado, factores de gancho por

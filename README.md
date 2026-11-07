@@ -34,9 +34,13 @@ structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - 
 ```
 
 `report` verifica el proyecto y escribe en la carpeta de salida `resultado.json` (todo el detalle, en kN, kN·m, mm
-y MPa), `memoria.txt` y `memoria.pdf`. La memoria resume cada miembro con la estación crítica de cada
-verificación y detalla lo que no cumple; `--full` agrega todas las estaciones. El PDF requiere el extra `pdf`
-(`pip install structurelab-rc[pdf]`).
+y MPa), `memoria.txt` y `memoria.pdf`. Hay una memoria de cálculo por elemento (viga o zapata), todas en el mismo
+archivo, con el formato de StructureLab_HFS: el resultado y el DCR máximo arriba, capítulos fijos (materiales,
+geometría, solicitaciones, requerimientos técnicos, cada revisión con su ubicación gobernante, índices DCR y notas y
+limitaciones), cada valor con su nombre en palabras, su símbolo y la referencia literal de la norma. Lo que no
+corresponde dice «No aplica» y lo que no está programado, «Falta implementación». `--full` agrega la tabla de todas
+las ubicaciones de cada verificación. El PDF requiere el extra `pdf` (`pip install structurelab-rc[pdf]`) y usa una
+fuente TrueType del sistema para los símbolos.
 
 `catalog` lista la designación, el diámetro nominal (mm), el área (mm²) y la masa (kg/m) de
 las barras del catálogo.

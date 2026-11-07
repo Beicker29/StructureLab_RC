@@ -92,8 +92,8 @@ y del relleno, y fuerzas de las sobrecargas. Salen en `resultado.json`, en `foot
 | Archivo | Contenido |
 | --- | --- |
 | `resultado.json` | Todo el detalle en unidades de presentación (kN, kN·m, kPa, mm, MPa), redondeado a 6 cifras significativas. Es la fuente de la memoria. |
-| `memoria.txt` | Memoria en texto: datos y supuestos, resumen, lo que no cumple y los casos críticos. |
-| `memoria.pdf` | La misma memoria en PDF; requiere el extra `pdf` (`pip install structurelab-rc[pdf]`). |
+| `memoria.txt` | Memoria de cálculo de cada elemento, una tras otra (D-068): resultado y DCR máximo, capítulos fijos con cada revisión en su ubicación gobernante, índices DCR y notas y limitaciones. |
+| `memoria.pdf` | Los mismos bloques en PDF, cada elemento desde una página nueva; requiere el extra `pdf` (`pip install structurelab-rc[pdf]`). |
 
 Cada verificación de `resultado.json` tiene:
 

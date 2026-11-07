@@ -19,9 +19,10 @@ from structurelab_rc.io.etabs.importer import SHEET, EtabsImportError, ImportSum
 from structurelab_rc.io.etabs.xlsx import XlsxError, read_table
 from structurelab_rc.model.loader import ProjectLoadError, load_footing_template, load_project, load_template, validate_input
 from structurelab_rc.model.project import Project
-from structurelab_rc.reporting.memoir import render_memoir
+from structurelab_rc.reporting.document import report_documents
 from structurelab_rc.reporting.pdf import write_pdf
 from structurelab_rc.reporting.results import build_results
+from structurelab_rc.reporting.text import render_text
 from structurelab_rc.setup import load_engine
 
 
@@ -69,12 +70,13 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050)."""
     project, checks = run_project(path)
     results = build_results(project, checks, __version__)
-    text = render_memoir(results, full=full)
+    documents = report_documents(results, full=full)
+    text = render_text(documents)
     output.mkdir(parents=True, exist_ok=True)
     result_path, memoir_path, pdf_path = output / "resultado.json", output / "memoria.txt", output / "memoria.pdf"
     result_path.write_text(json.dumps(results, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     memoir_path.write_text(text, encoding="utf-8", newline="\n")
-    pdf_written = write_pdf(text, pdf_path)
+    pdf_written = write_pdf(documents, pdf_path)
     files = (result_path, memoir_path, pdf_path) if pdf_written else (result_path, memoir_path)
     return Report(results["status"], files, pdf_written)
 

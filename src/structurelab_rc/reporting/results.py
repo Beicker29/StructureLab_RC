@@ -1,12 +1,17 @@
-"""Resultado de la verificación en unidades de presentación (kN, kN·m, mm, MPa), redondeado a 6 cifras (D-050)."""
+"""Resultado de la verificación en unidades de presentación (kN, kN·m, mm, MPa), redondeado a 6 cifras (D-050, D-068).
+
+Trae todo lo que la memoria imprime: propiedades de los materiales que usa el perfil, solicitaciones y armado de cada
+estación, casos de carga de cada zapata y las verificaciones; la memoria no calcula nada.
+"""
 
 import math
 from typing import Any
 
+from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
-from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, Soil
-from structurelab_rc.model.project import Project
+from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingLoad, Soil
+from structurelab_rc.model.project import Demands, Project
 from structurelab_rc.reporting.units import kN, kNm, kPa
 
 _DIGITS = 6
@@ -15,7 +20,9 @@ _UNITS = {"N*mm": ("kN-m", kNm), "N": ("kN", kN), "N/mm2": ("kPa", kPa)}
 # Valores de una verificación con unidad: nombre → unidad interna.
 _VALUE_UNITS = {"Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi Tth": "N*mm", "Vc": "N", "Vs": "N",
                 "c": "mm", "d": "mm", "theta": "deg", "Aoh": "mm2", "ph": "mm", "across": "mm", "across_max": "mm",
-                "N": "N", "Mx base": "N*mm", "My base": "N*mm", "ex": "mm", "ey": "mm"}
+                "N": "N", "Mx base": "N*mm", "My base": "N*mm", "ex": "mm", "ey": "mm", "As": "mm2", "Vu": "N",
+                "b0": "mm", "vuv": "MPa", "bslab": "mm", "A1": "mm2", "A2": "mm2", "Av/s": "mm2/mm", "At/s": "mm2/mm",
+                "At/s rama exterior": "mm2/mm"}
 
 
 def significant(value: float) -> float:
@@ -100,10 +107,38 @@ def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str,
         "id": footing.id,
         "geometry [mm]": geometry,
         "properties": {key: significant(value) for key, value in properties.items()},
-        "loads": len(footing.loads),
+        "reinforcement": {"bottom": footing.bottom.model_dump(mode="json"),
+                          "top": None if footing.top is None else footing.top.model_dump(mode="json")},
+        "loads": [_load_data(load) for load in footing.loads],
         "status": _status(checks),
-        "checks": [check_data(check) for check in checks],
+        # En las zapatas cada verificación lleva su caso de carga (None si vale para toda la zapata).
+        "checks": [{**check_data(check), "case": check.case} for check in checks],
     }
+
+
+def _load_data(load: FootingLoad) -> dict[str, Any]:
+    return {"case": load.case, "kind": load.kind, "dead_factor": load.dead_factor, "live_factor": load.live_factor,
+            "P [kN]": significant(kN(load.p)), "Vx [kN]": significant(kN(load.vx)), "Vy [kN]": significant(kN(load.vy)),
+            "Mx [kN-m]": significant(kNm(load.mx)), "My [kN-m]": significant(kNm(load.my))}
+
+
+def _demands_data(demands: Demands) -> dict[str, float | None]:
+    pairs = (("Pu [kN]", demands.pu, kN), ("Mu [kN-m]", demands.mu, kNm), ("M2 [kN-m]", demands.m2, kNm),
+             ("Vu [kN]", demands.vu, kN), ("V3 [kN]", demands.v3, kN), ("Tu [kN-m]", demands.tu, kNm))
+    return {key: None if value is None else significant(convert(value)) for key, value, convert in pairs}
+
+
+def _materials_used(project: Project) -> dict[str, Any]:
+    """Valores del perfil que usa el cálculo (los mismos que domain toma de codes); la memoria solo los imprime."""
+    profile = PROFILES.get(project.profile)
+    if profile is None:
+        return {}
+    assumptions, materials = profile.strength_assumptions, project.materials
+    es = assumptions.steel_modulus()
+    return {"beta1": assumptions.beta1(materials.fc), "ecu": assumptions.max_concrete_strain(),
+            "alpha1": assumptions.stress_block_factor(), "Es [MPa]": es,
+            "ety": significant(profile.flexure.yield_strain(materials.fy, es)),
+            "lambda": assumptions.concrete_lambda(materials.concrete)}
 
 
 def _status(checks: list[Check]) -> str:
@@ -126,6 +161,7 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
         "seismic": {"level": project.seismic.level, "justification": project.seismic.justification},
         "materials": {"fc [MPa]": project.materials.fc, "fy [MPa]": project.materials.fy, "fyt [MPa]": project.materials.fyt,
                       "concrete": project.materials.concrete},
+        "materials_used": _materials_used(project),
     }
     members = []
     for member in project.members:
@@ -134,7 +170,9 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
         for station in member.stations:
             here = [check for check in own if check.z == station.z and check.case == station.case]
             data = [check_data(check) for check in here]
-            stations.append({"z [mm]": station.z, "case": station.case, "status": _status(here), "checks": data})
+            stations.append({"z [mm]": station.z, "case": station.case, "status": _status(here),
+                             "demands": _demands_data(station.demands), "layout": station.layout.model_dump(mode="json", by_alias=True),
+                             "checks": data})
         members.append({
             "id": member.id,
             "type": member.type,

@@ -1,5 +1,6 @@
 import builtins
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -49,21 +50,30 @@ def test_results_hold_every_station_and_check(tmp_path: Path) -> None:
 def test_phi_in_the_memoir_comes_from_the_results(tmp_path: Path) -> None:
     results, text = _report(tmp_path)
     strength = next(check for check in results["members"][0]["stations"][0]["checks"] if check["name"] == "Flexion: resistencia")
-    assert f"phi = {strength['values']['phi']:.5f}" in text
+    assert f"Factor de reducción de resistencia  φ        {strength['values']['phi']:.4f}" in text
 
 
-def test_memoir_has_its_sections_and_the_declared_seismic_level(tmp_path: Path) -> None:
+BEAM_CHAPTERS = ("1. Propiedades mecánicas de los materiales", "2. Propiedades geométricas y armado", "3. Solicitaciones",
+                 "4. Revisión de requerimientos técnicos", "5. Revisión de condiciones de servicio",
+                 "6. Revisión de capacidad a momento flector", "7. Revisión de capacidad a fuerza cortante",
+                 "8. Revisión de capacidad a torsión", "9. Índices DCR", "10. Notas y limitaciones")
+
+
+def test_beam_memoir_has_its_fixed_chapters(tmp_path: Path) -> None:
     _, text = _report(tmp_path)
-    for heading in ("1. DATOS DEL PROYECTO", "2. SUPUESTOS Y CONVENCIONES", "3. RESUMEN POR MIEMBRO",
-                    "4. VERIFICACIONES QUE NO CUMPLEN", "5. ESTACIONES CRITICAS"):
-        assert heading in text
-    assert "Nivel sismico declarado: DMO" in text
-    assert "6. DETALLE DE TODAS LAS ESTACIONES" not in text
+    assert text.startswith("# Memoria de cálculo — Viga V-1")
+    assert "RESULTADO: PASS (CUMPLE)" in text
+    for chapter in BEAM_CHAPTERS:
+        assert f"## {chapter}" in text
+    assert "Nivel sísmico declarado: DMO" in text
+    assert "Falta implementación: fisuración, espesor mínimo y deflexiones" in text
+    locations = re.compile(r"Ubicación\s+Resultado\s+Demanda")
+    assert not locations.search(text)
     _, full = _report(tmp_path / "completo", full=True)
-    assert "6. DETALLE DE TODAS LAS ESTACIONES" in full
+    assert locations.search(full)
 
 
-def test_failing_checks_are_listed(tmp_path: Path) -> None:
+def test_failing_checks_are_shown_with_their_governing_location(tmp_path: Path) -> None:
     data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
     data["members"][0]["stations"][1]["demands"]["Mu_kNm"] = 600.0
     project = tmp_path / "falla.json"
@@ -71,8 +81,8 @@ def test_failing_checks_are_listed(tmp_path: Path) -> None:
     report = report_file(project, tmp_path / "salida")
     text = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
     assert report.status == "FAIL"
-    section = text.split("4. VERIFICACIONES QUE NO CUMPLEN")[1].split("5. ESTACIONES CRITICAS")[0]
-    assert "Flexion: resistencia, z = 3000 mm" in section
+    assert "RESULTADO: FAIL (NO CUMPLE)" in text
+    assert "### 6.1 Flexión: resistencia; ubicación gobernante: z = 3000 mm" in text
 
 
 def test_invalid_input_produces_a_short_report(tmp_path: Path) -> None:
@@ -80,7 +90,23 @@ def test_invalid_input_produces_a_short_report(tmp_path: Path) -> None:
     broken.write_text("{", encoding="utf-8")
     report = report_file(broken, tmp_path / "salida")
     assert report.status == "FAIL"
-    assert "La entrada no es valida" in (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
+    text = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
+    assert "La entrada no es válida" in text
+    assert "RESULTADO: FAIL (NO CUMPLE)" in text
+
+
+def test_footing_memoir_has_its_fixed_chapters(tmp_path: Path) -> None:
+    footing = Path(__file__).parent.parent / "examples" / "nsr_10" / "zapatas" / "zapata_aislada.json"
+    report_file(footing, tmp_path)
+    text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
+    results = json.loads((tmp_path / "resultado.json").read_text(encoding="utf-8"))
+    assert text.count("# Memoria de cálculo — Zapata ") == len(results["footings"]) == 2
+    for chapter in ("4. Revisión geotécnica: presión del suelo y contacto", "8. Revisión de cortante en dos direcciones",
+                    "10. Revisión de aplastamiento y pasadores", "11. Índices DCR", "12. Notas y limitaciones"):
+        assert f"## {chapter}" in text
+    assert "Área de la base (A)" in text
+    assert "Revisión geotécnica a deslizamiento y a volcamiento: falta implementación." in text
+    assert all("case" in check for check in results["footings"][0]["checks"])
 
 
 def test_outputs_have_no_date_and_are_reproducible(tmp_path: Path) -> None:
@@ -91,9 +117,13 @@ def test_outputs_have_no_date_and_are_reproducible(tmp_path: Path) -> None:
     assert "2026" not in first_text
 
 
-def test_pdf_uses_latin1_equivalents(tmp_path: Path) -> None:
+def test_pdf_draws_the_document_blocks(tmp_path: Path) -> None:
     assert latin1("Tu ≥ φTth, Aℓ·s, ñ") == "Tu >= phiTth, Al.s, ñ"
-    assert write_pdf("Memoria con φ y ≥\nsegunda linea", tmp_path / "memoria.pdf")
+    blocks: list[dict[str, Any]] = [{"kind": "title", "element": "Viga V", "meta": [("Norma", "NSR-10")], "status": "PASS",
+               "status_text": "CUMPLE",
+               "ratio": 0.5}, {"kind": "h1", "text": "1. Capítulo con φ y ≥"},
+              {"kind": "table", "headers": ["Parámetro", "Valor"], "rows": [["Área (mm²)", "12"]]}, {"kind": "note", "text": "nota"}]
+    assert write_pdf([blocks, blocks], tmp_path / "memoria.pdf")
     assert (tmp_path / "memoria.pdf").read_bytes().startswith(b"%PDF")
 
 

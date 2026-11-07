@@ -1,0 +1,389 @@
+"""Modelo neutro de la memoria de cálculo (D-068): bloques por elemento, construidos solo a partir del resultado.
+
+Cada elemento (viga o zapata) tiene capítulos fijos; lo que no corresponde dice "No aplica" y lo que el programa no
+calcula dice "Falta implementación". El texto (text.py) y el PDF (pdf.py) dibujan los mismos bloques. Vigas y zapatas
+comparten la verificación gobernante, el detalle de cada verificación, la tabla de requisitos y los índices DCR; solo
+cambia cómo se ubica una verificación (estación de la viga o caso de carga de la zapata).
+
+Bloques: title, summary, h1, h2, table, kv, p, note y alert (diccionarios con "kind").
+"""
+
+from collections.abc import Callable, Iterable
+from typing import Any
+
+from structurelab_rc.domain.status import Status
+from structurelab_rc.reporting.glossary import PROFILE_NAMES, STATUS_TEXT, classify, describe, display, number, unit_of
+
+Block = dict[str, Any]
+# Una verificación ubicada: (ubicación en palabras, verificación del resultado).
+Located = tuple[str, dict[str, Any]]
+
+_PRECEDENCE = {str(Status.FAIL): 3, str(Status.INCOMPLETE): 2, str(Status.BLOCKED): 1, str(Status.PASS): 0}
+_CONCRETE = {"normalweight": "concreto de peso normal", "lightweight": "concreto liviano"}
+_ENDS = {"straight": "rectas", "hook": "con gancho estándar"}
+_CHAPTER_TITLES = {
+    "requirements": "Revisión de requerimientos técnicos",
+    "flexure": "Revisión de capacidad a momento flector",
+    "shear": "Revisión de capacidad a fuerza cortante",
+    "torsion": "Revisión de capacidad a torsión",
+    "geotechnical": "Revisión geotécnica: presión del suelo y contacto",
+    "one_way": "Revisión de cortante en una dirección",
+    "punching": "Revisión de cortante en dos direcciones (punzonamiento)",
+    "development": "Revisión de desarrollo y anclaje del refuerzo",
+    "bearing": "Revisión de aplastamiento y pasadores",
+    "other": "Otras revisiones",
+}
+_BEAM_CONVENTIONS = (
+    "Las fuerzas llegan mayoradas; la aplicación no genera combinaciones (D-003).",
+    "Ejes de ETABS: X = eje 3, Y = eje 2 (hacia arriba), Z = eje 1. Mu (M3) positivo comprime la cara superior y M2 "
+    "positivo comprime la cara +3 (D-044).",
+    "Flexión con Pn = Pu y momentos respecto al centroide bruto (D-024); resistencia biaxial con la sección completa y "
+    "deformación neta de tracción en los estados M3, M2 y biaxial (D-046).",
+    "d no menor que 0.8h en As,min, cortante y torsión (D-043); en el cortante V3, no menor que 0.8bw (D-047).",
+    "La torsión se desprecia si Tu < φTth; si no, se verifica combinada con el cortante (D-037).",
+)
+_BEAM_LIMITATIONS = (
+    "Servicio (fisuración, espesor mínimo y deflexiones): falta implementación (subfase 2D, D-017, D-039).",
+    "Excepción de As,min cuando As supera en un tercio al requerido: falta implementación; la verificación queda "
+    "bloqueada si As < As,min (D-022).",
+    "Torsión de compatibilidad (Tu reducido a φTcr) y reducción de Aℓ en la zona comprimida: falta implementación.",
+    "Secciones huecas a torsión: no cubiertas.",
+    "Requisitos sísmicos de vigas (Fase 3): falta implementación.",
+)
+_FOOTING_CONVENTIONS = (
+    "Las fuerzas de la columna llegan como casos de servicio y mayorados, cada uno con los factores de carga muerta y "
+    "viva de su combinación; la aplicación no genera combinaciones (D-052, D-057).",
+    "Ejes globales de ETABS con origen en el centroide de la base: X a lo largo de lx, Y a lo largo de ly, Z hacia "
+    "arriba. Las fuerzas son las de la columna sobre la zapata, en la base de la columna (D-052, D-055).",
+    "Presión del suelo lineal y sin tracción bajo zapata rígida según Bellos y Bakas (2017) (D-053). qa es la presión "
+    "admisible bruta: incluye los pesos propios y las sobrecargas (D-056, D-057).",
+    "El contacto con el suelo se verifica con los casos de servicio; un caso sin equilibrio es NO CUMPLE (D-052, D-054).",
+    "Verificación estructural con la carga neta de cada caso mayorado: flexión en las caras de la columna, cortante a d "
+    "de la cara y punzonamiento a d/2 con transferencia de momento en los dos ejes (D-061, D-063).",
+    "Desarrollo sin reducciones opcionales y refuerzo sin recubrimiento epóxico (D-065).",
+)
+_FOOTING_LIMITATIONS = (
+    "Revisión geotécnica a deslizamiento y a volcamiento: falta implementación.",
+    "Momento negativo sin malla superior (concreto simple): falta implementación (D-059).",
+    "Aplastamiento del lado de la columna, empalme de los pasadores y tracción en la interfaz: se verificarán con las "
+    "columnas (D-059).",
+    "Zapatas combinadas, medianeras con viga de amarre, rotadas, escalonadas, losas de cimentación y pilotes: no cubiertas.",
+)
+_SOURCES = "Los factores φ, las capacidades y los numerales provienen del resultado de cada verificación."
+
+
+def _severity(check: dict[str, Any]) -> tuple[int, float]:
+    return _PRECEDENCE[check["status"]], check["ratio"] if check["ratio"] is not None else -1.0
+
+
+def governing(items: Iterable[Located]) -> dict[str, Located]:
+    """Por verificación, la ubicación más exigida: primero el estado más severo, luego la mayor razón."""
+    result: dict[str, Located] = {}
+    for where, check in items:
+        current = result.get(check["name"])
+        if current is None or _severity(check) > _severity(current[1]):
+            result[check["name"]] = (where, check)
+    return result
+
+
+def _status_text(status: str) -> str:
+    return STATUS_TEXT.get(status, status)
+
+
+def _quantity(value: float | None, unit: str) -> str:
+    shown = unit_of(f"x [{unit}]")[1]
+    return f"{number(value, shown)} {shown}".rstrip(" –") if value is not None else "–"
+
+
+def _title(element: str, results: dict[str, Any], meta: list[tuple[str, str]], items: list[Located], status: str) -> Block:
+    project = results["project"]
+    ratios = [check["ratio"] for _, check in items if check["ratio"] is not None]
+    meta = [("Proyecto", project["description"]), ("Norma", PROFILE_NAMES.get(project["profile"], project["profile"])),
+            ("Nivel sísmico declarado", project["seismic"]["level"]), *meta,
+            ("Programa", f"{results['software']['name']} {results['software']['version']}")]
+    return {"kind": "title", "element": element, "meta": meta, "status": status, "status_text": _status_text(status),
+            "ratio": max(ratios) if ratios else None}
+
+
+def _summary(items: list[Located]) -> Block:
+    """La verificación de mayor DCR de cada capítulo de resistencia."""
+    lines = []
+    by_chapter: dict[str, Located] = {}
+    for where, check in items:
+        chapter = classify(check["name"])[0]
+        if chapter == "requirements" or check["ratio"] is None:
+            continue
+        current = by_chapter.get(chapter)
+        if current is None or _severity(check) > _severity(current[1]):
+            by_chapter[chapter] = (where, check)
+    for chapter, (where, check) in by_chapter.items():
+        lines.append(f"{_CHAPTER_TITLES[chapter].split(': ')[0].replace('Revisión de ', '').capitalize()}: "
+                     f"DCR = {check['ratio']:.3f} ({display(check['name'])}, {where})")
+    return {"kind": "summary", "items": lines}
+
+
+def _materials(results: dict[str, Any]) -> list[Block]:
+    project = results["project"]
+    materials, used = project["materials"], project.get("materials_used", {})
+    profile = PROFILE_NAMES.get(project["profile"], project["profile"])
+    rows = [["Resistencia especificada del concreto (f'c)", number(materials["fc [MPa]"], "MPa"), "MPa", "Dato del usuario"],
+            ["Esfuerzo de fluencia del refuerzo longitudinal (fy)", number(materials["fy [MPa]"], "MPa"), "MPa", "Dato del usuario"],
+            ["Esfuerzo de fluencia del refuerzo transversal (fyt)", number(materials["fyt [MPa]"], "MPa"), "MPa", "Dato del usuario"],
+            ["Tipo de concreto", _CONCRETE.get(materials["concrete"], materials["concrete"]), "–", "Dato del usuario"]]
+    for key, value in used.items():
+        name, unit = unit_of(key)
+        description, symbol = describe(name)
+        rows.append([f"{description} ({symbol})", "–" if value is None else number(value, unit if unit != "–" else "–"),
+                     unit, f"Perfil {profile}"])
+    return [{"kind": "table", "headers": ["Propiedad", "Valor", "Unidad", "Referencia literal"], "rows": rows}]
+
+
+def _values_table(check: dict[str, Any]) -> Block | None:
+    if not check["values"]:
+        return None
+    rows = []
+    for key, value in check["values"].items():
+        name, unit = unit_of(key)
+        description, symbol = describe(name)
+        rows.append([description, symbol, number(value, unit), unit])
+    return {"kind": "table", "headers": ["Parámetro", "Símbolo", "Valor", "Unidad"], "rows": rows}
+
+
+def _check_detail(number_text: str, where: str, check: dict[str, Any], locations: list[Located] | None) -> list[Block]:
+    """Detalle de una verificación en su ubicación gobernante; con locations, la tabla de todas las ubicaciones."""
+    _, demand_symbol, capacity_symbol = classify(check["name"])
+    blocks: list[Block] = [{"kind": "h2", "text": f"{number_text} {display(check['name'])}; ubicación gobernante: {where}"}]
+    table = _values_table(check)
+    if table is not None:
+        blocks.append(table)
+    lines: list[tuple[str, str]] = [("Referencia literal", check["clause"] or "–")]
+    unit = check["unit"]
+    if check["demand"] is not None or check["capacity"] is not None:
+        lines.append((f"Demanda{f' ({demand_symbol})' if demand_symbol else ''}", _quantity(check["demand"], unit)))
+        lines.append((f"Capacidad{f' ({capacity_symbol})' if capacity_symbol else ''}", _quantity(check["capacity"], unit)))
+    if check["ratio"] is not None:
+        shown = unit_of(f"x [{unit}]")[1]
+        lines.append(("Verificación", f"{demand_symbol or 'Demanda'} / {capacity_symbol or 'capacidad'} = "
+                      f"{number(check['demand'], shown)} / {number(check['capacity'], shown)} = {check['ratio']:.3f}"))
+    lines.append(("Resultado", _status_text(check["status"])))
+    blocks.append({"kind": "kv", "items": lines})
+    if check["note"]:
+        blocks.append({"kind": "note", "text": check["note"]})
+    blocks.extend({"kind": "alert", "text": f"[{error['code']}] {error['message']}"} for error in check["errors"])
+    if locations:
+        rows = [[place, _status_text(item["status"]), _quantity(item["demand"], item["unit"]),
+                 _quantity(item["capacity"], item["unit"]), "–" if item["ratio"] is None else f"{item['ratio']:.3f}"]
+                for place, item in locations]
+        blocks.append({"kind": "table", "headers": ["Ubicación", "Resultado", "Demanda", "Capacidad", "DCR"], "rows": rows})
+    return blocks
+
+
+def _requirements(items: list[Located]) -> list[Block]:
+    rows = []
+    for name, (where, check) in governing(items).items():
+        if classify(name)[0] != "requirements":
+            continue
+        rows.append([display(name), where, _quantity(check["demand"], check["unit"]), _quantity(check["capacity"], check["unit"]),
+                     check["clause"] or "–", _status_text(check["status"])])
+    if not rows:
+        return [{"kind": "p", "text": "No aplica: ningún requisito para este elemento."}]
+    blocks: list[Block] = [{"kind": "table", "headers": ["Requisito", "Ubicación gobernante", "Exigido", "Suministrado",
+                                                          "Referencia literal", "Resultado"], "rows": rows}]
+    for name, (_, check) in governing(items).items():
+        if classify(name)[0] == "requirements":
+            blocks.extend({"kind": "alert", "text": f"{display(name)}: [{error['code']}] {error['message']}"}
+                          for error in check["errors"])
+    return blocks
+
+
+def _chapter(chapter: str, number_text: str, items: list[Located], full: bool) -> list[Block]:
+    selected = {name: located for name, located in governing(items).items() if classify(name)[0] == chapter}
+    if not selected:
+        return [{"kind": "p", "text": "No aplica: ninguna verificación de este tipo en el elemento."}]
+    blocks: list[Block] = []
+    for index, (name, (where, check)) in enumerate(selected.items(), start=1):
+        locations = [item for item in items if item[1]["name"] == name] if full else None
+        blocks.extend(_check_detail(f"{number_text}.{index}", where, check, locations))
+    return blocks
+
+
+def _dcr(items: list[Located]) -> list[Block]:
+    rows = [[display(name), _CHAPTER_TITLES[classify(name)[0]].replace("Revisión de ", "").capitalize(), where,
+             _quantity(check["demand"], check["unit"]), _quantity(check["capacity"], check["unit"]),
+             "–" if check["ratio"] is None else f"{check['ratio']:.3f}", _status_text(check["status"])]
+            for name, (where, check) in governing(items).items()]
+    return [{"kind": "table", "headers": ["Revisión", "Capítulo", "Ubicación gobernante", "Demanda", "Capacidad", "DCR",
+                                          "Resultado"], "rows": rows}]
+
+
+def _notes(results: dict[str, Any], conventions: tuple[str, ...], limitations: tuple[str, ...]) -> list[Block]:
+    project = results["project"]
+    return [{"kind": "p", "text": f"Justificación del nivel sísmico: {project['seismic']['justification']}"},
+            *({"kind": "note", "text": text} for text in (*conventions, _SOURCES)),
+            {"kind": "p", "text": "Limitaciones:"},
+            *({"kind": "note", "text": text} for text in limitations)]
+
+
+def _assemble(head: list[Block], chapters: list[tuple[str, Callable[[str], list[Block]]]]) -> list[Block]:
+    blocks = list(head)
+    for index, (title, build) in enumerate(chapters, start=1):
+        blocks.append({"kind": "h1", "text": f"{index}. {title}"})
+        blocks.extend(build(str(index)))
+    return blocks
+
+
+def _layers(layout: dict[str, Any]) -> str:
+    parts = []
+    for layer in layout["layers"]:
+        bars = layer["bars"]
+        if isinstance(bars, dict):
+            text = f"{bars['designation']} c/{bars['spacing']:.0f} mm"
+        else:
+            text = " ".join(bar if isinstance(bar, str) else bar["designation"] for bar in bars)
+        role = "torsión" if layer["role"] == "torsion" else "flexión"
+        parts.append(f"{layer['depth']:.0f} mm: {text} ({role})")
+    return "; ".join(parts)
+
+
+def _stirrups(layout: dict[str, Any]) -> str:
+    stirrups = layout["stirrups"]
+    if stirrups is None:
+        return "sin estribos"
+    closed = "cerrados" if stirrups["closed"] else "abiertos"
+    return f"{stirrups['designation']} de {stirrups['legs']} ramas c/{stirrups['spacing']:.0f} mm, {closed}"
+
+
+def _beam_geometry(member: dict[str, Any]) -> list[Block]:
+    section = member["section"]
+    names = {"bw": "Ancho del alma (bw)", "h": "Altura total (h)", "cover": "Recubrimiento libre a los estribos",
+             "hf": "Espesor del ala (hf)", "overhang_x_neg": "Saliente del ala hacia −3", "overhang_x_pos": "Saliente del ala hacia +3"}
+    rows = [["Longitud del miembro (L)", number(member["length [mm]"], "mm"), "mm", "Dato del usuario"]]
+    rows += [[label, number(section[key], "mm"), "mm", "Dato del usuario"] for key, label in names.items() if key in section]
+    reinforcement = [[f"{station['z [mm]']:.0f}", station["case"] or "–", _layers(station["layout"]), _stirrups(station["layout"])]
+                     for station in member["stations"]]
+    return [{"kind": "table", "headers": ["Propiedad", "Valor", "Unidad", "Fuente"], "rows": rows},
+            {"kind": "p", "text": "Armado por estación (profundidad de cada capa desde la fibra superior):"},
+            {"kind": "table", "headers": ["z (mm)", "Caso", "Capas longitudinales", "Estribos"], "rows": reinforcement}]
+
+
+def _beam_demands(member: dict[str, Any]) -> list[Block]:
+    keys = ("Pu [kN]", "Mu [kN-m]", "M2 [kN-m]", "Vu [kN]", "V3 [kN]", "Tu [kN-m]")
+    rows = [[f"{station['z [mm]']:.0f}", station["case"] or "–",
+             *(number(station["demands"].get(key), unit_of(key)[1]) for key in keys)] for station in member["stations"]]
+    headers = ["z (mm)", "Caso", *(f"{unit_of(key)[0]} ({unit_of(key)[1]})" for key in keys)]
+    return [{"kind": "p", "text": "Fuerzas mayoradas; Pu > 0 en compresión."}, {"kind": "table", "headers": headers, "rows": rows}]
+
+
+def beam_document(results: dict[str, Any], member: dict[str, Any], full: bool) -> list[Block]:
+    items: list[Located] = [(f"z = {station['z [mm]']:.0f} mm, caso {station['case'] or '–'}", check)
+                            for station in member["stations"] for check in station["checks"]]
+    head = [_title(f"Viga {member['id']}", results, [("Estaciones", str(len(member["stations"])))], items, member["status"]),
+            _summary(items)]
+    chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
+        ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
+        ("Propiedades geométricas y armado", lambda _: _beam_geometry(member)),
+        ("Solicitaciones", lambda _: _beam_demands(member)),
+        (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
+        ("Revisión de condiciones de servicio",
+         lambda _: [{"kind": "p", "text": "Falta implementación: fisuración, espesor mínimo y deflexiones (subfase 2D)."}]),
+        (_CHAPTER_TITLES["flexure"], lambda n: _chapter("flexure", n, items, full)),
+        (_CHAPTER_TITLES["shear"], lambda n: _chapter("shear", n, items, full)),
+        (_CHAPTER_TITLES["torsion"], lambda n: _chapter("torsion", n, items, full)),
+        ("Índices DCR", lambda _: _dcr(items)),
+        ("Notas y limitaciones", lambda _: _notes(results, _BEAM_CONVENTIONS, _BEAM_LIMITATIONS)),
+    ]
+    return _assemble(head, chapters)
+
+
+def _mat_text(mat: dict[str, Any] | None) -> str:
+    if mat is None:
+        return "no hay"
+    sets = "; ".join(
+        f"barras {direction} {mat[direction]['designation']} c/{mat[direction]['spacing']:.0f} mm"
+        + (f" (franja central c/{mat[direction]['band_spacing']:.0f} mm)" if mat[direction].get("band_spacing") else "")
+        for direction in ("x", "y"))
+    return f"{sets}; primero {mat['first']}; barras {_ENDS[mat['end']]}"
+
+
+def _footing_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[Block]:
+    g = footing["geometry [mm]"]
+    column = g["column"]
+    soil = results["soil"]
+    rows = [["Largo a lo largo de X (lx)", number(g["lx"], "mm"), "mm"], ["Ancho a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
+            ["Espesor (h)", number(g["h"], "mm"), "mm"], ["Recubrimiento libre de las mallas", number(g["cover"], "mm"), "mm"],
+            ["Columna a lo largo de X (cx)", number(column["cx"], "mm"), "mm"],
+            ["Columna a lo largo de Y (cy)", number(column["cy"], "mm"), "mm"],
+            ["Desplazamiento de la columna en X", number(column["offset_x"], "mm"), "mm"],
+            ["Desplazamiento de la columna en Y", number(column["offset_y"], "mm"), "mm"],
+            ["Altura del pedestal", number(g["pedestal_height"], "mm"), "mm"], ["Altura del relleno", number(g["fill_height"], "mm"), "mm"],
+            ["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
+            ["Sobrecarga viva (qL)", number(g["surcharge_live [kN/m2]"], "kN/m²"), "kN/m²"]]
+    soil_rows = [["Presión admisible bruta (qa)", number(soil["qa [kPa]"], "kPa"), "kPa"],
+                 ["Fracción mínima de contacto", number(soil["contacto minimo [-]"], "–"), "–"],
+                 ["Peso unitario del concreto (γc)", number(soil["gamma concreto [kN/m3]"], "kN/m³"), "kN/m³"],
+                 ["Peso unitario del relleno (γf)", number(soil["gamma relleno [kN/m3]"], "kN/m³"), "kN/m³"]]
+    properties = []
+    for key, value in footing["properties"].items():
+        name, unit = unit_of(key)
+        description, symbol = describe(name)
+        properties.append([f"{description} ({symbol})", number(value, unit), unit])
+    dowels = column.get("dowels")
+    reinforcement = [["Malla inferior", _mat_text(footing["reinforcement"]["bottom"])],
+                     ["Malla superior", _mat_text(footing["reinforcement"]["top"])],
+                     ["Pasadores", f"{dowels['count']} {dowels['designation']}" if dowels else "no declarados"]]
+    return [{"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": rows},
+            {"kind": "table", "headers": ["Suelo y pesos (dato del usuario)", "Valor", "Unidad"], "rows": soil_rows},
+            {"kind": "p", "text": "Propiedades calculadas a partir de las dimensiones (nunca declaradas):"},
+            {"kind": "table", "headers": ["Propiedad", "Valor", "Unidad"], "rows": properties},
+            {"kind": "table", "headers": ["Refuerzo", "Descripción"], "rows": reinforcement}]
+
+
+def _footing_demands(footing: dict[str, Any]) -> list[Block]:
+    keys = ("P [kN]", "Vx [kN]", "Vy [kN]", "Mx [kN-m]", "My [kN-m]")
+    blocks: list[Block] = [{"kind": "p", "text": "Fuerzas de la columna sobre la zapata, en la base de la columna; P > 0 en compresión."}]
+    for kind, title in (("service", "Casos de servicio"), ("factored", "Casos mayorados")):
+        loads = [load for load in footing["loads"] if load["kind"] == kind]
+        blocks.append({"kind": "h2", "text": title})
+        if not loads:
+            blocks.append({"kind": "p", "text": "No aplica: ningún caso de este tipo."})
+            continue
+        rows = [[load["case"], f"{load['dead_factor']:.2f}", f"{load['live_factor']:.2f}",
+                 *(number(load[key], unit_of(key)[1]) for key in keys)] for load in loads]
+        headers = ["Caso", "Factor D", "Factor L", *(f"{unit_of(key)[0]} ({unit_of(key)[1]})" for key in keys)]
+        blocks.append({"kind": "table", "headers": headers, "rows": rows})
+    return blocks
+
+
+def footing_document(results: dict[str, Any], footing: dict[str, Any], full: bool) -> list[Block]:
+    items: list[Located] = [(f"caso {check['case']}" if check.get("case") else "toda la zapata", check) for check in footing["checks"]]
+    counts = {kind: sum(1 for load in footing["loads"] if load["kind"] == kind) for kind in ("service", "factored")}
+    meta = [("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
+    head = [_title(f"Zapata {footing['id']}", results, meta, items, footing["status"]), _summary(items)]
+    chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
+        ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
+        ("Propiedades geométricas, suelo y armado", lambda _: _footing_geometry(results, footing)),
+        ("Solicitaciones", lambda _: _footing_demands(footing)),
+        (_CHAPTER_TITLES["geotechnical"], lambda n: _chapter("geotechnical", n, items, full)),
+        (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
+        (_CHAPTER_TITLES["flexure"], lambda n: _chapter("flexure", n, items, full)),
+        (_CHAPTER_TITLES["one_way"], lambda n: _chapter("one_way", n, items, full)),
+        (_CHAPTER_TITLES["punching"], lambda n: _chapter("punching", n, items, full)),
+        (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, items, full)),
+        (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, items, full)),
+        ("Índices DCR", lambda _: _dcr(items)),
+        ("Notas y limitaciones", lambda _: _notes(results, _FOOTING_CONVENTIONS, _FOOTING_LIMITATIONS)),
+    ]
+    return _assemble(head, chapters)
+
+
+def report_documents(results: dict[str, Any], *, full: bool = False) -> list[list[Block]]:
+    """Una memoria por elemento (vigas y luego zapatas); con la entrada inválida, una memoria corta de validación."""
+    if "project" not in results:
+        validation = results["validation"]
+        return [[{"kind": "title", "element": "Validación de entrada", "meta": [], "status": results["status"],
+                  "status_text": _status_text(results["status"]), "ratio": None},
+                 {"kind": "p", "text": "La entrada no es válida:"},
+                 *({"kind": "alert", "text": f"[{error['code']}] {error['message']}"} for error in validation["errors"])]]
+    documents = [beam_document(results, member, full) for member in results["members"]]
+    documents += [footing_document(results, footing, full) for footing in results.get("footings", [])]
+    return documents
