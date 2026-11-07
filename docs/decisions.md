@@ -560,9 +560,19 @@
 - **Problema:** el PDF de `references/` imprime en 25.4.3.1(a) ldh = fy·ψe·ψs·ψcc·ψr/(21λ√f'c)·db, que en SI da 3.8db (96 mm para una barra #8), cinco veces menos que el ACI 318-19 y que la NSR-10 C.12.5.2. El comentario R25.4.3.1 dice que la expresión restaura la del ACI 318-14 con modificaciones menores; en SI, esa ecuación es (0.24ψe·fy/(λ√f'c))·db = fy/(4.17λ√f'c)·db.
 - **Decisión del usuario:** se usa ldh = fy·ψe·ψs·ψcc·ψr/(4.2λ√f'c)·db (constante `_HOOK_CONSTANT` en `codes/aci_318_25/development.py`). Con ella, una barra #8 da 480 mm (NSR-10: 484 mm).
 
+### D-067: revisión de la fe de erratas del ACI 318-25 (SI), parte disponible (C-015)
+
+- **Fecha:** 2026-11-07
+- **Fuente:** fe de erratas del ACI Committee 318 al 14 de mayo de 2026, 6 imágenes en `references/Fe de erratas aci 318-25/` (sin versionar).
+- **Revisado:** la tabla de conversiones faltantes (2.2, R7.6.3.1, R8.3.1.1, 8.3.1.2, 8.6.2.1, R8.6.2.1, 8.6.2.3, 8.7.6.3, 8.7.7.1.2, 9.6.1.2, 9.8.1.2, 10.7.5.2.1, 17.6.1.2, R17.7.3.1, R18.7.5.2, 18.8.3.2, R22.2.2.4.3, R22.4.2.1, 22.9.4.2, R23.4.3, 24.2.3.5, R24.3.1, R24.3.2.1, 25.4.6.1(b), R25.6.2.1, 25.7.1.8.3(c), R25.7.2.3, 25.7.3.1(a)) y las correcciones de 8.7.4.1.3, 9.6.3.1, R11.8.4.1, R17.1.9, 17.6.5.5.1, R17.7.2.1.2, 18.10.3.3, 18.10.6.2, 18.10.6.4, R18.10.6.5, 18.12.7.6, 18.12.12.1, 19.2.3.1, R25.9.4.4.6 y 27.4.6.2.
+- **Efecto en lo implementado:** ninguno.
+  - 9.6.1.2 (80 000 psi → 550 MPa): el As,min de vigas ya limita fy a 550 MPa (D-019).
+  - 9.6.3.1: solo quita una unidad sobrante del texto de la tabla; el Av,min (Tabla 9.6.3.4) no cambia.
+  - 19.2.3.1: el módulo de rotura es fr = 0.62λ√f'c (el PDF imprime 0.062). No se usa todavía; aplicará en la subfase 2D (fisuración y deflexiones).
+  - Las demás son de capítulos no implementados (losas en dos direcciones, anclajes, sísmico, muros, evaluación de estructuras existentes) o del comentario.
+
 ## Consultas abiertas
 
-### C-015: fe de erratas del ACI 318-25 (SI)
+### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)
 
-- **Problema:** el usuario compartió la fe de erratas del ACI 318-25 (SI) en Scribd (https://es.scribd.com/document/1076078086/Aci-318-25-Errata-Si), pero el sitio solo muestra la portada sin iniciar sesión; no se pudo leer ningún numeral.
-- **Pendiente:** obtener el PDF (por ejemplo en `references/`, sin versionar) y revisar cada corrección que afecte a lo implementado: capítulos 7, 8, 9, 13, 16, 20 a 22, 24 y 25.
+- **Pendiente:** la fe de erratas tiene 17 páginas; en `references/Fe de erratas aci 318-25/` hay 6 imágenes. La descripción del documento menciona correcciones en "cálculos de resistencia a cortante" que no aparecen en ellas, y tampoco aparece 25.4.3.1 (D-066). Revisar las páginas restantes cuando estén disponibles.
