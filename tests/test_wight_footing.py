@@ -9,6 +9,7 @@ import pytest
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.footing.flexure import flexure_checks
 from structurelab_rc.domain.footing.loads import factored_cases
+from structurelab_rc.domain.footing.shear import PUNCHING, shear_checks
 from structurelab_rc.model.footing import Footing, Soil
 from structurelab_rc.model.project import Materials
 from structurelab_rc.setup import load_engine
@@ -16,6 +17,7 @@ from structurelab_rc.setup import load_engine
 ORACLES = Path(__file__).parent / "oracles"
 FOLDERS = {"aci-318-25": "aci_318_25", "nsr-10": "nsr_10"}
 MM_PER_IN, MM_PER_FT, KN_PER_KIP, MPA_PER_PSI = 25.4, 304.8, 4.448222, 6.894757e-3
+N_PER_KIP = KN_PER_KIP * 1000
 KNM_PER_KIPFT = KN_PER_KIP * MM_PER_FT / 1000
 
 
@@ -60,3 +62,18 @@ def test_square_footing_flexure_matches_wight(profile: str) -> None:
         assert minimum.capacity / MM_PER_IN**2 == pytest.approx(expected["As_in2"], rel=tolerance)
         assert minimum.capacity == pytest.approx(expected["bars"] * 510.0)  # #8: 510 mm²
         assert str(minimum.status) == "PASS"
+
+    overrides = oracle["tolerance_overrides"]
+    shear = {check.name: check for check in shear_checks(PROFILES[profile], materials, footing, cases, load_engine().bars)}
+    for direction in ("x", "y"):
+        one_way = shear[f"Cortante en una direccion (barras {direction})"]
+        assert one_way.demand is not None and one_way.capacity is not None
+        assert one_way.demand / N_PER_KIP == pytest.approx(expected["one_way_Vu_kips"], rel=overrides["one_way_Vu_kips"])
+        assert one_way.capacity / N_PER_KIP == pytest.approx(expected["one_way_phi_Vc_kips"], rel=overrides["one_way_phi_Vc_kips"])
+    punching = shear[PUNCHING]
+    values = dict(punching.values)
+    assert values["Vu"] / N_PER_KIP == pytest.approx(expected["punching_Vu_kips"], rel=tolerance)
+    assert values["b0"] / MM_PER_IN == pytest.approx(expected["punching_b0_in"], rel=tolerance)
+    assert punching.demand is not None and punching.capacity is not None
+    assert punching.demand / MPA_PER_PSI == pytest.approx(expected["punching_vu_psi"], rel=tolerance)
+    assert punching.capacity / MPA_PER_PSI == pytest.approx(expected["punching_phi_vc_psi"], rel=tolerance)

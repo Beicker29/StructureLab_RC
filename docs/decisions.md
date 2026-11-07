@@ -536,11 +536,12 @@
   - La presión de los casos mayorados se calcula una sola vez por zapata y la comparten flexión y cortante.
 - **Oráculo:** `tests/oracles/derive_footing_shear.py`, sin importar el paquete: integración exacta y Jc por cuadratura numérica; 6 casos por perfil (interior, con momento, borde, esquina, columna alargada con β = 3 y zapata delgada).
 
+### D-064: cortante del ejemplo 15-3 de Wight (C-013)
+
+- **Fecha:** 2026-11-07
+- **Diferencias reportadas:** punzonamiento dentro de ±1 % (Vu = 712.4 frente a 712 kips, b0 = 200 in, vu = 111.3 frente a 111 psi, φvc = 176.3 frente a 177 psi). Una dirección: Vu = 163.4 y 169.35 kips frente a 166 (−1.6 % y +2.02 %) y φVc = 407.4 y 394.9 kips frente a 392 (+3.9 % y +0.7 %). Causas: la d de cada capa frente a la d promedio (D-062); el ACI en SI usa 0.17√f'c (MPa) y Wight 2√f'c (psi) = 0.166√f'c (+2.4 %; D-015 no convierte constantes); y Wight imprime 166 kips aunque su cálculo da 166.37.
+- **Decisión del usuario:** el ejemplo se compara en `tests/oracles/<perfil>/wight_footing.json` con ±1 % en el punzonamiento, ±2.5 % en Vu de una dirección y ±4 % en φVc de una dirección. El valor impreso del libro no se modifica.
+
 ## Consultas abiertas
 
-### C-013: ejemplo 15-3 de Wight frente al cortante de zapatas
-
-- **Punzonamiento:** Vu = 712.4 kips (712), b0 = 200 in, vu = 111.3 psi (111) y φvc = 176.3 psi (177): dentro de ±1 %.
-- **Una dirección:** Vu = 163.4 y 169.35 kips frente a 166 (−1.6 % y +2.02 %); φVc = 407.4 y 394.9 kips frente a 392 (+3.9 % y +0.7 %). Causas: la d de cada capa frente a la d promedio (D-062); el ACI en SI usa 0.17√f'c (MPa) y Wight 2√f'c (psi) = 0.166√f'c (+2.4 %; D-015 no convierte constantes); y Wight imprime 166 kips, aunque su cálculo da 6.20·11.5·28/12 = 166.37 kips (frente a este valor, +1.79 %).
-- **Propuesta aprobada por el usuario:** ±1 % en punzonamiento, ±2 % en Vu y ±4 % en φVc de una dirección. Al aplicarla, Vu de las barras y (+2.02 %) no cumple ±2 % por el redondeo de impresión del libro.
-- **Pendiente:** tolerancia de Vu de una dirección (por ejemplo ±2.5 %), antes de agregar el cortante a `wight_footing.json`.
+Ninguna.
