@@ -524,6 +524,23 @@
   1. Se mantiene la d de cada capa y φMn se compara con Wight con ±2 % (`tests/oracles/<perfil>/wight_footing.json`); Mu, As,min y el número de barras, con ±1 % (D-015).
   2. NSR-10 C.7.12.2.1 se lee por tramos de fy: 0.0020 con fy ≤ 350 MPa (grados 280 y 350), 0.0018 con 350 < fy ≤ 420 MPa (grado 420) y 0.0018·420/fy con fy > 420 MPa, no menor que 0.0014. Así el Grado 60 convertido (413.7 MPa) usa 0.0018.
 
+### D-063: cortante en una dirección y punzonamiento de zapatas (V3D.2)
+
+- **Fecha:** 2026-11-07
+- **Implementación, con la regla DRY (D-060):**
+  - `domain/footing/loads.py` reúne la carga neta de cada caso mayorado y su integración a un lado de un plano; la usan la flexión (plano en la cara) y el cortante en una dirección (plano a d de la cara, con la d de las barras de esa dirección, ACI 13.2.7.2 y NSR-10 C.15.5.2).
+  - Vc en una dirección: NSR-10 usa la misma función de vigas (`codes/nsr_10/shear.concrete_shear`, D-030) con Vu y Mu de la sección y ρw de la malla; ACI tiene su propia ecuación de zapatas (13.2.6.2(a), 0.17λ√f'c·b·d). El límite √f'c ≤ 8.3 MPa se toma de `limited_sqrt_fc`, ahora pública en los dos perfiles.
+  - `mechanics/perimeter.py` calcula el perímetro crítico a d/2 recortado con la base (lados fuera: αs = 30 o 20, D-059), su centroide y Jc a partir de los lados que quedan; para la columna interior coincide con ACI R8.4.4.2.3. d es el promedio de las dos capas de la malla inferior (ACI 22.6.2.1).
+  - `domain/shear_strength.py` evalúa el cortante en dos direcciones para cualquier elemento: vu = Vu/(b0·d) + γv·Msc·c/Jc en los dos ejes, máximo en los extremos de los lados, frente a φvc del perfil (ACI Tabla 22.6.5.2 con λs = 1 por 13.2.6.2(b); NSR-10 C.11.11.2.1). Vu y Msc son la fuerza y el momento, respecto al centroide de los lados, de la carga neta fuera del área crítica. γf = 1/(1 + (2/3)√(b1/b2)) con b1 y b2 del área crítica.
+  - ACI 8.6.1.2: cuando vuv > φ0.17√f'c, se exige As,min = 5vuv·bslab·b0/(φαs·fy) con las barras de la malla inferior dentro de bslab = c + 3h, en cada dirección.
+  - La presión de los casos mayorados se calcula una sola vez por zapata y la comparten flexión y cortante.
+- **Oráculo:** `tests/oracles/derive_footing_shear.py`, sin importar el paquete: integración exacta y Jc por cuadratura numérica; 6 casos por perfil (interior, con momento, borde, esquina, columna alargada con β = 3 y zapata delgada).
+
 ## Consultas abiertas
 
-Ninguna.
+### C-013: ejemplo 15-3 de Wight frente al cortante de zapatas
+
+- **Punzonamiento:** Vu = 712.4 kips (712), b0 = 200 in, vu = 111.3 psi (111) y φvc = 176.3 psi (177): dentro de ±1 %.
+- **Una dirección:** Vu = 163.4 y 169.35 kips frente a 166 (−1.6 % y +2.02 %); φVc = 407.4 y 394.9 kips frente a 392 (+3.9 % y +0.7 %). Causas: la d de cada capa frente a la d promedio (D-062); el ACI en SI usa 0.17√f'c (MPa) y Wight 2√f'c (psi) = 0.166√f'c (+2.4 %; D-015 no convierte constantes); y Wight imprime 166 kips, aunque su cálculo da 6.20·11.5·28/12 = 166.37 kips (frente a este valor, +1.79 %).
+- **Propuesta aprobada por el usuario:** ±1 % en punzonamiento, ±2 % en Vu y ±4 % en φVc de una dirección. Al aplicarla, Vu de las barras y (+2.02 %) no cumple ±2 % por el redondeo de impresión del libro.
+- **Pendiente:** tolerancia de Vu de una dirección (por ejemplo ±2.5 %), antes de agregar el cortante a `wight_footing.json`.

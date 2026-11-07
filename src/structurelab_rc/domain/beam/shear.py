@@ -7,6 +7,7 @@ from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.beam.flexure import MIN_DEPTH_RATIO, nominal_flexure, section_states, steel_layers
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check, check_from_errors
+from structurelab_rc.domain.shear_strength import concrete_lambda as shared_concrete_lambda
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, blocked, incomplete
 from structurelab_rc.mechanics.materials import NoEquilibrium
@@ -45,10 +46,8 @@ def missing_demands(station: Station) -> Check | None:
 
 
 def concrete_lambda(profile: Profile, materials: Materials) -> float | Check:
-    lam = profile.strength_assumptions.concrete_lambda(materials.concrete)
-    if lam is None:
-        return check_from_errors(STRENGTH, [blocked("El concreto liviano no esta implementado (D-028)")])
-    return lam
+    lam = shared_concrete_lambda(profile, materials)
+    return check_from_errors(STRENGTH, [lam]) if isinstance(lam, StructuredError) else lam
 
 
 def _tension_steel(

@@ -10,6 +10,7 @@ from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.flexure_strength import MomentStrength, RectangularSection, rectangular_strength, required_area
 from structurelab_rc.domain.footing.flexure import flexure_checks
+from structurelab_rc.domain.footing.loads import factored_cases
 from structurelab_rc.domain.footing.mesh import mat_rows
 from structurelab_rc.mechanics.flexure import SteelLayer
 from structurelab_rc.model.footing import Footing, Soil
@@ -38,8 +39,8 @@ def _key(check: Check) -> tuple[str, str]:
 def test_flexure_checks_match_oracle(profile: str, case: dict[str, Any]) -> None:
     oracle = _oracle(FOLDERS[profile])
     footing = Footing.model_validate(case["footing"])
-    checks = flexure_checks(PROFILES[profile], Materials.model_validate(oracle["materials"]), footing,
-                            Soil.model_validate(oracle["soil"]), BARS)
+    cases, failures = factored_cases(footing, Soil.model_validate(oracle["soil"]))
+    checks = [*failures, *flexure_checks(PROFILES[profile], Materials.model_validate(oracle["materials"]), footing, cases, BARS)]
     got = {_key(check): check for check in checks}
     expected = {(item["name"], item.get("case", "")): item for item in case["expected"]["checks"]}
     assert set(got) == set(expected)

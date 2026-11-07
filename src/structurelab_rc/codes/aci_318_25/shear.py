@@ -18,6 +18,7 @@ def clauses() -> dict[str, str]:
         "min_reinforcement": "9.6.3.1 y Tabla 9.6.3.4",
         "spacing": "Tabla 9.7.6.2.2",
         "biaxial": "22.5.1.10 y 22.5.1.11",
+        "punching": "22.6.5.2, 22.6.5.3 y 8.4.4.2",
         "concrete": "Tabla 22.5.5.1",
     }
 
@@ -27,7 +28,7 @@ def strength_reduction() -> float:
     return _PHI_SHEAR
 
 
-def _sqrt_fc(fc: float, av_ge_min: bool) -> float:
+def limited_sqrt_fc(fc: float, av_ge_min: bool) -> float:
     """22.5.3.1 y 22.5.3.2: √f'c ≤ 8.3 MPa salvo con Av,min."""
     return math.sqrt(fc) if av_ge_min else min(math.sqrt(fc), _SQRT_FC_MAX)
 
@@ -39,7 +40,7 @@ def concrete_shear(
 
     Nu es positiva en compresión. h, Vu y Mu no intervienen en este perfil.
     """
-    sqrt_fc = _sqrt_fc(fc, av_ge_min)
+    sqrt_fc = limited_sqrt_fc(fc, av_ge_min)
     axial = min(nu / (6 * ag), 0.05 * fc)
     if av_ge_min:
         stress = max(0.17 * lam * sqrt_fc + axial, 0.66 * lam * math.cbrt(rho_w) * sqrt_fc + axial)
@@ -104,3 +105,36 @@ def biaxial_interaction(ratio_2: float, ratio_3: float) -> bool | None:
     if ratio_2 <= _INTERACTION_FREE or ratio_3 <= _INTERACTION_FREE:
         return True
     return ratio_2 + ratio_3 <= _INTERACTION_SUM
+
+
+_PUNCHING_ALPHA = {0: 40.0, 1: 30.0, 2: 20.0}
+
+def punching_concrete_stress(*, fc: float, lam: float, lam_s: float, beta: float, alpha_s: float, d: float, b0: float) -> float:
+    """Tabla 22.6.5.2, en MPa: el menor de 0.33, (0.17 + 0.33/β) y (0.17 + 0.083αs·d/b0), por λs·λ·√f'c, con
+    √f'c ≤ 8.3 MPa (22.6.3.1). β es el lado largo sobre el corto del área cargada."""
+    sqrt_fc = min(math.sqrt(fc), _SQRT_FC_MAX)
+    factor = min(0.33, 0.17 + 0.33 / beta, 0.17 + 0.083 * alpha_s * d / b0)
+    return factor * lam_s * lam * sqrt_fc
+
+
+def punching_alpha_s(sides_outside: int) -> float | None:
+    """22.6.5.3 y R22.6.5.3: 40 (interior, cuatro lados), 30 (borde, tres lados) o 20 (esquina, dos lados)."""
+    return _PUNCHING_ALPHA.get(sides_outside)
+
+
+def moment_transfer_fraction(b1: float, b2: float) -> float:
+    """8.4.2.2.2, ecuación (8.4.2.2.2): γf = 1/(1 + (2/3)√(b1/b2)); la fracción por cortante es γv = 1 − γf (8.4.4.2.2)."""
+    return 1 / (1 + 2 / 3 * math.sqrt(b1 / b2))
+
+
+def effective_slab_width(c2: float, h: float) -> float:
+    """8.4.2.2.3: ancho de la columna más 1.5h a cada lado."""
+    return c2 + 3 * h
+
+
+def punching_min_reinforcement(*, vuv: float, fc: float, lam: float, lam_s: float, alpha_s: float, fy: float, b0: float,
+                               bslab: float) -> float | None:
+    """8.6.1.2, ecuación (8.6.1.2): si vuv > φ0.17√f'c·λs·λ, As,min = 5vuv·bslab·b0/(φαs·fy) en el ancho bslab, en mm²."""
+    if vuv <= _PHI_SHEAR * 0.17 * math.sqrt(fc) * lam_s * lam:
+        return 0.0
+    return 5 * vuv * bslab * b0 / (_PHI_SHEAR * alpha_s * fy)

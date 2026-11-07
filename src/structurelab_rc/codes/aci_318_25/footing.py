@@ -1,9 +1,12 @@
 """Zapatas aisladas según ACI CODE-318-25, capítulo 13 y las disposiciones aplicables del capítulo 8 (13.3.3.1)."""
 
+from structurelab_rc.codes.aci_318_25 import shear
+
 _MIN_RATIO = 0.0018
 _MAX_SPACING = 450.0
 _SPACING_THICKNESS = 2.0
 _MIN_DEPTH = 150.0
+_SIZE_FACTOR = 1.0
 
 
 def clauses() -> dict[str, str]:
@@ -15,6 +18,8 @@ def clauses() -> dict[str, str]:
         "spacing": "8.7.2.2",
         "band": "13.3.3.3",
         "min_depth": "13.3.1.2",
+        "one_way_shear": "13.2.6.2(a) y 13.2.7.2",
+        "punching_min_reinforcement": "8.6.1.2",
     }
 
 
@@ -41,3 +46,16 @@ def min_depth() -> float:
 def footing_depth(h: float, cover: float, first_db: float, second_db: float) -> float:
     """13.3.1.2 mide la altura efectiva d del refuerzo inferior; se toma la menor, la de la segunda capa."""
     return h - cover - first_db - second_db / 2
+
+
+def one_way_concrete_shear(*, fc: float, lam: float, bw: float, d: float, h: float, rho_w: float, vu: float, mu: float) -> float:
+    """13.2.6.2(a): Vc = 0.17λ√f'c·bw·d en zapatas apoyadas en el suelo, con √f'c ≤ 8.3 MPa (22.5.3.1), en N.
+
+    No usa h, ρw, Vu ni Mu: el capítulo 13 permite omitir el efecto de tamaño y el del refuerzo a flexión.
+    """
+    return 0.17 * lam * shear.limited_sqrt_fc(fc, av_ge_min=False) * bw * d
+
+
+def punching_size_factor() -> float:
+    """13.2.6.2(b): λs = 1.0 en el cortante en dos direcciones de zapatas apoyadas en el suelo."""
+    return _SIZE_FACTOR

@@ -7,9 +7,9 @@ Zapatas aisladas según ACI CODE-318-25 (v3, en curso). Los campos de entrada y 
 | --- | --- |
 | `zapata_aislada.json` | Ejemplo de zapatas aisladas: Z1 centrada bajo columna cuadrada con pedestal y Z2 rectangular con la columna desplazada 400 mm en X. Fuerzas en la base de la columna, ejes globales. Datos ilustrativos. |
 
-Estado actual: se verifican la presión admisible y el contacto con el suelo (V3C) y la flexión con las mallas,
-As,min, separación, franja central y altura mínima (V3D.1). Cortante, punzonamiento, desarrollo, aplastamiento y
-pasadores llegan en V3D.2 y V3D.3 y por ahora salen `BLOCKED`.
+Estado actual: se verifican la presión admisible y el contacto con el suelo (V3C), la flexión con las mallas,
+As,min, separación, franja central y altura mínima (V3D.1) y el cortante en una dirección y el punzonamiento
+(V3D.2). Desarrollo, aplastamiento y pasadores llegan en V3D.3 y por ahora salen `BLOCKED`.
 
 ## Cómo correrlos
 

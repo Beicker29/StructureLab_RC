@@ -17,6 +17,7 @@ def clauses() -> dict[str, str]:
         "spacing": "C.11.4.5.1 y C.11.4.5.3",
         "biaxial": "no aplica en NSR-10",
         "concrete": "C.11.2.1 y C.11.2.2",
+        "punching": "C.11.11.2.1 y C.11.11.7",
     }
 
 
@@ -25,7 +26,7 @@ def strength_reduction() -> float:
     return _PHI_SHEAR
 
 
-def _sqrt_fc(fc: float, av_ge_min: bool) -> float:
+def limited_sqrt_fc(fc: float, av_ge_min: bool) -> float:
     """C.11.1.2 y C.11.1.2.1: √f'c ≤ 8.3 MPa salvo con refuerzo mínimo."""
     return math.sqrt(fc) if av_ge_min else min(math.sqrt(fc), _SQRT_FC_MAX)
 
@@ -50,7 +51,7 @@ def concrete_shear(
     *, fc: float, lam: float, bw: float, d: float, h: float, rho_w: float, nu: float, ag: float, vu: float, mu: float, av_ge_min: bool
 ) -> float:
     """Mayor entre C.11.2.1 y C.11.2.2 (D-030), en N. Nu es positiva en compresión; Vu y Mu en valor absoluto."""
-    sqrt_fc = _sqrt_fc(fc, av_ge_min)
+    sqrt_fc = limited_sqrt_fc(fc, av_ge_min)
     if nu > 0:
         simple = 0.17 * (1 + nu / (14 * ag)) * lam * sqrt_fc * bw * d  # (C.11-4)
     elif nu < 0:
@@ -107,4 +108,36 @@ def max_leg_spacing_across(vs: float, fc: float, bw: float, d: float) -> float |
 
 def biaxial_interaction(ratio_2: float, ratio_3: float) -> bool | None:
     """NSR-10 no tiene regla de interacción del cortante en dos direcciones: cada una se verifica por separado (D-046)."""
+    return None
+
+
+_PUNCHING_ALPHA = {0: 40.0, 1: 30.0, 2: 20.0}
+
+
+def punching_concrete_stress(*, fc: float, lam: float, lam_s: float, beta: float, alpha_s: float, d: float, b0: float) -> float:
+    """C.11.11.2.1, ecuaciones (C.11-31) a (C.11-33) divididas por b0·d, en MPa: el menor de 0.17(1 + 2/β),
+    0.083(αs·d/b0 + 2) y 0.33, por λ·√f'c, con √f'c ≤ 8.3 MPa (C.11.1.2). NSR-10 no tiene λs: se ignora."""
+    sqrt_fc = min(math.sqrt(fc), _SQRT_FC_MAX)
+    factor = min(0.17 * (1 + 2 / beta), 0.083 * (alpha_s * d / b0 + 2), 0.33)
+    return factor * lam * sqrt_fc
+
+
+def punching_alpha_s(sides_outside: int) -> float | None:
+    """C.11.11.2.1(b): 40 (columna interior), 30 (de borde) o 20 (de esquina)."""
+    return _PUNCHING_ALPHA.get(sides_outside)
+
+
+def moment_transfer_fraction(b1: float, b2: float) -> float:
+    """C.13.5.3.2, ecuación (C.13-1): γf = 1/(1 + (2/3)√(b1/b2)); por cortante, γv = 1 − γf (C.11.11.7.1)."""
+    return 1 / (1 + 2 / 3 * math.sqrt(b1 / b2))
+
+
+def effective_slab_width(c2: float, h: float) -> float:
+    """C.13.5.3.2: ancho de la columna más 1.5h a cada lado."""
+    return c2 + 3 * h
+
+
+def punching_min_reinforcement(*, vuv: float, fc: float, lam: float, lam_s: float, alpha_s: float, fy: float, b0: float,
+                               bslab: float) -> float | None:
+    """NSR-10 no tiene acero mínimo adicional por cortante en dos direcciones (D-059)."""
     return None

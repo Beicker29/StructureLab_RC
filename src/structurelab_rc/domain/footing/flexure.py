@@ -1,7 +1,6 @@
 """Flexión de zapatas aisladas con los casos mayorados (V3D.1; D-054, D-057, D-059).
 
-Carga neta: presión del suelo (Bellos y Bakas 2017, con la columna, los pesos y las sobrecargas factorados) menos las
-cargas por unidad de área sobre el voladizo (zapata, relleno y sobrecargas con los factores del caso). El momento en
+La carga neta de cada caso sale de domain/footing/loads.py. El momento en
 cada cara de la columna es el de la carga neta que actúa a un lado del plano vertical, en todo el ancho (ACI 13.2.6.6,
 NSR-10 C.15.4.1). Positivo tracciona la cara inferior; negativo, la superior. La resistencia es la de una sección
 rectangular del ancho total con la capa de esa dirección (domain/flexure_strength).
@@ -19,20 +18,18 @@ from structurelab_rc.domain.flexure_strength import (
     rectangular_strength,
     required_area,
 )
-from structurelab_rc.domain.footing.base import base_resultant
+from structurelab_rc.domain.footing.loads import FactoredCase, column_faces
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.status import Status
-from structurelab_rc.errors import StructuredError, blocked, incomplete, invalid_input
+from structurelab_rc.errors import StructuredError, blocked, invalid_input
 from structurelab_rc.mechanics.flexure import SteelLayer
-from structurelab_rc.mechanics.materials import NoEquilibrium
-from structurelab_rc.mechanics.soil_pressure import SoilPressure, footing_pressure
 from structurelab_rc.model.catalog import RebarSpec
-from structurelab_rc.model.footing import Footing, FootingLoad, Soil
+from structurelab_rc.model.footing import Footing
 from structurelab_rc.model.project import Materials
 
-EQUILIBRIUM = "Zapata: equilibrio con cargas mayoradas"
 _MATS = {"bottom": "inferior", "top": "superior"}
 _FACES = {"x": ("+X", "-X"), "y": ("+Y", "-Y")}
+_AXES = {"x": 0, "y": 1}
 _NEGLIGIBLE = 1e-6  # N·mm
 
 
@@ -44,50 +41,13 @@ class FaceMoments:
     moments: dict[str, tuple[float, float]]
 
 
-def _net_load(footing: Footing, soil: Soil, load: FootingLoad) -> float:
-    """Cargas hacia abajo sobre el voladizo por unidad de área, en N/mm²."""
-    dead = soil.unit_weight_concrete * footing.h + soil.unit_weight_fill * footing.fill_height + footing.surcharge_dead
-    return load.dead_factor * dead + load.live_factor * footing.surcharge_live
-
-
-def _face_moments(footing: Footing, pressure: SoilPressure, net_load: float) -> dict[str, tuple[float, float]]:
-    hx, hy = footing.lx / 2, footing.ly / 2
-    column = footing.column
-    east, west = column.offset_x + column.cx / 2, column.offset_x - column.cx / 2
-    north, south = column.offset_y + column.cy / 2, column.offset_y - column.cy / 2
-
-    def moment(polygon: tuple[tuple[float, float], ...], axis: int, face: float, outward: float, length: float) -> float:
-        force, sx, sy = pressure.resultant(polygon)
-        static = sx if axis == 0 else sy
-        soil = outward * (static - face * force)
-        width = footing.ly if axis == 0 else footing.lx
-        return soil - net_load * length * width * length / 2
-
-    return {
-        "x": (moment(((east, -hy), (hx, -hy), (hx, hy), (east, hy)), 0, east, 1.0, hx - east),
-              moment(((-hx, -hy), (west, -hy), (west, hy), (-hx, hy)), 0, west, -1.0, west + hx)),
-        "y": (moment(((-hx, north), (hx, north), (hx, hy), (-hx, hy)), 1, north, 1.0, hy - north),
-              moment(((-hx, -hy), (hx, -hy), (hx, south), (-hx, south)), 1, south, -1.0, south + hy)),
-    }
-
-
-def factored_moments(footing: Footing, soil: Soil) -> tuple[list[FaceMoments], list[Check]]:
-    """Momentos de cada caso mayorado; un caso sin equilibrio con el suelo es FAIL (D-054)."""
-    results, failures = [], []
-    for load in footing.loads:
-        if load.kind != "factored":
-            continue
-        resultant = base_resultant(footing, soil, load)
-        try:
-            if resultant.ex is None or resultant.ey is None:
-                raise NoEquilibrium("la carga mayorada sobre el suelo no es de compresion")
-            pressure = footing_pressure(footing.lx, footing.ly, resultant.n, resultant.ex, resultant.ey)
-        except NoEquilibrium as error:
-            failure = invalid_input(f"La resultante mayorada sale de la base: {error}", member=footing.id, case=load.case)
-            failures.append(Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", member=footing.id, case=load.case))
-            continue
-        results.append(FaceMoments(load.case, _face_moments(footing, pressure, _net_load(footing, soil, load))))
-    return results, failures
+def face_moments(footing: Footing, case: FactoredCase) -> FaceMoments:
+    """Momento de la carga neta a un lado de cada cara de la columna, en todo el ancho (ACI 13.2.6.6, NSR-10 C.15.4.1)."""
+    faces = column_faces(footing)
+    moments = {direction: (case.beyond(footing, _AXES[direction], plus, 1.0)[1],
+                           case.beyond(footing, _AXES[direction], minus, -1.0)[1])
+               for direction, (plus, minus) in faces.items()}
+    return FaceMoments(case.case, moments)
 
 
 def _strength(profile: Profile, materials: Materials, footing: Footing, row: BarRow) -> MomentStrength | StructuredError:
@@ -199,14 +159,12 @@ def _band_check(
                  capacity=row.band_area, unit="mm2", values=(("gamma s", gamma), ("As", total)), member=footing.id)
 
 
-def flexure_checks(profile: Profile, materials: Materials, footing: Footing, soil: Soil, bars: Sequence[RebarSpec]) -> list[Check]:
-    if not any(load.kind == "factored" for load in footing.loads):
-        error = incomplete("La zapata no tiene casos mayorados", member=footing.id)
-        name = _name("Flexion", "bottom", "x")
-        return [Check(name, Status.INCOMPLETE, (error,), profile.footing.clauses()["strength"], member=footing.id)]
-    cases, failures = factored_moments(footing, soil)
+def flexure_checks(
+    profile: Profile, materials: Materials, footing: Footing, factored: list[FactoredCase], bars: Sequence[RebarSpec]
+) -> list[Check]:
+    cases = [face_moments(footing, case) for case in factored]
     rows = {"bottom": mat_rows(footing, footing.bottom, bars)}
     if footing.top is not None:
         rows["top"] = mat_rows(footing, footing.top, bars)
-    return [*failures, *_strength_checks(profile, materials, footing, rows, cases),
+    return [*_strength_checks(profile, materials, footing, rows, cases),
             *_section_checks(profile, materials, footing, rows, cases)]

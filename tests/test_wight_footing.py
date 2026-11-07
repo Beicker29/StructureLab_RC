@@ -8,6 +8,7 @@ import pytest
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.footing.flexure import flexure_checks
+from structurelab_rc.domain.footing.loads import factored_cases
 from structurelab_rc.model.footing import Footing, Soil
 from structurelab_rc.model.project import Materials
 from structurelab_rc.setup import load_engine
@@ -44,7 +45,8 @@ def test_square_footing_flexure_matches_wight(profile: str) -> None:
     materials = Materials.model_validate({"fc": data["fc_psi"] * MPA_PER_PSI, "fy": data["fy_psi"] * MPA_PER_PSI,
                                           "fyt": data["fy_psi"] * MPA_PER_PSI, "concrete": "normalweight"})
 
-    checks = {check.name: check for check in flexure_checks(PROFILES[profile], materials, footing, soil, load_engine().bars)}
+    cases, _ = factored_cases(footing, soil)
+    checks = {check.name: check for check in flexure_checks(PROFILES[profile], materials, footing, cases, load_engine().bars)}
 
     for direction in ("x", "y"):
         strength = checks[f"Flexion malla inferior (barras {direction})"]

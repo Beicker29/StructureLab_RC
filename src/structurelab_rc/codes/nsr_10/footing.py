@@ -1,8 +1,11 @@
 """Zapatas aisladas según NSR-10 Título C, capítulo C.15."""
 
+from structurelab_rc.codes.nsr_10 import shear
+
 _MAX_SPACING = 450.0
 _SPACING_THICKNESS = 3.0
 _MIN_DEPTH = 150.0
+_SIZE_FACTOR = 1.0
 _GRADE_350 = 350.0
 _GRADE_420 = 420.0
 _RATIO_LOW_GRADE = 0.0020
@@ -19,6 +22,8 @@ def clauses() -> dict[str, str]:
         "spacing": "C.10.5.4",
         "band": "C.15.4.4.2",
         "min_depth": "C.15.7",
+        "one_way_shear": "C.15.5.1, C.15.5.2 y C.11.2",
+        "punching_min_reinforcement": "no aplica en NSR-10",
     }
 
 
@@ -50,3 +55,14 @@ def min_depth() -> float:
 def footing_depth(h: float, cover: float, first_db: float, second_db: float) -> float:
     """C.15.7 mide la altura sobre el refuerzo inferior: desde la cara superior de la malla inferior."""
     return h - cover - first_db - second_db
+
+
+def one_way_concrete_shear(*, fc: float, lam: float, bw: float, d: float, h: float, rho_w: float, vu: float, mu: float) -> float:
+    """C.15.5.1 remite a C.11 (C.11.11.1.1): la misma Vc de vigas, el mayor entre C.11.2.1 y C.11.2.2 (D-030), sin carga
+    axial y sin refuerzo a cortante, en N. Vu y Mu en valor absoluto en la sección."""
+    return shear.concrete_shear(fc=fc, lam=lam, bw=bw, d=d, h=h, rho_w=rho_w, nu=0.0, ag=bw * h, vu=vu, mu=mu, av_ge_min=False)
+
+
+def punching_size_factor() -> float:
+    """NSR-10 no tiene factor de efecto de tamaño en el cortante en dos direcciones: λs = 1.0."""
+    return _SIZE_FACTOR

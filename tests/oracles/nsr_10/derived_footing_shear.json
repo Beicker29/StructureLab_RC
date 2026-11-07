@@ -1,0 +1,454 @@
+{
+  "description": "Cortante en una dirección y punzonamiento de zapatas con casos mayorados (D-059, D-063).",
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0
+  },
+  "clauses": {
+    "one_way": "C.15.5.1, C.15.5.2 y C.11.2",
+    "punching": "C.11.11.2.1 y C.11.11.7"
+  },
+  "tolerance_rel": 1e-06,
+  "cases": [
+    {
+      "id": "interior-centrada",
+      "description": "columna interior sin momento",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 550.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 1500.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Cortante en una direccion (barras x)",
+          "status": "PASS",
+          "demand": 316097.2849999999,
+          "capacity": 756247.267697623,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Cortante en una direccion (barras y)",
+          "status": "PASS",
+          "demand": 325991.85499999986,
+          "capacity": 730501.9908399157,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Punzonamiento",
+          "status": "PASS",
+          "demand": 0.7662456530590387,
+          "capacity": 1.3096468989769725,
+          "alpha_s": 40.0,
+          "b0": 3636.4,
+          "case": "1.2D+1.6L"
+        }
+      ]
+    },
+    {
+      "id": "interior-momento",
+      "description": "columna rectangular con momentos en los dos ejes: transferencia por excentricidad del cortante",
+      "footing": {
+        "id": "Z",
+        "lx": 3000.0,
+        "ly": 2400.0,
+        "h": 600.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 600.0,
+          "cy": 400.0,
+          "offset_x": 200.0,
+          "offset_y": -100.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+L+E",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.0,
+            "P_kN": 1300.0,
+            "Vx_kN": 60.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": -150.0,
+            "My_kNm": 280.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Cortante en una direccion (barras x)",
+          "status": "PASS",
+          "demand": 363379.8509373067,
+          "capacity": 837207.2578161994,
+          "case": "1.2D+L+E"
+        },
+        {
+          "name": "Cortante en una direccion (barras y)",
+          "status": "PASS",
+          "demand": 332329.2604121267,
+          "capacity": 1014327.4761981152,
+          "case": "1.2D+L+E"
+        },
+        {
+          "name": "Punzonamiento",
+          "status": "PASS",
+          "demand": 0.7805333384316954,
+          "capacity": 1.3096468989769725,
+          "alpha_s": 40.0,
+          "b0": 4036.3999999999996,
+          "case": "1.2D+L+E"
+        }
+      ]
+    },
+    {
+      "id": "borde",
+      "description": "columna cerca del borde +X: un lado del perímetro fuera de la base (αs = 30)",
+      "footing": {
+        "id": "Z",
+        "lx": 2600.0,
+        "ly": 2400.0,
+        "h": 550.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 450.0,
+          "offset_x": 900.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 900.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": -250.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Cortante en una direccion (barras x)",
+          "status": "PASS",
+          "demand": 216916.34404024426,
+          "capacity": 756247.267697623,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Cortante en una direccion (barras y)",
+          "status": "PASS",
+          "demand": 195186.51000000007,
+          "capacity": 791377.1567432419,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Punzonamiento",
+          "status": "PASS",
+          "demand": 0.7220633246156806,
+          "capacity": 1.3096468989769725,
+          "alpha_s": 30.0,
+          "b0": 2568.2,
+          "case": "1.2D+1.6L"
+        }
+      ]
+    },
+    {
+      "id": "esquina",
+      "description": "columna cerca de la esquina: dos lados fuera (αs = 20)",
+      "footing": {
+        "id": "Z",
+        "lx": 2600.0,
+        "ly": 2600.0,
+        "h": 550.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 950.0,
+          "offset_y": 950.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 700.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 180.0,
+            "My_kNm": -180.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Cortante en una direccion (barras x)",
+          "status": "PASS",
+          "demand": 146878.71675054255,
+          "capacity": 819267.8733390914,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Cortante en una direccion (barras y)",
+          "status": "PASS",
+          "demand": 152149.73625150422,
+          "capacity": 791377.1567432419,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Punzonamiento",
+          "status": "PASS",
+          "demand": 0.8533389298725167,
+          "capacity": 1.3096468989769725,
+          "alpha_s": 20.0,
+          "b0": 1559.1,
+          "case": "1.2D+1.6L"
+        }
+      ]
+    },
+    {
+      "id": "columna-alargada",
+      "description": "columna de 900 x 300 (β = 3): gobierna la ecuación (b), distinta en cada perfil",
+      "footing": {
+        "id": "Z",
+        "lx": 2800.0,
+        "ly": 2400.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 900.0,
+          "cy": 300.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 1400.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Cortante en una direccion (barras x)",
+          "status": "PASS",
+          "demand": 264830.46857142856,
+          "capacity": 675287.2775790464,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Cortante en una direccion (barras y)",
+          "status": "PASS",
+          "demand": 376159.9733333333,
+          "capacity": 758893.0890273529,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Punzonamiento",
+          "status": "PASS",
+          "demand": 0.726196097537989,
+          "capacity": 1.124444307202451,
+          "alpha_s": 40.0,
+          "b0": 4036.3999999999996,
+          "case": "1.2D+1.6L"
+        }
+      ]
+    },
+    {
+      "id": "delgada",
+      "description": "zapata delgada muy cargada: falla en una dirección y activa ACI 8.6.1.2",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 350.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 1500.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": [
+        {
+          "name": "Cortante en una direccion (barras x)",
+          "status": "FAIL",
+          "demand": 440557.285,
+          "capacity": 432407.30722331704,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Cortante en una direccion (barras y)",
+          "status": "FAIL",
+          "demand": 450451.855,
+          "capacity": 406662.03036560974,
+          "case": "1.2D+1.6L"
+        },
+        {
+          "name": "Punzonamiento",
+          "status": "FAIL",
+          "demand": 1.8548392803967495,
+          "capacity": 1.3096468989769725,
+          "alpha_s": 40.0,
+          "b0": 2836.4,
+          "case": "1.2D+1.6L"
+        }
+      ]
+    }
+  ]
+}
