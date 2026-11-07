@@ -17,7 +17,7 @@ from structurelab_rc.model.loader import ProjectLoadError, load_project
 from structurelab_rc.model.project import Demands, Materials, Project, Section
 from structurelab_rc.setup import load_engine
 
-EXAMPLES = sorted(path for path in (Path(__file__).parent.parent / "examples").glob("*/*.json") if path.parent.name != "etabs")
+EXAMPLES = sorted(path for path in (Path(__file__).parent.parent / "examples").glob("*/*/*.json") if path.parts[-3] != "etabs")
 BARS = load_engine().bars
 BASE: dict[str, Any] = {
     "description": "Prueba",
@@ -57,13 +57,14 @@ def _validate(project: Project) -> tuple[Status, list[StructuredError]]:
     return check.status, list(check.errors)
 
 
-@pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: f"{path.parent.name}-{path.stem}")
+@pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: f"{path.parts[-3]}-{path.parent.name}-{path.stem}")
 def test_examples_load_and_validate(path: Path) -> None:
     assert validate_file(path).status is Status.PASS
 
 
 def test_there_are_examples_for_both_profiles() -> None:
-    assert {path.parent.name for path in EXAMPLES} >= {"aci_318_25", "nsr_10"}
+    assert {(path.parts[-3], path.parent.name) for path in EXAMPLES} >= {
+        (profile, element) for profile in ("aci_318_25", "nsr_10") for element in ("vigas", "zapatas")}
 
 
 def test_demands_are_converted_to_n_and_nmm() -> None:

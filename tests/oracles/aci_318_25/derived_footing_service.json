@@ -1,0 +1,415 @@
+{
+  "description": "Verificación geotécnica de zapatas con casos de servicio (D-052, D-057). Pesos y sobrecargas con los factores del caso; presión de Bellos y Bakas (2017) resuelta por equilibrio independiente.",
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.6,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0
+  },
+  "bearing_clause": "13.3.1.1",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "centrada",
+      "description": "carga centrada, contacto total",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "P_kN": 900.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "N_kN": 1041.12,
+        "Mx_base_kNm": 0.0,
+        "My_base_kNm": 0.0,
+        "equilibrium": true,
+        "ex_mm": 0.0,
+        "ey_mm": -0.0,
+        "pmax_kPa": 216.89999999999998,
+        "contact_fraction": 1.0,
+        "bearing": "PASS",
+        "contact": "PASS"
+      }
+    },
+    {
+      "id": "cortante-pedestal",
+      "description": "Vx a la altura h + hp, sin desplazamiento",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 800.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "P_kN": 800.0,
+        "Vx_kN": 60.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "N_kN": 944.192,
+        "Mx_base_kNm": 0.0,
+        "My_base_kNm": 78.0,
+        "equilibrium": true,
+        "ex_mm": 82.6103165457873,
+        "ey_mm": -0.0,
+        "pmax_kPa": 237.33166666666668,
+        "contact_fraction": 1.0,
+        "bearing": "PASS",
+        "contact": "PASS"
+      }
+    },
+    {
+      "id": "desplazada",
+      "description": "columna desplazada con pedestal, sobrecargas y momentos en los dos ejes; supera la presión admisible",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 600.0,
+        "surcharge_dead_kNm2": 3.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 500.0,
+          "cy": 400.0,
+          "offset_x": 300.0,
+          "offset_y": -200.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "P_kN": 700.0,
+        "Vx_kN": -20.0,
+        "Vy_kN": 30.0,
+        "Mx_kNm": 40.0,
+        "My_kNm": -25.0
+      },
+      "expected": {
+        "N_kN": 880.08,
+        "Mx_base_kNm": 146.536,
+        "My_base_kNm": 162.304,
+        "equilibrium": true,
+        "ex_mm": 184.41959821834376,
+        "ey_mm": -166.5030451777111,
+        "pmax_kPa": 359.46833333333336,
+        "contact_fraction": 1.0,
+        "bearing": "FAIL",
+        "contact": "PASS"
+      }
+    },
+    {
+      "id": "sobrecargas",
+      "description": "sobrecargas muerta y viva en una combinación con viva",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 4.0,
+        "surcharge_live_kNm2": 10.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "P_kN": 800.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 60.0
+      },
+      "expected": {
+        "N_kN": 1006.08,
+        "Mx_base_kNm": 0.0,
+        "My_base_kNm": 60.0,
+        "equilibrium": true,
+        "ex_mm": 59.63740458015267,
+        "ey_mm": -0.0,
+        "pmax_kPa": 240.85000000000002,
+        "contact_fraction": 1.0,
+        "bearing": "PASS",
+        "contact": "PASS"
+      }
+    },
+    {
+      "id": "sobrecargas-sin-viva",
+      "description": "las mismas sobrecargas en una combinación sin viva (factor 0)",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 4.0,
+        "surcharge_live_kNm2": 10.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 0.0,
+        "P_kN": 800.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 60.0
+      },
+      "expected": {
+        "N_kN": 959.68,
+        "Mx_base_kNm": 0.0,
+        "My_base_kNm": 60.0,
+        "equilibrium": true,
+        "ex_mm": 62.520840280093374,
+        "ey_mm": -0.0,
+        "pmax_kPa": 231.18333333333334,
+        "contact_fraction": 1.0,
+        "bearing": "PASS",
+        "contact": "PASS"
+      }
+    },
+    {
+      "id": "contacto-parcial",
+      "description": "momento grande en y: contacto parcial que cumple el mínimo",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "P_kN": 600.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 320.0
+      },
+      "expected": {
+        "N_kN": 741.12,
+        "Mx_base_kNm": 0.0,
+        "My_base_kNm": 320.0,
+        "equilibrium": true,
+        "ex_mm": 431.77892918825563,
+        "ey_mm": -0.0,
+        "pmax_kPa": 321.5741007194245,
+        "contact_fraction": 0.9602763385146803,
+        "bearing": "FAIL",
+        "contact": "PASS"
+      }
+    },
+    {
+      "id": "contacto-insuficiente",
+      "description": "momento mayor: el contacto no alcanza el mínimo",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "P_kN": 500.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 480.0
+      },
+      "expected": {
+        "N_kN": 641.12,
+        "Mx_base_kNm": 0.0,
+        "My_base_kNm": 480.0,
+        "equilibrium": true,
+        "ex_mm": 748.6897928624905,
+        "ey_mm": -0.0,
+        "pmax_kPa": 473.52500184325,
+        "contact_fraction": 0.5641377589218868,
+        "bearing": "FAIL",
+        "contact": "FAIL"
+      }
+    },
+    {
+      "id": "sobrepresion",
+      "description": "carga que supera la presión admisible",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "P_kN": 1300.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": -60.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "N_kN": 1441.12,
+        "Mx_base_kNm": -60.0,
+        "My_base_kNm": 0.0,
+        "equilibrium": true,
+        "ex_mm": 0.0,
+        "ey_mm": 41.634284445431334,
+        "pmax_kPa": 337.73333333333335,
+        "contact_fraction": 1.0,
+        "bearing": "FAIL",
+        "contact": "PASS"
+      }
+    },
+    {
+      "id": "sin-equilibrio",
+      "description": "resultante fuera de la base",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "P_kN": 200.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 500.0
+      },
+      "expected": {
+        "N_kN": 341.12,
+        "Mx_base_kNm": 0.0,
+        "My_base_kNm": 500.0,
+        "equilibrium": false,
+        "bearing": "FAIL",
+        "contact": "FAIL"
+      }
+    },
+    {
+      "id": "traccion",
+      "description": "carga de tracción mayor que los pesos",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "P_kN": -400.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "N_kN": -258.88,
+        "Mx_base_kNm": 0.0,
+        "My_base_kNm": 0.0,
+        "equilibrium": false,
+        "bearing": "FAIL",
+        "contact": "FAIL"
+      }
+    }
+  ]
+}

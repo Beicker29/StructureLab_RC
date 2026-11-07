@@ -42,8 +42,8 @@ Una fuente de verdad por concepto ([arquitectura](docs/architecture.md)).
 - Las fuerzas llegan mayoradas (JSON o ETABS). No se generan combinaciones. En zapatas llegan además
   las cargas de servicio, en un Excel aparte, para la presión admisible y el contacto (D-052).
 - Las propiedades que se derivan de las dimensiones (área, inercias, módulos, pesos) se calculan; nunca se declaran.
-- Unidades: entrada en mm, MPa, kN y kN·m (en zapatas, además, presión admisible en kPa y pesos unitarios en
-  kN/m³, D-055); interno en N, mm y MPa. La conversión ocurre
+- Unidades: entrada en mm, MPa, kN y kN·m (en zapatas, además, presión admisible en kPa, sobrecargas en kN/m² y
+  pesos unitarios en kN/m³, D-055, D-057); interno en N, mm y MPa. La conversión ocurre
   solo al cargar (`model/`) y al presentar (`reporting/`, con `kN()` y `kNm()`).
 - Tablas (barras, ganchos, materiales) en `src/structurelab_rc/data/` como CSV o TOML,
   cargadas por `setup.load_engine()`. Nada de Excel versionado en `data/`; la excepción son
@@ -67,8 +67,10 @@ Una fuente de verdad por concepto ([arquitectura](docs/architecture.md)).
 
 ## Ejemplos, resultados y verificación
 
-- `examples/<perfil>/*.json` versionados, entradas válidas y documentadas.
-  `results/` es salida generada e ignorada.
+- `examples/<perfil>/<elemento>/*.json` versionados, entradas válidas y documentadas; los de ETABS en
+  `examples/etabs/<elemento>/`. Cada carpeta tiene un `LEEME.md` corto (ejemplos y lo propio del perfil) y
+  los campos de entrada y salida se documentan una sola vez, en `docs/formatos/<elemento>.md`.
+  `results/` es salida generada e ignorada, con la misma estructura de carpetas (D-058).
 - La huella de los ejemplos se calcula sobre el JSON de resultado, la memoria en texto,
   la cartilla y `<nombre>_drawing.json`, sin fecha. Nunca sobre el DXF ni el PDF.
 - Cambios de cálculo requieren casos en el oráculo independiente

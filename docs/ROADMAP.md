@@ -66,7 +66,7 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
 - **V3A Presión del suelo (hecha):** regiones A a E de Bellos e integración exacta de la presión sobre polígonos (D-053).
 - **V3B Modelo y entrada (hecha):** zapata con columna y su desplazamiento, datos del suelo, mallas inferior y
   superior, propiedades derivadas, casos de servicio y mayorados desde dos Excel de ETABS (D-054, D-055).
-- **V3C Verificación geotécnica:** con los casos de servicio, pmax ≤ qa, región, fracción de contacto mínima y
+- **V3C Verificación geotécnica (hecha, D-056):** con los casos de servicio, pmax ≤ qa, región, fracción de contacto mínima y
   equilibrio.
 - **V3D Verificación estructural:** con la presión mayorada, flexión en las caras de la columna (mallas inferior y
   superior), As,min y separación, cortante en una dirección, punzonamiento con γv·Msc, distribución γs, altura

@@ -25,11 +25,12 @@ Extras opcionales: `pdf` (fpdf2) y `cad` (ezdxf).
 ```console
 structurelab-rc --version
 structurelab-rc catalog
-structurelab-rc validate examples/nsr_10/beam_t.json
-structurelab-rc verify examples/nsr_10/beam_t.json
-structurelab-rc import-etabs "examples/etabs/Element Forces - Beams.xlsx" examples/etabs/plantilla_nsr10.json --output results/etabs.json
-structurelab-rc report results/etabs.json --output results/etabs
-structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/etabs/zapatas/plantilla_zapatas_nsr10.json --output results/zapatas.json
+structurelab-rc validate examples/nsr_10/vigas/viga_t.json
+structurelab-rc verify examples/nsr_10/vigas/viga_t.json
+structurelab-rc report examples/nsr_10/zapatas/zapata_aislada.json --output results/nsr_10/zapatas/zapata_aislada
+structurelab-rc import-etabs "examples/etabs/vigas/Element Forces - Beams.xlsx" examples/etabs/vigas/plantilla_vigas_nsr10.json --output results/etabs/vigas/etabs.json
+structurelab-rc report results/etabs/vigas/etabs.json --output results/etabs/vigas/reporte
+structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/etabs/zapatas/plantilla_zapatas_nsr10.json --output results/etabs/zapatas/zapatas.json
 ```
 
 `report` verifica el proyecto y escribe en la carpeta de salida `resultado.json` (todo el detalle, en kN, kN·m, mm
@@ -83,17 +84,21 @@ se verifica después con `verify`.
 
 `import-etabs-footings` genera un proyecto de zapatas (v3, en curso) a partir de dos tablas "Joint Reactions" de
 ETABS, una con las combinaciones de servicio y otra con las mayoradas, y de una plantilla con el perfil, los
-materiales, el suelo (`allowable_pressure_kPa`, `min_contact_fraction` y los pesos unitarios en kN/m³), el factor
-de carga muerta de cada combinación mayorada (`dead_load_factors`) y los tipos de zapata. Cada tipo lista sus nudos
+materiales, el suelo (`allowable_pressure_kPa`, `min_contact_fraction` y los pesos unitarios en kN/m³), los
+factores de carga muerta y viva de cada combinación (`load_factors`) y los tipos de zapata, con sus sobrecargas
+superimpuestas en kN/m². Cada tipo lista sus nudos
 por Unique Name y declara solo dimensiones primarias (lx, ly, h, columna, relleno y pedestal) y las mallas
 inferior y superior; el área, las inercias, los módulos, el núcleo central y los pesos se calculan. La reacción
-de ETABS se convierte en la acción sobre la zapata: P = FZ, Vx = −FX, Vy = −FY, Mx = −MX y My = −MY. Las
-verificaciones de zapatas aún no existen y el resultado es `BLOCKED`. La plantilla de ejemplo usa datos supuestos.
+de ETABS se convierte en la acción sobre la zapata: P = FZ, Vx = −FX, Vy = −FY, Mx = −MX y My = −MY. Con los
+casos de servicio se verifican la presión admisible (pmax ≤ qa, presión bruta con los pesos propios) y el
+contacto mínimo (D-056); la verificación estructural aún no existe y queda `BLOCKED`. La plantilla de ejemplo usa datos supuestos.
 
 ## Ejemplos y resultados
 
-- `examples/<perfil>/*.json`: entradas válidas y documentadas, versionadas en Git.
-  `examples/etabs/` guarda los ejemplos de importación desde ETABS.
+- `examples/<perfil>/<elemento>/*.json` (`vigas`, `zapatas`): entradas válidas y documentadas, versionadas en Git.
+  `examples/etabs/<elemento>/` guarda los ejemplos de importación desde ETABS. Cada carpeta tiene un `LEEME.md`
+  con sus ejemplos y lo propio del perfil; los campos de entrada y de salida están en
+  [docs/formatos/](docs/formatos/) y el índice en [examples/README.md](examples/README.md).
 - `results/`: salida generada, ignorada por Git. Nunca se edita a mano.
 
 ## Más información

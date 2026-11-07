@@ -37,7 +37,7 @@ def _validate(path: Path) -> int:
 def _verify(path: Path) -> int:
     checks = verify_file(path)
     for check in checks:
-        where = f"{check.member} z={check.z:.0f}" if check.z is not None else ""
+        where = f"{check.member} z={check.z:.0f}" if check.z is not None else check.member
         demand, capacity = display(check.demand, check.unit), display(check.capacity, check.unit)
         print(f"{where:<16}{check.name:<50}{check.status:<11}{demand:>16}{capacity:>16}  {check.clause}")
         _print_errors(check)

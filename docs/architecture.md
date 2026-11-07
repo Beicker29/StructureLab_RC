@@ -86,3 +86,7 @@ Pu < 0.10 f'c·Ag) y reúne las verificaciones de flexión y cortante:
   estación sigue con `domain/beam/shear.py` (Vc, Vs, Av,min y separaciones de `codes/<perfil>/shear.py`);
   si no, arma la verificación combinada con `codes/<perfil>/torsion.py`. Ambos toman d y ρw del acero a
   tracción del estado a flexión.
+
+En zapatas (v3), `domain/footing/base.py` traslada las fuerzas de la columna y los pesos propios al centroide de
+la base, y `domain/footing/service.py` pide a `mechanics/soil_pressure.py` la presión con cada caso de servicio y
+arma las verificaciones de presión admisible y contacto. Los numerales salen de `codes/<perfil>/footing.py`.

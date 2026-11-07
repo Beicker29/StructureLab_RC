@@ -43,9 +43,10 @@ jobs:
         run: |
           # Ruta nativa del wheel (en Windows, Git Bash no convierte una ruta que termina en [pdf]).
           wheel=$(python -c "import glob, os; print(os.path.abspath(glob.glob('dist/*.whl')[0]))")
-          example="$PWD/examples/nsr_10/beam_t.json"
-          workbook="$PWD/examples/etabs/Element Forces - Beams.xlsx"
-          template="$PWD/examples/etabs/plantilla_nsr10.json"
+          example="$PWD/examples/nsr_10/vigas/viga_t.json"
+          footing="$PWD/examples/nsr_10/zapatas/zapata_aislada.json"
+          workbook="$PWD/examples/etabs/vigas/Element Forces - Beams.xlsx"
+          template="$PWD/examples/etabs/vigas/plantilla_vigas_nsr10.json"
           footings="$PWD/examples/etabs/zapatas"
           cd "$RUNNER_TEMP"
           python -m venv clean
@@ -59,5 +60,6 @@ jobs:
           "$bin/structurelab-rc" validate etabs.json
           "$bin/structurelab-rc" import-etabs-footings "$footings/Joint Reactions - Servicio.xlsx" "$footings/Joint Reactions - Ultimas.xlsx" "$footings/plantilla_zapatas_nsr10.json" --output zapatas.json
           "$bin/structurelab-rc" validate zapatas.json
+          "$bin/structurelab-rc" validate "$footing"
           "$bin/structurelab-rc" report "$example" --output reporte
           test -s reporte/resultado.json && test -s reporte/memoria.txt && test -s reporte/memoria.pdf

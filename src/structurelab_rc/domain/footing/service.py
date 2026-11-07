@@ -1,0 +1,58 @@
+"""Verificación geotécnica con los casos de servicio (V3C; D-052, puntos 2, 3 y 5).
+
+La presión bajo la zapata rígida sigue a Bellos y Bakas (2017) con la resultante de la columna, los pesos propios y las
+sobrecargas, con los factores de la combinación de servicio (D-057). Se compara la presión máxima con la admisible y
+la fracción de la base en contacto con el mínimo que declara el usuario; sin equilibrio (resultante fuera de la base
+o sin compresión) el caso es FAIL.
+"""
+
+from structurelab_rc.codes.registry import Profile
+from structurelab_rc.domain.check import Check
+from structurelab_rc.domain.footing.base import base_resultant
+from structurelab_rc.domain.status import Status
+from structurelab_rc.errors import incomplete, invalid_input
+from structurelab_rc.mechanics.materials import NoEquilibrium
+from structurelab_rc.mechanics.soil_pressure import footing_pressure
+from structurelab_rc.model.footing import Footing, FootingLoad, Soil
+
+BEARING = "Presion admisible del suelo"
+CONTACT = "Contacto con el suelo"
+CONTACT_CLAUSE = "D-052 (minimo declarado por el usuario)"
+_REGIONS = {"A": "triangular", "B": "pentagonal", "C": "total", "D": "trapezoidal en x", "E": "trapezoidal en y"}
+
+
+def _case_checks(profile: Profile, footing: Footing, soil: Soil, load: FootingLoad) -> list[Check]:
+    resultant = base_resultant(footing, soil, load)
+    values: tuple[tuple[str, float], ...] = (("N", resultant.n), ("Mx base", resultant.mx), ("My base", resultant.my))
+    bearing_clause = profile.footing.clauses()["bearing"]
+    ex, ey = resultant.ex, resultant.ey
+    try:
+        if ex is None or ey is None:
+            raise NoEquilibrium("la carga de servicio sobre el suelo no es de compresion")
+        pressure = footing_pressure(footing.lx, footing.ly, resultant.n, ex, ey)
+    except NoEquilibrium as error:
+        failure = invalid_input(f"Sin equilibrio con el suelo: {error}", member=footing.id, case=load.case)
+        return [
+            Check(BEARING, Status.FAIL, (failure,), bearing_clause, values=values, member=footing.id, case=load.case),
+            Check(CONTACT, Status.FAIL, (failure,), CONTACT_CLAUSE, values=values, member=footing.id, case=load.case),
+        ]
+    values += (("ex", ex), ("ey", ey))
+    fraction = pressure.contact_fraction()
+    bearing_ok = pressure.pmax <= soil.allowable_pressure
+    contact_ok = fraction >= soil.min_contact_fraction
+    region = f"Region {pressure.region} de Bellos y Bakas (2017): contacto {_REGIONS[pressure.region]}"
+    return [
+        Check(BEARING, Status.PASS if bearing_ok else Status.FAIL, clause=bearing_clause, demand=pressure.pmax,
+              capacity=soil.allowable_pressure, unit="N/mm2", values=values, note=region, member=footing.id, case=load.case),
+        # La razón es el mínimo exigido sobre la fracción en contacto: cumple con razón ≤ 1.
+        Check(CONTACT, Status.PASS if contact_ok else Status.FAIL, clause=CONTACT_CLAUSE, demand=soil.min_contact_fraction,
+              capacity=fraction, values=(*values, ("contacto", fraction)), note=region, member=footing.id, case=load.case),
+    ]
+
+
+def service_checks(profile: Profile, footing: Footing, soil: Soil) -> list[Check]:
+    loads = [load for load in footing.loads if load.kind == "service"]
+    if not loads:
+        error = incomplete("La zapata no tiene casos de servicio", member=footing.id)
+        return [Check(BEARING, Status.INCOMPLETE, (error,), profile.footing.clauses()["bearing"], member=footing.id)]
+    return [check for load in loads for check in _case_checks(profile, footing, soil, load)]

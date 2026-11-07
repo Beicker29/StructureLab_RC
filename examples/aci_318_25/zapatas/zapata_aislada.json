@@ -1,0 +1,204 @@
+{
+  "description": "Ejemplo de zapatas aisladas: Z1 centrada bajo columna cuadrada con pedestal y Z2 rectangular con la columna desplazada 400 mm en X. Fuerzas en la base de la columna, ejes globales. Datos ilustrativos. Unidades: mm, MPa, kPa, kN/m2, kN/m3, kN y kN-m.",
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "special",
+    "justification": "Categoría de diseño sísmico alta declarada por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0
+  },
+  "footings": [
+    {
+      "id": "Z1",
+      "lx": 2600.0,
+      "ly": 2600.0,
+      "h": 600.0,
+      "cover": 75.0,
+      "fill_height": 1200.0,
+      "pedestal_height": 600.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "column": {
+        "cx": 500.0,
+        "cy": 500.0,
+        "offset_x": 0.0,
+        "offset_y": 0.0
+      },
+      "bottom": {
+        "first": "x",
+        "x": {
+          "designation": "#5",
+          "spacing": 150.0
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 150.0
+        }
+      },
+      "top": {
+        "first": "x",
+        "x": {
+          "designation": "#4",
+          "spacing": 250.0
+        },
+        "y": {
+          "designation": "#4",
+          "spacing": 250.0
+        }
+      },
+      "loads": [
+        {
+          "case": "D+L",
+          "kind": "service",
+          "dead_factor": 1.0,
+          "live_factor": 1.0,
+          "P_kN": 1150.0,
+          "Vx_kN": 8.0,
+          "Vy_kN": 5.0,
+          "Mx_kNm": -12.0,
+          "My_kNm": 20.0
+        },
+        {
+          "case": "D+0.7EX",
+          "kind": "service",
+          "dead_factor": 1.0,
+          "live_factor": 0.0,
+          "P_kN": 900.0,
+          "Vx_kN": 55.0,
+          "Vy_kN": 4.0,
+          "Mx_kNm": -10.0,
+          "My_kNm": 150.0
+        },
+        {
+          "case": "D+0.7EY",
+          "kind": "service",
+          "dead_factor": 1.0,
+          "live_factor": 0.0,
+          "P_kN": 900.0,
+          "Vx_kN": 6.0,
+          "Vy_kN": 50.0,
+          "Mx_kNm": -140.0,
+          "My_kNm": 15.0
+        },
+        {
+          "case": "1.2D+1.6L",
+          "kind": "factored",
+          "dead_factor": 1.2,
+          "live_factor": 1.6,
+          "P_kN": 1620.0,
+          "Vx_kN": 11.0,
+          "Vy_kN": 7.0,
+          "Mx_kNm": -17.0,
+          "My_kNm": 28.0
+        },
+        {
+          "case": "1.2D+L+EX",
+          "kind": "factored",
+          "dead_factor": 1.2,
+          "live_factor": 1.0,
+          "P_kN": 1350.0,
+          "Vx_kN": 80.0,
+          "Vy_kN": 6.0,
+          "Mx_kNm": -14.0,
+          "My_kNm": 215.0
+        },
+        {
+          "case": "0.9D+EX",
+          "kind": "factored",
+          "dead_factor": 0.9,
+          "live_factor": 0.0,
+          "P_kN": 700.0,
+          "Vx_kN": 78.0,
+          "Vy_kN": 3.0,
+          "Mx_kNm": -8.0,
+          "My_kNm": 210.0
+        }
+      ]
+    },
+    {
+      "id": "Z2",
+      "lx": 3000.0,
+      "ly": 2200.0,
+      "h": 550.0,
+      "cover": 75.0,
+      "fill_height": 1000.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "column": {
+        "cx": 400.0,
+        "cy": 600.0,
+        "offset_x": 400.0,
+        "offset_y": 0.0
+      },
+      "bottom": {
+        "first": "y",
+        "x": {
+          "designation": "#5",
+          "spacing": 175.0
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 175.0
+        }
+      },
+      "top": null,
+      "loads": [
+        {
+          "case": "D+L",
+          "kind": "service",
+          "dead_factor": 1.0,
+          "live_factor": 1.0,
+          "P_kN": 780.0,
+          "Vx_kN": 4.0,
+          "Vy_kN": 3.0,
+          "Mx_kNm": 9.0,
+          "My_kNm": -35.0
+        },
+        {
+          "case": "D+0.7EY",
+          "kind": "service",
+          "dead_factor": 1.0,
+          "live_factor": 0.0,
+          "P_kN": 610.0,
+          "Vx_kN": 3.0,
+          "Vy_kN": 35.0,
+          "Mx_kNm": 95.0,
+          "My_kNm": -28.0
+        },
+        {
+          "case": "1.2D+1.6L",
+          "kind": "factored",
+          "dead_factor": 1.2,
+          "live_factor": 1.6,
+          "P_kN": 1100.0,
+          "Vx_kN": 6.0,
+          "Vy_kN": 4.0,
+          "Mx_kNm": 12.0,
+          "My_kNm": -50.0
+        },
+        {
+          "case": "1.2D+L+EY",
+          "kind": "factored",
+          "dead_factor": 1.2,
+          "live_factor": 1.0,
+          "P_kN": 920.0,
+          "Vx_kN": 4.0,
+          "Vy_kN": 52.0,
+          "Mx_kNm": 140.0,
+          "My_kNm": -40.0
+        }
+      ]
+    }
+  ]
+}

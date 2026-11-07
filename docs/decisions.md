@@ -456,6 +456,34 @@
   - Cada malla declara qué dirección va más cerca de la cara (`first`), porque eso define la d de cada dirección.
   - Mientras no existan V3C y V3D, cada zapata devuelve una verificación `BLOCKED`.
 
+### D-056: verificación geotécnica de zapatas (V3C)
+
+- **Fecha:** 2026-11-07
+- **Referencias:** ACI 318-25 13.3.1.1 y NSR-10 C.15.2.2 (área de la base con cargas sin mayorar y presión admisible); Bellos y Bakas (2017) para la presión.
+- **Implementación de D-052 (puntos 2 a 5):**
+  - Por cada caso de servicio, la resultante en el centroide de la base suma la columna y los pesos sin mayorar: Mx_base = Mx − P·oy − H·Vy y My_base = My + P·ox + H·Vx, con H = h + altura del pedestal. El pedestal pesa en el eje de la columna y desplaza el relleno de esa área. ex = My_base/N y ey = −Mx_base/N.
+  - "Presion admisible del suelo": pmax ≤ qa. Como los pesos de la zapata y del relleno están incluidos, pmax es la presión bruta y qa se compara como presión admisible bruta.
+  - "Contacto con el suelo": la fracción de la base en contacto debe ser al menos el mínimo declarado. La razón que se reporta es el mínimo sobre la fracción, de modo que cumple con razón ≤ 1. La nota indica la región de Bellos.
+  - Sin equilibrio (N ≤ 0 o resultante fuera de la base), las dos verificaciones del caso son FAIL.
+  - Sin casos de servicio, la verificación es INCOMPLETE. Los casos mayorados no se usan para el contacto.
+- **Oráculo:** `tests/oracles/derive_footing_service.py` calcula el momento como suma de r × F de cada fuerza, sin importar el paquete; 8 casos por perfil.
+
+### D-057: sobrecargas superimpuestas y factores de carga por combinación
+
+- **Fecha:** 2026-11-07
+- **Decisión del usuario:** cada zapata declara una sobrecarga superimpuesta muerta y otra viva, en kN/m², sobre el relleno. qa es una presión admisible bruta (confirma D-056).
+- **Consecuencia:** la carga viva no está en todas las combinaciones (SERVICIO 2 es D+EX+EZ) y su factor cambia entre las mayoradas (1.6, 1.0 o 0). Por eso cada caso, de servicio o mayorado, declara `dead_factor` y `live_factor`. En la plantilla de ETABS, `load_factors` da `{"dead", "live"}` para cada combinación de las dos tablas, y reemplaza a `dead_load_factors` (D-054).
+- **Implementación:** las sobrecargas actúan sobre el área de la base menos la de la columna, como el relleno. dead_factor multiplica los pesos propios y la sobrecarga muerta; live_factor, la sobrecarga viva. En servicio los factores son los de la combinación (por ejemplo 1 y 1 en D+L, 1 y 0 en D+E).
+
+### D-058: estructura de ejemplos y resultados
+
+- **Fecha:** 2026-11-07
+- **Decisión del usuario:**
+  - `examples/` y `results/` se organizan por perfil (`aci_318_25`, `nsr_10`) y dentro de cada uno por tipo de elemento (`vigas`, `zapatas`); ETABS va aparte, en `etabs/<elemento>/`.
+  - Los campos de entrada y de salida se documentan una sola vez por elemento, en `docs/formatos/` (`vigas.md`, `zapatas.md`, `etabs.md`), porque el formato no depende del perfil. Cada carpeta de ejemplos tiene un `LEEME.md` corto con sus ejemplos, cómo correrlos y lo propio del perfil; `examples/README.md` es el índice.
+  - Los archivos de ejemplo se nombran en español, como las carpetas: `viga_rectangular.json`, `viga_t.json`, `zapata_aislada.json`. Los valores del JSON (por ejemplo `"type": "beam"`) siguen en inglés, como el código.
+- **Implementación:** Git guarda solo el esqueleto de `results/` (`.gitkeep`). La plantilla de vigas de ETABS se renombró a `plantilla_vigas_nsr10.json`. La huella conserva los mismos hashes de las vigas con las rutas nuevas.
+
 ## Consultas abiertas
 
 Ninguna.

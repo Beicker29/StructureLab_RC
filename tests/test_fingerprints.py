@@ -18,9 +18,11 @@ from structurelab_rc.engine import import_etabs, report_file
 
 ROOT = Path(__file__).parent.parent
 FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
-EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*.json") if path.parent.name != "etabs")
-ETABS = "examples/etabs/plantilla_nsr10.json"
-WORKBOOK = ROOT / "examples" / "etabs" / "Element Forces - Beams.xlsx"
+# examples/<perfil>/<elemento>/*.json; los ejemplos de ETABS están aparte, en examples/etabs/<elemento>/.
+EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*/*.json")
+                  if path.parts[-3] != "etabs")
+ETABS = "examples/etabs/vigas/plantilla_vigas_nsr10.json"
+WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "Element Forces - Beams.xlsx"
 UPDATE = os.environ.get("STRUCTURELAB_UPDATE_FINGERPRINTS") == "1"
 
 

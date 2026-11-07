@@ -33,10 +33,12 @@ MAT = {"first": "x", "x": {"designation": "#5", "spacing": 150.0}, "y": {"design
 def _footing(**changes: Any) -> dict[str, Any]:
     data: dict[str, Any] = {
         "id": "Z1", "lx": 3000.0, "ly": 2000.0, "h": 600.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 500.0,
+        "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0,
         "column": {"cx": 400.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0}, "bottom": MAT, "top": None,
-        "loads": [{"case": "D+L", "kind": "service", "P_kN": 1000.0, "Vx_kN": 0.0, "Vy_kN": 0.0, "Mx_kNm": 0.0, "My_kNm": 0.0},
-                  {"case": "1.2D+1.6L", "kind": "factored", "dead_factor": 1.2, "P_kN": 1400.0, "Vx_kN": 10.0,
-                   "Vy_kN": -5.0, "Mx_kNm": 20.0, "My_kNm": -30.0}],
+        "loads": [{"case": "D+L", "kind": "service", "dead_factor": 1.0, "live_factor": 1.0, "P_kN": 1000.0, "Vx_kN": 0.0,
+                   "Vy_kN": 0.0, "Mx_kNm": 0.0, "My_kNm": 0.0},
+                  {"case": "1.2D+1.6L", "kind": "factored", "dead_factor": 1.2, "live_factor": 1.6, "P_kN": 1400.0,
+                   "Vx_kN": 10.0, "Vy_kN": -5.0, "Mx_kNm": 20.0, "My_kNm": -30.0}],
     }
     data.update(changes)
     return data
@@ -65,6 +67,8 @@ def test_units_and_derived_properties() -> None:
     assert weight == pytest.approx(24e-6 * 6e6 * 600)  # 86.4 kN
     assert pedestal == pytest.approx(24e-6 * 400 * 500 * 500)  # 2.4 kN
     assert fill == pytest.approx(18e-6 * (6e6 - 2e5) * 1000)  # 104.4 kN
+    assert footing.surcharge_dead == pytest.approx(2e-3)  # kN/m² → N/mm²
+    assert footing.surcharges() == (pytest.approx(2e-3 * 5.8e6), pytest.approx(5e-3 * 5.8e6))  # 11.6 y 29 kN
 
 
 @pytest.mark.parametrize(
@@ -72,12 +76,13 @@ def test_units_and_derived_properties() -> None:
     [
         ({"column": {"cx": 400.0, "cy": 500.0, "offset_x": 1400.0, "offset_y": 0.0}}, "se sale de la base"),
         ({"cover": 300.0}, "recubrimiento"),
-        ({"loads": [{"case": "C", "kind": "factored", "P_kN": 1.0, "Vx_kN": 0, "Vy_kN": 0, "Mx_kNm": 0, "My_kNm": 0}]},
-         "dead_factor"),
-        ({"loads": [{"case": "C", "kind": "service", "dead_factor": 1.0, "P_kN": 1.0, "Vx_kN": 0, "Vy_kN": 0, "Mx_kNm": 0,
-                     "My_kNm": 0}]}, "no lleva dead_factor"),
+        ({"loads": [{"case": "C", "kind": "factored", "dead_factor": 1.2, "P_kN": 1.0, "Vx_kN": 0, "Vy_kN": 0, "Mx_kNm": 0,
+                     "My_kNm": 0}]}, "live_factor"),
+        ({"loads": [{"case": "C", "kind": "service", "live_factor": 1.0, "P_kN": 1.0, "Vx_kN": 0, "Vy_kN": 0, "Mx_kNm": 0,
+                     "My_kNm": 0}]}, "dead_factor"),
+        ({"surcharge_live_kNm2": -1.0}, "surcharge_live"),
     ],
-    ids=["columna-fuera", "recubrimiento", "sin-factor", "factor-en-servicio"],
+    ids=["columna-fuera", "recubrimiento", "sin-factor-vivo", "sin-factor-muerto", "sobrecarga-negativa"],
 )
 def test_invalid_footings(changes: dict[str, Any], message: str) -> None:
     with pytest.raises(ValidationError, match=message):
@@ -109,12 +114,13 @@ def test_domain_validation(changes: dict[str, Any], message: str) -> None:
     assert any(message in error.message for error in check.errors)
 
 
-def test_footing_is_blocked_until_verified(tmp_path: Path) -> None:
+def test_structural_part_is_blocked_until_v3d(tmp_path: Path) -> None:
     path = tmp_path / "zapata.json"
     path.write_text(json.dumps(_project()), encoding="utf-8")
     _, checks = run_project(path)
     assert checks[0].status is Status.PASS
-    assert [(check.member, check.status) for check in checks[1:]] == [("Z1", Status.BLOCKED)]
+    structural = [check for check in checks if check.name == "Zapata: verificacion estructural"]
+    assert [(check.member, check.status) for check in structural] == [("Z1", Status.BLOCKED)]
 
 
 def _row(case: str, step: str, forces: tuple[float, float, float, float, float]) -> dict[str, str]:
@@ -128,7 +134,8 @@ def _template(**changes: Any) -> EtabsFootingTemplate:
     footing = {key: value for key, value in _footing().items() if key not in {"id", "loads"}}
     data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
             "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight"}, "soil": SOIL,
-            "dead_load_factors": {"U1": 1.2, "U2": 0.9},
+            "load_factors": {"S1": {"dead": 1.0, "live": 1.0}, "U1": {"dead": 1.2, "live": 1.6},
+                             "U2": {"dead": 0.9, "live": 0.0}},
             "footings": [{"id": "Z1", "etabs_unique_names": ["10"], **footing}]}
     data.update(changes)
     return EtabsFootingTemplate.model_validate(data)
@@ -145,18 +152,19 @@ def test_reactions_become_actions_on_the_footing() -> None:
     footing = project["footings"][0]
     assert footing["id"] == "Z1-7"
     loads = {load["case"]: load for load in footing["loads"]}
-    assert loads["S1"] == {"case": "S1", "kind": "service", "P_kN": 500.0, "Vx_kN": -10.0, "Vy_kN": 20.0, "Mx_kNm": -30.0,
-                           "My_kNm": 40.0}
-    assert loads["U1 (Max)"]["dead_factor"] == 1.2
+    assert loads["S1"] == {"case": "S1", "kind": "service", "dead_factor": 1.0, "live_factor": 1.0, "P_kN": 500.0,
+                           "Vx_kN": -10.0, "Vy_kN": 20.0, "Mx_kNm": -30.0, "My_kNm": 40.0}
+    assert (loads["U1 (Max)"]["dead_factor"], loads["U1 (Max)"]["live_factor"]) == (1.2, 1.6)
+    assert footing["surcharge_live_kNm2"] == 5.0
     assert loads["U1 (Min)"]["P_kN"] == 600.0
-    assert loads["U2"]["dead_factor"] == 0.9
+    assert (loads["U2"]["dead_factor"], loads["U2"]["live_factor"]) == (0.9, 0.0)
     assert loads["U2"]["P_kN"] == -50.0  # tracción en el apoyo: se resolverá como FAIL en V3D (D-054)
     assert summary.service_cases == ("S1",)
     assert summary.factored_cases == ("U1 (Max)", "U1 (Min)", "U2")
     Project.model_validate(project)
 
 
-def test_missing_dead_factor_and_joint_are_reported() -> None:
+def test_missing_factors_and_joint_are_reported() -> None:
     service = Table(HEADERS, UNITS, (_row("S1", "", (0.0, 0.0, 500.0, 0.0, 0.0)),))
     factored = Table(HEADERS, UNITS, (_row("U1", "", (0.0, 0.0, 700.0, 0.0, 0.0)), _row("U3", "", (0.0, 0.0, 700.0, 0.0, 0.0))))
     template = _template(footings=[{**_template().footings[0].model_dump(mode="json"), "etabs_unique_names": ["10", "99"]}])
@@ -165,8 +173,8 @@ def test_missing_dead_factor_and_joint_are_reported() -> None:
         build_footing_project(template, service, factored)
 
     messages = " | ".join(error.message for error in raised.value.errors)
-    assert "'U3' no tiene factor de carga muerta" in messages
-    assert "'U2' de la plantilla no aparece" in messages
+    assert "'U3' no tiene factores de carga" in messages
+    assert "'U2' de la plantilla no aparece en las tablas" in messages
     assert "'99' no tiene combinaciones en la tabla de servicio" in messages
 
 

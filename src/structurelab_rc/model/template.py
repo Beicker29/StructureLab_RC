@@ -66,6 +66,8 @@ class TemplateFooting(_Input):
     cover: PositiveFloat
     fill_height: NonNegativeFloat
     pedestal_height: NonNegativeFloat
+    surcharge_dead_kNm2: NonNegativeFloat
+    surcharge_live_kNm2: NonNegativeFloat
     column: Column
     bottom: Mat
     top: Mat | None
@@ -77,11 +79,18 @@ class TemplateFooting(_Input):
         return self
 
 
+class LoadFactors(_Input):
+    """Factores de carga muerta y viva de una combinación de ETABS (D-054, D-057)."""
+
+    dead: NonNegativeFloat
+    live: NonNegativeFloat
+
+
 class EtabsFootingTemplate(_Input):
     """Plantilla de zapatas: lo que las tablas de reacciones de ETABS no traen.
 
-    dead_load_factors da el factor de carga muerta de cada combinación mayorada (D-054); las combinaciones de
-    servicio no lo llevan.
+    load_factors da los factores de carga muerta y viva de cada combinación, de servicio y mayorada; se aplican al
+    peso propio, al relleno y a las sobrecargas (D-054, D-057).
     """
 
     description: str
@@ -89,7 +98,7 @@ class EtabsFootingTemplate(_Input):
     seismic: SeismicFacts
     materials: Materials
     soil: dict[str, float]
-    dead_load_factors: dict[str, PositiveFloat] = Field(min_length=1)
+    load_factors: dict[str, LoadFactors] = Field(min_length=1)
     footings: tuple[TemplateFooting, ...] = Field(min_length=1)
 
     @model_validator(mode="after")

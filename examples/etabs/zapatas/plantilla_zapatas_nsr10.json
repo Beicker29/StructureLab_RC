@@ -1,5 +1,5 @@
 {
-  "description": "Plantilla de importación de zapatas para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (65 apoyos del nivel CIM_SOT1_N-3.53). DATOS DE EJEMPLO: dimensiones, columnas, mallas, suelo y relleno son supuestos para probar la importación; reemplazar por los del proyecto. Unidades: mm, MPa, kPa y kN/m3.",
+  "description": "Plantilla de importación de zapatas para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (65 apoyos del nivel CIM_SOT1_N-3.53). DATOS DE EJEMPLO: dimensiones, columnas, mallas, suelo, relleno y sobrecargas son supuestos para probar la importación; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",
@@ -17,13 +17,51 @@
     "unit_weight_concrete_kNm3": 24.0,
     "unit_weight_fill_kNm3": 18.0
   },
-  "dead_load_factors": {
-    "COMB0 (1.4D)": 1.4,
-    "COMB1 (1.2D+1.6L)": 1.2,
-    "COMB4A (1.2D+L+EX+EZ)": 1.2,
-    "COMB4B (1.2D+L+EY+EZ)": 1.2,
-    "COMB6A (0.9+EX+EZ)": 0.9,
-    "COMB6B (0.9D+EY+EZ)": 0.9
+  "load_factors": {
+    "SERVICIO 1 (D+L)": {
+      "dead": 1.0,
+      "live": 1.0
+    },
+    "SERVICIO 2 (D+EX+EZ)": {
+      "dead": 1.0,
+      "live": 0.0
+    },
+    "SERVICIO 3 (D+EY+EZ)": {
+      "dead": 1.0,
+      "live": 0.0
+    },
+    "SERVICIO 4 (D+L+EX+EZ)": {
+      "dead": 1.0,
+      "live": 1.0
+    },
+    "SERVICIO 5  (D+L+EY+EZ)": {
+      "dead": 1.0,
+      "live": 1.0
+    },
+    "COMB0 (1.4D)": {
+      "dead": 1.4,
+      "live": 0.0
+    },
+    "COMB1 (1.2D+1.6L)": {
+      "dead": 1.2,
+      "live": 1.6
+    },
+    "COMB4A (1.2D+L+EX+EZ)": {
+      "dead": 1.2,
+      "live": 1.0
+    },
+    "COMB4B (1.2D+L+EY+EZ)": {
+      "dead": 1.2,
+      "live": 1.0
+    },
+    "COMB6A (0.9+EX+EZ)": {
+      "dead": 0.9,
+      "live": 0.0
+    },
+    "COMB6B (0.9D+EY+EZ)": {
+      "dead": 0.9,
+      "live": 0.0
+    }
   },
   "footings": [
     {
@@ -58,6 +96,8 @@
       "cover": 75.0,
       "fill_height": 1500.0,
       "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
       "column": {
         "cx": 600.0,
         "cy": 600.0,
@@ -116,6 +156,8 @@
       "cover": 75.0,
       "fill_height": 1500.0,
       "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
       "column": {
         "cx": 600.0,
         "cy": 600.0,
@@ -179,6 +221,8 @@
       "cover": 75.0,
       "fill_height": 1500.0,
       "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
       "column": {
         "cx": 600.0,
         "cy": 600.0,

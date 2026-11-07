@@ -20,7 +20,7 @@ _CONVENTIONS = (
     "Los factores phi, las capacidades y los numerales provienen del resultado de cada verificacion.",
 )
 _PRECEDENCE = {str(Status.FAIL): 3, str(Status.INCOMPLETE): 2, str(Status.BLOCKED): 1, str(Status.PASS): 0}
-_DECIMALS = {"kN-m": 1, "kN": 1, "mm": 0, "mm2": 0, "mm2/mm": 3, "MPa": 2, "deg": 2, "-": 5}
+_DECIMALS = {"kN-m": 1, "kN": 1, "kPa": 1, "mm": 0, "mm2": 0, "mm2/mm": 3, "MPa": 2, "deg": 2, "-": 5}
 _CONCRETE = {"normalweight": "concreto de peso normal", "lightweight": "concreto liviano"}
 _TYPES = {"beam": "viga", "column": "columna", "footing": "zapata", "wall": "muro", "slab": "losa"}
 

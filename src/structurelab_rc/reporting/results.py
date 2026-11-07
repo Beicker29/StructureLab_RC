@@ -7,14 +7,15 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, Soil
 from structurelab_rc.model.project import Project
-from structurelab_rc.reporting.units import kN, kNm
+from structurelab_rc.reporting.units import kN, kNm, kPa
 
 _DIGITS = 6
 # Unidad interna → (unidad de presentación, conversión).
-_UNITS = {"N*mm": ("kN-m", kNm), "N": ("kN", kN)}
+_UNITS = {"N*mm": ("kN-m", kNm), "N": ("kN", kN), "N/mm2": ("kPa", kPa)}
 # Valores de una verificación con unidad: nombre → unidad interna.
 _VALUE_UNITS = {"Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi Tth": "N*mm", "Vc": "N", "Vs": "N",
-                "c": "mm", "d": "mm", "theta": "deg", "Aoh": "mm2", "ph": "mm", "across": "mm", "across_max": "mm"}
+                "c": "mm", "d": "mm", "theta": "deg", "Aoh": "mm2", "ph": "mm", "across": "mm", "across_max": "mm",
+                "N": "N", "Mx base": "N*mm", "My base": "N*mm", "ex": "mm", "ey": "mm"}
 
 
 def significant(value: float) -> float:
@@ -76,6 +77,7 @@ _MM4_PER_M4 = 1e12
 def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str, Any]:
     """Zapata con sus propiedades derivadas de las dimensiones (nunca declaradas) y sus verificaciones."""
     footing_weight, pedestal_weight, fill_weight = footing.weights(soil)
+    dead_surcharge, live_surcharge = footing.surcharges()
     kern_x, kern_y = footing.kern
     properties = {
         "A [m2]": footing.area / _MM2_PER_M2,
@@ -88,8 +90,12 @@ def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str,
         "W zapata [kN]": kN(footing_weight),
         "W pedestal [kN]": kN(pedestal_weight),
         "W relleno [kN]": kN(fill_weight),
+        "Sobrecarga muerta [kN]": kN(dead_surcharge),
+        "Sobrecarga viva [kN]": kN(live_surcharge),
     }
     geometry = footing.model_dump(mode="json", include={"lx", "ly", "h", "cover", "fill_height", "pedestal_height", "column"})
+    geometry["surcharge_dead [kN/m2]"] = significant(footing.surcharge_dead / MPA_PER_KPA)
+    geometry["surcharge_live [kN/m2]"] = significant(footing.surcharge_live / MPA_PER_KPA)
     return {
         "id": footing.id,
         "geometry [mm]": geometry,

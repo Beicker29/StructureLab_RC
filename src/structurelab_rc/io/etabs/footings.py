@@ -13,7 +13,7 @@ from typing import Any
 from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.io.etabs.importer import EtabsImportError, case_label
 from structurelab_rc.io.etabs.xlsx import Table
-from structurelab_rc.model.template import EtabsFootingTemplate
+from structurelab_rc.model.template import EtabsFootingTemplate, LoadFactors
 
 SHEET = "Joint Reactions"
 REQUIRED_UNITS = {"FX": "kN", "FY": "kN", "FZ": "kN", "MX": "kN-m", "MY": "kN-m"}
@@ -48,13 +48,10 @@ def _rows_by_joint(table: Table) -> tuple[dict[str, list[dict[str, str]]], int]:
     return by_joint, skipped
 
 
-def _load(row: dict[str, str], kind: str, dead_factor: float | None) -> dict[str, Any]:
-    load: dict[str, Any] = {"case": case_label(row), "kind": kind}
-    if dead_factor is not None:
-        load["dead_factor"] = dead_factor
-    load.update({"P_kN": float(row["FZ"]), "Vx_kN": -float(row["FX"]), "Vy_kN": -float(row["FY"]),
-                 "Mx_kNm": -float(row["MX"]), "My_kNm": -float(row["MY"])})
-    return load
+def _load(row: dict[str, str], kind: str, factors: LoadFactors) -> dict[str, Any]:
+    return {"case": case_label(row), "kind": kind, "dead_factor": factors.dead, "live_factor": factors.live,
+            "P_kN": float(row["FZ"]), "Vx_kN": -float(row["FX"]), "Vy_kN": -float(row["FY"]),
+            "Mx_kNm": -float(row["MX"]), "My_kNm": -float(row["MY"])}
 
 
 def build_footing_project(
@@ -66,11 +63,11 @@ def build_footing_project(
         raise EtabsImportError(tuple(errors))
     service_rows, skipped_service = _rows_by_joint(service)
     factored_rows, skipped_factored = _rows_by_joint(factored)
-    factored_names = {row["Output Case"] for rows in factored_rows.values() for row in rows}
-    for name in sorted(factored_names - set(template.dead_load_factors)):
-        errors.append(invalid_input(f"La combinacion mayorada '{name}' no tiene factor de carga muerta en la plantilla"))
-    for name in sorted(set(template.dead_load_factors) - factored_names):
-        errors.append(invalid_input(f"La combinacion '{name}' de la plantilla no aparece en la tabla de cargas mayoradas"))
+    present = {row["Output Case"] for rows in (*service_rows.values(), *factored_rows.values()) for row in rows}
+    for name in sorted(present - set(template.load_factors)):
+        errors.append(invalid_input(f"La combinacion '{name}' no tiene factores de carga en la plantilla"))
+    for name in sorted(set(template.load_factors) - present):
+        errors.append(invalid_input(f"La combinacion '{name}' de la plantilla no aparece en las tablas de ETABS"))
     footings = []
     for footing_type in template.footings:
         base = footing_type.model_dump(mode="json", exclude={"id", "etabs_unique_names"})
@@ -82,12 +79,14 @@ def build_footing_project(
                                                 member=footing_type.id))
             if not own_service or not own_factored:
                 continue
-            loads = [_load(row, "service", None) for row in own_service]
-            loads += [_load(row, "factored", template.dead_load_factors.get(row["Output Case"])) for row in own_factored]
+            if any(row["Output Case"] not in template.load_factors for row in (*own_service, *own_factored)):
+                continue
+            loads = [_load(row, "service", template.load_factors[row["Output Case"]]) for row in own_service]
+            loads += [_load(row, "factored", template.load_factors[row["Output Case"]]) for row in own_factored]
             footings.append({"id": f"{footing_type.id}-{own_service[0]['Label']}", **base, "loads": loads})
     if errors:
         raise EtabsImportError(tuple(errors))
-    project = template.model_dump(mode="json", exclude={"dead_load_factors", "footings"})
+    project = template.model_dump(mode="json", exclude={"load_factors", "footings"})
     project["footings"] = footings
     summary = FootingImportSummary(
         len(footings),

@@ -12,7 +12,7 @@ from structurelab_rc.engine import report_file
 from structurelab_rc.reporting.pdf import latin1, write_pdf
 from structurelab_rc.reporting.results import check_data, significant
 
-EXAMPLE = Path(__file__).parent.parent / "examples" / "nsr_10" / "beam_t.json"
+EXAMPLE = Path(__file__).parent.parent / "examples" / "nsr_10" / "vigas" / "viga_t.json"
 
 
 def _report(tmp_path: Path, **options: Any) -> tuple[dict[str, Any], str]:
