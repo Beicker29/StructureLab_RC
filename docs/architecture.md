@@ -29,7 +29,7 @@ de una misma capa que no pueden hacerlo.
 | `reporting` | Presentación: `results.py` arma el resultado en unidades de salida (`kN()`, `kNm()`, 6 cifras), `memoir.py` la memoria en texto desde ese resultado y `pdf.py` el PDF. No calcula capacidades. |
 | `io/etabs` | Lee el Excel de ETABS con la biblioteca estándar y arma el proyecto JSON desde una plantilla (D-042). Convierte el formato de ETABS al de entrada: m a mm y la compresión positiva. `footings.py` cruza las reacciones de servicio y mayoradas y las convierte en acciones sobre la zapata (D-055). |
 | `setup` | `load_engine()`: carga las tablas de `data/` con `importlib.resources`. |
-| `domain/<elemento>` | Elige la cláusula y arma cada `Check` (`beam/`, `footing/`). `domain/status.py` tiene la única agregación de estados. |
+| `domain/<elemento>` | Elige la cláusula y arma cada `Check` (`beam/`, `footing/`). `domain/status.py` tiene la única agregación de estados y `domain/flexure_strength.py` la resistencia a flexión común a todos los elementos (D-060). |
 | `design/<elemento>` | Produce `ReinforcementLayout`. |
 | `detailing`, `drawing` | Neutros: usan límites ya calculados por el perfil; sin fórmulas normativas. |
 | `codes/<perfil>` | Fórmulas y constantes como funciones puras con el nombre de su ecuación o numeral. |
@@ -89,4 +89,6 @@ Pu < 0.10 f'c·Ag) y reúne las verificaciones de flexión y cortante:
 
 En zapatas (v3), `domain/footing/base.py` traslada las fuerzas de la columna y los pesos propios al centroide de
 la base, y `domain/footing/service.py` pide a `mechanics/soil_pressure.py` la presión con cada caso de servicio y
-arma las verificaciones de presión admisible y contacto. Los numerales salen de `codes/<perfil>/footing.py`.
+arma las verificaciones de presión admisible y contacto. `domain/footing/flexure.py` calcula los momentos de la
+carga neta en las caras de la columna con los casos mayorados y toma la resistencia de `domain/flexure_strength.py`,
+con las barras que ubica `domain/footing/mesh.py`. Los numerales salen de `codes/<perfil>/footing.py`.

@@ -37,8 +37,8 @@ def strength_reduction_moment(et: float, ety: float) -> float:
     return 0.65 + 0.25 * (et - ety) / _TRANSITION_SPAN
 
 
-def beam_min_net_tensile_strain(ety: float) -> float:
-    """9.3.3.1: las vigas con Pu < 0.10 f'c·Ag deben ser controladas por tracción."""
+def min_net_tensile_strain(ety: float) -> float:
+    """Controlada por tracción: vigas con Pu < 0.10 f'c·Ag (9.3.3.1) y losas y zapatas (7.3.3.1, 8.3.3.1)."""
     return _tension_controlled_strain(ety)
 
 

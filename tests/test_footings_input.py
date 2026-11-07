@@ -27,7 +27,7 @@ HEADERS = ("Story", "Label", "Unique Name", "Output Case", "Case Type", "Step Ty
 UNITS = {"FX": "kN", "FY": "kN", "FZ": "kN", "MX": "kN-m", "MY": "kN-m", "MZ": "kN-m"}
 SOIL = {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.6, "unit_weight_concrete_kNm3": 24.0,
         "unit_weight_fill_kNm3": 18.0}
-MAT = {"first": "x", "x": {"designation": "#5", "spacing": 150.0}, "y": {"designation": "#5", "spacing": 200.0}}
+MAT = {"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 150.0}, "y": {"designation": "#5", "spacing": 200.0}}
 
 
 def _footing(**changes: Any) -> dict[str, Any]:
@@ -119,7 +119,7 @@ def test_structural_part_is_blocked_until_v3d(tmp_path: Path) -> None:
     path.write_text(json.dumps(_project()), encoding="utf-8")
     _, checks = run_project(path)
     assert checks[0].status is Status.PASS
-    structural = [check for check in checks if check.name == "Zapata: verificacion estructural"]
+    structural = [check for check in checks if check.name == "Zapata: verificaciones pendientes"]
     assert [(check.member, check.status) for check in structural] == [("Z1", Status.BLOCKED)]
 
 

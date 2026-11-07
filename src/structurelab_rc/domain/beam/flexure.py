@@ -7,10 +7,11 @@ from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.beam.geometry import flexure_points, section_polygon
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check, check_from_errors
+from structurelab_rc.domain.flexure_strength import flexure_phi, material_models, net_tensile_strain_check
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, blocked, incomplete, invalid_input
 from structurelab_rc.mechanics.flexure import FlexureState, SteelLayer, compression_strips, flexure_state
-from structurelab_rc.mechanics.materials import ConcreteBlock, NoEquilibrium, SteelModel
+from structurelab_rc.mechanics.materials import NoEquilibrium
 from structurelab_rc.mechanics.section import SectionState, biaxial_state, section_state
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.project import Demands, Materials, Member, Section, Station
@@ -60,15 +61,6 @@ def nominal_flexure(
     strips = compression_strips(section.bw, section.h, bf, hf, flange_in_compression=top_in_compression)
     from_face = tuple(layer if top_in_compression else SteelLayer(section.h - layer.depth, layer.area) for layer in layers)
     return flexure_state(strips, from_face, *models, demands.pu)
-
-
-def material_models(profile: Profile, materials: Materials) -> tuple[ConcreteBlock, SteelModel] | StructuredError:
-    assumptions = profile.strength_assumptions
-    beta1 = assumptions.beta1(materials.fc)
-    if beta1 is None:
-        return invalid_input(f"{profile.id} no define beta1 para fc = {materials.fc} MPa")
-    concrete = ConcreteBlock(materials.fc, assumptions.stress_block_factor(), beta1, assumptions.max_concrete_strain())
-    return concrete, SteelModel(materials.fy, assumptions.steel_modulus())
 
 
 def section_states(given: StationInput) -> tuple[SectionState, SectionState] | StructuredError:
@@ -132,12 +124,7 @@ def _weak_min_reinforcement(profile: Profile, materials: Materials, member: Memb
 
 
 def _strain_check(name: str, profile: Profile, materials: Materials, strain: float | None) -> Check:
-    clause = profile.flexure.clauses()["net_tensile_strain"]
-    if strain is None:
-        return Check(name, Status.PASS, clause=clause, note="Sin momento en esta direccion")
-    ety = profile.flexure.yield_strain(materials.fy, profile.strength_assumptions.steel_modulus())
-    minimum = profile.flexure.beam_min_net_tensile_strain(ety)
-    return Check(name, Status.PASS if strain >= minimum else Status.FAIL, clause=clause, demand=minimum, capacity=strain)
+    return net_tensile_strain_check(name, profile.flexure.clauses()["net_tensile_strain"], profile, materials, strain)
 
 
 def _biaxial_checks(given: StationInput) -> tuple[Check, ...]:
@@ -152,8 +139,7 @@ def _biaxial_checks(given: StationInput) -> tuple[Check, ...]:
         return (check_from_errors(STRENGTH, [states]),)
     biaxial, weak = states
     assert demands.mu is not None and demands.m2 is not None
-    ety = profile.flexure.yield_strain(materials.fy, profile.strength_assumptions.steel_modulus())
-    phi = profile.flexure.strength_reduction_moment(biaxial.extreme_strain, ety)
+    phi = flexure_phi(profile, materials, biaxial.extreme_strain)
     demand = math.hypot(demands.mu, demands.m2)
     capacity = phi * math.hypot(biaxial.mn3, biaxial.mn2)
     values = (("phi", phi), ("Mn3", biaxial.mn3), ("Mn2", biaxial.mn2), ("theta", math.degrees(biaxial.theta)),

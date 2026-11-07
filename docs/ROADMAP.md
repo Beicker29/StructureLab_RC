@@ -68,11 +68,12 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
   superior, propiedades derivadas, casos de servicio y mayorados desde dos Excel de ETABS (D-054, D-055).
 - **V3C Verificación geotécnica (hecha, D-056):** con los casos de servicio, pmax ≤ qa, región, fracción de contacto mínima y
   equilibrio.
-- **V3D Verificación estructural:** con la presión mayorada, flexión en las caras de la columna (mallas inferior y
+- **V3D Verificación estructural** (V3D.1 flexión, As,min, separación, franja y altura: hecha, D-061; siguen V3D.2
+  cortante y punzonamiento y V3D.3 desarrollo, aplastamiento y pasadores): con la presión mayorada, flexión en las caras de la columna (mallas inferior y
   superior), As,min y separación, cortante en una dirección, punzonamiento con γv·Msc, distribución γs, altura
   mínima, desarrollo de las barras, aplastamiento y pasadores.
 - **V3E Memoria y huella:** memoria, resultados y huella de zapatas.
 - **V3F Diseño:** dimensiones en planta, altura y barras del catálogo; soluciones ordenadas y verificadas con V3C y V3D.
 
-Pendientes de la v3: zapatas combinadas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas
+Pendientes de la v3: diseño en concreto simple (momento negativo sin malla superior, D-059), zapatas combinadas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas
 escalonadas, zapatas rotadas, pedestal de sección distinta a la columna y muros (D-052, D-055).

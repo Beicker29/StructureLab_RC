@@ -36,6 +36,7 @@
       },
       "bottom": {
         "first": "x",
+        "end": "straight",
         "x": {
           "designation": "#5",
           "spacing": 150.0
@@ -47,6 +48,7 @@
       },
       "top": {
         "first": "x",
+        "end": "straight",
         "x": {
           "designation": "#4",
           "spacing": 250.0
@@ -143,6 +145,7 @@
       },
       "bottom": {
         "first": "y",
+        "end": "straight",
         "x": {
           "designation": "#5",
           "spacing": 175.0

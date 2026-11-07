@@ -32,8 +32,8 @@ def strength_reduction_moment(et: float, ety: float) -> float:
     return 0.65 + 0.25 * (et - ety) / (_TENSION_CONTROLLED - ety)
 
 
-def beam_min_net_tensile_strain(ety: float) -> float:
-    """C.10.3.5: εt ≥ 0.004 en elementos a flexión con Pu < 0.10 f'c·Ag."""
+def min_net_tensile_strain(ety: float) -> float:
+    """C.10.3.5: εt ≥ 0.004 en elementos a flexión con Pu < 0.10 f'c·Ag (vigas, losas y zapatas)."""
     return _BEAM_MIN_STRAIN
 
 

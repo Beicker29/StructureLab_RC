@@ -484,6 +484,46 @@
   - Los archivos de ejemplo se nombran en español, como las carpetas: `viga_rectangular.json`, `viga_t.json`, `zapata_aislada.json`. Los valores del JSON (por ejemplo `"type": "beam"`) siguen en inglés, como el código.
 - **Implementación:** Git guarda solo el esqueleto de `results/` (`.gitkeep`). La plantilla de vigas de ETABS se renombró a `plantilla_vigas_nsr10.json`. La huella conserva los mismos hashes de las vigas con las rutas nuevas.
 
+### D-059: criterios de la verificación estructural de zapatas (V3D)
+
+- **Fecha:** 2026-11-07
+- **Referencias:** ACI 318-25 13.2.6, 13.2.7, 13.3, 8.6.1, 8.7.2.2, 22.6, 8.4.4.2, 22.8, 25.4; NSR-10 C.15.4 a C.15.8, C.10.5.4, C.7.12, C.11.11, C.10.14, C.12.
+- **Hallazgo:** la Tabla 22.6.5.2 del ACI 318-25 escribe (b) y (c) como (0.17 + 0.33/β) y (0.17 + 0.083αs·d/b0), distintas de la NSR-10 (C.11.11.2.1), que conserva 0.17(1 + 2/β) y 0.083(αs·d/b0 + 2). Cada perfil usa su ecuación.
+- **Decisión del usuario:**
+  1. El acero mínimo adicional de ACI 8.6.1.2 (si vuv > φ0.17√f'c·λs·λ) aplica a las zapatas, con λs = 1 (13.2.6.2(b)). La NSR-10 no tiene ese requisito.
+  2. As,min = 0.0018Ag lo cumple la malla inferior completa. La malla superior lo cumple solo si hay momento negativo.
+  3. Un momento negativo en una zapata sin malla superior se resistiría como concreto simple (ACI cap. 14, NSR-10 C.22), que no está implementado: la verificación sale BLOCKED. El diseño en concreto simple queda pendiente en la hoja de ruta.
+  4. La dirección corta de una zapata rectangular admite una separación propia en la franja central de ancho igual al lado corto (ACI 13.3.3.3, NSR-10 C.15.4.4.2); se verifica que el acero de la franja sea al menos γs·As requerido.
+  5. Punzonamiento: el perímetro crítico a d/2 se recorta con la base. Con los cuatro lados dentro, αs = 40; con un lado fuera, αs = 30; con dos lados fuera, αs = 20 (ACI 22.6.5.3 y R22.6.5.3; NSR-10 C.11.11.2.1). b0 cuenta solo los lados dentro de la base.
+  6. Aplastamiento: en la v3 se verifica solo la cara de la zapata (A2 del tronco de pirámide 1:2). El lado de la columna se verificará con las columnas.
+  7. Pasadores (C-011, aprobado): en la v3, `column.dowels` (designación y cantidad) es obligatorio y su ausencia da INCOMPLETE. Se verifican el área ≥ 0.005Ag de la columna (ACI 16.3.4.1, NSR-10 C.15.8.2.1), el anclaje a compresión ldc dentro del espesor de la zapata (ACI 25.4.9, NSR-10 C.12.3) y que los pasadores tomen la compresión que excede el aplastamiento de la cara de la zapata (ACI 16.3.3.4, NSR-10 C.15.8.1.2(a)). El aplastamiento del lado de la columna, el empalme con sus barras y la tracción a través de la interfaz quedan para las columnas.
+  8. Cada malla declara si sus barras terminan rectas o con gancho estándar; se verifica ld o ldh desde la cara de la columna.
+
+### D-060: flexión común a todos los elementos
+
+- **Fecha:** 2026-11-07
+- **Decisión del usuario:** el código se mantiene DRY: el momento resistente nominal de una zapata se calcula igual que el de una viga, con el mismo código.
+- **Implementación:** `domain/flexure_strength.py` reúne lo que no es propio de un elemento: modelos de material del perfil, φ según εt, la resistencia de una sección rectangular sobre el motor de `mechanics`, el As requerido para un Mu (por bisección) y la verificación de εt mínima. `domain/beam/flexure.py` lo usa y se eliminó su copia. En `codes/<perfil>`, `beam_min_net_tensile_strain` pasó a `min_net_tensile_strain`, porque vale igual para vigas, losas y zapatas (ACI 9.3.3.1, 7.3.3.1 y 8.3.3.1; NSR-10 C.10.3.5); cada elemento cita su numeral. La huella de las vigas no cambió.
+
+### D-061: implementación de la flexión de zapatas (V3D.1)
+
+- **Fecha:** 2026-11-07
+- **Implementación:**
+  - Carga neta por caso mayorado: presión de Bellos con la resultante factorada (D-054, D-057) menos las cargas uniformes sobre el voladizo, fd·(γc·h + γf·hf + qD) + fl·qL.
+  - Momento en las cuatro caras de la columna con todo el ancho (ACI 13.2.6.6, NSR-10 C.15.4.1): positivo tracciona la malla inferior y negativo la superior. La resistencia es la de la sección rectangular del ancho total con la capa de esa dirección y su propia d (la segunda capa de la malla tiene d menor).
+  - Barras: n = ⌊(ancho − 2·recubrimiento − db)/s⌋ + 1, centradas en el ancho útil. Con band_spacing, la franja central (lado corto, centrada en la columna) lleva su separación y fuera rige spacing desde la última barra de la franja. Sin band_spacing, la franja cuenta las barras uniformes que caen en ella.
+  - εt, As,min, separación máxima, franja γs y altura mínima se verifican una vez por zapata. As,min de la malla superior y su franja, solo si algún caso produce momento negativo en esa dirección. La franja exige γs·As, con As el mayor entre el requerido por el momento y As,min.
+  - Altura mínima: ACI 13.3.1.2 mide la d del refuerzo inferior (se toma la de la segunda capa); NSR-10 C.15.7 mide la altura sobre el refuerzo inferior (desde la cara superior de la malla).
+- **Oráculo:** `tests/oracles/derive_footing_flexure.py`, sin importar el paquete: momentos por integración exacta sobre el voladizo y resistencia con el bloque de Whitney; 5 casos por perfil.
+
+### D-062: ejemplo 15-3 de Wight y cuantía mínima de NSR-10 por tramos (C-012)
+
+- **Fecha:** 2026-11-07
+- **Diferencias reportadas:** Mu = 891.3 kip·ft frente a 891 (0.03 %) y As,min ACI = 8.94 in² (igual). φMn = 1357.7 (barras x, d = 32.5 in) y 1315.1 kip·ft (barras y, d = 31.5 in) frente a 1340 de Wight, que usa d promedio = 32 in: +1.3 % y −1.9 %.
+- **Decisión del usuario:**
+  1. Se mantiene la d de cada capa y φMn se compara con Wight con ±2 % (`tests/oracles/<perfil>/wight_footing.json`); Mu, As,min y el número de barras, con ±1 % (D-015).
+  2. NSR-10 C.7.12.2.1 se lee por tramos de fy: 0.0020 con fy ≤ 350 MPa (grados 280 y 350), 0.0018 con 350 < fy ≤ 420 MPa (grado 420) y 0.0018·420/fy con fy > 420 MPa, no menor que 0.0014. Así el Grado 60 convertido (413.7 MPa) usa 0.0018.
+
 ## Consultas abiertas
 
 Ninguna.

@@ -14,7 +14,7 @@ from structurelab_rc.model.footing import Footing, Soil
 
 ORACLES = Path(__file__).parent / "oracles"
 FOLDERS = {"aci-318-25": "aci_318_25", "nsr-10": "nsr_10"}
-MAT = {"first": "x", "x": {"designation": "#5", "spacing": 150.0}, "y": {"designation": "#5", "spacing": 150.0}}
+MAT = {"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 150.0}, "y": {"designation": "#5", "spacing": 150.0}}
 
 
 def _oracle(folder: str) -> dict[str, Any]:

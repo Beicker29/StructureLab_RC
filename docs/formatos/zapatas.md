@@ -63,8 +63,10 @@ El relleno y las sobrecargas ocupan el área de la base menos la de la columna.
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `first` | texto | Dirección de las barras más cercanas a la cara de la zapata: `x` o `y`. Define la d de cada dirección. |
+| `end` | texto | Cómo terminan las barras: `straight` (rectas) o `hook` (gancho estándar). Se usará para el desarrollo (V3D.3). |
 | `x.designation`, `x.spacing` | -, mm | Barras paralelas a X: designación del catálogo y separación centro a centro. |
 | `y.designation`, `y.spacing` | -, mm | Barras paralelas a Y. |
+| `x.band_spacing` o `y.band_spacing` | mm | Opcional, solo en la dirección corta de una zapata rectangular: separación en la franja central de ancho igual al lado corto, centrada en la columna; fuera de ella rige `spacing`. |
 
 ### Caso de carga (`loads[]`)
 
@@ -117,7 +119,14 @@ H = h + altura del pedestal. Las excentricidades son ex = My base/N y ey = −Mx
 | --- | --- | --- |
 | Presión admisible del suelo | Presión máxima bruta frente a qa (kPa). La nota indica la región de contacto: C total, B pentagonal, D o E trapezoidal, A triangular. | ACI 13.3.1.1; NSR-10 C.15.2.2 |
 | Contacto con el suelo | Fracción mínima exigida (`demand`) frente a la fracción de la base en contacto (`capacity`); cumple con razón ≤ 1. | D-052 |
-| Zapata: verificación estructural | Pendiente (V3D); sale `BLOCKED`. | - |
+| Zapata: equilibrio con cargas mayoradas | FAIL si un caso mayorado no tiene equilibrio con el suelo (D-054). | D-054 |
+| Flexión malla inferior / superior (barras x o y) | Por caso mayorado: el mayor momento de la carga neta en las caras de la columna frente a φMn de la franja de ancho total. La superior solo aparece si hay momento negativo; sin malla superior sale `BLOCKED` (concreto simple, D-059). | ACI 13.2.6.6 y 13.2.7.1; NSR-10 C.15.4.1 y C.15.4.2 |
+| Deformación neta de tracción malla … | εt de la malla frente a la mínima del perfil. | ACI 8.3.3.1; NSR-10 C.10.3.5 |
+| Acero mínimo malla … | As frente a la cuantía mínima por el área bruta del ancho total. | ACI 8.6.1.1; NSR-10 C.10.5.4 y C.7.12.2.1 |
+| Separación máxima malla … | Separación (y la de la franja) frente al máximo del perfil. | ACI 8.7.2.2; NSR-10 C.10.5.4 |
+| Franja central malla … | Zapata rectangular: As en la franja frente a γs·As. | ACI 13.3.3.3; NSR-10 C.15.4.4.2 |
+| Altura mínima de la zapata | 150 mm, medidos como pide cada perfil. | ACI 13.3.1.2; NSR-10 C.15.7 |
+| Zapata: verificaciones pendientes | Cortante, punzonamiento, desarrollo, aplastamiento y pasadores (V3D.2 y V3D.3); sale `BLOCKED`. | - |
 
 Si la resultante cae fuera de la base o N no es de compresión, ambas verificaciones del caso son FAIL ("Sin
 equilibrio con el suelo"). Sin casos de servicio, la presión admisible sale INCOMPLETE.

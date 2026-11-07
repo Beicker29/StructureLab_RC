@@ -1,0 +1,621 @@
+{
+  "description": "Flexión de zapatas con casos mayorados (D-059, D-061): momentos por integración exacta, resistencia con el bloque de Whitney.",
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0
+  },
+  "clauses": {
+    "strength": "C.15.4.1 y C.15.4.2",
+    "band": "C.15.4.4.2"
+  },
+  "tolerance_rel": 1e-06,
+  "cases": [
+    {
+      "id": "cuadrada-centrada",
+      "description": "zapata cuadrada con carga centrada: flexión, εt, As,min, separación y altura",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 550.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 1500.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Flexion malla inferior (barras x)",
+            "case": "1.2D+1.6L",
+            "status": "PASS",
+            "demand_Nmm": 295786968.74999994,
+            "capacity_Nmm": 514603934.40441173
+          },
+          {
+            "name": "Flexion malla inferior (barras y)",
+            "case": "1.2D+1.6L",
+            "status": "PASS",
+            "demand_Nmm": 295786968.74999994,
+            "capacity_Nmm": 496663487.40441173
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras x)",
+            "status": "PASS",
+            "capacity": 0.05126229145728643
+          },
+          {
+            "name": "Acero minimo malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 2376.0,
+            "capacity": 2985.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras y)",
+            "status": "PASS",
+            "capacity": 0.04941501507537688
+          },
+          {
+            "name": "Acero minimo malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 2376.0,
+            "capacity": 2985.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Altura minima de la zapata",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 443.20000000000005
+          }
+        ]
+      }
+    },
+    {
+      "id": "rectangular-desplazada",
+      "description": "rectangular con la columna desplazada y momento: franja γs y malla superior",
+      "footing": {
+        "id": "Z",
+        "lx": 3200.0,
+        "ly": 2200.0,
+        "h": 600.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 500.0,
+          "offset_x": 350.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "y",
+          "end": "straight",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 180.0
+          }
+        },
+        "top": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#4",
+            "spacing": 250.0
+          },
+          "y": {
+            "designation": "#4",
+            "spacing": 250.0
+          }
+        },
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 1400.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 60.0
+          },
+          {
+            "case": "0.9D+E",
+            "kind": "factored",
+            "dead_factor": 0.9,
+            "live_factor": 0.0,
+            "P_kN": 450.0,
+            "Vx_kN": 90.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 420.0
+          }
+        ]
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Flexion malla inferior (barras x)",
+            "case": "1.2D+1.6L",
+            "status": "PASS",
+            "demand_Nmm": 378292351.6845702,
+            "capacity_Nmm": 575108976.0705882
+          },
+          {
+            "name": "Flexion malla inferior (barras y)",
+            "case": "1.2D+1.6L",
+            "status": "PASS",
+            "demand_Nmm": 228835454.5454545,
+            "capacity_Nmm": 649261532.9812499
+          },
+          {
+            "name": "Flexion malla inferior (barras x)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 270151324.3268012,
+            "capacity_Nmm": 575108976.0705882
+          },
+          {
+            "name": "Flexion malla superior (barras x)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 96868610.32624638,
+            "capacity_Nmm": 225570195.79893047
+          },
+          {
+            "name": "Flexion malla inferior (barras y)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 73300909.09090912,
+            "capacity_Nmm": 649261532.9812499
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras y)",
+            "status": "PASS",
+            "capacity": 0.0676721608040201
+          },
+          {
+            "name": "Acero minimo malla inferior (barras y)",
+            "status": "FAIL",
+            "demand": 3456.0,
+            "capacity": 3383.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 180.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Franja central malla inferior (barras y)",
+            "status": "FAIL",
+            "demand": 2816.0,
+            "capacity": 2587.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras x)",
+            "status": "PASS",
+            "capacity": 0.04783448943661972
+          },
+          {
+            "name": "Acero minimo malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 2376.0,
+            "capacity": 3124.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 200.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla superior (barras x)",
+            "status": "PASS",
+            "capacity": 0.1390145004306632
+          },
+          {
+            "name": "Acero minimo malla superior (barras x)",
+            "status": "FAIL",
+            "demand": 2376.0,
+            "capacity": 1161.0
+          },
+          {
+            "name": "Separacion maxima malla superior (barras x)",
+            "status": "PASS",
+            "demand": 250.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla superior (barras y)",
+            "status": "PASS",
+            "capacity": 0.136505831842576
+          },
+          {
+            "name": "Separacion maxima malla superior (barras y)",
+            "status": "PASS",
+            "demand": 250.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Altura minima de la zapata",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 490.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "sin-malla-superior",
+      "description": "momento negativo sin malla superior: BLOCKED (concreto simple)",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 550.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "0.9D+E",
+            "kind": "factored",
+            "dead_factor": 0.9,
+            "live_factor": 0.0,
+            "P_kN": 300.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 330.0
+          }
+        ]
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Flexion malla inferior (barras x)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 199976185.38215688,
+            "capacity_Nmm": 514603934.40441173
+          },
+          {
+            "name": "Flexion malla superior (barras x)",
+            "case": "0.9D+E",
+            "status": "BLOCKED",
+            "demand_Nmm": 34069007.903564885
+          },
+          {
+            "name": "Flexion malla inferior (barras y)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 58692181.64062503,
+            "capacity_Nmm": 496663487.40441173
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras x)",
+            "status": "PASS",
+            "capacity": 0.05126229145728643
+          },
+          {
+            "name": "Acero minimo malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 2376.0,
+            "capacity": 2985.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras y)",
+            "status": "PASS",
+            "capacity": 0.04941501507537688
+          },
+          {
+            "name": "Acero minimo malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 2376.0,
+            "capacity": 2985.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Altura minima de la zapata",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 443.20000000000005
+          }
+        ]
+      }
+    },
+    {
+      "id": "sin-equilibrio",
+      "description": "resultante mayorada fuera de la base",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 550.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "0.9D+E",
+            "kind": "factored",
+            "dead_factor": 0.9,
+            "live_factor": 0.0,
+            "P_kN": 100.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 900.0
+          }
+        ]
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Zapata: equilibrio con cargas mayoradas",
+            "case": "0.9D+E",
+            "status": "FAIL"
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras x)",
+            "status": "PASS",
+            "capacity": 0.05126229145728643
+          },
+          {
+            "name": "Acero minimo malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 2376.0,
+            "capacity": 2985.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras y)",
+            "status": "PASS",
+            "capacity": 0.04941501507537688
+          },
+          {
+            "name": "Acero minimo malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 2376.0,
+            "capacity": 2985.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Altura minima de la zapata",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 443.20000000000005
+          }
+        ]
+      }
+    },
+    {
+      "id": "separacion-excesiva",
+      "description": "separación mayor que la permitida y acero bajo el mínimo",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 200.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#4",
+            "spacing": 420.0
+          },
+          "y": {
+            "designation": "#4",
+            "spacing": 420.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 0.0,
+            "P_kN": 200.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Flexion malla inferior (barras x)",
+            "case": "1.2D",
+            "status": "FAIL",
+            "demand_Nmm": 38646867.18750001,
+            "capacity_Nmm": 33881128.35882354
+          },
+          {
+            "name": "Flexion malla inferior (barras y)",
+            "case": "1.2D",
+            "status": "FAIL",
+            "demand_Nmm": 38646867.18750001,
+            "capacity_Nmm": 30165463.958823532
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras x)",
+            "status": "PASS",
+            "capacity": 0.05016255813953488
+          },
+          {
+            "name": "Acero minimo malla inferior (barras x)",
+            "status": "FAIL",
+            "demand": 864.0,
+            "capacity": 774.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 420.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras y)",
+            "status": "PASS",
+            "capacity": 0.04447217054263566
+          },
+          {
+            "name": "Acero minimo malla inferior (barras y)",
+            "status": "FAIL",
+            "demand": 864.0,
+            "capacity": 774.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 420.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Altura minima de la zapata",
+            "status": "FAIL",
+            "demand": 150.0,
+            "capacity": 99.6
+          }
+        ]
+      }
+    }
+  ]
+}

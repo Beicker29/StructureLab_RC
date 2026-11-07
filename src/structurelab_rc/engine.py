@@ -50,7 +50,7 @@ def run_project(path: Path) -> tuple[Project | None, tuple[Check, ...]]:
             checks.extend(station_checks(profile, project.materials, member, station, bars))
     if project.soil is not None:
         for footing in project.footings:
-            checks.extend(footing_checks(profile, footing, project.soil))
+            checks.extend(footing_checks(profile, project.materials, footing, project.soil, bars))
     return project, tuple(checks)
 
 

@@ -49,16 +49,26 @@ class Column(_Input):
 
 
 class BarSet(_Input):
-    """Barras paralelas, de designación única, a una separación centro a centro constante."""
+    """Barras paralelas de designación única, a una separación centro a centro.
+
+    band_spacing es la separación en la franja central de una zapata rectangular, de ancho igual al lado corto y
+    centrada en la columna; solo la admiten las barras de la dirección corta (D-059, punto 4). spacing rige fuera de
+    la franja, o en todo el ancho si no hay franja.
+    """
 
     designation: str = Field(min_length=1)
     spacing: PositiveFloat
+    band_spacing: PositiveFloat | None = None
 
 
 class Mat(_Input):
-    """Malla: x son las barras paralelas a X y y las paralelas a Y. first es la dirección más cercana a la cara."""
+    """Malla: x son las barras paralelas a X y y las paralelas a Y. first es la dirección más cercana a la cara.
+
+    end declara cómo terminan las barras: rectas o con gancho estándar (D-059, punto 8).
+    """
 
     first: Literal["x", "y"]
+    end: Literal["straight", "hook"]
     x: BarSet
     y: BarSet
 
@@ -126,10 +136,23 @@ class Footing(_Input):
             raise ValueError(f"la columna de la zapata '{self.id}' se sale de la base")
         if 2 * self.cover >= self.h:
             raise ValueError(f"el recubrimiento de la zapata '{self.id}' no deja espacio para las mallas")
+        for mat in (self.bottom, self.top):
+            if mat is None:
+                continue
+            for direction, bar_set in (("x", mat.x), ("y", mat.y)):
+                if bar_set.band_spacing is not None and direction != self.short_direction:
+                    raise ValueError(f"en la zapata '{self.id}' solo las barras de la direccion corta admiten band_spacing")
         names = [(load.kind, load.case) for load in self.loads]
         if len(names) != len(set(names)):
             raise ValueError(f"la zapata '{self.id}' repite un caso de carga")
         return self
+
+    @property
+    def short_direction(self) -> str | None:
+        """Dirección corta: la de las barras paralelas al lado corto ("y" si lx > ly); None si la base es cuadrada."""
+        if self.lx == self.ly:
+            return None
+        return "y" if self.lx > self.ly else "x"
 
     @property
     def area(self) -> float:
