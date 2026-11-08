@@ -20,13 +20,18 @@ class SeismicFacts(_Input):
     justification: str = Field(min_length=1)
 
 
+Coating = Literal["uncoated", "galvanized", "epoxy", "zinc_epoxy"]
+
+
 class Materials(_Input):
-    """fy del refuerzo longitudinal y fyt de los estribos; concrete declara el tipo de concreto (D-028)."""
+    """fy del refuerzo longitudinal y fyt de los estribos; concrete declara el tipo de concreto (D-028) y coating el
+    recubrimiento de las barras, que cambia su longitud de desarrollo (D-071)."""
 
     fc: PositiveFloat
     fy: PositiveFloat
     fyt: PositiveFloat
     concrete: Literal["normalweight", "lightweight"]
+    coating: Coating
 
 
 class Section(_Input):

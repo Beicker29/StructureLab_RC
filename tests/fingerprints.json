@@ -1,40 +1,40 @@
 {
   "examples/aci_318_25/vigas/viga_rectangular.json": {
-    "resultado.json": "c38bba2dfff6ea516a39de71ea89f24aebd3accddac5607178417817e8a9ff43",
-    "memoria.txt": "2b298d6635c6f79ba10241b9bc1f74ded1656068ed2cb728c302f2806681672c"
+    "resultado.json": "a9929cabd4090a763cb8166ef0d70344394e6e3a89f85ed386c390bdbb187e2a",
+    "memoria.txt": "da8c05f8fe4e0dd723c4a6d48884cf63a68eb423f6b9de3a9c414b46dd14697c"
   },
   "examples/aci_318_25/vigas/viga_t.json": {
-    "resultado.json": "bbc20b1b65eb8994ea967a9fd3cecf4fe3d68e0f7c7fdf0df174debe20bc366d",
-    "memoria.txt": "47e7b7aa9fb75536599f9d62c756522d61ae06a19db364c886a4f96c4371e481"
+    "resultado.json": "bc3604fa174502c08e131fa3c38d324c8cdc9a489f0079b44d01c99466053c72",
+    "memoria.txt": "c3007fde2e691ce6d2a6265e6a2bab85056b66fef2aa50e19e72313a6e10cf06"
   },
   "examples/aci_318_25/zapatas/diseno_tipologias.json": {
-    "proyecto.json": "1ce11820ec94946fd5005401d0554a73d09bb539dc2a7fa576a57d7d78459e18",
-    "resultado.json": "199f2b21af5fb110bc25c2bf17a72889015931c5d3b4d65c42046c225c2f8a50",
-    "memoria.txt": "1585a3c757a9dac3f45fdbb1112f116971945cfa8f737e665b56bdc20fd1e1dc"
+    "proyecto.json": "85f9d7334f75b715861dba450ee9ec6c7d5c5a808a3e09c8da3ae659cfb8df41",
+    "resultado.json": "fe3108823d697fcf9c4b261c301395d812a59326388c13914b76a948006fb20f",
+    "memoria.txt": "1fb02089feb9b2df6ea0b334a6af166eecf0dcf99b9a7129b22a09fa0ebfa580"
   },
   "examples/aci_318_25/zapatas/zapata_aislada.json": {
-    "resultado.json": "728800ff8e552c4a557f75f8b8c69dbdd6125b0563942f76b08136fb9afd3c6b",
-    "memoria.txt": "bbb6cb5a06f212bd71781bffe9f3db0a31750839eff4bb9fce80e158f0314d66"
+    "resultado.json": "b36e2c9a6ea47631e87f04020bedc0ce1ee208fddf3b88ad2b58105a98324ae0",
+    "memoria.txt": "18e331fa1bdf790d9af92b24fcc1f961776f5fa2a1e0a7818715c582799b0b3e"
   },
   "examples/etabs/vigas/plantilla_vigas_nsr10.json": {
-    "resultado.json": "32595488ae7d6e3dc18f6e08a78c81ebb7200d4e5f41a36c5ae464d57ac6156c",
-    "memoria.txt": "48a0ee743def9d986e37b690c3909bb27d7a48b11f365dea36cb5f049323fee2"
+    "resultado.json": "83274e15a57b65e93c83302e2a008d581e157ec7d1884d31fd317a107b286539",
+    "memoria.txt": "db25af5418e66592182cded3323a5fd5eb2522523fcc69289134a05330283550"
   },
   "examples/nsr_10/vigas/viga_rectangular.json": {
-    "resultado.json": "1e0b706b38de575ae6864e34ff368728c9622e8d228ff3df1119a82909af4bb1",
-    "memoria.txt": "89274c85fb0a80b2cfd5dfc51629f567e9e504ba3bb94cc6f4a8507a00aee6f9"
+    "resultado.json": "001ca5f4c8fd0f49c78caa2a1d7d78f0fc547856612a7d6082c7e0295b918806",
+    "memoria.txt": "f25135509c66bbd684df59fd4ffce3c55045ee664022495f4b48bfedfa5ac791"
   },
   "examples/nsr_10/vigas/viga_t.json": {
-    "resultado.json": "73871768445987f6a55555941d1c48c20b80b517e8426f7b7742729d72d53dd8",
-    "memoria.txt": "f430df408d601cd4894d40789f4ff0bc2018cfcdc52d65bed7c74f959f4dd969"
+    "resultado.json": "c3028d752275c8fcf64d4bfcc9b2abb0c30b78dffb5dfce0117f2fd6989de872",
+    "memoria.txt": "89fb0af755d448553b9a90e6b1489c492c7ef8a72d159f17cc438f2534d3590f"
   },
   "examples/nsr_10/zapatas/diseno_tipologias.json": {
-    "proyecto.json": "e9e1f426ba2f4fb62bd2107fdecff66afd55017cffef175be78224cc36bbc3f7",
-    "resultado.json": "96f651ce0940a5f8c8ea43a188b40b3d7fac3fedd970025a1effab17d5094769",
-    "memoria.txt": "edbfd15039c16bb7088d2254def63d601ecc7e167d91f242fd135a42164af1a2"
+    "proyecto.json": "7488e1c899716aa0f3e60289a4a5e7f985cca79d830f8998fa44fceb143dce40",
+    "resultado.json": "701d8bd762462a4608d89a02ae3e8ba4e88bf4926e435b5e7ab3a6b08fa1ff8e",
+    "memoria.txt": "3994f581cbf3971a7fb7c1e06ad851d5877c47d73566988fceed7548a41a5bdd"
   },
   "examples/nsr_10/zapatas/zapata_aislada.json": {
-    "resultado.json": "f9c2f29c61352141b5c68860c6380da1b4660151abeab0f29813ed2d6b3e4aef",
-    "memoria.txt": "8151eab97733300c9c084b90cfe438d202224566dea6b32f7460386c1f523e42"
+    "resultado.json": "74064e90228ea495269b3d176372dc17589ce643bf3622e2158499f4782a8efc",
+    "memoria.txt": "ceb79eeed974dda4d27723a4a7a55a94b58a77564ecb7b7cbf48668310cae8cc"
   }
 }

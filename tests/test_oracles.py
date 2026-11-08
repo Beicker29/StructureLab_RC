@@ -60,7 +60,7 @@ def test_profile_flexure_matches_closed_form(profile: str, case: dict[str, Any])
     layout = ReinforcementLayout.model_validate({"layers": case["layers"], "stirrups": None})
     layers = steel_layers(layout, load_engine().bars)
     assert isinstance(layers, tuple)
-    materials = Materials(fc=case["fc"], fy=case["fy"], fyt=420.0, concrete="normalweight")
+    materials = Materials(fc=case["fc"], fy=case["fy"], fyt=420.0, concrete="normalweight", coating="uncoated")
     geometry = dict(case["section"])
     bf = geometry.pop("bf", None)
     if bf is not None:

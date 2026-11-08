@@ -49,7 +49,7 @@ def test_square_footing_flexure_matches_wight(profile: str) -> None:
                                 "sliding_safety_factor_seismic": 1.1, "overturning_safety_factor": 2.0,
                                 "overturning_safety_factor_seismic": 1.5})
     materials = Materials.model_validate({"fc": data["fc_psi"] * MPA_PER_PSI, "fy": data["fy_psi"] * MPA_PER_PSI,
-                                          "fyt": data["fy_psi"] * MPA_PER_PSI, "concrete": "normalweight"})
+                                          "fyt": data["fy_psi"] * MPA_PER_PSI, "concrete": "normalweight", "coating": "uncoated"})
 
     cases, _ = factored_cases(footing, soil)
     checks = {check.name: check for check in flexure_checks(PROFILES[profile], materials, footing, cases, load_engine().bars)}

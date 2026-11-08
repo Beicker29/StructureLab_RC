@@ -10,7 +10,7 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator, model_validator
 
 from structurelab_rc.model.footing import FootingLoad, Soil
-from structurelab_rc.model.project import SeismicFacts
+from structurelab_rc.model.project import Coating, SeismicFacts
 
 COMMERCIAL_FC = (21.0, 24.5, 28.0, 31.5, 35.0, 42.0, 48.0)  # MPa
 
@@ -25,6 +25,7 @@ class DesignMaterials(_Input):
     fy: PositiveFloat
     fyt: PositiveFloat
     concrete: Literal["normalweight", "lightweight"]
+    coating: Coating
 
 
 class Prices(_Input):

@@ -20,6 +20,8 @@ Located = tuple[str, dict[str, Any]]
 
 _PRECEDENCE = {str(Status.FAIL): 3, str(Status.INCOMPLETE): 2, str(Status.BLOCKED): 1, str(Status.PASS): 0}
 _CONCRETE = {"normalweight": "concreto de peso normal", "lightweight": "concreto liviano"}
+_COATING = {"uncoated": "sin recubrimiento", "galvanized": "galvanizado (zinc)", "epoxy": "epóxico",
+            "zinc_epoxy": "recubrimiento dual de zinc y epóxico"}
 _ENDS = {"straight": "rectas", "hook": "con gancho estándar"}
 _CHAPTER_TITLES = {
     "requirements": "Revisión de requerimientos técnicos",
@@ -60,7 +62,8 @@ _FOOTING_CONVENTIONS = (
     "El contacto con el suelo se verifica con los casos de servicio; un caso sin equilibrio es NO CUMPLE (D-052, D-054).",
     "Verificación estructural con la carga neta de cada caso mayorado: flexión en las caras de la columna, cortante a d "
     "de la cara y punzonamiento a d/2 con transferencia de momento en los dos ejes (D-061, D-063).",
-    "Desarrollo sin reducciones opcionales y refuerzo sin recubrimiento epóxico (D-065).",
+    "Desarrollo con ψe según el recubrimiento declarado, ψcc en ganchos y el factor As requerido/As suministrado solo "
+    "donde el perfil lo permite con el nivel sísmico declarado; ψr = 1.0 (D-071).",
     "Deslizamiento (fricción, adherencia sobre el área en contacto y pasiva afectada por su factor) y volcamiento con los "
     "casos de servicio y los factores de seguridad declarados por el usuario, sísmicos en los casos marcados (D-070).",
 )
@@ -131,7 +134,8 @@ def _materials(results: dict[str, Any]) -> list[Block]:
     rows = [["Resistencia especificada del concreto (f'c)", number(materials["fc [MPa]"], "MPa"), "MPa", "Dato del usuario"],
             ["Esfuerzo de fluencia del refuerzo longitudinal (fy)", number(materials["fy [MPa]"], "MPa"), "MPa", "Dato del usuario"],
             ["Esfuerzo de fluencia del refuerzo transversal (fyt)", number(materials["fyt [MPa]"], "MPa"), "MPa", "Dato del usuario"],
-            ["Tipo de concreto", _CONCRETE.get(materials["concrete"], materials["concrete"]), "–", "Dato del usuario"]]
+            ["Tipo de concreto", _CONCRETE.get(materials["concrete"], materials["concrete"]), "–", "Dato del usuario"],
+            ["Recubrimiento de las barras", _COATING.get(materials["coating"], materials["coating"]), "–", "Dato del usuario"]]
     for key, value in used.items():
         name, unit = unit_of(key)
         description, symbol = describe(name)

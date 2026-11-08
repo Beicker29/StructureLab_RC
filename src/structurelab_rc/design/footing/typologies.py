@@ -197,7 +197,8 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
                        f"f'c = {result.fc:g} MPa, costo total {result.cost:.2f}.",
         "profile": project.profile,
         "seismic": project.seismic.model_dump(),
-        "materials": {"fc": result.fc, "fy": materials.fy, "fyt": materials.fyt, "concrete": materials.concrete},
+        "materials": {"fc": result.fc, "fy": materials.fy, "fyt": materials.fyt, "concrete": materials.concrete,
+                      "coating": materials.coating},
         "soil": _soil_input(ctx),
         "footings": footings,
     }

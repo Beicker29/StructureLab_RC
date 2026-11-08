@@ -26,7 +26,7 @@ BASE: dict[str, Any] = {
     "description": "Prueba",
     "profile": "nsr-10",
     "seismic": {"level": "DMO", "justification": "Declarado para la prueba"},
-    "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight"},
+    "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"},
     "members": [
         {
             "id": "V1",
@@ -103,7 +103,8 @@ def test_unknown_profile_is_rejected() -> None:
 
 
 def test_concrete_outside_the_beta1_table_is_rejected() -> None:
-    assert _validate(_project(materials={"fc": 14.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight"}))[0] is Status.FAIL
+    weak = {"fc": 14.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}
+    assert _validate(_project(materials=weak))[0] is Status.FAIL
 
 
 def test_missing_demand_is_incomplete_and_not_assumed() -> None:
@@ -169,7 +170,7 @@ def test_check_status_comes_from_its_errors() -> None:
 def test_nominal_flexure_rejects_concrete_outside_the_table() -> None:
     result = nominal_flexure(
         PROFILES["nsr-10"],
-        Materials(fc=14.0, fy=420.0, fyt=420.0, concrete="normalweight"),
+        Materials(fc=14.0, fy=420.0, fyt=420.0, concrete="normalweight", coating="uncoated"),
         Section(bw=300.0, h=500.0, cover=40.0),
         (SteelLayer(440.0, 1530.0),),
         Demands.model_validate({"Mu_kNm": 100.0, "M2_kNm": 0.0, "Pu_kN": 0.0}),

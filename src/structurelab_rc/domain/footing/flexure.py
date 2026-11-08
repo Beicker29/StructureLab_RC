@@ -137,21 +137,31 @@ def _section_checks(
     return checks
 
 
+def required_mat_area(
+    profile: Profile, materials: Materials, footing: Footing, mat_row: tuple[str, BarRow], cases: list[FaceMoments]
+) -> float | None:
+    """As requerido de una dirección de una malla: el mayor entre el de flexión de los casos mayorados (momento positivo
+    para la inferior, negativo para la superior) y As,min; None si ninguna cuantía alcanza el momento."""
+    mat, row = mat_row
+    sign = 1.0 if mat == "bottom" else -1.0
+    demand = max([sign * moment for case in cases for moment in case.moments[row.direction]], default=0.0)
+    needed = required_area(profile, materials, RectangularSection(row.width, footing.h), row.depth, demand)
+    if needed is None:
+        return None
+    return max(needed, profile.footing.min_reinforcement_ratio(materials.fy) * row.width * footing.h)
+
+
 def _band_check(
     profile: Profile, materials: Materials, footing: Footing, mat_row: tuple[str, BarRow], cases: list[FaceMoments]
 ) -> Check:
     """Franja central de la dirección corta: As en la franja ≥ γs·As, con As el mayor entre el requerido y As,min."""
     mat, row = mat_row
-    ratio = profile.footing.min_reinforcement_ratio(materials.fy)
-    sign = 1.0 if mat == "bottom" else -1.0
-    demand = max([sign * moment for case in cases for moment in case.moments[row.direction]], default=0.0)
-    needed = required_area(profile, materials, RectangularSection(row.width, footing.h), row.depth, demand)
+    total = required_mat_area(profile, materials, footing, mat_row, cases)
     name = _name("Franja central", mat, row.direction)
     clause = profile.footing.clauses()["band"]
-    if needed is None:
+    if total is None:
         error = invalid_input("Ninguna cuantia alcanza el momento de la direccion corta", member=footing.id)
         return Check(name, Status.FAIL, (error,), clause, member=footing.id)
-    total = max(needed, ratio * row.width * footing.h)
     beta = max(footing.lx, footing.ly) / min(footing.lx, footing.ly)
     gamma = profile.footing.band_fraction(beta)
     required = gamma * total

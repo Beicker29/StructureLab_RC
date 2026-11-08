@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from structurelab_rc.codes.registry import Profile
+from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
 from structurelab_rc.domain.footing.checks import footing_checks
@@ -79,7 +80,7 @@ class Context:
 
     def materials(self, fc: float) -> Materials:
         m = self.project.materials
-        return Materials(fc=fc, fy=m.fy, fyt=m.fyt, concrete=m.concrete)
+        return Materials(fc=fc, fy=m.fy, fyt=m.fyt, concrete=m.concrete, coating=m.coating)
 
     def spec(self, designation: str) -> RebarSpec:
         return next(bar for bar in self.bars if bar.designation == designation)
@@ -98,7 +99,7 @@ def footing_for(ctx: Context, typology: Typology, column: DesignColumn, dowels: 
 
 def checks_for(ctx: Context, typology: Typology, column: DesignColumn, dowels: dict[str, Any] | None) -> list[Check]:
     footing = footing_for(ctx, typology, column, dowels)
-    return footing_checks(ctx.profile, ctx.materials(typology.fc), footing, ctx.soil, ctx.bars)
+    return footing_checks(Basis(ctx.profile, ctx.materials(typology.fc), ctx.bars, ctx.project.seismic.level), footing, ctx.soil)
 
 
 def _failures(checks: list[Check]) -> list[Check]:

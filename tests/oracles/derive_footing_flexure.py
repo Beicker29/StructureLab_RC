@@ -237,7 +237,7 @@ def main() -> None:
                  for case_id, text, footing in CASES]
         data = {"description": "Flexión de zapatas con casos mayorados (D-059, D-061): momentos por integración exacta, "
                                "resistencia con el bloque de Whitney.",
-                "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight"},
+                "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight", "coating": "uncoated"},
                 "soil": {"allowable_pressure_kPa": 250.0, "min_contact_fraction": 0.5, "unit_weight_concrete_kNm3": 24.0,
                          "unit_weight_fill_kNm3": 18.0,
                          "friction_coefficient": 0.45, "adhesion_kPa": 0.0, "passive_coefficient": 3.0,

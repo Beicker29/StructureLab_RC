@@ -9,7 +9,8 @@
     "fc": 28.0,
     "fy": 420.0,
     "fyt": 420.0,
-    "concrete": "normalweight"
+    "concrete": "normalweight",
+    "coating": "uncoated"
   },
   "members": [
     {

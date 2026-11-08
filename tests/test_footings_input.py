@@ -50,7 +50,7 @@ def _footing(**changes: Any) -> dict[str, Any]:
 
 def _project(**footing_changes: Any) -> dict[str, Any]:
     return {"description": "zapata", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
-            "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight"}, "soil": SOIL,
+            "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}, "soil": SOIL,
             "footings": [_footing(**footing_changes)]}
 
 
@@ -138,7 +138,7 @@ def _row(case: str, step: str, forces: tuple[float, float, float, float, float])
 def _template(**changes: Any) -> EtabsFootingTemplate:
     footing = {key: value for key, value in _footing().items() if key not in {"id", "loads"}}
     data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
-            "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight"}, "soil": SOIL,
+            "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}, "soil": SOIL,
             "load_factors": {"S1": {"dead": 1.0, "live": 1.0}, "U1": {"dead": 1.2, "live": 1.6},
                              "U2": {"dead": 0.9, "live": 0.0}},
             "footings": [{"id": "Z1", "etabs_unique_names": ["10"], **footing}]}

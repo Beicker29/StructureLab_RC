@@ -620,6 +620,36 @@
   6. Los datos nuevos son obligatorios; los ejemplos y plantillas se actualizan (las huellas cambian).
   7. El diseño por tipologías (D-069) incluye ambas revisiones en su búsqueda.
 
+### D-071: reducciones del desarrollo y refuerzo con recubrimiento epóxico
+
+- **Fecha:** 2026-11-08
+- **Referencias:** ACI 318-25 25.4.2.5 (Tabla), 25.4.3.2 (Tabla), 25.4.9.3 y 25.4.10; NSR-10 C.12.2.1, C.12.2.4(b),
+  C.12.2.5, C.12.3.3, C.12.5.2 y C.12.5.3 (leídos del PDF escaneado).
+- **Decisión del usuario (recomendaciones aprobadas):**
+  1. `materials.coating` obligatorio: `uncoated`, `galvanized`, `epoxy` o `zinc_epoxy` (los dos últimos con el mismo ψe).
+     Tracción: ψe = 1.5 con recubrimiento libre < 3db o separación libre < 6db, 1.2 en otro caso, ψt·ψe ≤ 1.7; ganchos:
+     ψe = 1.2; compresión: sin ψe.
+  2. As requerido de una malla = el mayor entre el As de flexión de los casos mayorados y el As,min (el factor no aplica
+     al refuerzo de retracción y temperatura, R25.4.10.1).
+  3. El factor As requerido/As suministrado se aplica solo con nivel sísmico `DMI` (NSR-10) o `none`/`ordinary` (ACI);
+     con niveles mayores no se aplica y la memoria dice por qué. NSR-10 C.12.2.5 remite a "C.21.2.1.6", que no existe en
+     NSR-10 (C.21.2.1 es el alcance de los pórticos DMI); ACI 25.4.10.2(e) excluye el sistema sísmico en categorías C a F.
+     El resultado sigue limitado por los mínimos (300 mm a tracción).
+  4. En NSR-10 el factor también se aplica a los ganchos (C.12.5.3(d)); en ACI no (25.4.10.2(d)).
+  5. Los pasadores a compresión no usan el factor: su área mínima es prescriptiva.
+  6. ψcc = 0.7 en ganchos de barras hasta la No. 36 con recubrimiento lateral libre ≥ 65 mm (barra extrema de la fila a la
+     cara lateral) y, en ganchos de 90°, recubrimiento sobre la extensión ≥ 50 mm (recubrimiento del extremo).
+  7. ψr = 1.0 (zapatas sin estribos); se incorporará con vigas y columnas.
+- **Implementación (DRY):** los factores son funciones públicas de `codes/<perfil>/development.py`
+  (`tension_coating_factor`, `hook_coating_factor`, `hook_cover_factor`, `excess_factor_permitted`); `domain/development.py`
+  describe la barra con `BarAnchorage`, elige ecuación y factores y arma el Check, para cualquier elemento; `domain/basis.py`
+  lleva el nivel sísmico hasta la verificación. El As requerido de las mallas sale de `required_mat_area`, la misma función
+  de la franja central. El modelo de zapata no distingue gancho de 90° y de 180°: se usa la condición del de 90°, que exige
+  además el recubrimiento sobre la extensión.
+- **Oráculo:** `tests/oracles/derive_footing_connection.py` con 8 casos nuevos por perfil (epóxico, tope de 1.7, refuerzo
+  en exceso con nivel bajo y alto, mínimo de 300 mm, ganchos con ψcc y recubrimiento corto). El caso existente de ganchos
+  cambia porque ahora le corresponde ψcc = 0.7.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

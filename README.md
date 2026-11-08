@@ -67,8 +67,8 @@ verifican vigas. Cada estación lleva `Pu_kN` (compresión positiva, también cu
 `M2_kNm`, `Vu_kN`, `V3_kN` y `Tu_kNm`. Una viga T con momento negativo
 declara `statically_determinate`.
 
-Los materiales llevan `fc`, `fy`, `fyt` (estribos) y `concrete` (`normalweight`; el liviano aún no se
-verifica). La sección lleva `cover`, el recubrimiento libre a los estribos. Cada estación declara
+Los materiales llevan `fc`, `fy`, `fyt` (estribos), `concrete` (`normalweight`; el liviano aún no se
+verifica) y `coating`, el recubrimiento de las barras (`uncoated`, `galvanized`, `epoxy` o `zinc_epoxy`, D-071). La sección lleva `cover`, el recubrimiento libre a los estribos. Cada estación declara
 `stirrups` (`designation`, `legs`, `spacing`, `closed`), o `null` si no tiene refuerzo a cortante. Cada
 capa declara `depth`, `role` (`flexure`, o `torsion` para las barras de Aℓ, que no cuentan como As) y
 `bars`, en orden de x creciente: solo designaciones, como `["#8", "#6", "#8"]`, que se reparten entre las

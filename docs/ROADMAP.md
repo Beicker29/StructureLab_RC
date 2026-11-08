@@ -79,8 +79,10 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
 - **V3G Estabilidad (hecha, D-070):** deslizamiento (fricción, adherencia sobre el área en contacto y pasiva afectada
   por su factor, en la dirección de la resultante y en cada eje) y volcamiento alrededor de cada borde, con los casos de
   servicio y los factores de seguridad declarados, sísmicos en los casos marcados; incluidos en el diseño por tipologías.
+- **V3H Desarrollo (hecha, D-071):** ψe por el recubrimiento de las barras (`materials.coating`), ψcc en ganchos y el
+  factor As requerido/As suministrado donde el perfil lo permite con el nivel sísmico; en `domain/development.py`,
+  común a vigas y columnas.
 
-Pendientes de la v3: reducciones opcionales del desarrollo (As requerido/As suministrado, factores de gancho por
-recubrimiento y confinamiento) y refuerzo con recubrimiento epóxico (D-065), empuje pasivo sobre el pedestal y suelo bajo nivel freático en la
+Pendientes de la v3: factores por estribos o espirales en el desarrollo (ψr, con vigas y columnas, D-071), empuje pasivo sobre el pedestal y suelo bajo nivel freático en la
 estabilidad (D-070), diseño en concreto simple (momento negativo sin malla superior, D-059), zapatas combinadas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas
 escalonadas, zapatas rotadas, pedestal de sección distinta a la columna y muros (D-052, D-055).

@@ -23,6 +23,7 @@ Referencia de la entrada y la salida de la verificación de vigas, común a los 
 | `materials.fy` | MPa | Fluencia del refuerzo longitudinal. |
 | `materials.fyt` | MPa | Fluencia del refuerzo transversal (estribos). Se declara aunque el ejemplo no lo use. |
 | `materials.concrete` | texto | `normalweight` (peso normal) o `lightweight` (liviano); define λ. |
+| `materials.coating` | texto | Recubrimiento de las barras: `uncoated` (sin recubrimiento), `galvanized`, `epoxy` o `zinc_epoxy` (dual de zinc y epóxico); cambia la longitud de desarrollo (ψe, D-071). |
 | `members` | lista | Vigas del proyecto. |
 
 ### Miembro (`members[]`)

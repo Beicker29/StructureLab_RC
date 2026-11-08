@@ -8,7 +8,8 @@
   "materials": {
     "fy": 420.0,
     "fyt": 420.0,
-    "concrete": "normalweight"
+    "concrete": "normalweight",
+    "coating": "uncoated"
   },
   "soil": {
     "allowable_pressure_kPa": 300.0,

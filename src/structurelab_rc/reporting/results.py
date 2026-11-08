@@ -161,7 +161,7 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
         "profile": project.profile,
         "seismic": {"level": project.seismic.level, "justification": project.seismic.justification},
         "materials": {"fc [MPa]": project.materials.fc, "fy [MPa]": project.materials.fy, "fyt [MPa]": project.materials.fyt,
-                      "concrete": project.materials.concrete},
+                      "concrete": project.materials.concrete, "coating": project.materials.coating},
         "materials_used": _materials_used(project),
     }
     members = []

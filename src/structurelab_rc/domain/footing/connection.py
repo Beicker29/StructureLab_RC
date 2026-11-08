@@ -1,24 +1,25 @@
 """Desarrollo de las mallas, aplastamiento y pasadores de zapatas aisladas (V3D.3; D-059, D-065).
 
 Desarrollo: desde cada cara de la columna hasta el extremo de la barra, con la longitud disponible menos el
-recubrimiento del extremo; la malla superior solo si algún caso produce momento negativo en esa dirección.
+recubrimiento del extremo; la malla superior solo si algún caso produce momento negativo en esa dirección. Factores
+(D-071): ψe por el recubrimiento de las barras, ψcc de ganchos con el recubrimiento lateral de la barra extrema y el del
+extremo, y As requerido/As suministrado con el As de required_mat_area si el perfil lo permite con el nivel sísmico.
 Aplastamiento: cara superior de la zapata, A2 del tronco de pirámide 1:2 contenido en la base. Pasadores: área mínima,
 anclaje a compresión hasta la malla inferior y la compresión que excede el aplastamiento. Las longitudes salen de
 domain/development.py; el aplastamiento y los mínimos, de codes.
 """
 
-from collections.abc import Sequence
 from dataclasses import replace
 
 from structurelab_rc.codes.registry import Profile
+from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.development import development_check, required_length
-from structurelab_rc.domain.footing.flexure import MAT_NAMES, face_moments, has_negative_moment
+from structurelab_rc.domain.development import BarAnchorage, development_check, required_length
+from structurelab_rc.domain.footing.flexure import MAT_NAMES, FaceMoments, face_moments, has_negative_moment, required_mat_area
 from structurelab_rc.domain.footing.loads import FactoredCase, column_faces
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete
-from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.footing import Footing
 from structurelab_rc.model.project import Materials
 
@@ -35,20 +36,32 @@ def _available(footing: Footing, direction: str) -> float:
     return min(half - plus, minus + half) - footing.cover
 
 
+def _anchorage(basis: Basis, footing: Footing, mat_row: tuple[str, BarRow], cases: list[FaceMoments]) -> BarAnchorage:
+    mat, row = mat_row
+    spec = getattr(footing, mat)
+    bar_set = getattr(spec, row.direction)
+    spacing = min(bar_set.spacing, bar_set.band_spacing or bar_set.spacing)
+    face_cover = footing.h - row.depth - row.diameter / 2  # recubrimiento libre a la cara de la malla
+    required = required_mat_area(basis.profile, basis.materials, footing, mat_row, cases)
+    excess = 1.0 if required is None else min(required / row.area, 1.0)
+    # La barra extrema de la fila queda al recubrimiento de la cara lateral; el extremo de la barra, al del extremo.
+    return BarAnchorage(row.diameter, spec.end, cb=min(footing.cover + row.diameter / 2, spacing / 2),
+                        concrete_below=footing.h - row.depth if mat == "bottom" else row.depth,
+                        clear_cover=min(face_cover, footing.cover), clear_spacing=spacing - row.diameter,
+                        side_cover=footing.cover, extension_cover=footing.cover, excess=excess)
+
+
 def _development_checks(
-    profile: Profile, materials: Materials, footing: Footing, rows: dict[str, dict[str, BarRow]], negative: dict[str, bool]
+    basis: Basis, footing: Footing, rows: dict[str, dict[str, BarRow]], cases: list[FaceMoments]
 ) -> list[Check]:
     checks = []
     for mat, mat_rows_ in rows.items():
         spec = getattr(footing, mat)
         for direction, row in mat_rows_.items():
-            if mat == "top" and not negative[direction]:
+            if mat == "top" and not has_negative_moment(cases, direction):
                 continue
-            bar_set = getattr(spec, direction)
-            spacing = min(bar_set.spacing, bar_set.band_spacing or bar_set.spacing)
-            cb = min(footing.cover + row.diameter / 2, spacing / 2)
-            below = footing.h - row.depth if mat == "bottom" else row.depth
-            required = required_length(profile, materials, row.diameter, spec.end, (cb, below))
+            bar = _anchorage(basis, footing, (mat, row), cases)
+            required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
             end = "con gancho estandar" if spec.end == "hook" else "rectas"
             name = f"Desarrollo malla {MAT_NAMES[mat]} (barras {direction})"
             checks.append(replace(development_check(name, required, _available(footing, direction), f"Barras {end}"),
@@ -94,8 +107,8 @@ def _bearing_checks(profile: Profile, materials: Materials, footing: Footing, ca
     return checks
 
 
-def _dowel_checks(profile: Profile, materials: Materials, footing: Footing, bottom: dict[str, BarRow],
-                  bars: Sequence[RebarSpec]) -> tuple[list[Check], float | None]:
+def _dowel_checks(basis: Basis, footing: Footing, bottom: dict[str, BarRow]) -> tuple[list[Check], float | None]:
+    profile, materials, bars = basis.profile, basis.materials, basis.bars
     dowels = footing.column.dowels
     clause = profile.footing.clauses()["dowels"]
     if dowels is None:
@@ -109,20 +122,17 @@ def _dowel_checks(profile: Profile, materials: Materials, footing: Footing, bott
     # Los pasadores bajan hasta la malla inferior y se apoyan en ella; su gancho no cuenta a compresión (D-065).
     first, second = bottom[footing.bottom.first], bottom["y" if footing.bottom.first == "x" else "x"]
     available = footing.h - footing.cover - first.diameter - second.diameter
-    required_ldc = required_length(profile, materials, spec.diameter_mm, "compression", (0.0, 0.0))
+    required_ldc = required_length(profile, materials, BarAnchorage(spec.diameter_mm, "compression"), basis.seismic_level)
     checks.append(replace(development_check(DOWELS_ANCHORAGE, required_ldc, available), member=footing.id))
     return checks, area
 
 
-def connection_checks(
-    profile: Profile, materials: Materials, footing: Footing, cases: list[FactoredCase], bars: Sequence[RebarSpec]
-) -> list[Check]:
-    rows = {"bottom": mat_rows(footing, footing.bottom, bars)}
+def connection_checks(basis: Basis, footing: Footing, cases: list[FactoredCase]) -> list[Check]:
+    rows = {"bottom": mat_rows(footing, footing.bottom, basis.bars)}
     if footing.top is not None:
-        rows["top"] = mat_rows(footing, footing.top, bars)
+        rows["top"] = mat_rows(footing, footing.top, basis.bars)
     moments = [face_moments(footing, case) for case in cases]
-    negative = {direction: has_negative_moment(moments, direction) for direction in ("x", "y")}
-    dowel_checks, dowel_area = _dowel_checks(profile, materials, footing, rows["bottom"], bars)
-    return [*_development_checks(profile, materials, footing, rows, negative), *dowel_checks,
-            *_bearing_checks(profile, materials, footing, cases, dowel_area)]
+    dowel_checks, dowel_area = _dowel_checks(basis, footing, rows["bottom"])
+    return [*_development_checks(basis, footing, rows, moments), *dowel_checks,
+            *_bearing_checks(basis.profile, basis.materials, footing, cases, dowel_area)]
 

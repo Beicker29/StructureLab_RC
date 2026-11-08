@@ -22,7 +22,7 @@ from structurelab_rc.model.project import Materials, Member, Section
 from structurelab_rc.setup import load_engine
 
 BARS = load_engine().bars
-MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight")
+MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight", coating="uncoated")
 SECTION_300X500 = {"bw": 300.0, "h": 500.0, "cover": 40.0}
 TOP = {"bars": ["#5", "#5", "#5"], "depth": 60.0, "role": "flexure"}
 BOTTOM = {"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}
@@ -173,7 +173,7 @@ def test_minimum_longitudinal_steel_floors_at_s(profile: str) -> None:
 
 
 def test_torsion_yield_strengths_are_capped_at_420_mpa() -> None:
-    high = Materials(fc=28.0, fy=520.0, fyt=520.0, concrete="normalweight")
+    high = Materials(fc=28.0, fy=520.0, fyt=520.0, concrete="normalweight", coating="uncoated")
     member = _member()
     capped = station_checks(PROFILES["nsr-10"], high, member, member.stations[0], BARS)
     longitudinal = next(check for check in capped if check.name == LONGITUDINAL)

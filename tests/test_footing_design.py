@@ -36,7 +36,7 @@ def _project(typologies: int = 2, plan_max: float = 4000.0, columns: int = 3) ->
     loads = [(400, 300.0, 20.0), (400, 480.0, 40.0), (500, 750.0, 60.0)][:columns]
     return {
         "description": "prueba", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "prueba"},
-        "materials": {"fy": 420.0, "fyt": 420.0, "concrete": "normalweight"},
+        "materials": {"fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"},
         "soil": {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.5, "unit_weight_concrete_kNm3": 24.0,
                  "unit_weight_fill_kNm3": 18.0,
                  "friction_coefficient": 0.45, "adhesion_kPa": 0.0, "passive_coefficient": 3.0,

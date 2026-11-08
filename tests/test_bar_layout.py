@@ -65,7 +65,7 @@ def _project(layer: dict[str, Any]) -> Project:
         "description": "Prueba",
         "profile": "nsr-10",
         "seismic": {"level": "DMO", "justification": "Prueba"},
-        "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight"},
+        "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"},
         "members": [{"id": "V", "type": "beam", "length": 6000.0, "section": SECTION.model_dump(exclude_none=True), "stations": [station]}],
     })
 
@@ -89,7 +89,7 @@ def _detailing(layers: list[dict[str, Any]], bw: float = 300.0) -> str:
                "demands": {"Pu_kN": 0.0, "Mu_kNm": 100.0, "M2_kNm": 0.0, "Vu_kN": 120.0, "V3_kN": 0.0, "Tu_kNm": 25.0}}
     member = Member.model_validate({"id": "V", "type": "beam", "length": 6000.0,
                                     "section": {"bw": bw, "h": 500.0, "cover": 40.0}, "stations": [station]})
-    materials = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight")
+    materials = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight", coating="uncoated")
     checks = station_checks(PROFILES["nsr-10"], materials, member, member.stations[0], BARS)
     detailing = next(check for check in checks if check.name == DETAILING)
     return "" if detailing.status is Status.PASS else detailing.note

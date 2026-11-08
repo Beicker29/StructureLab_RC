@@ -21,7 +21,7 @@ from structurelab_rc.model.project import Materials, Member
 from structurelab_rc.setup import load_engine
 
 BARS = load_engine().bars
-MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight")
+MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight", coating="uncoated")
 SECTION_300X500 = {"bw": 300.0, "h": 500.0, "cover": 40.0}
 BOTTOM = [{"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"}]
 STIRRUPS = {"designation": "#3", "legs": 2, "spacing": 150.0, "closed": True}
@@ -111,7 +111,7 @@ def test_axial_tension_lowers_the_torsion_threshold() -> None:
 
 
 def test_lightweight_concrete_is_blocked() -> None:
-    light = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="lightweight")
+    light = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="lightweight", coating="uncoated")
     assert _checks(_member(), materials=light)[STRENGTH].status is Status.BLOCKED
 
 
@@ -123,7 +123,7 @@ def test_missing_torsion_is_incomplete() -> None:
 
 
 def test_stirrup_yield_is_capped_at_420_mpa() -> None:
-    high = Materials(fc=28.0, fy=420.0, fyt=520.0, concrete="normalweight")
+    high = Materials(fc=28.0, fy=420.0, fyt=520.0, concrete="normalweight", coating="uncoated")
     vs = dict(_checks(_member(), materials=high)[STRENGTH].values)["Vs"]
     assert vs == pytest.approx(2 * 71.0 * 420.0 * 440.0 / 150.0)
 

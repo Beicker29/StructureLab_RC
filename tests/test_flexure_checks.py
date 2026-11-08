@@ -19,7 +19,7 @@ from structurelab_rc.model.project import Materials, Member
 from structurelab_rc.setup import load_engine
 
 BARS = load_engine().bars
-MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight")
+MATERIALS = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight", coating="uncoated")
 
 
 def _member(layers: list[dict[str, Any]], demands: dict[str, float], **changes: Any) -> Member:

@@ -26,6 +26,7 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 | `materials.fy` | MPa | Fluencia del refuerzo longitudinal. |
 | `materials.fyt` | MPa | Fluencia del refuerzo transversal (estribos). Se declara aunque el ejemplo no lo use. |
 | `materials.concrete` | texto | `normalweight` (peso normal) o `lightweight` (liviano); define λ. |
+| `materials.coating` | texto | Recubrimiento de las barras: `uncoated` (sin recubrimiento), `galvanized`, `epoxy` o `zinc_epoxy` (dual de zinc y epóxico); cambia la longitud de desarrollo (ψe, D-071). |
 | `soil` | objeto | Datos del suelo y de los pesos propios (abajo). Obligatorio con zapatas. |
 | `footings` | lista | Zapatas del proyecto. |
 
@@ -96,7 +97,7 @@ y del relleno, y fuerzas de las sobrecargas. Salen en `resultado.json`, en `foot
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 
 En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (D-069). `materials` declara solo `fy`,
-`fyt` y `concrete`: f'c es una variable del diseño. `soil` es igual que en la verificación.
+`fyt`, `concrete` y `coating`: f'c es una variable del diseño. `soil` es igual que en la verificación.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |

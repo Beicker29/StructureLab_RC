@@ -9,6 +9,7 @@ from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project
 from structurelab_rc.design.footing.typology import Context
+from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.footing.checks import footing_checks
@@ -62,7 +63,7 @@ def run_project(path: Path) -> tuple[Project | None, tuple[Check, ...]]:
             checks.extend(station_checks(profile, project.materials, member, station, bars))
     if project.soil is not None:
         for footing in project.footings:
-            checks.extend(footing_checks(profile, project.materials, footing, project.soil, bars))
+            checks.extend(footing_checks(Basis(profile, project.materials, bars, project.seismic.level), footing, project.soil))
     return project, tuple(checks)
 
 
