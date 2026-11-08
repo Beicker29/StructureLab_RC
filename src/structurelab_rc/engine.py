@@ -7,6 +7,8 @@ from typing import Any
 
 from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project
+from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.footing.checks import footing_checks
@@ -14,11 +16,20 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.errors import invalid_input
 from structurelab_rc.io.etabs import footings as etabs_footings
-from structurelab_rc.io.etabs.footings import FootingImportSummary, build_footing_project
+from structurelab_rc.io.etabs.footings import FootingImportSummary, build_footing_design_project, build_footing_project
 from structurelab_rc.io.etabs.importer import SHEET, EtabsImportError, ImportSummary, build_project
 from structurelab_rc.io.etabs.xlsx import XlsxError, read_table
-from structurelab_rc.model.loader import ProjectLoadError, load_footing_template, load_project, load_template, validate_input
+from structurelab_rc.model.design import FootingDesignProject
+from structurelab_rc.model.loader import (
+    ProjectLoadError,
+    load_design_project,
+    load_footing_template,
+    load_project,
+    load_template,
+    validate_input,
+)
 from structurelab_rc.model.project import Project
+from structurelab_rc.model.template import EtabsFootingDesignTemplate
 from structurelab_rc.reporting.document import report_documents
 from structurelab_rc.reporting.pdf import write_pdf
 from structurelab_rc.reporting.results import build_results
@@ -102,10 +113,46 @@ def import_etabs_footings(
     try:
         template = load_footing_template(template_path)
         tables = [read_table(path, etabs_footings.SHEET) for path in (service, factored)]
-        project, summary = build_footing_project(template, *tables)
-        validation = validate_project(validate_input(project, Project), load_engine().bars)
+        if isinstance(template, EtabsFootingDesignTemplate):
+            project, summary = build_footing_design_project(template, *tables)
+            design = validate_input(project, FootingDesignProject)
+            validation = _validate_design(design)
+        else:
+            project, summary = build_footing_project(template, *tables)
+            validation = validate_project(validate_input(project, Project), load_engine().bars)
     except (ProjectLoadError, EtabsImportError) as error:
         return None, None, check_from_errors(CHECK_NAME, error.errors)
     except XlsxError as error:
         return None, None, check_from_errors(CHECK_NAME, [invalid_input(str(error))])
     return project, summary, validation
+
+
+def _validate_design(design: FootingDesignProject) -> Check:
+    """El perfil y el nivel sísmico, y que las barras del bloque design estén en el catálogo."""
+    errors = []
+    profile = PROFILES.get(design.profile)
+    if profile is None:
+        errors.append(invalid_input(f"El perfil '{design.profile}' no existe; valores: {', '.join(sorted(PROFILES))}"))
+    elif design.seismic.level not in profile.seismic.seismic_levels():
+        errors.append(invalid_input(f"El nivel sismico '{design.seismic.level}' no existe en {profile.id}"))
+    known = {bar.designation for bar in load_engine().bars}
+    for designation in sorted({*design.design.bars, *design.design.dowel_bars} - known):
+        errors.append(invalid_input(f"La barra '{designation}' del bloque design no esta en el catalogo"))
+    return check_from_errors(CHECK_NAME, errors)
+
+
+def design_footings(path: Path) -> tuple[dict[str, Any] | None, DesignResult | None, Check]:
+    """Diseño por tipologías (D-069): el proyecto de verificación con una zapata por columna y el resumen."""
+    try:
+        design = load_design_project(path)
+    except ProjectLoadError as error:
+        return None, None, check_from_errors(CHECK_NAME, error.errors)
+    validation = _validate_design(design)
+    if validation.status is Status.FAIL:
+        return None, None, validation
+    ctx = Context(design, PROFILES[design.profile], load_engine().bars)
+    result = design_typologies(ctx)
+    if result.fc is None:
+        return None, result, check_from_errors(CHECK_NAME, [invalid_input(f"Sin solucion dentro de los limites: {result.failure}")])
+    return designed_project(ctx, result), result, validation
+

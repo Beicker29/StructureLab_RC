@@ -56,7 +56,7 @@ def _development_checks(
     return checks
 
 
-def _bearing_area(footing: Footing) -> tuple[float, float]:
+def bearing_area(footing: Footing) -> tuple[float, float]:
     """A1 (columna) y A2: base del tronco de pirámide de pendiente 1:2 bajo A1, contenido en la zapata."""
     column = footing.column
     hx, hy = footing.lx / 2, footing.ly / 2
@@ -68,7 +68,7 @@ def _bearing_area(footing: Footing) -> tuple[float, float]:
 
 def _bearing_checks(profile: Profile, materials: Materials, footing: Footing, cases: list[FactoredCase],
                     dowel_area: float | None) -> list[Check]:
-    a1, a2 = _bearing_area(footing)
+    a1, a2 = bearing_area(footing)
     bearing = profile.bearing
     phi = bearing.strength_reduction()
     capacity = phi * bearing.nominal_bearing(materials.fc, a1, a2)

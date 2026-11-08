@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from structurelab_rc.engine import import_etabs, report_file
+from structurelab_rc.engine import design_footings, import_etabs, report_file
 
 ROOT = Path(__file__).parent.parent
 FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
@@ -28,6 +28,15 @@ UPDATE = os.environ.get("STRUCTURELAB_UPDATE_FINGERPRINTS") == "1"
 
 def _fingerprint(name: str, work: Path) -> dict[str, str]:
     project = ROOT / name
+    files = ("resultado.json", "memoria.txt")
+    if Path(name).name.startswith("diseno_"):
+        # Diseño por tipologías (D-069): huella del proyecto diseñado y de su verificación.
+        data, _, _ = design_footings(project)
+        project = work / "proyecto.json"
+        project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+        report_file(project, work / "salida")
+        digests = {file: hashlib.sha256((work / "salida" / file).read_bytes()).hexdigest() for file in files}
+        return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **digests}
     if name == ETABS:
         data, _, _ = import_etabs(WORKBOOK, project)
         project = work / "etabs.json"

@@ -1,6 +1,6 @@
 """Plantilla para importar fuerzas de ETABS: todo lo que el archivo de ETABS no trae (D-042)."""
 
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, model_validator
 
@@ -107,3 +107,33 @@ class EtabsFootingTemplate(_Input):
         if len(set(names)) != len(names):
             raise ValueError("un Unique Name aparece en dos tipos de zapata")
         return self
+
+
+class TemplateColumns(_Input):
+    """Columnas de la misma sección: los Unique Name de sus nudos de apoyo en ETABS y la sección cx × cy (D-069)."""
+
+    etabs_unique_names: tuple[str, ...] = Field(min_length=1)
+    cx: PositiveFloat
+    cy: PositiveFloat
+
+
+class EtabsFootingDesignTemplate(_Input):
+    """Plantilla de diseño de zapatas por tipologías: el bloque design y las columnas; la asignación a tipologías la
+    hace el diseño (D-069). soil y design se validan con el proyecto de diseño que se genera."""
+
+    description: str
+    profile: str
+    seismic: SeismicFacts
+    materials: dict[str, Any]
+    soil: dict[str, float]
+    load_factors: dict[str, LoadFactors] = Field(min_length=1)
+    design: dict[str, Any]
+    columns: tuple[TemplateColumns, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _check_names(self) -> Self:
+        names = [name for group in self.columns for name in group.etabs_unique_names]
+        if len(set(names)) != len(names):
+            raise ValueError("un Unique Name aparece en dos grupos de columnas")
+        return self
+

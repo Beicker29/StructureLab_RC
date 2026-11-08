@@ -7,10 +7,10 @@ del perfil; los campos de entrada y de salida están, una sola vez, en [docs/for
 examples/
 ├── aci_318_25/
 │   ├── vigas/       viga_rectangular.json, viga_t.json
-│   └── zapatas/     zapata_aislada.json
+│   └── zapatas/     zapata_aislada.json, diseno_tipologias.json
 ├── nsr_10/
 │   ├── vigas/       viga_rectangular.json, viga_t.json
-│   └── zapatas/     zapata_aislada.json
+│   └── zapatas/     zapata_aislada.json, diseno_tipologias.json
 └── etabs/
     ├── vigas/       Excel de fuerzas en vigas y su plantilla
     └── zapatas/     Excel de reacciones (servicio y mayoradas) y su plantilla

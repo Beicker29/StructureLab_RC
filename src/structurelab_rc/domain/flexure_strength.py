@@ -6,6 +6,7 @@ numeral que cita.
 """
 
 from dataclasses import dataclass
+from functools import cache
 
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.check import Check
@@ -16,6 +17,7 @@ from structurelab_rc.mechanics.materials import ConcreteBlock, SteelModel
 from structurelab_rc.model.project import Materials
 
 _BISECTION_STEPS = 80
+_RELATIVE_TOLERANCE = 1e-10
 
 
 @dataclass(frozen=True)
@@ -70,8 +72,12 @@ def rectangular_strength(
     return MomentStrength(state, flexure_phi(profile, materials, state.extreme_strain))
 
 
+@cache
 def required_area(profile: Profile, materials: Materials, section: RectangularSection, depth: float, moment: float) -> float | None:
-    """Área de una capa a la profundidad depth con φMn = moment, por bisección; None si ninguna cuantía la alcanza."""
+    """Área de una capa a la profundidad depth con φMn = moment, por bisección; None si ninguna cuantía la alcanza.
+
+    Memoizada: el diseño la pide muchas veces con los mismos datos. La bisección se detiene con tolerancia relativa.
+    """
     if moment <= 0:
         return 0.0
     low, high = 0.0, section.width * depth  # cuantía 100 %: cota superior holgada
@@ -85,6 +91,8 @@ def required_area(profile: Profile, materials: Materials, section: RectangularSe
     for _ in range(_BISECTION_STEPS):
         middle = (low + high) / 2
         low, high = (middle, high) if design(middle) < moment else (low, middle)
+        if high - low <= _RELATIVE_TOLERANCE * high:
+            break
     return high
 
 

@@ -30,7 +30,7 @@ de una misma capa que no pueden hacerlo.
 | `io/etabs` | Lee el Excel de ETABS con la biblioteca estándar y arma el proyecto JSON desde una plantilla (D-042). Convierte el formato de ETABS al de entrada: m a mm y la compresión positiva. `footings.py` cruza las reacciones de servicio y mayoradas y las convierte en acciones sobre la zapata (D-055). |
 | `setup` | `load_engine()`: carga las tablas de `data/` con `importlib.resources`. |
 | `domain/<elemento>` | Elige la cláusula y arma cada `Check` (`beam/`, `footing/`). `domain/status.py` tiene la única agregación de estados y `domain/flexure_strength.py`, `domain/shear_strength.py` y `domain/development.py` la resistencia a flexión, a cortante y el desarrollo comunes a todos los elementos (D-060, D-063, D-065). |
-| `design/<elemento>` | Produce `ReinforcementLayout`. |
+| `design/<elemento>` | Produce armados. `design/footing/` diseña zapatas por tipologías: propone y aprueba con la verificación de `domain/footing` (D-069). |
 | `detailing`, `drawing` | Neutros: usan límites ya calculados por el perfil; sin fórmulas normativas. |
 | `codes/<perfil>` | Fórmulas y constantes como funciones puras con el nombre de su ecuación o numeral. |
 | `mechanics` | Equilibrio y compatibilidad de una sección poligonal con eje neutro de cualquier inclinación (`section.py`); `flexure.py` describe la flexión uniaxial por franjas sobre el mismo motor. `soil_pressure.py` da la presión lineal del suelo bajo una zapata rígida (Bellos y Bakas 2017, D-053), `polygon.py` el recorte y las integrales exactas que ambos usan y `perimeter.py` el perímetro crítico del cortante en dos direcciones. No conoce φ ni numerales. |

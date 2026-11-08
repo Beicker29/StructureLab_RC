@@ -5,6 +5,7 @@ Zapatas aisladas según NSR-10 Título C (v3, en curso). Los campos de entrada y
 
 | Ejemplo | Qué muestra |
 | --- | --- |
+| `diseno_tipologias.json` | Diseño por tipologías (D-069): 6 columnas, 2 zapatas tipo, f'c entre 21 y 28 MPa con sus precios. |
 | `zapata_aislada.json` | Ejemplo de zapatas aisladas: Z1 centrada bajo columna cuadrada con pedestal y Z2 rectangular con la columna desplazada 400 mm en X. Fuerzas en la base de la columna, ejes globales. Datos ilustrativos. |
 
 Estado actual: se verifican la presión admisible y el contacto con el suelo (V3C) y toda la parte estructural
@@ -16,6 +17,13 @@ punzonamiento, desarrollo de las barras, aplastamiento y pasadores.
 ```console
 structurelab-rc verify examples/nsr_10/zapatas/zapata_aislada.json
 structurelab-rc report examples/nsr_10/zapatas/zapata_aislada.json --output results/nsr_10/zapatas/zapata_aislada
+```
+
+Diseño por tipologías:
+
+```console
+structurelab-rc design-footings examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
+structurelab-rc report results/nsr_10/zapatas/diseno_tipologias/proyecto.json --output results/nsr_10/zapatas/diseno_tipologias/reporte
 ```
 
 ## Propio de este perfil

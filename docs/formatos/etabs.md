@@ -27,6 +27,10 @@ dos estados de carga distintos. P cambia de signo para que la compresión sea po
 
 ## Zapatas
 
+Con una plantilla que trae el bloque `design` (ver [zapatas](zapatas.md), diseño por tipologías), el importador genera el
+proyecto de diseño en lugar del de verificación: `columns[]` agrupa los Unique Name de las columnas de igual sección
+(`etabs_unique_names`, `cx`, `cy`) y cada nudo se vuelve una columna con id igual a su Label de ETABS.
+
 ### Tablas de ETABS
 
 Columnas requeridas: `Label`, `Unique Name`, `Output Case`, `Case Type`, `Step Type`, `FX`, `FY`, `FZ` (kN), `MX`,

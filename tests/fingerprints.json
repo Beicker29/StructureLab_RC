@@ -7,6 +7,11 @@
     "resultado.json": "bbc20b1b65eb8994ea967a9fd3cecf4fe3d68e0f7c7fdf0df174debe20bc366d",
     "memoria.txt": "47e7b7aa9fb75536599f9d62c756522d61ae06a19db364c886a4f96c4371e481"
   },
+  "examples/aci_318_25/zapatas/diseno_tipologias.json": {
+    "proyecto.json": "e9dcd252da57d780b742014bdbc0c1678d8c6d1fd6762a77a7aeea2c849c4969",
+    "resultado.json": "28ff9fdec7628c842fb3c5095288c7a8c598aae4d6c78d0fa7e31c4a5711391c",
+    "memoria.txt": "37b229a55b8c3bc1002fde73214970e717a68b603ce179308bb860f83d7830e2"
+  },
   "examples/aci_318_25/zapatas/zapata_aislada.json": {
     "resultado.json": "d3bcf6b401141ca50bab7220f6860187c771c222a661d82db95fa45e7dcb2568",
     "memoria.txt": "7ba8a75eb51dfea0f8df356dcf7ff0f4d9581cbf420829894c2578decebdd8ac"
@@ -22,6 +27,11 @@
   "examples/nsr_10/vigas/viga_t.json": {
     "resultado.json": "73871768445987f6a55555941d1c48c20b80b517e8426f7b7742729d72d53dd8",
     "memoria.txt": "f430df408d601cd4894d40789f4ff0bc2018cfcdc52d65bed7c74f959f4dd969"
+  },
+  "examples/nsr_10/zapatas/diseno_tipologias.json": {
+    "proyecto.json": "5e15cd435b08ce556e8b40b00260a374945018ddde4fca21081ee34abee4dbdf",
+    "resultado.json": "89f6e64c8d8ffc54bd93f2f99a521221beb5fe60dfccdb69187556490d9ecc1d",
+    "memoria.txt": "b7da03e270457c71267daf4f245ce8ecc32584eb15010d87c62eb5c419b983d8"
   },
   "examples/nsr_10/zapatas/zapata_aislada.json": {
     "resultado.json": "e770c806f8d6a85fd4bb3c89d1b4db3da61887f25c12ba2b022e76f17b915dd0",

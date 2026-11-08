@@ -583,6 +583,19 @@
   - Texto con Unicode (φ, ², ·, —), en lugar de la regla Latin-1 de D-050. El PDF usa una fuente TrueType del sistema (Segoe UI, Arial o DejaVu); sin ninguna, escribe equivalentes en ASCII. Las 65 zapatas de ETABS generan su PDF en unos 4 s.
   - La huella de todos los ejemplos cambió por el formato nuevo (cambio intencional); el cálculo no cambió.
 
+### D-069: diseño de zapatas por tipologías (V3F)
+
+- **Fecha:** 2026-11-07
+- **Decisión del usuario:**
+  1. El diseño busca un número dado de tipologías iguales (dimensiones y mallas) que cubran todas las columnas; el f'c es una variable de diseño entre los valores comerciales 21, 24.5, 28, 31.5, 35, 42 y 48 MPa, con un solo f'c para todas las zapatas del proyecto.
+  2. Formas en planta disponibles: cuadrada (por defecto), voladizos iguales y relación lx/ly fija.
+  3. Las soluciones se ordenan por costo: precio del concreto por m³ para cada f'c permitido y del acero por kg (excavación y formaleta fuera).
+  4. Con ETABS, un número dado de zapatas tipo para todas las columnas: la plantilla trae el bloque design y las secciones de las columnas; la asignación la hace el diseño.
+  5. Si nada cumple dentro de los límites, el resultado es FAIL con el motivo; los límites no se amplían.
+  6. Dentro de una tipología, cada columna se verifica con su propia sección, sus cargas y sus pasadores, que se diseñan por columna.
+- **Implementación (DRY):** el diseño no tiene fórmulas propias. `design/footing/typology.py` propone zapatas (planta, espesor, mallas a partir del As requerido de `domain/flexure_strength`, pasadores con el aplastamiento de `codes`) y las aprueba con `domain/footing/checks.footing_checks`; después de la primera planta viable explora dos más y se queda con la más barata, y elige los pasadores de menor área que aprueban área, anclaje y exceso de aplastamiento. `design/footing/grouping.py` parte la lista ordenada en N tramos continuos por programación dinámica (óptima para ese orden); `design/footing/typologies.py` diseña cada columna, las ordena por costo, agrupa y prueba cada f'c. El proyecto diseñado es un proyecto de verificación normal (`proyecto.json`), que `report` verifica y documenta.
+- **Rendimiento:** el As requerido se memoiza (una columna pasó de más de una hora a 0.6 s); un algoritmo genético se descartó porque necesitaría miles de verificaciones donde la búsqueda usa unas pocas y no garantiza el óptimo.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

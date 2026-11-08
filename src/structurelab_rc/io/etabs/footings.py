@@ -13,7 +13,7 @@ from typing import Any
 from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.io.etabs.importer import EtabsImportError, case_label
 from structurelab_rc.io.etabs.xlsx import Table
-from structurelab_rc.model.template import EtabsFootingTemplate, LoadFactors
+from structurelab_rc.model.template import EtabsFootingDesignTemplate, EtabsFootingTemplate, LoadFactors
 
 SHEET = "Joint Reactions"
 REQUIRED_UNITS = {"FX": "kN", "FY": "kN", "FZ": "kN", "MX": "kN-m", "MY": "kN-m"}
@@ -54,44 +54,75 @@ def _load(row: dict[str, str], kind: str, factors: LoadFactors) -> dict[str, Any
             "Mx_kNm": -float(row["MX"]), "My_kNm": -float(row["MY"])}
 
 
-def build_footing_project(
-    template: EtabsFootingTemplate, service: Table, factored: Table
-) -> tuple[dict[str, Any], FootingImportSummary]:
-    """Proyecto en el formato de entrada JSON, una zapata por nudo; lanza EtabsImportError con todos los problemas."""
+@dataclass(frozen=True)
+class _Joint:
+    group: str
+    label: str
+    loads: list[dict[str, Any]]
+
+
+def _joint_loads(
+    load_factors: dict[str, LoadFactors], service: Table, factored: Table, groups: list[tuple[str, tuple[str, ...]]]
+) -> tuple[list[_Joint], int]:
+    """Casos de servicio y mayorados de cada nudo de los grupos; lanza EtabsImportError con todos los problemas."""
     errors = _check_table(service, "servicio") + _check_table(factored, "cargas mayoradas")
     if errors:
         raise EtabsImportError(tuple(errors))
     service_rows, skipped_service = _rows_by_joint(service)
     factored_rows, skipped_factored = _rows_by_joint(factored)
     present = {row["Output Case"] for rows in (*service_rows.values(), *factored_rows.values()) for row in rows}
-    for name in sorted(present - set(template.load_factors)):
+    for name in sorted(present - set(load_factors)):
         errors.append(invalid_input(f"La combinacion '{name}' no tiene factores de carga en la plantilla"))
-    for name in sorted(set(template.load_factors) - present):
+    for name in sorted(set(load_factors) - present):
         errors.append(invalid_input(f"La combinacion '{name}' de la plantilla no aparece en las tablas de ETABS"))
-    footings = []
-    for footing_type in template.footings:
-        base = footing_type.model_dump(mode="json", exclude={"id", "etabs_unique_names"})
-        for unique_name in footing_type.etabs_unique_names:
+    joints = []
+    for group, unique_names in groups:
+        for unique_name in unique_names:
             own_service, own_factored = service_rows.get(unique_name, []), factored_rows.get(unique_name, [])
             for rows, which in ((own_service, "servicio"), (own_factored, "cargas mayoradas")):
                 if not rows:
                     errors.append(invalid_input(f"El Unique Name '{unique_name}' no tiene combinaciones en la tabla de {which}",
-                                                member=footing_type.id))
+                                                member=group))
             if not own_service or not own_factored:
                 continue
-            if any(row["Output Case"] not in template.load_factors for row in (*own_service, *own_factored)):
+            if any(row["Output Case"] not in load_factors for row in (*own_service, *own_factored)):
                 continue
-            loads = [_load(row, "service", template.load_factors[row["Output Case"]]) for row in own_service]
-            loads += [_load(row, "factored", template.load_factors[row["Output Case"]]) for row in own_factored]
-            footings.append({"id": f"{footing_type.id}-{own_service[0]['Label']}", **base, "loads": loads})
+            loads = [_load(row, "service", load_factors[row["Output Case"]]) for row in own_service]
+            loads += [_load(row, "factored", load_factors[row["Output Case"]]) for row in own_factored]
+            joints.append(_Joint(group, own_service[0]["Label"], loads))
     if errors:
         raise EtabsImportError(tuple(errors))
+    return joints, skipped_service + skipped_factored
+
+
+def _summary(items: list[dict[str, Any]], skipped: int) -> FootingImportSummary:
+    loads = [load for item in items for load in item["loads"]]
+    return FootingImportSummary(len(items), tuple(sorted({load["case"] for load in loads if load["kind"] == "service"})),
+                                tuple(sorted({load["case"] for load in loads if load["kind"] == "factored"})), skipped)
+
+
+def build_footing_project(
+    template: EtabsFootingTemplate, service: Table, factored: Table
+) -> tuple[dict[str, Any], FootingImportSummary]:
+    """Proyecto de verificación en el formato de entrada JSON, una zapata por nudo con la tipología de su grupo."""
+    groups = [(footing.id, footing.etabs_unique_names) for footing in template.footings]
+    joints, skipped = _joint_loads(template.load_factors, service, factored, groups)
+    bases = {footing.id: footing.model_dump(mode="json", exclude={"id", "etabs_unique_names"}) for footing in template.footings}
+    footings = [{"id": f"{joint.group}-{joint.label}", **bases[joint.group], "loads": joint.loads} for joint in joints]
     project = template.model_dump(mode="json", exclude={"load_factors", "footings"})
     project["footings"] = footings
-    summary = FootingImportSummary(
-        len(footings),
-        tuple(sorted({load["case"] for footing in footings for load in footing["loads"] if load["kind"] == "service"})),
-        tuple(sorted({load["case"] for footing in footings for load in footing["loads"] if load["kind"] == "factored"})),
-        skipped_service + skipped_factored,
-    )
-    return project, summary
+    return project, _summary(footings, skipped)
+
+
+def build_footing_design_project(
+    template: EtabsFootingDesignTemplate, service: Table, factored: Table
+) -> tuple[dict[str, Any], FootingImportSummary]:
+    """Proyecto de diseño por tipologías (D-069): una columna por nudo, con su sección y sus casos de carga."""
+    groups = [(str(index), group.etabs_unique_names) for index, group in enumerate(template.columns)]
+    joints, skipped = _joint_loads(template.load_factors, service, factored, groups)
+    sections = {str(index): group for index, group in enumerate(template.columns)}
+    columns = [{"id": joint.label, "cx": sections[joint.group].cx, "cy": sections[joint.group].cy, "loads": joint.loads}
+               for joint in joints]
+    project = template.model_dump(mode="json", exclude={"load_factors", "columns"})
+    project["columns"] = columns
+    return project, _summary(columns, skipped)

@@ -45,6 +45,7 @@ jobs:
           wheel=$(python -c "import glob, os; print(os.path.abspath(glob.glob('dist/*.whl')[0]))")
           example="$PWD/examples/nsr_10/vigas/viga_t.json"
           footing="$PWD/examples/nsr_10/zapatas/zapata_aislada.json"
+          design="$PWD/examples/nsr_10/zapatas/diseno_tipologias.json"
           workbook="$PWD/examples/etabs/vigas/Element Forces - Beams.xlsx"
           template="$PWD/examples/etabs/vigas/plantilla_vigas_nsr10.json"
           footings="$PWD/examples/etabs/zapatas"
@@ -61,5 +62,7 @@ jobs:
           "$bin/structurelab-rc" import-etabs-footings "$footings/Joint Reactions - Servicio.xlsx" "$footings/Joint Reactions - Ultimas.xlsx" "$footings/plantilla_zapatas_nsr10.json" --output zapatas.json
           "$bin/structurelab-rc" validate zapatas.json
           "$bin/structurelab-rc" validate "$footing"
+          "$bin/structurelab-rc" design-footings "$design" --output diseno
+          "$bin/structurelab-rc" verify diseno/proyecto.json
           "$bin/structurelab-rc" report "$example" --output reporte
           test -s reporte/resultado.json && test -s reporte/memoria.txt && test -s reporte/memoria.pdf

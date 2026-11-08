@@ -74,7 +74,8 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
   mínima, desarrollo de las barras, aplastamiento y pasadores.
 - **V3E Memoria y huella (hecha, D-068):** memoria de cálculo por elemento con el formato de StructureLab_HFS, para
   vigas y zapatas, en texto y PDF; huella de zapatas.
-- **V3F Diseño:** dimensiones en planta, altura y barras del catálogo; soluciones ordenadas y verificadas con V3C y V3D.
+- **V3F Diseño por tipologías (hecha, D-069):** N zapatas tipo para todas las columnas, f'c comercial, planta, espesor,
+  mallas y pasadores al menor costo; cada solución verificada con V3C y V3D.
 
 Pendientes de la v3: reducciones opcionales del desarrollo (As requerido/As suministrado, factores de gancho por
 recubrimiento y confinamiento) y refuerzo con recubrimiento epóxico (D-065), revisión geotécnica a deslizamiento y a volcamiento (complementan la de capacidad de soporte de

@@ -85,6 +85,31 @@ El relleno y las sobrecargas ocupan el área de la base menos la de la columna.
 Área A, inercias Ix e Iy, módulos de sección Sx y Sy, núcleo central (lx/6, ly/6), pesos de la zapata, del pedestal
 y del relleno, y fuerzas de las sobrecargas. Salen en `resultado.json`, en `footings[].properties`.
 
+## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
+
+En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (D-069). `materials` declara solo `fy`,
+`fyt` y `concrete`: f'c es una variable del diseño. `soil` es igual que en la verificación.
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `columns[].id` | texto | Identificador de la columna. |
+| `columns[].cx`, `columns[].cy` | mm | Sección de la columna (la zapata la centra). |
+| `columns[].loads` | lista | Casos de carga, iguales a los de una zapata. |
+| `design.typologies` | - | Número de zapatas tipo que deben cubrir todas las columnas. |
+| `design.prices.concrete_per_m3` | moneda/m³ | Precio del concreto para cada f'c permitido; las claves son f'c comerciales (21, 24.5, 28, 31.5, 35, 42, 48). |
+| `design.prices.steel_per_kg` | moneda/kg | Precio del acero. |
+| `design.shape` | texto | `square` (por defecto), `equal_cantilevers` o `ratio` (con `design.ratio` = lx/ly). |
+| `design.plan_step`, `design.plan_max` | mm | Paso y máximo de las dimensiones en planta. |
+| `design.h_min`, `design.h_step`, `design.h_max` | mm | Espesor mínimo, paso y máximo. |
+| `design.cover`, `design.fill_height`, `design.pedestal_height` | mm | Recubrimiento, relleno y pedestal de todas las zapatas. |
+| `design.surcharge_dead_kNm2`, `design.surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas. |
+| `design.bars`, `design.spacing_step`, `design.end` | -, mm, texto | Barras permitidas para las mallas, paso de separación y extremo de las barras. |
+| `design.dowel_bars` | - | Barras permitidas para los pasadores. |
+
+Salida: `proyecto.json` (una zapata por columna, nombrada `<tipología>-<columna>`, lista para `verify` y `report`) y
+`tipologias.json` (f'c, costo total y, por tipología, dimensiones, mallas, columnas, pasadores, concreto, acero y costo).
+Si nada cumple dentro de los límites, el comando termina con FAIL y el motivo.
+
 ## Salida
 
 `report` escribe tres archivos en la carpeta de salida:

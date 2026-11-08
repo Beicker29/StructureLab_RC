@@ -13,11 +13,14 @@ from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.engine import validate_file
 from structurelab_rc.errors import ErrorCode, StructuredError, blocked, incomplete, invalid_input
 from structurelab_rc.mechanics.flexure import SteelLayer
-from structurelab_rc.model.loader import ProjectLoadError, load_project
+from structurelab_rc.model.loader import ProjectLoadError, load_design_project, load_project
 from structurelab_rc.model.project import Demands, Materials, Project, Section
 from structurelab_rc.setup import load_engine
 
-EXAMPLES = sorted(path for path in (Path(__file__).parent.parent / "examples").glob("*/*/*.json") if path.parts[-3] != "etabs")
+_ALL = sorted(path for path in (Path(__file__).parent.parent / "examples").glob("*/*/*.json") if path.parts[-3] != "etabs")
+# Los ejemplos diseno_*.json son proyectos de diseño por tipologías (D-069), no de verificación.
+EXAMPLES = [path for path in _ALL if not path.name.startswith("diseno_")]
+DESIGN_EXAMPLES = [path for path in _ALL if path.name.startswith("diseno_")]
 BARS = load_engine().bars
 BASE: dict[str, Any] = {
     "description": "Prueba",
@@ -60,6 +63,12 @@ def _validate(project: Project) -> tuple[Status, list[StructuredError]]:
 @pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: f"{path.parts[-3]}-{path.parent.name}-{path.stem}")
 def test_examples_load_and_validate(path: Path) -> None:
     assert validate_file(path).status is Status.PASS
+
+
+@pytest.mark.parametrize("path", DESIGN_EXAMPLES, ids=lambda path: f"{path.parts[-3]}-{path.stem}")
+def test_design_examples_load(path: Path) -> None:
+    project = load_design_project(path)
+    assert project.design.typologies <= len(project.columns)
 
 
 def test_there_are_examples_for_both_profiles() -> None:

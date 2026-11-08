@@ -31,6 +31,7 @@ structurelab-rc report examples/nsr_10/zapatas/zapata_aislada.json --output resu
 structurelab-rc import-etabs "examples/etabs/vigas/Element Forces - Beams.xlsx" examples/etabs/vigas/plantilla_vigas_nsr10.json --output results/etabs/vigas/etabs.json
 structurelab-rc report results/etabs/vigas/etabs.json --output results/etabs/vigas/reporte
 structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/etabs/zapatas/plantilla_zapatas_nsr10.json --output results/etabs/zapatas/zapatas.json
+structurelab-rc design-footings examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
 ```
 
 `report` verifica el proyecto y escribe en la carpeta de salida `resultado.json` (todo el detalle, en kN, kN·m, mm
@@ -96,6 +97,13 @@ inferior y superior; el área, las inercias, los módulos, el núcleo central y 
 de ETABS se convierte en la acción sobre la zapata: P = FZ, Vx = −FX, Vy = −FY, Mx = −MX y My = −MY. Con los
 casos de servicio se verifican la presión admisible (pmax ≤ qa, presión bruta con los pesos propios) y el
 contacto mínimo (D-056); la verificación estructural aún no existe y queda `BLOCKED`. La plantilla de ejemplo usa datos supuestos.
+
+`design-footings` diseña zapatas por tipologías (D-069): a partir de columnas con sus casos de carga y un bloque
+`design` (número de tipologías, f'c comerciales con su precio por m³, precio del acero por kg, forma en planta y
+límites), encuentra las N zapatas tipo (f'c, dimensiones, mallas y pasadores por columna) de menor costo que cubren todas
+las columnas. Escribe `proyecto.json`, un proyecto de verificación normal que `report` verifica y documenta, y
+`tipologias.json` con el resumen. Con ETABS, `import-etabs-footings` y una plantilla que trae el bloque `design` generan
+el proyecto de diseño.
 
 ## Ejemplos y resultados
 

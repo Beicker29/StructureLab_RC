@@ -6,8 +6,9 @@ from pathlib import Path
 from pydantic import BaseModel, ValidationError
 
 from structurelab_rc.errors import StructuredError, invalid_input
+from structurelab_rc.model.design import FootingDesignProject
 from structurelab_rc.model.project import Project
-from structurelab_rc.model.template import EtabsFootingTemplate, EtabsTemplate
+from structurelab_rc.model.template import EtabsFootingDesignTemplate, EtabsFootingTemplate, EtabsTemplate
 
 
 class ProjectLoadError(Exception):
@@ -42,5 +43,16 @@ def load_template(path: Path) -> EtabsTemplate:
     return _load(path, EtabsTemplate, "la plantilla")
 
 
-def load_footing_template(path: Path) -> EtabsFootingTemplate:
-    return _load(path, EtabsFootingTemplate, "la plantilla de zapatas")
+def load_footing_template(path: Path) -> EtabsFootingTemplate | EtabsFootingDesignTemplate:
+    """Plantilla de verificación (tipos asignados a mano) o de diseño por tipologías (trae el bloque design, D-069)."""
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise ProjectLoadError((invalid_input(f"No se pudo leer la plantilla de zapatas: {error}", path=str(path)),)) from error
+    if isinstance(raw, dict) and "design" in raw:
+        return validate_input(raw, EtabsFootingDesignTemplate)
+    return validate_input(raw, EtabsFootingTemplate)
+
+
+def load_design_project(path: Path) -> FootingDesignProject:
+    return _load(path, FootingDesignProject, "el proyecto de diseño")
