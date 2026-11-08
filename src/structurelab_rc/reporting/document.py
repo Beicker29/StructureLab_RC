@@ -26,7 +26,7 @@ _CHAPTER_TITLES = {
     "flexure": "Revisión de capacidad a momento flector",
     "shear": "Revisión de capacidad a fuerza cortante",
     "torsion": "Revisión de capacidad a torsión",
-    "geotechnical": "Revisión geotécnica: presión del suelo y contacto",
+    "geotechnical": "Revisión geotécnica: presión, contacto y estabilidad",
     "one_way": "Revisión de cortante en una dirección",
     "punching": "Revisión de cortante en dos direcciones (punzonamiento)",
     "development": "Revisión de desarrollo y anclaje del refuerzo",
@@ -61,9 +61,11 @@ _FOOTING_CONVENTIONS = (
     "Verificación estructural con la carga neta de cada caso mayorado: flexión en las caras de la columna, cortante a d "
     "de la cara y punzonamiento a d/2 con transferencia de momento en los dos ejes (D-061, D-063).",
     "Desarrollo sin reducciones opcionales y refuerzo sin recubrimiento epóxico (D-065).",
+    "Deslizamiento (fricción, adherencia sobre el área en contacto y pasiva afectada por su factor) y volcamiento con los "
+    "casos de servicio y los factores de seguridad declarados por el usuario, sísmicos en los casos marcados (D-070).",
 )
 _FOOTING_LIMITATIONS = (
-    "Revisión geotécnica a deslizamiento y a volcamiento: falta implementación.",
+    "Empuje pasivo sobre el pedestal y deslizamiento con suelo bajo nivel freático: no cubiertos (D-070).",
     "Momento negativo sin malla superior (concreto simple): falta implementación (D-059).",
     "Aplastamiento del lado de la columna, empalme de los pasadores y tracción en la interfaz: se verificarán con las "
     "columnas (D-059).",
@@ -321,7 +323,16 @@ def _footing_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[
     soil_rows = [["Presión admisible bruta (qa)", number(soil["qa [kPa]"], "kPa"), "kPa"],
                  ["Fracción mínima de contacto", number(soil["contacto minimo [-]"], "–"), "–"],
                  ["Peso unitario del concreto (γc)", number(soil["gamma concreto [kN/m3]"], "kN/m³"), "kN/m³"],
-                 ["Peso unitario del relleno (γf)", number(soil["gamma relleno [kN/m3]"], "kN/m³"), "kN/m³"]]
+                 ["Peso unitario del relleno (γf)", number(soil["gamma relleno [kN/m3]"], "kN/m³"), "kN/m³"],
+                 ["Coeficiente de fricción suelo–zapata (μ)", number(soil["mu [-]"], "–"), "–"],
+                 ["Adherencia suelo–zapata (ca)", number(soil["ca [kPa]"], "kPa"), "kPa"],
+                 ["Coeficiente de empuje pasivo (Kp)", number(soil["Kp [-]"], "–"), "–"],
+                 ["Cohesión del suelo (c)", number(soil["c [kPa]"], "kPa"), "kPa"],
+                 ["Factor del empuje pasivo (fp)", number(soil["fp [-]"], "–"), "–"],
+                 ["FS mínimo al deslizamiento: sin sismo / con sismo",
+                  f"{number(soil['FS deslizamiento [-]'], '–')} / {number(soil['FS deslizamiento sismo [-]'], '–')}", "–"],
+                 ["FS mínimo al volcamiento: sin sismo / con sismo",
+                  f"{number(soil['FS volcamiento [-]'], '–')} / {number(soil['FS volcamiento sismo [-]'], '–')}", "–"]]
     properties = []
     for key, value in footing["properties"].items():
         name, unit = unit_of(key)
@@ -347,9 +358,9 @@ def _footing_demands(footing: dict[str, Any]) -> list[Block]:
         if not loads:
             blocks.append({"kind": "p", "text": "No aplica: ningún caso de este tipo."})
             continue
-        rows = [[load["case"], f"{load['dead_factor']:.2f}", f"{load['live_factor']:.2f}",
+        rows = [[load["case"], f"{load['dead_factor']:.2f}", f"{load['live_factor']:.2f}", "sí" if load["seismic"] else "no",
                  *(number(load[key], unit_of(key)[1]) for key in keys)] for load in loads]
-        headers = ["Caso", "Factor D", "Factor L", *(f"{unit_of(key)[0]} ({unit_of(key)[1]})" for key in keys)]
+        headers = ["Caso", "Factor D", "Factor L", "Sismo", *(f"{unit_of(key)[0]} ({unit_of(key)[1]})" for key in keys)]
         blocks.append({"kind": "table", "headers": headers, "rows": rows})
     return blocks
 

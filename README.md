@@ -89,8 +89,9 @@ se verifica después con `verify`.
 
 `import-etabs-footings` genera un proyecto de zapatas (v3, en curso) a partir de dos tablas "Joint Reactions" de
 ETABS, una con las combinaciones de servicio y otra con las mayoradas, y de una plantilla con el perfil, los
-materiales, el suelo (`allowable_pressure_kPa`, `min_contact_fraction` y los pesos unitarios en kN/m³), los
-factores de carga muerta y viva de cada combinación (`load_factors`) y los tipos de zapata, con sus sobrecargas
+materiales, el suelo (`allowable_pressure_kPa`, `min_contact_fraction`, los pesos unitarios en kN/m³ y los datos de
+deslizamiento y volcamiento, D-070), los factores de carga muerta y viva de cada combinación y si incluye sismo
+(`load_factors`) y los tipos de zapata, con sus sobrecargas
 superimpuestas en kN/m². Cada tipo lista sus nudos
 por Unique Name y declara solo dimensiones primarias (lx, ly, h, columna, relleno y pedestal) y las mallas
 inferior y superior; el área, las inercias, los módulos, el núcleo central y los pesos se calculan. La reacción

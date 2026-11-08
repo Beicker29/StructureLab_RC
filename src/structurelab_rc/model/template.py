@@ -80,10 +80,11 @@ class TemplateFooting(_Input):
 
 
 class LoadFactors(_Input):
-    """Factores de carga muerta y viva de una combinación de ETABS (D-054, D-057)."""
+    """Factores de carga muerta y viva de una combinación de ETABS (D-054, D-057) y si incluye sismo (D-070)."""
 
     dead: NonNegativeFloat
     live: NonNegativeFloat
+    seismic: bool = False
 
 
 class EtabsFootingTemplate(_Input):

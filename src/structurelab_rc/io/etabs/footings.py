@@ -50,7 +50,7 @@ def _rows_by_joint(table: Table) -> tuple[dict[str, list[dict[str, str]]], int]:
 
 def _load(row: dict[str, str], kind: str, factors: LoadFactors) -> dict[str, Any]:
     return {"case": case_label(row), "kind": kind, "dead_factor": factors.dead, "live_factor": factors.live,
-            "P_kN": float(row["FZ"]), "Vx_kN": -float(row["FX"]), "Vy_kN": -float(row["FY"]),
+            "seismic": factors.seismic, "P_kN": float(row["FZ"]), "Vx_kN": -float(row["FX"]), "Vy_kN": -float(row["FY"]),
             "Mx_kNm": -float(row["MX"]), "My_kNm": -float(row["MY"])}
 
 

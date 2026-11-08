@@ -22,7 +22,8 @@ _VALUE_UNITS = {"Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi T
                 "c": "mm", "d": "mm", "theta": "deg", "Aoh": "mm2", "ph": "mm", "across": "mm", "across_max": "mm",
                 "N": "N", "Mx base": "N*mm", "My base": "N*mm", "ex": "mm", "ey": "mm", "As": "mm2", "Vu": "N",
                 "b0": "mm", "vuv": "MPa", "bslab": "mm", "A1": "mm2", "A2": "mm2", "Av/s": "mm2/mm", "At/s": "mm2/mm",
-                "At/s rama exterior": "mm2/mm"}
+                "At/s rama exterior": "mm2/mm", "mu N": "N", "ca Ac": "N", "Pp x": "N", "Pp y": "N", "V": "N", "R": "N",
+                "Mo": "N*mm", "Mr": "N*mm"}
 
 
 def significant(value: float) -> float:
@@ -118,8 +119,8 @@ def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str,
 
 def _load_data(load: FootingLoad) -> dict[str, Any]:
     return {"case": load.case, "kind": load.kind, "dead_factor": load.dead_factor, "live_factor": load.live_factor,
-            "P [kN]": significant(kN(load.p)), "Vx [kN]": significant(kN(load.vx)), "Vy [kN]": significant(kN(load.vy)),
-            "Mx [kN-m]": significant(kNm(load.mx)), "My [kN-m]": significant(kNm(load.my))}
+            "seismic": load.seismic, "P [kN]": significant(kN(load.p)), "Vx [kN]": significant(kN(load.vx)),
+            "Vy [kN]": significant(kN(load.vy)), "Mx [kN-m]": significant(kNm(load.mx)), "My [kN-m]": significant(kNm(load.my))}
 
 
 def _demands_data(demands: Demands) -> dict[str, float | None]:
@@ -187,7 +188,13 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
         results["soil"] = {"qa [kPa]": significant(soil.allowable_pressure / MPA_PER_KPA),
                            "contacto minimo [-]": soil.min_contact_fraction,
                            "gamma concreto [kN/m3]": significant(soil.unit_weight_concrete / N_MM3_PER_KN_M3),
-                           "gamma relleno [kN/m3]": significant(soil.unit_weight_fill / N_MM3_PER_KN_M3)}
+                           "gamma relleno [kN/m3]": significant(soil.unit_weight_fill / N_MM3_PER_KN_M3),
+                           "mu [-]": soil.friction_coefficient, "ca [kPa]": significant(soil.adhesion / MPA_PER_KPA),
+                           "Kp [-]": soil.passive_coefficient, "c [kPa]": significant(soil.cohesion / MPA_PER_KPA),
+                           "fp [-]": soil.passive_factor, "FS deslizamiento [-]": soil.sliding_safety_factor,
+                           "FS deslizamiento sismo [-]": soil.sliding_safety_factor_seismic,
+                           "FS volcamiento [-]": soil.overturning_safety_factor,
+                           "FS volcamiento sismo [-]": soil.overturning_safety_factor_seismic}
         results["footings"] = [footing_data(footing, soil, [check for check in station_checks if check.member == footing.id])
                                for footing in project.footings]
     return results

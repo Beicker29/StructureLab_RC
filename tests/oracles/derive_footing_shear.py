@@ -239,7 +239,11 @@ def main() -> None:
         data = {"description": "Cortante en una dirección y punzonamiento de zapatas con casos mayorados (D-059, D-063).",
                 "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight"},
                 "soil": {"allowable_pressure_kPa": 250.0, "min_contact_fraction": 0.5, "unit_weight_concrete_kNm3": 24.0,
-                         "unit_weight_fill_kNm3": 18.0},
+                         "unit_weight_fill_kNm3": 18.0,
+                         "friction_coefficient": 0.45, "adhesion_kPa": 0.0, "passive_coefficient": 3.0,
+                         "cohesion_kPa": 0.0, "passive_factor": 0.5, "sliding_safety_factor": 1.5,
+                         "sliding_safety_factor_seismic": 1.1, "overturning_safety_factor": 2.0,
+                         "overturning_safety_factor_seismic": 1.5},
                 "clauses": clauses, "tolerance_rel": 1e-6, "cases": cases}
         (HERE / folder / "derived_footing_shear.json").write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
                                                                   encoding="utf-8")

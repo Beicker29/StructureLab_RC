@@ -33,7 +33,7 @@ de una misma capa que no pueden hacerlo.
 | `design/<elemento>` | Produce armados. `design/footing/` diseña zapatas por tipologías: propone y aprueba con la verificación de `domain/footing` (D-069). |
 | `detailing`, `drawing` | Neutros: usan límites ya calculados por el perfil; sin fórmulas normativas. |
 | `codes/<perfil>` | Fórmulas y constantes como funciones puras con el nombre de su ecuación o numeral. |
-| `mechanics` | Equilibrio y compatibilidad de una sección poligonal con eje neutro de cualquier inclinación (`section.py`); `flexure.py` describe la flexión uniaxial por franjas sobre el mismo motor. `soil_pressure.py` da la presión lineal del suelo bajo una zapata rígida (Bellos y Bakas 2017, D-053), `polygon.py` el recorte y las integrales exactas que ambos usan y `perimeter.py` el perímetro crítico del cortante en dos direcciones. No conoce φ ni numerales. |
+| `mechanics` | Equilibrio y compatibilidad de una sección poligonal con eje neutro de cualquier inclinación (`section.py`); `flexure.py` describe la flexión uniaxial por franjas sobre el mismo motor. `soil_pressure.py` da la presión lineal del suelo bajo una zapata rígida (Bellos y Bakas 2017, D-053), `polygon.py` el recorte y las integrales exactas que ambos usan, `perimeter.py` el perímetro crítico del cortante en dos direcciones y `earth_pressure.py` el empuje pasivo de Rankine con Kp dado. No conoce φ ni numerales. |
 | `model` | Datos del proyecto y `ReinforcementLayout`; `footing.py` describe la zapata y calcula sus propiedades derivadas (área, inercias, módulos, núcleo central y pesos). Convierte unidades al cargar. |
 | `errors` | Errores estructurados con código estable. |
 | `data` | Tablas CSV o TOML, sin código. |
@@ -89,7 +89,8 @@ Pu < 0.10 f'c·Ag) y reúne las verificaciones de flexión y cortante:
 
 En zapatas (v3), `domain/footing/base.py` traslada las fuerzas de la columna y los pesos propios al centroide de
 la base, y `domain/footing/service.py` pide a `mechanics/soil_pressure.py` la presión con cada caso de servicio y
-arma las verificaciones de presión admisible y contacto. `domain/footing/loads.py` calcula una vez la carga neta de
+arma las verificaciones de presión admisible y contacto, y `domain/footing/stability.py` las de deslizamiento y
+volcamiento (D-070). `domain/footing/loads.py` calcula una vez la carga neta de
 cada caso mayorado; con ella, `domain/footing/flexure.py` arma la flexión (resistencia de `domain/flexure_strength.py`)
 y `domain/footing/shear.py` el cortante en una dirección y el punzonamiento (`domain/shear_strength.py`), y
 `domain/footing/connection.py` el desarrollo de las mallas, el aplastamiento y los pasadores (`domain/development.py`),

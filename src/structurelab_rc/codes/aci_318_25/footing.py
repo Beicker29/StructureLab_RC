@@ -13,6 +13,7 @@ _DOWEL_RATIO = 0.005
 def clauses() -> dict[str, str]:
     return {
         "bearing": "13.3.1.1",
+        "stability": "13.2.6.1",
         "strength": "13.2.6.6 y 13.2.7.1",
         "net_tensile_strain": "8.3.3.1",
         "min_reinforcement": "8.6.1.1",

@@ -21,14 +21,29 @@ class _Input(BaseModel):
 
 
 class Soil(_Input):
-    """Datos del suelo y de los pesos propios; todos obligatorios (D-052, puntos 3 y 5)."""
+    """Datos del suelo y de los pesos propios; obligatorios salvo passive_factor (D-052, puntos 3 y 5; D-070).
+
+    Estabilidad (D-070): friction_coefficient es μ en la interfaz suelo–zapata y adhesion la adherencia c_a sobre el
+    área en contacto; passive_coefficient (Kp) y cohesion (c) dan el empuje pasivo sobre el espesor de la zapata, que
+    se suma afectado por passive_factor. Los factores de seguridad mínimos al deslizamiento y al volcamiento tienen un
+    valor para los casos sin sismo y otro para los marcados seismic.
+    """
 
     allowable_pressure: PositiveFloat = Field(validation_alias="allowable_pressure_kPa")
     min_contact_fraction: float = Field(gt=0, le=1)
     unit_weight_concrete: PositiveFloat = Field(validation_alias="unit_weight_concrete_kNm3")
     unit_weight_fill: NonNegativeFloat = Field(validation_alias="unit_weight_fill_kNm3")
+    friction_coefficient: NonNegativeFloat
+    adhesion: NonNegativeFloat = Field(validation_alias="adhesion_kPa")
+    passive_coefficient: NonNegativeFloat
+    cohesion: NonNegativeFloat = Field(validation_alias="cohesion_kPa")
+    passive_factor: float = Field(default=0.5, ge=0, le=1)
+    sliding_safety_factor: PositiveFloat
+    sliding_safety_factor_seismic: PositiveFloat
+    overturning_safety_factor: PositiveFloat
+    overturning_safety_factor_seismic: PositiveFloat
 
-    @field_validator("allowable_pressure")
+    @field_validator("allowable_pressure", "adhesion", "cohesion")
     @classmethod
     def _kpa_to_mpa(cls, value: float) -> float:
         return value * MPA_PER_KPA
@@ -90,13 +105,15 @@ class FootingLoad(_Input):
     P positiva en compresión contra el suelo; Vx y Vy son las fuerzas horizontales y Mx, My los momentos con la regla
     de la mano derecha. kind distingue los casos de servicio de los mayorados. Cada caso declara los factores de su
     combinación: dead_factor multiplica el peso de la zapata, el pedestal y el relleno y la sobrecarga muerta;
-    live_factor, la sobrecarga viva (D-054, D-057).
+    live_factor, la sobrecarga viva (D-054, D-057). seismic marca los casos con sismo, que se revisan a deslizamiento
+    y volcamiento con los factores de seguridad sísmicos (D-070).
     """
 
     case: str = Field(min_length=1)
     kind: Literal["service", "factored"]
     dead_factor: NonNegativeFloat
     live_factor: NonNegativeFloat
+    seismic: bool = False
     p: float = Field(validation_alias="P_kN")
     vx: float = Field(validation_alias="Vx_kN")
     vy: float = Field(validation_alias="Vy_kN")

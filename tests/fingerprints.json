@@ -8,13 +8,13 @@
     "memoria.txt": "47e7b7aa9fb75536599f9d62c756522d61ae06a19db364c886a4f96c4371e481"
   },
   "examples/aci_318_25/zapatas/diseno_tipologias.json": {
-    "proyecto.json": "e9dcd252da57d780b742014bdbc0c1678d8c6d1fd6762a77a7aeea2c849c4969",
-    "resultado.json": "28ff9fdec7628c842fb3c5095288c7a8c598aae4d6c78d0fa7e31c4a5711391c",
-    "memoria.txt": "37b229a55b8c3bc1002fde73214970e717a68b603ce179308bb860f83d7830e2"
+    "proyecto.json": "1ce11820ec94946fd5005401d0554a73d09bb539dc2a7fa576a57d7d78459e18",
+    "resultado.json": "199f2b21af5fb110bc25c2bf17a72889015931c5d3b4d65c42046c225c2f8a50",
+    "memoria.txt": "1585a3c757a9dac3f45fdbb1112f116971945cfa8f737e665b56bdc20fd1e1dc"
   },
   "examples/aci_318_25/zapatas/zapata_aislada.json": {
-    "resultado.json": "d3bcf6b401141ca50bab7220f6860187c771c222a661d82db95fa45e7dcb2568",
-    "memoria.txt": "7ba8a75eb51dfea0f8df356dcf7ff0f4d9581cbf420829894c2578decebdd8ac"
+    "resultado.json": "728800ff8e552c4a557f75f8b8c69dbdd6125b0563942f76b08136fb9afd3c6b",
+    "memoria.txt": "bbb6cb5a06f212bd71781bffe9f3db0a31750839eff4bb9fce80e158f0314d66"
   },
   "examples/etabs/vigas/plantilla_vigas_nsr10.json": {
     "resultado.json": "32595488ae7d6e3dc18f6e08a78c81ebb7200d4e5f41a36c5ae464d57ac6156c",
@@ -29,12 +29,12 @@
     "memoria.txt": "f430df408d601cd4894d40789f4ff0bc2018cfcdc52d65bed7c74f959f4dd969"
   },
   "examples/nsr_10/zapatas/diseno_tipologias.json": {
-    "proyecto.json": "5e15cd435b08ce556e8b40b00260a374945018ddde4fca21081ee34abee4dbdf",
-    "resultado.json": "89f6e64c8d8ffc54bd93f2f99a521221beb5fe60dfccdb69187556490d9ecc1d",
-    "memoria.txt": "b7da03e270457c71267daf4f245ce8ecc32584eb15010d87c62eb5c419b983d8"
+    "proyecto.json": "e9e1f426ba2f4fb62bd2107fdecff66afd55017cffef175be78224cc36bbc3f7",
+    "resultado.json": "96f651ce0940a5f8c8ea43a188b40b3d7fac3fedd970025a1effab17d5094769",
+    "memoria.txt": "edbfd15039c16bb7088d2254def63d601ecc7e167d91f242fd135a42164af1a2"
   },
   "examples/nsr_10/zapatas/zapata_aislada.json": {
-    "resultado.json": "e770c806f8d6a85fd4bb3c89d1b4db3da61887f25c12ba2b022e76f17b915dd0",
-    "memoria.txt": "9dc50bbc8db8bc60b2db464ada24984854204f1143db161f88955a891aecd732"
+    "resultado.json": "f9c2f29c61352141b5c68860c6380da1b4660151abeab0f29813ed2d6b3e4aef",
+    "memoria.txt": "8151eab97733300c9c084b90cfe438d202224566dea6b32f7460386c1f523e42"
   }
 }

@@ -1,0 +1,667 @@
+{
+  "description": "Deslizamiento y volcamiento de zapatas con casos de servicio (D-070). Resultante y contacto de derive_footing_service.py; pasiva integrada como diagrama trapezoidal.",
+  "soil": {
+    "allowable_pressure_kPa": 400.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.5,
+    "adhesion_kPa": 20.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 10.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5
+  },
+  "stability_clause": "13.2.6.1",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "sin-cortante",
+      "description": "sin fuerza horizontal: el deslizamiento no tiene demanda",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 800.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 941.12,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "eje X",
+          "eje Y"
+        ],
+        "V_kN": 0.0,
+        "R_kN": 617.6305080756887,
+        "sliding_demand_kN": 0.0,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje X",
+          "eje Y"
+        ],
+        "Mo_kNm": 0.0,
+        "Mr_kNm": 1129.344,
+        "overturning_demand_kNm": 0.0,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "cortante-x",
+      "description": "Vx solo: la resultante coincide con el eje X",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 600.0,
+        "Vx_kN": 180.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 741.12,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "la resultante",
+          "eje X"
+        ],
+        "V_kN": 180.0,
+        "R_kN": 517.6305080756888,
+        "sliding_demand_kN": 270.0,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje X"
+        ],
+        "Mo_kNm": 90.0,
+        "Mr_kNm": 889.3439999999999,
+        "overturning_demand_kNm": 180.0,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "cortante-y-pedestal",
+      "description": "Vy solo con pedestal: el cortante por h + hp genera momento en X",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 800.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 600.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 150.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 744.192,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "la resultante",
+          "eje Y"
+        ],
+        "V_kN": 150.0,
+        "R_kN": 529.3806096908265,
+        "sliding_demand_kN": 225.0,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje Y"
+        ],
+        "Mo_kNm": 195.0,
+        "Mr_kNm": 744.192,
+        "overturning_demand_kNm": 390.0,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "biaxial",
+      "description": "cortante en los dos ejes y momentos",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 500.0,
+        "Vx_kN": 200.0,
+        "Vy_kN": 200.0,
+        "Mx_kNm": -30.0,
+        "My_kNm": 40.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 641.12,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "la resultante"
+        ],
+        "V_kN": 282.842712474619,
+        "R_kN": 495.1155784503842,
+        "sliding_demand_kN": 424.26406871192853,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje Y"
+        ],
+        "Mo_kNm": 130.0,
+        "Mr_kNm": 641.12,
+        "overturning_demand_kNm": 260.0,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "biaxial-alargada",
+      "description": "zapata alargada en X con cortante desbalanceado: la cara de ancho ly resiste poco",
+      "footing": {
+        "lx": 4000.0,
+        "ly": 1200.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": true,
+        "P_kN": 250.0,
+        "Vx_kN": 260.0,
+        "Vy_kN": 20.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 391.12,
+        "Pp_x_kN": 61.28460969082652,
+        "Pp_y_kN": 204.28203230275508,
+        "sliding_governing": [
+          "eje X"
+        ],
+        "V_kN": 260.0,
+        "R_kN": 322.20230484541327,
+        "sliding_demand_kN": 286.0,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje X"
+        ],
+        "Mo_kNm": 130.0,
+        "Mr_kNm": 782.24,
+        "overturning_demand_kNm": 195.0,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "contacto-parcial",
+      "description": "momento grande: la adherencia actúa solo sobre el área en contacto",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 600.0,
+        "Vx_kN": 120.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 380.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 741.12,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "la resultante",
+          "eje X"
+        ],
+        "V_kN": 120.0,
+        "R_kN": 494.3869847596266,
+        "sliding_demand_kN": 180.0,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje X"
+        ],
+        "Mo_kNm": 440.0,
+        "Mr_kNm": 889.3439999999999,
+        "overturning_demand_kNm": 880.0,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "cohesion-y-sobrecargas",
+      "description": "relleno alto, sobrecargas y combinación sin viva",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1800.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 3.0,
+        "surcharge_live_kNm2": 8.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 0.0,
+        "seismic": false,
+        "P_kN": 400.0,
+        "Vx_kN": 230.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 621.856,
+        "Pp_x_kN": 145.34101615137752,
+        "Pp_y_kN": 174.409219381653,
+        "sliding_governing": [
+          "la resultante",
+          "eje X"
+        ],
+        "V_kN": 230.0,
+        "R_kN": 479.59850807568876,
+        "sliding_demand_kN": 345.0,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje X"
+        ],
+        "Mo_kNm": 115.0,
+        "Mr_kNm": 746.2271999999999,
+        "overturning_demand_kNm": 230.0,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "sismo-cumple",
+      "description": "con el factor sísmico cumple",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": true,
+        "P_kN": 300.0,
+        "Vx_kN": 330.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 441.12,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "la resultante",
+          "eje X"
+        ],
+        "V_kN": 330.0,
+        "R_kN": 367.6305080756888,
+        "sliding_demand_kN": 363.00000000000006,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje X"
+        ],
+        "Mo_kNm": 165.0,
+        "Mr_kNm": 529.3439999999999,
+        "overturning_demand_kNm": 247.5,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "sin-sismo-falla",
+      "description": "las mismas fuerzas sin marca de sismo no cumplen",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 300.0,
+        "Vx_kN": 330.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 441.12,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "la resultante",
+          "eje X"
+        ],
+        "V_kN": 330.0,
+        "R_kN": 367.6305080756888,
+        "sliding_demand_kN": 495.0,
+        "sliding": "FAIL",
+        "overturning_governing": [
+          "eje X"
+        ],
+        "Mo_kNm": 165.0,
+        "Mr_kNm": 529.3439999999999,
+        "overturning_demand_kNm": 330.0,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "volcamiento-falla",
+      "description": "excentricidad mayor que L/4: no cumple el volcamiento",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 500.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 420.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 641.12,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "eje X",
+          "eje Y"
+        ],
+        "V_kN": 0.0,
+        "R_kN": 437.01807982512724,
+        "sliding_demand_kN": 0.0,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje X"
+        ],
+        "Mo_kNm": 420.0,
+        "Mr_kNm": 769.3439999999999,
+        "overturning_demand_kNm": 840.0,
+        "overturning": "FAIL"
+      }
+    },
+    {
+      "id": "volcamiento-y-sismo",
+      "description": "momento en X con sismo: gobierna el eje Y",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": true,
+        "P_kN": 500.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": -300.0,
+        "My_kNm": 60.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 641.12,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "eje X",
+          "eje Y"
+        ],
+        "V_kN": 0.0,
+        "R_kN": 447.552577010313,
+        "sliding_demand_kN": 0.0,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje Y"
+        ],
+        "Mo_kNm": 300.0,
+        "Mr_kNm": 641.12,
+        "overturning_demand_kNm": 450.0,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "desplazada",
+      "description": "columna desplazada con pedestal: el peso del pedestal y P cambian el momento en la base",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 600.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 500.0,
+          "cy": 400.0,
+          "offset_x": 400.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 700.0,
+        "Vx_kN": -90.0,
+        "Vy_kN": 40.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "equilibrium": true,
+        "N_kN": 843.28,
+        "Pp_x_kN": 102.14101615137754,
+        "Pp_y_kN": 122.56921938165304,
+        "sliding_governing": [
+          "la resultante"
+        ],
+        "V_kN": 98.48857801796105,
+        "R_kN": 589.198857445985,
+        "sliding_demand_kN": 147.73286702694156,
+        "sliding": "PASS",
+        "overturning_governing": [
+          "eje X"
+        ],
+        "Mo_kNm": 180.712,
+        "Mr_kNm": 1011.9359999999999,
+        "overturning_demand_kNm": 361.424,
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "traccion",
+      "description": "carga de tracción: sin equilibrio, ambas fallan",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": -400.0,
+        "Vx_kN": 50.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": 0.0,
+        "My_kNm": 0.0
+      },
+      "expected": {
+        "equilibrium": false,
+        "sliding": "FAIL",
+        "overturning": "FAIL"
+      }
+    }
+  ]
+}

@@ -29,14 +29,21 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 | `soil` | objeto | Datos del suelo y de los pesos propios (abajo). Obligatorio con zapatas. |
 | `footings` | lista | Zapatas del proyecto. |
 
-### Suelo (`soil`); todos los campos son obligatorios
+### Suelo (`soil`); todos los campos son obligatorios salvo `passive_factor`
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `allowable_pressure_kPa` | kPa | Presión admisible **bruta** del suelo, qa. Se compara con la presión que incluye los pesos propios y las sobrecargas. |
 | `min_contact_fraction` | - | Fracción mínima de la base que debe quedar en contacto con el suelo en los casos de servicio (0 a 1). |
 | `unit_weight_concrete_kNm3` | kN/m³ | Peso unitario del concreto de la zapata y del pedestal. |
-| `unit_weight_fill_kNm3` | kN/m³ | Peso unitario del relleno sobre la zapata. |
+| `unit_weight_fill_kNm3` | kN/m³ | Peso unitario del relleno sobre la zapata; también el del suelo para el empuje pasivo. |
+| `friction_coefficient` | - | Coeficiente de fricción μ en la interfaz suelo–zapata (D-070). |
+| `adhesion_kPa` | kPa | Adherencia c_a suelo–zapata; actúa solo sobre el área en contacto (puede ser 0). |
+| `passive_coefficient` | - | Coeficiente de empuje pasivo Kp, dato del estudio de suelos. |
+| `cohesion_kPa` | kPa | Cohesión c del suelo para el empuje pasivo (2c·√Kp; puede ser 0). |
+| `passive_factor` | - | Factor que afecta el empuje pasivo al sumarlo a la fricción (0 a 1; por defecto 0.5). |
+| `sliding_safety_factor`, `sliding_safety_factor_seismic` | - | Factores de seguridad mínimos al deslizamiento, sin sismo y con sismo. |
+| `overturning_safety_factor`, `overturning_safety_factor_seismic` | - | Factores de seguridad mínimos al volcamiento, sin sismo y con sismo. |
 
 ### Zapata (`footings[]`)
 
@@ -77,6 +84,7 @@ El relleno y las sobrecargas ocupan el área de la base menos la de la columna.
 | `kind` | texto | `service` o `factored`. |
 | `dead_factor` | - | Factor de carga muerta de la combinación; multiplica el peso de la zapata, del pedestal y del relleno y la sobrecarga muerta. |
 | `live_factor` | - | Factor de carga viva de la combinación; multiplica la sobrecarga viva (0 si la combinación no tiene viva). |
+| `seismic` | sí/no | Opcional (por defecto `false`): la combinación incluye sismo; el deslizamiento y el volcamiento usan los factores de seguridad sísmicos (D-070). |
 | `P_kN`, `Vx_kN`, `Vy_kN` | kN | Fuerzas de la columna sobre la zapata. |
 | `Mx_kNm`, `My_kNm` | kN·m | Momentos de la columna sobre la zapata. |
 
@@ -145,6 +153,8 @@ H = h + altura del pedestal. Las excentricidades son ex = My base/N y ey = −Mx
 | --- | --- | --- |
 | Presión admisible del suelo | Presión máxima bruta frente a qa (kPa). La nota indica la región de contacto: C total, B pentagonal, D o E trapezoidal, A triangular. | ACI 13.3.1.1; NSR-10 C.15.2.2 |
 | Contacto con el suelo | Fracción mínima exigida (`demand`) frente a la fracción de la base en contacto (`capacity`); cumple con razón ≤ 1. | D-052 |
+| Deslizamiento | FS·V (`demand`) frente a R = μ·N + c_a·A_contacto + f_p·P_p (`capacity`), en la dirección de la resultante del cortante y en cada eje; gobierna la mayor razón y la nota dice cuál. Valores: N, contacto, μ·N, c_a·A_c, P_p en X y en Y, V, R, FS mínimo y FS obtenido. La pasiva actúa sobre el espesor h, con la sobrecarga del relleno. | ACI 13.2.6.1; NSR-10 remite al Título H (D-070) |
+| Volcamiento | FS·Mo (`demand`) frente a Mr = N·L/2 (`capacity`) alrededor del borde de cada eje; Mo es el momento en la base, que incluye el cortante por h + pedestal. La pasiva no se cuenta. | ACI 13.2.6.1; NSR-10 remite al Título H (D-070) |
 | Zapata: equilibrio con cargas mayoradas | FAIL si un caso mayorado no tiene equilibrio con el suelo (D-054). | D-054 |
 | Flexión malla inferior / superior (barras x o y) | Por caso mayorado: el mayor momento de la carga neta en las caras de la columna frente a φMn de la franja de ancho total. La superior solo aparece si hay momento negativo; sin malla superior sale `BLOCKED` (concreto simple, D-059). | ACI 13.2.6.6 y 13.2.7.1; NSR-10 C.15.4.1 y C.15.4.2 |
 | Deformación neta de tracción malla … | εt de la malla frente a la mínima del perfil. | ACI 8.3.3.1; NSR-10 C.10.3.5 |

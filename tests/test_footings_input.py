@@ -26,7 +26,11 @@ TEMPLATE = EXAMPLES / "plantilla_zapatas_nsr10.json"
 HEADERS = ("Story", "Label", "Unique Name", "Output Case", "Case Type", "Step Type", "FX", "FY", "FZ", "MX", "MY", "MZ")
 UNITS = {"FX": "kN", "FY": "kN", "FZ": "kN", "MX": "kN-m", "MY": "kN-m", "MZ": "kN-m"}
 SOIL = {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.6, "unit_weight_concrete_kNm3": 24.0,
-        "unit_weight_fill_kNm3": 18.0}
+        "unit_weight_fill_kNm3": 18.0,
+        "friction_coefficient": 0.45, "adhesion_kPa": 0.0, "passive_coefficient": 3.0,
+        "cohesion_kPa": 0.0, "passive_factor": 0.5, "sliding_safety_factor": 1.5,
+        "sliding_safety_factor_seismic": 1.1, "overturning_safety_factor": 2.0,
+        "overturning_safety_factor_seismic": 1.5}
 MAT = {"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 150.0}, "y": {"designation": "#5", "spacing": 200.0}}
 
 
@@ -153,7 +157,7 @@ def test_reactions_become_actions_on_the_footing() -> None:
     footing = project["footings"][0]
     assert footing["id"] == "Z1-7"
     loads = {load["case"]: load for load in footing["loads"]}
-    assert loads["S1"] == {"case": "S1", "kind": "service", "dead_factor": 1.0, "live_factor": 1.0, "P_kN": 500.0,
+    assert loads["S1"] == {"case": "S1", "kind": "service", "dead_factor": 1.0, "live_factor": 1.0, "seismic": False, "P_kN": 500.0,
                            "Vx_kN": -10.0, "Vy_kN": 20.0, "Mx_kNm": -30.0, "My_kNm": 40.0}
     assert (loads["U1 (Max)"]["dead_factor"], loads["U1 (Max)"]["live_factor"]) == (1.2, 1.6)
     assert footing["surcharge_live_kNm2"] == 5.0

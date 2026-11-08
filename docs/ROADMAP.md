@@ -76,8 +76,11 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
   vigas y zapatas, en texto y PDF; huella de zapatas.
 - **V3F Diseño por tipologías (hecha, D-069):** N zapatas tipo para todas las columnas, f'c comercial, planta, espesor,
   mallas y pasadores al menor costo; cada solución verificada con V3C y V3D.
+- **V3G Estabilidad (hecha, D-070):** deslizamiento (fricción, adherencia sobre el área en contacto y pasiva afectada
+  por su factor, en la dirección de la resultante y en cada eje) y volcamiento alrededor de cada borde, con los casos de
+  servicio y los factores de seguridad declarados, sísmicos en los casos marcados; incluidos en el diseño por tipologías.
 
 Pendientes de la v3: reducciones opcionales del desarrollo (As requerido/As suministrado, factores de gancho por
-recubrimiento y confinamiento) y refuerzo con recubrimiento epóxico (D-065), revisión geotécnica a deslizamiento y a volcamiento (complementan la de capacidad de soporte de
-V3C; ACI 13.2.6.1 y NSR-10 C.15.2 remiten al reglamento general), diseño en concreto simple (momento negativo sin malla superior, D-059), zapatas combinadas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas
+recubrimiento y confinamiento) y refuerzo con recubrimiento epóxico (D-065), empuje pasivo sobre el pedestal y suelo bajo nivel freático en la
+estabilidad (D-070), diseño en concreto simple (momento negativo sin malla superior, D-059), zapatas combinadas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas
 escalonadas, zapatas rotadas, pedestal de sección distinta a la columna y muros (D-052, D-055).

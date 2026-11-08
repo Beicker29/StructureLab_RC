@@ -101,11 +101,11 @@ def test_footing_memoir_has_its_fixed_chapters(tmp_path: Path) -> None:
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     results = json.loads((tmp_path / "resultado.json").read_text(encoding="utf-8"))
     assert text.count("# Memoria de cálculo — Zapata ") == len(results["footings"]) == 2
-    for chapter in ("4. Revisión geotécnica: presión del suelo y contacto", "8. Revisión de cortante en dos direcciones",
+    for chapter in ("4. Revisión geotécnica: presión, contacto y estabilidad", "8. Revisión de cortante en dos direcciones",
                     "10. Revisión de aplastamiento y pasadores", "11. Índices DCR", "12. Notas y limitaciones"):
         assert f"## {chapter}" in text
     assert "Área de la base (A)" in text
-    assert "Revisión geotécnica a deslizamiento y a volcamiento: falta implementación." in text
+    assert "Empuje pasivo sobre el pedestal y deslizamiento con suelo bajo nivel freático: no cubiertos (D-070)." in text
     assert all("case" in check for check in results["footings"][0]["checks"])
 
 

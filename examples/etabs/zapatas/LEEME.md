@@ -11,6 +11,9 @@ Las columnas que se leen de ETABS, la conversión de signos y los campos de la p
 | `plantilla_diseno_zapatas_nsr10.json` | Plantilla de diseño por tipologías (D-069): bloque `design` con 4 tipologías y la sección de las columnas. **Datos supuestos.** |
 | `plantilla_zapatas_nsr10.json` | Plantilla con lo que ETABS no exporta. **Sus dimensiones, columnas, mallas, suelo, relleno y sobrecargas son datos supuestos** para probar la importación. |
 
+En las dos plantillas, las combinaciones con sismo (EX, EY) van marcadas `"seismic": true` en `load_factors`, y el suelo trae los
+datos supuestos de deslizamiento y volcamiento (D-070).
+
 ## Cómo correrlo
 
 ```console

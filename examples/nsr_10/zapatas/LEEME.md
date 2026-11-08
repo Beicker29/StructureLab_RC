@@ -30,3 +30,4 @@ structurelab-rc report results/nsr_10/zapatas/diseno_tipologias/proyecto.json --
 
 - `profile`: `nsr-10`; `seismic.level`: `DMI`, `DMO` o `DES`.
 - Presión admisible: numeral C.15.2.2. El contacto mínimo es un criterio del proyecto (D-052).
+- Deslizamiento y volcamiento: NSR-10 remite al Título H; los datos del suelo y los factores de seguridad son del usuario (D-070). En estos ejemplos son **datos supuestos** (μ = 0.45, c_a = 0, Kp = 3.0, c = 0, f_p = 0.5; FS 1.5/1.1 al deslizamiento y 2.0/1.5 al volcamiento) y las combinaciones con E van marcadas `seismic`.

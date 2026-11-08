@@ -2,13 +2,14 @@
 
 La presión bajo la zapata rígida sigue a Bellos y Bakas (2017) con la resultante de la columna, los pesos propios y las
 sobrecargas, con los factores de la combinación de servicio (D-057). Se compara la presión máxima con la admisible y
-la fracción de la base en contacto con el mínimo que declara el usuario; sin equilibrio (resultante fuera de la base
-o sin compresión) el caso es FAIL.
+la fracción de la base en contacto con el mínimo que declara el usuario, y se revisan el deslizamiento y el volcamiento
+(D-070, `stability`); sin equilibrio (resultante fuera de la base o sin compresión) el caso es FAIL.
 """
 
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import base_resultant
+from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING, overturning_check, sliding_check
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete, invalid_input
 from structurelab_rc.mechanics.materials import NoEquilibrium
@@ -25,6 +26,7 @@ def _case_checks(profile: Profile, footing: Footing, soil: Soil, load: FootingLo
     resultant = base_resultant(footing, soil, load)
     values: tuple[tuple[str, float], ...] = (("N", resultant.n), ("Mx base", resultant.mx), ("My base", resultant.my))
     bearing_clause = profile.footing.clauses()["bearing"]
+    stability_clause = profile.footing.clauses()["stability"]
     ex, ey = resultant.ex, resultant.ey
     try:
         if ex is None or ey is None:
@@ -35,6 +37,8 @@ def _case_checks(profile: Profile, footing: Footing, soil: Soil, load: FootingLo
         return [
             Check(BEARING, Status.FAIL, (failure,), bearing_clause, values=values, member=footing.id, case=load.case),
             Check(CONTACT, Status.FAIL, (failure,), CONTACT_CLAUSE, values=values, member=footing.id, case=load.case),
+            Check(SLIDING, Status.FAIL, (failure,), stability_clause, values=values, member=footing.id, case=load.case),
+            Check(OVERTURNING, Status.FAIL, (failure,), stability_clause, values=values, member=footing.id, case=load.case),
         ]
     values += (("ex", ex), ("ey", ey))
     fraction = pressure.contact_fraction()
@@ -47,6 +51,8 @@ def _case_checks(profile: Profile, footing: Footing, soil: Soil, load: FootingLo
         # La razón es el mínimo exigido sobre la fracción en contacto: cumple con razón ≤ 1.
         Check(CONTACT, Status.PASS if contact_ok else Status.FAIL, clause=CONTACT_CLAUSE, demand=soil.min_contact_fraction,
               capacity=fraction, values=(*values, ("contacto", fraction)), note=region, member=footing.id, case=load.case),
+        sliding_check(stability_clause, footing, soil, load, fraction),
+        overturning_check(stability_clause, footing, soil, load),
     ]
 
 

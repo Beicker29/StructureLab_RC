@@ -205,12 +205,18 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
 
 def _load_input(load: FootingLoad) -> dict[str, Any]:
     return {"case": load.case, "kind": load.kind, "dead_factor": load.dead_factor, "live_factor": load.live_factor,
-            "P_kN": load.p / N_PER_KN, "Vx_kN": load.vx / N_PER_KN, "Vy_kN": load.vy / N_PER_KN, "Mx_kNm": load.mx / NMM_PER_KNM,
-            "My_kNm": load.my / NMM_PER_KNM}
+            "seismic": load.seismic, "P_kN": load.p / N_PER_KN, "Vx_kN": load.vx / N_PER_KN, "Vy_kN": load.vy / N_PER_KN,
+            "Mx_kNm": load.mx / NMM_PER_KNM, "My_kNm": load.my / NMM_PER_KNM}
 
 
 def _soil_input(ctx: Context) -> dict[str, float]:
     soil = ctx.soil
     return {"allowable_pressure_kPa": soil.allowable_pressure / MPA_PER_KPA, "min_contact_fraction": soil.min_contact_fraction,
             "unit_weight_concrete_kNm3": soil.unit_weight_concrete / N_MM3_PER_KN_M3,
-            "unit_weight_fill_kNm3": soil.unit_weight_fill / N_MM3_PER_KN_M3}
+            "unit_weight_fill_kNm3": soil.unit_weight_fill / N_MM3_PER_KN_M3,
+            "friction_coefficient": soil.friction_coefficient, "adhesion_kPa": soil.adhesion / MPA_PER_KPA,
+            "passive_coefficient": soil.passive_coefficient, "cohesion_kPa": soil.cohesion / MPA_PER_KPA,
+            "passive_factor": soil.passive_factor, "sliding_safety_factor": soil.sliding_safety_factor,
+            "sliding_safety_factor_seismic": soil.sliding_safety_factor_seismic,
+            "overturning_safety_factor": soil.overturning_safety_factor,
+            "overturning_safety_factor_seismic": soil.overturning_safety_factor_seismic}

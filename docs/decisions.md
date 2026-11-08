@@ -596,6 +596,30 @@
 - **Implementación (DRY):** el diseño no tiene fórmulas propias. `design/footing/typology.py` propone zapatas (planta, espesor, mallas a partir del As requerido de `domain/flexure_strength`, pasadores con el aplastamiento de `codes`) y las aprueba con `domain/footing/checks.footing_checks`; después de la primera planta viable explora dos más y se queda con la más barata, y elige los pasadores de menor área que aprueban área, anclaje y exceso de aplastamiento. `design/footing/grouping.py` parte la lista ordenada en N tramos continuos por programación dinámica (óptima para ese orden); `design/footing/typologies.py` diseña cada columna, las ordena por costo, agrupa y prueba cada f'c. El proyecto diseñado es un proyecto de verificación normal (`proyecto.json`), que `report` verifica y documenta.
 - **Rendimiento:** el As requerido se memoiza (una columna pasó de más de una hora a 0.6 s); un algoritmo genético se descartó porque necesitaría miles de verificaciones donde la búsqueda usa unas pocas y no garantiza el óptimo. Los diseños individuales, las coberturas y los diseños de tramo se reparten entre procesos (`design-footings --workers N`, por defecto los núcleos del equipo); el resultado es idéntico con cualquier número de procesos (ETABS, 65 columnas: 8 min con 32 hilos). Una partición perezosa con cota inferior del concreto se probó y se descartó: con la cota a ~30 % del costo real tuvo que diseñar el 75 % de los tramos.
 
+### D-070: deslizamiento y volcamiento de zapatas
+
+- **Fecha:** 2026-11-08
+- **Problema:** ACI 318-25 13.2.6.1 exige dimensionar las zapatas contra el volcamiento y el deslizamiento en la interfaz
+  suelo–zapata "de acuerdo con el código general de construcción", sin método ni factores; NSR-10 remite al Título H,
+  que no está en `references/`.
+- **Decisión del usuario:**
+  1. Los factores de seguridad los declara el usuario en `soil`: deslizamiento y volcamiento, cada uno con un valor para
+     casos sin sismo y otro para casos con sismo.
+  2. Cada caso de carga puede marcarse `seismic: true` (en ETABS, por combinación en `load_factors`); sin marca, el caso
+     se revisa con los factores sin sismo.
+  3. Se revisan los casos de servicio tal como llegan, con sus factores de carga muerta y viva (como V3C); las
+     combinaciones favorables las define el usuario.
+  4. Deslizamiento: resistencia = μ·N + c_a·A_contacto + f_p·P_p, con μ y c_a declarados, A_contacto el área en contacto
+     de Bellos y Bakas y P_p el empuje pasivo afectado por el factor f_p (por defecto 0.5), porque la fricción y la
+     pasiva no se movilizan por completo a la vez. La pasiva usa Kp declarado por el usuario, actúa solo sobre el
+     espesor h de la zapata con la sobrecarga del relleno encima (de Kp·γ·D₁ a Kp·γ·(D₁ + h), γ del relleno, D₁ la
+     altura del relleno) e incluye la cohesión declarada (2c·√Kp). Con cortante en los dos ejes se revisan la dirección
+     de la resultante, con P_p(θ) = P_p,x·|cos θ| + P_p,y·|sin θ|, y cada eje por separado; gobierna el menor factor.
+  5. Volcamiento: alrededor de cada borde, factor = momento resistente / momento volcador = (L/2)/|e| en cada eje, con
+     la resultante en la base (momento de la columna más el cortante por h + pedestal); la pasiva no se cuenta.
+  6. Los datos nuevos son obligatorios; los ejemplos y plantillas se actualizan (las huellas cambian).
+  7. El diseño por tipologías (D-069) incluye ambas revisiones en su búsqueda.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

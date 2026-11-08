@@ -17,6 +17,7 @@ _RATIO_FLOOR = 0.0014
 def clauses() -> dict[str, str]:
     return {
         "bearing": "C.15.2.2",
+        "stability": "Titulo H (remision), factores declarados (D-070)",
         "strength": "C.15.4.1 y C.15.4.2",
         "net_tensile_strain": "C.10.3.5",
         "min_reinforcement": "C.10.5.4 y C.7.12.2.1",

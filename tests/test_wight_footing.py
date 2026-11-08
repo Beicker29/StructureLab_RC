@@ -43,7 +43,11 @@ def test_square_footing_flexure_matches_wight(profile: str) -> None:
                    "P_kN": data["Pu_kips"] * KN_PER_KIP, "Vx_kN": 0.0, "Vy_kN": 0.0, "Mx_kNm": 0.0, "My_kNm": 0.0}],
     })
     soil = Soil.model_validate({"allowable_pressure_kPa": 287.0, "min_contact_fraction": 0.5,
-                                "unit_weight_concrete_kNm3": 23.6, "unit_weight_fill_kNm3": 18.9})
+                                "unit_weight_concrete_kNm3": 23.6, "unit_weight_fill_kNm3": 18.9,
+                                "friction_coefficient": 0.45, "adhesion_kPa": 0.0, "passive_coefficient": 3.0,
+                                "cohesion_kPa": 0.0, "passive_factor": 0.5, "sliding_safety_factor": 1.5,
+                                "sliding_safety_factor_seismic": 1.1, "overturning_safety_factor": 2.0,
+                                "overturning_safety_factor_seismic": 1.5})
     materials = Materials.model_validate({"fc": data["fc_psi"] * MPA_PER_PSI, "fy": data["fy_psi"] * MPA_PER_PSI,
                                           "fyt": data["fy_psi"] * MPA_PER_PSI, "concrete": "normalweight"})
 

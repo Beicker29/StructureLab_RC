@@ -49,7 +49,7 @@ ETABS reporta la fuerza del apoyo sobre la estructura. Sobre la zapata actúa la
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `description`, `profile`, `seismic`, `materials`, `soil` | | Igual que en el proyecto (ver [zapatas](zapatas.md)). |
-| `load_factors` | objeto | Para cada combinación de las dos tablas, `{"dead": ..., "live": ...}`: factores de carga muerta y viva. Una combinación sin factores es un error de importación. |
+| `load_factors` | objeto | Para cada combinación de las dos tablas, `{"dead": ..., "live": ...}`: factores de carga muerta y viva, y `"seismic": true` si la combinación incluye sismo (D-070; por defecto `false`). Una combinación sin factores es un error de importación. |
 | `footings[].id` | texto | Nombre del tipo de zapata. |
 | `footings[].etabs_unique_names` | lista | Unique Name de los apoyos de ETABS que usan este tipo. |
 | `footings[].lx`, `ly`, `h`, `cover`, `fill_height`, `pedestal_height` | mm | Igual que en el proyecto. |

@@ -26,6 +26,10 @@ solve = _PRESSURE.solve
 GAMMA_C, GAMMA_F = 24.0, 18.0  # kN/m³
 QA, MIN_CONTACT = 250.0, 0.6  # kPa, -
 CLAUSES = {"aci_318_25": "13.3.1.1", "nsr_10": "C.15.2.2"}
+# Datos de estabilidad (D-070): obligatorios en el suelo; este oráculo no los usa (ver derive_footing_stability.py).
+STABILITY = {"friction_coefficient": 0.45, "adhesion_kPa": 0.0, "passive_coefficient": 3.0, "cohesion_kPa": 0.0,
+             "passive_factor": 0.5, "sliding_safety_factor": 1.5, "sliding_safety_factor_seismic": 1.1,
+             "overturning_safety_factor": 2.0, "overturning_safety_factor_seismic": 1.5}
 
 
 def _cross(r: tuple[float, float, float], f: tuple[float, float, float]) -> tuple[float, float, float]:
@@ -103,7 +107,7 @@ def main() -> None:
                                "con los factores del caso; "
                                "presión de Bellos y Bakas (2017) resuelta por equilibrio independiente.",
                 "soil": {"allowable_pressure_kPa": QA, "min_contact_fraction": MIN_CONTACT,
-                         "unit_weight_concrete_kNm3": GAMMA_C, "unit_weight_fill_kNm3": GAMMA_F},
+                         "unit_weight_concrete_kNm3": GAMMA_C, "unit_weight_fill_kNm3": GAMMA_F, **STABILITY},
                 "bearing_clause": clause, "tolerance_rel": 1e-9, "cases": cases}
         (HERE / folder / "derived_footing_service.json").write_text(
             json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

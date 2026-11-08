@@ -14,7 +14,16 @@
     "allowable_pressure_kPa": 300.0,
     "min_contact_fraction": 0.5,
     "unit_weight_concrete_kNm3": 24.0,
-    "unit_weight_fill_kNm3": 18.0
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.45,
+    "adhesion_kPa": 0.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5
   },
   "load_factors": {
     "SERVICIO 1 (D+L)": {
@@ -23,19 +32,23 @@
     },
     "SERVICIO 2 (D+EX+EZ)": {
       "dead": 1.0,
-      "live": 0.0
+      "live": 0.0,
+      "seismic": true
     },
     "SERVICIO 3 (D+EY+EZ)": {
       "dead": 1.0,
-      "live": 0.0
+      "live": 0.0,
+      "seismic": true
     },
     "SERVICIO 4 (D+L+EX+EZ)": {
       "dead": 1.0,
-      "live": 1.0
+      "live": 1.0,
+      "seismic": true
     },
     "SERVICIO 5  (D+L+EY+EZ)": {
       "dead": 1.0,
-      "live": 1.0
+      "live": 1.0,
+      "seismic": true
     },
     "COMB0 (1.4D)": {
       "dead": 1.4,
@@ -47,19 +60,23 @@
     },
     "COMB4A (1.2D+L+EX+EZ)": {
       "dead": 1.2,
-      "live": 1.0
+      "live": 1.0,
+      "seismic": true
     },
     "COMB4B (1.2D+L+EY+EZ)": {
       "dead": 1.2,
-      "live": 1.0
+      "live": 1.0,
+      "seismic": true
     },
     "COMB6A (0.9+EX+EZ)": {
       "dead": 0.9,
-      "live": 0.0
+      "live": 0.0,
+      "seismic": true
     },
     "COMB6B (0.9D+EY+EZ)": {
       "dead": 0.9,
-      "live": 0.0
+      "live": 0.0,
+      "seismic": true
     }
   },
   "design": {
