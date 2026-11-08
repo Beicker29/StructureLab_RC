@@ -11,7 +11,7 @@
     "concrete": "normalweight"
   },
   "soil": {
-    "allowable_pressure_kPa": 250.0,
+    "allowable_pressure_kPa": 300.0,
     "min_contact_fraction": 0.5,
     "unit_weight_concrete_kNm3": 24.0,
     "unit_weight_fill_kNm3": 18.0

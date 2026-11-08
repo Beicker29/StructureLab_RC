@@ -141,8 +141,9 @@ def _validate_design(design: FootingDesignProject) -> Check:
     return check_from_errors(CHECK_NAME, errors)
 
 
-def design_footings(path: Path) -> tuple[dict[str, Any] | None, DesignResult | None, Check]:
-    """Diseño por tipologías (D-069): el proyecto de verificación con una zapata por columna y el resumen."""
+def design_footings(path: Path, workers: int = 1) -> tuple[dict[str, Any] | None, DesignResult | None, Check]:
+    """Diseño por tipologías (D-069): el proyecto de verificación con una zapata por columna y el resumen; workers es el
+    número de procesos entre los que se reparte (no cambia el resultado)."""
     try:
         design = load_design_project(path)
     except ProjectLoadError as error:
@@ -151,7 +152,7 @@ def design_footings(path: Path) -> tuple[dict[str, Any] | None, DesignResult | N
     if validation.status is Status.FAIL:
         return None, None, validation
     ctx = Context(design, PROFILES[design.profile], load_engine().bars)
-    result = design_typologies(ctx)
+    result = design_typologies(ctx, workers)
     if result.fc is None:
         return None, result, check_from_errors(CHECK_NAME, [invalid_input(f"Sin solucion dentro de los limites: {result.failure}")])
     return designed_project(ctx, result), result, validation

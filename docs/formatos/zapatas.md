@@ -108,7 +108,7 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 
 Salida: `proyecto.json` (una zapata por columna, nombrada `<tipología>-<columna>`, lista para `verify` y `report`) y
 `tipologias.json` (f'c, costo total y, por tipología, dimensiones, mallas, columnas, pasadores, concreto, acero y costo).
-Si nada cumple dentro de los límites, el comando termina con FAIL y el motivo.
+Si nada cumple dentro de los límites, el comando termina con FAIL y el motivo. `--workers N` fija los procesos en paralelo (por defecto, los núcleos del equipo; `--workers 1`, sin paralelo); no cambia el resultado.
 
 ## Salida
 

@@ -86,6 +86,11 @@ def test_designed_typologies_cover_every_column_and_verify(tmp_path: Path) -> No
     assert {str(check.status) for check in checks} == {"PASS"}
 
 
+def test_parallel_design_gives_the_same_result() -> None:
+    ctx = _context(_project(typologies=2, columns=3))
+    assert design_typologies(ctx, workers=2) == design_typologies(ctx, workers=1)
+
+
 def test_design_takes_the_least_thickness_for_its_plan_and_mats() -> None:
     ctx = _context(_project(typologies=1, columns=1))
     column = ctx.project.columns[0]

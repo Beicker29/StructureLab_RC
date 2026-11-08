@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -80,8 +81,8 @@ def _import_etabs_footings(service: Path, factored: Path, template: Path, output
     return 0
 
 
-def _design_footings(path: Path, output: Path) -> int:
-    project, result, check = design_footings(path)
+def _design_footings(path: Path, output: Path, workers: int | None) -> int:
+    project, result, check = design_footings(path, workers or os.cpu_count() or 1)
     print(f"{check.name}: {check.status}")
     _print_errors(check)
     if project is None or result is None:
@@ -134,6 +135,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     designer = commands.add_parser("design-footings", help="disena zapatas por tipologias desde un proyecto de diseno")
     designer.add_argument("project", type=Path, help="proyecto de diseno en JSON (columnas y bloque design)")
     designer.add_argument("--output", type=Path, required=True, help="carpeta donde escribir proyecto.json y tipologias.json")
+    designer.add_argument("--workers", type=int, help="procesos en paralelo (por defecto, los nucleos del equipo; 1: sin paralelo)")
     reporter = commands.add_parser("report", help="verifica un proyecto y escribe resultado.json, memoria.txt y memoria.pdf")
     reporter.add_argument("project", type=Path, help="ruta del archivo JSON")
     reporter.add_argument("--output", type=Path, required=True, help="carpeta de salida, por ejemplo results/mi_proyecto")
@@ -141,7 +143,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     commands_by_name: dict[str, Callable[[], int]] = {
         "report": lambda: _report(args.project, args.output, args.full),
-        "design-footings": lambda: _design_footings(args.project, args.output),
+        "design-footings": lambda: _design_footings(args.project, args.output, args.workers),
         "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output),
         "import-etabs": lambda: _import_etabs(args.workbook, args.template, args.output),
         "validate": lambda: _validate(args.project),

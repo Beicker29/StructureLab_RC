@@ -4,18 +4,29 @@ Para cada f'c comercial con precio: (1) diseño individual de cada columna; (2) 
 diseño; (3) partición en N tramos continuos por programación dinámica, donde el costo de un tramo es el de la tipología
 de su columna más exigente si cubre a todas, o el de un diseño del tramo completo si no; (4) se elige el f'c de menor costo
 total y cada tipología final se verifica de nuevo con todas sus columnas. Un solo f'c para todas las zapatas (D-069).
+
+Los diseños individuales, las coberturas y los diseños de tramo son independientes entre sí: con workers > 1 se reparten
+entre procesos y la partición consulta la tabla ya calculada. El resultado es el mismo con cualquier número de procesos.
 """
 
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass
-from functools import cache
 from typing import Any
 
+from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing.grouping import partition
 from structurelab_rc.design.footing.typology import Context, GroupDesign, Typology, covers, design_group, priced
-from structurelab_rc.model.design import DesignColumn
+from structurelab_rc.model.catalog import RebarSpec
+from structurelab_rc.model.design import DesignColumn, FootingDesignProject
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, N_PER_KN, NMM_PER_KNM, FootingLoad
+
+# Tareas: ("single", fc, columna), ("covers", tipología, columna), ("design", fc, columnas, tipología de partida); las
+# columnas son índices de project.columns, para no copiar las columnas a cada proceso en cada tarea.
+Task = tuple[Any, ...]
+Runner = Callable[[list[Task]], list[Any]]
+_WORKER: Context | None = None  # contexto de cada proceso del pool, armado una vez por _start_worker
 
 
 @dataclass(frozen=True)
@@ -35,42 +46,85 @@ class DesignResult:
     failure: str = ""
 
 
-def _for_fc(ctx: Context, fc: float) -> tuple[float, list[tuple[GroupDesign, list[DesignColumn]]]] | str:
+def _run(ctx: Context, task: Task) -> Any:
+    kind, *args = task
     columns = ctx.project.columns
-    singles = {}
-    for column in columns:
-        single = design_group(ctx, [column], fc)
+    if kind == "single":
+        fc, index = args
+        return design_group(ctx, [columns[index]], fc)
+    if kind == "covers":
+        typology, index = args
+        return covers(ctx, typology, columns[index])
+    fc, indices, start = args
+    return design_group(ctx, [columns[index] for index in indices], fc, start=start)
+
+
+def _start_worker(project: FootingDesignProject, bars: Sequence[RebarSpec]) -> None:
+    global _WORKER
+    _WORKER = Context(project, PROFILES[project.profile], bars)  # el perfil (módulos) no se copia entre procesos
+
+
+def _run_in_worker(task: Task) -> Any:
+    assert _WORKER is not None
+    return _run(_WORKER, task)
+
+
+def _usable(start: int, end: int, count: int, groups: int) -> bool:
+    """Si el tramo start..end puede ser uno de los `groups` tramos de una partición de 0..count−1 (los demás no
+    entran en ninguna partición: no hace falta diseñarlos)."""
+    before, after = start, count - 1 - end
+    for k in range(groups):  # k tramos antes y groups − 1 − k después, cada uno con al menos un elemento
+        rest = groups - 1 - k
+        if (k == 0) == (before == 0) and k <= before and (rest == 0) == (after == 0) and rest <= after:
+            return True
+    return False
+
+
+def _for_fc(ctx: Context, fc: float, run: Runner) -> tuple[float, list[tuple[GroupDesign, list[DesignColumn]]]] | str:
+    columns = ctx.project.columns
+    designs = run([("single", fc, index) for index in range(len(columns))])
+    singles: dict[str, GroupDesign] = {}
+    for column, single in zip(columns, designs, strict=True):
         if single is None:
             return f"f'c = {fc:g} MPa: la columna {column.id} no tiene zapata dentro de los límites"
         singles[column.id] = single
+    position = {column.id: index for index, column in enumerate(columns)}
     ordered = sorted(columns, key=lambda column: (singles[column.id].cost, column.id))
+    count, groups = len(ordered), ctx.design.typologies
+    segments = [(start, end) for end in range(count) for start in range(end + 1) if _usable(start, end, count, groups)]
 
-    @cache
-    def covered(typology_owner: int, member: int) -> dict[str, Any] | None:
-        """Pasadores con que la tipología individual de typology_owner cubre a member (None si no lo cubre)."""
-        if typology_owner == member:
-            return singles[ordered[member].id].dowels[ordered[member].id]
-        return covers(ctx, singles[ordered[typology_owner].id].typology, ordered[member])
+    # Pasadores con que la tipología individual de ordered[owner] cubre a ordered[member] (None si no lo cubre).
+    pairs = sorted({(end, member) for start, end in segments for member in range(start, end)})
+    covered: dict[tuple[int, int], dict[str, Any] | None] = {
+        (owner, owner): singles[ordered[owner].id].dowels[ordered[owner].id] for owner in range(count)}
+    tasks: list[Task] = [("covers", singles[ordered[owner].id].typology, position[ordered[member].id]) for owner, member in pairs]
+    covered.update(zip(pairs, run(tasks), strict=True))
 
-    @cache
-    def group(start: int, end: int) -> GroupDesign | None:
+    # Costo de cada tramo: la tipología de su columna más exigente si cubre a todas, o un diseño del tramo completo.
+    table: dict[tuple[int, int], GroupDesign | None] = {}
+    pending = []
+    for start, end in segments:
         members = ordered[start : end + 1]
-        owner = singles[ordered[end].id]
-        dowels = {ordered[member].id: covered(end, member) for member in range(start, end + 1)}
+        dowels = {ordered[member].id: covered[(end, member)] for member in range(start, end + 1)}
         if all(value is not None for value in dowels.values()):
-            return priced(ctx, owner.typology, members, {key: value for key, value in dowels.items() if value is not None})
-        return design_group(ctx, members, fc, start=_largest(singles, members))
+            table[(start, end)] = priced(ctx, singles[ordered[end].id].typology, members,
+                                         {key: value for key, value in dowels.items() if value is not None})
+        else:
+            pending.append((start, end))
+    tasks = [("design", fc, tuple(position[column.id] for column in ordered[start : end + 1]),
+              _largest(singles, ordered[start : end + 1])) for start, end in pending]
+    table.update(zip(pending, run(tasks), strict=True))
 
     def cost(start: int, end: int) -> float:
-        result = group(start, end)
+        result = table.get((start, end))
         return math.inf if result is None else result.cost
 
-    total, segments = partition(len(ordered), ctx.design.typologies, cost)
-    if not segments:
-        return f"f'c = {fc:g} MPa: no hay {ctx.design.typologies} tipologías que cubran todas las columnas"
+    total, chosen_segments = partition(count, groups, cost)
+    if not chosen_segments:
+        return f"f'c = {fc:g} MPa: no hay {groups} tipologías que cubran todas las columnas"
     chosen = []
-    for start, end in segments:
-        result = group(start, end)
+    for start, end in chosen_segments:
+        result = table[(start, end)]
         assert result is not None
         chosen.append((result, list(ordered[start : end + 1])))
     return total, chosen
@@ -84,11 +138,24 @@ def _largest(singles: dict[str, GroupDesign], members: Sequence[DesignColumn]) -
                     max(t.h for t in typologies), widest.bottom, widest.top)
 
 
-def design_typologies(ctx: Context) -> DesignResult:
+def design_typologies(ctx: Context, workers: int = 1) -> DesignResult:
+    """workers: procesos entre los que se reparte el diseño (1: en este proceso); no cambia el resultado."""
+    if workers <= 1:
+        return _design(ctx, lambda tasks: [_run(ctx, task) for task in tasks])
+    with ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(ctx.project, tuple(ctx.bars))) as pool:
+        return _design(ctx, lambda tasks: _in_pool(pool, tasks, workers))
+
+
+def _in_pool(pool: Executor, tasks: list[Task], workers: int) -> list[Any]:
+    chunk = max(1, len(tasks) // (8 * workers))  # tareas de duración dispar: lotes pequeños reparten mejor la carga
+    return list(pool.map(_run_in_worker, tasks, chunksize=chunk))
+
+
+def _design(ctx: Context, run: Runner) -> DesignResult:
     best: tuple[float, float, list[tuple[GroupDesign, list[DesignColumn]]]] | None = None
     failures = []
     for fc in ctx.design.prices.fc_options:
-        outcome = _for_fc(ctx, fc)
+        outcome = _for_fc(ctx, fc, run)
         if isinstance(outcome, str):
             failures.append(outcome)
             continue
