@@ -11,6 +11,7 @@ import pytest
 
 from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.design.footing import typology as typology_module
 from structurelab_rc.design.footing.grouping import partition, reassign
 from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import (
@@ -23,12 +24,25 @@ from structurelab_rc.design.footing.typologies import (
     design_typologies,
     designed_project,
 )
-from structurelab_rc.design.footing.typology import Context, Typology, column_checks, covers, design_group, priced
+from structurelab_rc.design.footing.typology import (
+    Context,
+    GroupDesign,
+    Typology,
+    _demands,
+    _dowel_options,
+    _mat_candidates,
+    checks_for,
+    column_checks,
+    column_cost,
+    covers,
+    design_group,
+    priced,
+)
 from structurelab_rc.domain.status import Status
 from structurelab_rc.engine import design_footings, report_file, run_project
 from structurelab_rc.io.etabs.footings import build_footing_design_project
 from structurelab_rc.io.etabs.xlsx import Table
-from structurelab_rc.model.design import FootingDesignProject
+from structurelab_rc.model.design import DesignColumn, FootingDesignProject
 from structurelab_rc.model.template import EtabsFootingDesignTemplate
 from structurelab_rc.setup import load_engine
 
@@ -274,6 +288,66 @@ def test_negative_moment_uses_plain_concrete_where_permitted(level: str, top: bo
     data["columns"][0]["loads"] = _loads(150, 120.0)
     result = design_typologies(_context(data))
     assert (result.typologies[0].design.typology.top is not None) is top
+
+
+def _enumerate(ctx: Context, column: DesignColumn, fc: float, plan: tuple[float, float]) -> float:
+    """Menor costo de la columna en la planta, enumerando todos los espesores de h_min a h_max y todas las combinaciones de
+    mallas candidatas (inferior × superior o ninguna) con los pasadores de menor área que pasan. Independiente de la
+    búsqueda: no usa _at_height, _verify ni la bisección; solo las candidatas, footing_checks y el costo por columna."""
+    design = ctx.design
+    best = math.inf
+    count = int(round((design.h_max - design.h_min) / design.h_step)) + 1
+    for h in (design.h_min + index * design.h_step for index in range(count)):
+        bars = {"designation": design.bars[0], "spacing": 100.0}
+        provisional = Typology(fc, plan[0], plan[1], h, {"first": "x", "end": design.end, "x": bars, "y": bars}, None)
+        bottoms = list(_mat_candidates(ctx, provisional, _demands(ctx, [column], provisional, 1.0)))
+        negative = _demands(ctx, [column], provisional, -1.0)
+        tops = [None, *_mat_candidates(ctx, provisional, negative)] if max(negative.values()) > 0 else [None]
+        for bottom, top in itertools.product(bottoms, tops):
+            typology = Typology(fc, plan[0], plan[1], h, bottom, top)
+            for dowels in _dowel_options(ctx, typology, column):  # de menor a mayor área (y costo)
+                if all(check.status is Status.PASS for check in checks_for(ctx, typology, column, dowels)):
+                    best = min(best, column_cost(ctx, typology, column, dowels)[0])
+                    break
+    return best
+
+
+def _thickness_case(case: str) -> dict[str, Any]:
+    data = _project(typologies=1, columns=1)
+    data["design"]["h_max"] = 700.0
+    if case != "sin negativo":
+        data["seismic"]["level"] = "DES" if case == "negativo DES" else "DMO"
+        data["columns"][0]["loads"] = _loads(150, 120.0)
+    return data
+
+
+@pytest.mark.parametrize("case", ["sin negativo", "negativo DES", "negativo DMO"])
+def test_thickness_and_mats_are_the_cheapest_of_the_enumeration(case: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    """D-076: en una planta fija, el resultado es el mínimo de la enumeración completa (incluidos los espesores menores
+    que el de la bisección), y las mallas separables no necesitan el respaldo conjunto."""
+    monkeypatch.setattr(typology_module, "_MAT_TRIES", 3)  # menos candidatas: la enumeración cabe en una prueba
+    monkeypatch.setattr(typology_module, "_jointly", lambda *args: pytest.fail("las mallas no resultaron separables"))
+    ctx = _context(_thickness_case(case))
+    column = ctx.project.columns[0]
+    design = design_group(ctx, [column], 21.0)
+    assert design is not None
+    plan = (design.typology.lx, design.typology.ly)
+    found = typology_module._for_plan(ctx, [column], 21.0, plan, ctx.design.h_min)
+    assert isinstance(found, GroupDesign)
+    assert found.cost == pytest.approx(_enumerate(ctx, column, 21.0, plan))
+
+
+def test_the_bound_never_prunes_the_optimum(monkeypatch: pytest.MonkeyPatch) -> None:
+    ctx = _context(_thickness_case("negativo DMO"))
+    column = ctx.project.columns[0]
+    design = design_group(ctx, [column], 21.0)
+    assert design is not None
+    plan = (design.typology.lx, design.typology.ly)
+    pruned = typology_module._for_plan(ctx, [column], 21.0, plan, ctx.design.h_min)
+    monkeypatch.setattr(typology_module, "_lower_bound", lambda *args: -math.inf)  # sin poda: todos los espesores
+    full = typology_module._for_plan(ctx, [column], 21.0, plan, ctx.design.h_min)
+    assert isinstance(pruned, GroupDesign) and isinstance(full, GroupDesign)
+    assert pruned.cost == pytest.approx(full.cost)
 
 
 @pytest.mark.parametrize(("options", "message"), [([21.0, 26.0], "no es un valor comercial"), ([21.0, 28.0], "no tiene precio")])

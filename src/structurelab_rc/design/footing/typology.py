@@ -4,10 +4,11 @@ El diseño no tiene fórmulas propias: propone zapatas y las aprueba con la mism
 (`domain/footing/checks.footing_checks`). Para proponer barras usa los momentos de `domain/footing/flexure` y el As
 requerido de `domain/flexure_strength`; para los pasadores, el aplastamiento de `codes` y A2 de `domain/footing`.
 
-Orden de la búsqueda: planta (crece si fallan la presión o el contacto), espesor (crece si fallan el cortante, el
-punzonamiento, la altura, el anclaje de los pasadores o el aplastamiento) y, para cada espesor, las mallas de menor peso
-que aprueban la flexión, los mínimos, la separación, la franja y el desarrollo. Una tipología fija la zapata
-(dimensiones, mallas y f'c); cada columna del grupo se verifica con su propia sección, sus cargas y sus pasadores.
+Orden de la búsqueda: planta (crece si fallan la presión o el contacto; la primera viable y dos más, una heurística),
+espesor (el menor con solución, por bisección, y luego los mayores mientras la cota inferior del costo no alcance el
+mejor, D-076) y, para cada espesor, las mallas de menor costo: la inferior con sus pasadores y la superior más liviana que
+pasa, que se verifican por separado y se confirman juntas. Una tipología fija la zapata (dimensiones, mallas y f'c);
+cada columna del grupo se verifica con su propia sección, sus cargas y sus pasadores.
 """
 
 import json
@@ -296,56 +297,137 @@ def _soil_ok(ctx: Context, columns: Sequence[DesignColumn], typology: Typology) 
     return True
 
 
+def _top_related(check: Check) -> bool:
+    """Verificaciones que dependen solo de la malla superior (o, sin ella, del concreto simple): separables de la inferior,
+    cuya altura efectiva, cortante, punzonamiento y anclaje de pasadores no dependen de la superior (D-076)."""
+    return "malla superior" in check.name or check.name.startswith(PLAIN)
+
+
 def _at_height(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tuple[float, float], h: float) -> GroupDesign | str:
-    """Solución de menor peso de mallas con este espesor; "soil" si la planta no cumple el suelo, "h" si falta espesor."""
+    """Solución de menor costo con este espesor (D-076); "soil" si la planta no cumple el suelo, "h" si falta espesor.
+
+    Las verificaciones de las dos mallas son separables: la malla inferior de menor costo (con sus pasadores, cuyo anclaje
+    depende de ella) se busca sin malla superior, ignorando lo que depende de la superior; con ella, la superior más liviana
+    que pasa (ninguna primero, si el perfil permite concreto simple con el nivel sísmico, D-072; luego todas las
+    candidatas). El par se confirma con una verificación completa."""
     design = ctx.design
     any_bars = {"designation": design.bars[0], "spacing": design.spacing_step * 4}
     provisional = Typology(fc, plan[0], plan[1], h, {"first": "x", "end": design.end, "x": any_bars, "y": any_bars}, None)
     if not _soil_ok(ctx, columns, provisional):
         return "soil"
-    positive = _demands(ctx, columns, provisional, 1.0)
+    bottoms = sorted(_mat_candidates(ctx, provisional, _demands(ctx, columns, provisional, 1.0)),
+                     key=lambda mat: _mat_mass(ctx, provisional, mat))
     negative = _demands(ctx, columns, provisional, -1.0)
-    # Con momento negativo se prueba primero sin malla superior (concreto simple, D-072), solo si el perfil lo permite con
-    # el nivel sísmico (si no, ese intento siempre falla), y luego con la malla superior más liviana.
     tops: list[dict[str, Any] | None] = [None]
     if max(negative.values()) > 0:
-        top = next(_mat_candidates(ctx, provisional, negative), None)
-        plain = ctx.profile.plain.permitted_in_foundations(ctx.project.seismic.level)
-        tops = [None, top] if plain else [top]
-    for bottom in _mat_candidates(ctx, provisional, positive):
-        for top in tops:
-            typology = Typology(fc, plan[0], plan[1], h, bottom, top)
-            failures, dowels = _verify(ctx, typology, columns)
-            if not failures:
-                return priced(ctx, typology, columns, dowels)
-            if not all(failure.name.startswith(_MAT_PREFIXES) for failure in failures):
-                return "h"  # falla algo que depende del espesor
+        candidates = sorted(_mat_candidates(ctx, provisional, negative), key=lambda mat: _mat_mass(ctx, provisional, mat))
+        tops = [None, *candidates] if ctx.profile.plain.permitted_in_foundations(ctx.project.seismic.level) else [*candidates]
+    bottom = _cheapest_bottom(ctx, columns, provisional, bottoms)
+    if bottom is None:
+        return "h"
+    for top in tops:
+        typology = Typology(fc, plan[0], plan[1], h, bottom, top)
+        failures, dowels = _verify(ctx, typology, columns)
+        if not failures:
+            return priced(ctx, typology, columns, dowels)
+        if not all(_top_related(failure) for failure in failures):
+            return _jointly(ctx, columns, provisional, bottoms, tops)  # no separó: enumeración conjunta
     return "h"
 
 
+def _cheapest_bottom(
+    ctx: Context, columns: Sequence[DesignColumn], provisional: Typology, bottoms: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """La malla inferior de menor costo (mallas y pasadores) que aprueba lo que no depende de la superior; None si falta
+    espesor. Se recorre de menor a mayor peso y se para cuando su acero más los pasadores mínimos ya no pueden ganar."""
+    price = ctx.design.prices.steel_per_kg
+    dowels_floor = sum(min(option["count"] * ctx.spec(option["designation"]).mass_kg_m for option in
+                           _dowel_options(ctx, provisional, column)) * (provisional.h - ctx.design.cover) / 1000 * price
+                       for column in columns)
+    best: tuple[float, dict[str, Any]] | None = None
+    for bottom in bottoms:
+        typology = Typology(provisional.fc, provisional.lx, provisional.ly, provisional.h, bottom, None)
+        steel = len(columns) * _mat_mass(ctx, typology, bottom) * price
+        if best is not None and steel + dowels_floor >= best[0]:
+            break
+        failures, dowels = _verify(ctx, typology, columns)
+        own = [failure for failure in failures if not _top_related(failure)]
+        if not own:
+            cost = priced(ctx, typology, columns, dowels).cost - _concrete_cost(ctx, typology, columns)
+            best = (cost, bottom) if best is None or cost < best[0] else best
+        elif best is None and not all(failure.name.startswith(_MAT_PREFIXES) for failure in own):
+            return None  # falla algo que depende del espesor
+    return None if best is None else best[1]
+
+
+def _jointly(
+    ctx: Context, columns: Sequence[DesignColumn], provisional: Typology, bottoms: list[dict[str, Any]],
+    tops: list[dict[str, Any] | None],
+) -> GroupDesign | str:
+    """Respaldo si las mallas no resultaran separables: todas las combinaciones, la de menor costo que pasa."""
+    best: GroupDesign | None = None
+    for bottom in bottoms:
+        for top in tops:
+            typology = Typology(provisional.fc, provisional.lx, provisional.ly, provisional.h, bottom, top)
+            failures, dowels = _verify(ctx, typology, columns)
+            if not failures:
+                result = priced(ctx, typology, columns, dowels)
+                best = result if best is None or result.cost < best.cost else best
+    return "h" if best is None else best
+
+
+def _concrete_cost(ctx: Context, typology: Typology, columns: Sequence[DesignColumn]) -> float:
+    design = ctx.design
+    volume = sum(typology.lx * typology.ly * typology.h + column.cx * column.cy * design.pedestal_height for column in columns)
+    return volume / _MM3_PER_M3 * design.prices.concrete(typology.fc)
+
+
+def _lower_bound(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tuple[float, float], h: float) -> float:
+    """Cota inferior del costo con este espesor (D-076): concreto más la malla inferior mínima, con el acero mínimo del
+    perfil, las longitudes de _mat_mass y la menor masa por área de las barras candidatas; sin pasadores ni malla
+    superior. Crece con h."""
+    design = ctx.design
+    lx, ly = plan
+    ratio = ctx.profile.footing.min_reinforcement_ratio(ctx.project.materials.fy)
+    unit = min(ctx.spec(designation).mass_kg_m / ctx.spec(designation).area_mm2 for designation in design.bars)
+    # Barras x: As,min con el ancho ly y largo lx − 2r; barras y: ancho lx y largo ly − 2r (kg).
+    steel = ratio * h * (ly * (lx - 2 * design.cover) + lx * (ly - 2 * design.cover)) * unit / 1000
+    typology = Typology(fc, lx, ly, h, {}, None)
+    return _concrete_cost(ctx, typology, columns) + len(columns) * steel * design.prices.steel_per_kg
+
+
 def _for_plan(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tuple[float, float], h_start: float) -> GroupDesign | bool:
-    """La solución del menor espesor con solución en esta planta, buscado por bisección; False si la planta no cumple el
-    suelo ni con el espesor inicial y True si no hay solución hasta h_max."""
+    """La solución de menor costo en esta planta (D-076): el menor espesor con solución, por bisección, y luego los
+    mayores hasta h_max, mientras la cota inferior no alcance el mejor costo (un espesor que no cumple el suelo se salta).
+    False si la planta no cumple el suelo ni con el espesor inicial y True si no hay solución hasta h_max."""
     design = ctx.design
     count = int(round((design.h_max - h_start) / design.h_step)) + 1
     heights = [h_start + index * design.h_step for index in range(max(count, 1))]
     first = _at_height(ctx, columns, fc, plan, heights[0])
     if first == "soil":
         return False
-    if isinstance(first, GroupDesign):
-        return first
-    best: GroupDesign | None = None
-    low, high = 1, len(heights) - 1
-    while low <= high:
-        middle = (low + high) // 2
-        result = _at_height(ctx, columns, fc, plan, heights[middle])
-        if isinstance(result, GroupDesign):
-            best, high = result, middle - 1
-        elif result == "soil":
-            high = middle - 1  # el peso propio ya no cabe: espesores menores
-        else:
-            low = middle + 1
-    return True if best is None else best
+    best = first if isinstance(first, GroupDesign) else None
+    lowest = 0
+    if best is None:
+        low, high = 1, len(heights) - 1
+        while low <= high:
+            middle = (low + high) // 2
+            result = _at_height(ctx, columns, fc, plan, heights[middle])
+            if isinstance(result, GroupDesign):
+                best, lowest, high = result, middle, middle - 1
+            elif result == "soil":
+                high = middle - 1  # el peso propio ya no cabe: espesores menores
+            else:
+                low = middle + 1
+        if best is None:
+            return True
+    for h in heights[lowest + 1 :]:
+        if _lower_bound(ctx, columns, fc, plan, h) >= best.cost:
+            break  # la cota crece con h: ningún espesor mayor puede ganar
+        result = _at_height(ctx, columns, fc, plan, h)
+        if isinstance(result, GroupDesign) and result.cost < best.cost:
+            best = result
+    return best
 
 
 def design_group(ctx: Context, columns: Sequence[DesignColumn], fc: float, start: Typology | None = None) -> GroupDesign | None:
