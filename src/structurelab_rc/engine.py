@@ -7,6 +7,7 @@ from typing import Any
 
 from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.design.footing.assignment import available as solver_available
 from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project
 from structurelab_rc.design.footing.typology import Context
@@ -143,28 +144,37 @@ def _validate_design(design: FootingDesignProject) -> Check:
     return check_from_errors(CHECK_NAME, errors)
 
 
-def design_footings(path: Path, workers: int = 1) -> tuple[dict[str, Any] | None, DesignResult | None, Check]:
+def design_footings(
+    path: Path, workers: int = 1, method: str | None = None
+) -> tuple[dict[str, Any] | None, DesignResult | None, Check]:
     """Diseño por tipologías (D-069): el proyecto de verificación con una zapata por columna y el resumen; workers es el
-    número de procesos entre los que se reparte (no cambia el resultado)."""
-    project, result, check, _ = _design_footings(path, workers, profile=False)
+    número de procesos entre los que se reparte (no cambia el resultado); method (dp o milp) reemplaza design.method."""
+    project, result, check, _ = _design_footings(path, workers, method, profile=False)
     return project, result, check
 
 
-def profile_footings(path: Path, workers: int = 1) -> tuple[dict[str, Any] | None, DesignResult | None, Check, dict[str, Any] | None]:
+def profile_footings(
+    path: Path, workers: int = 1, method: str | None = None
+) -> tuple[dict[str, Any] | None, DesignResult | None, Check, dict[str, Any] | None]:
     """Lo mismo que design_footings, con la medición de tiempos y el análisis de la solución (etapa E0)."""
-    return _design_footings(path, workers, profile=True)
+    return _design_footings(path, workers, method, profile=True)
 
 
 def _design_footings(
-    path: Path, workers: int, profile: bool
+    path: Path, workers: int, method: str | None, profile: bool
 ) -> tuple[dict[str, Any] | None, DesignResult | None, Check, dict[str, Any] | None]:
     try:
         design = load_design_project(path)
     except ProjectLoadError as error:
         return None, None, check_from_errors(CHECK_NAME, error.errors), None
+    if method is not None:
+        design = design.model_copy(update={"design": design.design.model_copy(update={"method": method})})
     validation = _validate_design(design)
     if validation.status is Status.FAIL:
         return None, None, validation, None
+    if design.design.method == "milp" and not solver_available():
+        message = "El metodo milp necesita el solucionador highspy: instale  pip install structurelab-rc[opt]"
+        return None, None, check_from_errors(CHECK_NAME, [invalid_input(message)]), None
     ctx = Context(design, PROFILES[design.profile], load_engine().bars)
     measurement = None
     if profile:

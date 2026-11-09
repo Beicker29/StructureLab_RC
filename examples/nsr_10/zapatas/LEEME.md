@@ -37,6 +37,9 @@ structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - 
 structurelab-rc design-footings results/nsr_10/zapatas/diseno_etabs.json --output results/nsr_10/zapatas/diseno_etabs
 ```
 
+El diseño usa por defecto el método `milp` (D-075), que requiere `pip install structurelab-rc[opt]`; `--method dp`
+usa solo la DP.
+
 ## Propio de este perfil
 
 - `profile`: `nsr-10`; `seismic.level`: `DMI`, `DMO` o `DES`.

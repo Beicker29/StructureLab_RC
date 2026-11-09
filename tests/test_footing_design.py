@@ -53,7 +53,7 @@ def _project(typologies: int = 2, plan_max: float = 4000.0, columns: int = 3) ->
                  "cohesion_kPa": 0.0, "passive_factor": 0.5, "sliding_safety_factor": 1.5,
                  "sliding_safety_factor_seismic": 1.1, "overturning_safety_factor": 2.0,
                  "overturning_safety_factor_seismic": 1.5},
-        "design": {"typologies": typologies, "fc_options": [21.0],
+        "design": {"typologies": typologies, "fc_options": [21.0], "method": "dp",  # estas pruebas son de la DP
                    "prices": {"concrete_per_m3": {"21": 500000.0}, "steel_per_kg": 6000.0},
                    "plan_step": 100.0, "plan_max": plan_max, "h_min": 350.0, "h_step": 50.0, "h_max": 900.0, "cover": 75.0,
                    "fill_height": 800.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,

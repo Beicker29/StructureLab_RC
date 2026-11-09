@@ -115,9 +115,17 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 | `design.surcharge_dead_kNm2`, `design.surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas. |
 | `design.bars`, `design.spacing_step`, `design.end` | -, mm, texto | Barras permitidas para las mallas, paso de separación y extremo de las barras. |
 | `design.dowel_bars` | - | Barras permitidas para los pasadores. |
+| `design.method` | texto | `milp` (por defecto desde E2; requiere `pip install structurelab-rc[opt]`) o `dp` (solo la partición y la reasignación). `--method` en la CLI lo reemplaza (D-075). |
+| `design.milp_time_limit_s` | s | Límite de tiempo del MILP por f'c (por defecto 120). |
 
 Después de la partición, cada columna pasa a la tipología elegida más barata que la cubre si baja el costo y su grupo
 conserva al menos una columna (D-074). Las tipologías repetidas se permiten y se marcan.
+
+Con `milp`, después de la DP se arma el catálogo (diseños individuales y de tramo, sin repetidas), se calcula con qué
+pasadores cubre cada candidato a cada columna y un MILP elige N tipologías distintas y la asignación de menor costo,
+sin la restricción de tramos continuos, con brecha 0 y desempate por acero y por el orden del catálogo. Arranca desde la
+DP si esta no tiene repetidas; en ese caso se exige `C_MILP ≤ C_DP` (en pesos enteros) y, si no se cumple, el f'c se
+rechaza. El resultado del MILP no se reasigna.
 
 Salida: `proyecto.json` (una zapata por columna, nombrada `<tipología>-<columna>`, lista para `verify` y `report`; si
 hay tipologías repetidas, su `description` termina con una advertencia que la memoria muestra en el encabezado) y
@@ -125,19 +133,22 @@ hay tipologías repetidas, su `description` termina con una advertencia que la m
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
+| `method` | texto | `dp` o `milp`. |
 | `fc [MPa]` | MPa | f'c elegido: el de menor costo total. |
-| `cost` | moneda | Costo total, después de la reasignación. |
-| `cost_before_reassignment` | moneda | Costo de la partición, antes de reasignar. |
+| `cost` | moneda | Costo total (con `dp`, después de la reasignación; con `milp`, el del MILP, o el de la DP si el MILP no tiene solución). |
+| `milp` | objeto | Solo con `milp`: `status` (`optimal`: óptimo certificado en el catálogo; `time_limit`: sin certificar; `infeasible`: sin N tipologías distintas, queda la DP), `dp_cost`, `dp_distinct_count`, `milp_cost`, `candidates`, `seconds` (matriz y solucionador) y `note`. |
+| `cost_before_reassignment` | moneda | Costo de la partición, antes de reasignar (con `milp`, igual a `cost`). |
 | `distinct_count` | - | Tipologías distintas; menor que el número pedido si hay repetidas. |
 | `duplicates` | lista | Grupos de tipologías idénticas (mismos f'c, lx, ly, h y mallas): `typologies` (nombres) y `at_limit` (`plan_max` si el paso siguiente de planta lo supera, `h_max` si el de espesor lo supera; vacía si ninguno). |
 | `reassigned` | lista | Columnas reasignadas: `column`, `from`, `to` (nombres de tipología) y `saving` (moneda). |
-| `by_fc` | lista | Cada f'c evaluado: `fc [MPa]`, `cost` y `distinct_count` (null si no tiene solución, con `failure`). |
+| `by_fc` | lista | Cada f'c evaluado: `fc [MPa]`, `cost` y `distinct_count` (null si no tiene solución, con `failure`); con `milp`, también su bloque `milp`. |
 | `typologies` | lista | Por tipología: `name`, dimensiones, mallas, `columns`, `dowels`, concreto, acero y `cost`. |
 
 Si nada cumple dentro de los límites, el comando termina con FAIL y el motivo. `--workers N` fija los procesos en paralelo (por defecto, los núcleos del equipo; `--workers 1`, sin paralelo); no cambia el resultado.
 `--profile` escribe además `medicion.json` (etapa E0 de [plan-tipologias](../planes/plan-tipologias.md)): configuración
-(SHA, máquina, procesos), número y tiempo de las tareas `single`, `covers`, `design` y `reassign` (coberturas de la
-reasignación) por f'c, tramos cubiertos y rediseñados, tiempo del proceso principal entre lotes (`main_s`), una
+(SHA, máquina, procesos), número y tiempo de las tareas `single`, `covers`, `design`, `reassign` (coberturas de la
+reasignación) y `matrix` (matriz del MILP) por f'c, tramos cubiertos y rediseñados (la tabla tiene todos los tramos,
+n(n+1)/2, porque no depende de N), tiempo del proceso principal entre lotes (`main_s`), una
 muestra fija de 500 pares columna–candidato con la extrapolación a la matriz completa de cobertura, y las tipologías
 repetidas y columnas reasignables de la solución. No cambia `proyecto.json` ni `tipologias.json`.
 

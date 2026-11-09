@@ -3,22 +3,35 @@
 Para cada f'c comercial con precio: (1) diseño individual de cada columna; (2) columnas ordenadas por el costo de su
 diseño; (3) partición en N tramos continuos por programación dinámica, donde el costo de un tramo es el de la tipología
 de su columna más exigente si cubre a todas, o el de un diseño del tramo completo si no; (4) reasignación: cada columna
-pasa a la tipología elegida más barata que la cubre sin vaciar ningún grupo (D-074); (5) se elige el f'c de menor costo
-total. Un solo f'c para todas las zapatas (D-069). Las tipologías repetidas se permiten y se marcan (D-074).
+pasa a la tipología elegida más barata que la cubre sin vaciar ningún grupo (D-074); (5) con el método milp (E2,
+D-075), asignación óptima sobre el catálogo de la DP, sin la restricción de tramos continuos; (6) se elige el f'c de
+menor costo total. Un solo f'c para todas las zapatas (D-069). Las tipologías repetidas se permiten y se marcan (D-074).
+La tabla de tramos no depende de N: se diseñan todos los tramos de la lista ordenada.
 
 Los diseños individuales, las coberturas y los diseños de tramo son independientes entre sí: con workers > 1 se reparten
 entre procesos y la partición consulta la tabla ya calculada. El resultado es el mismo con cualquier número de procesos.
 """
 
 import math
+import time
 from collections.abc import Callable, Sequence
 from concurrent.futures import Executor, ProcessPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.design.footing.assignment import assign
 from structurelab_rc.design.footing.grouping import partition, reassign
-from structurelab_rc.design.footing.typology import Context, GroupDesign, Typology, covers, design_group, priced, typology_key
+from structurelab_rc.design.footing.typology import (
+    Context,
+    GroupDesign,
+    Typology,
+    column_cost,
+    covers,
+    design_group,
+    priced,
+    typology_key,
+)
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.design import DesignColumn, FootingDesignProject
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, N_PER_KN, NMM_PER_KNM, FootingLoad
@@ -28,6 +41,7 @@ from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, N_PER_KN
 Task = tuple[Any, ...]
 Runner = Callable[[list[Task]], list[Any]]
 _WORKER: Context | None = None  # contexto de cada proceso del pool, armado una vez por _start_worker
+_G_PER_KG = 1000  # el acero entra al MILP en gramos enteros
 
 
 @dataclass(frozen=True)
@@ -48,6 +62,20 @@ class Move:
 
 
 @dataclass(frozen=True)
+class MilpInfo:
+    """El MILP de un f'c (E2, D-075) frente a la DP de la que parte. status: optimal (óptimo certificado en el catálogo),
+    time_limit (sin certificar) o infeasible (sin N tipologías distintas que cubran todo: queda la DP)."""
+
+    status: str
+    dp_cost: float
+    dp_distinct_count: int
+    milp_cost: float | None
+    candidates: int
+    seconds: float  # matriz de cobertura y solucionador
+    note: str = ""
+
+
+@dataclass(frozen=True)
 class FcOption:
     """Un f'c evaluado: su costo total y sus tipologías distintas, o por qué no tiene solución."""
 
@@ -55,6 +83,7 @@ class FcOption:
     cost: float | None
     distinct_count: int | None
     failure: str = ""
+    milp: MilpInfo | None = None
 
 
 @dataclass(frozen=True)
@@ -79,6 +108,8 @@ class DesignResult:
     options: tuple[FcOption, ...] = ()
     distinct_count: int = 0
     duplicates: tuple[Duplicate, ...] = ()
+    method: str = "dp"
+    milp: MilpInfo | None = None
 
 
 def _duplicates(ctx: Context, typologies: Sequence[TypologyResult]) -> tuple[Duplicate, ...]:
@@ -134,17 +165,6 @@ def _run_in_worker(task: Task) -> Any:
     return _run(_WORKER, task)
 
 
-def _usable(start: int, end: int, count: int, groups: int) -> bool:
-    """Si el tramo start..end puede ser uno de los `groups` tramos de una partición de 0..count−1 (los demás no
-    entran en ninguna partición: no hace falta diseñarlos)."""
-    before, after = start, count - 1 - end
-    for k in range(groups):  # k tramos antes y groups − 1 − k después, cada uno con al menos un elemento
-        rest = groups - 1 - k
-        if (k == 0) == (before == 0) and k <= before and (rest == 0) == (after == 0) and rest <= after:
-            return True
-    return False
-
-
 Chosen = list[tuple[GroupDesign, list[DesignColumn]]]
 Shift = tuple[str, int, int, float]  # columna, grupo de origen, grupo de destino (índices de Chosen) y ahorro
 
@@ -155,9 +175,35 @@ class _FcSolution:
     chosen: Chosen
     before: float  # costo de la partición, antes de reasignar
     shifts: list[Shift]
+    milp: MilpInfo | None = None
+
+
+@dataclass(frozen=True)
+class _Tables:
+    """Lo que no depende de N en un f'c: columnas ordenadas por el costo de su diseño individual, esos diseños y el
+    diseño de cada tramo start..end de la lista ordenada (None si no tiene)."""
+
+    fc: float
+    ordered: list[DesignColumn]
+    singles: dict[str, GroupDesign]
+    table: dict[tuple[int, int], GroupDesign | None]
+
+
+def _positions(ctx: Context) -> dict[str, int]:
+    return {column.id: index for index, column in enumerate(ctx.project.columns)}
 
 
 def _for_fc(ctx: Context, fc: float, run: Runner) -> _FcSolution | str:
+    tables = _tables(ctx, fc, run)
+    if isinstance(tables, str):
+        return tables
+    solution = _dp(ctx, tables, run)
+    if isinstance(solution, str) or ctx.design.method == "dp":
+        return solution
+    return _milp(ctx, tables, solution, run)
+
+
+def _tables(ctx: Context, fc: float, run: Runner) -> _Tables | str:
     columns = ctx.project.columns
     designs = run([("single", fc, index) for index in range(len(columns))])
     singles: dict[str, GroupDesign] = {}
@@ -165,10 +211,10 @@ def _for_fc(ctx: Context, fc: float, run: Runner) -> _FcSolution | str:
         if single is None:
             return f"f'c = {fc:g} MPa: la columna {column.id} no tiene zapata dentro de los límites"
         singles[column.id] = single
-    position = {column.id: index for index, column in enumerate(columns)}
+    position = _positions(ctx)
     ordered = sorted(columns, key=lambda column: (singles[column.id].cost, column.id))
-    count, groups = len(ordered), ctx.design.typologies
-    segments = [(start, end) for end in range(count) for start in range(end + 1) if _usable(start, end, count, groups)]
+    count = len(ordered)
+    segments = [(start, end) for end in range(count) for start in range(end + 1)]  # todos: la tabla no depende de N
 
     # Pasadores con que la tipología individual de ordered[owner] cubre a ordered[member] (None si no lo cubre).
     pairs = sorted({(end, member) for start, end in segments for member in range(start, end)})
@@ -191,23 +237,73 @@ def _for_fc(ctx: Context, fc: float, run: Runner) -> _FcSolution | str:
     tasks = [("design", fc, tuple(position[column.id] for column in ordered[start : end + 1]),
               _largest(singles, ordered[start : end + 1])) for start, end in pending]
     table.update(zip(pending, run(tasks), strict=True))
+    return _Tables(fc, ordered, singles, table)
+
+
+def _dp(ctx: Context, tables: _Tables, run: Runner) -> _FcSolution | str:
+    """Partición en N tramos continuos de la lista ordenada y reasignación (D-074)."""
+    ordered, table, groups = tables.ordered, tables.table, ctx.design.typologies
 
     def cost(start: int, end: int) -> float:
         result = table.get((start, end))
         return math.inf if result is None else result.cost
 
-    total, chosen_segments = partition(count, groups, cost)
+    total, chosen_segments = partition(len(ordered), groups, cost)
     if not chosen_segments:
-        return f"f'c = {fc:g} MPa: no hay {groups} tipologías que cubran todas las columnas"
+        return f"f'c = {tables.fc:g} MPa: no hay {groups} tipologías que cubran todas las columnas"
     chosen = []
     for start, end in chosen_segments:
         result = table[(start, end)]
         assert result is not None
         chosen.append((result, list(ordered[start : end + 1])))
-    regrouped, shifts = _reassign(ctx, chosen, run, position)
+    regrouped, shifts = _reassign(ctx, chosen, run, _positions(ctx))
     if not shifts:  # sin cambios: la misma solución y el mismo total que la partición
         return _FcSolution(total, chosen, total, [])
     return _FcSolution(sum(design.cost for design, _ in regrouped), regrouped, total, shifts)
+
+
+def _milp(ctx: Context, tables: _Tables, dp: _FcSolution, run: Runner) -> _FcSolution | str:
+    """MILP (E2, D-075) sobre el catálogo de la DP: los diseños individuales y los de los tramos, sin repetidas; matriz
+    completa de cobertura con covers(); arranque desde la DP si no tiene repetidas."""
+    begin = time.perf_counter()
+    columns, groups = ctx.project.columns, ctx.design.typologies
+    raw = [tables.singles[column.id].typology for column in tables.ordered]
+    raw += [design.typology for _, design in sorted(tables.table.items(), key=lambda item: item[0]) if design is not None]
+    catalog = list({typology_key(typology): typology for typology in raw}.values())
+    width = len(catalog)
+    found = run([("covers", typology, index) for index in range(len(columns)) for typology in catalog])
+    dowels = [found[index * width : (index + 1) * width] for index in range(len(columns))]
+    priced_pairs = [[None if dowels[i][j] is None else column_cost(ctx, catalog[j], columns[i], dowels[i][j]) for j in range(width)]
+                    for i in range(len(columns))]
+    cost = [[None if pair is None else round(pair[0]) for pair in row] for row in priced_pairs]
+    steel = [[None if pair is None else round(pair[2] * _G_PER_KG) for pair in row] for row in priced_pairs]
+
+    index = {typology_key(typology): j for j, typology in enumerate(catalog)}
+    position = _positions(ctx)
+    dp_choice = [0] * len(columns)
+    for design, members in dp.chosen:
+        for column in members:
+            dp_choice[position[column.id]] = index[typology_key(design.typology)]
+    dp_distinct = len(set(dp_choice))
+    start = dp_choice if dp_distinct == groups else None  # con repetidas la DP no es factible en el modelo
+    result = assign(cost, steel, groups, start, ctx.design.milp_time_limit)
+    seconds = time.perf_counter() - begin
+    if not result.choice:
+        note = f"sin {groups} tipologías distintas del catálogo que cubran todas las columnas: queda la DP"
+        return replace(dp, milp=MilpInfo(result.status, dp.total, dp_distinct, None, width, seconds, note))
+    if start is not None:  # C_MILP ≤ C_DP, en pesos enteros (D-074: solo si la DP no tiene repetidas)
+        dp_cost = sum(cost[i][j] or 0 for i, j in enumerate(dp_choice))
+        if result.cost > dp_cost:
+            return f"f'c = {tables.fc:g} MPa: el MILP dio {result.cost} y la DP {dp_cost}; resultado rechazado (error interno)"
+    chosen: Chosen = []
+    for j in sorted(set(result.choice)):
+        rows = [i for i, chosen_j in enumerate(result.choice) if chosen_j == j]
+        chosen.append((priced(ctx, catalog[j], [columns[i] for i in rows], {columns[i].id: dowels[i][j] for i in rows}),
+                       [columns[i] for i in rows]))
+    total = sum(design.cost for design, _ in chosen)
+    note = "" if start is not None else (f"la DP tiene repetidas ({dp_distinct} distintas de {groups}): no sirve de arranque "
+                                         "y C_MILP ≤ C_DP no se exige (D-074)")
+    return _FcSolution(total, chosen, total, [], MilpInfo(result.status, dp.total, dp_distinct, total, width, seconds, note))
 
 
 def _reassign(ctx: Context, chosen: Chosen, run: Runner, position: dict[str, int]) -> tuple[Chosen, list[Shift]]:
@@ -277,7 +373,8 @@ def _design(ctx: Context, run: Runner) -> DesignResult:
             failures.append(outcome)
             options.append(FcOption(fc, None, None, outcome))
             continue
-        options.append(FcOption(fc, outcome.total, _distinct_count([design.typology for design, _ in outcome.chosen])))
+        options.append(FcOption(fc, outcome.total, _distinct_count([design.typology for design, _ in outcome.chosen]),
+                                milp=outcome.milp))
         if best is None or outcome.total < best[1].total:
             best = (fc, outcome)
     if best is None:
@@ -292,7 +389,7 @@ def _design(ctx: Context, run: Runner) -> DesignResult:
     moves = tuple(Move(column, names[source], names[target], saving) for column, source, target, saving in solution.shifts)
     return DesignResult(fc, typologies, solution.total, cost_before_reassignment=solution.before, reassigned=moves,
                         options=tuple(options), distinct_count=_distinct_count([item.design.typology for item in typologies]),
-                        duplicates=_duplicates(ctx, typologies))
+                        duplicates=_duplicates(ctx, typologies), method=ctx.design.method, milp=solution.milp)
 
 
 def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:

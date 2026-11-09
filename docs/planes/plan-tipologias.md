@@ -10,8 +10,8 @@ una sesión aparte, se cierra con su criterio de aceptación y actualiza la tabl
 |---|---|---|
 | E0. Medición | Cerrada (2026-11-09) | [`docs/mediciones/E0.md`](../mediciones/E0.md): 92 % del tiempo en rediseños de tramo; matriz completa ≈ 1 % del tiempo; NSR-10 con 1 repetida; reasignables 2.2 % (NSR-10) y 7.9–8.3 % (ACI) |
 | E1. DP: repetidas marcadas y reasignación | Cerrada (2026-11-09) | D-074: huella idéntica; ETABS −3.2 % (NSR-10, f'c 21 → 24.5) y −7.9 % (ACI); `report` PASS |
-| E2. Generador compartido y MILP | Aprobada con matriz completa (2026-11-09); después de E1 | D-075 |
-| E3a. Espesor de menor costo en `design_group` | Aprobada; después de E2, por separado | — |
+| E2. Generador compartido y MILP | Cerrada (2026-11-09) | D-075: huella idéntica; ETABS −3.0 % (NSR-10) y −4.6 % (ACI) frente a E1, óptimo certificado; `milp` por defecto |
+| E3a. Espesor y mallas de menor costo en `design_group` | Aprobada (2026-11-09) con ajustes; después de E2 | D-076 |
 | E3b. Velocidad: rediseñar solo lo que proponga el MILP | Pendiente (según E2 y E3a) | — |
 | Curva costo–N | Fase siguiente | — |
 
@@ -200,11 +200,30 @@ MILP, estado y tiempos. Registrar D-075 y actualizar `docs/formatos/zapatas.md` 
 En ACI 318-25 una zapata más gruesa sin malla superior resultó más barata que la elegida con malla superior (Z3 frente a
 Z2 en [E0](../mediciones/E0.md)). Es un defecto frente a lo que declara D-069 (la tipología más económica).
 
-**Cambio:** para cada planta, elegir el espesor de menor costo entre los que tienen solución, con y sin malla superior.
-La verificación no cambia: cada propuesta sigue aprobándose con `footing_checks`.
+**Cambio** (aprobado el 2026-11-09, D-076). La verificación no cambia: cada propuesta sigue aprobándose con
+`footing_checks`.
 
-**Aceptación:** va sola, después de E2, para medir su ganancia por separado. Cambia la huella (cambio de cálculo
-intencional, listado y justificado); casos en el oráculo; costo y tiempo antes y después en los dos proyectos de ETABS.
+1. **Mallas por espesor.** Hoy `_at_height` devuelve la primera combinación que pasa en orden de malla inferior y prueba
+   una sola malla superior. Si las verificaciones de la malla inferior y de la superior son separables (confirmarlo en
+   el código y probarlo contra la enumeración), se halla la más liviana que pasa de cada una (la superior entre todas
+   las candidatas, o ninguna si el perfil lo permite con el nivel sísmico, D-072) y el par se confirma con una
+   verificación completa.
+2. **Espesor.** Desde el menor espesor con solución (bisección), recorrer los espesores mayores hasta `h_max` y elegir
+   el de menor costo. Una falla de suelo no detiene el barrido: ese espesor se salta y se sigue.
+3. **Poda exacta.** Se deja de subir cuando la cota inferior de un espesor alcanza el mejor costo: concreto más la malla
+   inferior mínima, con la misma función de acero mínimo del perfil (incluida la cuantía por tramos de NSR-10), las
+   mismas longitudes que `_mat_mass` y la menor relación masa/área de las barras candidatas. Pasadores y malla superior
+   quedan fuera de la cota.
+4. La búsqueda de plantas (la primera viable y dos más) no cambia y sigue siendo heurística.
+
+**Pruebas:** enumerador independiente (no reutiliza la lógica de `_at_height`) que recorre todos los espesores, incluidos
+los menores que el resultado de la bisección, y todas las combinaciones de mallas candidatas, en casos de una columna
+con la planta fija: el resultado debe ser el mínimo. La poda nunca descarta el óptimo. Mismo resultado con cualquier
+número de procesos.
+
+**Aceptación:** va sola, después de E2, para medir su ganancia por separado. Antes de correr ETABS completo se mide el
+multiplicador de tiempo con los diseños individuales y se reporta. Cambia la huella (cambio de cálculo intencional,
+listado y justificado). Costo y tiempo antes y después en los dos proyectos de ETABS con `milp`; `report` PASS.
 
 ## E3b. Velocidad (según E2 y E3a)
 

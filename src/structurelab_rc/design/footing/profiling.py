@@ -14,7 +14,7 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 from structurelab_rc.design.footing import typologies
-from structurelab_rc.design.footing.typologies import DesignResult, Task, _design, _run, _start_worker, _usable
+from structurelab_rc.design.footing.typologies import DesignResult, Task, _design, _run, _start_worker
 from structurelab_rc.design.footing.typology import (
     _DOWEL_PREFIX,
     Context,
@@ -86,8 +86,8 @@ def _profile(ctx: Context, execute: Timed, workers: int) -> tuple[DesignResult, 
         if tasks:
             kind = tasks[0][0]
             fc = tasks[0][1].fc if kind == "covers" else tasks[0][1]
-            if kind == "covers" and batches[-1]["kind"] == "design":
-                kind = "reassign"
+            if kind == "covers" and batches[-1]["kind"] in ("design", "reassign"):
+                kind = "reassign" if batches[-1]["kind"] == "design" else "matrix"  # matriz del MILP (E2)
         else:
             kind, fc = _NEXT[batches[-1]["kind"]], batches[-1]["fc"]
         batches.append({"kind": kind, "fc": fc, "start": start, "end": end, "times": [t for t, _ in timed],
@@ -113,13 +113,15 @@ def _fc_stages(ctx: Context, fc: float, batches: list[dict[str, Any]], end: floa
     own = {batch["kind"]: batch for batch in batches if batch["fc"] == fc}
     after = [batch["start"] for batch in batches if batch["start"] > own["single"]["end"] and batch["fc"] != fc]
     single, covered, design, moved = own["single"], own.get("covers"), own.get("design"), own.get("reassign")
+    matrix = own.get("matrix")
+    next_start = min(after, default=end)  # comienzo del f'c siguiente (o fin del diseño)
     count, groups = len(ctx.project.columns), ctx.design.typologies
     stage: dict[str, Any] = {"fc": fc, "columns": count, "typologies": groups,
                              "single": _summary(single["times"], single)}
     if covered is None or design is None:
         stage.update(failure="hay columnas sin zapata dentro de los límites", candidates=[])
         return stage
-    segments = sum(1 for last in range(count) for first in range(last + 1) if _usable(first, last, count, groups))
+    segments = count * (count + 1) // 2  # la tabla de tramos no depende de N (E2)
     stage.update(
         covers={**_summary(covered["times"], covered), "not_covered": sum(r is None for r in covered["results"])},
         design={**_summary(design["times"], design), "infeasible": sum(r is None for r in design["results"])},
@@ -127,7 +129,9 @@ def _fc_stages(ctx: Context, fc: float, batches: list[dict[str, Any]], end: floa
         reassign=_summary([] if moved is None else moved["times"], moved),
         main_s={"order_and_segments": covered["start"] - single["end"], "priced_segments": design["start"] - covered["end"],
                 "partition": (min(after, default=end) if moved is None else moved["start"]) - design["end"],
-                "reassign_pricing": 0.0 if moved is None else min(after, default=end) - moved["end"]},
+                "reassign_pricing": 0.0 if moved is None else (next_start if matrix is None else matrix["start"]) - moved["end"],
+                "milp_solver": 0.0 if matrix is None else next_start - matrix["end"]},
+        matrix=_summary([] if matrix is None else matrix["times"], matrix),
         candidates=[r.typology for r in (*single["results"], *design["results"]) if r is not None])
     return stage
 

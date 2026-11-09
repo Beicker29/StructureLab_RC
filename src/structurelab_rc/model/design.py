@@ -73,6 +73,8 @@ class FootingDesign(_Input):
     spacing_step: PositiveFloat
     end: Literal["straight", "hook"]
     dowel_bars: tuple[str, ...] = Field(min_length=1)
+    method: Literal["dp", "milp"] = "milp"  # E2, D-075: milp (por defecto) exige structurelab-rc[opt]
+    milp_time_limit: PositiveFloat = Field(120.0, validation_alias="milp_time_limit_s")  # s por f'c
 
     @model_validator(mode="after")
     def _check(self) -> Self:

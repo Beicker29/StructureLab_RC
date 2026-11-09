@@ -104,7 +104,8 @@ contacto mínimo (D-056); la verificación estructural aún no existe y queda `B
 límites), encuentra las N zapatas tipo (f'c, dimensiones, mallas y pasadores por columna) de menor costo que cubren todas
 las columnas. Escribe `proyecto.json`, un proyecto de verificación normal que `report` verifica y documenta, y
 `tipologias.json` con el resumen. Con ETABS, `import-etabs-footings` y una plantilla que trae el bloque `design` generan
-el proyecto de diseño.
+el proyecto de diseño. Por defecto (`design.method = "milp"`) una asignación óptima sobre el catálogo de la DP completa
+el diseño (D-075); requiere el extra `opt` (`pip install structurelab-rc[opt]`). `--method dp` usa solo la DP.
 
 ## Ejemplos y resultados
 

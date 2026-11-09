@@ -723,6 +723,44 @@
   de E0 que conserva las 6 tipologías. En los dos queda una sola columna reasignable, bloqueada porque es la única de
   su grupo.
 
+### D-075: segundo solucionador del diseño por tipologías: MILP sobre el catálogo de la DP (E2)
+
+- **Fecha:** 2026-11-09
+- **Decisión del usuario:** E2 con la matriz completa de cobertura (E0: ≈1 % del tiempo), tal como está en
+  [plan-tipologias](planes/plan-tipologias.md); el modo `dp` conserva la huella de E1.
+- **Implementación:**
+  1. La tabla de tramos ya no depende de N: se diseñan todos los tramos de la lista ordenada (n(n+1)/2). La DP da el
+     mismo resultado: los tramos que se agregan no entran en ninguna partición en N tramos.
+  2. El costo de una tipología en una columna (`typology.column_cost`: concreto, mallas y pasadores) es el costo por
+     par; el de un grupo es la suma del de sus columnas, y la DP lo reutiliza. La huella no cambió.
+  3. `design/footing/assignment.py`: MILP con highspy (extra opcional `opt`, `highspy==1.15.1`): cada columna una
+     tipología, cada tipología elegida con al menos una columna, exactamente N, solo pares que `covers()` aprueba.
+     Brecha 0, un hilo, semilla fija; costos en pesos enteros y acero en gramos enteros; desempate en tres pasos (costo;
+     con ese costo fijo, acero; con los dos fijos, el orden del catálogo).
+  4. Flujo con `design.method = "milp"` o `--method milp`, por f'c: DP con la reasignación de D-074 → catálogo (diseños
+     individuales y de tramo, sin repetidas) → matriz completa con `covers()` en el pool → MILP con arranque desde la
+     DP si no tiene repetidas. Se exige `C_MILP ≤ C_DP` en pesos enteros cuando la DP no tiene repetidas; si no se
+     cumple, el f'c se rechaza (error interno). Si el MILP no tiene solución (no hay N tipologías distintas en el
+     catálogo), queda la DP con sus repetidas marcadas y una nota. Se elige el f'c de menor costo del método pedido.
+  5. Límite de tiempo por f'c `design.milp_time_limit_s`, 120 s por defecto, compartido por los tres pasos; si se
+     agota, queda la mejor solución y el estado `time_limit` (sin certificar).
+  6. Sin highspy, pedir `milp` es FAIL con "instale structurelab-rc[opt]"; nunca una DP silenciosa. La CI instala el
+     extra `opt`.
+- **Seguridad:** el MILP solo elige entre pares aprobados por `covers()`, y el proyecto diseñado se reverifica completo.
+- **Resultado (E2, 2026-11-09, proyecto de ETABS, 73 columnas, N = 6, 16 procesos):** huella de los ejemplos idéntica
+  con `dp` y con `milp`. Óptimo certificado en todos los f'c; `report` PASS.
+
+  | Perfil | E1 (DP): f'c, costo | E2 (MILP): f'c, costo | Por f'c: DP → MILP | MILP por f'c |
+  | --- | --- | --- | --- | --- |
+  | NSR-10 | 24.5 MPa, 624 266 644 | 21 MPa, 605 443 055 (−3.0 %) | 21: 630.73 M (5 distintas) → 605.44 M; 24.5: 624.27 → 609.74 M; 28: 629.54 → 622.55 M | 57–76 candidatos; 18–23 s |
+  | ACI 318-25 | 21 MPa, 746 988 349 | 21 MPa, 712 419 298 (−4.6 %) | 21: 746.99 → 712.42 M; 24.5: 770.44 → 736.76 M; 28: 801.51 → 766.61 M | 36–37 candidatos; 13–14 s |
+
+  `C_MILP ≤ C_DP` se exigió y se cumplió en los cinco f'c cuya DP no tiene repetidas; en NSR-10 21 MPa la DP tiene
+  repetidas y la nota lo dice. El MILP agrega 13 a 23 s por f'c (matriz de cobertura; el solucionador tarda ≈1 s) y la
+  tabla completa de tramos 15 rediseños más; el diseño tardó 2338 s (NSR-10) y 2539 s (ACI 318-25).
+- **Método por defecto:** `milp`, por decisión del usuario al cumplirse la aceptación de E2. `dp` sigue disponible con
+  `--method dp`. La prueba del wheel en la CI instala `[pdf,opt]`.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

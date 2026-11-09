@@ -237,20 +237,24 @@ def column_checks(ctx: Context, typology: Typology, column: DesignColumn) -> tup
     return first
 
 
+def column_cost(ctx: Context, typology: Typology, column: DesignColumn, dowels: dict[str, Any]) -> tuple[float, float, float]:
+    """Costo, volumen de concreto (m³) y peso de acero (kg) de la zapata de una columna con la tipología y sus pasadores:
+    mallas rectas de borde a borde menos el recubrimiento y pasadores hasta la malla inferior. Es el costo por par de la
+    DP y del MILP (E2): el de un grupo es la suma del de sus columnas."""
+    design = ctx.design
+    concrete = (typology.lx * typology.ly * typology.h + column.cx * column.cy * design.pedestal_height) / _MM3_PER_M3
+    steel = _mat_mass(ctx, typology, typology.bottom) + (0.0 if typology.top is None else _mat_mass(ctx, typology, typology.top))
+    steel += dowels["count"] * ctx.spec(dowels["designation"]).mass_kg_m * (typology.h - design.cover) / 1000
+    price = design.prices
+    return concrete * price.concrete(typology.fc) + steel * price.steel_per_kg, concrete, steel
+
+
 def _cost(
     ctx: Context, typology: Typology, columns: Sequence[DesignColumn], dowels: dict[str, dict[str, Any]]
 ) -> tuple[float, float, float]:
-    """Costo, volumen de concreto (m³) y peso de acero (kg) del grupo: mallas rectas de borde a borde menos el
-    recubrimiento y pasadores hasta la malla inferior."""
-    design = ctx.design
-    concrete = steel = 0.0
-    for column in columns:
-        concrete += (typology.lx * typology.ly * typology.h + column.cx * column.cy * design.pedestal_height) / _MM3_PER_M3
-        steel += _mat_mass(ctx, typology, typology.bottom) + (0.0 if typology.top is None else _mat_mass(ctx, typology, typology.top))
-        spec = ctx.spec(dowels[column.id]["designation"])
-        steel += dowels[column.id]["count"] * spec.mass_kg_m * (typology.h - design.cover) / 1000
-    price = ctx.design.prices
-    return concrete * price.concrete(typology.fc) + steel * price.steel_per_kg, concrete, steel
+    """Costo, concreto y acero del grupo: la suma de los de sus columnas."""
+    parts = [column_cost(ctx, typology, column, dowels[column.id]) for column in columns]
+    return sum(part[0] for part in parts), sum(part[1] for part in parts), sum(part[2] for part in parts)
 
 
 def _mat_mass(ctx: Context, typology: Typology, mat: dict[str, Any]) -> float:

@@ -13,6 +13,7 @@ dependencies = ["pydantic==2.14.2"]
 [project.optional-dependencies]
 pdf = ["fpdf2==2.9.0"]
 cad = ["ezdxf==1.4.5"]
+opt = ["highspy==1.15.1"]
 dev = [
     "build==1.6.1",
     "hypothesis==6.170.14",

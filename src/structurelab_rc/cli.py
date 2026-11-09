@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from structurelab_rc import __version__
+from structurelab_rc.design.footing.typologies import MilpInfo
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.engine import (
@@ -91,13 +92,13 @@ def _import_etabs_footings(service: Path, factored: Path, template: Path, output
     return 0
 
 
-def _design_footings(path: Path, output: Path, workers: int | None, profile: bool) -> int:
+def _design_footings(path: Path, output: Path, workers: int | None, profile: bool, method: str | None) -> int:
     processes = workers or os.cpu_count() or 1
     measurement = None
     if profile:
-        project, result, check, measurement = profile_footings(path, processes)
+        project, result, check, measurement = profile_footings(path, processes, method)
     else:
-        project, result, check = design_footings(path, processes)
+        project, result, check = design_footings(path, processes, method)
     print(f"{check.name}: {check.status}")
     _print_errors(check)
     if measurement is not None:
@@ -109,14 +110,16 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
         return 1
     output.mkdir(parents=True, exist_ok=True)
     (output / "proyecto.json").write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    summary = {"fc [MPa]": result.fc, "cost": round(result.cost, 2),
+    summary = {"method": result.method, "fc [MPa]": result.fc, "cost": round(result.cost, 2),
+               **({"milp": _milp_summary(result.milp)} if result.milp is not None else {}),
                "cost_before_reassignment": round(result.cost_before_reassignment, 2),
                "distinct_count": result.distinct_count,
                "duplicates": [{"typologies": list(group.typologies), "at_limit": list(group.at_limit)} for group in result.duplicates],
                "reassigned": [{"column": move.column, "from": move.source, "to": move.target, "saving": round(move.saving, 2)}
                               for move in result.reassigned],
                "by_fc": [{"fc [MPa]": option.fc, "cost": None if option.cost is None else round(option.cost, 2),
-                          "distinct_count": option.distinct_count, **({"failure": option.failure} if option.failure else {})}
+                          "distinct_count": option.distinct_count, **({"failure": option.failure} if option.failure else {}),
+                          **({"milp": _milp_summary(option.milp)} if option.milp is not None else {})}
                          for option in result.options],
                "typologies": [
         {"name": item.name, "lx [mm]": item.design.typology.lx, "ly [mm]": item.design.typology.ly,
@@ -130,12 +133,22 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
         print(f"  {item.name}: {t.lx:.0f} x {t.ly:.0f} x {t.h:.0f} mm; {len(item.columns)} columnas: {', '.join(item.columns)}")
     if result.reassigned:
         print(f"Reasignadas {len(result.reassigned)} columnas; costo antes de reasignar {result.cost_before_reassignment:.2f}")
+    if result.milp is not None:
+        milp = result.milp
+        print(f"MILP: {milp.status}; costo DP {milp.dp_cost:.2f} ({milp.dp_distinct_count} distintas); "
+              f"{milp.candidates} candidatos; {milp.seconds:.1f} s" + (f"; {milp.note}" if milp.note else ""))
     for group in result.duplicates:
         limit = f" (en el limite {', '.join(group.at_limit)})" if group.at_limit else ""
         print(f"ADVERTENCIA: tipologias repetidas {' = '.join(group.typologies)}{limit}; "
               f"{result.distinct_count} distintas de {len(result.typologies)}")
     print(f"Proyecto escrito en {output / 'proyecto.json'}; verifiquelo o genere su memoria con report")
     return 0
+
+
+def _milp_summary(milp: MilpInfo) -> dict[str, Any]:
+    return {"status": milp.status, "dp_cost": round(milp.dp_cost, 2), "dp_distinct_count": milp.dp_distinct_count,
+            "milp_cost": None if milp.milp_cost is None else round(milp.milp_cost, 2), "candidates": milp.candidates,
+            "seconds": round(milp.seconds, 1), "note": milp.note}
 
 
 def _environment(workers: int) -> dict[str, Any]:
@@ -197,6 +210,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     designer.add_argument("--workers", type=int, help="procesos en paralelo (por defecto, los nucleos del equipo; 1: sin paralelo)")
     designer.add_argument("--profile", action="store_true",
                           help="escribe ademas medicion.json: tiempos por tarea y analisis de la solucion (no cambia el resultado)")
+    designer.add_argument("--method", choices=("dp", "milp"),
+                          help="dp (particion) o milp (asignacion optima, requiere structurelab-rc[opt]); reemplaza design.method")
     reporter = commands.add_parser("report", help="verifica un proyecto y escribe resultado.json, memoria.txt y memoria.pdf")
     reporter.add_argument("project", type=Path, help="ruta del archivo JSON")
     reporter.add_argument("--output", type=Path, required=True, help="carpeta de salida, por ejemplo results/mi_proyecto")
@@ -204,7 +219,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     commands_by_name: dict[str, Callable[[], int]] = {
         "report": lambda: _report(args.project, args.output, args.full),
-        "design-footings": lambda: _design_footings(args.project, args.output, args.workers, args.profile),
+        "design-footings": lambda: _design_footings(args.project, args.output, args.workers, args.profile, args.method),
         "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output),
         "import-etabs": lambda: _import_etabs(args.workbook, args.template, args.output),
         "validate": lambda: _validate(args.project),
