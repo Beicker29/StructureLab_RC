@@ -29,7 +29,8 @@ class DesignMaterials(_Input):
 
 
 class Prices(_Input):
-    """Precio del concreto por m³ para cada f'c permitido (clave en MPa, como texto) y del acero por kg."""
+    """Precio del concreto por m³ por f'c comercial (clave en MPa, como texto; puede traer más resistencias que las que se
+    evalúan) y del acero por kg."""
 
     concrete_per_m3: dict[str, PositiveFloat] = Field(min_length=1)
     steel_per_kg: PositiveFloat
@@ -45,15 +46,16 @@ class Prices(_Input):
     def concrete(self, fc: float) -> float:
         return next(price for key, price in self.concrete_per_m3.items() if float(key) == fc)
 
-    @property
-    def fc_options(self) -> tuple[float, ...]:
-        return tuple(sorted(float(key) for key in self.concrete_per_m3))
+    def has(self, fc: float) -> bool:
+        return any(float(key) == fc for key in self.concrete_per_m3)
 
 
 class FootingDesign(_Input):
-    """Límites de la búsqueda. La forma en planta es cuadrada por defecto (D-069); "ratio" fija lx/ly."""
+    """Límites de la búsqueda. fc_options son las resistencias comerciales que se evalúan, cada una con su precio (D-072).
+    La forma en planta es cuadrada por defecto (D-069); "ratio" fija lx/ly."""
 
     typologies: PositiveInt
+    fc_options: tuple[float, ...] = Field(min_length=1)
     prices: Prices
     shape: Literal["square", "equal_cantilevers", "ratio"] = "square"
     ratio: PositiveFloat | None = None
@@ -78,6 +80,13 @@ class FootingDesign(_Input):
             raise ValueError("ratio se declara solo con shape = 'ratio'")
         if self.h_max < self.h_min:
             raise ValueError("h_max debe ser al menos h_min")
+        for fc in self.fc_options:
+            if fc not in COMMERCIAL_FC:
+                raise ValueError(f"f'c = {fc:g} MPa no es un valor comercial; valores: {', '.join(f'{v:g}' for v in COMMERCIAL_FC)}")
+            if not self.prices.has(fc):
+                raise ValueError(f"f'c = {fc:g} MPa no tiene precio en prices.concrete_per_m3")
+        if len(set(self.fc_options)) != len(self.fc_options):
+            raise ValueError("fc_options repite una resistencia")
         return self
 
 

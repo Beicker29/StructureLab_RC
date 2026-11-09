@@ -27,10 +27,16 @@
     "overturning_safety_factor_seismic": 1.5
   },
   "design": {
-    "typologies": 2,
+    "typologies": 6,
+    "fc_options": [
+      21.0,
+      24.5,
+      28.0
+    ],
     "prices": {
       "concrete_per_m3": {
         "21": 520000.0,
+        "24.5": 545000.0,
         "28": 575000.0
       },
       "steel_per_kg": 6200.0

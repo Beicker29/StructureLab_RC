@@ -28,8 +28,9 @@ dos estados de carga distintos. P cambia de signo para que la compresión sea po
 ## Zapatas
 
 Con una plantilla que trae el bloque `design` (ver [zapatas](zapatas.md), diseño por tipologías), el importador genera el
-proyecto de diseño en lugar del de verificación: `columns[]` agrupa los Unique Name de las columnas de igual sección
-(`etabs_unique_names`, `cx`, `cy`) y cada nudo se vuelve una columna con id igual a su Label de ETABS.
+proyecto de diseño en lugar del de verificación: cada Unique Name es una columna; `columns[]` agrupa los de igual sección
+(`etabs_unique_names`, `cx` a lo largo de X y `cy` a lo largo de Y, en mm) y cada nudo se vuelve una columna con id igual
+a su Label de ETABS. Las cargas de cada columna salen de los dos Excel; el diseño centra la zapata bajo la columna.
 
 ### Tablas de ETABS
 

@@ -1,4 +1,4 @@
-"""V3D.1: flexión de zapatas contra el oráculo independiente (D-059, D-061)."""
+"""V3D.1 y V3I: flexión de zapatas, con concreto simple sin malla superior, contra el oráculo independiente (D-061, D-072)."""
 
 import json
 from pathlib import Path
@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.flexure_strength import MomentStrength, RectangularSection, rectangular_strength, required_area
 from structurelab_rc.domain.footing.flexure import flexure_checks
@@ -40,7 +41,8 @@ def test_flexure_checks_match_oracle(profile: str, case: dict[str, Any]) -> None
     oracle = _oracle(FOLDERS[profile])
     footing = Footing.model_validate(case["footing"])
     cases, failures = factored_cases(footing, Soil.model_validate(oracle["soil"]))
-    checks = [*failures, *flexure_checks(PROFILES[profile], Materials.model_validate(oracle["materials"]), footing, cases, BARS)]
+    basis = Basis(PROFILES[profile], Materials.model_validate(oracle["materials"]), BARS, case["seismic_level"])
+    checks = [*failures, *flexure_checks(basis, footing, cases)]
     got = {_key(check): check for check in checks}
     expected = {(item["name"], item.get("case", "")): item for item in case["expected"]["checks"]}
     assert set(got) == set(expected)
@@ -57,7 +59,9 @@ def test_flexure_checks_match_oracle(profile: str, case: dict[str, Any]) -> None
             assert check.demand == pytest.approx(item["demand"], rel=tolerance), key
         if "capacity" in item:
             assert check.capacity == pytest.approx(item["capacity"], rel=tolerance), key
-        if key[0].startswith("Flexion"):
+        if "clause" in item:
+            assert check.clause == item["clause"], key
+        elif key[0].startswith("Flexion"):
             assert check.clause == oracle["clauses"]["strength"]
         if key[0].startswith("Franja"):
             assert check.clause == oracle["clauses"]["band"]

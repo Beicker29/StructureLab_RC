@@ -154,7 +154,7 @@ def _in_pool(pool: Executor, tasks: list[Task], workers: int) -> list[Any]:
 def _design(ctx: Context, run: Runner) -> DesignResult:
     best: tuple[float, float, list[tuple[GroupDesign, list[DesignColumn]]]] | None = None
     failures = []
-    for fc in ctx.design.prices.fc_options:
+    for fc in sorted(ctx.design.fc_options):
         outcome = _for_fc(ctx, fc, run)
         if isinstance(outcome, str):
             failures.append(outcome)

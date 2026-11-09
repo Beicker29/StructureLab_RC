@@ -105,7 +105,8 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 | `columns[].cx`, `columns[].cy` | mm | Sección de la columna (la zapata la centra). |
 | `columns[].loads` | lista | Casos de carga, iguales a los de una zapata. |
 | `design.typologies` | - | Número de zapatas tipo que deben cubrir todas las columnas. |
-| `design.prices.concrete_per_m3` | moneda/m³ | Precio del concreto para cada f'c permitido; las claves son f'c comerciales (21, 24.5, 28, 31.5, 35, 42, 48). |
+| `design.fc_options` | MPa | Lista de f'c que se evalúan (D-072); cada uno comercial (21, 24.5, 28, 31.5, 35, 42, 48) y con precio. El diseño elige el de menor costo total. |
+| `design.prices.concrete_per_m3` | moneda/m³ | Precio del concreto por f'c; las claves son f'c comerciales y pueden incluir más resistencias que `fc_options`. |
 | `design.prices.steel_per_kg` | moneda/kg | Precio del acero. |
 | `design.shape` | texto | `square` (por defecto), `equal_cantilevers` o `ratio` (con `design.ratio` = lx/ly). |
 | `design.plan_step`, `design.plan_max` | mm | Paso y máximo de las dimensiones en planta. |
@@ -157,7 +158,8 @@ H = h + altura del pedestal. Las excentricidades son ex = My base/N y ey = −Mx
 | Deslizamiento | FS·V (`demand`) frente a R = μ·N + c_a·A_contacto + f_p·P_p (`capacity`), en la dirección de la resultante del cortante y en cada eje; gobierna la mayor razón y la nota dice cuál. Valores: N, contacto, μ·N, c_a·A_c, P_p en X y en Y, V, R, FS mínimo y FS obtenido. La pasiva actúa sobre el espesor h, con la sobrecarga del relleno. | ACI 13.2.6.1; NSR-10 remite al Título H (D-070) |
 | Volcamiento | FS·Mo (`demand`) frente a Mr = N·L/2 (`capacity`) alrededor del borde de cada eje; Mo es el momento en la base, que incluye el cortante por h + pedestal. La pasiva no se cuenta. | ACI 13.2.6.1; NSR-10 remite al Título H (D-070) |
 | Zapata: equilibrio con cargas mayoradas | FAIL si un caso mayorado no tiene equilibrio con el suelo (D-054). | D-054 |
-| Flexión malla inferior / superior (barras x o y) | Por caso mayorado: el mayor momento de la carga neta en las caras de la columna frente a φMn de la franja de ancho total. La superior solo aparece si hay momento negativo; sin malla superior sale `BLOCKED` (concreto simple, D-059). | ACI 13.2.6.6 y 13.2.7.1; NSR-10 C.15.4.1 y C.15.4.2 |
+| Flexión malla inferior / superior (barras x o y) | Por caso mayorado: el mayor momento de la carga neta en las caras de la columna frente a φMn de la franja de ancho total. La superior solo aparece si hay momento negativo. | ACI 13.2.6.6 y 13.2.7.1; NSR-10 C.15.4.1 y C.15.4.2 |
+| Flexión concreto simple (cara superior, barras x o y) | Momento negativo sin malla superior: Mu frente a φMn = 0.60·0.42λ√f'c·Sm, Sm = b(h − 50)²/6 en todo el ancho. Con ACI special o NSR-10 DES el concreto simple no se permite en cimentaciones: FAIL "requiere malla superior" (D-072). | ACI 14.5.2.1, 14.5.1.7, 14.1.3; NSR-10 C.22.5.1, C.22.4.7, C.22.10.1 |
 | Deformación neta de tracción malla … | εt de la malla frente a la mínima del perfil. | ACI 8.3.3.1; NSR-10 C.10.3.5 |
 | Acero mínimo malla … | As frente a la cuantía mínima por el área bruta del ancho total. | ACI 8.6.1.1; NSR-10 C.10.5.4 y C.7.12.2.1 |
 | Separación máxima malla … | Separación (y la de la franja) frente al máximo del perfil. | ACI 8.7.2.2; NSR-10 C.10.5.4 |

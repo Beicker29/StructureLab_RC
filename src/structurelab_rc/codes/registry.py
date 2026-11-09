@@ -7,6 +7,7 @@ from structurelab_rc.codes.aci_318_25 import bearing as aci_bearing
 from structurelab_rc.codes.aci_318_25 import development as aci_development
 from structurelab_rc.codes.aci_318_25 import flexure as aci_flexure
 from structurelab_rc.codes.aci_318_25 import footing as aci_footing
+from structurelab_rc.codes.aci_318_25 import plain as aci_plain
 from structurelab_rc.codes.aci_318_25 import seismic as aci_seismic
 from structurelab_rc.codes.aci_318_25 import shear as aci_shear
 from structurelab_rc.codes.aci_318_25 import strength_assumptions as aci_strength_assumptions
@@ -15,6 +16,7 @@ from structurelab_rc.codes.nsr_10 import bearing as nsr_bearing
 from structurelab_rc.codes.nsr_10 import development as nsr_development
 from structurelab_rc.codes.nsr_10 import flexure as nsr_flexure
 from structurelab_rc.codes.nsr_10 import footing as nsr_footing
+from structurelab_rc.codes.nsr_10 import plain as nsr_plain
 from structurelab_rc.codes.nsr_10 import seismic as nsr_seismic
 from structurelab_rc.codes.nsr_10 import shear as nsr_shear
 from structurelab_rc.codes.nsr_10 import strength_assumptions as nsr_strength_assumptions
@@ -193,6 +195,18 @@ class Seismic(Protocol):
     def seismic_levels(self) -> frozenset[str]: ...
 
 
+class Plain(Protocol):
+    def clauses(self) -> dict[str, str]: ...
+
+    def strength_reduction(self) -> float: ...
+
+    def flexural_tension_stress(self, fc: float, lam: float) -> float: ...
+
+    def soil_cast_reduction(self) -> float: ...
+
+    def permitted_in_foundations(self, seismic_level: str) -> bool: ...
+
+
 @dataclass(frozen=True)
 class Profile:
     id: str
@@ -204,11 +218,12 @@ class Profile:
     footing: Footing
     development: Development
     bearing: Bearing
+    plain: Plain
 
 
 PROFILES = {
     "aci-318-25": Profile("aci-318-25", aci_strength_assumptions, aci_flexure, aci_shear, aci_torsion, aci_seismic, aci_footing,
-                          aci_development, aci_bearing),
+                          aci_development, aci_bearing, aci_plain),
     "nsr-10": Profile("nsr-10", nsr_strength_assumptions, nsr_flexure, nsr_shear, nsr_torsion, nsr_seismic, nsr_footing,
-                      nsr_development, nsr_bearing),
+                      nsr_development, nsr_bearing, nsr_plain),
 }

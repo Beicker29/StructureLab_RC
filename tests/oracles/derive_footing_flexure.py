@@ -31,10 +31,15 @@ BARS = {"#4": (12.7, 129.0), "#5": (15.9, 199.0), "#6": (19.1, 284.0), "#7": (22
 PROFILES = {
     "aci_318_25": {"min_ratio": 0.0018, "spacing": lambda h: min(2 * h, 450.0), "tension": FY / ES + 0.003,
                    "strain_min": FY / ES + 0.003, "depth": lambda h, c, d1, d2: h - c - d1 - d2 / 2,
-                   "clauses": {"strength": "13.2.6.6 y 13.2.7.1", "band": "13.3.3.3"}},
+                   "clauses": {"strength": "13.2.6.6 y 13.2.7.1", "band": "13.3.3.3",
+                               "plain": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)", "plain_seismic": "14.1.3"},
+                   "levels": {"bajo": "intermediate", "alto": "special"},
+                   "plain_levels": ("none", "ordinary", "intermediate")},
     "nsr_10": {"min_ratio": 0.0018, "spacing": lambda h: min(3 * h, 450.0), "tension": 0.005, "strain_min": 0.004,
                "depth": lambda h, c, d1, d2: h - c - d1 - d2,
-               "clauses": {"strength": "C.15.4.1 y C.15.4.2", "band": "C.15.4.4.2"}},
+               "clauses": {"strength": "C.15.4.1 y C.15.4.2", "band": "C.15.4.4.2",
+                           "plain": "C.22.5.1, C.22.4.7 y C.9.3.5", "plain_seismic": "C.22.10.1"},
+               "levels": {"bajo": "DMO", "alto": "DES"}, "plain_levels": ("DMI", "DMO")},
 }
 
 
@@ -45,6 +50,18 @@ def _phi(strain: float, profile: dict) -> float:
     if strain >= profile["tension"]:
         return 0.90
     return 0.65 + 0.25 * (strain - ety) / (profile["tension"] - ety)
+
+
+def _plain(f: dict, direction: str, demand: float, case: str, profile: dict, level: str) -> dict:
+    """Momento negativo sin malla superior (D-072): concreto simple con φ = 0.60, Mn = 0.42√f'c·b(h − 50)²/6, si el nivel
+    sísmico lo permite; si no, FAIL."""
+    name = f"Flexion concreto simple (cara superior, barras {direction})"
+    if level not in profile["plain_levels"]:
+        return {"name": name, "case": case, "status": "FAIL", "demand_Nmm": demand, "clause": profile["clauses"]["plain_seismic"]}
+    width = f["ly"] if direction == "x" else f["lx"]
+    capacity = 0.60 * 0.42 * math.sqrt(FC) * width * (f["h"] - 50.0) ** 2 / 6
+    return {"name": name, "case": case, "status": "PASS" if capacity >= demand else "FAIL", "demand_Nmm": demand,
+            "capacity_Nmm": capacity, "clause": profile["clauses"]["plain"]}
 
 
 def _strength(area: float, width: float, depth: float, profile: dict) -> tuple[float, float, float]:
@@ -133,7 +150,7 @@ def _band_count(f: dict, direction: str, row: dict, spacing: float) -> int:
     return sum(1 for i in range(n) if centre - short / 2 - 1e-6 <= start + i * spacing <= centre + short / 2 + 1e-6)
 
 
-def _expected(f: dict, profile: dict) -> dict:
+def _expected(f: dict, profile: dict, level: str) -> dict:
     checks: list[dict] = []
     rows = {"bottom": _rows(f, f["bottom"])}
     if f["top"] is not None:
@@ -152,7 +169,7 @@ def _expected(f: dict, profile: dict) -> dict:
                     continue
                 name = f"Flexion malla {label} (barras {direction})"
                 if mat not in rows:
-                    checks.append({"name": name, "case": load["case"], "status": "BLOCKED", "demand_Nmm": demand})
+                    checks.append(_plain(f, direction, demand, load["case"], profile, level))
                     continue
                 row = rows[mat][direction]
                 nominal, phi, _ = _strength(row["area"], row["width"], row["depth"], profile)
@@ -218,23 +235,28 @@ def _footing(**changes: object) -> dict:
 
 
 CASES = [
-    ("cuadrada-centrada", "zapata cuadrada con carga centrada: flexión, εt, As,min, separación y altura", _footing()),
+    ("cuadrada-centrada", "zapata cuadrada con carga centrada: flexión, εt, As,min, separación y altura", _footing(), "alto"),
     ("rectangular-desplazada", "rectangular con la columna desplazada y momento: franja γs y malla superior",
      _footing(lx=3200.0, ly=2200.0, h=600.0, column={"cx": 400.0, "cy": 500.0, "offset_x": 350.0, "offset_y": 0.0},
               bottom=_mat("y", ("#6", 200.0), ("#5", 180.0)), top=_mat("x", ("#4", 250.0), ("#4", 250.0)),
-              loads=[_load("1.2D+1.6L", 1.2, 1.6, 1400.0, my=60.0), _load("0.9D+E", 0.9, 0.0, 450.0, my=420.0, vx=90.0)])),
-    ("sin-malla-superior", "momento negativo sin malla superior: BLOCKED (concreto simple)",
-     _footing(loads=[_load("0.9D+E", 0.9, 0.0, 300.0, my=330.0)])),
-    ("sin-equilibrio", "resultante mayorada fuera de la base", _footing(loads=[_load("0.9D+E", 0.9, 0.0, 100.0, my=900.0)])),
+              loads=[_load("1.2D+1.6L", 1.2, 1.6, 1400.0, my=60.0), _load("0.9D+E", 0.9, 0.0, 450.0, my=420.0, vx=90.0)]), "alto"),
+    ("sin-malla-superior", "momento negativo sin malla superior con nivel alto: el concreto simple no se permite, FAIL",
+     _footing(loads=[_load("0.9D+E", 0.9, 0.0, 300.0, my=330.0)]), "alto"),
+    ("concreto-simple-cumple", "momento negativo moderado sin malla superior y nivel bajo: lo resiste el concreto simple",
+     _footing(lx=2800.0, ly=2000.0, h=600.0, loads=[_load("0.9D+E", 0.9, 0.0, 450.0, my=330.0)]), "bajo"),
+    ("concreto-simple-no-cumple", "zapata delgada con momento negativo sin malla superior y nivel bajo: no alcanza el concreto "
+     "simple", _footing(h=250.0, loads=[_load("0.9D+E", 0.9, 0.0, 300.0, my=330.0)]), "bajo"),
+    ("sin-equilibrio", "resultante mayorada fuera de la base", _footing(loads=[_load("0.9D+E", 0.9, 0.0, 100.0, my=900.0)]), "alto"),
     ("separacion-excesiva", "separación mayor que la permitida y acero bajo el mínimo",
-     _footing(h=200.0, bottom=_mat("x", ("#4", 420.0), ("#4", 420.0)), loads=[_load("1.2D", 1.2, 0.0, 200.0)])),
+     _footing(h=200.0, bottom=_mat("x", ("#4", 420.0), ("#4", 420.0)), loads=[_load("1.2D", 1.2, 0.0, 200.0)]), "alto"),
 ]
 
 
 def main() -> None:
     for folder, profile in PROFILES.items():
-        cases = [{"id": case_id, "description": text, "footing": footing, "expected": _expected(footing, profile)}
-                 for case_id, text, footing in CASES]
+        cases = [{"id": case_id, "description": text, "footing": footing, "seismic_level": profile["levels"][level],
+                  "expected": _expected(footing, profile, profile["levels"][level])}
+                 for case_id, text, footing, level in CASES]
         data = {"description": "Flexión de zapatas con casos mayorados (D-059, D-061): momentos por integración exacta, "
                                "resistencia con el bloque de Whitney.",
                 "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight", "coating": "uncoated"},

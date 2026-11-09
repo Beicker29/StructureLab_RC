@@ -3,13 +3,14 @@
 La carga neta de cada caso sale de domain/footing/loads.py. El momento en
 cada cara de la columna es el de la carga neta que actúa a un lado del plano vertical, en todo el ancho (ACI 13.2.6.6,
 NSR-10 C.15.4.1). Positivo tracciona la cara inferior; negativo, la superior. La resistencia es la de una sección
-rectangular del ancho total con la capa de esa dirección (domain/flexure_strength).
+rectangular del ancho total con la capa de esa dirección (domain/flexure_strength). Sin malla superior, el momento
+negativo lo resiste el concreto simple (domain/plain_strength), si el perfil lo permite con el nivel sísmico (D-072).
 """
 
-from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
 from structurelab_rc.codes.registry import Profile
+from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.flexure_strength import (
     MomentStrength,
@@ -20,14 +21,15 @@ from structurelab_rc.domain.flexure_strength import (
 )
 from structurelab_rc.domain.footing.loads import FactoredCase, column_faces
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
+from structurelab_rc.domain.plain_strength import plain_rectangular_moment
 from structurelab_rc.domain.status import Status
-from structurelab_rc.errors import StructuredError, blocked, invalid_input
+from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.mechanics.flexure import SteelLayer
-from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.footing import Footing
 from structurelab_rc.model.project import Materials
 
 MAT_NAMES = {"bottom": "inferior", "top": "superior"}
+PLAIN = "Flexion concreto simple"
 _FACES = {"x": ("+X", "-X"), "y": ("+Y", "-Y")}
 _AXES = {"x": 0, "y": 1}
 _NEGLIGIBLE = 1e-6  # N·mm
@@ -58,9 +60,29 @@ def _name(kind: str, mat: str, direction: str) -> str:
     return f"{kind} malla {MAT_NAMES[mat]} (barras {direction})"
 
 
-def _strength_checks(
-    profile: Profile, materials: Materials, footing: Footing, rows: dict[str, dict[str, BarRow]], cases: list[FaceMoments]
-) -> list[Check]:
+def _plain_check(basis: Basis, footing: Footing, direction: str, demand: float, location: tuple[str, str]) -> Check:
+    """Momento negativo sin malla superior: concreto simple en todo el ancho, espesor h − 50 mm (D-072)."""
+    face, load_case = location
+    plain = basis.profile.plain
+    name = f"{PLAIN} (cara superior, barras {direction})"
+    clause = plain.clauses()["flexure"]
+    member = footing.id
+    if not plain.permitted_in_foundations(basis.seismic_level):
+        error = invalid_input(f"Momento negativo sin malla superior: {plain.clauses()['seismic']} no permite cimentaciones de "
+                              f"concreto simple con nivel sismico {basis.seismic_level}; requiere malla superior (D-072)",
+                              face=face, member=member, case=load_case)
+        return Check(name, Status.FAIL, (error,), plain.clauses()["seismic"], demand=demand, unit="N*mm", member=member, case=load_case)
+    width = footing.ly if direction == "x" else footing.lx
+    strength = plain_rectangular_moment(basis.profile, basis.materials, width, footing.h, cast_against_soil=True)
+    if isinstance(strength, StructuredError):
+        return replace(check_from_errors(name, [strength]), clause=clause, member=member, case=load_case)
+    values = (("phi", strength.phi), ("Mn", strength.nominal), ("h calculo", strength.thickness), ("Sm", strength.modulus))
+    return Check(name, Status.PASS if strength.design >= demand else Status.FAIL, clause=clause, demand=demand,
+                 capacity=strength.design, unit="N*mm", values=values, note=f"Cara {face} de la columna", member=member, case=load_case)
+
+
+def _strength_checks(basis: Basis, footing: Footing, rows: dict[str, dict[str, BarRow]], cases: list[FaceMoments]) -> list[Check]:
+    profile, materials = basis.profile, basis.materials
     clause = profile.footing.clauses()["strength"]
     checks = []
     for case in cases:
@@ -74,10 +96,7 @@ def _strength_checks(
                 name = _name("Flexion", mat, direction)
                 member, load_case = footing.id, case.case
                 if mat not in rows:
-                    error = blocked("Momento negativo sin malla superior: el concreto simple no esta implementado (D-059)",
-                                    face=face, member=member, case=load_case)
-                    checks.append(Check(name, Status.BLOCKED, (error,), clause, member=member, case=load_case, demand=demand,
-                                        unit="N*mm"))
+                    checks.append(_plain_check(basis, footing, direction, demand, (face, load_case)))
                     continue
                 row = rows[mat][direction]
                 strength = _strength(profile, materials, footing, row)
@@ -169,12 +188,10 @@ def _band_check(
                  capacity=row.band_area, unit="mm2", values=(("gamma s", gamma), ("As", total)), member=footing.id)
 
 
-def flexure_checks(
-    profile: Profile, materials: Materials, footing: Footing, factored: list[FactoredCase], bars: Sequence[RebarSpec]
-) -> list[Check]:
+def flexure_checks(basis: Basis, footing: Footing, factored: list[FactoredCase]) -> list[Check]:
     cases = [face_moments(footing, case) for case in factored]
-    rows = {"bottom": mat_rows(footing, footing.bottom, bars)}
+    rows = {"bottom": mat_rows(footing, footing.bottom, basis.bars)}
     if footing.top is not None:
-        rows["top"] = mat_rows(footing, footing.top, bars)
-    return [*_strength_checks(profile, materials, footing, rows, cases),
-            *_section_checks(profile, materials, footing, rows, cases)]
+        rows["top"] = mat_rows(footing, footing.top, basis.bars)
+    return [*_strength_checks(basis, footing, rows, cases),
+            *_section_checks(basis.profile, basis.materials, footing, rows, cases)]

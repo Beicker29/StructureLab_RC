@@ -194,7 +194,7 @@ def test_example_workbooks_import(tmp_path: Path) -> None:
 
     assert check.status is Status.PASS
     assert project is not None and summary is not None
-    assert summary.footings == 65
+    assert summary.footings == 57  # nudos de la plantilla presentes en los Excel (73 nudos; 16 sin tipo de zapata)
     assert len(summary.service_cases) == 9  # 1 sin envolvente + 4 con Max y Min
     assert len(summary.factored_cases) == 10  # 2 sin envolvente + 4 con Max y Min
     assert all(len(footing["loads"]) == 19 for footing in project["footings"])

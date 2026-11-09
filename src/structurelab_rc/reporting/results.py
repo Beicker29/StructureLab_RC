@@ -23,7 +23,7 @@ _VALUE_UNITS = {"Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi T
                 "N": "N", "Mx base": "N*mm", "My base": "N*mm", "ex": "mm", "ey": "mm", "As": "mm2", "Vu": "N",
                 "b0": "mm", "vuv": "MPa", "bslab": "mm", "A1": "mm2", "A2": "mm2", "Av/s": "mm2/mm", "At/s": "mm2/mm",
                 "At/s rama exterior": "mm2/mm", "mu N": "N", "ca Ac": "N", "Pp x": "N", "Pp y": "N", "V": "N", "R": "N",
-                "Mo": "N*mm", "Mr": "N*mm"}
+                "Mo": "N*mm", "Mr": "N*mm", "h calculo": "mm", "Sm": "mm3"}
 
 
 def significant(value: float) -> float:

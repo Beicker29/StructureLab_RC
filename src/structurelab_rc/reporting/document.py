@@ -69,7 +69,8 @@ _FOOTING_CONVENTIONS = (
 )
 _FOOTING_LIMITATIONS = (
     "Empuje pasivo sobre el pedestal y deslizamiento con suelo bajo nivel freático: no cubiertos (D-070).",
-    "Momento negativo sin malla superior (concreto simple): falta implementación (D-059).",
+    "Momento negativo sin malla superior como concreto simple solo donde el perfil lo permite con el nivel sísmico; la "
+    "excepción de viviendas de una o dos familias de hasta tres pisos no está implementada (D-072).",
     "Aplastamiento del lado de la columna, empalme de los pasadores y tracción en la interfaz: se verificarán con las "
     "columnas (D-059).",
     "Zapatas combinadas, medianeras con viga de amarre, rotadas, escalonadas, losas de cimentación y pilotes: no cubiertas.",

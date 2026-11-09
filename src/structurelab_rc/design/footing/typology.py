@@ -21,7 +21,7 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
 from structurelab_rc.domain.footing.checks import footing_checks
 from structurelab_rc.domain.footing.connection import bearing_area
-from structurelab_rc.domain.footing.flexure import face_moments
+from structurelab_rc.domain.footing.flexure import PLAIN, face_moments
 from structurelab_rc.domain.footing.loads import factored_cases
 from structurelab_rc.domain.footing.service import service_checks
 from structurelab_rc.domain.status import Status
@@ -31,7 +31,7 @@ from structurelab_rc.model.footing import Footing, Soil
 from structurelab_rc.model.project import Materials
 
 _MAT_PREFIXES = ("Flexion malla", "Deformacion neta de traccion malla", "Acero minimo malla", "Separacion maxima malla",
-                 "Franja central", "Desarrollo malla")
+                 "Franja central", "Desarrollo malla", PLAIN)
 _MAT_TRIES = 12
 _DOWELS_MIN = 4
 _DOWEL_PREFIX = "Pasadores"
@@ -293,14 +293,21 @@ def _at_height(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: t
         return "soil"
     positive = _demands(ctx, columns, provisional, 1.0)
     negative = _demands(ctx, columns, provisional, -1.0)
+    # Con momento negativo se prueba primero sin malla superior (concreto simple, D-072), solo si el perfil lo permite con
+    # el nivel sísmico (si no, ese intento siempre falla), y luego con la malla superior más liviana.
+    tops: list[dict[str, Any] | None] = [None]
+    if max(negative.values()) > 0:
+        top = next(_mat_candidates(ctx, provisional, negative), None)
+        plain = ctx.profile.plain.permitted_in_foundations(ctx.project.seismic.level)
+        tops = [None, top] if plain else [top]
     for bottom in _mat_candidates(ctx, provisional, positive):
-        top = next(_mat_candidates(ctx, provisional, negative), None) if max(negative.values()) > 0 else None
-        typology = Typology(fc, plan[0], plan[1], h, bottom, top)
-        failures, dowels = _verify(ctx, typology, columns)
-        if not failures:
-            return priced(ctx, typology, columns, dowels)
-        if not all(failure.name.startswith(_MAT_PREFIXES) for failure in failures):
-            return "h"  # falla algo que depende del espesor
+        for top in tops:
+            typology = Typology(fc, plan[0], plan[1], h, bottom, top)
+            failures, dowels = _verify(ctx, typology, columns)
+            if not failures:
+                return priced(ctx, typology, columns, dowels)
+            if not all(failure.name.startswith(_MAT_PREFIXES) for failure in failures):
+                return "h"  # falla algo que depende del espesor
     return "h"
 
 

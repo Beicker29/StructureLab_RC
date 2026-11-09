@@ -486,6 +486,8 @@
 
 ### D-059: criterios de la verificación estructural de zapatas (V3D)
 
+> El momento negativo sin malla superior ya no queda BLOCKED: ver D-072.
+
 - **Fecha:** 2026-11-07
 - **Referencias:** ACI 318-25 13.2.6, 13.2.7, 13.3, 8.6.1, 8.7.2.2, 22.6, 8.4.4.2, 22.8, 25.4; NSR-10 C.15.4 a C.15.8, C.10.5.4, C.7.12, C.11.11, C.10.14, C.12.
 - **Hallazgo:** la Tabla 22.6.5.2 del ACI 318-25 escribe (b) y (c) como (0.17 + 0.33/β) y (0.17 + 0.083αs·d/b0), distintas de la NSR-10 (C.11.11.2.1), que conserva 0.17(1 + 2/β) y 0.083(αs·d/b0 + 2). Cada perfil usa su ecuación.
@@ -649,6 +651,30 @@
 - **Oráculo:** `tests/oracles/derive_footing_connection.py` con 8 casos nuevos por perfil (epóxico, tope de 1.7, refuerzo
   en exceso con nivel bajo y alto, mínimo de 300 mm, ganchos con ψcc y recubrimiento corto). El caso existente de ganchos
   cambia porque ahora le corresponde ψcc = 0.7.
+
+### D-072: momento negativo de zapatas como concreto simple y lista de f'c del diseño
+
+- **Fecha:** 2026-11-08
+- **Referencias:** ACI 318-25 14.1.3, 14.3.2.1, 14.4.3.2.1, 14.5.1.6, 14.5.1.7, 14.5.2.1 y Tabla 21.2.1(f); NSR-10
+  C.9.3.5, C.22.4.5, C.22.4.7, C.22.5.1, C.22.7.4, C.22.7.5 y C.22.10.1 (leídos del PDF escaneado).
+- **Decisión del usuario (recomendaciones aprobadas):**
+  1. El momento negativo en una cara sin malla superior se revisa como concreto simple: φMn = 0.60·0.42λ√f'c·Sm ≥ Mu,
+     Sm = b·(h − 50)²/6 (concreto vaciado contra el suelo) con b el ancho completo; reemplaza el BLOCKED de D-059. El
+     cortante sigue revisándose como concreto reforzado.
+  2. Se permite con NSR-10 DMI y DMO (C.22.10.1 lo prohíbe con DES) y con ACI none, ordinary e intermediate (14.1.3 lo
+     restringe en categorías D a F; special se toma como tales). Si no se permite, FAIL "requiere malla superior".
+  3. La excepción de viviendas de una o dos familias de hasta tres pisos no se implementa (pendiente).
+  4. El diseño por tipologías prueba primero sin malla superior y la agrega solo si hace falta.
+  5. No se agrega la verificación de espesor mínimo de 200 mm: la altura mínima del concreto reforzado ya la supera.
+  6. El diseño evalúa una lista explícita de f'c (`design.fc_options`), comerciales y con precio en `concrete_per_m3`;
+     la tabla de precios puede traer más resistencias.
+- **Implementación (DRY):** `codes/<perfil>/plain.py` (φ, 0.42λ√f'c, reducción de 50 mm, niveles permitidos) y
+  `domain/plain_strength.py` (sección rectangular), reutilizables en muros y pedestales; `domain/footing/flexure.py` solo
+  arma la verificación "Flexion concreto simple".
+- **Ejemplo de ETABS (pedido del usuario):** la plantilla de diseño toma cada Unique Name de los Excel como columna de
+  500 × 800 mm (cx × cy) con la zapata centrada. Los Excel de ETABS se actualizaron (73 apoyos en 4 niveles); la plantilla
+  de verificación quedó con los 57 apoyos que siguen existiendo.
+- **Oráculo:** `tests/oracles/derive_footing_flexure.py` con nivel sísmico por caso y tres casos de concreto simple.
 
 ## Consultas abiertas
 

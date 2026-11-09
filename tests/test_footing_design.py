@@ -43,7 +43,8 @@ def _project(typologies: int = 2, plan_max: float = 4000.0, columns: int = 3) ->
                  "cohesion_kPa": 0.0, "passive_factor": 0.5, "sliding_safety_factor": 1.5,
                  "sliding_safety_factor_seismic": 1.1, "overturning_safety_factor": 2.0,
                  "overturning_safety_factor_seismic": 1.5},
-        "design": {"typologies": typologies, "prices": {"concrete_per_m3": {"21": 500000.0}, "steel_per_kg": 6000.0},
+        "design": {"typologies": typologies, "fc_options": [21.0],
+                   "prices": {"concrete_per_m3": {"21": 500000.0}, "steel_per_kg": 6000.0},
                    "plan_step": 100.0, "plan_max": plan_max, "h_min": 350.0, "h_step": 50.0, "h_max": 900.0, "cover": 75.0,
                    "fill_height": 800.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
                    "bars": ["#4", "#5"], "spacing_step": 25.0, "end": "straight", "dowel_bars": ["#5"]},
@@ -145,3 +146,21 @@ def test_etabs_design_template_builds_a_design_project() -> None:
     assert [column.id for column in design.columns] == ["A1", "A2"]
     assert (design.columns[1].cy, design.columns[1].loads[1].p) == (450.0, 950e3)
     assert summary.footings == 2
+
+
+@pytest.mark.parametrize(("level", "top"), [("DMO", False), ("DES", True)])
+def test_negative_moment_uses_plain_concrete_where_permitted(level: str, top: bool) -> None:
+    """D-072: con momento negativo el diseño prueba primero sin malla superior; con DES el concreto simple no se permite."""
+    data = _project(typologies=1, columns=1)
+    data["seismic"]["level"] = level
+    data["columns"][0]["loads"] = _loads(150, 120.0)
+    result = design_typologies(_context(data))
+    assert (result.typologies[0].design.typology.top is not None) is top
+
+
+@pytest.mark.parametrize(("options", "message"), [([21.0, 26.0], "no es un valor comercial"), ([21.0, 28.0], "no tiene precio")])
+def test_fc_options_must_be_commercial_and_priced(options: list[float], message: str) -> None:
+    data = _project()
+    data["design"]["fc_options"] = options
+    with pytest.raises(ValueError, match=message):
+        FootingDesignProject.model_validate(data)

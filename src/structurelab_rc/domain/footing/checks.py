@@ -22,7 +22,7 @@ def structural_checks(basis: Basis, footing: Footing, soil: Soil) -> list[Check]
         return [Check(STRUCTURAL, Status.INCOMPLETE, (error,), member=footing.id)]
     cases, failures = factored_cases(footing, soil)
     profile, materials, bars = basis.profile, basis.materials, basis.bars
-    return [*failures, *flexure_checks(profile, materials, footing, cases, bars),
+    return [*failures, *flexure_checks(basis, footing, cases),
             *shear_checks(profile, materials, footing, cases, bars), *connection_checks(basis, footing, cases)]
 
 

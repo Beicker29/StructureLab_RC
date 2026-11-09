@@ -6,9 +6,9 @@ VALUES: nombre de un valor intermedio → (descripción, símbolo).
 
 STATUS_TEXT = {"PASS": "CUMPLE", "FAIL": "NO CUMPLE", "INCOMPLETE": "INCOMPLETO", "BLOCKED": "BLOQUEADO"}
 PROFILE_NAMES = {"aci-318-25": "ACI CODE-318-25", "nsr-10": "NSR-10 Título C"}
-UNITS = {"kN-m": "kN·m", "mm2": "mm²", "mm2/mm": "mm²/mm", "kN/m2": "kN/m²", "kN/m3": "kN/m³", "m2": "m²", "m3": "m³",
+UNITS = {"kN-m": "kN·m", "mm3": "mm³", "mm2": "mm²", "mm2/mm": "mm²/mm", "kN/m2": "kN/m²", "kN/m3": "kN/m³", "m2": "m²", "m3": "m³",
          "m4": "m⁴", "deg": "°", "-": "–", "": "–"}
-DECIMALS = {"kN·m": 1, "kN": 1, "kPa": 1, "mm": 0, "mm²": 0, "mm²/mm": 3, "MPa": 2, "°": 2, "–": 4, "m²": 3, "m³": 3,
+DECIMALS = {"kN·m": 1, "kN": 1, "kPa": 1, "mm": 0, "mm³": 0, "mm²": 0, "mm²/mm": 3, "MPa": 2, "°": 2, "–": 4, "m²": 3, "m³": 3,
             "m⁴": 3, "kN/m²": 1, "kN/m³": 1}
 
 # Orden de los prefijos: el primero que coincide gobierna (los más específicos van antes).
@@ -39,6 +39,7 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Zapata: equilibrio", "geotechnical", "", ""),
     ("Zapata: verificacion estructural", "flexure", "", ""),
     ("Flexion malla", "flexure", "Mu", "φMn"),
+    ("Flexion concreto simple", "flexure", "Mu", "φMn"),
     ("Deformacion neta de traccion malla", "requirements", "εt,min", "εt"),
     ("Acero minimo por punzonamiento", "requirements", "As,min", "As en bslab"),
     ("Acero minimo malla", "requirements", "As,min", "As"),
@@ -95,6 +96,8 @@ VALUES = {
     "As": ("Área de acero", "As"),
     "cuantia minima": ("Cuantía mínima", "ρmin"),
     "gamma s": ("Fracción del refuerzo en la franja central", "γs"),
+    "h calculo": ("Espesor de cálculo del concreto simple (h − 50 mm contra el suelo)", "h"),
+    "Sm": ("Módulo elástico de la sección", "Sm"),
     "psi e": ("Factor por recubrimiento de las barras", "ψe"),
     "psi cc": ("Factor por recubrimiento del gancho", "ψcc"),
     "As,req/As,sum": ("Razón As requerido / As suministrado", "As,req/As,sum"),
