@@ -1,9 +1,9 @@
 {
-  "description": "Ejemplo de diseño por tipologías: 6 columnas con cargas de servicio y mayoradas, 2 zapatas tipo. Datos ilustrativos; precios en la moneda del usuario.",
+  "description": "Ejemplo de diseño por tipologías: 6 columnas con cargas de servicio y mayoradas, 6 zapatas tipo. Datos ilustrativos; precios en la moneda del usuario.",
   "profile": "aci-318-25",
   "seismic": {
     "level": "special",
-    "justification": "Declarado por el ingeniero para este ejemplo."
+    "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
   },
   "materials": {
     "fy": 420.0,

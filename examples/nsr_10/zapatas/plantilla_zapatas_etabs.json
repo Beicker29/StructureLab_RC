@@ -1,9 +1,9 @@
 {
-  "description": "Plantilla de importación de zapatas para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (65 apoyos del nivel CIM_SOT1_N-3.53). DATOS DE EJEMPLO: dimensiones, columnas, mallas, suelo, relleno y sobrecargas son supuestos para probar la importación; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3.",
+  "description": "Plantilla de importación de zapatas para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (73 apoyos en 4 niveles de cimentación). DATOS DE EJEMPLO: dimensiones, columnas, mallas, suelo, relleno y sobrecargas son supuestos para probar la importación; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",
-    "justification": "Capacidad especial de disipación declarada por el ingeniero para este ejemplo."
+    "justification": "Capacidad especial de disipación de energía (DES) declarada por el ingeniero para este ejemplo."
   },
   "materials": {
     "fc": 28.0,

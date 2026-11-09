@@ -676,6 +676,18 @@
   de verificación quedó con los 57 apoyos que siguen existiendo.
 - **Oráculo:** `tests/oracles/derive_footing_flexure.py` con nivel sísmico por caso y tres casos de concreto simple.
 
+### D-073: los mismos ejemplos para los dos perfiles
+
+- **Fecha:** 2026-11-08
+- **Decisión del usuario:** los ejemplos de ACI 318-25 y de NSR-10 son el mismo caso con los mismos datos, para poder
+  comparar resultados; solo cambian el perfil y el nivel sísmico equivalente (`ordinary` ↔ DMI, `intermediate` ↔ DMO,
+  `special` ↔ DES). Las plantillas de ETABS (`plantilla_*_etabs.json`) van en la carpeta de su perfil y leen los Excel
+  compartidos de `examples/etabs/<elemento>/`, que solo guarda los Excel. Se conservan los ejemplos pequeños de
+  `diseno_tipologias.json` (rápidos, en la huella) y el diseño desde los Excel (73 apoyos, varios minutos).
+- **Cambios:** el diseño por tipologías de NSR-10 pasa a 6 tipologías como el de ACI; las vigas de ACI pasan a
+  `intermediate`, equivalente a DMO; se crean las plantillas de ETABS de ACI, gemelas de las de NSR-10. Reemplaza la
+  ubicación de las plantillas de D-058.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

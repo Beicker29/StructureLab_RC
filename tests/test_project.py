@@ -13,14 +13,18 @@ from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.engine import validate_file
 from structurelab_rc.errors import ErrorCode, StructuredError, blocked, incomplete, invalid_input
 from structurelab_rc.mechanics.flexure import SteelLayer
-from structurelab_rc.model.loader import ProjectLoadError, load_design_project, load_project
+from structurelab_rc.model.loader import ProjectLoadError, load_design_project, load_footing_template, load_project, load_template
 from structurelab_rc.model.project import Demands, Materials, Project, Section
 from structurelab_rc.setup import load_engine
 
-_ALL = sorted(path for path in (Path(__file__).parent.parent / "examples").glob("*/*/*.json") if path.parts[-3] != "etabs")
-# Los ejemplos diseno_*.json son proyectos de diseño por tipologías (D-069), no de verificación.
-EXAMPLES = [path for path in _ALL if not path.name.startswith("diseno_")]
+_ROOT = Path(__file__).parent.parent / "examples"
+_ALL = sorted(path for path in _ROOT.glob("*/*/*.json") if path.parts[-3] != "etabs")
+# Los ejemplos diseno_*.json son proyectos de diseño por tipologías (D-069) y las plantilla_*_etabs.json, plantillas de
+# importación de ETABS (D-073); el resto son proyectos de verificación.
+TEMPLATES = [path for path in _ALL if path.name.startswith("plantilla_")]
+EXAMPLES = [path for path in _ALL if not path.name.startswith(("diseno_", "plantilla_"))]
 DESIGN_EXAMPLES = [path for path in _ALL if path.name.startswith("diseno_")]
+_LEVELS = {"ordinary": "DMI", "intermediate": "DMO", "special": "DES"}
 BARS = load_engine().bars
 BASE: dict[str, Any] = {
     "description": "Prueba",
@@ -63,6 +67,26 @@ def _validate(project: Project) -> tuple[Status, list[StructuredError]]:
 @pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: f"{path.parts[-3]}-{path.parent.name}-{path.stem}")
 def test_examples_load_and_validate(path: Path) -> None:
     assert validate_file(path).status is Status.PASS
+
+
+@pytest.mark.parametrize("path", TEMPLATES, ids=lambda path: f"{path.parts[-3]}-{path.parent.name}-{path.stem}")
+def test_etabs_templates_load(path: Path) -> None:
+    loader = load_template if path.parent.name == "vigas" else load_footing_template
+    assert loader(path).profile == ("aci-318-25" if path.parts[-3] == "aci_318_25" else "nsr-10")
+
+
+@pytest.mark.parametrize("path", sorted(_ROOT.glob("aci_318_25/*/*.json")), ids=lambda path: f"{path.parent.name}-{path.stem}")
+def test_examples_are_the_same_for_both_profiles(path: Path) -> None:
+    """D-073: cada ejemplo de ACI 318-25 tiene su gemelo en NSR-10 con los mismos datos; solo cambian el perfil y el nivel
+    sísmico equivalente (y su justificación)."""
+    twin = _ROOT / "nsr_10" / path.parent.name / path.name
+    aci, nsr = (json.loads(item.read_text(encoding="utf-8")) for item in (path, twin))
+    assert (aci["profile"], nsr["profile"]) == ("aci-318-25", "nsr-10")
+    assert _LEVELS[aci["seismic"]["level"]] == nsr["seismic"]["level"]
+    for data in (aci, nsr):
+        data.pop("profile")
+        data.pop("seismic")
+    assert aci == nsr
 
 
 @pytest.mark.parametrize("path", DESIGN_EXAMPLES, ids=lambda path: f"{path.parts[-3]}-{path.stem}")

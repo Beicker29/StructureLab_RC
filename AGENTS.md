@@ -67,8 +67,9 @@ Una fuente de verdad por concepto ([arquitectura](docs/architecture.md)).
 
 ## Ejemplos, resultados y verificación
 
-- `examples/<perfil>/<elemento>/*.json` versionados, entradas válidas y documentadas; los de ETABS en
-  `examples/etabs/<elemento>/`. Cada carpeta tiene un `LEEME.md` corto (ejemplos y lo propio del perfil) y
+- `examples/<perfil>/<elemento>/*.json` versionados, entradas válidas y documentadas, con los mismos ejemplos y datos
+  para los dos perfiles (solo cambian el perfil y el nivel sísmico equivalente); las plantillas de ETABS en la carpeta de
+  su perfil y los Excel compartidos en `examples/etabs/<elemento>/`. Cada carpeta tiene un `LEEME.md` corto (ejemplos y lo propio del perfil) y
   los campos de entrada y salida se documentan una sola vez, en `docs/formatos/<elemento>.md`.
   `results/` es salida generada e ignorada, con la misma estructura de carpetas (D-058).
 - La huella de los ejemplos se calcula sobre el JSON de resultado, la memoria en texto,

@@ -5,7 +5,9 @@ Zapatas aisladas según NSR-10 Título C (v3, en curso). Los campos de entrada y
 
 | Ejemplo | Qué muestra |
 | --- | --- |
-| `diseno_tipologias.json` | Diseño por tipologías (D-069): 6 columnas, 2 zapatas tipo, f'c entre 21 y 28 MPa con sus precios. |
+| `diseno_tipologias.json` | Diseño por tipologías (D-069): 6 columnas, 6 zapatas tipo, f'c de 21, 24.5 y 28 MPa con sus precios. |
+| `plantilla_diseno_zapatas_etabs.json` | Diseño por tipologías desde los Excel compartidos de `examples/etabs/zapatas/`: cada Unique Name es una columna de 500 × 800 mm (cx × cy) con la zapata centrada; 6 tipologías y f'c de 21, 24.5 y 28 MPa. **Datos supuestos.** El diseño de los 73 apoyos tarda varios minutos. |
+| `plantilla_zapatas_etabs.json` | Verificación desde los mismos Excel con tres tipos de zapata; cubre 57 de los 73 apoyos. **Dimensiones, columnas, mallas, suelo, relleno y sobrecargas supuestos.** Las combinaciones con sismo van marcadas `"seismic": true` en `load_factors`. |
 | `zapata_aislada.json` | Ejemplo de zapatas aisladas: Z1 centrada bajo columna cuadrada con pedestal y Z2 rectangular con la columna desplazada 400 mm en X. Fuerzas en la base de la columna, ejes globales. Datos ilustrativos. |
 
 Estado actual: se verifican la presión admisible y el contacto con el suelo (V3C) y toda la parte estructural
@@ -24,6 +26,15 @@ Diseño por tipologías:
 ```console
 structurelab-rc design-footings examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
 structurelab-rc report results/nsr_10/zapatas/diseno_tipologias/proyecto.json --output results/nsr_10/zapatas/diseno_tipologias/reporte
+```
+
+Desde los Excel de ETABS (verificación y diseño):
+
+```console
+structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/plantilla_zapatas_etabs.json --output results/nsr_10/zapatas/etabs.json
+structurelab-rc report results/nsr_10/zapatas/etabs.json --output results/nsr_10/zapatas/etabs
+structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/plantilla_diseno_zapatas_etabs.json --output results/nsr_10/zapatas/diseno_etabs.json
+structurelab-rc design-footings results/nsr_10/zapatas/diseno_etabs.json --output results/nsr_10/zapatas/diseno_etabs
 ```
 
 ## Propio de este perfil

@@ -1,6 +1,8 @@
 # Importación desde ETABS
 
-Los ejemplos están en `examples/etabs/<elemento>/`; el proyecto generado tiene el formato de [vigas](vigas.md) o de [zapatas](zapatas.md).
+Los Excel de ejemplo están en `examples/etabs/<elemento>/` y las plantillas, una por perfil con los mismos datos, en
+`examples/<perfil>/<elemento>/plantilla_*_etabs.json`; el proyecto generado tiene el formato de [vigas](vigas.md) o de
+[zapatas](zapatas.md).
 
 ## Vigas
 

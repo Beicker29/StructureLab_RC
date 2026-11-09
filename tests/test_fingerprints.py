@@ -18,10 +18,12 @@ from structurelab_rc.engine import design_footings, import_etabs, report_file
 
 ROOT = Path(__file__).parent.parent
 FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
-# examples/<perfil>/<elemento>/*.json; los ejemplos de ETABS están aparte, en examples/etabs/<elemento>/.
+# examples/<perfil>/<elemento>/*.json: los mismos ejemplos para los dos perfiles (D-073). Las plantillas de ETABS
+# (plantilla_*_etabs.json) leen los Excel compartidos de examples/etabs/<elemento>/; solo la de vigas entra en la huella
+# (las de zapatas importan 57 a 73 apoyos y su diseño tarda minutos).
 EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*/*.json")
-                  if path.parts[-3] != "etabs")
-ETABS = "examples/etabs/vigas/plantilla_vigas_nsr10.json"
+                  if path.parts[-3] != "etabs" and not path.name.startswith("plantilla_"))
+ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/vigas/plantilla_vigas_etabs.json")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "Element Forces - Beams.xlsx"
 UPDATE = os.environ.get("STRUCTURELAB_UPDATE_FINGERPRINTS") == "1"
 
@@ -37,7 +39,7 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
         report_file(project, work / "salida")
         digests = {file: hashlib.sha256((work / "salida" / file).read_bytes()).hexdigest() for file in files}
         return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **digests}
-    if name == ETABS:
+    if name in ETABS:
         data, _, _ = import_etabs(WORKBOOK, project)
         project = work / "etabs.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
@@ -45,7 +47,7 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
     return {file: hashlib.sha256((work / "salida" / file).read_bytes()).hexdigest() for file in ("resultado.json", "memoria.txt")}
 
 
-@pytest.mark.parametrize("name", [*EXAMPLES, ETABS])
+@pytest.mark.parametrize("name", [*EXAMPLES, *ETABS])
 def test_fingerprint_is_stable(name: str, tmp_path: Path) -> None:
     current = _fingerprint(name, tmp_path)
     stored = json.loads(FINGERPRINTS.read_text(encoding="utf-8")) if FINGERPRINTS.exists() else {}

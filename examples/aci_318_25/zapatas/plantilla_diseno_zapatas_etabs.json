@@ -1,9 +1,9 @@
 {
-  "description": "Plantilla de diseño por tipologías (D-069) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (65 apoyos del nivel CIM_SOT1_N-3.53). DATOS DE EJEMPLO: secciones de columna, suelo, relleno, sobrecargas, precios y límites son supuestos; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3.",
-  "profile": "nsr-10",
+  "description": "Plantilla de diseño por tipologías (D-069) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (73 apoyos en 4 niveles de cimentación). DATOS DE EJEMPLO: secciones de columna, suelo, relleno, sobrecargas, precios y límites son supuestos; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3.",
+  "profile": "aci-318-25",
   "seismic": {
-    "level": "DES",
-    "justification": "Capacidad especial de disipación declarada por el ingeniero para este ejemplo."
+    "level": "special",
+    "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
   },
   "materials": {
     "fy": 420.0,
@@ -81,7 +81,7 @@
     }
   },
   "design": {
-    "typologies": 4,
+    "typologies": 6,
     "fc_options": [
       21.0,
       24.5,

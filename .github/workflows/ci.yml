@@ -47,8 +47,9 @@ jobs:
           footing="$PWD/examples/nsr_10/zapatas/zapata_aislada.json"
           design="$PWD/examples/nsr_10/zapatas/diseno_tipologias.json"
           workbook="$PWD/examples/etabs/vigas/Element Forces - Beams.xlsx"
-          template="$PWD/examples/etabs/vigas/plantilla_vigas_nsr10.json"
+          template="$PWD/examples/nsr_10/vigas/plantilla_vigas_etabs.json"
           footings="$PWD/examples/etabs/zapatas"
+          footing_template="$PWD/examples/nsr_10/zapatas/plantilla_zapatas_etabs.json"
           cd "$RUNNER_TEMP"
           python -m venv clean
           if [ "$RUNNER_OS" = "Windows" ]; then bin=clean/Scripts; else bin=clean/bin; fi
@@ -59,7 +60,7 @@ jobs:
           "$bin/structurelab-rc" verify "$example"
           "$bin/structurelab-rc" import-etabs "$workbook" "$template" --output etabs.json
           "$bin/structurelab-rc" validate etabs.json
-          "$bin/structurelab-rc" import-etabs-footings "$footings/Joint Reactions - Servicio.xlsx" "$footings/Joint Reactions - Ultimas.xlsx" "$footings/plantilla_zapatas_nsr10.json" --output zapatas.json
+          "$bin/structurelab-rc" import-etabs-footings "$footings/Joint Reactions - Servicio.xlsx" "$footings/Joint Reactions - Ultimas.xlsx" "$footing_template" --output zapatas.json
           "$bin/structurelab-rc" validate zapatas.json
           "$bin/structurelab-rc" validate "$footing"
           "$bin/structurelab-rc" design-footings "$design" --output diseno

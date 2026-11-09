@@ -3,7 +3,7 @@
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",
-    "justification": "Capacidad especial de disipación declarada por el ingeniero para este ejemplo."
+    "justification": "Capacidad especial de disipación de energía (DES) declarada por el ingeniero para este ejemplo."
   },
   "materials": {
     "fc": 28.0,

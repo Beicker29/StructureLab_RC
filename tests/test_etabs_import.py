@@ -11,9 +11,9 @@ from structurelab_rc.engine import import_etabs
 from structurelab_rc.io.etabs.xlsx import read_table
 from structurelab_rc.model.loader import load_project
 
-EXAMPLES = Path(__file__).parent.parent / "examples" / "etabs" / "vigas"
-WORKBOOK = EXAMPLES / "Element Forces - Beams.xlsx"
-TEMPLATE = EXAMPLES / "plantilla_vigas_nsr10.json"
+EXAMPLES = Path(__file__).parent.parent / "examples"
+WORKBOOK = EXAMPLES / "etabs" / "vigas" / "Element Forces - Beams.xlsx"
+TEMPLATE = EXAMPLES / "nsr_10" / "vigas" / "plantilla_vigas_etabs.json"
 HEADERS = ["Story", "Beam", "Unique Name", "Output Case", "Case Type", "Step Type", "Station", "P", "V2", "V3", "T", "M2", "M3"]
 UNITS = ["", "", "", "", "", "", "m", "kN", "kN", "kN", "kN-m", "kN-m", "kN-m"]
 

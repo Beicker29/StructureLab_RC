@@ -28,9 +28,9 @@ structurelab-rc catalog
 structurelab-rc validate examples/nsr_10/vigas/viga_t.json
 structurelab-rc verify examples/nsr_10/vigas/viga_t.json
 structurelab-rc report examples/nsr_10/zapatas/zapata_aislada.json --output results/nsr_10/zapatas/zapata_aislada
-structurelab-rc import-etabs "examples/etabs/vigas/Element Forces - Beams.xlsx" examples/etabs/vigas/plantilla_vigas_nsr10.json --output results/etabs/vigas/etabs.json
-structurelab-rc report results/etabs/vigas/etabs.json --output results/etabs/vigas/reporte
-structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/etabs/zapatas/plantilla_zapatas_nsr10.json --output results/etabs/zapatas/zapatas.json
+structurelab-rc import-etabs "examples/etabs/vigas/Element Forces - Beams.xlsx" examples/nsr_10/vigas/plantilla_vigas_etabs.json --output results/nsr_10/vigas/etabs.json
+structurelab-rc report results/nsr_10/vigas/etabs.json --output results/nsr_10/vigas/etabs
+structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/plantilla_zapatas_etabs.json --output results/nsr_10/zapatas/etabs.json
 structurelab-rc design-footings examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
 ```
 
@@ -108,8 +108,10 @@ el proyecto de diseño.
 
 ## Ejemplos y resultados
 
-- `examples/<perfil>/<elemento>/*.json` (`vigas`, `zapatas`): entradas válidas y documentadas, versionadas en Git.
-  `examples/etabs/<elemento>/` guarda los ejemplos de importación desde ETABS. Cada carpeta tiene un `LEEME.md`
+- `examples/<perfil>/<elemento>/*.json` (`vigas`, `zapatas`): entradas válidas y documentadas, versionadas en Git. Los dos
+  perfiles tienen los mismos ejemplos con los mismos datos (solo cambian el perfil y el nivel sísmico equivalente), para
+  poder comparar resultados; las plantillas de ETABS (`plantilla_*_etabs.json`) están en la carpeta de su perfil y leen
+  los Excel compartidos de `examples/etabs/<elemento>/` (D-073). Cada carpeta tiene un `LEEME.md`
   con sus ejemplos y lo propio del perfil; los campos de entrada y de salida están en
   [docs/formatos/](docs/formatos/) y el índice en [examples/README.md](examples/README.md).
 - `results/`: salida generada, ignorada por Git. Nunca se edita a mano.

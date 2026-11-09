@@ -1,0 +1,205 @@
+{
+  "description": "Plantilla de importación para 'Element Forces - Beams.xlsx' (vigas B34 y B37 del 2do piso). Contiene lo que ETABS no exporta: perfil, nivel sísmico, materiales, secciones y armado por tramos, medidos en mm desde la estación 0 de ETABS. Unidades: mm y MPa.",
+  "profile": "nsr-10",
+  "seismic": {
+    "level": "DMO",
+    "justification": "Capacidad moderada de disipación de energía (DMO) declarada por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated"
+  },
+  "members": [
+    {
+      "id": "B34",
+      "type": "beam",
+      "etabs_unique_name": "117",
+      "length": 4625.0,
+      "section": {
+        "bw": 300.0,
+        "h": 500.0,
+        "cover": 40.0
+      },
+      "segments": [
+        {
+          "from": 0.0,
+          "to": 1200.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 62.0,
+                "role": "flexure",
+                "bars": [
+                  "#6",
+                  "#6",
+                  "#6",
+                  "#6"
+                ]
+              },
+              {
+                "depth": 250.0,
+                "role": "torsion",
+                "bars": [
+                  "#7",
+                  "#7"
+                ]
+              },
+              {
+                "depth": 440.0,
+                "role": "flexure",
+                "bars": [
+                  "#5",
+                  "#5",
+                  "#5"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#3",
+              "legs": 2,
+              "spacing": 100.0,
+              "closed": true
+            }
+          }
+        },
+        {
+          "from": 1200.0,
+          "to": 3400.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 60.0,
+                "role": "flexure",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 250.0,
+                "role": "torsion",
+                "bars": [
+                  "#7",
+                  "#7"
+                ]
+              },
+              {
+                "depth": 438.0,
+                "role": "flexure",
+                "bars": [
+                  "#6",
+                  "#6",
+                  "#6"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#3",
+              "legs": 2,
+              "spacing": 150.0,
+              "closed": true
+            }
+          }
+        },
+        {
+          "from": 3400.0,
+          "to": 4625.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 62.0,
+                "role": "flexure",
+                "bars": [
+                  "#6",
+                  "#6",
+                  "#6",
+                  "#6"
+                ]
+              },
+              {
+                "depth": 250.0,
+                "role": "torsion",
+                "bars": [
+                  "#7",
+                  "#7"
+                ]
+              },
+              {
+                "depth": 440.0,
+                "role": "flexure",
+                "bars": [
+                  "#5",
+                  "#5",
+                  "#5"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#3",
+              "legs": 2,
+              "spacing": 100.0,
+              "closed": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "B37",
+      "type": "beam",
+      "etabs_unique_name": "120",
+      "length": 2505.0,
+      "section": {
+        "bw": 300.0,
+        "h": 500.0,
+        "cover": 40.0
+      },
+      "segments": [
+        {
+          "from": 0.0,
+          "to": 2505.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 62.0,
+                "role": "flexure",
+                "bars": [
+                  "#6",
+                  "#6",
+                  "#6",
+                  "#6"
+                ]
+              },
+              {
+                "depth": 250.0,
+                "role": "torsion",
+                "bars": [
+                  "#7",
+                  "#7"
+                ]
+              },
+              {
+                "depth": 440.0,
+                "role": "flexure",
+                "bars": [
+                  "#6",
+                  "#6",
+                  "#6"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#3",
+              "legs": 2,
+              "spacing": 100.0,
+              "closed": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

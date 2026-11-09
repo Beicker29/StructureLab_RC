@@ -3,7 +3,7 @@
   "profile": "nsr-10",
   "seismic": {
     "level": "DMO",
-    "justification": "Capacidad moderada de disipación declarada por el ingeniero para este ejemplo."
+    "justification": "Capacidad moderada de disipación de energía (DMO) declarada por el ingeniero para este ejemplo."
   },
   "materials": {
     "fc": 28.0,

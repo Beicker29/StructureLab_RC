@@ -1,9 +1,9 @@
 {
-  "description": "Ejemplo de diseño por tipologías: 6 columnas con cargas de servicio y mayoradas, 2 zapatas tipo. Datos ilustrativos; precios en la moneda del usuario.",
+  "description": "Ejemplo de diseño por tipologías: 6 columnas con cargas de servicio y mayoradas, 6 zapatas tipo. Datos ilustrativos; precios en la moneda del usuario.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",
-    "justification": "Declarado por el ingeniero para este ejemplo."
+    "justification": "Capacidad especial de disipación de energía (DES) declarada por el ingeniero para este ejemplo."
   },
   "materials": {
     "fy": 420.0,
@@ -27,7 +27,7 @@
     "overturning_safety_factor_seismic": 1.5
   },
   "design": {
-    "typologies": 2,
+    "typologies": 6,
     "fc_options": [
       21.0,
       24.5,

@@ -19,10 +19,10 @@ from structurelab_rc.model.project import Project
 from structurelab_rc.model.template import EtabsFootingTemplate
 from structurelab_rc.setup import load_engine
 
-EXAMPLES = Path(__file__).parent.parent / "examples" / "etabs" / "zapatas"
-SERVICE = EXAMPLES / "Joint Reactions - Servicio.xlsx"
-FACTORED = EXAMPLES / "Joint Reactions - Ultimas.xlsx"
-TEMPLATE = EXAMPLES / "plantilla_zapatas_nsr10.json"
+EXAMPLES = Path(__file__).parent.parent / "examples"
+SERVICE = EXAMPLES / "etabs" / "zapatas" / "Joint Reactions - Servicio.xlsx"
+FACTORED = EXAMPLES / "etabs" / "zapatas" / "Joint Reactions - Ultimas.xlsx"
+TEMPLATE = EXAMPLES / "nsr_10" / "zapatas" / "plantilla_zapatas_etabs.json"
 HEADERS = ("Story", "Label", "Unique Name", "Output Case", "Case Type", "Step Type", "FX", "FY", "FZ", "MX", "MY", "MZ")
 UNITS = {"FX": "kN", "FY": "kN", "FZ": "kN", "MX": "kN-m", "MY": "kN-m", "MZ": "kN-m"}
 SOIL = {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.6, "unit_weight_concrete_kNm3": 24.0,

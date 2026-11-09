@@ -3,7 +3,7 @@
   "profile": "aci-318-25",
   "seismic": {
     "level": "special",
-    "justification": "Categoría de diseño sísmico alta declarada por el ingeniero para este ejemplo."
+    "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
   },
   "materials": {
     "fc": 28.0,
