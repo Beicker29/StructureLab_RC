@@ -761,6 +761,44 @@
 - **Método por defecto:** `milp`, por decisión del usuario al cumplirse la aceptación de E2. `dp` sigue disponible con
   `--method dp`. La prueba del wheel en la CI instala `[pdf,opt]`.
 
+### D-076: espesor y mallas de menor costo en `design_group` (E3a)
+
+- **Fecha:** 2026-11-09
+- **Problema:** `design_group` tomaba el menor espesor con solución de cada planta, no el de menor costo (E0: en ACI
+  318-25 una zapata más gruesa sin malla superior resultó más barata), y en cada espesor devolvía la primera
+  combinación de mallas que pasaba, con una sola malla superior candidata. Es un defecto frente a D-069 (la tipología
+  más económica).
+- **Decisión del usuario e implementación** (`design/footing/typology.py`; las verificaciones no cambian):
+  1. Mallas: las verificaciones de la malla inferior y de la superior son separables (las de la superior, o del
+     concreto simple sin ella, dependen solo de ella; la altura efectiva de la inferior, el cortante, el punzonamiento
+     y el anclaje de los pasadores no dependen de la superior). Se busca la inferior de menor costo con sus pasadores
+     (su anclaje depende de los diámetros de la inferior), de menor a mayor peso y hasta que su acero más los
+     pasadores mínimos no pueda ganar; con ella, la superior más liviana que pasa entre todas las candidatas (ninguna
+     primero si el perfil permite concreto simple, D-072). El par se confirma con una verificación completa; si no
+     pasara, se enumeran todas las combinaciones.
+  2. Espesor: desde el menor con solución (bisección), se recorren los mayores hasta `h_max` y se elige el de menor
+     costo. Un espesor que no cumple el suelo se salta y el barrido sigue.
+  3. Poda exacta: se deja de subir cuando la cota inferior alcanza el mejor costo: concreto más la malla inferior
+     mínima con `min_reinforcement_ratio` del perfil (la misma del chequeo de As,min), las longitudes de `_mat_mass` y
+     la menor masa por área de las barras candidatas; sin pasadores ni malla superior. La cota crece con h.
+  4. La búsqueda de plantas (la primera viable y dos más) no cambia y **sigue siendo heurística**.
+- **Control:** enumerador independiente en las pruebas (no reutiliza `_at_height`): todos los espesores, incluidos los
+  menores que el de la bisección, y todas las combinaciones de mallas candidatas, en casos sin momento negativo, con
+  momento negativo en DES (malla superior obligatoria) y en DMO (concreto simple permitido). El resultado es el mínimo
+  y nunca se usa el respaldo conjunto. La poda no cambia el resultado frente al barrido completo.
+- **Multiplicador de tiempo** (diseños individuales del proyecto de ETABS, 73 columnas × 3 f'c, 16 procesos): 0.99 a
+  1.10 en el tiempo de las tareas (1.03 a 1.17 en tiempo de pared). Ningún diseño individual sube de costo; mejoran 1
+  (NSR-10, 28 MPa) o 2 (ACI 318-25) de 73 columnas, con −0.06 a −0.08 % del costo de los individuales, siempre con
+  una zapata más gruesa. Huella de los ejemplos idéntica.
+- **Estado (2026-11-09, sin cerrar):** la corrida completa de ETABS NSR-10 con `milp` se detuvo a pedido del usuario a
+  los 8 848 s sin terminar (E2: 2 338 s); llevaba unas 31 h de CPU (E2: unas 9 h) y al final solo 2 de 16 procesos
+  trabajaban, en unas pocas tareas de rediseño de tramo muy largas. Los grupos reales de la solución de E2 (3 a 25
+  columnas) cuestan 1.0 a 1.25 veces lo de antes con E3a y dan el mismo diseño, sin usar el respaldo conjunto: algunos
+  tramos de la tabla de la DP, no identificados aún, se disparan. Hipótesis por confirmar: tramos con malla superior
+  obligatoria (NSR-10 DES), donde se prueban todas las superiores en cada espesor y la cota, sin la superior, poda
+  tarde. **Pendiente:** medir una muestra de tramos reales con las dos búsquedas (espesores, superiores probadas,
+  tiempo), proponer el ajuste al usuario y repetir ETABS.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

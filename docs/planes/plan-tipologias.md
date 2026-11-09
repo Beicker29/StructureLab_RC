@@ -11,7 +11,7 @@ una sesión aparte, se cierra con su criterio de aceptación y actualiza la tabl
 | E0. Medición | Cerrada (2026-11-09) | [`docs/mediciones/E0.md`](../mediciones/E0.md): 92 % del tiempo en rediseños de tramo; matriz completa ≈ 1 % del tiempo; NSR-10 con 1 repetida; reasignables 2.2 % (NSR-10) y 7.9–8.3 % (ACI) |
 | E1. DP: repetidas marcadas y reasignación | Cerrada (2026-11-09) | D-074: huella idéntica; ETABS −3.2 % (NSR-10, f'c 21 → 24.5) y −7.9 % (ACI); `report` PASS |
 | E2. Generador compartido y MILP | Cerrada (2026-11-09) | D-075: huella idéntica; ETABS −3.0 % (NSR-10) y −4.6 % (ACI) frente a E1, óptimo certificado; `milp` por defecto |
-| E3a. Espesor y mallas de menor costo en `design_group` | Aprobada (2026-11-09) con ajustes; después de E2 | D-076 |
+| E3a. Espesor y mallas de menor costo en `design_group` | En curso: implementada y probada; la corrida de ETABS no terminó (tiempo); pendiente diagnosticar tramos lentos | D-076 |
 | E3b. Velocidad: rediseñar solo lo que proponga el MILP | Pendiente (según E2 y E3a) | — |
 | Curva costo–N | Fase siguiente | — |
 

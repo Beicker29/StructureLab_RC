@@ -118,8 +118,9 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 | `design.method` | texto | `milp` (por defecto desde E2; requiere `pip install structurelab-rc[opt]`) o `dp` (solo la partición y la reasignación). `--method` en la CLI lo reemplaza (D-075). |
 | `design.milp_time_limit_s` | s | Límite de tiempo del MILP por f'c (por defecto 120). |
 
-Después de la partición, cada columna pasa a la tipología elegida más barata que la cubre si baja el costo y su grupo
-conserva al menos una columna (D-074). Las tipologías repetidas se permiten y se marcan.
+Cada tipología se diseña con la planta (la primera viable y dos más), el espesor y las mallas de menor costo que aprueban
+todas las verificaciones (D-069, D-076). Después de la partición, cada columna pasa a la tipología elegida más barata
+que la cubre si baja el costo y su grupo conserva al menos una columna (D-074). Las tipologías repetidas se permiten y se marcan.
 
 Con `milp`, después de la DP se arma el catálogo (diseños individuales y de tramo, sin repetidas), se calcula con qué
 pasadores cubre cada candidato a cada columna y un MILP elige N tipologías distintas y la asignación de menor costo,
