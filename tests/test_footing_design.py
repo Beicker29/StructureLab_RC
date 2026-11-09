@@ -11,11 +11,21 @@ import pytest
 
 from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
-from structurelab_rc.design.footing.grouping import partition
-from structurelab_rc.design.footing.typologies import design_typologies, designed_project
-from structurelab_rc.design.footing.typology import Context, Typology, column_checks, design_group
+from structurelab_rc.design.footing.grouping import partition, reassign
+from structurelab_rc.design.footing.profiling import profile_typologies
+from structurelab_rc.design.footing.typologies import (
+    Duplicate,
+    FcOption,
+    TypologyResult,
+    _duplicates,
+    _reassign,
+    _run,
+    design_typologies,
+    designed_project,
+)
+from structurelab_rc.design.footing.typology import Context, Typology, column_checks, covers, design_group, priced
 from structurelab_rc.domain.status import Status
-from structurelab_rc.engine import design_footings, run_project
+from structurelab_rc.engine import design_footings, report_file, run_project
 from structurelab_rc.io.etabs.footings import build_footing_design_project
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.design import FootingDesignProject
@@ -77,6 +87,75 @@ def test_partition_reports_infeasible() -> None:
     assert partition(3, 2, lambda i, j: math.inf) == (math.inf, [])
 
 
+@pytest.mark.parametrize("seed", range(20))
+def test_reassign_lowers_the_cost_and_keeps_every_group(seed: int) -> None:
+    rng = random.Random(seed)
+    items, groups = 9, 3
+    table = {(i, g): (math.inf if rng.random() < 0.3 else rng.uniform(1, 10)) for i in range(items) for g in range(groups)}
+    owner = [i % groups for i in range(items)]
+    for i in range(items):
+        table[(i, owner[i])] = rng.uniform(1, 10)  # su grupo de partida lo cubre
+    order = list(range(items))
+    result = reassign(owner, groups, lambda i, g: table[(i, g)], order)
+    assert sum(table[(i, result[i])] for i in range(items)) <= sum(table[(i, owner[i])] for i in range(items))
+    sizes = [result.count(g) for g in range(groups)]
+    assert min(sizes) >= 1
+    for i in range(items):  # estable: nadie baja su costo moviéndose sin vaciar su grupo
+        assert sizes[result[i]] == 1 or all(table[(i, g)] >= table[(i, result[i])] for g in range(groups))
+    assert reassign(result, groups, lambda i, g: table[(i, g)], order) == result
+
+
+def test_reassign_keeps_one_item_in_each_group_in_the_given_order() -> None:
+    costs = {(0, 0): 5.0, (0, 1): 1.0, (1, 0): 5.0, (1, 1): 1.0, (2, 0): math.inf, (2, 1): 2.0}
+    # Los dos elementos del grupo 0 quieren pasar al 1: pasa el primero en el orden y el segundo conserva el grupo 0.
+    assert reassign([0, 0, 1], 2, lambda i, g: costs[(i, g)], [1, 0, 2]) == [0, 1, 1]
+    assert reassign([0, 0, 1], 2, lambda i, g: costs[(i, g)], [0, 1, 2]) == [1, 0, 1]
+
+
+def test_identical_columns_are_marked_as_duplicates(tmp_path: Path) -> None:
+    data = _project(typologies=2, columns=1)
+    data["columns"].append({**data["columns"][0], "id": "C2"})
+    ctx = _context(data)
+    result = design_typologies(ctx)
+    assert len(result.typologies) == 2 and result.distinct_count == 1
+    assert [group.typologies for group in result.duplicates] == [("Z1", "Z2")]
+    assert result.options == (FcOption(21.0, result.cost, 1),)
+    assert result.reassigned == () and result.cost_before_reassignment == result.cost
+    path = tmp_path / "proyecto.json"
+    path.write_text(json.dumps(designed_project(ctx, result)), encoding="utf-8")
+    report_file(path, tmp_path / "salida")
+    assert "ADVERTENCIA: tipologías repetidas: Z1 = Z2" in (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
+
+
+def test_duplicates_report_the_design_limits() -> None:
+    ctx = _context(_project(typologies=1, columns=1))
+    design = design_group(ctx, ctx.project.columns, 21.0)
+    assert design is not None
+    t = design.typology
+    assert max(t.lx, t.ly) + ctx.design.plan_step <= ctx.design.plan_max and t.h + ctx.design.h_step <= ctx.design.h_max
+    limited = _context(_project(typologies=1, columns=1, plan_max=max(t.lx, t.ly)))  # el paso siguiente ya no cabe
+    pair = (TypologyResult("Z1", design, ("C1",)), TypologyResult("Z2", design, ("C2",)))
+    assert _duplicates(limited, pair) == (Duplicate(("Z1", "Z2"), ("plan_max",)),)
+    assert _duplicates(ctx, pair[:1]) == ()
+
+
+def test_reassignment_moves_a_column_to_a_cheaper_typology_that_covers_it() -> None:
+    ctx = _context(_project(typologies=2, columns=3))
+    c1, c2, c3 = ctx.project.columns
+    largest, middle = design_group(ctx, [c3], 21.0), design_group(ctx, [c2], 21.0)
+    assert largest is not None and middle is not None
+    dowels = covers(ctx, largest.typology, c1)
+    assert dowels is not None and covers(ctx, middle.typology, c1) is not None
+    chosen = [(priced(ctx, largest.typology, [c1, c3], {"C1": dowels, "C3": largest.dowels["C3"]}), [c1, c3]), (middle, [c2])]
+    position = {column.id: index for index, column in enumerate(ctx.project.columns)}
+    regrouped, shifts = _reassign(ctx, chosen, lambda tasks: [_run(ctx, task) for task in tasks], position)
+    assert [(column, source, target) for column, source, target, _ in shifts] == [("C1", 0, 1)]
+    assert [[column.id for column in columns] for _, columns in regrouped] == [["C3"], ["C1", "C2"]]
+    before, after = sum(design.cost for design, _ in chosen), sum(design.cost for design, _ in regrouped)
+    assert after == pytest.approx(before - shifts[0][3]) and shifts[0][3] > 0
+    assert regrouped[1][0].dowels["C1"] == covers(ctx, middle.typology, c1)
+
+
 def test_designed_typologies_cover_every_column_and_verify(tmp_path: Path) -> None:
     ctx = _context(_project())
     result = design_typologies(ctx)
@@ -94,6 +173,42 @@ def test_designed_typologies_cover_every_column_and_verify(tmp_path: Path) -> No
 def test_parallel_design_gives_the_same_result() -> None:
     ctx = _context(_project(typologies=2, columns=3))
     assert design_typologies(ctx, workers=2) == design_typologies(ctx, workers=1)
+
+
+def _without_times(value: Any) -> Any:
+    """La medición sin los tiempos (claves *_s), que cambian entre corridas."""
+    if isinstance(value, dict):
+        return {key: _without_times(item) for key, item in value.items() if not key.endswith("_s") and key != "estimate_over_design"}
+    if isinstance(value, list):
+        return [_without_times(item) for item in value]
+    return value
+
+
+def test_profile_gives_the_same_result_and_the_same_counts_in_parallel() -> None:
+    ctx = _context(_project(typologies=2, columns=3))
+    result, measurement = profile_typologies(ctx, workers=1)
+    assert result == design_typologies(ctx, workers=1)
+    parallel, measured = profile_typologies(ctx, workers=2)
+    assert parallel == result
+    assert _without_times(measured | {"workers": 1}) == _without_times(measurement)
+    stage = measurement["fc"][0]
+    assert stage["single"]["count"] == 3
+    assert stage["covered_segments"] + stage["redesigned_segments"] == stage["segments"]
+    assert stage["design"]["count"] == stage["redesigned_segments"]
+    assert stage["sample"]["pairs_sampled"] == stage["sample"]["pairs_full"] <= 3 * stage["sample"]["candidates"]
+    assert stage["sample"]["soil_rejects_but_covers"] == 0
+    assert measurement["solution"]["repeated"] == 0 and measurement["solution"]["typologies"] == 2
+
+
+def test_cli_profile_writes_the_measurement_without_changing_the_design(tmp_path: Path) -> None:
+    source = tmp_path / "diseno.json"
+    source.write_text(json.dumps(_project(typologies=1, columns=2)), encoding="utf-8")
+    assert main(["design-footings", str(source), "--output", str(tmp_path / "a"), "--workers", "1"]) == 0
+    assert main(["design-footings", str(source), "--output", str(tmp_path / "b"), "--workers", "1", "--profile"]) == 0
+    for name in ("proyecto.json", "tipologias.json"):
+        assert (tmp_path / "a" / name).read_bytes() == (tmp_path / "b" / name).read_bytes()
+    measurement = json.loads((tmp_path / "b" / "medicion.json").read_text(encoding="utf-8"))
+    assert measurement["environment"]["workers"] == 1 and measurement["fc"][0]["fc"] == 21.0
 
 
 def test_design_takes_the_least_thickness_for_its_plan_and_mats() -> None:
@@ -123,6 +238,9 @@ def test_cli_writes_the_designed_project(tmp_path: Path) -> None:
     assert main(["design-footings", str(source), "--output", str(tmp_path / "salida")]) == 0
     summary = json.loads((tmp_path / "salida" / "tipologias.json").read_text(encoding="utf-8"))
     assert summary["fc [MPa]"] == 21.0 and len(summary["typologies"]) == 1
+    assert summary["distinct_count"] == 1 and summary["duplicates"] == [] and summary["reassigned"] == []
+    assert summary["cost_before_reassignment"] == summary["cost"]
+    assert summary["by_fc"] == [{"fc [MPa]": 21.0, "cost": summary["cost"], "distinct_count": 1}]
     assert (tmp_path / "salida" / "proyecto.json").exists()
 
 

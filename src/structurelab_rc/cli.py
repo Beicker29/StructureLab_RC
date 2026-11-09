@@ -3,13 +3,23 @@
 import argparse
 import json
 import os
+import platform
 from collections.abc import Callable, Sequence
 from pathlib import Path
+from typing import Any
 
 from structurelab_rc import __version__
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
-from structurelab_rc.engine import design_footings, import_etabs, import_etabs_footings, report_file, validate_file, verify_file
+from structurelab_rc.engine import (
+    design_footings,
+    import_etabs,
+    import_etabs_footings,
+    profile_footings,
+    report_file,
+    validate_file,
+    verify_file,
+)
 from structurelab_rc.reporting.units import display
 from structurelab_rc.setup import load_engine
 
@@ -81,15 +91,34 @@ def _import_etabs_footings(service: Path, factored: Path, template: Path, output
     return 0
 
 
-def _design_footings(path: Path, output: Path, workers: int | None) -> int:
-    project, result, check = design_footings(path, workers or os.cpu_count() or 1)
+def _design_footings(path: Path, output: Path, workers: int | None, profile: bool) -> int:
+    processes = workers or os.cpu_count() or 1
+    measurement = None
+    if profile:
+        project, result, check, measurement = profile_footings(path, processes)
+    else:
+        project, result, check = design_footings(path, processes)
     print(f"{check.name}: {check.status}")
     _print_errors(check)
+    if measurement is not None:
+        output.mkdir(parents=True, exist_ok=True)
+        data = {"environment": _environment(processes), "project": str(path), **measurement}
+        (output / "medicion.json").write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"Medicion escrita en {output / 'medicion.json'}")
     if project is None or result is None:
         return 1
     output.mkdir(parents=True, exist_ok=True)
     (output / "proyecto.json").write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    summary = {"fc [MPa]": result.fc, "cost": round(result.cost, 2), "typologies": [
+    summary = {"fc [MPa]": result.fc, "cost": round(result.cost, 2),
+               "cost_before_reassignment": round(result.cost_before_reassignment, 2),
+               "distinct_count": result.distinct_count,
+               "duplicates": [{"typologies": list(group.typologies), "at_limit": list(group.at_limit)} for group in result.duplicates],
+               "reassigned": [{"column": move.column, "from": move.source, "to": move.target, "saving": round(move.saving, 2)}
+                              for move in result.reassigned],
+               "by_fc": [{"fc [MPa]": option.fc, "cost": None if option.cost is None else round(option.cost, 2),
+                          "distinct_count": option.distinct_count, **({"failure": option.failure} if option.failure else {})}
+                         for option in result.options],
+               "typologies": [
         {"name": item.name, "lx [mm]": item.design.typology.lx, "ly [mm]": item.design.typology.ly,
          "h [mm]": item.design.typology.h, "bottom": item.design.typology.bottom, "top": item.design.typology.top,
          "columns": list(item.columns), "dowels": item.design.dowels, "concrete [m3]": round(item.design.concrete, 3),
@@ -99,8 +128,38 @@ def _design_footings(path: Path, output: Path, workers: int | None) -> int:
     for item in result.typologies:
         t = item.design.typology
         print(f"  {item.name}: {t.lx:.0f} x {t.ly:.0f} x {t.h:.0f} mm; {len(item.columns)} columnas: {', '.join(item.columns)}")
+    if result.reassigned:
+        print(f"Reasignadas {len(result.reassigned)} columnas; costo antes de reasignar {result.cost_before_reassignment:.2f}")
+    for group in result.duplicates:
+        limit = f" (en el limite {', '.join(group.at_limit)})" if group.at_limit else ""
+        print(f"ADVERTENCIA: tipologias repetidas {' = '.join(group.typologies)}{limit}; "
+              f"{result.distinct_count} distintas de {len(result.typologies)}")
     print(f"Proyecto escrito en {output / 'proyecto.json'}; verifiquelo o genere su memoria con report")
     return 0
+
+
+def _environment(workers: int) -> dict[str, Any]:
+    """Configuración de la medición: SHA, máquina, sistema operativo y procesos."""
+    return {"sha": _git_sha(), "machine": platform.processor() or platform.machine(), "cpu_count": os.cpu_count(),
+            "os": platform.platform(), "python": platform.python_version(), "workers": workers}
+
+
+def _git_sha() -> str:
+    """SHA del HEAD leído de .git (no exige git instalado); no detecta cambios sin commit."""
+    for folder in (Path.cwd(), *Path.cwd().parents):
+        git = folder / ".git"
+        if not (git / "HEAD").exists():
+            continue
+        head = (git / "HEAD").read_text(encoding="utf-8").strip()
+        if not head.startswith("ref: "):
+            return head
+        ref = head.removeprefix("ref: ")
+        if (git / ref).exists():
+            return (git / ref).read_text(encoding="utf-8").strip()
+        packed = git / "packed-refs"
+        lines = packed.read_text(encoding="utf-8").splitlines() if packed.exists() else []
+        return next((line.split()[0] for line in lines if line.endswith(f" {ref}")), "desconocido")
+    return "desconocido"
 
 
 def _report(project: Path, output: Path, full: bool) -> int:
@@ -136,6 +195,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     designer.add_argument("project", type=Path, help="proyecto de diseno en JSON (columnas y bloque design)")
     designer.add_argument("--output", type=Path, required=True, help="carpeta donde escribir proyecto.json y tipologias.json")
     designer.add_argument("--workers", type=int, help="procesos en paralelo (por defecto, los nucleos del equipo; 1: sin paralelo)")
+    designer.add_argument("--profile", action="store_true",
+                          help="escribe ademas medicion.json: tiempos por tarea y analisis de la solucion (no cambia el resultado)")
     reporter = commands.add_parser("report", help="verifica un proyecto y escribe resultado.json, memoria.txt y memoria.pdf")
     reporter.add_argument("project", type=Path, help="ruta del archivo JSON")
     reporter.add_argument("--output", type=Path, required=True, help="carpeta de salida, por ejemplo results/mi_proyecto")
@@ -143,7 +204,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     commands_by_name: dict[str, Callable[[], int]] = {
         "report": lambda: _report(args.project, args.output, args.full),
-        "design-footings": lambda: _design_footings(args.project, args.output, args.workers),
+        "design-footings": lambda: _design_footings(args.project, args.output, args.workers, args.profile),
         "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output),
         "import-etabs": lambda: _import_etabs(args.workbook, args.template, args.output),
         "validate": lambda: _validate(args.project),

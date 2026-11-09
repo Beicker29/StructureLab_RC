@@ -1,7 +1,8 @@
-"""Partición óptima de una lista ordenada en un número dado de tramos continuos (programación dinámica)."""
+"""Partición óptima de una lista ordenada en un número dado de tramos continuos (programación dinámica) y reasignación
+de elementos entre grupos ya formados."""
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 
 def partition(count: int, groups: int, cost: Callable[[int, int], float]) -> tuple[float, list[tuple[int, int]]]:
@@ -32,3 +33,30 @@ def partition(count: int, groups: int, cost: Callable[[int, int], float]) -> tup
         segments.append((start, end - 1))
         end = start
     return best[groups][count], segments[::-1]
+
+
+def reassign(owner: Sequence[int], groups: int, cost: Callable[[int, int], float], order: Sequence[int]) -> list[int]:
+    """Mueve elementos al grupo más barato sin vaciar ninguno (D-074).
+
+    owner[i] es el grupo del elemento i; cost(i, g) el costo del elemento i en el grupo g (math.inf si no cabe). En el
+    orden dado, cada elemento pasa al grupo de menor costo (el de menor índice si empatan) si baja su costo y su grupo
+    conserva al menos un elemento; se repite hasta que nada cambie (termina: el costo total baja en cada movimiento).
+    """
+    owner = list(owner)
+    sizes = [0] * groups
+    for group in owner:
+        sizes[group] += 1
+    changed = True
+    while changed:
+        changed = False
+        for item in order:
+            here = owner[item]
+            if sizes[here] <= 1:
+                continue
+            target = min(range(groups), key=lambda group: (cost(item, group), group))
+            if cost(item, target) < cost(item, here):
+                owner[item] = target
+                sizes[here] -= 1
+                sizes[target] += 1
+                changed = True
+    return owner

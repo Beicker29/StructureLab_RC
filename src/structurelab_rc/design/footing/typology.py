@@ -10,6 +10,7 @@ que aprueban la flexión, los mínimos, la separación, la franja y el desarroll
 (dimensiones, mallas y f'c); cada columna del grupo se verifica con su propia sección, sus cargas y sus pasadores.
 """
 
+import json
 import math
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
@@ -49,6 +50,13 @@ class Typology:
     h: float
     bottom: dict[str, Any]
     top: dict[str, Any] | None
+
+
+def typology_key(typology: Typology) -> tuple[Any, ...]:
+    """Tipologías iguales (D-074): coinciden f'c, lx, ly, h, malla inferior y malla superior; los pasadores son de cada
+    columna y no cuentan."""
+    return (typology.fc, typology.lx, typology.ly, typology.h, json.dumps(typology.bottom, sort_keys=True),
+            json.dumps(typology.top, sort_keys=True))
 
 
 @dataclass(frozen=True)

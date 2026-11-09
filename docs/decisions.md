@@ -596,7 +596,7 @@
   5. Si nada cumple dentro de los límites, el resultado es FAIL con el motivo; los límites no se amplían.
   6. Dentro de una tipología, cada columna se verifica con su propia sección, sus cargas y sus pasadores, que se diseñan por columna.
 - **Implementación (DRY):** el diseño no tiene fórmulas propias. `design/footing/typology.py` propone zapatas (planta, espesor, mallas a partir del As requerido de `domain/flexure_strength`, pasadores con el aplastamiento de `codes`) y las aprueba con `domain/footing/checks.footing_checks`; después de la primera planta viable explora dos más y se queda con la más barata, y elige los pasadores de menor área que aprueban área, anclaje y exceso de aplastamiento. `design/footing/grouping.py` parte la lista ordenada en N tramos continuos por programación dinámica (óptima para ese orden); `design/footing/typologies.py` diseña cada columna, las ordena por costo, agrupa y prueba cada f'c. El proyecto diseñado es un proyecto de verificación normal (`proyecto.json`), que `report` verifica y documenta.
-- **Rendimiento:** el As requerido se memoiza (una columna pasó de más de una hora a 0.6 s); un algoritmo genético se descartó porque necesitaría miles de verificaciones donde la búsqueda usa unas pocas y no garantiza el óptimo. Los diseños individuales, las coberturas y los diseños de tramo se reparten entre procesos (`design-footings --workers N`, por defecto los núcleos del equipo); el resultado es idéntico con cualquier número de procesos (ETABS, 65 columnas: 8 min con 32 hilos). Una partición perezosa con cota inferior del concreto se probó y se descartó: con la cota a ~30 % del costo real tuvo que diseñar el 75 % de los tramos.
+- **Rendimiento:** el As requerido se memoiza (una columna pasó de más de una hora a 0.6 s); un algoritmo genético se descartó porque necesitaría miles de verificaciones donde la búsqueda usa unas pocas y no garantiza el óptimo. Los diseños individuales, las coberturas y los diseños de tramo se reparten entre procesos (`design-footings --workers N`, por defecto los núcleos del equipo); el resultado es idéntico con cualquier número de procesos (ETABS, 65 columnas: 8 min con 32 hilos; referencia vigente desde la medición E0 del 2026-11-09, [docs/mediciones/E0.md](mediciones/E0.md): 73 columnas, 16 hilos, 35 min con NSR-10 y 39 min con ACI 318-25). Una partición perezosa con cota inferior del concreto se probó y se descartó: con la cota a ~30 % del costo real tuvo que diseñar el 75 % de los tramos.
 
 ### D-070: deslizamiento y volcamiento de zapatas
 
@@ -687,6 +687,41 @@
 - **Cambios:** el diseño por tipologías de NSR-10 pasa a 6 tipologías como el de ACI; las vigas de ACI pasan a
   `intermediate`, equivalente a DMO; se crean las plantillas de ETABS de ACI, gemelas de las de NSR-10. Reemplaza la
   ubicación de las plantillas de D-058.
+
+### D-074: tipologías repetidas y reasignación en el diseño por tipologías (E1)
+
+- **Fecha:** 2026-11-09
+- **Contexto:** la medición E0 ([docs/mediciones/E0.md](mediciones/E0.md)) encontró en NSR-10 una solución de N = 6
+  con dos tipologías idénticas (Z4 = Z5) y, en los dos perfiles, columnas que otra tipología elegida cubre más barato
+  (2.2 % del costo en NSR-10, 7.9 a 8.3 % en ACI 318-25).
+- **Decisión del usuario:**
+  1. Se permiten tipologías repetidas, pero se marcan. Iguales: coinciden f'c, lx, ly, h, malla inferior y malla
+     superior (los pasadores son de cada columna). No hay FAIL ni se descarta el f'c: se elige el f'c más barato.
+     La primera propuesta (FAIL en modo `dp`, descartar el f'c) se cambió por esta.
+  2. `tipologias.json` trae `distinct_count`, `duplicates` (grupos de tipologías idénticas: nombres y `at_limit`, los
+     límites de diseño `plan_max` o `h_max` en que está la tipología, cuando el paso siguiente los supera) y, por cada
+     f'c evaluado, su costo y su `distinct_count`. La memoria muestra una advertencia visible cuando hay repetidas.
+     Las repetidas, junto con el ahorro marginal de la curva costo–N, servirán como indicador de saturación de N.
+  3. Reasignación que conserva las N: en orden de id, cada columna pasa a la tipología elegida más barata que la
+     cubre si baja el costo y su grupo de origen conserva al menos una columna; se repite hasta que nada cambie. Las
+     tipologías no se rediseñan. Va antes de comparar los f'c. Salida: `cost_before_reassignment` y `reassigned`
+     (`column`, `from`, `to`, `saving`).
+  4. En E2, la verificación `C_MILP ≤ C_DP` se exige solo cuando la DP no tiene repetidas; si las tiene, se reportan
+     los dos costos con su `distinct_count` y una nota. En la curva costo–N los puntos con repetidas se marcan.
+- **Seguridad:** la reasignación solo mueve una columna a una tipología que la cubre según `covers()` (todas las
+  verificaciones de la columna con sus pasadores), y el proyecto diseñado se reverifica completo con `report`.
+- **Resultado (E1, 2026-11-09, proyecto de ETABS, 73 columnas, N = 6, 16 procesos):** huella de los ejemplos idéntica
+  (6 columnas y N = 6: nada que reasignar). La reasignación cuesta 1.3 a 1.9 s por f'c (365 coberturas).
+
+  | Perfil | E0: f'c, costo | E1: f'c, costo antes → después | Reasignadas | Distintas | `report` |
+  | --- | --- | --- | --- | --- | --- |
+  | NSR-10 | 21 MPa, 644 701 163 (5 distintas) | 24.5 MPa, 649 544 544 → 624 266 644 (−3.2 % frente a E0) | 15 | 6 | PASS |
+  | ACI 318-25 | 21 MPa, 811 203 293 | 21 MPa, 811 203 293 → 746 988 349 (−7.9 %) | 43 | 6 | PASS |
+
+  En NSR-10 la reasignación cambia el f'c elegido: 21 MPa baja a 630 730 196 (exactamente lo estimado en E0) y
+  sigue con 5 distintas; 24.5 MPa queda más barato, sin repetidas. En ACI 318-25 el ahorro coincide con la estimación
+  de E0 que conserva las 6 tipologías. En los dos queda una sola columna reasignable, bloqueada porque es la única de
+  su grupo.
 
 ## Consultas abiertas
 

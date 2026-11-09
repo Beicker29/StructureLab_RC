@@ -2,8 +2,9 @@
 
 Para cada f'c comercial con precio: (1) diseño individual de cada columna; (2) columnas ordenadas por el costo de su
 diseño; (3) partición en N tramos continuos por programación dinámica, donde el costo de un tramo es el de la tipología
-de su columna más exigente si cubre a todas, o el de un diseño del tramo completo si no; (4) se elige el f'c de menor costo
-total y cada tipología final se verifica de nuevo con todas sus columnas. Un solo f'c para todas las zapatas (D-069).
+de su columna más exigente si cubre a todas, o el de un diseño del tramo completo si no; (4) reasignación: cada columna
+pasa a la tipología elegida más barata que la cubre sin vaciar ningún grupo (D-074); (5) se elige el f'c de menor costo
+total. Un solo f'c para todas las zapatas (D-069). Las tipologías repetidas se permiten y se marcan (D-074).
 
 Los diseños individuales, las coberturas y los diseños de tramo son independientes entre sí: con workers > 1 se reparten
 entre procesos y la partición consulta la tabla ya calculada. El resultado es el mismo con cualquier número de procesos.
@@ -16,8 +17,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from structurelab_rc.codes.registry import PROFILES
-from structurelab_rc.design.footing.grouping import partition
-from structurelab_rc.design.footing.typology import Context, GroupDesign, Typology, covers, design_group, priced
+from structurelab_rc.design.footing.grouping import partition, reassign
+from structurelab_rc.design.footing.typology import Context, GroupDesign, Typology, covers, design_group, priced, typology_key
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.design import DesignColumn, FootingDesignProject
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, N_PER_KN, NMM_PER_KNM, FootingLoad
@@ -37,6 +38,35 @@ class TypologyResult:
 
 
 @dataclass(frozen=True)
+class Move:
+    """Columna reasignada (D-074): de la tipología source a target, con el ahorro."""
+
+    column: str
+    source: str
+    target: str
+    saving: float
+
+
+@dataclass(frozen=True)
+class FcOption:
+    """Un f'c evaluado: su costo total y sus tipologías distintas, o por qué no tiene solución."""
+
+    fc: float
+    cost: float | None
+    distinct_count: int | None
+    failure: str = ""
+
+
+@dataclass(frozen=True)
+class Duplicate:
+    """Tipologías idénticas de la solución (D-074) y los límites de diseño en que está esa tipología: "plan_max" si el
+    paso siguiente de planta lo supera, "h_max" si el de espesor lo supera."""
+
+    typologies: tuple[str, ...]
+    at_limit: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class DesignResult:
     """Solución: f'c, tipologías y costo total; failure explica por qué no la hay (dentro de los límites)."""
 
@@ -44,6 +74,41 @@ class DesignResult:
     typologies: tuple[TypologyResult, ...]
     cost: float
     failure: str = ""
+    cost_before_reassignment: float = math.inf
+    reassigned: tuple[Move, ...] = ()
+    options: tuple[FcOption, ...] = ()
+    distinct_count: int = 0
+    duplicates: tuple[Duplicate, ...] = ()
+
+
+def _duplicates(ctx: Context, typologies: Sequence[TypologyResult]) -> tuple[Duplicate, ...]:
+    groups: dict[tuple[Any, ...], list[TypologyResult]] = {}
+    for item in typologies:
+        groups.setdefault(typology_key(item.design.typology), []).append(item)
+    design = ctx.design
+    found = []
+    for items in groups.values():
+        if len(items) == 1:
+            continue
+        t = items[0].design.typology
+        limits = tuple(name for name, reached in (("plan_max", max(t.lx, t.ly) + design.plan_step > design.plan_max),
+                                                  ("h_max", t.h + design.h_step > design.h_max)) if reached)
+        found.append(Duplicate(tuple(item.name for item in items), limits))
+    return tuple(found)
+
+
+def _distinct_count(typologies: Sequence[Typology]) -> int:
+    return len({typology_key(typology) for typology in typologies})
+
+
+def _duplicates_warning(result: DesignResult) -> str:
+    """Advertencia de tipologías repetidas (D-074), vacía si no las hay; va en la descripción del proyecto diseñado, que
+    la memoria muestra en su encabezado."""
+    if not result.duplicates:
+        return ""
+    groups = "; ".join(" = ".join(group.typologies) + (f" (en el límite {', '.join(group.at_limit)})" if group.at_limit else "")
+                       for group in result.duplicates)
+    return f" ADVERTENCIA: tipologías repetidas: {groups}; {result.distinct_count} distintas de {len(result.typologies)} (D-074)."
 
 
 def _run(ctx: Context, task: Task) -> Any:
@@ -80,7 +145,19 @@ def _usable(start: int, end: int, count: int, groups: int) -> bool:
     return False
 
 
-def _for_fc(ctx: Context, fc: float, run: Runner) -> tuple[float, list[tuple[GroupDesign, list[DesignColumn]]]] | str:
+Chosen = list[tuple[GroupDesign, list[DesignColumn]]]
+Shift = tuple[str, int, int, float]  # columna, grupo de origen, grupo de destino (índices de Chosen) y ahorro
+
+
+@dataclass(frozen=True)
+class _FcSolution:
+    total: float
+    chosen: Chosen
+    before: float  # costo de la partición, antes de reasignar
+    shifts: list[Shift]
+
+
+def _for_fc(ctx: Context, fc: float, run: Runner) -> _FcSolution | str:
     columns = ctx.project.columns
     designs = run([("single", fc, index) for index in range(len(columns))])
     singles: dict[str, GroupDesign] = {}
@@ -127,7 +204,46 @@ def _for_fc(ctx: Context, fc: float, run: Runner) -> tuple[float, list[tuple[Gro
         result = table[(start, end)]
         assert result is not None
         chosen.append((result, list(ordered[start : end + 1])))
-    return total, chosen
+    regrouped, shifts = _reassign(ctx, chosen, run, position)
+    if not shifts:  # sin cambios: la misma solución y el mismo total que la partición
+        return _FcSolution(total, chosen, total, [])
+    return _FcSolution(sum(design.cost for design, _ in regrouped), regrouped, total, shifts)
+
+
+def _reassign(ctx: Context, chosen: Chosen, run: Runner, position: dict[str, int]) -> tuple[Chosen, list[Shift]]:
+    """Reasignación de D-074 entre las tipologías elegidas, sin rediseñarlas: solo las columnas de grupos con más de una
+    pueden moverse, y solo a una tipología que las cubre (covers)."""
+    members = [(column, group) for group, (_, columns) in enumerate(chosen) for column in columns]
+    movable = [(column, group) for column, group in members if len(chosen[group][1]) > 1]
+    pairs = [(column, other) for column, group in movable for other in range(len(chosen)) if other != group]
+    found: dict[tuple[str, int], dict[str, Any] | None] = {
+        (column.id, group): chosen[group][0].dowels[column.id] for column, group in members}
+    tasks: list[Task] = [("covers", chosen[other][0].typology, position[column.id]) for column, other in pairs]
+    found.update(zip(((column.id, other) for column, other in pairs), run(tasks), strict=True))
+
+    costs: dict[tuple[int, int], float] = {}
+
+    def cost(item: int, group: int) -> float:
+        if (item, group) not in costs:
+            column = members[item][0]
+            dowels = found.get((column.id, group))
+            costs[(item, group)] = math.inf if dowels is None else priced(
+                ctx, chosen[group][0].typology, [column], {column.id: dowels}).cost
+        return costs[(item, group)]
+
+    order = sorted(range(len(members)), key=lambda item: members[item][0].id)
+    owner = reassign([group for _, group in members], len(chosen), cost, order)
+    shifts = [(members[item][0].id, group, owner[item], cost(item, group) - cost(item, owner[item]))
+              for item, (_, group) in enumerate(members) if owner[item] != group]
+    regrouped: Chosen = []
+    for group, (design, columns) in enumerate(chosen):
+        now = [members[item][0] for item in range(len(members)) if owner[item] == group]
+        if [column.id for column in now] == [column.id for column in columns]:
+            regrouped.append((design, columns))  # grupo sin cambios: el mismo diseño y el mismo costo
+            continue
+        dowels = {column.id: found[(column.id, group)] for column in now}
+        regrouped.append((priced(ctx, design.typology, now, {key: value for key, value in dowels.items() if value is not None}), now))
+    return regrouped, shifts
 
 
 def _largest(singles: dict[str, GroupDesign], members: Sequence[DesignColumn]) -> Typology:
@@ -152,23 +268,31 @@ def _in_pool(pool: Executor, tasks: list[Task], workers: int) -> list[Any]:
 
 
 def _design(ctx: Context, run: Runner) -> DesignResult:
-    best: tuple[float, float, list[tuple[GroupDesign, list[DesignColumn]]]] | None = None
+    best: tuple[float, _FcSolution] | None = None
     failures = []
+    options = []
     for fc in sorted(ctx.design.fc_options):
         outcome = _for_fc(ctx, fc, run)
         if isinstance(outcome, str):
             failures.append(outcome)
+            options.append(FcOption(fc, None, None, outcome))
             continue
-        total, chosen = outcome
-        if best is None or total < best[0]:
-            best = (total, fc, chosen)
+        options.append(FcOption(fc, outcome.total, _distinct_count([design.typology for design, _ in outcome.chosen])))
+        if best is None or outcome.total < best[1].total:
+            best = (fc, outcome)
     if best is None:
-        return DesignResult(None, (), math.inf, "; ".join(failures))
-    total, fc, chosen = best
-    chosen.sort(key=lambda item: (item[0].typology.lx * item[0].typology.ly, item[0].typology.h))
-    typologies = tuple(TypologyResult(f"Z{index}", design, tuple(column.id for column in columns))
-                       for index, (design, columns) in enumerate(chosen, start=1))
-    return DesignResult(fc, typologies, total)
+        return DesignResult(None, (), math.inf, "; ".join(failures), options=tuple(options))
+    fc, solution = best
+    chosen = solution.chosen
+    ranked = sorted(range(len(chosen)), key=lambda group: (chosen[group][0].typology.lx * chosen[group][0].typology.ly,
+                                                            chosen[group][0].typology.h))
+    names = {group: f"Z{index}" for index, group in enumerate(ranked, start=1)}
+    typologies = tuple(TypologyResult(names[group], chosen[group][0], tuple(column.id for column in chosen[group][1]))
+                       for group in ranked)
+    moves = tuple(Move(column, names[source], names[target], saving) for column, source, target, saving in solution.shifts)
+    return DesignResult(fc, typologies, solution.total, cost_before_reassignment=solution.before, reassigned=moves,
+                        options=tuple(options), distinct_count=_distinct_count([item.design.typology for item in typologies]),
+                        duplicates=_duplicates(ctx, typologies))
 
 
 def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
@@ -194,7 +318,7 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
     materials = project.materials
     return {
         "description": f"{project.description} Diseño por tipologías (D-069): {len(result.typologies)} tipologías, "
-                       f"f'c = {result.fc:g} MPa, costo total {result.cost:.2f}.",
+                       f"f'c = {result.fc:g} MPa, costo total {result.cost:.2f}.{_duplicates_warning(result)}",
         "profile": project.profile,
         "seismic": project.seismic.model_dump(),
         "materials": {"fc": result.fc, "fy": materials.fy, "fyt": materials.fyt, "concrete": materials.concrete,

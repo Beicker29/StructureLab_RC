@@ -7,6 +7,7 @@ from typing import Any
 
 from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project
 from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.domain.basis import Basis
@@ -145,16 +146,33 @@ def _validate_design(design: FootingDesignProject) -> Check:
 def design_footings(path: Path, workers: int = 1) -> tuple[dict[str, Any] | None, DesignResult | None, Check]:
     """Diseño por tipologías (D-069): el proyecto de verificación con una zapata por columna y el resumen; workers es el
     número de procesos entre los que se reparte (no cambia el resultado)."""
+    project, result, check, _ = _design_footings(path, workers, profile=False)
+    return project, result, check
+
+
+def profile_footings(path: Path, workers: int = 1) -> tuple[dict[str, Any] | None, DesignResult | None, Check, dict[str, Any] | None]:
+    """Lo mismo que design_footings, con la medición de tiempos y el análisis de la solución (etapa E0)."""
+    return _design_footings(path, workers, profile=True)
+
+
+def _design_footings(
+    path: Path, workers: int, profile: bool
+) -> tuple[dict[str, Any] | None, DesignResult | None, Check, dict[str, Any] | None]:
     try:
         design = load_design_project(path)
     except ProjectLoadError as error:
-        return None, None, check_from_errors(CHECK_NAME, error.errors)
+        return None, None, check_from_errors(CHECK_NAME, error.errors), None
     validation = _validate_design(design)
     if validation.status is Status.FAIL:
-        return None, None, validation
+        return None, None, validation, None
     ctx = Context(design, PROFILES[design.profile], load_engine().bars)
-    result = design_typologies(ctx, workers)
+    measurement = None
+    if profile:
+        result, measurement = profile_typologies(ctx, workers)
+    else:
+        result = design_typologies(ctx, workers)
     if result.fc is None:
-        return None, result, check_from_errors(CHECK_NAME, [invalid_input(f"Sin solucion dentro de los limites: {result.failure}")])
-    return designed_project(ctx, result), result, validation
+        failure = check_from_errors(CHECK_NAME, [invalid_input(f"Sin solucion dentro de los limites: {result.failure}")])
+        return None, result, failure, measurement
+    return designed_project(ctx, result), result, validation, measurement
 

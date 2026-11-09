@@ -116,9 +116,30 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 | `design.bars`, `design.spacing_step`, `design.end` | -, mm, texto | Barras permitidas para las mallas, paso de separación y extremo de las barras. |
 | `design.dowel_bars` | - | Barras permitidas para los pasadores. |
 
-Salida: `proyecto.json` (una zapata por columna, nombrada `<tipología>-<columna>`, lista para `verify` y `report`) y
-`tipologias.json` (f'c, costo total y, por tipología, dimensiones, mallas, columnas, pasadores, concreto, acero y costo).
+Después de la partición, cada columna pasa a la tipología elegida más barata que la cubre si baja el costo y su grupo
+conserva al menos una columna (D-074). Las tipologías repetidas se permiten y se marcan.
+
+Salida: `proyecto.json` (una zapata por columna, nombrada `<tipología>-<columna>`, lista para `verify` y `report`; si
+hay tipologías repetidas, su `description` termina con una advertencia que la memoria muestra en el encabezado) y
+`tipologias.json`:
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `fc [MPa]` | MPa | f'c elegido: el de menor costo total. |
+| `cost` | moneda | Costo total, después de la reasignación. |
+| `cost_before_reassignment` | moneda | Costo de la partición, antes de reasignar. |
+| `distinct_count` | - | Tipologías distintas; menor que el número pedido si hay repetidas. |
+| `duplicates` | lista | Grupos de tipologías idénticas (mismos f'c, lx, ly, h y mallas): `typologies` (nombres) y `at_limit` (`plan_max` si el paso siguiente de planta lo supera, `h_max` si el de espesor lo supera; vacía si ninguno). |
+| `reassigned` | lista | Columnas reasignadas: `column`, `from`, `to` (nombres de tipología) y `saving` (moneda). |
+| `by_fc` | lista | Cada f'c evaluado: `fc [MPa]`, `cost` y `distinct_count` (null si no tiene solución, con `failure`). |
+| `typologies` | lista | Por tipología: `name`, dimensiones, mallas, `columns`, `dowels`, concreto, acero y `cost`. |
+
 Si nada cumple dentro de los límites, el comando termina con FAIL y el motivo. `--workers N` fija los procesos en paralelo (por defecto, los núcleos del equipo; `--workers 1`, sin paralelo); no cambia el resultado.
+`--profile` escribe además `medicion.json` (etapa E0 de [plan-tipologias](../planes/plan-tipologias.md)): configuración
+(SHA, máquina, procesos), número y tiempo de las tareas `single`, `covers`, `design` y `reassign` (coberturas de la
+reasignación) por f'c, tramos cubiertos y rediseñados, tiempo del proceso principal entre lotes (`main_s`), una
+muestra fija de 500 pares columna–candidato con la extrapolación a la matriz completa de cobertura, y las tipologías
+repetidas y columnas reasignables de la solución. No cambia `proyecto.json` ni `tipologias.json`.
 
 ## Salida
 
