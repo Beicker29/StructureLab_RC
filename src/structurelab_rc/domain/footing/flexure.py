@@ -25,7 +25,7 @@ from structurelab_rc.domain.plain_strength import plain_rectangular_moment
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.mechanics.flexure import SteelLayer
-from structurelab_rc.model.footing import Footing
+from structurelab_rc.model.footing import Footing, FootingBase
 from structurelab_rc.model.project import Materials
 
 MAT_NAMES = {"bottom": "inferior", "top": "superior"}
@@ -60,9 +60,10 @@ def _name(kind: str, mat: str, direction: str) -> str:
     return f"{kind} malla {MAT_NAMES[mat]} (barras {direction})"
 
 
-def _plain_check(basis: Basis, footing: Footing, direction: str, demand: float, location: tuple[str, str]) -> Check:
-    """Momento negativo sin malla superior: concreto simple en todo el ancho, espesor h − 50 mm (D-072)."""
-    face, load_case = location
+def plain_check(basis: Basis, footing: FootingBase, direction: str, demand: float, location: tuple[str, str, str]) -> Check:
+    """Momento negativo sin malla superior: concreto simple en todo el ancho, espesor h − 50 mm (D-072). location es la
+    cara (o sección), el caso y la nota que describe la sección."""
+    face, load_case, note = location
     plain = basis.profile.plain
     name = f"{PLAIN} (cara superior, barras {direction})"
     clause = plain.clauses()["flexure"]
@@ -78,7 +79,8 @@ def _plain_check(basis: Basis, footing: Footing, direction: str, demand: float, 
         return replace(check_from_errors(name, [strength]), clause=clause, member=member, case=load_case)
     values = (("phi", strength.phi), ("Mn", strength.nominal), ("h calculo", strength.thickness), ("Sm", strength.modulus))
     return Check(name, Status.PASS if strength.design >= demand else Status.FAIL, clause=clause, demand=demand,
-                 capacity=strength.design, unit="N*mm", values=values, note=f"Cara {face} de la columna", member=member, case=load_case)
+                 capacity=strength.design, unit="N*mm", values=values, note=note, member=member,
+                 case=load_case)
 
 
 def _strength_checks(basis: Basis, footing: Footing, rows: dict[str, dict[str, BarRow]], cases: list[FaceMoments]) -> list[Check]:
@@ -96,7 +98,7 @@ def _strength_checks(basis: Basis, footing: Footing, rows: dict[str, dict[str, B
                 name = _name("Flexion", mat, direction)
                 member, load_case = footing.id, case.case
                 if mat not in rows:
-                    checks.append(_plain_check(basis, footing, direction, demand, (face, load_case)))
+                    checks.append(plain_check(basis, footing, direction, demand, (face, load_case, f"Cara {face} de la columna")))
                     continue
                 row = rows[mat][direction]
                 strength = _strength(profile, materials, footing, row)

@@ -98,8 +98,10 @@ y del relleno, y fuerzas de las sobrecargas. Salen en `resultado.json`, en `foot
 ## Zapata combinada (`combined_footings[]`, D-080)
 
 Zapata rectangular de dos columnas, solo verificación. X es la dirección larga: las dos columnas van a distintas x. Usa
-el mismo `soil` que las zapatas aisladas. Por ahora (V3J.1) se verifica la parte geotécnica con la resultante de las
-dos columnas; la verificación estructural queda `BLOCKED` hasta V3J.2 y V3J.3, y la memoria llega en V3J.4.
+el mismo `soil` que las zapatas aisladas. Por ahora se verifican la parte geotécnica con la resultante de las dos
+columnas (V3J.1) y, con los casos mayorados, la viga en la dirección larga (V3J.2: flexión de las barras inferiores y
+superiores x, cortante sin estribos, acero mínimo de vigas y separación); las franjas transversales, el punzonamiento,
+el desarrollo y los pasadores quedan `BLOCKED` hasta V3J.3, y la memoria llega en V3J.4.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |

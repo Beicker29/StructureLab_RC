@@ -6,6 +6,7 @@ _PHI_COMPRESSION = 0.65
 _PHI_TENSION = 0.90
 _TRANSITION_SPAN = 0.003
 _FY_MAX_AS_MIN = 550.0
+_EXEMPTION_FACTOR = 4 / 3
 
 
 def clauses() -> dict[str, str]:
@@ -51,6 +52,12 @@ def min_flexural_reinforcement(fc: float, fy: float, bw: float, d: float) -> flo
     """9.6.1.2 (a) y (b), con fy limitado a 550 MPa (D-019); en mm²."""
     fy = min(fy, _FY_MAX_AS_MIN)
     return max(0.25 * math.sqrt(fc) / fy * bw * d, 1.4 / fy * bw * d)
+
+
+def effective_min_reinforcement(as_min: float, as_analysis: float) -> float:
+    """9.6.1.3: si el As provisto en cada sección es al menos un tercio mayor que el requerido por análisis, 9.6.1.2 no
+    se exige; el As que debe proveerse es entonces el menor entre As,min y 4/3 del requerido por análisis, en mm²."""
+    return min(as_min, _EXEMPTION_FACTOR * as_analysis)
 
 
 def determinate_flange_width(bw: float, bf: float) -> float:

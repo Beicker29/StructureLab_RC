@@ -2,9 +2,10 @@
 
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
+from structurelab_rc.domain.footing.combined_beam import long_beam_checks
 from structurelab_rc.domain.footing.connection import connection_checks
 from structurelab_rc.domain.footing.flexure import flexure_checks
-from structurelab_rc.domain.footing.loads import factored_cases
+from structurelab_rc.domain.footing.loads import combined_factored_cases, factored_cases
 from structurelab_rc.domain.footing.service import combined_service_checks, service_checks
 from structurelab_rc.domain.footing.shear import shear_checks
 from structurelab_rc.domain.status import Status
@@ -29,12 +30,18 @@ def structural_checks(basis: Basis, footing: Footing, soil: Soil) -> list[Check]
 
 
 def combined_footing_checks(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Check]:
-    """Zapata combinada (D-080): la revisión geotécnica con la resultante de las dos columnas; la verificación estructural
-    (viga larga, franjas transversales, punzonamiento, desarrollo y pasadores) llega en V3J.2 y V3J.3: mientras tanto
-    queda BLOCKED, para que la zapata nunca resulte PASS sin estar completa."""
-    pending = blocked("La verificacion estructural de las zapatas combinadas no esta implementada todavia (D-080, V3J.2 y V3J.3)",
-                      member=footing.id)
-    return [*combined_service_checks(basis.profile, footing, soil),
+    """Zapata combinada (D-080): la revisión geotécnica con la resultante de las dos columnas y, con los casos mayorados,
+    el equilibrio y la viga en la dirección larga (V3J.2). Las franjas transversales, el punzonamiento, el desarrollo y
+    los pasadores llegan en V3J.3: mientras tanto quedan BLOCKED, para que la zapata nunca resulte PASS sin estar
+    completa."""
+    service = combined_service_checks(basis.profile, footing, soil)
+    if not any(loads[0].kind == "factored" for loads in footing.cases()):
+        error = incomplete("La zapata combinada no tiene casos mayorados", member=footing.id)
+        return [*service, Check(COMBINED_STRUCTURAL, Status.INCOMPLETE, (error,), member=footing.id)]
+    cases, failures = combined_factored_cases(footing, soil)
+    pending = blocked("Las franjas transversales, el punzonamiento, el desarrollo y los pasadores de las zapatas combinadas "
+                      "no estan implementados todavia (D-080, V3J.3)", member=footing.id)
+    return [*service, *failures, *long_beam_checks(basis, footing, soil, cases),
             Check(COMBINED_STRUCTURAL, Status.BLOCKED, (pending,), member=footing.id)]
 
 

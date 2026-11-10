@@ -28,6 +28,7 @@ def clauses() -> dict[str, str]:
         "punching_min_reinforcement": "no aplica en NSR-10",
         "dowels": "C.15.8.2.1",
         "dowel_excess": "C.15.8.1.2(a)",
+        "combined_spacing": "C.10.5.4",
     }
 
 
@@ -44,6 +45,12 @@ def min_reinforcement_ratio(fy: float) -> float:
 def max_bar_spacing(h: float) -> float:
     """C.10.5.4: no mayor que tres veces el espesor ni que 450 mm."""
     return min(_SPACING_THICKNESS * h, _MAX_SPACING)
+
+
+def combined_max_bar_spacing(h: float, fy: float, cc: float) -> float:
+    """Zapata combinada: la de las zapatas de espesor uniforme, C.10.5.4 (tres veces el espesor y 450 mm); no usa fy
+    ni cc, en mm."""
+    return max_bar_spacing(h)
 
 
 def band_fraction(beta: float) -> float:

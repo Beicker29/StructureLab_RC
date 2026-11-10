@@ -7,12 +7,13 @@ pesos y las sobrecargas) menos las cargas uniformes sobre la zapata fuera de la 
 from dataclasses import dataclass
 
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.footing.base import base_resultant
+from structurelab_rc.domain.footing.base import BaseResultant, base_resultant, combined_load, combined_resultant
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import invalid_input
 from structurelab_rc.mechanics.materials import NoEquilibrium
 from structurelab_rc.mechanics.polygon import Point, area_centroid
 from structurelab_rc.mechanics.soil_pressure import SoilPressure, footing_pressure
+from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing, FootingLoad, Soil
 
 EQUILIBRIUM = "Zapata: equilibrio con cargas mayoradas"
@@ -54,9 +55,21 @@ class FactoredCase:
         return force, outward * ((sx if axis == 0 else sy) - plane * force)
 
 
-def _net_load(footing: Footing, soil: Soil, load: FootingLoad) -> float:
+def _net_load(footing: Footing | CombinedFooting, soil: Soil, load: FootingLoad) -> float:
     dead = soil.unit_weight_concrete * footing.h + soil.unit_weight_fill * footing.fill_height + footing.surcharge_dead
     return load.dead_factor * dead + load.live_factor * footing.surcharge_live
+
+
+def _factored(footing: Footing | CombinedFooting, soil: Soil, load: FootingLoad, resultant: BaseResultant) -> FactoredCase | Check:
+    """El caso con su presión, o FAIL si no hay equilibrio con el suelo (D-054)."""
+    try:
+        if resultant.ex is None or resultant.ey is None:
+            raise NoEquilibrium("la carga mayorada sobre el suelo no es de compresion")
+        pressure = footing_pressure(footing.lx, footing.ly, resultant.n, resultant.ex, resultant.ey)
+    except NoEquilibrium as error:
+        failure = invalid_input(f"La resultante mayorada sale de la base: {error}", member=footing.id, case=load.case)
+        return Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", member=footing.id, case=load.case)
+    return FactoredCase(load, pressure, _net_load(footing, soil, load))
 
 
 def factored_cases(footing: Footing, soil: Soil) -> tuple[list[FactoredCase], list[Check]]:
@@ -65,16 +78,28 @@ def factored_cases(footing: Footing, soil: Soil) -> tuple[list[FactoredCase], li
     for load in footing.loads:
         if load.kind != "factored":
             continue
-        resultant = base_resultant(footing, soil, load)
-        try:
-            if resultant.ex is None or resultant.ey is None:
-                raise NoEquilibrium("la carga mayorada sobre el suelo no es de compresion")
-            pressure = footing_pressure(footing.lx, footing.ly, resultant.n, resultant.ex, resultant.ey)
-        except NoEquilibrium as error:
-            failure = invalid_input(f"La resultante mayorada sale de la base: {error}", member=footing.id, case=load.case)
-            failures.append(Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", member=footing.id, case=load.case))
+        result = _factored(footing, soil, load, base_resultant(footing, soil, load))
+        if isinstance(result, Check):
+            failures.append(result)
+        else:
+            cases.append(result)
+    return cases, failures
+
+
+def combined_factored_cases(
+    footing: CombinedFooting, soil: Soil
+) -> tuple[list[tuple[FactoredCase, tuple[FootingLoad, ...]]], list[Check]]:
+    """Lo mismo para una zapata combinada (D-080): cada caso mayorado con la presión de la resultante de las dos columnas
+    (su carga es la suma de las dos) y las cargas de cada columna."""
+    cases, failures = [], []
+    for loads in footing.cases():
+        if loads[0].kind != "factored":
             continue
-        cases.append(FactoredCase(load, pressure, _net_load(footing, soil, load)))
+        result = _factored(footing, soil, combined_load(loads), combined_resultant(footing, soil, loads))
+        if isinstance(result, Check):
+            failures.append(result)
+        else:
+            cases.append((result, loads))
     return cases, failures
 
 

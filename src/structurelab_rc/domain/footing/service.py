@@ -8,7 +8,7 @@ la fracción de la base en contacto con el mínimo que declara el usuario, y se 
 
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.footing.base import BaseResultant, base_resultant, combined_resultant
+from structurelab_rc.domain.footing.base import BaseResultant, base_resultant, combined_load, combined_resultant
 from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING, overturning_check, sliding_check
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete, invalid_input
@@ -83,11 +83,5 @@ def combined_service_checks(profile: Profile, footing: CombinedFooting, soil: So
         return [Check(BEARING, Status.INCOMPLETE, (error,), profile.footing.clauses()["bearing"], member=footing.id)]
     checks = []
     for loads in cases:
-        first = loads[0]
-        total = FootingLoad.model_construct(case=first.case, kind=first.kind, dead_factor=first.dead_factor,
-                                            live_factor=first.live_factor, seismic=first.seismic,
-                                            p=sum(load.p for load in loads), vx=sum(load.vx for load in loads),
-                                            vy=sum(load.vy for load in loads), mx=sum(load.mx for load in loads),
-                                            my=sum(load.my for load in loads))
-        checks += _case_checks(profile, footing, soil, total, combined_resultant(footing, soil, loads))
+        checks += _case_checks(profile, footing, soil, combined_load(loads), combined_resultant(footing, soil, loads))
     return checks

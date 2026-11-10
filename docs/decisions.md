@@ -916,10 +916,23 @@
      simple según D-072) y refuerzo transversal adicional bajo cada columna (opcional).
   4. Viga en la dirección larga con las cargas y momentos de las columnas y la presión neta mayorada integrada a lo largo:
      flexión en las caras de las columnas y en el máximo entre ellas; cortante a d de cada cara.
-  5. Franjas transversales de ancho columna + d/2 a cada lado (en la columna de borde, d/2 hacia el interior), con la
-     presión de Bellos que actúa dentro de la franja, en voladizo desde la cara de la columna (opción b: no la carga de la
-     columna repartida en el ancho, como Wight y el manual).
-  6. Acero mínimo 0.0018·b·h (ACI 7.6.1, NSR-10 C.7.12.2) en cada dirección, con la separación máxima del perfil.
+  5. Franjas transversales de ancho columna + d/2 a cada lado (en la columna de borde, d/2 hacia el interior), en
+     voladizo desde la cara de la columna, cargadas con la carga mayorada de la columna (Pu y Mx) repartida en el ancho B
+     con la forma de la presión de Bellos en la posición de la columna; con presión uniforme en Y da Pu/B, como Wight y
+     el manual (revisado en V3J.2: la opción b inicial, solo la presión bajo la franja, omitía los cortantes de la viga
+     en los bordes de la franja y daba ≈55 % menos momento en el ejemplo del manual).
+  6. Acero mínimo (revisado en V3J.2): en la dirección larga, el de vigas en los dos perfiles, ACI 9.6.1.2 con la
+     exención 9.6.1.3 (13.3.2.1 remite las zapatas combinadas al capítulo 9) y NSR-10 C.10.5.1 con la exención C.10.5.3,
+     como Wight y el manual; en las franjas transversales, 0.0018·Ag (ACI 7.6.1.1, NSR-10 C.10.5.4 y C.7.12.2.1). La
+     separación máxima, la del perfil.
+  6b. Cortante en una dirección de la viga larga sin estribos (el modelo no los tiene): Vu ≤ φVc a d de las caras, con
+     ACI 13.2.6.2(a) y NSR-10 C.15.5 → C.11, como en las aisladas y como el manual; si no alcanza, FAIL.
+  6c. Frente al manual se esperan diferencias: usa la presión bruta uniforme (con pesos propios) aunque su resultante
+     está 0.2 ft fuera del centro; aquí la presión neta de Bellos. Se compara con explicación y tolerancia (D-064).
+  6d. Separación máxima de las barras x de la viga larga (V3J.2): ACI, el menor de 3h y 450 mm (7.7.2.3) y del límite
+     de fisuración de la Tabla 24.3.2 con fs = (2/3)·fy (24.3.2.1), por la remisión de 13.3.2.1 a los capítulos 7 y 9
+     (más exigente que el manual, que no aplica 24.3: con 75 mm de recubrimiento da ≈190 mm); NSR-10, C.10.5.4 (3h y
+     450 mm).
   7. Se reutilizan la revisión geotécnica (con la resultante de las dos columnas), el punzonamiento por columna con el
      perímetro truncado y γv·Msc, el desarrollo, el aplastamiento y los pasadores.
   8. Oráculos: Wight 15-6 y el ejemplo 5 del manual, en SI con la tolerancia de D-064, más un oráculo independiente.
@@ -935,6 +948,22 @@
   idéntica). La verificación estructural de la combinada queda BLOCKED hasta V3J.3. Oráculo
   `derive_combined_service.py`: 6 casos por perfil (uniforme, excéntrica, borde con pedestal y momentos, sismo,
   deslizamiento y sin equilibrio); 3 de 3 mutaciones de la resultante detectadas.
+- **V3J.2 (hecha):** `domain/footing/combined_beam.py`. Cuerpo libre a la izquierda de cada sección con la carga neta
+  de Bellos integrada en todo el ancho, la fuerza de cada columna (`column_vertical`, compartida con la resultante) y su
+  par My + (h + pedestal)·Vx en el plano de la base, para que V y M cierren en cero en los extremos. Momentos en las
+  cuatro caras y donde V = 0; cortante a d de cada cara hacia su tramo. `effective_min_reinforcement` (9.6.1.3,
+  C.10.5.3) y `combined_max_bar_spacing` en los dos perfiles. Las franjas, el punzonamiento, el desarrollo y los
+  pasadores siguen BLOCKED; sin casos mayorados, INCOMPLETE. Oráculo `derive_combined_beam.py`: 8 casos por perfil
+  (extremos por barrido y sección áurea, no por las raíces de V); 5 de 5 mutaciones detectadas, y encontró que el
+  paquete saltaba el extremo cuando V = 0 caía en un punto del muestreo (corregido).
+- **Referencias (decisión del usuario, V3J.2):** `tests/oracles/<perfil>/references_combined_beam.json`. Wight 15-6 con
+  la presión neta de las columnas: Mu⁻ 2112 frente a 2100 kip·ft, φMn 2225 frente a 2220, Vu 307.5 frente a 307 (±1 %);
+  φVc 294.7 (ACI, +2.3 %, 0.17√f'c en SI) y 298.2 (NSR-10, +3.5 %, gobierna C.11.2.2) frente a 288 (±3 % y ±4 %); As,min
+  11.86 frente a 11.7 in² (±2 %); el cortante sin estribos es FAIL (Wight pone estribos). Wight toma el momento positivo
+  de la columna interior en su eje (≈516 kip·ft); aquí en la cara, 13.2.7.1 (318 kip·ft). Del manual solo As,min (10.20
+  frente a 10.0 in², ±2.5 %: el libro imprime 10.0 por 10.03) y el momento en la cara exterior de la columna de borde
+  (2.1 frente a 2 kip·ft): sus diagramas no se reproducen con sus propios datos (con wu = 68.2 k/ft el máximo da 507
+  kip·ft, no 576). Nuestros valores: 548 kip·ft entre columnas y 154 kip·ft en la cara interior de la exterior (159).
 
 ## Consultas abiertas
 

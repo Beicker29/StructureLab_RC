@@ -11,6 +11,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from structurelab_rc.model.catalog import RebarSpec
+from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import BarSet, Footing, Mat
 
 _TOLERANCE = 1e-6
@@ -76,8 +77,18 @@ def band_limits(footing: Footing, direction: str) -> tuple[float, float] | None:
     return centre - short / 2, centre + short / 2
 
 
-def mat_rows(footing: Footing, mat: Mat, bars: Sequence[RebarSpec]) -> dict[str, BarRow]:
-    """Las dos direcciones de una malla; la de `first` va más cerca de la cara. Las barras deben estar en el catálogo."""
+def _row(footing: Footing | CombinedFooting, direction: str, bar_set: BarSet, spec: RebarSpec, from_face: float) -> BarRow:
+    width = footing.ly if direction == "x" else footing.lx
+    half = width / 2 - footing.cover - spec.diameter_mm / 2
+    band = band_limits(footing, direction) if isinstance(footing, Footing) else None
+    positions, inner = _positions(-half, half, bar_set, band)
+    return BarRow(direction, bar_set.designation, spec.diameter_mm, spec.area_mm2, footing.h - from_face, width,
+                  tuple(positions), band, tuple(inner))
+
+
+def mat_rows(footing: Footing | CombinedFooting, mat: Mat, bars: Sequence[RebarSpec]) -> dict[str, BarRow]:
+    """Las dos direcciones de una malla; la de `first` va más cerca de la cara. Las barras deben estar en el catálogo.
+    La zapata combinada no tiene franja central (su refuerzo bajo cada columna va aparte, D-080)."""
     specs = {bar.designation: bar for bar in bars}
     order = (mat.first, "y" if mat.first == "x" else "x")
     first_diameter = specs[getattr(mat, mat.first).designation].diameter_mm
@@ -86,10 +97,13 @@ def mat_rows(footing: Footing, mat: Mat, bars: Sequence[RebarSpec]) -> dict[str,
         bar_set: BarSet = getattr(mat, direction)
         spec = specs[bar_set.designation]
         from_face = footing.cover + spec.diameter_mm / 2 if index == 0 else footing.cover + first_diameter + spec.diameter_mm / 2
-        width = footing.ly if direction == "x" else footing.lx
-        half = width / 2 - footing.cover - spec.diameter_mm / 2
-        band = band_limits(footing, direction)
-        positions, inner = _positions(-half, half, bar_set, band)
-        rows[direction] = BarRow(direction, bar_set.designation, spec.diameter_mm, spec.area_mm2, footing.h - from_face, width,
-                                 tuple(positions), band, tuple(inner))
+        rows[direction] = _row(footing, direction, bar_set, spec, from_face)
     return rows
+
+
+def top_row(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> BarRow | None:
+    """Las barras superiores paralelas a X de una zapata combinada, una sola capa; None si no las tiene."""
+    if footing.top is None:
+        return None
+    spec = next(bar for bar in bars if bar.designation == footing.top.designation)
+    return _row(footing, "x", footing.top, spec, footing.cover + spec.diameter_mm / 2)

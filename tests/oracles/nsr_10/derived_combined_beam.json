@@ -1,0 +1,1234 @@
+{
+  "description": "Viga en la dirección larga de zapatas combinadas (D-080, V3J.2): diagramas V y M del cuerpo libre con la presión de Bellos y Bakas, resistencia de Whitney, As,min de vigas con la excepción de 4/3 y cortante sin estribos.",
+  "soil": {
+    "allowable_pressure_kPa": 300.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.5,
+    "adhesion_kPa": 10.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated"
+  },
+  "seismic_level": "DMO",
+  "tolerance_rel": 1e-07,
+  "cases": [
+    {
+      "id": "simetrica",
+      "description": "dos columnas iguales simétricas: presión uniforme, momento negativo entre columnas y voladizos",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1300.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1300.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        },
+        "top": {
+          "designation": "#7",
+          "spacing": 150.0
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Viga larga: flexion (barras inferiores x)",
+            "status": "PASS",
+            "demand_Nmm": 129486741.66666794,
+            "capacity_Nmm": 1125254930.532353,
+            "phi": 0.9,
+            "et": 0.0322647783740807,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": 2225.0
+          },
+          {
+            "name": "Viga larga: flexion (barras superiores x)",
+            "status": "PASS",
+            "demand_Nmm": 646759999.9999998,
+            "capacity_Nmm": 1125254930.532353,
+            "phi": 0.9,
+            "et": 0.0322647783740807,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": -2.0094836486350694e-05
+          },
+          {
+            "name": "Viga larga: cortante en una direccion",
+            "status": "PASS",
+            "demand_N": 500635.3573333337,
+            "capacity_N": 834988.3091109552,
+            "x_mm": 1161.1,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras inferiores x)",
+            "status": "PASS",
+            "capacity": 0.0322647783740807,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm2": 747.0105264610386,
+            "capacity_mm2": 5031.0,
+            "as_min_mm2": 4092.666666666666,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
+            "status": "PASS",
+            "capacity": 0.0322647783740807,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras superiores x)",
+            "status": "PASS",
+            "demand_mm2": 3793.7154122144966,
+            "capacity_mm2": 5031.0,
+            "as_min_mm2": 4092.666666666666,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          }
+        ],
+        "equilibrium_failures": []
+      }
+    },
+    {
+      "id": "borde-desigual",
+      "description": "columna de borde y cargas desiguales (como el manual del ACI): presión trapezoidal",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2400.0,
+        "h": 800.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2700.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 900.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 500.0,
+            "cy": 500.0,
+            "x": 1000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1600.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#8",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        },
+        "top": {
+          "designation": "#8",
+          "spacing": 150.0
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Viga larga: flexion (barras inferiores x)",
+            "status": "PASS",
+            "demand_Nmm": 465642519.67592525,
+            "capacity_Nmm": 1978428847.5,
+            "phi": 0.9,
+            "et": 0.029290933333333335,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": 1250.0
+          },
+          {
+            "name": "Viga larga: flexion (barras superiores x)",
+            "status": "PASS",
+            "demand_Nmm": 492596618.20803165,
+            "capacity_Nmm": 1978428847.5,
+            "phi": 0.9,
+            "et": 0.029290933333333335,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": -1251.9886101050643
+          },
+          {
+            "name": "Viga larga: cortante en una direccion",
+            "status": "PASS",
+            "demand_N": 569950.9569408288,
+            "capacity_N": 1183049.0475098733,
+            "x_mm": 37.700000000000045,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras inferiores x)",
+            "status": "PASS",
+            "capacity": 0.029290933333333335,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm2": 2326.8381540088253,
+            "capacity_mm2": 7650.0,
+            "as_min_mm2": 5698.399999999999,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
+            "status": "PASS",
+            "capacity": 0.029290933333333335,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras superiores x)",
+            "status": "PASS",
+            "demand_mm2": 2462.837458326252,
+            "capacity_mm2": 7650.0,
+            "as_min_mm2": 5698.399999999999,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          }
+        ],
+        "equilibrium_failures": []
+      }
+    },
+    {
+      "id": "momentos-sismo",
+      "description": "dos casos: gravedad y sismo con My, Vx, pedestal y columnas desplazadas en Y",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 600.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2200.0,
+            "y": 200.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1100.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 20.0,
+                "My_kNm": 0.0
+              },
+              {
+                "case": "U2",
+                "kind": "factored",
+                "dead_factor": 1.0,
+                "live_factor": 0.5,
+                "P_kN": 800.0,
+                "Vx_kN": 90.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 250.0,
+                "seismic": true
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2100.0,
+            "y": -150.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1400.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": -30.0,
+                "My_kNm": 0.0
+              },
+              {
+                "case": "U2",
+                "kind": "factored",
+                "dead_factor": 1.0,
+                "live_factor": 0.5,
+                "P_kN": 1000.0,
+                "Vx_kN": 110.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 300.0,
+                "seismic": true
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        },
+        "top": {
+          "designation": "#7",
+          "spacing": 150.0
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Viga larga: flexion (barras inferiores x)",
+            "status": "PASS",
+            "demand_Nmm": 112968958.14562416,
+            "capacity_Nmm": 1125254930.532353,
+            "phi": 0.9,
+            "et": 0.0322647783740807,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": 2325.0
+          },
+          {
+            "name": "Viga larga: flexion (barras superiores x)",
+            "status": "PASS",
+            "demand_Nmm": 803540580.5029848,
+            "capacity_Nmm": 1125254930.532353,
+            "phi": 0.9,
+            "et": 0.0322647783740807,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": -48.015623874146755
+          },
+          {
+            "name": "Viga larga: cortante en una direccion",
+            "status": "PASS",
+            "demand_N": 567116.01014129,
+            "capacity_N": 830646.8019038844,
+            "x_mm": 1261.1,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1"
+          },
+          {
+            "name": "Viga larga: flexion (barras inferiores x)",
+            "status": "PASS",
+            "demand_Nmm": 255444861.51881152,
+            "capacity_Nmm": 1125254930.532353,
+            "phi": 0.9,
+            "et": 0.0322647783740807,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U2",
+            "x_mm": -1975.0
+          },
+          {
+            "name": "Viga larga: flexion (barras superiores x)",
+            "status": "PASS",
+            "demand_Nmm": 673276073.6983631,
+            "capacity_Nmm": 1125254930.532353,
+            "phi": 0.9,
+            "et": 0.0322647783740807,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U2",
+            "x_mm": 589.235139041089
+          },
+          {
+            "name": "Viga larga: cortante en una direccion",
+            "status": "PASS",
+            "demand_N": 535938.323072187,
+            "capacity_N": 843774.0803340252,
+            "x_mm": -1361.1,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U2"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras inferiores x)",
+            "status": "PASS",
+            "capacity": 0.0322647783740807,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm2": 1479.5294263593908,
+            "capacity_mm2": 5031.0,
+            "as_min_mm2": 4092.666666666666,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
+            "status": "PASS",
+            "capacity": 0.0322647783740807,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras superiores x)",
+            "status": "PASS",
+            "demand_mm2": 4092.666666666666,
+            "capacity_mm2": 5031.0,
+            "as_min_mm2": 4092.666666666666,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          }
+        ],
+        "equilibrium_failures": []
+      }
+    },
+    {
+      "id": "sin-superior",
+      "description": "sin barras superiores: el momento negativo lo resiste el concreto simple (D-072)",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 500.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 500.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Viga larga: flexion (barras inferiores x)",
+            "status": "PASS",
+            "demand_Nmm": 49403408.33333343,
+            "capacity_Nmm": 1125254930.532353,
+            "phi": 0.9,
+            "et": 0.0322647783740807,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": -2225.0
+          },
+          {
+            "name": "Flexion concreto simple (cara superior, barras x)",
+            "case": "U1",
+            "status": "FAIL",
+            "demand_Nmm": 246759999.99999988,
+            "capacity_Nmm": 187795428.05936465,
+            "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
+            "x_mm": -2.012755146552081e-05
+          },
+          {
+            "name": "Viga larga: cortante en una direccion",
+            "status": "PASS",
+            "demand_N": 191008.69066666672,
+            "capacity_N": 828355.6322299016,
+            "x_mm": -1161.1,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras inferiores x)",
+            "status": "PASS",
+            "capacity": 0.0322647783740807,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm2": 284.2969508261032,
+            "capacity_mm2": 5031.0,
+            "as_min_mm2": 4092.666666666666,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          }
+        ],
+        "equilibrium_failures": []
+      }
+    },
+    {
+      "id": "cortante-no-cumple",
+      "description": "zapata delgada y cargas grandes: no cumple el cortante sin estribos",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 450.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 2200.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 2200.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        },
+        "top": {
+          "designation": "#7",
+          "spacing": 150.0
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Viga larga: flexion (barras inferiores x)",
+            "status": "PASS",
+            "demand_Nmm": 219580491.66666794,
+            "capacity_Nmm": 649825430.5323529,
+            "phi": 0.9,
+            "et": 0.017903816338700057,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": 2225.0
+          },
+          {
+            "name": "Viga larga: flexion (barras superiores x)",
+            "status": "FAIL",
+            "demand_Nmm": 1096759999.9999995,
+            "capacity_Nmm": 649825430.5323529,
+            "phi": 0.9,
+            "et": 0.017903816338700057,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": -8.559842058275559e-06
+          },
+          {
+            "name": "Viga larga: cortante en una direccion",
+            "status": "FAIL",
+            "demand_N": 1031758.6906666667,
+            "capacity_N": 526283.9230062742,
+            "x_mm": -1411.1,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras inferiores x)",
+            "status": "PASS",
+            "capacity": 0.017903816338700057,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm2": 2171.2939496999616,
+            "capacity_mm2": 5031.0,
+            "as_min_mm2": 2425.9999999999995,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
+            "status": "PASS",
+            "capacity": 0.017903816338700057,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras superiores x)",
+            "status": "PASS",
+            "demand_mm2": 2425.9999999999995,
+            "capacity_mm2": 5031.0,
+            "as_min_mm2": 2425.9999999999995,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          }
+        ],
+        "equilibrium_failures": []
+      }
+    },
+    {
+      "id": "minimo-excepcion",
+      "description": "cargas pequeñas: As < As,min de vigas pero ≥ 4/3 del requerido (excepción)",
+      "footing": {
+        "id": "ZC",
+        "lx": 4500.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -1500.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 250.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 1500.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 250.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 250.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 250.0
+          }
+        },
+        "top": {
+          "designation": "#5",
+          "spacing": 250.0
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Viga larga: flexion (barras inferiores x)",
+            "status": "PASS",
+            "demand_Nmm": 14915600.000000015,
+            "capacity_Nmm": 367099289.36470586,
+            "phi": 0.9,
+            "et": 0.1090147298994975,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": -1725.0
+          },
+          {
+            "name": "Viga larga: flexion (barras superiores x)",
+            "status": "PASS",
+            "demand_Nmm": 91320000.00000006,
+            "capacity_Nmm": 367099289.36470586,
+            "phi": 0.9,
+            "et": 0.1090147298994975,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": -2.604598796551727e-05
+          },
+          {
+            "name": "Viga larga: cortante en una direccion",
+            "status": "PASS",
+            "demand_N": 71210.65955555561,
+            "capacity_N": 832606.0317111269,
+            "x_mm": 657.95,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras inferiores x)",
+            "status": "PASS",
+            "capacity": 0.1090147298994975,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm2": 85.30333499619094,
+            "capacity_mm2": 1592.0,
+            "as_min_mm2": 4113.666666666666,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm": 250.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
+            "status": "PASS",
+            "capacity": 0.1090147298994975,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras superiores x)",
+            "status": "PASS",
+            "demand_mm2": 523.4959543538722,
+            "capacity_mm2": 1592.0,
+            "as_min_mm2": 4113.666666666666,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "status": "PASS",
+            "demand_mm": 250.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          }
+        ],
+        "equilibrium_failures": []
+      }
+    },
+    {
+      "id": "minimo-no-cumple",
+      "description": "As menor que As,min y que 4/3 del requerido",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -1200.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1300.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 1200.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1300.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "y",
+          "end": "straight",
+          "x": {
+            "designation": "#4",
+            "spacing": 350.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        },
+        "top": {
+          "designation": "#8",
+          "spacing": 120.0
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Viga larga: flexion (barras inferiores x)",
+            "status": "FAIL",
+            "demand_Nmm": 592998075.0,
+            "capacity_Nmm": 175348725.67058825,
+            "phi": 0.9,
+            "et": 0.2220578165374677,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": -975.0
+          },
+          {
+            "name": "Viga larga: cortante en una direccion",
+            "status": "PASS",
+            "demand_N": 419208.2733333334,
+            "capacity_N": 813310.5673995328,
+            "x_mm": -2027.75,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras inferiores x)",
+            "status": "PASS",
+            "capacity": 0.2220578165374677,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras inferiores x)",
+            "status": "FAIL",
+            "demand_mm2": 3539.0226952371668,
+            "capacity_mm2": 774.0,
+            "as_min_mm2": 4018.333333333333,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm": 350.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          }
+        ],
+        "equilibrium_failures": []
+      }
+    },
+    {
+      "id": "contacto-parcial",
+      "description": "momento grande: contacto parcial, la carga uniforme supera la presión en un voladizo",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 0.0,
+                "P_kN": 900.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 900.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 0.0,
+                "P_kN": 400.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 900.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        },
+        "top": {
+          "designation": "#7",
+          "spacing": 150.0
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Viga larga: flexion (barras inferiores x)",
+            "status": "PASS",
+            "demand_Nmm": 773520817.824074,
+            "capacity_Nmm": 1125254930.532353,
+            "phi": 0.9,
+            "et": 0.0322647783740807,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": -1775.0
+          },
+          {
+            "name": "Viga larga: flexion (barras superiores x)",
+            "status": "PASS",
+            "demand_Nmm": 741134457.6255217,
+            "capacity_Nmm": 1125254930.532353,
+            "phi": 0.9,
+            "et": 0.0322647783740807,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "x_mm": 1769.1398994218684
+          },
+          {
+            "name": "Viga larga: cortante en una direccion",
+            "status": "PASS",
+            "demand_N": 669731.7244444444,
+            "capacity_N": 843774.0803340252,
+            "x_mm": -1161.1,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras inferiores x)",
+            "status": "PASS",
+            "capacity": 0.0322647783740807,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm2": 4092.666666666666,
+            "capacity_mm2": 5031.0,
+            "as_min_mm2": 4092.666666666666,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          },
+          {
+            "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
+            "status": "PASS",
+            "capacity": 0.0322647783740807,
+            "clause": "C.10.3.5"
+          },
+          {
+            "name": "Viga larga: acero minimo (barras superiores x)",
+            "status": "PASS",
+            "demand_mm2": 4092.666666666666,
+            "capacity_mm2": 5031.0,
+            "as_min_mm2": 4092.666666666666,
+            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3"
+          },
+          {
+            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "status": "PASS",
+            "demand_mm": 150.0,
+            "capacity_mm": 450.0,
+            "clause": "C.10.5.4"
+          }
+        ],
+        "equilibrium_failures": []
+      }
+    }
+  ]
+}

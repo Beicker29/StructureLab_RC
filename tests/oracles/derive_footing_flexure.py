@@ -253,7 +253,8 @@ CASES = [
 
 
 def main() -> None:
-    for folder, profile in PROFILES.items():
+    profiles: dict[str, dict] = PROFILES
+    for folder, profile in profiles.items():
         cases = [{"id": case_id, "description": text, "footing": footing, "seismic_level": profile["levels"][level],
                   "expected": _expected(footing, profile, profile["levels"][level])}
                  for case_id, text, footing, level in CASES]

@@ -6,6 +6,7 @@ _PHI_COMPRESSION = 0.65
 _PHI_TENSION = 0.90
 _TENSION_CONTROLLED = 0.005
 _BEAM_MIN_STRAIN = 0.004
+_EXEMPTION_FACTOR = 4 / 3
 
 
 def clauses() -> dict[str, str]:
@@ -45,6 +46,12 @@ def beam_axial_limit(fc: float, ag: float) -> float:
 def min_flexural_reinforcement(fc: float, fy: float, bw: float, d: float) -> float:
     """C.10.5.1, ecuación (C.10-3) y mínimo 1.4·bw·d/fy; en mm²."""
     return max(0.25 * math.sqrt(fc) / fy * bw * d, 1.4 * bw * d / fy)
+
+
+def effective_min_reinforcement(as_min: float, as_analysis: float) -> float:
+    """C.10.5.3: C.10.5.1 y C.10.5.2 no se aplican si en cada sección el As proporcionado es al menos un tercio superior
+    al requerido por análisis; el As que debe proveerse es entonces el menor entre As,min y 4/3 del requerido, en mm²."""
+    return min(as_min, _EXEMPTION_FACTOR * as_analysis)
 
 
 def determinate_flange_width(bw: float, bf: float) -> float:

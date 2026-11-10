@@ -15,7 +15,7 @@ ex = My_base/N y ey = −Mx_base/N.
 
 from dataclasses import dataclass
 
-from structurelab_rc.model.combined import CombinedFooting
+from structurelab_rc.model.combined import CombinedColumn, CombinedFooting
 from structurelab_rc.model.footing import Footing, FootingLoad, Soil
 
 
@@ -55,6 +55,18 @@ def base_resultant(footing: Footing, soil: Soil, load: FootingLoad) -> BaseResul
     return BaseResultant(load.p + centred + at_column, mx, my, centred + at_column)
 
 
+def _dead_per_area(footing: CombinedFooting, soil: Soil) -> float:
+    return soil.unit_weight_fill * footing.fill_height + footing.surcharge_dead
+
+
+def column_vertical(footing: CombinedFooting, soil: Soil, column: CombinedColumn, load: FootingLoad) -> float:
+    """Fuerza vertical hacia abajo en el eje de una columna de la zapata combinada, en N: P más su pedestal, menos el
+    relleno y las sobrecargas que la columna desplaza (que la carga uniforme cuenta en toda la base)."""
+    area = column.area
+    at_column = load.dead_factor * (soil.unit_weight_concrete * area * footing.pedestal_height - _dead_per_area(footing, soil) * area)
+    return load.p + at_column - load.live_factor * footing.surcharge_live * area
+
+
 def combined_resultant(footing: CombinedFooting, soil: Soil, loads: tuple[FootingLoad, ...]) -> BaseResultant:
     """Resultante de una zapata combinada (D-080) para un caso: las fuerzas de cada columna en su eje (x, y) a la altura
     h + pedestal, su pedestal y el área que ocupa (sin relleno ni sobrecarga), y la zapata, el relleno y las sobrecargas
@@ -62,17 +74,24 @@ def combined_resultant(footing: CombinedFooting, soil: Soil, loads: tuple[Footin
     case = loads[0]
     height = footing.h + footing.pedestal_height
     footing_weight, _, _ = footing.weights(soil)
-    dead_per_area = soil.unit_weight_fill * footing.fill_height + footing.surcharge_dead
-    live_per_area = footing.surcharge_live
-    n = case.dead_factor * (footing_weight + dead_per_area * footing.area) + case.live_factor * live_per_area * footing.area
+    n = (case.dead_factor * (footing_weight + _dead_per_area(footing, soil) * footing.area)
+         + case.live_factor * footing.surcharge_live * footing.area)
     mx = my = 0.0
     weight = n
     for column, load in zip(footing.columns, loads, strict=True):
-        at_column = case.dead_factor * (soil.unit_weight_concrete * column.area * footing.pedestal_height - dead_per_area * column.area)
-        at_column -= case.live_factor * live_per_area * column.area
-        vertical = load.p + at_column
+        vertical = column_vertical(footing, soil, column, load)
         mx += load.mx - vertical * column.y - height * load.vy
         my += load.my + vertical * column.x + height * load.vx
         n += vertical
-        weight += at_column
+        weight += vertical - load.p
     return BaseResultant(n, mx, my, weight)
+
+
+def combined_load(loads: tuple[FootingLoad, ...]) -> FootingLoad:
+    """Las cargas de las dos columnas de un caso sumadas: el nombre, los factores y la marca de sismo del caso, y la
+    fuerza horizontal total (para el deslizamiento)."""
+    first = loads[0]
+    return FootingLoad.model_construct(case=first.case, kind=first.kind, dead_factor=first.dead_factor,
+                                       live_factor=first.live_factor, seismic=first.seismic, p=sum(load.p for load in loads),
+                                       vx=sum(load.vx for load in loads), vy=sum(load.vy for load in loads),
+                                       mx=sum(load.mx for load in loads), my=sum(load.my for load in loads))
