@@ -56,6 +56,12 @@
         "ey_mm": -0.0,
         "pmax_kPa": 216.89999999999998,
         "capacity_kPa": 250.0,
+        "corners_kPa": [
+          216.89999999999998,
+          216.89999999999998,
+          216.89999999999998,
+          216.89999999999998
+        ],
         "contact_fraction": 1.0,
         "bearing": "PASS",
         "contact": "PASS"
@@ -98,6 +104,12 @@
         "ey_mm": -0.0,
         "pmax_kPa": 237.33166666666668,
         "capacity_kPa": 250.0,
+        "corners_kPa": [
+          156.08166666666668,
+          237.33166666666668,
+          237.33166666666668,
+          156.08166666666668
+        ],
         "contact_fraction": 1.0,
         "bearing": "PASS",
         "contact": "PASS"
@@ -140,6 +152,12 @@
         "ey_mm": -166.5030451777111,
         "pmax_kPa": 359.46833333333336,
         "capacity_kPa": 250.0,
+        "corners_kPa": [
+          190.4016666666667,
+          359.46833333333336,
+          176.29833333333337,
+          7.231666666666669
+        ],
         "contact_fraction": 1.0,
         "bearing": "FAIL",
         "contact": "PASS"
@@ -182,6 +200,12 @@
         "ey_mm": -0.0,
         "pmax_kPa": 240.85000000000002,
         "capacity_kPa": 250.0,
+        "corners_kPa": [
+          178.35000000000002,
+          240.85000000000002,
+          240.85000000000002,
+          178.35000000000002
+        ],
         "contact_fraction": 1.0,
         "bearing": "PASS",
         "contact": "PASS"
@@ -224,6 +248,12 @@
         "ey_mm": -0.0,
         "pmax_kPa": 231.18333333333334,
         "capacity_kPa": 250.0,
+        "corners_kPa": [
+          168.68333333333334,
+          231.18333333333334,
+          231.18333333333334,
+          168.68333333333334
+        ],
         "contact_fraction": 1.0,
         "bearing": "PASS",
         "contact": "PASS"
@@ -266,6 +296,12 @@
         "ey_mm": -0.0,
         "pmax_kPa": 321.5741007194245,
         "capacity_kPa": 250.0,
+        "corners_kPa": [
+          0.0,
+          321.5741007194245,
+          321.5741007194245,
+          0.0
+        ],
         "contact_fraction": 0.9602763385146803,
         "bearing": "FAIL",
         "contact": "PASS"
@@ -308,6 +344,12 @@
         "ey_mm": -0.0,
         "pmax_kPa": 473.52500184325,
         "capacity_kPa": 250.0,
+        "corners_kPa": [
+          0.0,
+          473.52500184325,
+          473.52500184325,
+          0.0
+        ],
         "contact_fraction": 0.5641377589218868,
         "bearing": "FAIL",
         "contact": "FAIL"
@@ -350,6 +392,12 @@
         "ey_mm": 41.634284445431334,
         "pmax_kPa": 337.73333333333335,
         "capacity_kPa": 250.0,
+        "corners_kPa": [
+          262.73333333333335,
+          262.73333333333335,
+          337.73333333333335,
+          337.73333333333335
+        ],
         "contact_fraction": 1.0,
         "bearing": "FAIL",
         "contact": "PASS"
@@ -393,6 +441,12 @@
         "ey_mm": 46.471280748497435,
         "pmax_kPa": 306.48333333333335,
         "capacity_kPa": 332.5,
+        "corners_kPa": [
+          231.48333333333335,
+          231.48333333333335,
+          306.48333333333335,
+          306.48333333333335
+        ],
         "contact_fraction": 1.0,
         "bearing": "PASS",
         "contact": "PASS"
@@ -436,6 +490,12 @@
         "ey_mm": 30.909990108803168,
         "pmax_kPa": 441.9,
         "capacity_kPa": 332.5,
+        "corners_kPa": [
+          366.9,
+          366.9,
+          441.9,
+          441.9
+        ],
         "contact_fraction": 1.0,
         "bearing": "FAIL",
         "contact": "PASS"

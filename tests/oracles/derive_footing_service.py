@@ -64,7 +64,11 @@ def _expected(footing: dict, load: dict) -> dict:
     corners = [plane[0] + plane[1] * x + plane[2] * y for x in (-lx / 2, lx / 2) for y in (-ly / 2, ly / 2)]
     pmax = max(corners)
     capacity = QA * (SEISMIC_QA if load.get("seismic") else 1.0)  # D-079: qa aumentada solo con sismo
+    # Esquinas en el orden (−x, −y), (+x, −y), (+x, +y), (−x, +y), recortadas en cero (sin contacto), D-080.
+    ordered = [max(plane[0] + plane[1] * x + plane[2] * y, 0.0)
+               for x, y in ((-lx / 2, -ly / 2), (lx / 2, -ly / 2), (lx / 2, ly / 2), (-lx / 2, ly / 2))]
     return {**result, "equilibrium": True, "ex_mm": ex * 1e3, "ey_mm": ey * 1e3, "pmax_kPa": pmax, "capacity_kPa": capacity,
+            "corners_kPa": ordered,
             "contact_fraction": fraction, "bearing": "PASS" if pmax <= capacity else "FAIL",
             "contact": "PASS" if fraction >= MIN_CONTACT else "FAIL"}
 

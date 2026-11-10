@@ -179,13 +179,14 @@ El diseño del N elegido se obtiene con `design-footings` y se reverifica con `r
 
 ## Salida
 
-`report` escribe tres archivos en la carpeta de salida:
+`report` escribe estos archivos en la carpeta de salida:
 
 | Archivo | Contenido |
 | --- | --- |
 | `resultado.json` | Todo el detalle en unidades de presentación (kN, kN·m, kPa, mm, MPa), redondeado a 6 cifras significativas. Es la fuente de la memoria. |
 | `memoria.txt` | Memoria de cálculo de cada elemento, una tras otra (D-068): resultado y DCR máximo, capítulos fijos con cada revisión en su ubicación gobernante, índices DCR y notas y limitaciones. |
 | `memoria.pdf` | Los mismos bloques en PDF, cada elemento desde una página nueva; requiere el extra `pdf` (`pip install structurelab-rc[pdf]`). |
+| `presion_<zapata>.svg` | Planta de cada zapata con la presión del suelo en cada esquina del caso de servicio que gobierna la presión admisible (D-080); el PDF la incrusta en el capítulo de solicitaciones, junto con la tabla de esquinas de todos los casos de servicio. Las presiones vienen en los valores de cada verificación de presión admisible (`p esquina -x-y`, `+x-y`, `+x+y` y `-x+y`, en kPa). |
 
 Cada verificación de `resultado.json` tiene:
 

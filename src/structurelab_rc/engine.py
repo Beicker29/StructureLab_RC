@@ -37,6 +37,7 @@ from structurelab_rc.model.project import Project
 from structurelab_rc.model.template import EtabsFootingDesignTemplate
 from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.reporting.document import report_documents
+from structurelab_rc.reporting.figures import pressure_figures
 from structurelab_rc.reporting.pdf import write_pdf
 from structurelab_rc.reporting.results import build_results
 from structurelab_rc.reporting.text import render_text
@@ -87,14 +88,16 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050)."""
     project, checks = run_project(path)
     results = build_results(project, checks, __version__)
-    documents = report_documents(results, full=full)
-    text = render_text(documents)
     output.mkdir(parents=True, exist_ok=True)
+    figures = pressure_figures(results, output)
+    documents = report_documents(results, full=full, figures=figures)
+    text = render_text(documents)
     result_path, memoir_path, pdf_path = output / "resultado.json", output / "memoria.txt", output / "memoria.pdf"
     result_path.write_text(json.dumps(results, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     memoir_path.write_text(text, encoding="utf-8", newline="\n")
     pdf_written = write_pdf(documents, pdf_path)
     files = (result_path, memoir_path, pdf_path) if pdf_written else (result_path, memoir_path)
+    files = (*files, *figures.values())
     return Report(results["status"], files, pdf_written)
 
 

@@ -46,10 +46,12 @@ def _case_checks(profile: Profile, footing: Footing, soil: Soil, load: FootingLo
     bearing_ok = pressure.pmax <= capacity
     contact_ok = fraction >= soil.min_contact_fraction
     region = f"Region {pressure.region} de Bellos y Bakas (2017): contacto {_REGIONS[pressure.region]}"
-    bearing_values = values
+    corners = tuple((f"p esquina {name}", value) for name, value in zip(("-x-y", "+x-y", "+x+y", "-x+y"), pressure.corners(),
+                                                                         strict=True))
+    bearing_values = (*values, *corners)  # presión en cada esquina, para la planta de la memoria (D-080)
     bearing_note = region
     if load.seismic and soil.seismic_bearing_factor != 1.0:
-        bearing_values = (*values, ("qa", soil.allowable_pressure), ("factor sismo qa", soil.seismic_bearing_factor))
+        bearing_values = (*bearing_values, ("qa", soil.allowable_pressure), ("factor sismo qa", soil.seismic_bearing_factor))
         bearing_note = f"{region}; combinacion con sismo: qa x {soil.seismic_bearing_factor:g} (D-079)"
     return [
         Check(BEARING, Status.PASS if bearing_ok else Status.FAIL, clause=bearing_clause, demand=pressure.pmax,

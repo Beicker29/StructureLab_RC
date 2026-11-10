@@ -145,3 +145,16 @@ def test_cli_report_writes_the_files(tmp_path: Path, capsys: pytest.CaptureFixtu
     assert main(["report", str(EXAMPLE), "--output", str(tmp_path)]) == 0
     assert "Resultado: PASS" in capsys.readouterr().out
     assert {path.name for path in tmp_path.iterdir()} == {"resultado.json", "memoria.txt", "memoria.pdf"}
+
+
+def test_footing_report_draws_the_soil_pressure_in_plan(tmp_path: Path) -> None:
+    """D-080: la memoria de cada zapata trae la planta con la presión en las esquinas del caso que gobierna y la tabla de
+    las esquinas de todos los casos de servicio; el SVG queda en la carpeta del report."""
+    report = report_file(EXAMPLE.parent.parent / "zapatas" / "zapata_aislada.json", tmp_path)
+    figure = tmp_path / "presion_Z1.svg"
+    assert figure in report.files
+    svg = figure.read_text(encoding="utf-8")
+    assert svg.startswith("<svg") and svg.count("<circle") == 4
+    text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
+    assert "Presión del suelo en las esquinas (casos de servicio)" in text and "archivo presion_Z1.svg" in text
+

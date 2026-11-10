@@ -903,6 +903,33 @@
   cambiar estados; los `diseno_tipologias` dan las mismas tipologías y el mismo costo. La curva costo–N agrega el ahorro
   acumulado frente al primer N en la tabla de la memoria, el JSON y el CSV (pedido del usuario).
 
+### D-080: zapatas combinadas (verificación) e imagen de presiones en planta
+
+- **Fecha:** 2026-11-10
+- **Referencias:** ACI 318-25 13.2.6.4, 13.3.2, 13.3.4 (y 13.2.6.2 para el cortante); NSR-10 C.15.10.1 a C.15.10.4 (leídos
+  del PDF escaneado); Wight, ejemplo 15-6; ACI MNL-17(21), volumen 1, capítulo 11, ejemplo de cimentaciones 5 (compañero
+  de ACI 318-19: lo que cambió en 318-25 se compara con cuidado).
+- **Decisión del usuario:**
+  1. Solo verificación (sin diseño por tipologías); dos columnas; solo rectangular (otras formas, pendientes).
+  2. Zapata rígida con la presión lineal de Bellos y Bakas; todas las solicitaciones internas salen de esa presión.
+  3. Refuerzo: malla inferior en las dos direcciones, malla superior en la dirección larga (opcional; sin ella, concreto
+     simple según D-072) y refuerzo transversal adicional bajo cada columna (opcional).
+  4. Viga en la dirección larga con las cargas y momentos de las columnas y la presión neta mayorada integrada a lo largo:
+     flexión en las caras de las columnas y en el máximo entre ellas; cortante a d de cada cara.
+  5. Franjas transversales de ancho columna + d/2 a cada lado (en la columna de borde, d/2 hacia el interior), con la
+     presión de Bellos que actúa dentro de la franja, en voladizo desde la cara de la columna (opción b: no la carga de la
+     columna repartida en el ancho, como Wight y el manual).
+  6. Acero mínimo 0.0018·b·h (ACI 7.6.1, NSR-10 C.7.12.2) en cada dirección, con la separación máxima del perfil.
+  7. Se reutilizan la revisión geotécnica (con la resultante de las dos columnas), el punzonamiento por columna con el
+     perímetro truncado y γv·Msc, el desarrollo, el aplastamiento y los pasadores.
+  8. Oráculos: Wight 15-6 y el ejemplo 5 del manual, en SI con la tolerancia de D-064, más un oráculo independiente.
+  9. Imagen en planta de la presión del suelo en cada esquina, para zapatas aisladas y combinadas: el caso de servicio
+     que gobierna la presión admisible, con una tabla de las esquinas de todos los casos de servicio; las presiones las
+     calcula la revisión geotécnica y la memoria solo las dibuja.
+- **Subfases:** V3J.1 modelo, entrada y revisión geotécnica; V3J.2 viga en la dirección larga; V3J.3 franjas
+  transversales, punzonamiento, desarrollo, aplastamiento y pasadores; V3J.4 memoria, ejemplos y documentación. La
+  imagen de presiones de las zapatas aisladas va primero, por separado.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

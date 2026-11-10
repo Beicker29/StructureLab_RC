@@ -9,9 +9,11 @@ Bloques: title, summary, h1, h2, table, kv, p, note y alert (diccionarios con "k
 """
 
 from collections.abc import Callable, Iterable
+from pathlib import Path
 from typing import Any
 
 from structurelab_rc.domain.status import Status
+from structurelab_rc.reporting.figures import CORNERS, FIGURE_ASPECT, PRESSURE, corner_key, governing_pressure
 from structurelab_rc.reporting.glossary import PROFILE_NAMES, STATUS_TEXT, classify, describe, display, number, unit_of
 
 Block = dict[str, Any]
@@ -355,7 +357,26 @@ def _footing_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[
             {"kind": "table", "headers": ["Refuerzo", "Descripción"], "rows": reinforcement}]
 
 
-def _footing_demands(footing: dict[str, Any]) -> list[Block]:
+def _soil_pressures(footing: dict[str, Any], figure: Path | None) -> list[Block]:
+    """Presión del suelo en las esquinas (D-080): la planta del caso de servicio que gobierna la presión admisible y la
+    tabla de las esquinas de todos los casos de servicio."""
+    checks = [check for check in footing["checks"] if check["name"] == PRESSURE and corner_key("-x-y") in check["values"]]
+    if not checks:
+        return []
+    blocks: list[Block] = [{"kind": "h2", "text": "Presión del suelo en las esquinas (casos de servicio)"}]
+    governing = governing_pressure(footing["checks"])
+    if figure is not None and governing is not None:
+        blocks.append({"kind": "image", "path": str(figure), "aspect": FIGURE_ASPECT,
+                       "caption": f"Presión del suelo en planta, caso que gobierna {governing['case']}"})
+    rows = [[check["case"], *(number(check["values"][corner_key(name)], "kPa") for name, _, _ in CORNERS)] for check in checks]
+    blocks.append({"kind": "table", "headers": ["Caso", "p (−x, −y) kPa", "p (+x, −y) kPa", "p (+x, +y) kPa", "p (−x, +y) kPa"],
+                   "rows": rows})
+    blocks.append({"kind": "note", "text": "Presión bruta de Bellos y Bakas (2017) con los factores del caso; 0 indica una esquina "
+                                           "sin contacto con el suelo."})
+    return blocks
+
+
+def _footing_demands(footing: dict[str, Any], figure: Path | None = None) -> list[Block]:
     keys = ("P [kN]", "Vx [kN]", "Vy [kN]", "Mx [kN-m]", "My [kN-m]")
     blocks: list[Block] = [{"kind": "p", "text": "Fuerzas de la columna sobre la zapata, en la base de la columna; P > 0 en compresión."}]
     for kind, title in (("service", "Casos de servicio"), ("factored", "Casos mayorados")):
@@ -368,10 +389,10 @@ def _footing_demands(footing: dict[str, Any]) -> list[Block]:
                  *(number(load[key], unit_of(key)[1]) for key in keys)] for load in loads]
         headers = ["Caso", "Factor D", "Factor L", "Sismo", *(f"{unit_of(key)[0]} ({unit_of(key)[1]})" for key in keys)]
         blocks.append({"kind": "table", "headers": headers, "rows": rows})
-    return blocks
+    return blocks + _soil_pressures(footing, figure)
 
 
-def footing_document(results: dict[str, Any], footing: dict[str, Any], full: bool) -> list[Block]:
+def footing_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None) -> list[Block]:
     items: list[Located] = [(f"caso {check['case']}" if check.get("case") else "toda la zapata", check) for check in footing["checks"]]
     counts = {kind: sum(1 for load in footing["loads"] if load["kind"] == kind) for kind in ("service", "factored")}
     meta = [("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
@@ -379,7 +400,7 @@ def footing_document(results: dict[str, Any], footing: dict[str, Any], full: boo
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
         ("Propiedades geométricas, suelo y armado", lambda _: _footing_geometry(results, footing)),
-        ("Solicitaciones", lambda _: _footing_demands(footing)),
+        ("Solicitaciones", lambda _: _footing_demands(footing, figure)),
         (_CHAPTER_TITLES["geotechnical"], lambda n: _chapter("geotechnical", n, items, full)),
         (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
         (_CHAPTER_TITLES["flexure"], lambda n: _chapter("flexure", n, items, full)),
@@ -393,7 +414,7 @@ def footing_document(results: dict[str, Any], footing: dict[str, Any], full: boo
     return _assemble(head, chapters)
 
 
-def report_documents(results: dict[str, Any], *, full: bool = False) -> list[list[Block]]:
+def report_documents(results: dict[str, Any], *, full: bool = False, figures: dict[str, Path] | None = None) -> list[list[Block]]:
     """Una memoria por elemento (vigas y luego zapatas); con la entrada inválida, una memoria corta de validación."""
     if "project" not in results:
         validation = results["validation"]
@@ -402,5 +423,6 @@ def report_documents(results: dict[str, Any], *, full: bool = False) -> list[lis
                  {"kind": "p", "text": "La entrada no es válida:"},
                  *({"kind": "alert", "text": f"[{error['code']}] {error['message']}"} for error in validation["errors"])]]
     documents = [beam_document(results, member, full) for member in results["members"]]
-    documents += [footing_document(results, footing, full) for footing in results.get("footings", [])]
+    documents += [footing_document(results, footing, full, (figures or {}).get(footing["id"]))
+                  for footing in results.get("footings", [])]
     return documents

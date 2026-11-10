@@ -60,6 +60,8 @@ def test_service_checks_match_oracle(profile: str, case: dict[str, Any]) -> None
     assert bearing.demand * 1e3 == pytest.approx(expected["pmax_kPa"], rel=tolerance)
     assert bearing.capacity is not None
     assert bearing.capacity * 1e3 == pytest.approx(expected["capacity_kPa"], rel=tolerance)
+    corners = [values[f"p esquina {name}"] * 1e3 for name in ("-x-y", "+x-y", "+x+y", "-x+y")]
+    assert corners == pytest.approx(expected["corners_kPa"], rel=tolerance, abs=1e-6)
     assert contact.capacity == pytest.approx(expected["contact_fraction"], rel=tolerance)
 
 
