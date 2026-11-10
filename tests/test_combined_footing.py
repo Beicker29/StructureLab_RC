@@ -83,33 +83,37 @@ def _beam_checks(profile: str, footing: CombinedFooting, oracle: dict[str, Any])
     return [*failures, *long_beam_checks(basis, footing, soil, cases)]
 
 
+def _station_key(check: Check) -> tuple[str, str, float | None]:
+    return check.name, check.case or "", None if check.z is None else round(check.z, 3)
+
+
 @pytest.mark.parametrize(("profile", "case"), BEAM_CASES)
 def test_long_beam_checks_match_oracle(profile: str, case: dict[str, Any]) -> None:
+    """Las verificaciones de vigas en cada estación de la viga larga (D-081) frente al oráculo: mismas estaciones,
+    estados, demandas, capacidades y numerales. Las del eje débil (M2, V3) no aplican y se prueban con las vigas."""
     oracle = _oracle(FOLDERS[profile], "derived_combined_beam")
     tolerance = oracle["tolerance_rel"]
     checks = _beam_checks(profile, CombinedFooting.model_validate(case["footing"]), oracle)
-    got = {(check.name, check.case or ""): check for check in checks}
-    expected = {(item["name"], item.get("case", "")): item for item in case["expected"]["checks"]}
-    assert set(got) == set(expected)
-    for key, item in expected.items():
+    expected = case["expected"]["checks"]
+    names = {item["name"] for item in expected}
+    got = {_station_key(check): check for check in checks if check.name in names}
+    wanted = {(item["name"], item.get("case", ""), None if "z_mm" not in item else round(item["z_mm"], 3)): item for item in expected}
+    assert set(got) == set(wanted)
+    for key, item in wanted.items():
         check = got[key]
-        values = dict(check.values)
         assert str(check.status) == item["status"], key
-        if item["status"] == "FAIL" and "capacity_Nmm" not in item and "capacity_N" not in item and "capacity" not in item:
-            continue
-        for field, attribute in (("demand_Nmm", "demand"), ("capacity_Nmm", "capacity"), ("demand_N", "demand"),
-                                 ("capacity_N", "capacity"), ("demand_mm2", "demand"), ("capacity_mm2", "capacity"),
-                                 ("demand_mm", "demand"), ("capacity_mm", "capacity"), ("capacity", "capacity")):
+        for field in ("demand", "capacity"):
             if field in item:
-                assert getattr(check, attribute) == pytest.approx(item[field], rel=tolerance), (key, field)
-        if "phi" in item:
-            assert values["phi"] == pytest.approx(item["phi"], rel=tolerance), key
-        if "et" in item:
-            assert values["et"] == pytest.approx(item["et"], rel=tolerance), key
-        if "as_min_mm2" in item:
-            assert values["As,min"] == pytest.approx(item["as_min_mm2"], rel=tolerance), key
-        if "x_mm" in item and "x" in values:
-            assert values["x"] == pytest.approx(item["x_mm"], rel=tolerance, abs=1e-3), key
+                # abs: el cortante donde V = 0 es ruido numérico (≈1e-3 N).
+                assert getattr(check, field) == pytest.approx(item[field], rel=tolerance, abs=0.1), (key, field)
+        for field in ("demand_Nmm", "capacity_Nmm"):
+            if field in item:
+                assert getattr(check, field.removesuffix("_Nmm")) == pytest.approx(item[field], rel=tolerance, abs=0.1), (key, field)
+        values = dict(check.values)
+        if "as_min" in item:
+            assert values["As,min"] == pytest.approx(item["as_min"], rel=tolerance), key
+        if "analysis" in item:
+            assert values["As analisis"] == pytest.approx(item["analysis"], rel=tolerance, abs=1e-6), key
         if "clause" in item:
             assert check.clause == item["clause"], key
 
@@ -185,5 +189,5 @@ def test_project_with_a_combined_footing_is_blocked_until_v3j3(tmp_path: Path) -
     footing["bottom"]["x"] = {"designation": "#7", "spacing": 150.0}
     by_name = {check.name: check for check in _project(tmp_path, footing)}
     assert by_name["Validacion de entrada"].status is Status.PASS
-    assert by_name["Viga larga: flexion (barras inferiores x)"].status is Status.PASS
+    assert by_name["Flexion: resistencia"].status is Status.PASS
     assert by_name[COMBINED_STRUCTURAL].status is Status.BLOCKED

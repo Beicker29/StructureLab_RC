@@ -91,7 +91,8 @@ Cada verificación de `resultado.json` tiene:
 | --- | --- |
 | Flexión: resistencia | φMn biaxial con Pn = Pu frente a Mu y M2; valores `phi`, `Mn3`, `Mn2`, `theta` (orientación del eje neutro), `c`, `et`. |
 | Flexión: deformación neta de tracción (M3, M2, biaxial) | εt mínima del perfil frente a la εt de cada estado. |
-| Flexión: acero mínimo (M3, M2) | As,min frente al acero a tracción, con d ≥ 0.8h. |
+| Flexión: acero mínimo (M3, M2) | As,min frente al acero a tracción del lado en tracción (más allá de la mitad de la altura), con d ≥ 0.8h; si As < As,min, basta 4/3 del As requerido por el momento de la estación (ACI 9.6.1.3, NSR-10 C.10.5.3; valores `As,min` y `As analisis`). |
+| Flexión: separación por fisuración | Separación entre barras vecinas de la capa más cercana a la cara en tracción frente a 380·(280/fs) − 2.5·cc ≤ 300·(280/fs), fs = 2/3·fy (ACI 24.3.2, NSR-10 C.10.6.4); con una sola barra, el ancho de esa cara. Valores `cc` y `barras`. |
 | Cortante: resistencia, dimensiones de la sección, refuerzo mínimo, separación máxima | Vc + Vs, límite de la sección, Av,min y separaciones en la dirección V2. |
 | Cortante V3: ... | Las mismas verificaciones en la dirección V3; d ≥ 0.8bw. |
 | Cortante: interacción V2-V3 | Solo ACI 318-25: interacción de los cortantes en dos direcciones. |

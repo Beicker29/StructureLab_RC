@@ -7,6 +7,11 @@ _PHI_TENSION = 0.90
 _TRANSITION_SPAN = 0.003
 _FY_MAX_AS_MIN = 550.0
 _EXEMPTION_FACTOR = 4 / 3
+_CRACK_SPACING = 380.0
+_CRACK_SPACING_CAP = 300.0
+_CRACK_STRESS = 280.0
+_CRACK_COVER = 2.5
+_SERVICE_STRESS = 2 / 3
 
 
 def clauses() -> dict[str, str]:
@@ -16,6 +21,7 @@ def clauses() -> dict[str, str]:
         "axial_limit": "9.5.2.1",
         "min_reinforcement": "9.6.1.2",
         "min_reinforcement_exception": "9.6.1.3",
+        "crack_spacing": "24.3.2 y 24.3.2.1",
     }
 
 
@@ -58,6 +64,13 @@ def effective_min_reinforcement(as_min: float, as_analysis: float) -> float:
     """9.6.1.3: si el As provisto en cada sección es al menos un tercio mayor que el requerido por análisis, 9.6.1.2 no
     se exige; el As que debe proveerse es entonces el menor entre As,min y 4/3 del requerido por análisis, en mm²."""
     return min(as_min, _EXEMPTION_FACTOR * as_analysis)
+
+
+def crack_control_spacing(fy: float, cc: float) -> float:
+    """Tabla 24.3.2, barras corrugadas: el menor de 380·(280/fs) − 2.5·cc y 300·(280/fs), con fs = (2/3)·fy
+    (24.3.2.1) y cc la menor distancia de la superficie del refuerzo a la cara en tracción; en mm."""
+    fs = _SERVICE_STRESS * fy
+    return min(_CRACK_SPACING * _CRACK_STRESS / fs - _CRACK_COVER * cc, _CRACK_SPACING_CAP * _CRACK_STRESS / fs)
 
 
 def determinate_flange_width(bw: float, bf: float) -> float:

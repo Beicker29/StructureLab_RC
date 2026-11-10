@@ -30,16 +30,14 @@ def _out_of_scope(profile: Profile, materials: Materials, member: Member, statio
     return None
 
 
-def _shear_and_torsion(
-    profile: Profile, materials: Materials, member: Member, station: Station, bars: Sequence[RebarSpec]
-) -> tuple[Check, ...]:
+def _shear_and_torsion(given: StationInput) -> tuple[Check, ...]:
+    profile, materials, member, station = given.profile, given.materials, given.member, given.station
     missing = missing_demands(station)
     if missing is not None:
         return (missing,)
-    given = StationInput(profile, materials, member, station, bars)
     threshold = threshold_check(profile, materials, member, station)
     if threshold is None:
-        checks = (*shear_checks(profile, materials, member, station, bars), *weak_shear_checks(given))
+        checks = (*shear_checks(given), *weak_shear_checks(given))
         interaction = interaction_check(profile, checks)
         return checks if interaction is None else (*checks, interaction)
     if threshold.status is not Status.PASS:
@@ -49,13 +47,18 @@ def _shear_and_torsion(
     return threshold, *torsion, *weak_shear_checks(given, at_s)
 
 
-def station_checks(
-    profile: Profile, materials: Materials, member: Member, station: Station, bars: Sequence[RebarSpec]
-) -> tuple[Check, ...]:
+def checks_for(given: StationInput) -> tuple[Check, ...]:
+    """Verificaciones de una estación; given.foundation marca la dirección larga de una zapata combinada (D-081)."""
+    profile, materials, member, station, bars = given.profile, given.materials, given.member, given.station, given.bars
     blocking = _out_of_scope(profile, materials, member, station)
     if blocking is not None:
         checks: tuple[Check, ...] = (blocking,)
     else:
-        flexure = flexure_checks(profile, materials, member, station, bars)
-        checks = (*flexure, *_shear_and_torsion(profile, materials, member, station, bars))
+        checks = (*flexure_checks(profile, materials, member, station, bars), *_shear_and_torsion(given))
     return tuple(replace(check, member=member.id, z=station.z, case=station.case) for check in checks)
+
+
+def station_checks(
+    profile: Profile, materials: Materials, member: Member, station: Station, bars: Sequence[RebarSpec]
+) -> tuple[Check, ...]:
+    return checks_for(StationInput(profile, materials, member, station, bars))

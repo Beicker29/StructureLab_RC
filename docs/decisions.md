@@ -161,6 +161,7 @@
 - **Fecha:** 2026-11-04
 - **Referencia:** ACI 9.6.1.3; NSR-10 C.10.5.3.
 - **Decisión:** no se implementa por ahora y queda pendiente en la hoja de ruta. Si As < As,min, la verificación devuelve `BLOCKED` ("no implementado"), porque la excepción podría levantar el incumplimiento. Confirmado por el usuario.
+- **Resuelta por D-081 (2026-11-10):** la excepción se implementa en el acero mínimo de vigas (M3 y M2).
 
 ### D-023: lectura del Excel de ETABS
 
@@ -184,6 +185,7 @@
 - **Referencia:** ACI 9.6.1.2; NSR-10 C.10.5.1. Ambas usan d, la distancia al centroide del refuerzo de tracción.
 - **Alternativas:** contar solo las capas a tracción de la mitad traccionada, o todo el acero a tracción.
 - **Decisión del usuario:** para As,min cuenta todo el acero a tracción en el estado nominal, y d es su centroide, pero no menor que 0.8h (D-043). En la viga T de ejemplo a momento positivo, As = 1928 mm², el centroide queda a 361.5 mm y d = 0.8h = 400 mm, así que As,min = 400 mm².
+- **Revisada por D-081 (2026-11-10):** As,min cuenta solo el acero a tracción más allá de la mitad de la altura desde la cara comprimida; d sigue sin bajar de 0.8h.
 
 ### D-026: As,min frente a los ejemplos de Wight
 
@@ -969,6 +971,44 @@
   estructural. Hoy entran en la resultante y en la presión de Bellos (revisión geotécnica y carga neta), pero la viga
   larga no considera la torsión que producen, y en las franjas transversales (V3J.3) solo cuentan a través de la forma
   de la presión; el cortante Vy en la base de la columna no se lleva a las franjas.
+
+### D-081: la dirección larga de la zapata combinada se revisa con el código de vigas
+
+- **Fecha:** 2026-11-10
+- **Referencias:** ACI 318-25 13.3.2.1, 9.6.1.2, 9.6.1.3, 7.6.3.1, 7.7.2.3, 13.2.6.2(a), Tabla 24.3.2 y 24.3.2.1;
+  NSR-10 C.10.5.1, C.10.5.3, C.10.5.4, C.10.6.4 (ecuación C.10-4), C.11.4.6.1(a), C.15.5.
+- **Decisión del usuario:** como la dirección larga se trata como viga, se reutiliza el código de vigas (sus
+  verificaciones y requisitos normativos) en lugar de un código propio.
+  1. La viga larga es un `Member` de tipo viga: sección B × h con el recubrimiento de la zapata, las barras inferiores y
+     superiores x como capas con posición y los estribos opcionales (`stirrups` de la zapata combinada, como en vigas).
+     Cada caso mayorado da estaciones en las secciones críticas: el mayor momento positivo y el mayor negativo, si los
+     hay (caras de las columnas y puntos con V = 0, sin los ceros de V pegados a un borde libre, que son ruido), y las
+     secciones a d de cada cara hacia su tramo. `station_checks` da la flexión con las dos capas, εt, As,min, la
+     fisuración, el cortante, el eje débil (trivial: M2 = V3 = 0) y la interacción V2-V3.
+  2. Cortante en modo cimentación: Vc de las cimentaciones superficiales (ACI 13.2.6.2(a); NSR-10 C.15.5 → C.11) y
+     Av,min solo donde Vu > φVc en ACI (13.3.2.1 remite al capítulo 7: 7.6.3.1); NSR-10 no lo exige en zapatas
+     (C.11.4.6.1(a)). Con estribos, Vs como en vigas.
+  3. Excepción de 4/3 en el código de vigas (resuelve D-022): As provisto ≥ min(As,min, 4/3·As por análisis), con el As
+     por análisis de la estación: el acero a tracción del estado nominal escalado hasta φMn = |Mu|. Si el provisto no
+     alcanza el momento, FAIL.
+  4. Control de fisuración en vigas y en la viga larga: la separación entre barras vecinas de la capa más cercana a la
+     cara en tracción frente a 380·(280/fs) − 2.5·cc, no mayor que 300·(280/fs), con fs = (2/3)·fy y cc la menor
+     distancia libre de la barra a esa cara (ACI Tabla 24.3.2; NSR-10 C.10.6.4). Con una sola barra en la capa, s es el
+     ancho de la cara en tracción: lo dice NSR-10 C.10.6.4; en ACI, que no lo dice, la misma lectura (decisión del
+     usuario). Se adelanta esta parte de la fase 2D.
+  5. Propio de la zapata: sin barras superiores y M < 0, la flexión es de concreto simple (D-072); la separación de 3h
+     y 450 mm (ACI 7.7.2.3, NSR-10 C.10.5.4) por capa.
+  6. As,min y su excepción cuentan solo el acero a tracción del lado en tracción de la sección, más allá de la mitad de
+     la altura desde la cara comprimida (ajusta D-025, en vigas y en la viga larga, los dos ejes; decisión del usuario):
+     con c pequeño, las barras cercanas a la cara comprimida quedan a tracción pero no son refuerzo de tracción por
+     flexión. Contarlas bajaba d (D-043) y dejaba el As,min del manual (ejemplo 5) en 9.26 in² frente a 10.0. El cortante
+     sigue con D-043 (todo el acero a tracción, d ≥ 0.8h).
+- **Consecuencias:** las reglas de vigas D-043 (d ≥ 0.8h) y D-025 (con el ajuste del punto 6) aplican a la viga
+  larga. Sin barras superiores y M < 0, las barras inferiores quedan a tracción cerca de la cara comprimida y el
+  cortante usa d = 0.8h. Los ejemplos de vigas solo ganan el check de fisuración (todos PASS; 638 por perfil en las
+  plantillas de ETABS); ninguno tenía As < As,min. Oráculo `derive_combined_beam.py` rehecho con las reglas de vigas
+  escritas aparte (compatibilidad de deformaciones con las dos capas); 9 casos por perfil; 5 de 5 mutaciones
+  detectadas.
 
 ## Consultas abiertas
 

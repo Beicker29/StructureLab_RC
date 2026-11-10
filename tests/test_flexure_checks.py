@@ -5,6 +5,7 @@ import pytest
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.beam.flexure import (
+    CRACK_SPACING,
     MIN_REINFORCEMENT,
     MIN_REINFORCEMENT_M2,
     NET_TENSILE_STRAIN,
@@ -51,6 +52,7 @@ def test_a_well_reinforced_beam_passes_every_check() -> None:
         NET_TENSILE_STRAIN_BIAXIAL: Status.PASS,
         MIN_REINFORCEMENT: Status.PASS,
         MIN_REINFORCEMENT_M2: Status.PASS,
+        CRACK_SPACING: Status.PASS,
     }
     phi = dict(checks[STRENGTH].values)["phi"]
     assert checks[STRENGTH].capacity == pytest.approx(phi * dict(checks[STRENGTH].values)["Mn3"])
@@ -100,11 +102,51 @@ def test_net_tensile_strain_limit_differs_between_profiles() -> None:
     assert aci.status is Status.FAIL
 
 
-def test_below_minimum_reinforcement_is_blocked_until_the_exception_exists() -> None:
+def _whitney_area(mu: float, b: float, d: float) -> float:
+    """As con φ = 0.90 y el bloque de Whitney, independiente del paquete: (0.85·f'c·b/fy)·(d − √(d² − 2Mu/(φ·0.85·f'c·b)))."""
+    k = 0.85 * MATERIALS.fc * b
+    return k / MATERIALS.fy * (d - math.sqrt(d**2 - 2 * mu / (0.9 * k)))
+
+
+@pytest.mark.parametrize("profile", ["aci-318-25", "nsr-10"])
+@pytest.mark.parametrize(("mu", "status"), [(20.0, Status.PASS), (33.0, Status.FAIL)])
+def test_below_minimum_reinforcement_uses_the_one_third_exception(profile: str, mu: float, status: Status) -> None:
+    """As < As,min pasa si As ≥ 4/3 del requerido por análisis (ACI 9.6.1.3, NSR-10 C.10.5.3; D-081)."""
     layers = [{"bars": ["#4", "#4"], "depth": 440.0, "role": "flexure"}]
-    check = _checks(_member(layers, {"Pu_kN": 0.0, "Mu_kNm": 20.0, "M2_kNm": 0.0}))[MIN_REINFORCEMENT]
-    assert check.status is Status.BLOCKED
-    assert "C.10.5.3" in check.errors[0].message
+    check = _checks(_member(layers, {"Pu_kN": 0.0, "Mu_kNm": mu, "M2_kNm": 0.0}), profile)[MIN_REINFORCEMENT]
+    analysis = _whitney_area(mu * 1e6, 300.0, 440.0)
+    assert check.status is status
+    assert dict(check.values)["As analisis"] == pytest.approx(analysis, rel=1e-6)
+    assert check.demand == pytest.approx(4 / 3 * analysis, rel=1e-6)
+    assert check.capacity == pytest.approx(2 * 129.0)
+
+
+def test_below_minimum_without_enough_strength_fails() -> None:
+    layers = [{"bars": ["#4", "#4"], "depth": 440.0, "role": "flexure"}]
+    check = _checks(_member(layers, {"Pu_kN": 0.0, "Mu_kNm": 60.0, "M2_kNm": 0.0}))[MIN_REINFORCEMENT]
+    assert check.status is Status.FAIL
+    assert "no aplica la excepcion" in check.note
+
+
+@pytest.mark.parametrize("profile", ["aci-318-25", "nsr-10"])
+@pytest.mark.parametrize(("bars", "width", "status"), [
+    (["#8", "#8", "#8"], 300.0, Status.PASS),
+    (["#8"], 300.0, Status.FAIL),
+    (["#8", "#8"], 600.0, Status.FAIL),
+])
+def test_crack_control_spacing_of_the_tension_layer(profile: str, bars: list[str], width: float, status: Status) -> None:
+    """ACI 24.3.2 y NSR-10 C.10.6.4 con fs = 2/3·fy: s ≤ min(380·280/fs − 2.5·cc, 300·280/fs); una sola barra usa el
+    ancho de la cara en tracción (D-081)."""
+    layers = [{"bars": bars, "depth": 440.0, "role": "flexure"}]
+    member = _member(layers, {"Pu_kN": 0.0, "Mu_kNm": 50.0, "M2_kNm": 0.0}, section={"bw": width, "h": 500.0, "cover": 40.0})
+    check = _checks(member, profile)[CRACK_SPACING]
+    cc = 500.0 - 440.0 - 25.4 / 2
+    fs = 2 / 3 * MATERIALS.fy
+    inset = 40.0 + 25.4 / 2
+    expected = width if len(bars) == 1 else (width - 2 * inset) / (len(bars) - 1)
+    assert check.status is status
+    assert check.demand == pytest.approx(expected)
+    assert check.capacity == pytest.approx(min(380 * 280 / fs - 2.5 * cc, 300 * 280 / fs))
 
 
 T_SECTION = {"bw": 300.0, "h": 500.0, "cover": 40.0, "hf": 100.0, "overhang_x_neg": 350.0, "overhang_x_pos": 350.0}
@@ -129,17 +171,17 @@ def test_aci_caps_fy_at_550_mpa_for_minimum_reinforcement() -> None:
     assert nsr.min_flexural_reinforcement(28.0, 690.0, 300.0, 440.0) < nsr.min_flexural_reinforcement(28.0, 550.0, 300.0, 440.0)
 
 
-def test_minimum_reinforcement_counts_every_bar_in_tension() -> None:
-    # El eje neutro queda por encima de las 2#5 superiores, que también trabajan a tracción (D-025).
+def test_minimum_reinforcement_counts_only_the_tension_side() -> None:
+    # El eje neutro queda por encima de las 2#5 superiores, que trabajan a tracción, pero están del lado comprimido
+    # (60 mm < h/2): As,min solo cuenta las 3#8 (D-025 revisada por D-081).
     layers = [
         {"bars": ["#5", "#5"], "depth": 60.0, "role": "flexure"},
         {"bars": ["#8", "#8", "#8"], "depth": 440.0, "role": "flexure"},
     ]
     member = _member(layers, {"Pu_kN": 0.0, "Mu_kNm": 180.0, "M2_kNm": 0.0}, section=T_SECTION, statically_determinate=False)
     check = _checks(member)[MIN_REINFORCEMENT]
-    area = 2 * 199.0 + 3 * 510.0
-    # El centroide del acero a tracción queda a 361.5 mm, pero d no se toma menor que 0.8h = 400 mm (D-043).
-    depth = max((2 * 199.0 * 60.0 + 3 * 510.0 * 440.0) / area, 0.8 * 500.0)
+    area = 3 * 510.0
+    depth = max(440.0, 0.8 * 500.0)
     assert check.capacity == pytest.approx(area)
     assert check.demand == pytest.approx(1.4 * 300.0 * depth / 420.0)
 

@@ -8,6 +8,7 @@ from typing import Self
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
 from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Mat, Soil, _Input
+from structurelab_rc.model.reinforcement import Stirrups
 
 COLUMNS = 2
 
@@ -34,7 +35,8 @@ class CombinedColumn(_Input):
 class CombinedFooting(_Input):
     """Zapata combinada de espesor h con dos columnas a lo largo de X. bottom es la malla inferior en las dos direcciones;
     top, las barras superiores paralelas a X (opcional: sin ellas, el momento negativo se revisa como concreto simple,
-    D-072). fill_height, pedestal_height, cover y las sobrecargas, como en la zapata aislada (D-057)."""
+    D-072); stirrups, los estribos de la dirección larga, como en las vigas (opcional, D-081). fill_height,
+    pedestal_height, cover y las sobrecargas, como en la zapata aislada (D-057)."""
 
     id: str = Field(min_length=1)
     lx: PositiveFloat
@@ -48,6 +50,7 @@ class CombinedFooting(_Input):
     columns: tuple[CombinedColumn, ...] = Field(min_length=COLUMNS, max_length=COLUMNS)
     bottom: Mat
     top: BarSet | None = None
+    stirrups: Stirrups | None = None
 
     @field_validator("surcharge_dead", "surcharge_live")
     @classmethod

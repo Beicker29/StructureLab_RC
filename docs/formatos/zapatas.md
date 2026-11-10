@@ -99,8 +99,9 @@ y del relleno, y fuerzas de las sobrecargas. Salen en `resultado.json`, en `foot
 
 Zapata rectangular de dos columnas, solo verificación. X es la dirección larga: las dos columnas van a distintas x. Usa
 el mismo `soil` que las zapatas aisladas. Por ahora se verifican la parte geotécnica con la resultante de las dos
-columnas (V3J.1) y, con los casos mayorados, la viga en la dirección larga (V3J.2: flexión de las barras inferiores y
-superiores x, cortante sin estribos, acero mínimo de vigas y separación); las franjas transversales, el punzonamiento,
+columnas (V3J.1) y, con los casos mayorados, la viga en la dirección larga con las verificaciones de vigas en sus
+secciones críticas (V3J.2 y D-081: cada check lleva `z`, la posición desde el borde −X, y en `note` la sección; Vc y
+Av,min de cimentación) y la separación de 3h y 450 mm; las franjas transversales, el punzonamiento,
 el desarrollo y los pasadores quedan `BLOCKED` hasta V3J.3, y la memoria llega en V3J.4.
 
 | Campo | Unidad | Descripción |
@@ -115,6 +116,7 @@ el desarrollo y los pasadores quedan `BLOCKED` hasta V3J.3, y la memoria llega e
 | `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; las dos columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
 | `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
 | `top` | | Barras superiores paralelas a X (`designation`, `spacing`), opcional: sin ellas, el momento negativo se revisa como concreto simple (D-072). |
+| `stirrups` | | Estribos de la dirección larga, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 

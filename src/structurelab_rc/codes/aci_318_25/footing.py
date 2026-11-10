@@ -9,11 +9,6 @@ _MIN_DEPTH = 150.0
 _SIZE_FACTOR = 1.0
 _DOWEL_RATIO = 0.005
 _ONE_WAY_SPACING_THICKNESS = 3.0
-_CRACK_SPACING = 380.0
-_CRACK_SPACING_CAP = 300.0
-_CRACK_STRESS = 280.0
-_CRACK_COVER = 2.5
-_SERVICE_STRESS = 2 / 3
 
 
 def clauses() -> dict[str, str]:
@@ -30,7 +25,8 @@ def clauses() -> dict[str, str]:
         "punching_min_reinforcement": "8.6.1.2",
         "dowels": "16.3.4.1",
         "dowel_excess": "16.3.3.4",
-        "combined_spacing": "13.3.2.1, 7.7.2.3 y 24.3.2",
+        "combined_spacing": "13.3.2.1 y 7.7.2.3",
+        "combined_min_shear": "13.3.2.1 y 7.6.3.1",
     }
 
 
@@ -44,13 +40,15 @@ def max_bar_spacing(h: float) -> float:
     return min(_SPACING_THICKNESS * h, _MAX_SPACING)
 
 
-def combined_max_bar_spacing(h: float, fy: float, cc: float) -> float:
-    """Zapata combinada en una dirección (13.3.2.1 remite a los capítulos 7 y 9): el menor de 3h y 450 mm (7.7.2.3) y
-    del límite de fisuración de la Tabla 24.3.2, 380·(280/fs) − 2.5·cc y 300·(280/fs), con fs = (2/3)·fy (24.3.2.1) y
-    cc la distancia libre de la barra a la cara en tracción; en mm."""
-    fs = _SERVICE_STRESS * fy
-    crack = min(_CRACK_SPACING * _CRACK_STRESS / fs - _CRACK_COVER * cc, _CRACK_SPACING_CAP * _CRACK_STRESS / fs)
-    return min(_ONE_WAY_SPACING_THICKNESS * h, _MAX_SPACING, crack)
+def combined_max_bar_spacing(h: float) -> float:
+    """Zapata combinada en una dirección (13.3.2.1 remite a los capítulos 7 y 9): el menor de 3h y 450 mm (7.7.2.3), en
+    mm. El límite de fisuración (24.3.2) lo revisa la flexión de vigas."""
+    return min(_ONE_WAY_SPACING_THICKNESS * h, _MAX_SPACING)
+
+
+def combined_min_shear_threshold(vc: float) -> float | None:
+    """Zapata combinada (13.3.2.1 remite al capítulo 7): Av,min donde Vu > φVc (7.6.3.1), en N."""
+    return shear.strength_reduction() * vc
 
 
 def band_fraction(beta: float) -> float:

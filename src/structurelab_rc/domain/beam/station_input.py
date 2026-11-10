@@ -10,8 +10,11 @@ from structurelab_rc.model.project import Materials, Member, Station
 
 @dataclass(frozen=True)
 class StationInput:
+    """foundation: la viga es la dirección larga de una zapata combinada (D-081): Vc y Av,min de cimentación."""
+
     profile: Profile
     materials: Materials
     member: Member
     station: Station
     bars: Sequence[RebarSpec]
+    foundation: bool = False

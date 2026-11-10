@@ -10,13 +10,15 @@ No importa el paquete. Unidades de trabajo: N y mm. Para cada caso mayorado:
    derive_footing_shear.py; cada columna a la izquierda baja F = P + fd·(γc·A·hp − (γf·hf + qD)·A) − fl·qL·A en su eje
    y aplica el par My + (h + hp)·Vx. V = suma de fuerzas hacia arriba; M = suma de momentos respecto a la sección
    (positivo tracciona abajo).
-3. Momentos en las cuatro caras y extremos de cada tramo sin columna, buscados por barrido fino de M y sección áurea
-   (no por las raíces de V, como el paquete); cortante a d (de las barras inferiores x) de cada cara hacia su tramo, con
-   Vc de 13.2.6.2(a) o de C.11.2 (el mayor de C.11.2.1 y C.11.2.2).
-4. Resistencia con el bloque de Whitney y φ por perfil (derive_footing_flexure.py); sin barras superiores, concreto
-   simple (D-072). As,min de vigas: max(0.25√f'c, 1.4)/fy·b·d, o 4/3 del As requerido por el mayor momento si es menor
-   (ACI 9.6.1.3, NSR-10 C.10.5.3), con As = (0.85·f'c·b/fy)·(d − √(d² − 2·Mu/(0.9·0.85·f'c·b))). Separación máxima:
-   min(3h, 450), 380·(280/fs) − 2.5·cc y 300·(280/fs) con fs = 2/3·fy (cc libre a la cara), en los dos perfiles.
+3. Estaciones de cada caso: el mayor y el menor momento entre las cuatro caras y los extremos interiores de cada tramo
+   (barrido fino de M y sección áurea, no por las raíces de V, como el paquete), y las secciones a d (de las barras
+   inferiores x) de cada cara hacia su tramo.
+4. En cada estación, las reglas de vigas (D-081) escritas aparte: resistencia por compatibilidad de deformaciones con
+   las dos capas (bloque de Whitney, acero elastoplástico, concreto desplazado), εt, As,min de vigas con d ≥ 0.8h y el
+   acero a tracción más allá de h/2, excepción de 4/3 por bisección del acero escalado, separación por fisuración (fs = 2/3·fy) y
+   cortante con Vc de cimentación, estribos y Av,min de cimentación. Sin barras superiores y M < 0, la flexión es de
+   concreto simple (D-072); el cortante sigue la regla de vigas (las barras inferiores quedan a tracción cerca de la cara
+   comprimida y d = 0.8h, D-043). Separación 3h y 450 mm por capa.
 
 Uso: python tests/oracles/derive_combined_beam.py
 """
@@ -48,10 +50,12 @@ GAMMA_C, GAMMA_F = _F.GAMMA_C, _F.GAMMA_F  # N/mm³
 BARS = _F.BARS
 PHI_SHEAR = _S.PHI
 SCAN, GOLDEN_STEPS = 4000, 200
-CLAUSES = {"aci_318_25": {"strength": "9.5.1.1(a) y Tabla 21.2.2", "min": "9.6.1.2 y 9.6.1.3",
-                          "shear": "13.2.6.2(a) y 13.2.7.2", "strain": "9.3.3.1", "spacing": "13.3.2.1, 7.7.2.3 y 24.3.2"},
-           "nsr_10": {"strength": "C.9.3.2.1 y C.9.3.2.2", "min": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-                      "shear": "C.15.5.1, C.15.5.2 y C.11.2", "strain": "C.10.3.5", "spacing": "C.10.5.4 y C.10.6.4"}}
+ECU, ES, BETA1 = 0.003, 200000.0, 0.85
+CLAUSES = {"aci_318_25": {"strength": "9.5.1.1(a) y Tabla 21.2.2", "min": "9.6.1.2 y 9.6.1.3", "crack": "24.3.2 y 24.3.2.1",
+                          "shear": "13.2.6.2(a) y 13.2.7.2", "min_shear": "13.3.2.1 y 7.6.3.1",
+                          "spacing": "13.3.2.1 y 7.7.2.3"},
+           "nsr_10": {"strength": "C.9.3.2.1 y C.9.3.2.2", "min": "C.10.5.1 y C.10.5.2 y C.10.5.3", "crack": "C.10.6.4",
+                      "shear": "C.15.5.1, C.15.5.2 y C.11.2", "min_shear": "C.11.4.6.1(a)", "spacing": "C.10.5.4"}}
 
 
 def _beam(f: dict, case: str) -> dict | None:
@@ -126,88 +130,158 @@ def _extreme(beam: dict, low: float, high: float, sign: float) -> list[tuple[flo
     return found
 
 
-def _moments(beam: dict) -> tuple[tuple[float, float], tuple[float, float]]:
-    """(M+, x) y (M−, x), con M− positivo; 0 si no hay momento de ese signo."""
+def _stations(beam: dict, depth: float) -> list[float]:
+    """Las x de las estaciones: el mayor momento positivo y el mayor negativo, si los hay (caras y extremos interiores),
+    y las secciones a d."""
     candidates = [(x, _shear_moment(beam, x)[1]) for x, _ in _faces(beam)]
     for low, high in _regions(beam):
         candidates += _extreme(beam, low, high, 1.0) + _extreme(beam, low, high, -1.0)
-    top = max(candidates, key=lambda item: item[1])
-    bottom = min(candidates, key=lambda item: item[1])
-    return (max(top[1], 0.0), top[0]), (max(-bottom[1], 0.0), bottom[0])
+    largest, smallest = max(candidates, key=lambda item: item[1]), min(candidates, key=lambda item: item[1])
+    xs = ([largest[0]] if largest[1] > 0 else []) + ([smallest[0]] if smallest[1] < 0 else [])
+    for face, side in _faces(beam):
+        x = face + side * depth
+        if any(low < x < high and low <= face <= high for low, high in _regions(beam)):
+            xs.append(x)
+    unique: list[float] = []
+    for x in sorted(xs):
+        if not unique or abs(x - unique[-1]) > 1e-6:
+            unique.append(x)
+    return unique
 
 
-def _rows(f: dict) -> tuple[dict, dict | None]:
+def _rows(f: dict) -> list[dict]:
+    """Capas de barras x (profundidad desde la cara superior): inferior y, si hay, superior."""
     mat = f["bottom"]
     first = mat["first"]
     d1 = BARS[mat[first]["designation"]][0]
     db, ab = BARS[mat["x"]["designation"]]
     offset = f["cover"] + db / 2 if first == "x" else f["cover"] + d1 + db / 2
     n = _F._count(f["ly"], f["cover"], db, mat["x"]["spacing"])
-    bottom = {"depth": f["h"] - offset, "area": n * ab, "spacing": mat["x"]["spacing"], "cc": offset - db / 2}
-    top = None
+    rows = [{"face": "bottom", "depth": f["h"] - offset, "area": n * ab, "spacing": mat["x"]["spacing"], "cc": offset - db / 2}]
     if f.get("top"):
         db, ab = BARS[f["top"]["designation"]]
         n = _F._count(f["ly"], f["cover"], db, f["top"]["spacing"])
-        top = {"depth": f["h"] - f["cover"] - db / 2, "area": n * ab, "spacing": f["top"]["spacing"], "cc": f["cover"]}
-    return bottom, top
+        rows.append({"face": "top", "depth": f["cover"] + db / 2, "area": n * ab, "spacing": f["top"]["spacing"], "cc": f["cover"]})
+    return rows
 
 
-def _required(moment: float, width: float, depth: float) -> float:
-    k = 0.85 * FC * width
-    return k / FY * (depth - math.sqrt(depth**2 - 2 * moment / (0.9 * k)))
+def _state(layers: list[tuple[float, float]], b: float, h: float) -> dict | None:
+    """Compatibilidad de deformaciones con el bloque de Whitney y acero elastoplástico, Pu = 0. layers: (profundidad desde
+    la cara comprimida, área). Una barra dentro del bloque descuenta el concreto que desplaza. None sin equilibrio."""
+
+    def forces(c: float) -> tuple[float, list[tuple[float, float, float]]]:
+        a = min(BETA1 * c, h)
+        steel = []
+        for depth, area in layers:
+            strain = ECU * (depth - c) / c
+            stress = max(-FY, min(FY, ES * strain))
+            displaced = 0.85 * FC if depth < BETA1 * c else 0.0
+            steel.append((depth, area * (stress + displaced), strain))
+        return sum(force for _, force, _ in steel) - 0.85 * FC * b * a, steel
+
+    low, high = 1e-9, h / BETA1
+    if forces(low)[0] <= 0 or forces(high)[0] >= 0:
+        return None
+    for _ in range(300):
+        middle = (low + high) / 2
+        low, high = (middle, high) if forces(middle)[0] > 0 else (low, middle)
+    c = (low + high) / 2
+    _, steel = forces(c)
+    a = min(BETA1 * c, h)
+    nominal = sum(force * depth for depth, force, _ in steel) - 0.85 * FC * b * a * a / 2
+    deepest = max(depth for depth, _ in layers)
+    return {"c": c, "Mn": nominal, "et": ECU * (deepest - c) / c, "strains": [strain for _, _, strain in steel]}
 
 
-def _flexure(folder: str, f: dict, row: dict, moment: float, bars: str) -> dict:
-    profile = _F.PROFILES[folder]
-    nominal, phi, strain = _F._strength(row["area"], f["ly"], row["depth"], profile)
-    return {"name": f"Viga larga: flexion ({bars})", "status": "PASS" if phi * nominal >= moment else "FAIL",
-            "demand_Nmm": moment, "capacity_Nmm": phi * nominal, "phi": phi, "et": strain, "clause": CLAUSES[folder]["strength"]}
+def _oriented(rows: list[dict], h: float, moment: float) -> list[tuple[float, float]]:
+    return [(row["depth"] if moment >= 0 else h - row["depth"], row["area"]) for row in rows]
 
 
-def _shear(folder: str, f: dict, beam: dict, rows: tuple[dict, dict | None]) -> dict:
-    bottom, top = rows
-    depth = bottom["depth"]
-    worst = None
-    for face, side in _faces(beam):
-        x = face + side * depth
-        if not any(low < x < high and low <= face <= high for low, high in _regions(beam)):
-            continue
-        shear, moment = _shear_moment(beam, x)
-        tension = bottom["area"] if moment >= 0 else (top["area"] if top else 0.0)
-        capacity = PHI_SHEAR * _S._one_way_vc(folder, f["ly"], depth, tension / (f["ly"] * depth), abs(shear), abs(moment))
-        if worst is None or abs(shear) / capacity > worst[0]:
-            worst = (abs(shear) / capacity, abs(shear), capacity, x)
-    name = "Viga larga: cortante en una direccion"
-    if worst is None:
-        return {"name": name, "status": "PASS"}
-    return {"name": name, "status": "PASS" if worst[1] <= worst[2] else "FAIL", "demand_N": worst[1], "capacity_N": worst[2],
-            "x_mm": worst[3], "clause": CLAUSES[folder]["shear"]}
+def _design(profile: dict, layers: list[tuple[float, float]], b: float, h: float) -> float:
+    state = _state(layers, b, h)
+    return 0.0 if state is None else _F._phi(state["et"], profile) * abs(state["Mn"])
 
 
-def _section(folder: str, f: dict, row: dict, demand: float, bars: str) -> list[dict]:
-    profile = _F.PROFILES[folder]
-    _, _, strain = _F._strength(row["area"], f["ly"], row["depth"], profile)
-    as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * f["ly"] * row["depth"]
-    required = min(as_min, 4 / 3 * _required(demand, f["ly"], row["depth"]))
-    # Separación: min(3h, 450) (ACI 7.7.2.3, NSR-10 C.10.5.4) y fisuración con fs = 2/3·fy (Tabla 24.3.2, Ec. C.10-4).
+def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float) -> list[dict]:
+    """Resistencia, εt (M3), As,min (M3) con la excepción de 4/3 y la separación por fisuración, como en las vigas."""
+    profile, b, h = _F.PROFILES[folder], f["ly"], f["h"]
+    layers = _oriented(rows, h, moment)
+    state = _state(layers, b, h)
+    assert state is not None
+    phi = _F._phi(state["et"], profile)
+    checks = [{"name": "Flexion: resistencia", "status": "PASS" if phi * state["Mn"] >= abs(moment) else "FAIL",
+               "demand": abs(moment), "capacity": phi * state["Mn"], "clause": CLAUSES[folder]["strength"]}]
+    if moment == 0:
+        return checks
+    checks.append({"name": "Flexion: deformacion neta de traccion (M3)",
+        "status": "PASS" if state["et"] >= profile["strain_min"] else "FAIL",
+                   "capacity": state["et"]})
+    # As,min: solo el acero a tracción del lado en tracción, más allá de h/2 desde la cara comprimida (D-081).
+    tension = [(layer, strain > 0 and layer[0] > h / 2) for layer, strain in zip(layers, state["strains"], strict=True)]
+    provided = sum(area for (depth, area), pulled in tension if pulled)
+    centroid = sum(depth * area for (depth, area), pulled in tension if pulled) / provided
+    d = max(centroid, 0.8 * h)
+    as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * b * d
+    minimum = {"name": "Flexion: acero minimo (M3)", "capacity": provided, "as_min": as_min, "clause": CLAUSES[folder]["min"]}
+    if provided >= as_min:
+        minimum.update(status="PASS", demand=as_min)
+    else:
+        def design(k: float) -> float:
+            return _design(profile, [(depth, area * k if pulled else area) for (depth, area), pulled in tension], b, h)
+
+        if design(1.0) < abs(moment):
+            minimum.update(status="FAIL", demand=as_min)
+        else:
+            lo, hi = 0.0, 1.0
+            for _ in range(200):
+                mid = (lo + hi) / 2
+                lo, hi = (mid, hi) if design(mid) < abs(moment) else (lo, mid)
+            effective = min(as_min, 4 / 3 * hi * provided)
+            minimum.update(status="PASS" if provided >= effective else "FAIL", demand=effective, analysis=hi * provided)
+    checks.append(minimum)
+    face = "bottom" if moment > 0 else "top"
+    row = next(row for row in rows if row["face"] == face)
     fs = 2 / 3 * FY
-    spacing = min(3 * f["h"], 450.0, 380 * 280 / fs - 2.5 * row["cc"], 300 * 280 / fs)
-    return [
-        {"name": f"Viga larga: deformacion neta de traccion ({bars})", "status": "PASS" if strain >= profile["strain_min"] else "FAIL",
-         "capacity": strain, "clause": CLAUSES[folder]["strain"]},
-        {"name": f"Viga larga: acero minimo ({bars})", "status": "PASS" if row["area"] >= required else "FAIL",
-         "demand_mm2": required, "capacity_mm2": row["area"], "as_min_mm2": as_min, "clause": CLAUSES[folder]["min"]},
-        {"name": f"Viga larga: separacion maxima ({bars})", "status": "PASS" if row["spacing"] <= spacing else "FAIL",
-         "demand_mm": row["spacing"], "capacity_mm": spacing, "clause": CLAUSES[folder]["spacing"]},
-    ]
+    limit = min(380 * 280 / fs - 2.5 * row["cc"], 300 * 280 / fs)
+    checks.append({"name": "Flexion: separacion por fisuracion", "status": "PASS" if row["spacing"] <= limit else "FAIL",
+                   "demand": row["spacing"], "capacity": limit, "clause": CLAUSES[folder]["crack"]})
+    return checks
+
+
+def _shear_checks(folder: str, f: dict, rows: list[dict], given: tuple[float, float]) -> list[dict]:
+    """Cortante de vigas en modo cimentación: d y ρw del acero a tracción (d ≥ 0.8h), Vc de cimentación, Vs de los
+    estribos (Vs ≤ 0.66√f'c·b·d) y Av,min si Vu > φVc (ACI 7.6.3.1; NSR-10 no lo exige en zapatas)."""
+    shear, moment = given
+    b, h = f["ly"], f["h"]
+    layers = _oriented(rows, h, moment)
+    state = _state(layers, b, h)
+    if state is None or not any(strain > 0 for strain in state["strains"]):
+        return [{"name": "Cortante: resistencia", "status": "BLOCKED"}]
+    pulled = [(depth, area) for (depth, area), strain in zip(layers, state["strains"], strict=True) if strain > 0]
+    area = sum(a for _, a in pulled)
+    d = max(sum(depth * a for depth, a in pulled) / area, 0.8 * h)
+    vc = _S._one_way_vc(folder, b, d, area / (b * d), abs(shear), abs(moment))
+    stirrups = f.get("stirrups")
+    fyt = 420.0
+    transverse = 0.0 if stirrups is None else stirrups["legs"] * BARS[stirrups["designation"]][1] / stirrups["spacing"]
+    vs = transverse * fyt * d
+    capacity = PHI_SHEAR * (vc + min(vs, 0.66 * math.sqrt(FC) * b * d))
+    checks = [{"name": "Cortante: resistencia", "status": "PASS" if abs(shear) <= capacity else "FAIL", "demand": abs(shear),
+               "capacity": capacity, "clause": CLAUSES[folder]["shear"]}]
+    required = folder == "aci_318_25" and abs(shear) > PHI_SHEAR * vc
+    if not required:
+        checks.append({"name": "Cortante: refuerzo minimo", "status": "PASS", "clause": CLAUSES[folder]["min_shear"]})
+    else:
+        av_min = max(0.062 * math.sqrt(FC), 0.35) * b / fyt
+        checks.append({"name": "Cortante: refuerzo minimo", "status": "PASS" if transverse >= av_min else "FAIL",
+                       "demand": av_min, "capacity": transverse, "clause": CLAUSES[folder]["min_shear"]})
+    return checks
 
 
 def _expected(folder: str, f: dict, level: str) -> dict:
     rows = _rows(f)
-    bottom, top = rows
     profile = _F.PROFILES[folder]
     checks, failures = [], []
-    positive_max = negative_max = 0.0
     for load in f["columns"][0]["loads"]:
         if load["kind"] != "factored":
             continue
@@ -216,20 +290,19 @@ def _expected(folder: str, f: dict, level: str) -> dict:
         if beam is None:
             failures.append(case)
             continue
-        (positive, x_pos), (negative, x_neg) = _moments(beam)
-        positive_max, negative_max = max(positive_max, positive), max(negative_max, negative)
-        checks.append({**_flexure(folder, f, bottom, positive, "barras inferiores x"), "case": case, "x_mm": x_pos})
-        if negative > 1e-6:
-            if top is None:
-                plain = _F._plain(f, "x", negative, case, profile, level)
-                checks.append({**plain, "x_mm": x_neg})
+        for x in _stations(beam, rows[0]["depth"]):
+            shear, moment = _shear_moment(beam, x)
+            z = x + f["lx"] / 2
+            if moment < 0 and not f.get("top"):
+                station = [_F._plain(f, "x", -moment, case, profile, level), *_shear_checks(folder, f, rows, (shear, moment))]
             else:
-                checks.append({**_flexure(folder, f, top, negative, "barras superiores x"), "case": case, "x_mm": x_neg})
-        checks.append({**_shear(folder, f, beam, rows), "case": case})
-    if positive_max > 1e-6:
-        checks += _section(folder, f, bottom, positive_max, "barras inferiores x")
-    if top is not None and negative_max > 1e-6:
-        checks += _section(folder, f, top, negative_max, "barras superiores x")
+                station = _flexure_checks(folder, f, rows, moment) + _shear_checks(folder, f, rows, (shear, moment))
+            checks += [{**item, "case": case, "z_mm": z} for item in station]
+    maximum = min(3 * f["h"], 450.0)
+    for row in rows:
+        bars = "barras inferiores x" if row["face"] == "bottom" else "barras superiores x"
+        checks.append({"name": f"Viga larga: separacion maxima ({bars})", "status": "PASS" if row["spacing"] <= maximum else "FAIL",
+                       "demand": row["spacing"], "capacity": maximum, "clause": CLAUSES[folder]["spacing"]})
     return {"checks": checks, "equilibrium_failures": failures}
 
 
@@ -273,6 +346,10 @@ CASES = [
      _footing([_column("C1", -2000.0, [_load("U1", 500.0)]), _column("C2", 2000.0, [_load("U1", 500.0)])], top=None)),
     ("cortante-no-cumple", "zapata delgada y cargas grandes: no cumple el cortante sin estribos",
      _footing([_column("C1", -2000.0, [_load("U1", 2200.0)]), _column("C2", 2000.0, [_load("U1", 2200.0)])], h=450.0)),
+    ("cortante-con-estribos", "la misma zapata delgada con estribos: Vs, Av,min (ACI 7.6.3.1) y d del acero a tracción",
+     _footing([_column("C1", -2000.0, [_load("U1", 2200.0)]), _column("C2", 2000.0, [_load("U1", 2200.0)])], h=550.0,
+              stirrups={"designation": "#4", "legs": 8, "spacing": 250.0, "closed": True},
+              top={"designation": "#8", "spacing": 120.0})),
     ("minimo-excepcion", "cargas pequeñas: As < As,min de vigas pero ≥ 4/3 del requerido (excepción)",
      _footing([_column("C1", -1500.0, [_load("U1", 250.0)]), _column("C2", 1500.0, [_load("U1", 250.0)])], lx=4500.0,
               bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 250.0},

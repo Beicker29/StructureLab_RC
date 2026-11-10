@@ -72,7 +72,8 @@ def _tension_steel(
 
 
 def shear_terms(given: StationInput, minimum: float) -> ShearTerms | Check:
-    """Vc con Av ≥ Av,min cuando n·Ab/s alcanza minimum (Av,min/s, o (Av + 2At)min/s con torsión)."""
+    """Vc con Av ≥ Av,min cuando n·Ab/s alcanza minimum (Av,min/s, o (Av + 2At)min/s con torsión). En la dirección
+    larga de una zapata combinada (foundation), Vc es la de las cimentaciones superficiales del perfil (D-081)."""
     profile, materials, member, station, bars = given.profile, given.materials, given.member, given.station, given.bars
     lam = concrete_lambda(profile, materials)
     if isinstance(lam, Check):
@@ -86,10 +87,15 @@ def shear_terms(given: StationInput, minimum: float) -> ShearTerms | Check:
     stirrups = station.layout.stirrups
     specs = {bar.designation: bar for bar in bars}
     transverse = 0.0 if stirrups is None else stirrups.legs * specs[stirrups.designation].area_mm2 / stirrups.spacing
-    vc = shear.concrete_shear(
-        fc=materials.fc, lam=lam, bw=section.bw, d=d, h=section.h, rho_w=tension_area / (section.bw * d), nu=demands.pu,
-        ag=section.area, vu=abs(demands.vu), mu=abs(demands.mu), av_ge_min=transverse >= minimum,
-    )
+    rho_w = tension_area / (section.bw * d)
+    if given.foundation:
+        vc = profile.footing.one_way_concrete_shear(fc=materials.fc, lam=lam, bw=section.bw, d=d, h=section.h, rho_w=rho_w,
+                                                    vu=abs(demands.vu), mu=abs(demands.mu))
+    else:
+        vc = shear.concrete_shear(
+            fc=materials.fc, lam=lam, bw=section.bw, d=d, h=section.h, rho_w=rho_w, nu=demands.pu,
+            ag=section.area, vu=abs(demands.vu), mu=abs(demands.mu), av_ge_min=transverse >= minimum,
+        )
     fyt = min(materials.fyt, shear.max_stirrup_yield())
     return ShearTerms(lam, d, vc, shear.max_steel_shear(materials.fc, section.bw, d), fyt, transverse)
 
@@ -103,14 +109,14 @@ def leg_spacing_across(member: Member, station: Station, bars: Sequence[RebarSpe
     return (member.section.bw - 2 * member.section.cover - diameter) / (stirrups.legs - 1)
 
 
-def shear_checks(
-    profile: Profile, materials: Materials, member: Member, station: Station, bars: Sequence[RebarSpec]
-) -> tuple[Check, ...]:
-    """Verificaciones a cortante de una estación dentro del alcance de viga y con torsión despreciable."""
+def shear_checks(given: StationInput) -> tuple[Check, ...]:
+    """Verificaciones a cortante de una estación dentro del alcance de viga y con torsión despreciable. En la dirección
+    larga de una zapata combinada (foundation), Av,min se exige según la regla de cimentación del perfil (D-081)."""
+    profile, materials, member, station, bars = given.profile, given.materials, given.member, given.station, given.bars
     shear, section = profile.shear, member.section
     fyt = min(materials.fyt, shear.max_stirrup_yield())
     av_min_s = shear.min_shear_reinforcement(materials.fc, section.bw, fyt)
-    terms = shear_terms(StationInput(profile, materials, member, station, bars), av_min_s)
+    terms = shear_terms(given, av_min_s)
     if isinstance(terms, Check):
         return (terms,)
     assert station.demands.vu is not None
@@ -119,19 +125,24 @@ def shear_checks(
     vs = shear.steel_shear(terms.transverse, fyt, d, 1.0)
     vu = abs(station.demands.vu)
     capacity = phi * (vc + min(vs, terms.vs_max))
+    strength_clause = profile.footing.clauses()["one_way_shear"] if given.foundation else clauses["strength"]
     checks = [
-        Check(STRENGTH, Status.PASS if capacity >= vu else Status.FAIL, clause=clauses["strength"],
+        Check(STRENGTH, Status.PASS if capacity >= vu else Status.FAIL, clause=strength_clause,
               demand=vu, capacity=capacity, unit="N", values=(("phi", phi), ("Vc", vc), ("Vs", vs), ("d", d))),
         Check(SECTION, Status.PASS if vu <= phi * (vc + terms.vs_max) else Status.FAIL, clause=clauses["section"],
               demand=vu, capacity=phi * (vc + terms.vs_max), unit="N"),
     ]
-    threshold = shear.min_reinforcement_threshold(vc, fc, terms.lam, bw, d, shear.min_reinforcement_exempt(section.h, bw, section.hf))
+    if given.foundation:
+        threshold = profile.footing.combined_min_shear_threshold(vc)
+        min_clause = profile.footing.clauses()["combined_min_shear"]
+    else:
+        threshold = shear.min_reinforcement_threshold(vc, fc, terms.lam, bw, d, shear.min_reinforcement_exempt(section.h, bw, section.hf))
+        min_clause = clauses["min_reinforcement"]
     if threshold is None or vu <= threshold:
-        checks.append(Check(MIN_REINFORCEMENT, Status.PASS, clause=clauses["min_reinforcement"], note="No se requiere Av,min"))
+        checks.append(Check(MIN_REINFORCEMENT, Status.PASS, clause=min_clause, note="No se requiere Av,min"))
     else:
         status = Status.PASS if terms.transverse >= av_min_s else Status.FAIL
-        checks.append(Check(MIN_REINFORCEMENT, status, clause=clauses["min_reinforcement"],
-                            demand=av_min_s, capacity=terms.transverse, unit="mm2/mm"))
+        checks.append(Check(MIN_REINFORCEMENT, status, clause=min_clause, demand=av_min_s, capacity=terms.transverse, unit="mm2/mm"))
     stirrups = station.layout.stirrups
     if stirrups is None:
         checks.append(Check(SPACING, Status.PASS, clause=clauses["spacing"], note="Sin estribos"))

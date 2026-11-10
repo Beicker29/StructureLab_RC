@@ -1,4 +1,4 @@
-"""Viga en la dirección larga de una zapata combinada con los casos mayorados (D-080, V3J.2).
+"""Viga en la dirección larga de una zapata combinada con los casos mayorados (D-080, V3J.2; D-081).
 
 La zapata es rígida: la carga neta hacia arriba es la presión de Bellos y Bakas de la resultante de las dos columnas
 menos las cargas uniformes (domain/footing/loads.py), integrada en todo el ancho. Cada columna baja en su eje la fuerza
@@ -9,47 +9,37 @@ libre a su izquierda:
     V(x) = ∫q dA − Σ F_c                         (columnas con x_c < x)
     M(x) = x·∫q dA − ∫x·q dA − Σ [F_c·(x − x_c) − C_c]
 
-M positivo tracciona la cara inferior (barras inferiores x); negativo, la superior (barras superiores x o, sin ellas,
-concreto simple, D-072). Los momentos se revisan en las cuatro caras de las columnas y en los extremos de cada tramo
-(donde V = 0); el cortante, a d de cada cara, hacia el tramo, sin estribos (Vu ≤ φVc). El acero mínimo es el de vigas
-con su excepción de 4/3 (ACI 9.6.1.2 y 9.6.1.3, NSR-10 C.10.5.1 y C.10.5.3), la separación máxima la de
-`combined_max_bar_spacing` del perfil y la sección es la rectangular del ancho total. Mx, Vy y la posición en Y de
-las columnas no cambian la viga: actúan en el sentido transversal.
+M positivo tracciona la cara inferior, como Mu de las vigas. La viga larga se revisa con el código de vigas (D-081):
+una sección rectangular B × h con las barras inferiores y superiores x como capas y los estribos opcionales, y una
+estación por sección crítica de cada caso (el mayor momento positivo y el mayor negativo entre las caras y los puntos
+con V = 0, y el cortante a d de cada cara hacia su tramo), con las verificaciones de vigas en modo cimentación (Vc y Av,min de
+cimentación). Lo propio de la zapata: sin barras superiores, el momento negativo lo resiste el concreto simple
+(D-072), y la separación de 3h y 450 mm (ACI 7.7.2.3, NSR-10 C.10.5.4). Mx, Vy y la posición en Y de las columnas no
+cambian la viga: actúan en el sentido transversal (su torsión queda pendiente, D-080).
 """
 
 from dataclasses import dataclass, replace
 
-from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.basis import Basis
-from structurelab_rc.domain.check import Check, check_from_errors
-from structurelab_rc.domain.flexure_strength import (
-    MomentStrength,
-    RectangularSection,
-    net_tensile_strain_check,
-    rectangular_strength,
-    required_area,
-)
+from structurelab_rc.domain.beam.shear import shear_checks
+from structurelab_rc.domain.beam.station import checks_for
+from structurelab_rc.domain.beam.station_input import StationInput
+from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.flexure import plain_check
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_row
-from structurelab_rc.domain.shear_strength import concrete_lambda
 from structurelab_rc.domain.status import Status
-from structurelab_rc.errors import StructuredError
-from structurelab_rc.mechanics.flexure import SteelLayer
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import FootingLoad, Soil
-from structurelab_rc.model.project import Materials
+from structurelab_rc.model.project import Demands, Member, Section, Station
+from structurelab_rc.model.reinforcement import BarLayer, BarPosition, ReinforcementLayout
 
-FLEXURE = "Viga larga: flexion"
-SHEAR = "Viga larga: cortante en una direccion"
-MIN_REINFORCEMENT = "Viga larga: acero minimo"
-STRAIN = "Viga larga: deformacion neta de traccion"
 SPACING = "Viga larga: separacion maxima"
 BARS = {"bottom": "barras inferiores x", "top": "barras superiores x"}
-_NEGLIGIBLE = 1e-6  # N·mm
 _SUBDIVISIONS = 64
 _BISECTION_STEPS = 200
+_EDGE = 1e-6
 
 
 @dataclass(frozen=True)
@@ -64,7 +54,7 @@ class ColumnForce:
 
 
 @dataclass(frozen=True)
-class Section:
+class CriticalSection:
     x: float
     label: str
 
@@ -113,9 +103,9 @@ def _regions(beam: BeamCase) -> list[tuple[float, float, str]]:
             (second.x + second.half, beam.lx / 2, "voladizo +X")]
 
 
-def _faces(beam: BeamCase) -> list[tuple[Section, float]]:
+def _faces(beam: BeamCase) -> list[tuple[CriticalSection, float]]:
     """Las cuatro caras con la dirección hacia su tramo (−1 a la izquierda, +1 a la derecha)."""
-    return [(Section(column.x + side * column.half, f"cara {'+' if side > 0 else '-'}X de la columna {column.id}"), side)
+    return [(CriticalSection(column.x + side * column.half, f"cara {'+' if side > 0 else '-'}X de la columna {column.id}"), side)
             for column in beam.columns for side in (-1.0, 1.0)]
 
 
@@ -142,133 +132,95 @@ def _zero_shear(beam: BeamCase, low: float, high: float) -> list[float]:
             if b - a <= 1e-9 * beam.lx:
                 break
         roots.append((a + b) / 2)
-    return roots
+    # V es cero en un borde libre: un cambio de signo pegado a un extremo del tramo es ruido, no un extremo de M.
+    return [x for x in roots if min(x - low, high - x) > _EDGE * beam.lx]
 
 
-def moment_sections(beam: BeamCase) -> list[Section]:
+def moment_sections(beam: BeamCase) -> list[CriticalSection]:
     sections = [section for section, _ in _faces(beam)]
     for low, high, label in _regions(beam):
-        sections += [Section(x, f"{label}, V = 0") for x in _zero_shear(beam, low, high)]
+        sections += [CriticalSection(x, f"{label}, V = 0") for x in _zero_shear(beam, low, high)]
     return sections
 
 
-def shear_sections(beam: BeamCase, depth: float) -> list[Section]:
+def shear_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
     """A d de cada cara, hacia su tramo, si la sección queda dentro de ese tramo."""
     regions = _regions(beam)
     sections = []
     for face, side in _faces(beam):
         x = face.x + side * depth
         if any(low < x < high and (low <= face.x <= high) for low, high, _ in regions):
-            sections.append(Section(x, f"a d de la {face.label}"))
+            sections.append(CriticalSection(x, f"a d de la {face.label}"))
     return sections
 
 
-def _strength(profile: Profile, materials: Materials, footing: CombinedFooting, row: BarRow) -> MomentStrength | StructuredError:
-    return rectangular_strength(profile, materials, RectangularSection(row.width, footing.h), (SteelLayer(row.depth, row.area),))
-
-
-def _flexure_check(basis: Basis, footing: CombinedFooting, row: BarRow, demand: tuple[float, Section, str], bars: str) -> Check:
-    profile, materials = basis.profile, basis.materials
-    moment, section, case = demand
-    name = f"{FLEXURE} ({bars})"
-    clause = profile.flexure.clauses()["strength"]
-    strength = _strength(profile, materials, footing, row)
-    if isinstance(strength, StructuredError):
-        return replace(check_from_errors(name, [strength]), clause=clause, member=footing.id, case=case)
-    values = (("phi", strength.phi), ("Mn", strength.nominal), ("d", row.depth), ("As", row.area),
-              ("et", strength.state.extreme_strain), ("x", section.x))
-    return Check(name, Status.PASS if strength.design >= moment else Status.FAIL, clause=clause, demand=moment,
-                 capacity=strength.design, unit="N*mm", values=values, note=section.label.capitalize(), member=footing.id, case=case)
-
-
-def _shear_check(basis: Basis, footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], beam: BeamCase) -> Check:
-    profile, materials = basis.profile, basis.materials
+def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None]) -> tuple[Section, ReinforcementLayout]:
+    """La viga larga como viga: sección B × h con el recubrimiento de la zapata, las barras inferiores y superiores x
+    como capas (x desde la cara −Y, profundidad desde la cara superior) y los estribos declarados (D-081)."""
     bottom, top = rows
-    clause = profile.footing.clauses()["one_way_shear"]
-    lam = concrete_lambda(profile, materials)
-    if isinstance(lam, StructuredError):
-        return replace(check_from_errors(SHEAR, [lam]), clause=clause, member=footing.id, case=beam.case)
-    phi = profile.shear.strength_reduction()
-    depth = bottom.depth
-    worst: tuple[float, float, float, Section] | None = None  # razón, Vu, φVc, sección
-    for section in shear_sections(beam, depth):
-        shear, moment = abs(beam.shear(section.x)), beam.moment(section.x)
-        tension = bottom.area if moment >= 0 else (top.area if top is not None else 0.0)
-        vc = profile.footing.one_way_concrete_shear(fc=materials.fc, lam=lam, bw=footing.ly, d=depth, h=footing.h,
-                                                    rho_w=tension / (footing.ly * depth), vu=shear, mu=abs(moment))
-        if worst is None or shear / (phi * vc) > worst[0]:
-            worst = (shear / (phi * vc), shear, phi * vc, section)
-    if worst is None:
-        return Check(SHEAR, Status.PASS, clause=clause, member=footing.id, case=beam.case,
-                     note="Ninguna seccion a d de las caras queda dentro de la zapata")
-    _, demand, capacity, section = worst
-    return Check(SHEAR, Status.PASS if demand <= capacity else Status.FAIL, clause=clause, demand=demand, capacity=capacity,
-                 unit="N", values=(("phi", phi), ("Vc", capacity / phi), ("d", depth), ("x", section.x)),
-                 note=f"Seccion {section.label}; sin estribos", member=footing.id, case=beam.case)
+    half = footing.ly / 2
+    layers = [BarLayer(depth=bottom.depth, role="flexure",
+                       bars=tuple(BarPosition(designation=bottom.designation, x=x + half) for x in bottom.positions))]
+    if top is not None:
+        layers.insert(0, BarLayer(depth=footing.h - top.depth, role="flexure",
+                                  bars=tuple(BarPosition(designation=top.designation, x=x + half) for x in top.positions)))
+    return Section(bw=footing.ly, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
 
 
-def _min_check(basis: Basis, footing: CombinedFooting, row: BarRow, demand: float, bars: str) -> Check:
-    """As de vigas, o 4/3 del requerido por el mayor momento si es menor (las barras son continuas: el mismo As en
-    todas las secciones)."""
-    profile, materials = basis.profile, basis.materials
-    clauses = profile.flexure.clauses()
-    as_min = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, row.width, row.depth)
-    analysis = required_area(profile, materials, RectangularSection(row.width, footing.h), row.depth, demand)
-    required = as_min if analysis is None else profile.flexure.effective_min_reinforcement(as_min, analysis)
-    values: tuple[tuple[str, float], ...] = (("As,min", as_min), ("d", row.depth))
-    note = ""
-    if analysis is not None:
-        values += (("As analisis", analysis),)
-        if required < as_min:
-            note = f"Excepcion de {clauses['min_reinforcement_exception']}: 4/3 del As requerido por analisis"
-    return Check(f"{MIN_REINFORCEMENT} ({bars})", Status.PASS if row.area >= required else Status.FAIL,
-                 clause=f"{clauses['min_reinforcement']} y {clauses['min_reinforcement_exception']}", demand=required,
-                 capacity=row.area, unit="mm2", values=values, note=note, member=footing.id)
+def critical_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
+    """Las secciones de un caso: el mayor momento positivo y el mayor negativo (caras y V = 0), si los hay, y las de
+    cortante."""
+    moments = [(beam.moment(section.x), section) for section in moment_sections(beam)]
+    largest, smallest = max(moments, key=lambda item: item[0]), min(moments, key=lambda item: item[0])
+    chosen = ([largest[1]] if largest[0] > 0 else []) + ([smallest[1]] if smallest[0] < 0 else [])
+    unique = {section.x: section for section in [*chosen, *shear_sections(beam, depth)]}
+    return sorted(unique.values(), key=lambda section: section.x)
 
 
-def _section_checks(basis: Basis, footing: CombinedFooting, row: BarRow, demand: float, bars: str) -> list[Check]:
-    """εt, acero mínimo y separación de una capa de barras x con momento de su signo."""
-    profile, materials = basis.profile, basis.materials
-    strength = _strength(profile, materials, footing, row)
-    checks = []
-    if isinstance(strength, MomentStrength):
-        checks.append(replace(net_tensile_strain_check(f"{STRAIN} ({bars})", profile.flexure.clauses()["net_tensile_strain"],
-                                                       profile, materials, strength.state.extreme_strain), member=footing.id))
-    checks.append(_min_check(basis, footing, row, demand, bars))
-    spacing = footing.bottom.x.spacing if bars == BARS["bottom"] else footing.top.spacing if footing.top else 0.0
-    clear_cover = footing.h - row.depth - row.diameter / 2  # de la superficie de la barra a la cara en tracción
-    maximum = profile.footing.combined_max_bar_spacing(footing.h, materials.fy, clear_cover)
-    checks.append(Check(f"{SPACING} ({bars})", Status.PASS if spacing <= maximum else Status.FAIL,
-                        clause=profile.footing.clauses()["combined_spacing"], demand=spacing, capacity=maximum, unit="mm",
-                        values=(("cc", clear_cover),), member=footing.id))
-    return checks
+def _with_section(check: Check, label: str) -> Check:
+    note = label.capitalize() if not check.note else f"{label.capitalize()}: {check.note}"
+    return replace(check, note=note)
+
+
+def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
+    beam, section, has_top = given
+    moment, shear = beam.moment(section.x), beam.shear(section.x)
+    z = section.x + footing.lx / 2
+    station = Station.model_construct(z=z, layout=member.stations[0].layout, case=beam.case,
+                                      demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))
+    if moment < 0 and not has_top:
+        # Sin barras superiores: flexión de concreto simple (D-072) y el cortante de vigas, que necesita acero a tracción.
+        flexure = plain_check(basis, footing, "x", -moment, (section.label, beam.case, section.label.capitalize()))
+        given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
+        shear_only = [replace(check, member=footing.id, z=z, case=beam.case) for check in shear_checks(given_station)]
+        return [replace(flexure, z=z), *(_with_section(check, section.label) for check in shear_only)]
+    checks = checks_for(StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True))
+    return [_with_section(replace(check, member=footing.id), section.label) for check in checks]
+
+
+def _spacing_check(basis: Basis, footing: CombinedFooting, spacing: float, bars: str) -> Check:
+    maximum = basis.profile.footing.combined_max_bar_spacing(footing.h)
+    return Check(f"{SPACING} ({bars})", Status.PASS if spacing <= maximum else Status.FAIL,
+                 clause=basis.profile.footing.clauses()["combined_spacing"], demand=spacing, capacity=maximum, unit="mm",
+                 member=footing.id)
 
 
 def long_beam_checks(
     basis: Basis, footing: CombinedFooting, soil: Soil, cases: list[tuple[FactoredCase, tuple[FootingLoad, ...]]]
 ) -> list[Check]:
-    """Flexión y cortante de cada caso mayorado y las verificaciones de sección de las barras x."""
+    """Las verificaciones de vigas en las secciones críticas de cada caso mayorado y la separación de las barras x."""
     bottom = mat_rows(footing, footing.bottom, basis.bars)["x"]
     top = top_row(footing, basis.bars)
+    section, layout = beam_member(footing, (bottom, top))
+    placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
+    member = Member.model_construct(id=footing.id, type="beam", statically_determinate=None, length=footing.lx, section=section,
+                                    stations=(placeholder,))
     checks = []
-    positive_max = negative_max = 0.0
     for pressure, loads in cases:
         beam = beam_case(footing, soil, pressure, loads)
-        moments = [(beam.moment(section.x), section) for section in moment_sections(beam)]
-        positive, at_positive = max(moments, key=lambda item: item[0])
-        negative, at_negative = min(moments, key=lambda item: item[0])
-        positive, negative = max(positive, 0.0), max(-negative, 0.0)
-        positive_max, negative_max = max(positive_max, positive), max(negative_max, negative)
-        checks.append(_flexure_check(basis, footing, bottom, (positive, at_positive, beam.case), BARS["bottom"]))
-        if negative > _NEGLIGIBLE:
-            if top is None:
-                checks.append(plain_check(basis, footing, "x", negative,
-                                          (at_negative.label, beam.case, at_negative.label.capitalize())))
-            else:
-                checks.append(_flexure_check(basis, footing, top, (negative, at_negative, beam.case), BARS["top"]))
-        checks.append(_shear_check(basis, footing, (bottom, top), beam))
-    if positive_max > _NEGLIGIBLE:
-        checks += _section_checks(basis, footing, bottom, positive_max, BARS["bottom"])
-    if top is not None and negative_max > _NEGLIGIBLE:
-        checks += _section_checks(basis, footing, top, negative_max, BARS["top"])
+        for critical in critical_sections(beam, bottom.depth):
+            checks += _station_checks(basis, footing, member, (beam, critical, top is not None))
+    checks.append(_spacing_check(basis, footing, footing.bottom.x.spacing, BARS["bottom"]))
+    if footing.top is not None:
+        checks.append(_spacing_check(basis, footing, footing.top.spacing, BARS["top"]))
     return checks
