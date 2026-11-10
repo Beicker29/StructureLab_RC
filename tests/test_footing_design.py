@@ -219,6 +219,18 @@ def test_profile_gives_the_same_result_and_the_same_counts_in_parallel() -> None
     assert measurement["solution"]["repeated"] == 0 and measurement["solution"]["typologies"] == 2
 
 
+def test_profile_measures_the_iterative_method() -> None:
+    """Con milp_iter, la medición registra los lotes por tipo de tarea y da el mismo resultado que sin medir."""
+    data = _project(typologies=2, columns=3)
+    data["design"]["method"] = "milp_iter"
+    ctx = _context(data)
+    result, measurement = profile_typologies(ctx, workers=1)
+    assert result == design_typologies(ctx)
+    stage = measurement["fc"][0]
+    assert stage["single"]["count"] == 3 and stage["covers"]["count"] > 0
+    assert stage["iterations"] and stage["iterations"][-1]["cost"] >= result.cost - 1e-6
+
+
 def test_cli_profile_writes_the_measurement_without_changing_the_design(tmp_path: Path) -> None:
     source = tmp_path / "diseno.json"
     source.write_text(json.dumps(_project(typologies=1, columns=2)), encoding="utf-8")

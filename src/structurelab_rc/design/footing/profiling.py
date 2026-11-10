@@ -5,6 +5,9 @@ cuándo empieza y termina cada lote. Por cada f'c, `_for_fc` lanza tres lotes en
 tiempo entre lotes es trabajo del proceso principal: orden y tramos, costeo de los tramos cubiertos y partición. Después
 analiza la solución sin modificarla: muestra de la matriz de cobertura, tipologías repetidas y columnas que otra
 tipología elegida cubriría más barato.
+
+Con milp_iter (E3b, D-077) los lotes no siguen ese orden: cada uno se registra por el tipo de sus tareas (single, design,
+covers, refine) y por f'c se resume el tiempo de cada tipo, junto con las iteraciones del resultado.
 """
 
 import random
@@ -79,10 +82,19 @@ def profile_typologies(ctx: Context, workers: int = 1) -> tuple[DesignResult, di
 def _profile(ctx: Context, execute: Timed, workers: int) -> tuple[DesignResult, dict[str, Any]]:
     batches: list[dict[str, Any]] = []
 
+    iterative = ctx.design.method == "milp_iter"
+
     def run(tasks: list[Task]) -> list[Any]:
         start = time.perf_counter()
         timed = execute(tasks)
         end = time.perf_counter()
+        if iterative:  # por el tipo de sus tareas; un lote vacío no se registra
+            if tasks:
+                kind = tasks[0][0]
+                fc = tasks[0][1].fc if kind == "covers" else tasks[0][1]
+                batches.append({"kind": kind, "fc": fc, "start": start, "end": end, "times": [t for t, _ in timed],
+                                "results": [result for _, result in timed]})
+            return [result for _, result in timed]
         if tasks:
             kind = tasks[0][0]
             fc = tasks[0][1].fc if kind == "covers" else tasks[0][1]
@@ -97,7 +109,15 @@ def _profile(ctx: Context, execute: Timed, workers: int) -> tuple[DesignResult, 
     start = time.perf_counter()
     result = _design(ctx, run)
     end = time.perf_counter()
-    by_fc = [_fc_stages(ctx, fc, batches, end) for fc in sorted(ctx.design.fc_options)]
+    stages = _iterative_stages if iterative else _fc_stages
+    by_fc = [stages(ctx, fc, batches, end) for fc in sorted(ctx.design.fc_options)]
+    if iterative:
+        options = {option.fc: option for option in result.options}
+        for stage in by_fc:
+            option = options.get(stage["fc"])
+            stage["iterations"] = [] if option is None else [
+                {"number": step.number, "candidates": step.candidates, "cost": step.cost, "status": step.status,
+                 "seconds": step.seconds} for step in option.iterations]
     for stage in by_fc:
         stage["sample"] = _sample(ctx, stage.pop("candidates"), execute, workers, end - start)
     measurement = {"workers": workers, "design_s": end - start, "fc": by_fc, "solution": _solution(ctx, result, execute)}
@@ -133,6 +153,29 @@ def _fc_stages(ctx: Context, fc: float, batches: list[dict[str, Any]], end: floa
                 "milp_solver": 0.0 if matrix is None else next_start - matrix["end"]},
         matrix=_summary([] if matrix is None else matrix["times"], matrix),
         candidates=[r.typology for r in (*single["results"], *design["results"]) if r is not None])
+    return stage
+
+
+def _iterative_stages(ctx: Context, fc: float, batches: list[dict[str, Any]], end: float) -> dict[str, Any]:
+    """milp_iter: por tipo de tarea (single: diseños individuales; design: diseño de todas las columnas y repartos de
+    pares; refine: grupos propuestos y finales con el barrido; covers: cobertura de los candidatos nuevos), la suma de
+    tiempos y el tiempo de pared de sus lotes; el resto del tiempo del f'c es del proceso principal (MILP y costeo)."""
+    own = [batch for batch in batches if batch["fc"] == fc]
+    stage: dict[str, Any] = {"fc": fc, "columns": len(ctx.project.columns), "typologies": ctx.design.typologies}
+    if not own:
+        stage.update(failure="sin lotes medidos", candidates=[])
+        return stage
+    for kind in ("single", "design", "covers", "refine"):
+        mine = [batch for batch in own if batch["kind"] == kind]
+        times = [t for batch in mine for t in batch["times"]]
+        stage[kind] = {"batches": len(mine), "count": len(times), "sum_s": sum(times), "max_s": max(times, default=0.0),
+                       "batch_s": sum(batch["end"] - batch["start"] for batch in mine)}
+    later = [batch["start"] for batch in batches if batch["start"] > own[-1]["end"]]
+    wall = min(later, default=end) - own[0]["start"]
+    stage["wall_s"] = wall
+    stage["main_s"] = wall - sum(stage[kind]["batch_s"] for kind in ("single", "design", "covers", "refine"))
+    stage["candidates"] = [result.typology for batch in own if batch["kind"] in ("single", "design", "refine")
+                           for result in batch["results"] if result is not None]
     return stage
 
 

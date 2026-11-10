@@ -840,6 +840,7 @@
   3. Para cuando el costo no baja, cuando los rediseños no agregan candidatos, a las `iter_max` iteraciones o al pasar
      `iter_time_limit_s`. Los grupos finales se refinan con el barrido (la misma función que `milp`).
   4. La matriz de costos por par y el armado de los grupos se comparten con `milp` (`_pair_costs`, `_chosen`).
+  5. La medición `--profile` (E0) registra con `milp_iter` cada lote por el tipo de sus tareas (`single`, `design`, `covers`, `refine`) y agrega las iteraciones por f'c; antes deducía las etapas por el orden de los lotes de la tabla de tramos y fallaba con `milp_iter` (corregido el 2026-11-10).
 - **Intentos medidos antes del reparto de pares:** solo rediseñar los grupos propuestos se detenía en la primera
   iteración (el rediseño repetía la tipología) y NSR-10 quedaba +0.28 %; los subgrupos de cada grupo y el reparto de
   pares consecutivos no bastaron: la tipología que faltaba juntaba columnas de dos grupos no consecutivos.
