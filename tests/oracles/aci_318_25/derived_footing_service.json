@@ -13,7 +13,8 @@
     "sliding_safety_factor": 1.5,
     "sliding_safety_factor_seismic": 1.1,
     "overturning_safety_factor": 2.0,
-    "overturning_safety_factor_seismic": 1.5
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
   },
   "bearing_clause": "13.3.1.1",
   "tolerance_rel": 1e-09,
@@ -54,6 +55,7 @@
         "ex_mm": 0.0,
         "ey_mm": -0.0,
         "pmax_kPa": 216.89999999999998,
+        "capacity_kPa": 250.0,
         "contact_fraction": 1.0,
         "bearing": "PASS",
         "contact": "PASS"
@@ -95,6 +97,7 @@
         "ex_mm": 82.6103165457873,
         "ey_mm": -0.0,
         "pmax_kPa": 237.33166666666668,
+        "capacity_kPa": 250.0,
         "contact_fraction": 1.0,
         "bearing": "PASS",
         "contact": "PASS"
@@ -136,6 +139,7 @@
         "ex_mm": 184.41959821834376,
         "ey_mm": -166.5030451777111,
         "pmax_kPa": 359.46833333333336,
+        "capacity_kPa": 250.0,
         "contact_fraction": 1.0,
         "bearing": "FAIL",
         "contact": "PASS"
@@ -177,6 +181,7 @@
         "ex_mm": 59.63740458015267,
         "ey_mm": -0.0,
         "pmax_kPa": 240.85000000000002,
+        "capacity_kPa": 250.0,
         "contact_fraction": 1.0,
         "bearing": "PASS",
         "contact": "PASS"
@@ -218,6 +223,7 @@
         "ex_mm": 62.520840280093374,
         "ey_mm": -0.0,
         "pmax_kPa": 231.18333333333334,
+        "capacity_kPa": 250.0,
         "contact_fraction": 1.0,
         "bearing": "PASS",
         "contact": "PASS"
@@ -259,6 +265,7 @@
         "ex_mm": 431.77892918825563,
         "ey_mm": -0.0,
         "pmax_kPa": 321.5741007194245,
+        "capacity_kPa": 250.0,
         "contact_fraction": 0.9602763385146803,
         "bearing": "FAIL",
         "contact": "PASS"
@@ -300,6 +307,7 @@
         "ex_mm": 748.6897928624905,
         "ey_mm": -0.0,
         "pmax_kPa": 473.52500184325,
+        "capacity_kPa": 250.0,
         "contact_fraction": 0.5641377589218868,
         "bearing": "FAIL",
         "contact": "FAIL"
@@ -341,6 +349,93 @@
         "ex_mm": 0.0,
         "ey_mm": 41.634284445431334,
         "pmax_kPa": 337.73333333333335,
+        "capacity_kPa": 250.0,
+        "contact_fraction": 1.0,
+        "bearing": "FAIL",
+        "contact": "PASS"
+      }
+    },
+    {
+      "id": "sobrepresion-con-sismo",
+      "description": "combinación con sismo cuya presión supera qa pero no qa × 1.33: cumple (D-079)",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 0.0,
+        "P_kN": 1150.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": -60.0,
+        "My_kNm": 0.0,
+        "seismic": true
+      },
+      "expected": {
+        "N_kN": 1291.12,
+        "Mx_base_kNm": -60.0,
+        "My_base_kNm": 0.0,
+        "equilibrium": true,
+        "ex_mm": 0.0,
+        "ey_mm": 46.471280748497435,
+        "pmax_kPa": 306.48333333333335,
+        "capacity_kPa": 332.5,
+        "contact_fraction": 1.0,
+        "bearing": "PASS",
+        "contact": "PASS"
+      }
+    },
+    {
+      "id": "sismo-supera-qa-aumentada",
+      "description": "combinación con sismo que supera también qa × 1.33",
+      "footing": {
+        "lx": 2400.0,
+        "ly": 2000.0,
+        "h": 500.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 0.0,
+        "surcharge_live_kNm2": 0.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 400.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        }
+      },
+      "load": {
+        "dead_factor": 1.0,
+        "live_factor": 0.0,
+        "P_kN": 1800.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 0.0,
+        "Mx_kNm": -60.0,
+        "My_kNm": 0.0,
+        "seismic": true
+      },
+      "expected": {
+        "N_kN": 1941.12,
+        "Mx_base_kNm": -60.0,
+        "My_base_kNm": 0.0,
+        "equilibrium": true,
+        "ex_mm": 0.0,
+        "ey_mm": 30.909990108803168,
+        "pmax_kPa": 441.9,
+        "capacity_kPa": 332.5,
         "contact_fraction": 1.0,
         "bearing": "FAIL",
         "contact": "PASS"

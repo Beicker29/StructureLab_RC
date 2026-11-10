@@ -691,4 +691,5 @@ def _soil_input(ctx: Context) -> dict[str, float]:
             "passive_factor": soil.passive_factor, "sliding_safety_factor": soil.sliding_safety_factor,
             "sliding_safety_factor_seismic": soil.sliding_safety_factor_seismic,
             "overturning_safety_factor": soil.overturning_safety_factor,
-            "overturning_safety_factor_seismic": soil.overturning_safety_factor_seismic}
+            "overturning_safety_factor_seismic": soil.overturning_safety_factor_seismic,
+            "seismic_bearing_factor": soil.seismic_bearing_factor}

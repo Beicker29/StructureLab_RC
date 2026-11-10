@@ -26,7 +26,8 @@ class Soil(_Input):
     Estabilidad (D-070): friction_coefficient es μ en la interfaz suelo–zapata y adhesion la adherencia c_a sobre el
     área en contacto; passive_coefficient (Kp) y cohesion (c) dan el empuje pasivo sobre el espesor de la zapata, que
     se suma afectado por passive_factor. Los factores de seguridad mínimos al deslizamiento y al volcamiento tienen un
-    valor para los casos sin sismo y otro para los marcados seismic.
+    valor para los casos sin sismo y otro para los marcados seismic. seismic_bearing_factor aumenta la presión admisible
+    en los casos marcados seismic (D-079; 1.0, sin aumento, si no se declara).
     """
 
     allowable_pressure: PositiveFloat = Field(validation_alias="allowable_pressure_kPa")
@@ -42,6 +43,12 @@ class Soil(_Input):
     sliding_safety_factor_seismic: PositiveFloat
     overturning_safety_factor: PositiveFloat
     overturning_safety_factor_seismic: PositiveFloat
+    seismic_bearing_factor: float = Field(default=1.0, ge=1.0)
+
+    def bearing_capacity(self, seismic: bool) -> float:
+        """Presión admisible bruta (MPa) de un caso de servicio: qa, multiplicada por seismic_bearing_factor si el caso
+        incluye sismo (D-079)."""
+        return self.allowable_pressure * (self.seismic_bearing_factor if seismic else 1.0)
 
     @field_validator("allowable_pressure", "adhesion", "cohesion")
     @classmethod

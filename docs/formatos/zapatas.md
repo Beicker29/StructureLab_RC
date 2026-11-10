@@ -45,6 +45,7 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 | `passive_factor` | - | Factor que afecta el empuje pasivo al sumarlo a la fricción (0 a 1; por defecto 0.5). |
 | `sliding_safety_factor`, `sliding_safety_factor_seismic` | - | Factores de seguridad mínimos al deslizamiento, sin sismo y con sismo. |
 | `overturning_safety_factor`, `overturning_safety_factor_seismic` | - | Factores de seguridad mínimos al volcamiento, sin sismo y con sismo. |
+| `seismic_bearing_factor` | - | Opcional (por defecto 1.0, no menor que 1.0): factor que aumenta qa en los casos de servicio marcados `seismic` (D-079). |
 
 ### Zapata (`footings[]`)
 
@@ -166,7 +167,7 @@ escribe:
 
 | Archivo | Contenido |
 | --- | --- |
-| `curva.json` | `method`, `seconds` y `points`: por N, `N`, `fc [MPa]`, `cost`, `saving` y `saving [%]` (frente al N anterior), `rises` (el costo sube), `status` y `certified` (estado del MILP del f'c elegido; null con `dp`), `distinct_count`, `duplicates` (con `at_limit`) y `failure` si no tiene solución. |
+| `curva.json` | `method`, `seconds` y `points`: por N, `N`, `fc [MPa]`, `cost`, `saving` y `saving [%]` (frente al N anterior), `saving_from_first` y `saving_from_first [%]` (acumulado frente al primer N), `rises` (el costo sube), `status` y `certified` (estado del MILP del f'c elegido; null con `dp`), `distinct_count`, `duplicates` (con `at_limit`) y `failure` si no tiene solución. |
 | `curva.csv` | Los mismos puntos, separados por punto y coma. |
 | `curva.svg` | Costo total frente a N: puntos naranjas con tipologías repetidas, rojos si el costo sube. |
 | `memoria_curva.txt`, `memoria_curva.pdf` | Memoria de la curva: datos del proyecto, la gráfica (incrustada en el PDF), la tabla de puntos y su lectura. |

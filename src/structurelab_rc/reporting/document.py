@@ -326,6 +326,7 @@ def _footing_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[
             ["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
             ["Sobrecarga viva (qL)", number(g["surcharge_live [kN/m2]"], "kN/m²"), "kN/m²"]]
     soil_rows = [["Presión admisible bruta (qa)", number(soil["qa [kPa]"], "kPa"), "kPa"],
+                 ["Factor de aumento de qa en combinaciones con sismo", number(soil["factor sismo qa [-]"], "–"), "–"],
                  ["Fracción mínima de contacto", number(soil["contacto minimo [-]"], "–"), "–"],
                  ["Peso unitario del concreto (γc)", number(soil["gamma concreto [kN/m3]"], "kN/m³"), "kN/m³"],
                  ["Peso unitario del relleno (γf)", number(soil["gamma relleno [kN/m3]"], "kN/m³"), "kN/m³"],

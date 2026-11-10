@@ -87,6 +87,8 @@ VALUES = {
     "Mo": ("Momento volcador respecto del borde", "Mo"),
     "Mr": ("Momento resistente respecto del borde (N·L/2)", "Mr"),
     "FS requerido": ("Factor de seguridad mínimo declarado", "FS,mín"),
+    "qa": ("Presión admisible bruta sin aumento", "qa"),
+    "factor sismo qa": ("Factor de aumento de qa con sismo (D-079)", "f"),
     "FS": ("Factor de seguridad obtenido", "FS"),
     "Mx base": ("Momento respecto de X en el centroide de la base", "Mx,base"),
     "My base": ("Momento respecto de Y en el centroide de la base", "My,base"),

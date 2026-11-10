@@ -884,6 +884,24 @@
 - **Pruebas:** cada punto igual (`milp`) o igual o menor (`milp_iter`) que el diseño suelto; mismo resultado con 1 y 2
   procesos; ahorro y costo que sube; CSV, SVG y memoria; el CLI escribe los archivos y rechaza N mayor que las columnas.
 
+### D-079: aumento de la presión admisible en combinaciones con sismo
+
+- **Fecha:** 2026-11-10
+- **Problema:** con sismo, la capacidad portante del suelo puede aumentarse por un factor que fija el estudio de suelos;
+  la verificación comparaba siempre con qa.
+- **Decisión del usuario:** dato opcional `soil.seismic_bearing_factor` (1.0 por defecto, sin aumento; no menor que 1.0).
+  Se usa la marca `seismic` que ya llevan los casos de carga y las combinaciones de ETABS (D-070); no se dividen los
+  Excel. En los ejemplos y plantillas, 1.33 como dato supuesto.
+- **Implementación:** `Soil.bearing_capacity(seismic)` da qa o qa × factor; la verificación de presión admisible de cada
+  caso de servicio la usa y, con sismo y factor distinto de 1, muestra qa, el factor y la nota. El contacto, el
+  deslizamiento y el volcamiento no cambian. El diseño por tipologías lo toma de la misma verificación, y la cota de
+  planta usa la capacidad de cada caso.
+- **Oráculo:** `derive_footing_service.py` con el factor 1.33 y dos casos con sismo (306.5 kPa cumple con 332.5 kPa;
+  441.9 kPa no cumple); la prueba compara además la capacidad.
+- **Efecto en los ejemplos:** la capacidad de los casos con sismo de `zapata_aislada` pasa de 250 a 332.5 kPa sin
+  cambiar estados; los `diseno_tipologias` dan las mismas tipologías y el mismo costo. La curva costo–N agrega el ahorro
+  acumulado frente al primer N en la tabla de la memoria, el JSON y el CSV (pedido del usuario).
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

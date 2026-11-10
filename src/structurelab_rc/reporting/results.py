@@ -23,7 +23,7 @@ _VALUE_UNITS = {"Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi T
                 "N": "N", "Mx base": "N*mm", "My base": "N*mm", "ex": "mm", "ey": "mm", "As": "mm2", "Vu": "N",
                 "b0": "mm", "vuv": "MPa", "bslab": "mm", "A1": "mm2", "A2": "mm2", "Av/s": "mm2/mm", "At/s": "mm2/mm",
                 "At/s rama exterior": "mm2/mm", "mu N": "N", "ca Ac": "N", "Pp x": "N", "Pp y": "N", "V": "N", "R": "N",
-                "Mo": "N*mm", "Mr": "N*mm", "h calculo": "mm", "Sm": "mm3"}
+                "Mo": "N*mm", "Mr": "N*mm", "qa": "N/mm2", "h calculo": "mm", "Sm": "mm3"}
 
 
 def significant(value: float) -> float:
@@ -194,7 +194,8 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
                            "fp [-]": soil.passive_factor, "FS deslizamiento [-]": soil.sliding_safety_factor,
                            "FS deslizamiento sismo [-]": soil.sliding_safety_factor_seismic,
                            "FS volcamiento [-]": soil.overturning_safety_factor,
-                           "FS volcamiento sismo [-]": soil.overturning_safety_factor_seismic}
+                           "FS volcamiento sismo [-]": soil.overturning_safety_factor_seismic,
+                           "factor sismo qa [-]": soil.seismic_bearing_factor}
         results["footings"] = [footing_data(footing, soil, [check for check in station_checks if check.member == footing.id])
                                for footing in project.footings]
     return results

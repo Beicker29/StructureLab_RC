@@ -12,13 +12,13 @@
     "memoria.txt": "8c124ea78ceeec40d80c1acdd6696657f23471eb1c87b16ae0cd08529f45fd64"
   },
   "examples/aci_318_25/zapatas/diseno_tipologias.json": {
-    "proyecto.json": "57f3dd5aff77164a63c1ca3a93e935d1491bce5f8bd3bfb5e9be749ccb327370",
-    "resultado.json": "6dc0e2df491db17edb9b44176f326240b86c139016973c9ac75d1d0aef368ab1",
-    "memoria.txt": "2b43559d2e80ce18866757c77030e449023da034ebcb3ecc99e6cb8c061b60a2"
+    "proyecto.json": "19de511a877e34828ab42332f1c93757f8702eb2658d6f8518ea3d68c4f64acf",
+    "resultado.json": "e70c3ca48e113df381e2367f05bb93a72daafedbcc560f5e6d8fd52367d9f024",
+    "memoria.txt": "db8dd882ee7be2549f9f25ed82715ebf454e090923221e1110fc7168790ee7df"
   },
   "examples/aci_318_25/zapatas/zapata_aislada.json": {
-    "resultado.json": "ebe38cddbe13c34321914a80e26ebc719df83b5cf20c00398d345277e67c62bb",
-    "memoria.txt": "4f3cb2fcaf80c6bb6af364b1b3fb30eaebcecaa1413e2cbd7801c732c63913ba"
+    "resultado.json": "ed7dd48d0822f2a0fc313fafbf707dccfe1b12435f3d3873b2fd6b124bf69c1d",
+    "memoria.txt": "c128872a1bf30957b72f9b9c002ed92dd086ce36f3095b72cb781381da253deb"
   },
   "examples/nsr_10/vigas/plantilla_vigas_etabs.json": {
     "resultado.json": "18b3b0a132b23d37a562673de0a023242f6dcaa0c5ed10c6802c94ee5f49819d",
@@ -33,12 +33,12 @@
     "memoria.txt": "d14bab96e4a3275411af269c5cc795896e5a2720b7321dadb061164df8b1c64b"
   },
   "examples/nsr_10/zapatas/diseno_tipologias.json": {
-    "proyecto.json": "3c912c0c174149355669ca09bd41270813dbdeec364cb2ca9a9299b833d1df76",
-    "resultado.json": "70a6303ded69aaa9e93748f8e51d1a42f33a5c043ba8b35dfc72375f81af6305",
-    "memoria.txt": "9a81ccc744a73547a975950dad624f30943dc656a396a178db0a660b631c31b1"
+    "proyecto.json": "f0e06a7caa282ff1940263118bb90b0a3a22cd6002aee78a8048bae14d7960f3",
+    "resultado.json": "6ff79a07d735d74dc862f75d198eed7a35b45091af1c98a64e733cc52ddecc7a",
+    "memoria.txt": "5451eb730d707028f8e4807e7e51ae59e835960a00db0ddef7b6476934a318cd"
   },
   "examples/nsr_10/zapatas/zapata_aislada.json": {
-    "resultado.json": "55f73968c575083af228d298e7da1c90b9e33bc2f7b7b1b145072d89775c5c01",
-    "memoria.txt": "b1de7daf28920ec63c0e3cddef002f41d3d76651ac6d15d928119b4b7274b3d1"
+    "resultado.json": "a42905a7857b31f07acf77a621cdaa4eafe1bbd222c1e9857d885037ac3f3f2d",
+    "memoria.txt": "6f7a5beb7e9a73f070d4720f370f74e8a6548a30ec024cc46700edcabebb7004"
   }
 }

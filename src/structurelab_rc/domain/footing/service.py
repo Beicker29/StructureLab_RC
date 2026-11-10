@@ -42,12 +42,18 @@ def _case_checks(profile: Profile, footing: Footing, soil: Soil, load: FootingLo
         ]
     values += (("ex", ex), ("ey", ey))
     fraction = pressure.contact_fraction()
-    bearing_ok = pressure.pmax <= soil.allowable_pressure
+    capacity = soil.bearing_capacity(load.seismic)
+    bearing_ok = pressure.pmax <= capacity
     contact_ok = fraction >= soil.min_contact_fraction
     region = f"Region {pressure.region} de Bellos y Bakas (2017): contacto {_REGIONS[pressure.region]}"
+    bearing_values = values
+    bearing_note = region
+    if load.seismic and soil.seismic_bearing_factor != 1.0:
+        bearing_values = (*values, ("qa", soil.allowable_pressure), ("factor sismo qa", soil.seismic_bearing_factor))
+        bearing_note = f"{region}; combinacion con sismo: qa x {soil.seismic_bearing_factor:g} (D-079)"
     return [
         Check(BEARING, Status.PASS if bearing_ok else Status.FAIL, clause=bearing_clause, demand=pressure.pmax,
-              capacity=soil.allowable_pressure, unit="N/mm2", values=values, note=region, member=footing.id, case=load.case),
+              capacity=capacity, unit="N/mm2", values=bearing_values, note=bearing_note, member=footing.id, case=load.case),
         # La razón es el mínimo exigido sobre la fracción en contacto: cumple con razón ≤ 1.
         Check(CONTACT, Status.PASS if contact_ok else Status.FAIL, clause=CONTACT_CLAUSE, demand=soil.min_contact_fraction,
               capacity=fraction, values=(*values, ("contacto", fraction)), note=region, member=footing.id, case=load.case),

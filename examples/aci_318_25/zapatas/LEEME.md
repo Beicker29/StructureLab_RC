@@ -45,4 +45,4 @@ usa solo la DP.
 
 - `profile`: `aci-318-25`; `seismic.level`: `none`, `ordinary`, `intermediate` o `special`.
 - Presión admisible: numeral 13.3.1.1. El contacto mínimo es un criterio del proyecto (D-052).
-- Deslizamiento y volcamiento: 13.2.6.1 remite al código general; los datos del suelo y los factores de seguridad son del usuario (D-070). En estos ejemplos son **datos supuestos** (μ = 0.45, c_a = 0, Kp = 3.0, c = 0, f_p = 0.5; FS 1.5/1.1 al deslizamiento y 2.0/1.5 al volcamiento) y las combinaciones con E van marcadas `seismic`.
+- Deslizamiento y volcamiento: 13.2.6.1 remite al código general; los datos del suelo y los factores de seguridad son del usuario (D-070). En estos ejemplos son **datos supuestos** (μ = 0.45, c_a = 0, Kp = 3.0, c = 0, f_p = 0.5; FS 1.5/1.1 al deslizamiento y 2.0/1.5 al volcamiento; qa aumentada 1.33 con sismo, D-079) y las combinaciones con E van marcadas `seismic`.

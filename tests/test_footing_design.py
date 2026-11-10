@@ -503,6 +503,8 @@ def _points() -> tuple[CurvePoint, ...]:
 def test_csv_svg_and_memoir_show_the_points() -> None:
     data = curve_data(_points(), "milp_iter", 12.0)
     assert data["points"][1]["saving [%]"] == pytest.approx(20.0)
+    assert [row["saving_from_first"] for row in data["points"]] == [0.0, 2.0, 1.0]  # ahorro acumulado frente a N = 1
+    assert data["points"][2]["saving_from_first [%]"] == pytest.approx(10.0)
     csv = curve_csv(data).splitlines()
     assert len(csv) == 4 and csv[2].endswith("Z1=Z2 (h_max)")
     svg = curve_svg(data)

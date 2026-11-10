@@ -139,9 +139,11 @@ def _plans(ctx: Context, columns: Sequence[DesignColumn], start: tuple[float, fl
 
 
 def _initial_size(ctx: Context, columns: Sequence[DesignColumn]) -> float:
-    """Cota inferior de la planta: la carga de servicio mayor sobre la presión admisible (sin pesos ni momentos)."""
-    largest = max((load.p for column in columns for load in column.loads if load.kind == "service"), default=0.0)
-    side = math.sqrt(max(largest, 0.0) / ctx.soil.allowable_pressure)
+    """Cota inferior de la planta: el mayor cociente de la carga de servicio sobre la presión admisible de su caso (con el
+    aumento sísmico, D-079), sin pesos ni momentos."""
+    largest = max((load.p / ctx.soil.bearing_capacity(load.seismic) for column in columns for load in column.loads
+                   if load.kind == "service"), default=0.0)
+    side = math.sqrt(max(largest, 0.0))
     return math.floor(side / ctx.design.plan_step) * ctx.design.plan_step
 
 

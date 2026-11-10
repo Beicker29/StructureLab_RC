@@ -27,9 +27,11 @@ def _status(result: DesignResult) -> str | None:
 
 def curve_data(points: Sequence[CurvePoint], method: str, seconds: float) -> dict[str, Any]:
     rows = []
+    reference = next((point.result.cost for point in points if point.result.fc is not None), None)  # el menor N con solución
     for point in points:
         result = point.result
         status = _status(result)
+        total = None if reference is None or result.fc is None else reference - result.cost
         rows.append({
             "N": point.count,
             "fc [MPa]": result.fc,
@@ -37,6 +39,9 @@ def curve_data(points: Sequence[CurvePoint], method: str, seconds: float) -> dic
             "saving": None if point.saving is None else round(point.saving, 2),
             "saving [%]": None if point.saving is None or not point.saving + result.cost else
             round(100 * point.saving / (point.saving + result.cost), 3),
+            "saving_from_first": None if total is None else round(total, 2),
+            "saving_from_first [%]": None if total is None or reference is None or not reference else
+            round(100 * total / reference, 3),
             "rises": point.rises,
             "status": status,
             "certified": None if status is None else status == _OPTIMAL,
@@ -48,13 +53,13 @@ def curve_data(points: Sequence[CurvePoint], method: str, seconds: float) -> dic
 
 
 def curve_csv(data: dict[str, Any]) -> str:
-    header = "N;fc_MPa;costo;ahorro;ahorro_pct;sube;certificado;distintas;repetidas"
+    header = "N;fc_MPa;costo;ahorro;ahorro_pct;ahorro_desde_N1;ahorro_desde_N1_pct;sube;certificado;distintas;repetidas"
     lines = [header]
     for row in data["points"]:
         repeats = " | ".join("=".join(group["typologies"]) + (f" ({','.join(group['at_limit'])})" if group["at_limit"] else "")
                              for group in row["duplicates"])
-        values = [row["N"], row["fc [MPa]"], row["cost"], row["saving"], row["saving [%]"], row["rises"], row["certified"],
-                  row["distinct_count"], repeats]
+        values = [row["N"], row["fc [MPa]"], row["cost"], row["saving"], row["saving [%]"], row["saving_from_first"],
+                  row["saving_from_first [%]"], row["rises"], row["certified"], row["distinct_count"], repeats]
         lines.append(";".join("" if value is None else str(value) for value in values))
     return "\n".join(lines) + "\n"
 
@@ -122,6 +127,8 @@ def curve_document(data: dict[str, Any], project: dict[str, str], svg_path: str)
                      "sin solución" if row["cost"] is None else _money(row["cost"]),
                      "–" if row["saving"] is None else _money(row["saving"]),
                      "–" if row["saving [%]"] is None else f"{row['saving [%]']:.2f} %",
+                     "–" if not row["saving_from_first"] else _money(row["saving_from_first"]),
+                     "–" if not row["saving_from_first [%]"] else f"{row['saving_from_first [%]']:.2f} %",
                      "sí" if row["rises"] else "no", certified,
                      "–" if row["distinct_count"] is None else str(row["distinct_count"]), repeats or "–"])
     blocks: list[dict[str, Any]] = [
@@ -130,7 +137,8 @@ def curve_document(data: dict[str, Any], project: dict[str, str], svg_path: str)
                                  ("Método", data["method"]), ("Tiempo total", f"{data['seconds']:.0f} s")]},
         {"kind": "image", "path": svg_path, "caption": "Costo total frente al número de tipologías", "aspect": _HEIGHT / _WIDTH},
         {"kind": "h2", "text": "Puntos de la curva"},
-        {"kind": "table", "headers": ["N", "f'c (MPa)", "Costo total", "Ahorro frente a N − 1", "Ahorro (%)", "Sube",
+        {"kind": "table", "headers": ["N", "f'c (MPa)", "Costo total", "Ahorro frente a N − 1", "Ahorro (%)",
+                                      f"Ahorro frente a N = {data['points'][0]['N']}", "Ahorro acumulado (%)", "Sube",
                                       "Óptimo certificado", "Distintas", "Repetidas"], "rows": rows},
         {"kind": "h2", "text": "Lectura de la curva"},
         {"kind": "note", "text": "Cada punto conserva el catálogo de candidatos de los anteriores, así que puede resultar igual o "

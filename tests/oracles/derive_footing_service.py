@@ -25,6 +25,7 @@ solve = _PRESSURE.solve
 
 GAMMA_C, GAMMA_F = 24.0, 18.0  # kN/m³
 QA, MIN_CONTACT = 250.0, 0.6  # kPa, -
+SEISMIC_QA = 1.33  # aumento de qa en los casos con sismo (D-079)
 CLAUSES = {"aci_318_25": "13.3.1.1", "nsr_10": "C.15.2.2"}
 # Datos de estabilidad (D-070): obligatorios en el suelo; este oráculo no los usa (ver derive_footing_stability.py).
 STABILITY = {"friction_coefficient": 0.45, "adhesion_kPa": 0.0, "passive_coefficient": 3.0, "cohesion_kPa": 0.0,
@@ -62,8 +63,9 @@ def _expected(footing: dict, load: dict) -> dict:
     plane, fraction = solve(lx, ly, n, ex, ey)
     corners = [plane[0] + plane[1] * x + plane[2] * y for x in (-lx / 2, lx / 2) for y in (-ly / 2, ly / 2)]
     pmax = max(corners)
-    return {**result, "equilibrium": True, "ex_mm": ex * 1e3, "ey_mm": ey * 1e3, "pmax_kPa": pmax,
-            "contact_fraction": fraction, "bearing": "PASS" if pmax <= QA else "FAIL",
+    capacity = QA * (SEISMIC_QA if load.get("seismic") else 1.0)  # D-079: qa aumentada solo con sismo
+    return {**result, "equilibrium": True, "ex_mm": ex * 1e3, "ey_mm": ey * 1e3, "pmax_kPa": pmax, "capacity_kPa": capacity,
+            "contact_fraction": fraction, "bearing": "PASS" if pmax <= capacity else "FAIL",
             "contact": "PASS" if fraction >= MIN_CONTACT else "FAIL"}
 
 
@@ -75,8 +77,10 @@ def _footing(**changes: object) -> dict:
     return data
 
 
-def _load(p: float, vx: float = 0.0, vy: float = 0.0, mx: float = 0.0, my: float = 0.0, live: float = 1.0) -> dict:
-    return {"dead_factor": 1.0, "live_factor": live, "P_kN": p, "Vx_kN": vx, "Vy_kN": vy, "Mx_kNm": mx, "My_kNm": my}
+def _load(p: float, vx: float = 0.0, vy: float = 0.0, mx: float = 0.0, my: float = 0.0, live: float = 1.0,
+          seismic: bool = False) -> dict:
+    load = {"dead_factor": 1.0, "live_factor": live, "P_kN": p, "Vx_kN": vx, "Vy_kN": vy, "Mx_kNm": mx, "My_kNm": my}
+    return {**load, "seismic": True} if seismic else load
 
 
 CASES = [
@@ -94,6 +98,10 @@ CASES = [
     ("contacto-parcial", "momento grande en y: contacto parcial que cumple el mínimo", _footing(), _load(600.0, my=320.0)),
     ("contacto-insuficiente", "momento mayor: el contacto no alcanza el mínimo", _footing(), _load(500.0, my=480.0)),
     ("sobrepresion", "carga que supera la presión admisible", _footing(), _load(1300.0, mx=-60.0)),
+    ("sobrepresion-con-sismo", "combinación con sismo cuya presión supera qa pero no qa × 1.33: cumple (D-079)", _footing(),
+     _load(1150.0, mx=-60.0, live=0.0, seismic=True)),
+    ("sismo-supera-qa-aumentada", "combinación con sismo que supera también qa × 1.33", _footing(),
+     _load(1800.0, mx=-60.0, live=0.0, seismic=True)),
     ("sin-equilibrio", "resultante fuera de la base", _footing(), _load(200.0, my=500.0)),
     ("traccion", "carga de tracción mayor que los pesos", _footing(), _load(-400.0)),
 ]
@@ -107,7 +115,8 @@ def main() -> None:
                                "con los factores del caso; "
                                "presión de Bellos y Bakas (2017) resuelta por equilibrio independiente.",
                 "soil": {"allowable_pressure_kPa": QA, "min_contact_fraction": MIN_CONTACT,
-                         "unit_weight_concrete_kNm3": GAMMA_C, "unit_weight_fill_kNm3": GAMMA_F, **STABILITY},
+                         "unit_weight_concrete_kNm3": GAMMA_C, "unit_weight_fill_kNm3": GAMMA_F, **STABILITY,
+                         "seismic_bearing_factor": SEISMIC_QA},
                 "bearing_clause": clause, "tolerance_rel": 1e-9, "cases": cases}
         (HERE / folder / "derived_footing_service.json").write_text(
             json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
