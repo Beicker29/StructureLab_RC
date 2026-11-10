@@ -11,10 +11,13 @@ import pytest
 
 from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.design.footing import typologies as typologies_impl
 from structurelab_rc.design.footing import typology as typology_module
 from structurelab_rc.design.footing.grouping import partition, reassign
 from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import (
+    CurvePoint,
+    DesignResult,
     Duplicate,
     FcOption,
     TypologyResult,
@@ -23,6 +26,7 @@ from structurelab_rc.design.footing.typologies import (
     _run,
     design_typologies,
     designed_project,
+    typology_curve,
 )
 from structurelab_rc.design.footing.typology import (
     Context,
@@ -44,6 +48,7 @@ from structurelab_rc.io.etabs.footings import build_footing_design_project
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.design import DesignColumn, FootingDesignProject
 from structurelab_rc.model.template import EtabsFootingDesignTemplate
+from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.setup import load_engine
 
 BARS = load_engine().bars
@@ -452,3 +457,74 @@ def test_iterative_milp_designed_project_verifies(tmp_path: Path) -> None:
     assert summary["method"] == "milp_iter" and summary["iterations"]
     _, checks = run_project(tmp_path / "salida" / "proyecto.json")
     assert {str(check.status) for check in checks} == {"PASS"}
+
+
+# Curva costo–N (D-078)
+
+def _curve_data(method: str, typologies: int = 1) -> dict[str, Any]:
+    data = _project(typologies=typologies, columns=3)
+    data["design"]["method"] = method
+    return data
+
+
+@pytest.mark.parametrize("method", ["milp_iter", "milp"])
+def test_each_point_is_at_most_the_standalone_design(method: str) -> None:
+    """Cada punto conserva lo que no depende de N: con milp la tabla (el mismo resultado que el diseño suelto); con
+    milp_iter el catálogo, que puede dar un costo igual o menor."""
+    points = typology_curve(_context(_curve_data(method)), [1, 2, 3])
+    assert [point.count for point in points] == [1, 2, 3]
+    for point in points:
+        alone = design_typologies(_context(_curve_data(method, point.count))).cost
+        if method == "milp":
+            assert point.result.cost == pytest.approx(alone)
+        else:
+            assert point.result.cost <= alone + 1e-6
+
+
+def test_the_curve_is_the_same_with_any_number_of_workers() -> None:
+    ctx = _context(_curve_data("milp_iter"))
+    assert typology_curve(ctx, [1, 2, 3], workers=2) == typology_curve(ctx, [1, 2, 3], workers=1)
+
+
+def test_saving_and_rising_cost_are_marked(monkeypatch: pytest.MonkeyPatch) -> None:
+    costs = iter([10.0, 8.0, 9.0])
+    monkeypatch.setattr(typologies_impl, "_design", lambda ctx, run, solve: DesignResult(21.0, (), next(costs)))
+    points = typology_curve(_context(_curve_data("milp_iter")), [3, 1, 2])
+    assert [(point.count, point.saving, point.rises) for point in points] == [(1, None, False), (2, 2.0, False), (3, -1.0, True)]
+
+
+def _points() -> tuple[CurvePoint, ...]:
+    repeated = DesignResult(21.0, (), 8.0, distinct_count=1, duplicates=(Duplicate(("Z1", "Z2"), ("h_max",)),))
+    return (CurvePoint(1, DesignResult(21.0, (), 10.0, distinct_count=1), None, False),
+            CurvePoint(2, repeated, 2.0, False),
+            CurvePoint(3, DesignResult(24.5, (), 9.0, distinct_count=3), -1.0, True))
+
+
+def test_csv_svg_and_memoir_show_the_points() -> None:
+    data = curve_data(_points(), "milp_iter", 12.0)
+    assert data["points"][1]["saving [%]"] == pytest.approx(20.0)
+    csv = curve_csv(data).splitlines()
+    assert len(csv) == 4 and csv[2].endswith("Z1=Z2 (h_max)")
+    svg = curve_svg(data)
+    assert svg.count("<circle") == 3 and "#d97706" in svg and "#c62828" in svg  # repetidas y costo que sube
+    blocks = curve_document(data, {"description": "prueba", "profile": "nsr-10"}, "curva.svg")
+    assert any(block["kind"] == "image" for block in blocks)
+    assert any(block["kind"] == "alert" and "N = 3" in block["text"] for block in blocks)
+
+
+def test_cli_writes_the_curve_and_its_memoir(tmp_path: Path) -> None:
+    source = tmp_path / "diseno.json"
+    source.write_text(json.dumps(_curve_data("milp_iter")), encoding="utf-8")
+    output = tmp_path / "curva"
+    assert main(["typology-curve", str(source), "--output", str(output), "--n", "1-2,3", "--workers", "1"]) == 0
+    data = json.loads((output / "curva.json").read_text(encoding="utf-8"))
+    assert [row["N"] for row in data["points"]] == [1, 2, 3]
+    assert (output / "curva.svg").read_text(encoding="utf-8").startswith("<svg")
+    assert "Curva costo–N" in (output / "memoria_curva.txt").read_text(encoding="utf-8")
+    assert (output / "curva.csv").exists()
+
+
+def test_cli_rejects_more_typologies_than_columns(tmp_path: Path) -> None:
+    source = tmp_path / "diseno.json"
+    source.write_text(json.dumps(_curve_data("milp_iter")), encoding="utf-8")
+    assert main(["typology-curve", str(source), "--output", str(tmp_path / "curva"), "--n", "4"]) == 1

@@ -1,6 +1,7 @@
 """Memoria de cálculo en texto: dibuja los bloques de document.py (D-068)."""
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 _SEPARATOR = "=" * 100
@@ -32,6 +33,7 @@ _RENDER: dict[str, Callable[[dict[str, Any]], list[str]]] = {
     "p": lambda block: [block["text"]],
     "note": lambda block: [f"- {block['text']}"],
     "alert": lambda block: [f"! {block['text']}"],
+    "image": lambda block: [f"[Gráfica: {block['caption']}; archivo {Path(block['path']).name}]"],
 }
 
 

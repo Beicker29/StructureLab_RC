@@ -19,6 +19,7 @@ _FONTS = (("C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/segoeuib.ttf"),
           ("/Library/Fonts/Arial.ttf", "/Library/Fonts/Arial Bold.ttf"))
 _SIZES = {"title": 13.0, "h1": 10.5, "h2": 8.5, "body": 7.0}
 _LINE = 3.6
+_IMAGE_FRACTION = 0.75  # ancho de una gráfica respecto al ancho útil de la página
 
 
 def latin1(text: str) -> str:
@@ -112,6 +113,17 @@ class _Renderer:
         elif kind in ("p", "note", "alert"):
             prefix = {"p": "", "note": "• ", "alert": "! "}[kind]
             self.text(prefix + block["text"], _SIZES["body"])
+        elif kind == "image":
+            self.image(block["path"], block["aspect"])
+
+    def image(self, path: str, aspect: float) -> None:
+        """Gráfica (SVG o imagen) de proporción alto/ancho conocida, desde una página nueva si no cabe."""
+        pdf = self.pdf
+        width = (pdf.w - pdf.l_margin - pdf.r_margin) * _IMAGE_FRACTION
+        if pdf.get_y() + width * aspect > pdf.page_break_trigger:
+            pdf.add_page()
+        pdf.image(path, x=pdf.l_margin, w=width, h=width * aspect)
+        pdf.ln(2)
 
 
 def write_pdf(documents: list[list[dict[str, Any]]], path: Path) -> bool:

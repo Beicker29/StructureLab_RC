@@ -85,6 +85,6 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
 - **V3I Concreto simple (hecha, D-072):** momento negativo sin malla superior resistido por el concreto simple donde el
   nivel sísmico lo permite; el diseño prueba primero sin malla superior; lista explícita de f'c a evaluar.
 
-Pendientes de la v3: factores por estribos o espirales en el desarrollo (ψr, con vigas y columnas, D-071), empuje pasivo sobre el pedestal y suelo bajo nivel freático en la
+Pendientes de la v3: diseño por tipologías con apoyos en distintos niveles de cimentación (hoy todas las zapatas usan el mismo relleno y el mismo pedestal del bloque `design`; los Excel de ejemplo tienen 4 niveles y por decisión del usuario no se considera ningún efecto por ahora), factores por estribos o espirales en el desarrollo (ψr, con vigas y columnas, D-071), empuje pasivo sobre el pedestal y suelo bajo nivel freático en la
 estabilidad (D-070), excepción de viviendas para el concreto simple en cimentaciones con sismo alto (D-072), zapatas combinadas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas
 escalonadas, zapatas rotadas, pedestal de sección distinta a la columna y muros (D-052, D-055).

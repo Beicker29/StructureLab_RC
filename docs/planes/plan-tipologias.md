@@ -13,7 +13,7 @@ una sesión aparte, se cierra con su criterio de aceptación y actualiza la tabl
 | E2. Generador compartido y MILP | Cerrada (2026-11-09) | D-075: huella idéntica; ETABS −3.0 % (NSR-10) y −4.6 % (ACI) frente a E1, óptimo certificado; `milp` por defecto |
 | E3a. Espesor y mallas de menor costo en `design_group` | Cerrada (2026-11-09) | D-076: mismo costo en los dos proyectos de ETABS; tiempo −33 % (NSR-10) y −32 % (ACI) frente a E2; barrido solo en individuales y grupos elegidos; huella idéntica |
 | E3b. Velocidad: rediseñar solo lo que proponga el MILP | Cerrada (2026-11-10) | D-077: `milp_iter` iguala el costo de `milp` en los dos proyectos de ETABS (y lo mejora en NSR-10 con 24.5 y 28 MPa) con −67 % y −69 % de tiempo; `milp_iter` por defecto desde el cierre |
-| Curva costo–N | Fase siguiente | — |
+| Curva costo–N | Cerrada (2026-11-10) | D-078: `typology-curve` (JSON, CSV, SVG y memoria); ETABS N = 1 a 12 en 23–24 min por perfil; ahorro marginal bajo 2 % desde N = 5 |
 
 Ninguna etapa empieza si la anterior no está cerrada y su resultado registrado. Las decisiones de continuar o no
 las toma el usuario con los datos de la etapa previa.

@@ -158,6 +158,24 @@ n(n+1)/2, porque no depende de N), tiempo del proceso principal entre lotes (`ma
 muestra fija de 500 pares columna–candidato con la extrapolación a la matriz completa de cobertura, y las tipologías
 repetidas y columnas reasignables de la solución. No cambia `proyecto.json` ni `tipologias.json`.
 
+### Curva costo–N (comando `typology-curve`, D-078)
+
+`structurelab-rc typology-curve <proyecto de diseño> --output <carpeta> [--n 1-12] [--workers N] [--method ...]` diseña
+con cada N pedido (por defecto de 1 a 12, o hasta el número de columnas; `--n` acepta `1-12`, `2,4,6` o `1-4,8`) y
+escribe:
+
+| Archivo | Contenido |
+| --- | --- |
+| `curva.json` | `method`, `seconds` y `points`: por N, `N`, `fc [MPa]`, `cost`, `saving` y `saving [%]` (frente al N anterior), `rises` (el costo sube), `status` y `certified` (estado del MILP del f'c elegido; null con `dp`), `distinct_count`, `duplicates` (con `at_limit`) y `failure` si no tiene solución. |
+| `curva.csv` | Los mismos puntos, separados por punto y coma. |
+| `curva.svg` | Costo total frente a N: puntos naranjas con tipologías repetidas, rojos si el costo sube. |
+| `memoria_curva.txt`, `memoria_curva.pdf` | Memoria de la curva: datos del proyecto, la gráfica (incrustada en el PDF), la tabla de puntos y su lectura. |
+
+Lo que no depende de N se calcula una vez por f'c y se conserva entre valores de N: con `milp_iter`, el catálogo y su
+cobertura, que siguen creciendo (un punto puede salir igual o más barato que el diseño suelto con ese N); con `milp` y
+`dp`, la tabla de tramos (cada punto es igual al diseño suelto). El valor de `design.typologies` del proyecto se ignora.
+El diseño del N elegido se obtiene con `design-footings` y se reverifica con `report`.
+
 ## Salida
 
 `report` escribe tres archivos en la carpeta de salida:

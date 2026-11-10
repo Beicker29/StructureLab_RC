@@ -25,6 +25,7 @@ Diseño por tipologías:
 
 ```console
 structurelab-rc design-footings examples/aci_318_25/zapatas/diseno_tipologias.json --output results/aci_318_25/zapatas/diseno_tipologias
+structurelab-rc typology-curve examples/aci_318_25/zapatas/diseno_tipologias.json --output results/aci_318_25/zapatas/curva
 structurelab-rc report results/aci_318_25/zapatas/diseno_tipologias/proyecto.json --output results/aci_318_25/zapatas/diseno_tipologias/reporte
 ```
 

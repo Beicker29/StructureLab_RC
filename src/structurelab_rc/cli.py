@@ -20,6 +20,7 @@ from structurelab_rc.engine import (
     import_etabs_footings,
     profile_footings,
     report_file,
+    typology_curve_file,
     validate_file,
     verify_file,
 )
@@ -196,6 +197,38 @@ def _report(project: Path, output: Path, full: bool) -> int:
     return 1 if report.status == Status.FAIL else 0
 
 
+def _counts(text: str) -> list[int]:
+    """N de la curva: "1-12", "2,4,6" o una combinación ("1-4,8")."""
+    counts: set[int] = set()
+    try:
+        for part in text.split(","):
+            low, _, high = part.strip().partition("-")
+            counts.update(range(int(low), int(high or low) + 1))
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(f"valores de N no validos: {text}") from error
+    return sorted(counts)
+
+
+def _typology_curve(path: Path, output: Path, counts: list[int] | None, workers: int | None, method: str | None) -> int:
+    report, check = typology_curve_file(path, output, counts, workers or os.cpu_count() or 1, method)
+    print(f"{check.name}: {check.status}")
+    _print_errors(check)
+    if report is None:
+        return 1
+    data = report.data
+    print(f"Curva costo-N ({data['method']}, {data['seconds']:.0f} s)")
+    for row in data["points"]:
+        if row["cost"] is None:
+            print(f"  N = {row['N']:2d}: sin solucion")
+            continue
+        saving = "" if row["saving"] is None else f"; ahorro {row['saving']:.2f} ({row['saving [%]']:.2f} %)"
+        flags = (" SUBE" if row["rises"] else "") + (" (repetidas)" if row["duplicates"] else "")
+        print(f"  N = {row['N']:2d}: f'c {row['fc [MPa]']:g} MPa; costo {row['cost']:.2f}{saving}{flags}")
+    for path_written in report.files:
+        print(f"  {path_written}")
+    return 0
+
+
 def _tolerant_console() -> None:
     """Una consola que no tiene un carácter (por ejemplo, "≤" en cp1252 de Windows con la salida redirigida) lo reemplaza
     en lugar de interrumpir el comando cuando los resultados ya están escritos."""
@@ -233,6 +266,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     designer.add_argument("--method", choices=("dp", "milp", "milp_iter"),
                           help="dp (particion), milp (asignacion optima) o milp_iter (iterativo, sin tabla de tramos); los dos "
                                "ultimos requieren structurelab-rc[opt]; reemplaza design.method")
+    curve = commands.add_parser("typology-curve", help="curva costo-N del diseno por tipologias (D-078)")
+    curve.add_argument("project", type=Path, help="proyecto de diseno en JSON (columnas y bloque design)")
+    curve.add_argument("--output", type=Path, required=True, help="carpeta donde escribir curva.json, curva.csv, curva.svg y la memoria")
+    curve.add_argument("--n", type=_counts, help="valores de N, por ejemplo 1-12 o 2,4,6 (por defecto, de 1 a 12 o al numero de columnas)")
+    curve.add_argument("--workers", type=int, help="procesos en paralelo (por defecto, los nucleos del equipo; 1: sin paralelo)")
+    curve.add_argument("--method", choices=("dp", "milp", "milp_iter"), help="reemplaza design.method")
     reporter = commands.add_parser("report", help="verifica un proyecto y escribe resultado.json, memoria.txt y memoria.pdf")
     reporter.add_argument("project", type=Path, help="ruta del archivo JSON")
     reporter.add_argument("--output", type=Path, required=True, help="carpeta de salida, por ejemplo results/mi_proyecto")
@@ -241,6 +280,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     commands_by_name: dict[str, Callable[[], int]] = {
         "report": lambda: _report(args.project, args.output, args.full),
         "design-footings": lambda: _design_footings(args.project, args.output, args.workers, args.profile, args.method),
+        "typology-curve": lambda: _typology_curve(args.project, args.output, args.n, args.workers, args.method),
         "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output),
         "import-etabs": lambda: _import_etabs(args.workbook, args.template, args.output),
         "validate": lambda: _validate(args.project),

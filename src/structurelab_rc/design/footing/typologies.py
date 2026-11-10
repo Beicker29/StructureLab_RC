@@ -220,8 +220,12 @@ def _for_fc(ctx: Context, fc: float, run: Runner) -> _FcSolution | str:
     if ctx.design.method == "milp_iter":
         return _iterative(ctx, fc, run)
     tables = _tables(ctx, fc, run)
-    if isinstance(tables, str):
-        return tables
+    return tables if isinstance(tables, str) else _from_tables(ctx, tables, run)
+
+
+def _from_tables(ctx: Context, tables: _Tables, run: Runner) -> _FcSolution | str:
+    """dp o milp con N = design.typologies sobre la tabla de tramos de un f'c, que no depende de N (D-075), y el
+    refinamiento de los grupos elegidos (D-076)."""
     solution = _dp(ctx, tables, run)
     if isinstance(solution, str):
         return solution
@@ -389,59 +393,82 @@ def _chosen(
     return chosen
 
 
-def _iterative(ctx: Context, fc: float, run: Runner) -> _FcSolution | str:
-    """milp_iter (E3b, D-077): catálogo con los diseños individuales y uno de todas las columnas (con él siempre hay N
-    tipologías que cubren todo: esa y N − 1 individuales); en cada iteración, MILP desde la solución anterior y rediseño,
-    con el barrido de espesores, de cada grupo propuesto de dos o más columnas sobre exactamente sus columnas. El
-    catálogo solo crece, así que el costo nunca sube. Para cuando el costo no baja, en design.iter_max iteraciones o al
-    pasar design.iter_time_limit_s."""
-    begin = time.perf_counter()
-    design, columns, groups = ctx.design, ctx.project.columns, ctx.design.typologies
+@dataclass
+class _Catalog:
+    """Estado de milp_iter en un f'c (E3b, D-077): diseños individuales, candidatos sin repetir, pasadores con que cada
+    candidato cubre cada columna (dowels[i][j]) y los grupos ya rediseñados. No depende de N: la curva costo–N (D-078) lo
+    conserva entre valores de N, y solo crece."""
+
+    fc: float
+    singles: dict[str, GroupDesign]
+    catalog: list[Typology] = field(default_factory=list)
+    keys: set[Any] = field(default_factory=set)
+    dowels: list[list[dict[str, Any] | None]] = field(default_factory=list)
+    redesigned: set[tuple[int, ...]] = field(default_factory=set)
+
+
+def _new_catalog(ctx: Context, fc: float, run: Runner) -> _Catalog | str:
+    """Catálogo inicial: los diseños individuales y uno de todas las columnas (con él siempre hay N tipologías que cubren
+    todo: esa y N − 1 individuales)."""
+    columns = ctx.project.columns
     singles = _singles(ctx, fc, run)
     if isinstance(singles, str):
         return singles
-    everyone = tuple(range(len(columns)))
-    seed = run([("design", fc, everyone, _largest(singles, columns))])[0]
-    catalog: list[Typology] = []
-    keys: set[Any] = set()
-    dowels: list[list[dict[str, Any] | None]] = [[] for _ in columns]
+    seed = run([("design", fc, tuple(range(len(columns))), _largest(singles, columns))])[0]
+    state = _Catalog(fc, singles, dowels=[[] for _ in columns])
+    _extend(ctx, state, [singles[column.id].typology for column in columns] + ([] if seed is None else [seed.typology]), run)
+    return state
 
-    def extend(candidates: Sequence[Typology]) -> None:
-        new = []
-        for typology in candidates:
-            if typology_key(typology) not in keys:
-                keys.add(typology_key(typology))
-                new.append(typology)
-        found = run([("covers", typology, index) for index in range(len(columns)) for typology in new])
-        for index in range(len(columns)):
-            dowels[index].extend(found[index * len(new) : (index + 1) * len(new)])
-        catalog.extend(new)
 
-    extend([singles[column.id].typology for column in columns] + ([] if seed is None else [seed.typology]))
-    redesigned: set[tuple[int, ...]] = set()
+def _extend(ctx: Context, state: _Catalog, candidates: Sequence[Typology], run: Runner) -> None:
+    """Agrega los candidatos nuevos y calcula con covers() solo su cobertura."""
+    columns = ctx.project.columns
+    new = []
+    for typology in candidates:
+        if typology_key(typology) not in state.keys:
+            state.keys.add(typology_key(typology))
+            new.append(typology)
+    found = run([("covers", typology, index) for index in range(len(columns)) for typology in new])
+    for index in range(len(columns)):
+        state.dowels[index].extend(found[index * len(new) : (index + 1) * len(new)])
+    state.catalog.extend(new)
+
+
+def _iterative(ctx: Context, fc: float, run: Runner) -> _FcSolution | str:
+    """milp_iter (E3b, D-077) en un f'c: catálogo inicial e iteraciones."""
+    state = _new_catalog(ctx, fc, run)
+    return state if isinstance(state, str) else _iterate(ctx, state, run)
+
+
+def _iterate(ctx: Context, state: _Catalog, run: Runner) -> _FcSolution | str:
+    """Iteraciones de milp_iter con N = design.typologies (E3b, D-077): MILP desde la solución anterior y rediseño de lo
+    propuesto. El catálogo solo crece, así que el costo nunca sube. Para cuando el costo no baja, cuando los rediseños no
+    agregan candidatos, en design.iter_max iteraciones o al pasar design.iter_time_limit_s."""
+    begin = time.perf_counter()
+    design, groups, fc, singles = ctx.design, ctx.design.typologies, state.fc, state.singles
     iterations: list[Iteration] = []
     start: Sequence[int] | None = None
     best: Chosen | None = None
     best_total = math.inf
     while True:
-        cost, steel = _pair_costs(ctx, catalog, dowels)
+        cost, steel = _pair_costs(ctx, state.catalog, state.dowels)
         result = assign(cost, steel, groups, start, design.milp_time_limit)
         if not result.choice:
             break
-        chosen = _chosen(ctx, catalog, dowels, result.choice)
+        chosen = _chosen(ctx, state.catalog, state.dowels, result.choice)
         total = sum(group.cost for group, _ in chosen)
-        iterations.append(Iteration(len(iterations) + 1, len(catalog), total, result.status, time.perf_counter() - begin))
+        iterations.append(Iteration(len(iterations) + 1, len(state.catalog), total, result.status, time.perf_counter() - begin))
         improved = total < best_total - 1e-6
         if improved:
             best, best_total, start = chosen, total, result.choice
-        tasks = [task for task in _proposals(ctx, fc, singles, chosen) if task[2] not in redesigned]
+        tasks = [task for task in _proposals(ctx, fc, singles, chosen) if task[2] not in state.redesigned]
         if (not improved or not tasks or len(iterations) >= design.iter_max
                 or time.perf_counter() - begin >= design.iter_time_limit):
             break
-        redesigned.update(task[2] for task in tasks)
-        size = len(catalog)
-        extend([found.typology for found in run(tasks) if found is not None])
-        if len(catalog) == size:
+        state.redesigned.update(task[2] for task in tasks)
+        size = len(state.catalog)
+        _extend(ctx, state, [found.typology for found in run(tasks) if found is not None], run)
+        if len(state.catalog) == size:
             break  # los rediseños ya estaban en el catálogo: el MILP daría lo mismo
     if best is None:
         return f"f'c = {fc:g} MPa: no hay {groups} tipologías del catálogo que cubran todas las columnas"
@@ -533,17 +560,64 @@ def design_typologies(ctx: Context, workers: int = 1) -> DesignResult:
         return _design(ctx, lambda tasks: _in_pool(pool, tasks, workers))
 
 
+@dataclass(frozen=True)
+class CurvePoint:
+    """Un punto de la curva costo–N (D-078): el diseño con N tipologías, el ahorro frente al punto anterior (None en el
+    primero) y si su costo sube respecto a él."""
+
+    count: int
+    result: DesignResult
+    saving: float | None
+    rises: bool
+
+
+def typology_curve(ctx: Context, counts: Sequence[int], workers: int = 1) -> tuple[CurvePoint, ...]:
+    """Curva costo–N (D-078): el diseño con cada N de counts (en orden creciente). Lo que no depende de N se calcula una
+    vez por f'c y se conserva: con milp_iter, el catálogo y su cobertura (que siguen creciendo entre valores de N); con
+    milp y dp, la tabla de tramos. Determinista: la misma curva da el mismo resultado con cualquier número de procesos."""
+    if workers <= 1:
+        return _curve(ctx, sorted(counts), lambda tasks: [_run(ctx, task) for task in tasks])
+    with ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(ctx.project, tuple(ctx.bars))) as pool:
+        return _curve(ctx, sorted(counts), lambda tasks: _in_pool(pool, tasks, workers))
+
+
+def _curve(ctx: Context, counts: Sequence[int], run: Runner) -> tuple[CurvePoint, ...]:
+    cache: dict[float, _Catalog | _Tables | str] = {}
+
+    def solve(ctx_n: Context, fc: float, run: Runner) -> _FcSolution | str:
+        if fc not in cache:
+            cache[fc] = _new_catalog(ctx, fc, run) if ctx.design.method == "milp_iter" else _tables(ctx, fc, run)
+        state = cache[fc]
+        if isinstance(state, str):
+            return state
+        return _iterate(ctx_n, state, run) if isinstance(state, _Catalog) else _from_tables(ctx_n, state, run)
+
+    points: list[CurvePoint] = []
+    for count in counts:
+        project = ctx.project.model_copy(update={"design": ctx.design.model_copy(update={"typologies": count})})
+        result = _design(Context(project, ctx.profile, ctx.bars), run, solve)
+        previous = points[-1].result.cost if points and points[-1].result.fc is not None else None
+        if result.fc is None or previous is None:
+            points.append(CurvePoint(count, result, None, False))
+        else:
+            points.append(CurvePoint(count, result, previous - result.cost, result.cost > previous + 1e-6))
+    return tuple(points)
+
+
 def _in_pool(pool: Executor, tasks: list[Task], workers: int) -> list[Any]:
     chunk = max(1, len(tasks) // (8 * workers))  # tareas de duración dispar: lotes pequeños reparten mejor la carga
     return list(pool.map(_run_in_worker, tasks, chunksize=chunk))
 
 
-def _design(ctx: Context, run: Runner) -> DesignResult:
+Solver = Callable[[Context, float, Runner], "_FcSolution | str"]
+
+
+def _design(ctx: Context, run: Runner, solve: Solver = _for_fc) -> DesignResult:
     best: tuple[float, _FcSolution] | None = None
     failures = []
     options = []
     for fc in sorted(ctx.design.fc_options):
-        outcome = _for_fc(ctx, fc, run)
+        outcome = solve(ctx, fc, run)
         if isinstance(outcome, str):
             failures.append(outcome)
             options.append(FcOption(fc, None, None, outcome))

@@ -857,6 +857,33 @@
   con 1 y 2 procesos (el tiempo de cada iteración no entra en la comparación); límite de iteraciones; el proyecto
   diseñado pasa la verificación completa.
 
+### D-078: curva costo–N del diseño por tipologías
+
+- **Fecha:** 2026-11-10
+- **Decisión del usuario:** comando `typology-curve` con N por defecto de 1 a 12 (o hasta el número de columnas) y
+  `--n` para elegir otros; lo que no depende de N se conserva entre valores de N; la gráfica en SVG y en la memoria.
+- **Implementación:** `typology_curve` (`design/footing/typologies.py`) diseña con cada N reutilizando por f'c el
+  catálogo y su cobertura (`milp_iter`, que siguen creciendo: un punto puede salir igual o más barato que el diseño
+  suelto con ese N) o la tabla de tramos (`milp` y `dp`: cada punto igual al diseño suelto). Cada punto lleva el f'c,
+  el costo, el ahorro frente al N anterior, si el costo sube, la certificación del MILP del f'c elegido, las tipologías
+  distintas y las repetidas (con `at_limit`). `reporting/curve.py` arma `curva.json`, `curva.csv`, `curva.svg` y los
+  bloques de la memoria (`memoria_curva.txt` y `.pdf`); los renderizadores tienen el bloque `image` (el PDF incrusta
+  el SVG). La saturación no tiene umbral automático: repetidas y ahorro marginal pequeño se muestran para el ingeniero.
+- **Resultado (ETABS, 73 columnas, N = 1 a 12, `milp_iter`, 16 procesos):** NSR-10 en 1 355 s y ACI 318-25 en
+  1 434 s; óptimo certificado en todos los puntos, sin repetidas y sin subidas; N = 6 coincide con el diseño suelto.
+
+  | N | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | NSR-10 (M) | 912.9 | 702.0 | 647.1 | 622.0 | 612.1 | 605.4 | 599.0 | 592.6 | 589.3 | 586.2 | 583.4 | 581.4 |
+  | ahorro (%) | – | 23.1 | 7.8 | 3.9 | 1.6 | 1.1 | 1.1 | 1.1 | 0.6 | 0.5 | 0.5 | 0.3 |
+  | ACI 318-25 (M) | 1 077.1 | 827.1 | 760.9 | 734.7 | 723.2 | 712.4 | 706.3 | 702.5 | 698.9 | 696.0 | 693.6 | 692.1 |
+  | ahorro (%) | – | 23.2 | 8.0 | 3.4 | 1.6 | 1.5 | 0.9 | 0.5 | 0.5 | 0.4 | 0.3 | 0.2 |
+
+  El ahorro marginal cae bajo 2 % desde N = 5 en los dos perfiles; el f'c elegido es 21 MPa en todos los puntos salvo
+  NSR-10 con N = 3 (24.5 MPa).
+- **Pruebas:** cada punto igual (`milp`) o igual o menor (`milp_iter`) que el diseño suelto; mismo resultado con 1 y 2
+  procesos; ahorro y costo que sube; CSV, SVG y memoria; el CLI escribe los archivos y rechaza N mayor que las columnas.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

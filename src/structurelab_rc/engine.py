@@ -1,6 +1,8 @@
 """Orquestación de los casos de uso."""
 
 import json
+import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -9,7 +11,7 @@ from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing.assignment import available as solver_available
 from structurelab_rc.design.footing.profiling import profile_typologies
-from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project
+from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project, typology_curve
 from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.station import station_checks
@@ -33,6 +35,7 @@ from structurelab_rc.model.loader import (
 )
 from structurelab_rc.model.project import Project
 from structurelab_rc.model.template import EtabsFootingDesignTemplate
+from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.reporting.document import report_documents
 from structurelab_rc.reporting.pdf import write_pdf
 from structurelab_rc.reporting.results import build_results
@@ -154,6 +157,47 @@ def design_footings(
     return project, result, check
 
 
+CURVE_MAX = 12  # curva costo–N: N por defecto de 1 a 12, o hasta el número de columnas (D-078)
+
+
+@dataclass(frozen=True)
+class CurveReport:
+    data: dict[str, Any]
+    files: tuple[Path, ...]
+
+
+def typology_curve_file(
+    path: Path, output: Path, counts: Sequence[int] | None = None, workers: int = 1, method: str | None = None
+) -> tuple[CurveReport | None, Check]:
+    """Curva costo–N del diseño por tipologías (D-078): curva.json, curva.csv, curva.svg y la memoria (memoria_curva.txt
+    y, si fpdf2 está instalado, memoria_curva.pdf) en la carpeta de salida."""
+    ctx, validation = _design_context(path, method)
+    if ctx is None:
+        return None, validation
+    columns = len(ctx.project.columns)
+    wanted = sorted(set(counts)) if counts else list(range(1, min(CURVE_MAX, columns) + 1))
+    outside = [count for count in wanted if not 1 <= count <= columns]
+    if outside:
+        message = f"N debe estar entre 1 y el numero de columnas ({columns}): {', '.join(map(str, outside))}"
+        return None, check_from_errors(CHECK_NAME, [invalid_input(message)])
+    begin = time.perf_counter()
+    points = typology_curve(ctx, wanted, workers)
+    data = curve_data(points, ctx.design.method, time.perf_counter() - begin)
+    data = {"project": str(path), "profile": ctx.project.profile, **data}
+    output.mkdir(parents=True, exist_ok=True)
+    json_path, csv_path, svg_path = output / "curva.json", output / "curva.csv", output / "curva.svg"
+    json_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    csv_path.write_text(curve_csv(data), encoding="utf-8", newline="\n")
+    svg_path.write_text(curve_svg(data), encoding="utf-8", newline="\n")
+    blocks = curve_document(data, {"description": ctx.project.description, "profile": ctx.project.profile}, str(svg_path))
+    memoir_path, pdf_path = output / "memoria_curva.txt", output / "memoria_curva.pdf"
+    memoir_path.write_text(render_text([blocks]), encoding="utf-8", newline="\n")
+    files: tuple[Path, ...] = (json_path, csv_path, svg_path, memoir_path)
+    if write_pdf([blocks], pdf_path):
+        files = (*files, pdf_path)
+    return CurveReport(data, files), validation
+
+
 def profile_footings(
     path: Path, workers: int = 1, method: str | None = None
 ) -> tuple[dict[str, Any] | None, DesignResult | None, Check, dict[str, Any] | None]:
@@ -161,22 +205,29 @@ def profile_footings(
     return _design_footings(path, workers, method, profile=True)
 
 
-def _design_footings(
-    path: Path, workers: int, method: str | None, profile: bool
-) -> tuple[dict[str, Any] | None, DesignResult | None, Check, dict[str, Any] | None]:
+def _design_context(path: Path, method: str | None) -> tuple[Context | None, Check]:
+    """Proyecto de diseño cargado y validado, con el método pedido, listo para diseñar; o el Check que lo impide."""
     try:
         design = load_design_project(path)
     except ProjectLoadError as error:
-        return None, None, check_from_errors(CHECK_NAME, error.errors), None
+        return None, check_from_errors(CHECK_NAME, error.errors)
     if method is not None:
         design = design.model_copy(update={"design": design.design.model_copy(update={"method": method})})
     validation = _validate_design(design)
     if validation.status is Status.FAIL:
-        return None, None, validation, None
+        return None, validation
     if design.design.method in ("milp", "milp_iter") and not solver_available():
         message = f"El metodo {design.design.method} necesita el solucionador highspy: instale  pip install structurelab-rc[opt]"
-        return None, None, check_from_errors(CHECK_NAME, [invalid_input(message)]), None
-    ctx = Context(design, PROFILES[design.profile], load_engine().bars)
+        return None, check_from_errors(CHECK_NAME, [invalid_input(message)])
+    return Context(design, PROFILES[design.profile], load_engine().bars), validation
+
+
+def _design_footings(
+    path: Path, workers: int, method: str | None, profile: bool
+) -> tuple[dict[str, Any] | None, DesignResult | None, Check, dict[str, Any] | None]:
+    ctx, validation = _design_context(path, method)
+    if ctx is None:
+        return None, None, validation, None
     measurement = None
     if profile:
         result, measurement = profile_typologies(ctx, workers)

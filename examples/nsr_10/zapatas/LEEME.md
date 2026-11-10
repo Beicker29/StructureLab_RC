@@ -25,6 +25,7 @@ Diseño por tipologías:
 
 ```console
 structurelab-rc design-footings examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
+structurelab-rc typology-curve examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/curva
 structurelab-rc report results/nsr_10/zapatas/diseno_tipologias/proyecto.json --output results/nsr_10/zapatas/diseno_tipologias/reporte
 ```
 

@@ -32,6 +32,7 @@ structurelab-rc import-etabs "examples/etabs/vigas/Element Forces - Beams.xlsx" 
 structurelab-rc report results/nsr_10/vigas/etabs.json --output results/nsr_10/vigas/etabs
 structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/plantilla_zapatas_etabs.json --output results/nsr_10/zapatas/etabs.json
 structurelab-rc design-footings examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
+structurelab-rc typology-curve examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/curva
 ```
 
 `report` verifica el proyecto y escribe en la carpeta de salida `resultado.json` (todo el detalle, en kN, kN·m, mm
