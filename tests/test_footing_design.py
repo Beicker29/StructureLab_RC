@@ -337,8 +337,9 @@ def test_thickness_and_mats_are_the_cheapest_of_the_enumeration(case: str, monke
     assert found.cost == pytest.approx(_enumerate(ctx, column, 21.0, plan))
 
 
-def test_the_bound_never_prunes_the_optimum(monkeypatch: pytest.MonkeyPatch) -> None:
-    ctx = _context(_thickness_case("negativo DMO"))
+@pytest.mark.parametrize("case", ["sin negativo", "negativo DES", "negativo DMO"])
+def test_the_bound_never_prunes_the_optimum(case: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    ctx = _context(_thickness_case(case))
     column = ctx.project.columns[0]
     design = design_group(ctx, [column], 21.0)
     assert design is not None
@@ -350,9 +351,64 @@ def test_the_bound_never_prunes_the_optimum(monkeypatch: pytest.MonkeyPatch) -> 
     assert pruned.cost == pytest.approx(full.cost)
 
 
+@pytest.mark.parametrize("case", ["sin negativo", "negativo DES", "negativo DMO"])
+def test_the_bound_is_below_every_solution(case: str) -> None:
+    """La cota (concreto, mallas mínimas y pasadores mínimos) nunca supera el costo de una solución con ese espesor."""
+    ctx = _context(_thickness_case(case))
+    column = ctx.project.columns[0]
+    design = design_group(ctx, [column], 21.0)
+    assert design is not None
+    plan = (design.typology.lx, design.typology.ly)
+    for h in (ctx.design.h_min + index * ctx.design.h_step for index in range(7)):
+        found = typology_module._at_height(ctx, [column], 21.0, plan, h)
+        if isinstance(found, GroupDesign):
+            assert typology_module._lower_bound(ctx, [column], 21.0, plan, h) <= found.cost + 1e-6
+
+
 @pytest.mark.parametrize(("options", "message"), [([21.0, 26.0], "no es un valor comercial"), ([21.0, 28.0], "no tiene precio")])
 def test_fc_options_must_be_commercial_and_priced(options: list[float], message: str) -> None:
     data = _project()
     data["design"]["fc_options"] = options
     with pytest.raises(ValueError, match=message):
         FootingDesignProject.model_validate(data)
+
+
+def test_refining_the_chosen_groups_never_raises_the_cost(monkeypatch: pytest.MonkeyPatch) -> None:
+    """D-076: la tabla de tramos usa la búsqueda rápida y cada grupo elegido se rediseña con el barrido de espesores; un
+    grupo solo se reemplaza si baja de costo."""
+    import structurelab_rc.design.footing.typologies as typologies_module
+
+    data = _thickness_case("negativo DES")
+    data["design"]["typologies"] = 1
+    ctx = _context(data)
+    refined = design_typologies(ctx)
+    monkeypatch.setattr(typologies_module, "_refine", lambda ctx, tables, solution, run: solution)
+    plain = design_typologies(ctx)
+    assert refined.cost <= plain.cost + 1e-6
+
+
+def test_table_segments_use_the_quick_search_and_refinement_the_sweep(monkeypatch: pytest.MonkeyPatch) -> None:
+    import structurelab_rc.design.footing.typologies as typologies_module
+
+    seen: list[tuple[str, bool]] = []
+
+    def spy(ctx: Context, columns: list[DesignColumn], fc: float, start: Typology | None = None, sweep: bool = True) -> None:
+        seen.append(("grupo" if len(columns) > 1 or start is not None else "individual", sweep))
+
+    monkeypatch.setattr(typologies_module, "design_group", spy)
+    ctx = _context(_project(typologies=1, columns=2))
+    typologies_module._run(ctx, ("single", 21.0, 0))
+    typologies_module._run(ctx, ("design", 21.0, (0, 1), None))
+    typologies_module._run(ctx, ("refine", 21.0, (0, 1), None))
+    assert [sweep for _, sweep in seen] == [True, False, True]
+
+
+def test_cli_does_not_fail_on_characters_the_console_lacks(monkeypatch: pytest.MonkeyPatch) -> None:
+    import io
+    import sys
+
+    console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", console)
+    assert main(["catalog"]) == 0
+    print("C_MILP ≤ C_DP")  # sin la consola tolerante, UnicodeEncodeError
+    console.flush()

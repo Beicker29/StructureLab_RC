@@ -119,7 +119,9 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 | `design.milp_time_limit_s` | s | Límite de tiempo del MILP por f'c (por defecto 120). |
 
 Cada tipología se diseña con la planta (la primera viable y dos más), el espesor y las mallas de menor costo que aprueban
-todas las verificaciones (D-069, D-076). Después de la partición, cada columna pasa a la tipología elegida más barata
+todas las verificaciones (D-069, D-076). Los tramos de la tabla usan el menor espesor con solución; los diseños
+individuales y los grupos elegidos recorren además los espesores mayores, y un grupo elegido se reemplaza por su
+rediseño si baja de costo. Después de la partición, cada columna pasa a la tipología elegida más barata
 que la cubre si baja el costo y su grupo conserva al menos una columna (D-074). Las tipologías repetidas se permiten y se marcan.
 
 Con `milp`, después de la DP se arma el catálogo (diseños individuales y de tramo, sin repetidas), se calcula con qué
@@ -175,6 +177,7 @@ Cada verificación de `resultado.json` tiene:
 | `values` | Valores intermedios con su unidad entre corchetes, por ejemplo `phi`, `Vc [kN]` o `ex [mm]`. Los factores φ se leen de aquí. |
 | `note` | Aclaración, por ejemplo la región de contacto de la zapata. |
 | `errors` | Errores estructurados (`code`, `message`, `details`) cuando el estado no es PASS. |
+
 En zapatas, `resultado.json` agrega `soil` (datos del suelo en kPa y kN/m³) y `footings`, con la geometría, las
 propiedades calculadas, el número de casos y las verificaciones.
 

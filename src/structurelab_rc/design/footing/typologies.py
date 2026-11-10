@@ -151,8 +151,9 @@ def _run(ctx: Context, task: Task) -> Any:
     if kind == "covers":
         typology, index = args
         return covers(ctx, typology, columns[index])
+    # "design": tramo de la tabla, búsqueda rápida; "refine": grupo elegido, con el barrido de espesores (D-076).
     fc, indices, start = args
-    return design_group(ctx, [columns[index] for index in indices], fc, start=start)
+    return design_group(ctx, [columns[index] for index in indices], fc, start=start, sweep=kind == "refine")
 
 
 def _start_worker(project: FootingDesignProject, bars: Sequence[RebarSpec]) -> None:
@@ -198,9 +199,28 @@ def _for_fc(ctx: Context, fc: float, run: Runner) -> _FcSolution | str:
     if isinstance(tables, str):
         return tables
     solution = _dp(ctx, tables, run)
-    if isinstance(solution, str) or ctx.design.method == "dp":
+    if isinstance(solution, str):
         return solution
-    return _milp(ctx, tables, solution, run)
+    if ctx.design.method == "milp":
+        solution = _milp(ctx, tables, solution, run)
+        if isinstance(solution, str):
+            return solution
+    return _refine(ctx, tables, solution, run)
+
+
+def _refine(ctx: Context, tables: _Tables, solution: _FcSolution, run: Runner) -> _FcSolution:
+    """Rediseña cada grupo elegido sobre exactamente sus columnas con el barrido de espesores (D-076): la tabla de tramos
+    usa la búsqueda rápida y el barrido solo se paga donde decide el resultado. Un grupo se reemplaza solo si baja de
+    costo, así que el total nunca sube."""
+    position = _positions(ctx)
+    tasks: list[Task] = [("refine", tables.fc, tuple(position[column.id] for column in members), _largest(tables.singles, members))
+                         for _, members in solution.chosen]
+    chosen: Chosen = []
+    for (design, members), refined in zip(solution.chosen, run(tasks), strict=True):
+        chosen.append((refined, members) if refined is not None and refined.cost < design.cost else (design, members))
+    if all(new is old for (new, _), (old, _) in zip(chosen, solution.chosen, strict=True)):
+        return solution
+    return replace(solution, total=sum(design.cost for design, _ in chosen), chosen=chosen)
 
 
 def _tables(ctx: Context, fc: float, run: Runner) -> _Tables | str:
@@ -234,6 +254,9 @@ def _tables(ctx: Context, fc: float, run: Runner) -> _Tables | str:
                                          {key: value for key, value in dowels.items() if value is not None})
         else:
             pending.append((start, end))
+    # Los tramos más largos primero: cuestan más y, al final de la lista, dejaban a unos pocos procesos trabajando solos.
+    # El orden de cálculo no cambia el resultado: cada rediseño vuelve a su tramo.
+    pending.sort(key=lambda segment: (segment[0] - segment[1], segment))
     tasks = [("design", fc, tuple(position[column.id] for column in ordered[start : end + 1]),
               _largest(singles, ordered[start : end + 1])) for start, end in pending]
     table.update(zip(pending, run(tasks), strict=True))

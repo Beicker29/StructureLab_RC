@@ -790,14 +790,37 @@
   1.10 en el tiempo de las tareas (1.03 a 1.17 en tiempo de pared). Ningún diseño individual sube de costo; mejoran 1
   (NSR-10, 28 MPa) o 2 (ACI 318-25) de 73 columnas, con −0.06 a −0.08 % del costo de los individuales, siempre con
   una zapata más gruesa. Huella de los ejemplos idéntica.
-- **Estado (2026-11-09, sin cerrar):** la corrida completa de ETABS NSR-10 con `milp` se detuvo a pedido del usuario a
-  los 8 848 s sin terminar (E2: 2 338 s); llevaba unas 31 h de CPU (E2: unas 9 h) y al final solo 2 de 16 procesos
-  trabajaban, en unas pocas tareas de rediseño de tramo muy largas. Los grupos reales de la solución de E2 (3 a 25
-  columnas) cuestan 1.0 a 1.25 veces lo de antes con E3a y dan el mismo diseño, sin usar el respaldo conjunto: algunos
-  tramos de la tabla de la DP, no identificados aún, se disparan. Hipótesis por confirmar: tramos con malla superior
-  obligatoria (NSR-10 DES), donde se prueban todas las superiores en cada espesor y la cota, sin la superior, poda
-  tarde. **Pendiente:** medir una muestra de tramos reales con las dos búsquedas (espesores, superiores probadas,
-  tiempo), proponer el ajuste al usuario y repetir ETABS.
+- **Diagnóstico (2026-11-09):** 18 tramos reales de la tabla de la DP (ETABS NSR-10, f'c 24.5, 3 por rango de longitud),
+  con la búsqueda de E2 y la de E3a. Ningún tramo se dispara (el más lento, 40 s), pero todos cuestan unas 3 veces más
+  (CPU de la tabla por f'c: 3.6 h con E2 y 13.8 h con E3a): el barrido de espesores subía unos 12 espesores sobre el
+  mejor porque la cota (concreto y malla inferior mínima) era holgada. La hipótesis de la malla superior no se confirmó
+  (unas 2 verificaciones por espesor). Los costos de los 18 tramos fueron idénticos a los de E2. El final con 2 de 16
+  procesos se debía al reparto: los últimos lotes juntaban los tramos más largos.
+- **Ajustes aprobados por el usuario:**
+  1. La cota suma los pasadores mínimos de cada columna y, si la malla superior es obligatoria (momento negativo sin
+     concreto simple permitido), su acero mínimo en las direcciones con momento negativo; todo está en cualquier
+     solución, así que sigue siendo exacta. Con ella la tabla quedó en 1.43 veces E2 (NSR-10), pero ETABS ACI 318-25
+     tardó 5 759 s (E2: 2 539 s) con el mismo costo.
+  2. Los tramos más largos se reparten primero (el resultado no cambia).
+  3. El barrido de espesores se aplica solo donde decide el resultado: los diseños individuales y el refinamiento de
+     cada grupo elegido por la DP o el MILP (`_refine`: rediseño con barrido sobre exactamente sus columnas, que se
+     reemplaza solo si baja de costo). La tabla de tramos usa la búsqueda rápida (`design_group(..., sweep=False)`:
+     el menor espesor con solución, con las mallas de menor costo).
+  4. La consola del CLI reemplaza los caracteres que no tiene (el "≤" de la nota del MILP interrumpía el comando en
+     cp1252 con la salida redirigida, aunque los resultados ya estaban escritos).
+- **Resultado (ETABS, 73 columnas, N = 6, `milp`, 16 procesos):**
+
+  | Perfil | E2: costo, tiempo | E3a cerrada: costo, tiempo |
+  | --- | --- | --- |
+  | NSR-10 | 21 MPa, 605 443 055; 2 338 s | 21 MPa, 605 443 055; 1 560 s (−33 %) |
+  | ACI 318-25 | 21 MPa, 712 419 298; 2 539 s | 21 MPa, 712 419 298; 1 717 s (−32 %) |
+
+  Mismas tipologías que con el barrido en toda la tabla; óptimo certificado; `report` PASS. Huella de los ejemplos
+  idéntica. En estos proyectos E3a no baja el costo (sus mejoras de −0.06 a −0.08 % en 1 o 2 diseños individuales no
+  cambian las tipologías finales); la búsqueda de plantas sigue siendo heurística.
+- **Pruebas:** la poda no pierde el óptimo y la cota no supera el costo de una solución real (sin negativo, DES y DMO);
+  el refinamiento nunca sube el costo; la tabla usa la búsqueda rápida y el refinamiento el barrido; la consola cp1252
+  no interrumpe el CLI.
 
 ## Consultas abiertas
 

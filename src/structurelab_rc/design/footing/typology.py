@@ -383,44 +383,73 @@ def _concrete_cost(ctx: Context, typology: Typology, columns: Sequence[DesignCol
 
 
 def _lower_bound(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tuple[float, float], h: float) -> float:
-    """Cota inferior del costo con este espesor (D-076): concreto más la malla inferior mínima, con el acero mínimo del
-    perfil, las longitudes de _mat_mass y la menor masa por área de las barras candidatas; sin pasadores ni malla
-    superior. Crece con h."""
+    """Cota inferior del costo con este espesor (D-076): concreto, la malla inferior mínima (acero mínimo del perfil, las
+    longitudes de _mat_mass y la menor masa por área de las barras candidatas), los pasadores mínimos de cada columna (los
+    de menor masa entre sus candidatos) y, si la malla superior es obligatoria (momento negativo sin concreto simple
+    permitido, D-072), su acero mínimo en las direcciones con momento negativo. Todo lo que se suma está en cualquier
+    solución con este espesor, así que la poda no pierde el óptimo; crece con h."""
     design = ctx.design
     lx, ly = plan
     ratio = ctx.profile.footing.min_reinforcement_ratio(ctx.project.materials.fy)
     unit = min(ctx.spec(designation).mass_kg_m / ctx.spec(designation).area_mm2 for designation in design.bars)
-    # Barras x: As,min con el ancho ly y largo lx − 2r; barras y: ancho lx y largo ly − 2r (kg).
-    steel = ratio * h * (ly * (lx - 2 * design.cover) + lx * (ly - 2 * design.cover)) * unit / 1000
-    typology = Typology(fc, lx, ly, h, {}, None)
-    return _concrete_cost(ctx, typology, columns) + len(columns) * steel * design.prices.steel_per_kg
+    # Barras x: As,min con el ancho ly y largo lx − 2r; barras y: ancho lx y largo ly − 2r (kg por zapata).
+    per_direction = {"x": ratio * h * ly * (lx - 2 * design.cover) * unit / 1000,
+                     "y": ratio * h * lx * (ly - 2 * design.cover) * unit / 1000}
+    steel = len(columns) * sum(per_direction.values())
+    bars = {"designation": design.bars[0], "spacing": design.spacing_step * 4}
+    provisional = Typology(fc, lx, ly, h, {"first": "x", "end": design.end, "x": bars, "y": bars}, None)
+    for column in columns:
+        steel += min(option["count"] * ctx.spec(option["designation"]).mass_kg_m
+                     for option in _dowel_options(ctx, provisional, column)) * (h - design.cover) / 1000
+    if not ctx.profile.plain.permitted_in_foundations(ctx.project.seismic.level):
+        negative = _demands(ctx, columns, provisional, -1.0)
+        steel += len(columns) * sum(per_direction[direction] for direction, moment in negative.items() if moment > 0)
+    return _concrete_cost(ctx, provisional, columns) + steel * design.prices.steel_per_kg
+
+
+def _heights(ctx: Context, h_start: float) -> list[float]:
+    count = int(round((ctx.design.h_max - h_start) / ctx.design.h_step)) + 1
+    return [h_start + index * ctx.design.h_step for index in range(max(count, 1))]
+
+
+def _thinnest(
+    ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tuple[float, float], heights: list[float]
+) -> tuple[GroupDesign | bool, int]:
+    """El menor espesor con solución en esta planta, por bisección, y su índice en heights (búsqueda rápida de la tabla de
+    tramos). False si la planta no cumple el suelo ni con el espesor inicial y True si no hay solución hasta h_max."""
+    first = _at_height(ctx, columns, fc, plan, heights[0])
+    if first == "soil":
+        return False, 0
+    if isinstance(first, GroupDesign):
+        return first, 0
+    best: GroupDesign | None = None
+    lowest = 0
+    low, high = 1, len(heights) - 1
+    while low <= high:
+        middle = (low + high) // 2
+        result = _at_height(ctx, columns, fc, plan, heights[middle])
+        if isinstance(result, GroupDesign):
+            best, lowest, high = result, middle, middle - 1
+        elif result == "soil":
+            high = middle - 1  # el peso propio ya no cabe: espesores menores
+        else:
+            low = middle + 1
+    return (True, 0) if best is None else (best, lowest)
+
+
+def _quick_plan(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tuple[float, float], h_start: float) -> GroupDesign | bool:
+    """Sin barrido: el menor espesor con solución (tabla de tramos, D-076)."""
+    return _thinnest(ctx, columns, fc, plan, _heights(ctx, h_start))[0]
 
 
 def _for_plan(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tuple[float, float], h_start: float) -> GroupDesign | bool:
     """La solución de menor costo en esta planta (D-076): el menor espesor con solución, por bisección, y luego los
     mayores hasta h_max, mientras la cota inferior no alcance el mejor costo (un espesor que no cumple el suelo se salta).
     False si la planta no cumple el suelo ni con el espesor inicial y True si no hay solución hasta h_max."""
-    design = ctx.design
-    count = int(round((design.h_max - h_start) / design.h_step)) + 1
-    heights = [h_start + index * design.h_step for index in range(max(count, 1))]
-    first = _at_height(ctx, columns, fc, plan, heights[0])
-    if first == "soil":
-        return False
-    best = first if isinstance(first, GroupDesign) else None
-    lowest = 0
-    if best is None:
-        low, high = 1, len(heights) - 1
-        while low <= high:
-            middle = (low + high) // 2
-            result = _at_height(ctx, columns, fc, plan, heights[middle])
-            if isinstance(result, GroupDesign):
-                best, lowest, high = result, middle, middle - 1
-            elif result == "soil":
-                high = middle - 1  # el peso propio ya no cabe: espesores menores
-            else:
-                low = middle + 1
-        if best is None:
-            return True
+    heights = _heights(ctx, h_start)
+    best, lowest = _thinnest(ctx, columns, fc, plan, heights)
+    if not isinstance(best, GroupDesign):
+        return best
     for h in heights[lowest + 1 :]:
         if _lower_bound(ctx, columns, fc, plan, h) >= best.cost:
             break  # la cota crece con h: ningún espesor mayor puede ganar
@@ -430,16 +459,20 @@ def _for_plan(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tu
     return best
 
 
-def design_group(ctx: Context, columns: Sequence[DesignColumn], fc: float, start: Typology | None = None) -> GroupDesign | None:
+def design_group(
+    ctx: Context, columns: Sequence[DesignColumn], fc: float, start: Typology | None = None, sweep: bool = True
+) -> GroupDesign | None:
     """La tipología más económica entre la menor planta viable y las _EXTRA_PLANS siguientes (D-069), o None si nada
-    cumple dentro de los límites."""
+    cumple dentro de los límites. sweep recorre los espesores mayores que el mínimo con solución (D-076); sin él, la
+    búsqueda rápida para la tabla de tramos."""
     initial = _initial_size(ctx, columns)
     lower = (start.lx, start.ly) if start is not None else (initial, initial)
     h_start = start.h if start is not None else ctx.design.h_min
     best: GroupDesign | None = None
     extra = None
+    search = _for_plan if sweep else _quick_plan
     for plan in _plans(ctx, columns, lower):
-        result = _for_plan(ctx, columns, fc, plan, h_start)
+        result = search(ctx, columns, fc, plan, h_start)
         if isinstance(result, GroupDesign) and (best is None or result.cost < best.cost):
             best = result
         if best is not None:

@@ -1,9 +1,11 @@
 """Interfaz de línea de comandos."""
 
 import argparse
+import io
 import json
 import os
 import platform
+import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
@@ -185,7 +187,16 @@ def _report(project: Path, output: Path, full: bool) -> int:
     return 1 if report.status == Status.FAIL else 0
 
 
+def _tolerant_console() -> None:
+    """Una consola que no tiene un carácter (por ejemplo, "≤" en cp1252 de Windows con la salida redirigida) lo reemplaza
+    en lugar de interrumpir el comando cuando los resultados ya están escritos."""
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(errors="replace")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
+    _tolerant_console()
     parser = argparse.ArgumentParser(prog="structurelab-rc", description="Concreto reforzado: verificación, diseño y despiece.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     commands = parser.add_subparsers(dest="command", required=True)

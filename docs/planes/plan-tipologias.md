@@ -11,7 +11,7 @@ una sesión aparte, se cierra con su criterio de aceptación y actualiza la tabl
 | E0. Medición | Cerrada (2026-11-09) | [`docs/mediciones/E0.md`](../mediciones/E0.md): 92 % del tiempo en rediseños de tramo; matriz completa ≈ 1 % del tiempo; NSR-10 con 1 repetida; reasignables 2.2 % (NSR-10) y 7.9–8.3 % (ACI) |
 | E1. DP: repetidas marcadas y reasignación | Cerrada (2026-11-09) | D-074: huella idéntica; ETABS −3.2 % (NSR-10, f'c 21 → 24.5) y −7.9 % (ACI); `report` PASS |
 | E2. Generador compartido y MILP | Cerrada (2026-11-09) | D-075: huella idéntica; ETABS −3.0 % (NSR-10) y −4.6 % (ACI) frente a E1, óptimo certificado; `milp` por defecto |
-| E3a. Espesor y mallas de menor costo en `design_group` | En curso: implementada y probada; la corrida de ETABS no terminó (tiempo); pendiente diagnosticar tramos lentos | D-076 |
+| E3a. Espesor y mallas de menor costo en `design_group` | Cerrada (2026-11-09) | D-076: mismo costo en los dos proyectos de ETABS; tiempo −33 % (NSR-10) y −32 % (ACI) frente a E2; barrido solo en individuales y grupos elegidos; huella idéntica |
 | E3b. Velocidad: rediseñar solo lo que proponga el MILP | Pendiente (según E2 y E3a) | — |
 | Curva costo–N | Fase siguiente | — |
 
@@ -228,6 +228,9 @@ listado y justificado). Costo y tiempo antes y después en los dos proyectos de 
 ## E3b. Velocidad (según E2 y E3a)
 
 **Objetivo:** bajar el tiempo, que hoy se va casi todo en los rediseños de tramo (E0: 92 %).
+
+**Ya hecho en E3a (D-076):** los grupos elegidos se refinan con el barrido de espesores sobre exactamente sus columnas, y
+la tabla usa la búsqueda rápida.
 
 **Idea:** partir de los diseños individuales y rediseñar con `design_group` solo los grupos que proponga el MILP, sobre
 exactamente esas columnas; agregar esos rediseños al catálogo, calcular la cobertura solo de los candidatos nuevos y
