@@ -822,6 +822,40 @@
   el refinamiento nunca sube el costo; la tabla usa la búsqueda rápida y el refinamiento el barrido; la consola cp1252
   no interrumpe el CLI.
 
+### D-077: diseño por tipologías iterativo sin tabla de tramos: `milp_iter` (E3b)
+
+- **Fecha:** 2026-11-10
+- **Problema:** con `milp`, el 92 % del tiempo se va en diseñar los 2402 tramos de la tabla de la DP (E0), aunque el
+  MILP solo usa unos pocos.
+- **Decisión del usuario:** método `design.method = "milp_iter"` (`--method milp_iter`), con `design.iter_max` (10 por
+  defecto) y `design.iter_time_limit_s` (600 s por f'c por defecto); `milp` sigue por defecto hasta que el usuario decida.
+- **Implementación** (`design/footing/typologies.py`, `_iterative` y `_proposals`; las verificaciones no cambian):
+  1. Catálogo inicial: los diseños individuales y un diseño de todas las columnas (con él siempre hay N tipologías que
+     cubren todo: esa y N − 1 individuales). Cobertura con `covers()` solo de los candidatos nuevos.
+  2. En cada iteración, MILP desde la solución anterior (el catálogo solo crece: el costo nunca sube) y rediseños de lo
+     propuesto: cada grupo de dos o más columnas sobre exactamente sus columnas, con el barrido de espesores (D-076), y,
+     con la búsqueda rápida, el reparto de cada par de grupos: la unión de sus columnas, ordenada por el costo de su
+     diseño individual, cortada en dos en cada posición.
+  3. Para cuando el costo no baja, cuando los rediseños no agregan candidatos, a las `iter_max` iteraciones o al pasar
+     `iter_time_limit_s`. Los grupos finales se refinan con el barrido (la misma función que `milp`).
+  4. La matriz de costos por par y el armado de los grupos se comparten con `milp` (`_pair_costs`, `_chosen`).
+- **Intentos medidos antes del reparto de pares:** solo rediseñar los grupos propuestos se detenía en la primera
+  iteración (el rediseño repetía la tipología) y NSR-10 quedaba +0.28 %; los subgrupos de cada grupo y el reparto de
+  pares consecutivos no bastaron: la tipología que faltaba juntaba columnas de dos grupos no consecutivos.
+- **Resultado (ETABS, 73 columnas, N = 6, 16 procesos):**
+
+  | Perfil | `milp`: costo, tiempo | `milp_iter`: costo, tiempo | Por f'c: `milp` → `milp_iter` |
+  | --- | --- | --- | --- |
+  | NSR-10 | 21 MPa, 605 443 055; 1 560 s | 21 MPa, 605 443 055; 510 s (−67 %) | 21: igual; 24.5: 609.74 → 608.84 M; 28: 622.55 → 621.86 M |
+  | ACI 318-25 | 21 MPa, 712 419 298; 1 717 s | 21 MPa, 712 419 298; 533 s (−69 %) | 21, 24.5 y 28: iguales |
+
+  Dos o tres iteraciones por f'c; óptimo certificado del MILP en cada una; `report` PASS. `milp_iter` puede mejorar a
+  `milp` porque sus grupos no tienen que ser tramos continuos de la lista ordenada. Huella de los ejemplos idéntica
+  (`milp` sigue por defecto).
+- **Pruebas:** costo de las iteraciones no creciente y mismo costo que `milp` con 1, 2 y 3 tipologías; mismo resultado
+  con 1 y 2 procesos (el tiempo de cada iteración no entra en la comparación); límite de iteraciones; el proyecto
+  diseñado pasa la verificación completa.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

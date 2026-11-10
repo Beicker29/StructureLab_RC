@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from structurelab_rc import __version__
-from structurelab_rc.design.footing.typologies import MilpInfo
+from structurelab_rc.design.footing.typologies import Iteration, MilpInfo
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.engine import (
@@ -94,6 +94,11 @@ def _import_etabs_footings(service: Path, factored: Path, template: Path, output
     return 0
 
 
+def _iterations(items: Sequence[Iteration]) -> list[dict[str, Any]]:
+    return [{"number": item.number, "candidates": item.candidates, "cost": round(item.cost, 2), "status": item.status,
+             "seconds": round(item.seconds, 1)} for item in items]
+
+
 def _design_footings(path: Path, output: Path, workers: int | None, profile: bool, method: str | None) -> int:
     processes = workers or os.cpu_count() or 1
     measurement = None
@@ -114,6 +119,7 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
     (output / "proyecto.json").write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     summary = {"method": result.method, "fc [MPa]": result.fc, "cost": round(result.cost, 2),
                **({"milp": _milp_summary(result.milp)} if result.milp is not None else {}),
+               **({"iterations": _iterations(result.iterations)} if result.iterations else {}),
                "cost_before_reassignment": round(result.cost_before_reassignment, 2),
                "distinct_count": result.distinct_count,
                "duplicates": [{"typologies": list(group.typologies), "at_limit": list(group.at_limit)} for group in result.duplicates],
@@ -121,7 +127,8 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
                               for move in result.reassigned],
                "by_fc": [{"fc [MPa]": option.fc, "cost": None if option.cost is None else round(option.cost, 2),
                           "distinct_count": option.distinct_count, **({"failure": option.failure} if option.failure else {}),
-                          **({"milp": _milp_summary(option.milp)} if option.milp is not None else {})}
+                          **({"milp": _milp_summary(option.milp)} if option.milp is not None else {}),
+                          **({"iterations": _iterations(option.iterations)} if option.iterations else {})}
                          for option in result.options],
                "typologies": [
         {"name": item.name, "lx [mm]": item.design.typology.lx, "ly [mm]": item.design.typology.ly,
@@ -139,6 +146,8 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
         milp = result.milp
         print(f"MILP: {milp.status}; costo DP {milp.dp_cost:.2f} ({milp.dp_distinct_count} distintas); "
               f"{milp.candidates} candidatos; {milp.seconds:.1f} s" + (f"; {milp.note}" if milp.note else ""))
+    for step in result.iterations:
+        print(f"Iteracion {step.number}: {step.candidates} candidatos; costo {step.cost:.2f}; {step.status}; {step.seconds:.1f} s")
     for group in result.duplicates:
         limit = f" (en el limite {', '.join(group.at_limit)})" if group.at_limit else ""
         print(f"ADVERTENCIA: tipologias repetidas {' = '.join(group.typologies)}{limit}; "
@@ -221,8 +230,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     designer.add_argument("--workers", type=int, help="procesos en paralelo (por defecto, los nucleos del equipo; 1: sin paralelo)")
     designer.add_argument("--profile", action="store_true",
                           help="escribe ademas medicion.json: tiempos por tarea y analisis de la solucion (no cambia el resultado)")
-    designer.add_argument("--method", choices=("dp", "milp"),
-                          help="dp (particion) o milp (asignacion optima, requiere structurelab-rc[opt]); reemplaza design.method")
+    designer.add_argument("--method", choices=("dp", "milp", "milp_iter"),
+                          help="dp (particion), milp (asignacion optima) o milp_iter (iterativo, sin tabla de tramos); los dos "
+                               "ultimos requieren structurelab-rc[opt]; reemplaza design.method")
     reporter = commands.add_parser("report", help="verifica un proyecto y escribe resultado.json, memoria.txt y memoria.pdf")
     reporter.add_argument("project", type=Path, help="ruta del archivo JSON")
     reporter.add_argument("--output", type=Path, required=True, help="carpeta de salida, por ejemplo results/mi_proyecto")

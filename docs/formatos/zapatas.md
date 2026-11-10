@@ -115,8 +115,10 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 | `design.surcharge_dead_kNm2`, `design.surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas. |
 | `design.bars`, `design.spacing_step`, `design.end` | -, mm, texto | Barras permitidas para las mallas, paso de separación y extremo de las barras. |
 | `design.dowel_bars` | - | Barras permitidas para los pasadores. |
-| `design.method` | texto | `milp` (por defecto desde E2; requiere `pip install structurelab-rc[opt]`) o `dp` (solo la partición y la reasignación). `--method` en la CLI lo reemplaza (D-075). |
-| `design.milp_time_limit_s` | s | Límite de tiempo del MILP por f'c (por defecto 120). |
+| `design.method` | texto | `milp` (por defecto desde E2; requiere `pip install structurelab-rc[opt]`), `dp` (solo la partición y la reasignación) o `milp_iter` (iterativo, sin tabla de tramos, D-077; requiere `[opt]`). `--method` en la CLI lo reemplaza (D-075). |
+| `design.milp_time_limit_s` | s | Límite de tiempo del MILP (por f'c con `milp`; por solución con `milp_iter`; por defecto 120). |
+| `design.iter_max` | - | Con `milp_iter`: iteraciones por f'c (por defecto 10). |
+| `design.iter_time_limit_s` | s | Con `milp_iter`: tiempo por f'c (por defecto 600). |
 
 Cada tipología se diseña con la planta (la primera viable y dos más), el espesor y las mallas de menor costo que aprueban
 todas las verificaciones (D-069, D-076). Los tramos de la tabla usan el menor espesor con solución; los diseños
@@ -136,10 +138,11 @@ hay tipologías repetidas, su `description` termina con una advertencia que la m
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
-| `method` | texto | `dp` o `milp`. |
+| `method` | texto | `dp`, `milp` o `milp_iter`. |
 | `fc [MPa]` | MPa | f'c elegido: el de menor costo total. |
 | `cost` | moneda | Costo total (con `dp`, después de la reasignación; con `milp`, el del MILP, o el de la DP si el MILP no tiene solución). |
 | `milp` | objeto | Solo con `milp`: `status` (`optimal`: óptimo certificado en el catálogo; `time_limit`: sin certificar; `infeasible`: sin N tipologías distintas, queda la DP), `dp_cost`, `dp_distinct_count`, `milp_cost`, `candidates`, `seconds` (matriz y solucionador) y `note`. |
+| `iterations` | lista | Solo con `milp_iter`: cada iteración del f'c elegido con `number`, `candidates`, `cost`, `status` y `seconds` (también en `by_fc`). |
 | `cost_before_reassignment` | moneda | Costo de la partición, antes de reasignar (con `milp`, igual a `cost`). |
 | `distinct_count` | - | Tipologías distintas; menor que el número pedido si hay repetidas. |
 | `duplicates` | lista | Grupos de tipologías idénticas (mismos f'c, lx, ly, h y mallas): `typologies` (nombres) y `at_limit` (`plan_max` si el paso siguiente de planta lo supera, `h_max` si el de espesor lo supera; vacía si ninguno). |

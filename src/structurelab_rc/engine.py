@@ -148,7 +148,8 @@ def design_footings(
     path: Path, workers: int = 1, method: str | None = None
 ) -> tuple[dict[str, Any] | None, DesignResult | None, Check]:
     """Diseño por tipologías (D-069): el proyecto de verificación con una zapata por columna y el resumen; workers es el
-    número de procesos entre los que se reparte (no cambia el resultado); method (dp o milp) reemplaza design.method."""
+    número de procesos entre los que se reparte (no cambia el resultado); method (dp, milp o milp_iter) reemplaza
+    design.method."""
     project, result, check, _ = _design_footings(path, workers, method, profile=False)
     return project, result, check
 
@@ -172,8 +173,8 @@ def _design_footings(
     validation = _validate_design(design)
     if validation.status is Status.FAIL:
         return None, None, validation, None
-    if design.design.method == "milp" and not solver_available():
-        message = "El metodo milp necesita el solucionador highspy: instale  pip install structurelab-rc[opt]"
+    if design.design.method in ("milp", "milp_iter") and not solver_available():
+        message = f"El metodo {design.design.method} necesita el solucionador highspy: instale  pip install structurelab-rc[opt]"
         return None, None, check_from_errors(CHECK_NAME, [invalid_input(message)]), None
     ctx = Context(design, PROFILES[design.profile], load_engine().bars)
     measurement = None

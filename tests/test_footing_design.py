@@ -412,3 +412,43 @@ def test_cli_does_not_fail_on_characters_the_console_lacks(monkeypatch: pytest.M
     assert main(["catalog"]) == 0
     print("C_MILP ≤ C_DP")  # sin la consola tolerante, UnicodeEncodeError
     console.flush()
+
+
+def _iterative_project(typologies: int, columns: int = 3, **design: Any) -> dict[str, Any]:
+    data = _project(typologies=typologies, columns=columns)
+    data["design"].update({"method": "milp_iter", **design})
+    return data
+
+
+@pytest.mark.parametrize("typologies", [1, 2, 3])
+def test_iterative_milp_matches_milp_and_never_raises_the_cost(typologies: int) -> None:
+    """E3b (D-077): sin tabla de tramos, el catálogo crece con los rediseños de los grupos propuestos y el costo de las
+    iteraciones nunca sube; en estos casos llega al mismo costo que milp."""
+    iterative = design_typologies(_context(_iterative_project(typologies)))
+    reference = _project(typologies=typologies, columns=3)
+    reference["design"]["method"] = "milp"
+    assert iterative.iterations
+    costs = [step.cost for step in iterative.iterations]
+    assert costs == sorted(costs, reverse=True)
+    assert iterative.cost == pytest.approx(min(costs))
+    assert iterative.cost == pytest.approx(design_typologies(_context(reference)).cost)
+
+
+def test_iterative_milp_is_the_same_with_any_number_of_workers() -> None:
+    data = _iterative_project(2)
+    assert design_typologies(_context(data), workers=2) == design_typologies(_context(data), workers=1)
+
+
+def test_iterative_milp_respects_the_iteration_limit() -> None:
+    result = design_typologies(_context(_iterative_project(2, iter_max=1)))
+    assert len(result.iterations) == 1
+
+
+def test_iterative_milp_designed_project_verifies(tmp_path: Path) -> None:
+    source = tmp_path / "diseno.json"
+    source.write_text(json.dumps(_iterative_project(2)), encoding="utf-8")
+    assert main(["design-footings", str(source), "--output", str(tmp_path / "salida"), "--workers", "1"]) == 0
+    summary = json.loads((tmp_path / "salida" / "tipologias.json").read_text(encoding="utf-8"))
+    assert summary["method"] == "milp_iter" and summary["iterations"]
+    _, checks = run_project(tmp_path / "salida" / "proyecto.json")
+    assert {str(check.status) for check in checks} == {"PASS"}
