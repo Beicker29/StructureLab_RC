@@ -828,7 +828,8 @@
 - **Problema:** con `milp`, el 92 % del tiempo se va en diseñar los 2402 tramos de la tabla de la DP (E0), aunque el
   MILP solo usa unos pocos.
 - **Decisión del usuario:** método `design.method = "milp_iter"` (`--method milp_iter`), con `design.iter_max` (10 por
-  defecto) y `design.iter_time_limit_s` (600 s por f'c por defecto); `milp` sigue por defecto hasta que el usuario decida.
+  defecto) y `design.iter_time_limit_s` (600 s por f'c por defecto). Al cumplirse la aceptación, el usuario decidió que
+  `milp_iter` sea el método por defecto (2026-11-10); `milp` y `dp` siguen disponibles con `--method`.
 - **Implementación** (`design/footing/typologies.py`, `_iterative` y `_proposals`; las verificaciones no cambian):
   1. Catálogo inicial: los diseños individuales y un diseño de todas las columnas (con él siempre hay N tipologías que
      cubren todo: esa y N − 1 individuales). Cobertura con `covers()` solo de los candidatos nuevos.
@@ -851,7 +852,7 @@
 
   Dos o tres iteraciones por f'c; óptimo certificado del MILP en cada una; `report` PASS. `milp_iter` puede mejorar a
   `milp` porque sus grupos no tienen que ser tramos continuos de la lista ordenada. Huella de los ejemplos idéntica
-  (`milp` sigue por defecto).
+  con los dos métodos (también con `milp_iter` por defecto).
 - **Pruebas:** costo de las iteraciones no creciente y mismo costo que `milp` con 1, 2 y 3 tipologías; mismo resultado
   con 1 y 2 procesos (el tiempo de cada iteración no entra en la comparación); límite de iteraciones; el proyecto
   diseñado pasa la verificación completa.

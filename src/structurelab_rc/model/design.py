@@ -73,7 +73,7 @@ class FootingDesign(_Input):
     spacing_step: PositiveFloat
     end: Literal["straight", "hook"]
     dowel_bars: tuple[str, ...] = Field(min_length=1)
-    method: Literal["dp", "milp", "milp_iter"] = "milp"  # E2, D-075: milp (por defecto) y milp_iter (E3b, D-077) exigen [opt]
+    method: Literal["dp", "milp", "milp_iter"] = "milp_iter"  # D-077: milp_iter (por defecto desde E3b) y milp exigen [opt]
     milp_time_limit: PositiveFloat = Field(120.0, validation_alias="milp_time_limit_s")  # s por f'c (cada solución del MILP)
     iter_max: PositiveInt = 10  # milp_iter: iteraciones por f'c
     iter_time_limit: PositiveFloat = Field(600.0, validation_alias="iter_time_limit_s")  # milp_iter: s por f'c

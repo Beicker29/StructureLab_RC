@@ -115,7 +115,7 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 | `design.surcharge_dead_kNm2`, `design.surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas. |
 | `design.bars`, `design.spacing_step`, `design.end` | -, mm, texto | Barras permitidas para las mallas, paso de separación y extremo de las barras. |
 | `design.dowel_bars` | - | Barras permitidas para los pasadores. |
-| `design.method` | texto | `milp` (por defecto desde E2; requiere `pip install structurelab-rc[opt]`), `dp` (solo la partición y la reasignación) o `milp_iter` (iterativo, sin tabla de tramos, D-077; requiere `[opt]`). `--method` en la CLI lo reemplaza (D-075). |
+| `design.method` | texto | `milp_iter` (por defecto desde E3b: iterativo, sin tabla de tramos, D-077), `milp` (asignación óptima sobre la tabla completa de tramos, D-075) o `dp` (solo la partición y la reasignación). `milp_iter` y `milp` requieren `pip install structurelab-rc[opt]`. `--method` en la CLI lo reemplaza. |
 | `design.milp_time_limit_s` | s | Límite de tiempo del MILP (por f'c con `milp`; por solución con `milp_iter`; por defecto 120). |
 | `design.iter_max` | - | Con `milp_iter`: iteraciones por f'c (por defecto 10). |
 | `design.iter_time_limit_s` | s | Con `milp_iter`: tiempo por f'c (por defecto 600). |

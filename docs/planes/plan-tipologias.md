@@ -12,7 +12,7 @@ una sesión aparte, se cierra con su criterio de aceptación y actualiza la tabl
 | E1. DP: repetidas marcadas y reasignación | Cerrada (2026-11-09) | D-074: huella idéntica; ETABS −3.2 % (NSR-10, f'c 21 → 24.5) y −7.9 % (ACI); `report` PASS |
 | E2. Generador compartido y MILP | Cerrada (2026-11-09) | D-075: huella idéntica; ETABS −3.0 % (NSR-10) y −4.6 % (ACI) frente a E1, óptimo certificado; `milp` por defecto |
 | E3a. Espesor y mallas de menor costo en `design_group` | Cerrada (2026-11-09) | D-076: mismo costo en los dos proyectos de ETABS; tiempo −33 % (NSR-10) y −32 % (ACI) frente a E2; barrido solo en individuales y grupos elegidos; huella idéntica |
-| E3b. Velocidad: rediseñar solo lo que proponga el MILP | Cerrada (2026-11-10) | D-077: `milp_iter` iguala el costo de `milp` en los dos proyectos de ETABS (y lo mejora en NSR-10 con 24.5 y 28 MPa) con −67 % y −69 % de tiempo; `milp` sigue por defecto |
+| E3b. Velocidad: rediseñar solo lo que proponga el MILP | Cerrada (2026-11-10) | D-077: `milp_iter` iguala el costo de `milp` en los dos proyectos de ETABS (y lo mejora en NSR-10 con 24.5 y 28 MPa) con −67 % y −69 % de tiempo; `milp_iter` por defecto desde el cierre |
 | Curva costo–N | Fase siguiente | — |
 
 Ninguna etapa empieza si la anterior no está cerrada y su resultado registrado. Las decisiones de continuar o no
