@@ -6,7 +6,7 @@ base. Las propiedades derivadas (área, inercias, módulos, núcleo central, pes
 nunca se declaran.
 """
 
-from typing import Literal, Self
+from typing import Literal, Protocol, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
@@ -18,6 +18,29 @@ N_MM3_PER_KN_M3 = 1e-6
 
 class _Input(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+
+
+class FootingBase(Protocol):
+    """Lo que la revisión geotécnica necesita de una zapata, aislada o combinada (D-080): su base rectangular, su
+    espesor y la altura del relleno."""
+
+    @property
+    def id(self) -> str: ...
+
+    @property
+    def lx(self) -> float: ...
+
+    @property
+    def ly(self) -> float: ...
+
+    @property
+    def h(self) -> float: ...
+
+    @property
+    def fill_height(self) -> float: ...
+
+    @property
+    def area(self) -> float: ...
 
 
 class Soil(_Input):

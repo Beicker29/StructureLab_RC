@@ -1,0 +1,582 @@
+{
+  "description": "Revisión geotécnica de zapatas combinadas (D-080): resultante de las dos columnas por suma de r × F, presión de Bellos y Bakas por equilibrio independiente, deslizamiento y volcamiento.",
+  "soil": {
+    "allowable_pressure_kPa": 300.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.5,
+    "adhesion_kPa": 10.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "bearing_clause": "C.15.2.2",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "simetrica",
+      "description": "dos columnas iguales simétricas: resultante en el centroide y presión uniforme",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "P_kN": 900.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "P_kN": 900.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        }
+      },
+      "expected": {
+        "D+L": {
+          "N_kN": 2291.475,
+          "Mx_base_kNm": 0.0,
+          "My_base_kNm": 0.0,
+          "equilibrium": true,
+          "ex_mm": 0.0,
+          "ey_mm": -0.0,
+          "pmax_kPa": 190.95624999999998,
+          "corners_kPa": [
+            190.95624999999998,
+            190.95624999999998,
+            190.95624999999998,
+            190.95624999999998
+          ],
+          "capacity_kPa": 300.0,
+          "bearing": "PASS",
+          "contact_fraction": 1.0,
+          "contact": "PASS",
+          "sliding_demand_kN": 0.0,
+          "sliding_capacity_kN": 1316.7675,
+          "sliding": "PASS",
+          "overturning_demand_kNm": 0.0,
+          "overturning_capacity_kNm": 6874.424999999999,
+          "overturning": "PASS"
+        }
+      }
+    },
+    {
+      "id": "desigual",
+      "description": "cargas desiguales: la resultante se corre hacia la columna más cargada",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "P_kN": 600.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "P_kN": 1400.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        }
+      },
+      "expected": {
+        "D+L": {
+          "N_kN": 2491.475,
+          "Mx_base_kNm": 0.0,
+          "My_base_kNm": 1600.0,
+          "equilibrium": true,
+          "ex_mm": 642.1898674479977,
+          "ey_mm": -0.0,
+          "pmax_kPa": 340.95624999999995,
+          "corners_kPa": [
+            74.28958333333335,
+            340.95624999999995,
+            340.95624999999995,
+            74.28958333333335
+          ],
+          "capacity_kPa": 300.0,
+          "bearing": "FAIL",
+          "contact_fraction": 1.0,
+          "contact": "PASS",
+          "sliding_demand_kN": 0.0,
+          "sliding_capacity_kN": 1416.7675,
+          "sliding": "PASS",
+          "overturning_demand_kNm": 3200.0,
+          "overturning_capacity_kNm": 7474.424999999999,
+          "overturning": "PASS"
+        }
+      }
+    },
+    {
+      "id": "borde-pedestal",
+      "description": "columna de borde, pedestal, columnas desplazadas en Y y momentos en los dos ejes",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 600.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 400.0,
+            "x": -2775.0,
+            "y": 150.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "P_kN": 800.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 30.0,
+                "My_kNm": -60.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 1500.0,
+            "y": -100.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "P_kN": 1200.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": -20.0,
+                "My_kNm": 80.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        }
+      },
+      "expected": {
+        "D+L": {
+          "N_kN": 2497.5455,
+          "Mx_base_kNm": 10.071549999999993,
+          "My_base_kNm": -397.92505000000006,
+          "equilibrium": true,
+          "ex_mm": -159.32644670537536,
+          "ey_mm": -4.032579186245052,
+          "pmax_kPa": 243.80710000000002,
+          "corners_kPa": [
+            243.80710000000002,
+            177.48625833333332,
+            172.45048333333332,
+            238.77132500000002
+          ],
+          "capacity_kPa": 300.0,
+          "bearing": "PASS",
+          "contact_fraction": 1.0,
+          "contact": "PASS",
+          "sliding_demand_kN": 0.0,
+          "sliding_capacity_kN": 1419.80275,
+          "sliding": "PASS",
+          "overturning_demand_kNm": 795.8501000000001,
+          "overturning_capacity_kNm": 7492.6365000000005,
+          "overturning": "PASS"
+        }
+      }
+    },
+    {
+      "id": "sismo",
+      "description": "combinación con sismo: cortantes, momentos y qa × 1.33",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "P_kN": 950.0,
+                "Vx_kN": 60.0,
+                "Vy_kN": 20.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 150.0,
+                "seismic": true
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "P_kN": 1250.0,
+                "Vx_kN": 80.0,
+                "Vy_kN": 25.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 180.0,
+                "seismic": true
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        }
+      },
+      "expected": {
+        "D+0.7E": {
+          "N_kN": 2633.5,
+          "Mx_base_kNm": -31.5,
+          "My_base_kNm": 1028.0,
+          "equilibrium": true,
+          "ex_mm": 390.3550408202012,
+          "ey_mm": 11.961268274159863,
+          "pmax_kPa": 313.0,
+          "corners_kPa": [
+            125.91666666666669,
+            297.25,
+            313.0,
+            141.66666666666669
+          ],
+          "capacity_kPa": 399.0,
+          "bearing": "PASS",
+          "contact_fraction": 1.0,
+          "contact": "PASS",
+          "sliding_demand_kN": 161.75985286838016,
+          "sliding_capacity_kN": 1532.1789629118316,
+          "sliding": "PASS",
+          "overturning_demand_kNm": 1542.0,
+          "overturning_capacity_kNm": 7900.5,
+          "overturning": "PASS"
+        }
+      }
+    },
+    {
+      "id": "deslizamiento",
+      "description": "cortante grande con poca carga vertical: no cumple el deslizamiento",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "P_kN": 200.0,
+                "Vx_kN": 250.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "P_kN": 200.0,
+                "Vx_kN": 250.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        }
+      },
+      "expected": {
+        "D": {
+          "N_kN": 833.5,
+          "Mx_base_kNm": 0.0,
+          "My_base_kNm": 350.0,
+          "equilibrium": true,
+          "ex_mm": 419.91601679664063,
+          "ey_mm": -0.0,
+          "pmax_kPa": 98.625,
+          "corners_kPa": [
+            40.291666666666664,
+            98.625,
+            98.625,
+            40.291666666666664
+          ],
+          "capacity_kPa": 300.0,
+          "bearing": "PASS",
+          "contact_fraction": 1.0,
+          "contact": "PASS",
+          "sliding_demand_kN": 750.0,
+          "sliding_capacity_kN": 587.78,
+          "sliding": "FAIL",
+          "overturning_demand_kNm": 700.0,
+          "overturning_capacity_kNm": 2500.5,
+          "overturning": "PASS"
+        }
+      }
+    },
+    {
+      "id": "sin-equilibrio",
+      "description": "momento enorme: resultante fuera de la base",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "P_kN": 100.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 4000.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 2000.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "P_kN": 100.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 4000.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        }
+      },
+      "expected": {
+        "D": {
+          "N_kN": 633.5,
+          "Mx_base_kNm": 0.0,
+          "My_base_kNm": 8000.0,
+          "equilibrium": false
+        }
+      }
+    }
+  ]
+}

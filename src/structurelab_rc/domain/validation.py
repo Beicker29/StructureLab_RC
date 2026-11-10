@@ -7,7 +7,8 @@ from structurelab_rc.domain.beam.geometry import flange_limits, interior_limits,
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.errors import StructuredError, incomplete, invalid_input
 from structurelab_rc.model.catalog import RebarSpec
-from structurelab_rc.model.footing import Footing
+from structurelab_rc.model.combined import CombinedFooting
+from structurelab_rc.model.footing import BarSet, Dowels, Footing
 from structurelab_rc.model.project import Member, Project, Station
 
 CHECK_NAME = "Validacion de entrada"
@@ -63,27 +64,53 @@ def _station_errors(member: Member, station: Station, specs: dict[str, RebarSpec
             yield incomplete(f"Falta la demanda {label}", **where)
 
 
+def _bar_set_errors(name: str, bar_set: BarSet, specs: dict[str, RebarSpec], where: dict[str, str]) -> Iterator[StructuredError]:
+    spec = specs.get(bar_set.designation)
+    if spec is None:
+        yield invalid_input(f"La barra '{bar_set.designation}' de {name} no esta en el catalogo", **where)
+    elif bar_set.spacing <= spec.diameter_mm:
+        yield invalid_input(f"La separacion de {name} no deja espacio libre", **where)
+
+
+def _layers_errors(layers: list[tuple[str, list[BarSet]]], h: float, cover: float, specs: dict[str, RebarSpec],
+                   where: dict[str, str]) -> Iterator[StructuredError]:
+    """Barras del catálogo con separación libre positiva, y las capas y los recubrimientos dentro del espesor h."""
+    thickness = 2 * cover
+    for name, bar_sets in layers:
+        for index, bar_set in enumerate(bar_sets):
+            yield from _bar_set_errors(f"las barras {'xy'[index] if len(bar_sets) > 1 else 'x'} de la malla {name}", bar_set, specs, where)
+        thickness += sum(specs[bar_set.designation].diameter_mm for bar_set in bar_sets if bar_set.designation in specs)
+    if thickness >= h:
+        yield invalid_input("Las mallas y los recubrimientos no caben en el espesor de la zapata", **where)
+
+
+def _dowel_errors(dowels: Dowels | None, specs: dict[str, RebarSpec], where: dict[str, str]) -> Iterator[StructuredError]:
+    if dowels is not None and dowels.designation not in specs:
+        yield invalid_input(f"La barra '{dowels.designation}' de los pasadores no esta en el catalogo", **where)
+
+
 def _footing_errors(footing: Footing, specs: dict[str, RebarSpec]) -> Iterator[StructuredError]:
     """Barras del catálogo, separación libre positiva y mallas dentro del espesor."""
     where = {"member": footing.id}
-    mats = [("inferior", footing.bottom)] + ([("superior", footing.top)] if footing.top is not None else [])
-    thickness = 2 * footing.cover
-    for name, mat in mats:
-        diameters = []
-        for direction, bar_set in (("x", mat.x), ("y", mat.y)):
-            spec = specs.get(bar_set.designation)
-            if spec is None:
-                yield invalid_input(f"La barra '{bar_set.designation}' de la malla {name} no esta en el catalogo", **where)
-                continue
-            diameters.append(spec.diameter_mm)
-            if bar_set.spacing <= spec.diameter_mm:
-                yield invalid_input(f"La separacion de las barras {direction} de la malla {name} no deja espacio libre", **where)
-        thickness += sum(diameters)
-    if thickness >= footing.h:
-        yield invalid_input("Las mallas y los recubrimientos no caben en el espesor de la zapata", **where)
-    dowels = footing.column.dowels
-    if dowels is not None and dowels.designation not in specs:
-        yield invalid_input(f"La barra '{dowels.designation}' de los pasadores no esta en el catalogo", **where)
+    layers = [("inferior", [footing.bottom.x, footing.bottom.y])]
+    if footing.top is not None:
+        layers.append(("superior", [footing.top.x, footing.top.y]))
+    yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
+    yield from _dowel_errors(footing.column.dowels, specs, where)
+
+
+def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> Iterator[StructuredError]:
+    """Lo mismo para una zapata combinada (D-080): malla inferior, barras superiores en X, refuerzo transversal bajo cada
+    columna y pasadores."""
+    where = {"member": footing.id}
+    layers = [("inferior", [footing.bottom.x, footing.bottom.y])]
+    if footing.top is not None:
+        layers.append(("superior", [footing.top]))
+    yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
+    for column in footing.columns:
+        if column.band is not None:
+            yield from _bar_set_errors(f"el refuerzo transversal bajo la columna '{column.id}'", column.band, specs, where)
+        yield from _dowel_errors(column.dowels, specs, {**where, "column": column.id})
 
 
 def validate_project(project: Project, bars: Sequence[RebarSpec]) -> Check:
@@ -98,4 +125,6 @@ def validate_project(project: Project, bars: Sequence[RebarSpec]) -> Check:
             errors.extend(_station_errors(member, station, specs))
     for footing in project.footings:
         errors.extend(_footing_errors(footing, specs))
+    for combined in project.combined_footings:
+        errors.extend(_combined_errors(combined, specs))
     return check_from_errors(CHECK_NAME, errors)

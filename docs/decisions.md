@@ -929,6 +929,12 @@
 - **Subfases:** V3J.1 modelo, entrada y revisión geotécnica; V3J.2 viga en la dirección larga; V3J.3 franjas
   transversales, punzonamiento, desarrollo, aplastamiento y pasadores; V3J.4 memoria, ejemplos y documentación. La
   imagen de presiones de las zapatas aisladas va primero, por separado.
+- **V3J.1 (hecha):** `model/combined.py` (`CombinedFooting`, `CombinedColumn`; bloque `combined_footings` del proyecto);
+  `combined_resultant` en `domain/footing/base.py`; la revisión geotécnica recibe la resultante ya calculada y una
+  geometría común (`FootingBase`), así sirve igual para las dos zapatas (la aislada da el mismo resultado: huella
+  idéntica). La verificación estructural de la combinada queda BLOCKED hasta V3J.3. Oráculo
+  `derive_combined_service.py`: 6 casos por perfil (uniforme, excéntrica, borde con pedestal y momentos, sismo,
+  deslizamiento y sin equilibrio); 3 de 3 mutaciones de la resultante detectadas.
 
 ## Consultas abiertas
 

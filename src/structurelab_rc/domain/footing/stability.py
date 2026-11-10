@@ -15,10 +15,10 @@ Los factores de seguridad son los que declara el usuario, sísmicos en los casos
 import math
 
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.footing.base import base_resultant
+from structurelab_rc.domain.footing.base import BaseResultant
 from structurelab_rc.domain.status import Status
 from structurelab_rc.mechanics.earth_pressure import passive_force
-from structurelab_rc.model.footing import Footing, FootingLoad, Soil
+from structurelab_rc.model.footing import FootingBase, FootingLoad, Soil
 
 SLIDING = "Deslizamiento"
 OVERTURNING = "Volcamiento"
@@ -30,9 +30,10 @@ def _ratio(demand: float, capacity: float) -> float:
     return math.inf if capacity <= 0 else demand / capacity
 
 
-def sliding_check(clause: str, footing: Footing, soil: Soil, load: FootingLoad, contact: float) -> Check:
-    """contact: fracción de la base en contacto (Bellos y Bakas) con la resultante del caso, en equilibrio."""
-    resultant = base_resultant(footing, soil, load)
+def sliding_check(clause: str, footing: FootingBase, soil: Soil, load: FootingLoad, support: tuple[BaseResultant, float]) -> Check:
+    """support: la resultante en la base del caso y la fracción de la base en contacto (Bellos y Bakas), en equilibrio.
+    load da la fuerza horizontal (Vx, Vy), el nombre del caso y la marca de sismo."""
+    resultant, contact = support
     safety = soil.sliding_safety_factor_seismic if load.seismic else soil.sliding_safety_factor
     friction = soil.friction_coefficient * resultant.n
     adhesion = soil.adhesion * contact * footing.area
@@ -56,8 +57,7 @@ def sliding_check(clause: str, footing: Footing, soil: Soil, load: FootingLoad, 
                  unit="N", values=values, note=f"Gobierna {name}", member=footing.id, case=load.case)
 
 
-def overturning_check(clause: str, footing: Footing, soil: Soil, load: FootingLoad) -> Check:
-    resultant = base_resultant(footing, soil, load)
+def overturning_check(clause: str, footing: FootingBase, soil: Soil, load: FootingLoad, resultant: BaseResultant) -> Check:
     safety = soil.overturning_safety_factor_seismic if load.seismic else soil.overturning_safety_factor
     axes = [("el eje X", abs(resultant.my), resultant.n * footing.lx / 2), ("el eje Y", abs(resultant.mx), resultant.n * footing.ly / 2)]
     name, moment, resisting = max(axes, key=lambda item: _ratio(item[1], item[2]))

@@ -4,6 +4,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
+from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing, Soil
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 
@@ -126,7 +127,8 @@ class Member(_Input):
 
 
 class Project(_Input):
-    """Vigas (members), zapatas (footings) o ambas; las zapatas requieren los datos del suelo (D-052)."""
+    """Vigas (members), zapatas aisladas (footings), zapatas combinadas (combined_footings, D-080) o varias; las zapatas
+    requieren los datos del suelo (D-052)."""
 
     description: str
     profile: str
@@ -135,16 +137,19 @@ class Project(_Input):
     members: tuple[Member, ...] = ()
     soil: Soil | None = None
     footings: tuple[Footing, ...] = ()
+    combined_footings: tuple[CombinedFooting, ...] = ()
 
     @model_validator(mode="after")
     def _check_content(self) -> Self:
-        if not self.members and not self.footings:
+        any_footing = bool(self.footings or self.combined_footings)
+        if not self.members and not any_footing:
             raise ValueError("el proyecto debe tener al menos un miembro o una zapata")
-        if self.footings and self.soil is None:
+        if any_footing and self.soil is None:
             raise ValueError("las zapatas requieren los datos del suelo (soil)")
-        if self.soil is not None and not self.footings:
+        if self.soil is not None and not any_footing:
             raise ValueError("soil solo se declara con zapatas")
-        ids = [member.id for member in self.members] + [footing.id for footing in self.footings]
+        ids = ([member.id for member in self.members] + [footing.id for footing in self.footings]
+               + [footing.id for footing in self.combined_footings])
         if len(ids) != len(set(ids)):
             raise ValueError("los identificadores de miembros y zapatas deben ser únicos")
         return self

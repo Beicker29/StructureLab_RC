@@ -8,13 +8,14 @@ la fracción de la base en contacto con el mínimo que declara el usuario, y se 
 
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.footing.base import base_resultant
+from structurelab_rc.domain.footing.base import BaseResultant, base_resultant, combined_resultant
 from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING, overturning_check, sliding_check
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete, invalid_input
 from structurelab_rc.mechanics.materials import NoEquilibrium
 from structurelab_rc.mechanics.soil_pressure import footing_pressure
-from structurelab_rc.model.footing import Footing, FootingLoad, Soil
+from structurelab_rc.model.combined import CombinedFooting
+from structurelab_rc.model.footing import Footing, FootingBase, FootingLoad, Soil
 
 BEARING = "Presion admisible del suelo"
 CONTACT = "Contacto con el suelo"
@@ -22,8 +23,9 @@ CONTACT_CLAUSE = "D-052 (minimo declarado por el usuario)"
 _REGIONS = {"A": "triangular", "B": "pentagonal", "C": "total", "D": "trapezoidal en x", "E": "trapezoidal en y"}
 
 
-def _case_checks(profile: Profile, footing: Footing, soil: Soil, load: FootingLoad) -> list[Check]:
-    resultant = base_resultant(footing, soil, load)
+def _case_checks(profile: Profile, footing: FootingBase, soil: Soil, load: FootingLoad, resultant: BaseResultant) -> list[Check]:
+    """Un caso de servicio con su resultante en la base; load da el nombre del caso, la marca de sismo y la fuerza
+    horizontal total."""
     values: tuple[tuple[str, float], ...] = (("N", resultant.n), ("Mx base", resultant.mx), ("My base", resultant.my))
     bearing_clause = profile.footing.clauses()["bearing"]
     stability_clause = profile.footing.clauses()["stability"]
@@ -59,8 +61,8 @@ def _case_checks(profile: Profile, footing: Footing, soil: Soil, load: FootingLo
         # La razón es el mínimo exigido sobre la fracción en contacto: cumple con razón ≤ 1.
         Check(CONTACT, Status.PASS if contact_ok else Status.FAIL, clause=CONTACT_CLAUSE, demand=soil.min_contact_fraction,
               capacity=fraction, values=(*values, ("contacto", fraction)), note=region, member=footing.id, case=load.case),
-        sliding_check(stability_clause, footing, soil, load, fraction),
-        overturning_check(stability_clause, footing, soil, load),
+        sliding_check(stability_clause, footing, soil, load, (resultant, fraction)),
+        overturning_check(stability_clause, footing, soil, load, resultant),
     ]
 
 
@@ -69,4 +71,23 @@ def service_checks(profile: Profile, footing: Footing, soil: Soil) -> list[Check
     if not loads:
         error = incomplete("La zapata no tiene casos de servicio", member=footing.id)
         return [Check(BEARING, Status.INCOMPLETE, (error,), profile.footing.clauses()["bearing"], member=footing.id)]
-    return [check for load in loads for check in _case_checks(profile, footing, soil, load)]
+    return [check for load in loads for check in _case_checks(profile, footing, soil, load, base_resultant(footing, soil, load))]
+
+
+def combined_service_checks(profile: Profile, footing: CombinedFooting, soil: Soil) -> list[Check]:
+    """La misma revisión geotécnica para una zapata combinada (D-080), con la resultante de las dos columnas; la fuerza
+    horizontal del deslizamiento es la suma de las dos."""
+    cases = [loads for loads in footing.cases() if loads[0].kind == "service"]
+    if not cases:
+        error = incomplete("La zapata combinada no tiene casos de servicio", member=footing.id)
+        return [Check(BEARING, Status.INCOMPLETE, (error,), profile.footing.clauses()["bearing"], member=footing.id)]
+    checks = []
+    for loads in cases:
+        first = loads[0]
+        total = FootingLoad.model_construct(case=first.case, kind=first.kind, dead_factor=first.dead_factor,
+                                            live_factor=first.live_factor, seismic=first.seismic,
+                                            p=sum(load.p for load in loads), vx=sum(load.vx for load in loads),
+                                            vy=sum(load.vy for load in loads), mx=sum(load.mx for load in loads),
+                                            my=sum(load.my for load in loads))
+        checks += _case_checks(profile, footing, soil, total, combined_resultant(footing, soil, loads))
+    return checks

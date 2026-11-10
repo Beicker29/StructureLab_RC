@@ -95,6 +95,25 @@ El relleno y las sobrecargas ocupan el área de la base menos la de la columna.
 Área A, inercias Ix e Iy, módulos de sección Sx y Sy, núcleo central (lx/6, ly/6), pesos de la zapata, del pedestal
 y del relleno, y fuerzas de las sobrecargas. Salen en `resultado.json`, en `footings[].properties`.
 
+## Zapata combinada (`combined_footings[]`, D-080)
+
+Zapata rectangular de dos columnas, solo verificación. X es la dirección larga: las dos columnas van a distintas x. Usa
+el mismo `soil` que las zapatas aisladas. Por ahora (V3J.1) se verifica la parte geotécnica con la resultante de las
+dos columnas; la verificación estructural queda `BLOCKED` hasta V3J.2 y V3J.3, y la memoria llega en V3J.4.
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `id`, `lx`, `ly`, `h`, `cover`, `fill_height`, `pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2` | | Como en la zapata aislada. |
+| `columns[]` | lista | Exactamente dos columnas. |
+| `columns[].id` | texto | Identificador de la columna. |
+| `columns[].cx`, `columns[].cy` | mm | Sección (cx a lo largo de X). |
+| `columns[].x`, `columns[].y` | mm | Posición del eje de la columna respecto al centroide de la base. |
+| `columns[].dowels` | | Pasadores, como en la zapata aislada (opcional; sin ellos sus verificaciones quedan INCOMPLETE). |
+| `columns[].band` | | Refuerzo transversal adicional bajo la columna, paralelo a Y, en el ancho de su franja: `designation` y `spacing` (opcional). |
+| `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; las dos columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
+| `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
+| `top` | | Barras superiores paralelas a X (`designation`, `spacing`), opcional: sin ellas, el momento negativo se revisa como concreto simple (D-072). |
+
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 
 En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (D-069). `materials` declara solo `fy`,
