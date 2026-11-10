@@ -12,6 +12,11 @@ _GRADE_420 = 420.0
 _RATIO_LOW_GRADE = 0.0020
 _RATIO_420 = 0.0018
 _RATIO_FLOOR = 0.0014
+_CRACK_SPACING = 380.0
+_CRACK_SPACING_CAP = 300.0
+_CRACK_STRESS = 280.0
+_CRACK_COVER = 2.5
+_SERVICE_STRESS = 2 / 3
 
 
 def clauses() -> dict[str, str]:
@@ -28,7 +33,7 @@ def clauses() -> dict[str, str]:
         "punching_min_reinforcement": "no aplica en NSR-10",
         "dowels": "C.15.8.2.1",
         "dowel_excess": "C.15.8.1.2(a)",
-        "combined_spacing": "C.10.5.4",
+        "combined_spacing": "C.10.5.4 y C.10.6.4",
     }
 
 
@@ -48,9 +53,12 @@ def max_bar_spacing(h: float) -> float:
 
 
 def combined_max_bar_spacing(h: float, fy: float, cc: float) -> float:
-    """Zapata combinada: la de las zapatas de espesor uniforme, C.10.5.4 (tres veces el espesor y 450 mm); no usa fy
-    ni cc, en mm."""
-    return max_bar_spacing(h)
+    """Zapata combinada revisada como viga (D-080): el menor de C.10.5.4 (tres veces el espesor y 450 mm) y del control
+    de agrietamiento de vigas, C.10.6.4, ecuación (C.10-4): 380·(280/fs) − 2.5·cc, no mayor que 300·(280/fs), con
+    fs = (2/3)·fy y cc la menor distancia de la superficie de la barra a la cara en tracción; en mm."""
+    fs = _SERVICE_STRESS * fy
+    crack = min(_CRACK_SPACING * _CRACK_STRESS / fs - _CRACK_COVER * cc, _CRACK_SPACING_CAP * _CRACK_STRESS / fs)
+    return min(max_bar_spacing(h), crack)
 
 
 def band_fraction(beta: float) -> float:

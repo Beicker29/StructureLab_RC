@@ -16,7 +16,7 @@ No importa el paquete. Unidades de trabajo: N y mm. Para cada caso mayorado:
 4. Resistencia con el bloque de Whitney y φ por perfil (derive_footing_flexure.py); sin barras superiores, concreto
    simple (D-072). As,min de vigas: max(0.25√f'c, 1.4)/fy·b·d, o 4/3 del As requerido por el mayor momento si es menor
    (ACI 9.6.1.3, NSR-10 C.10.5.3), con As = (0.85·f'c·b/fy)·(d − √(d² − 2·Mu/(0.9·0.85·f'c·b))). Separación máxima:
-   NSR-10 min(3h, 450); ACI además 380·(280/fs) − 2.5·cc y 300·(280/fs) con fs = 2/3·fy (cc libre a la cara).
+   min(3h, 450), 380·(280/fs) − 2.5·cc y 300·(280/fs) con fs = 2/3·fy (cc libre a la cara), en los dos perfiles.
 
 Uso: python tests/oracles/derive_combined_beam.py
 """
@@ -51,7 +51,7 @@ SCAN, GOLDEN_STEPS = 4000, 200
 CLAUSES = {"aci_318_25": {"strength": "9.5.1.1(a) y Tabla 21.2.2", "min": "9.6.1.2 y 9.6.1.3",
                           "shear": "13.2.6.2(a) y 13.2.7.2", "strain": "9.3.3.1", "spacing": "13.3.2.1, 7.7.2.3 y 24.3.2"},
            "nsr_10": {"strength": "C.9.3.2.1 y C.9.3.2.2", "min": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-                      "shear": "C.15.5.1, C.15.5.2 y C.11.2", "strain": "C.10.3.5", "spacing": "C.10.5.4"}}
+                      "shear": "C.15.5.1, C.15.5.2 y C.11.2", "strain": "C.10.3.5", "spacing": "C.10.5.4 y C.10.6.4"}}
 
 
 def _beam(f: dict, case: str) -> dict | None:
@@ -189,11 +189,9 @@ def _section(folder: str, f: dict, row: dict, demand: float, bars: str) -> list[
     _, _, strain = _F._strength(row["area"], f["ly"], row["depth"], profile)
     as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * f["ly"] * row["depth"]
     required = min(as_min, 4 / 3 * _required(demand, f["ly"], row["depth"]))
-    # Separación: NSR-10 C.10.5.4, min(3h, 450); ACI 7.7.2.3 y Tabla 24.3.2 con fs = 2/3·fy.
-    spacing = min(3 * f["h"], 450.0)
-    if folder == "aci_318_25":
-        fs = 2 / 3 * FY
-        spacing = min(spacing, 380 * 280 / fs - 2.5 * row["cc"], 300 * 280 / fs)
+    # Separación: min(3h, 450) (ACI 7.7.2.3, NSR-10 C.10.5.4) y fisuración con fs = 2/3·fy (Tabla 24.3.2, Ec. C.10-4).
+    fs = 2 / 3 * FY
+    spacing = min(3 * f["h"], 450.0, 380 * 280 / fs - 2.5 * row["cc"], 300 * 280 / fs)
     return [
         {"name": f"Viga larga: deformacion neta de traccion ({bars})", "status": "PASS" if strain >= profile["strain_min"] else "FAIL",
          "capacity": strain, "clause": CLAUSES[folder]["strain"]},

@@ -932,7 +932,8 @@
   6d. Separación máxima de las barras x de la viga larga (V3J.2): ACI, el menor de 3h y 450 mm (7.7.2.3) y del límite
      de fisuración de la Tabla 24.3.2 con fs = (2/3)·fy (24.3.2.1), por la remisión de 13.3.2.1 a los capítulos 7 y 9
      (más exigente que el manual, que no aplica 24.3: con 75 mm de recubrimiento da ≈190 mm); NSR-10, C.10.5.4 (3h y
-     450 mm).
+     450 mm) y, por decisión del usuario (la combinada se revisa como viga), el control de agrietamiento de vigas
+     C.10.6.4, ecuación (C.10-4), con fs = (2/3)·fy: la misma forma que 24.3.2.
   7. Se reutilizan la revisión geotécnica (con la resultante de las dos columnas), el punzonamiento por columna con el
      perímetro truncado y γv·Msc, el desarrollo, el aplastamiento y los pasadores.
   8. Oráculos: Wight 15-6 y el ejemplo 5 del manual, en SI con la tolerancia de D-064, más un oráculo independiente.
@@ -964,6 +965,10 @@
   frente a 10.0 in², ±2.5 %: el libro imprime 10.0 por 10.03) y el momento en la cara exterior de la columna de borde
   (2.1 frente a 2 kip·ft): sus diagramas no se reproducen con sus propios datos (con wu = 68.2 k/ft el máximo da 507
   kip·ft, no 576). Nuestros valores: 548 kip·ft entre columnas y 154 kip·ft en la cara interior de la exterior (159).
+- **Pendiente (decisión del usuario, 2026-11-10):** incorporar Vy y las columnas desplazadas en Y en la verificación
+  estructural. Hoy entran en la resultante y en la presión de Bellos (revisión geotécnica y carga neta), pero la viga
+  larga no considera la torsión que producen, y en las franjas transversales (V3J.3) solo cuentan a través de la forma
+  de la presión; el cortante Vy en la base de la columna no se lleva a las franjas.
 
 ## Consultas abiertas
 

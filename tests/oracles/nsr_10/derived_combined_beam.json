@@ -149,8 +149,8 @@
             "name": "Viga larga: separacion maxima (barras inferiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           },
           {
             "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
@@ -170,8 +170,8 @@
             "name": "Viga larga: separacion maxima (barras superiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           }
         ],
         "equilibrium_failures": []
@@ -300,8 +300,8 @@
             "name": "Viga larga: separacion maxima (barras inferiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           },
           {
             "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
@@ -321,8 +321,8 @@
             "name": "Viga larga: separacion maxima (barras superiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           }
         ],
         "equilibrium_failures": []
@@ -506,8 +506,8 @@
             "name": "Viga larga: separacion maxima (barras inferiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           },
           {
             "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
@@ -527,8 +527,8 @@
             "name": "Viga larga: separacion maxima (barras superiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           }
         ],
         "equilibrium_failures": []
@@ -651,8 +651,8 @@
             "name": "Viga larga: separacion maxima (barras inferiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           }
         ],
         "equilibrium_failures": []
@@ -781,8 +781,8 @@
             "name": "Viga larga: separacion maxima (barras inferiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           },
           {
             "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
@@ -802,8 +802,8 @@
             "name": "Viga larga: separacion maxima (barras superiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           }
         ],
         "equilibrium_failures": []
@@ -930,10 +930,10 @@
           },
           {
             "name": "Viga larga: separacion maxima (barras inferiores x)",
-            "status": "PASS",
+            "status": "FAIL",
             "demand_mm": 250.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           },
           {
             "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
@@ -951,10 +951,10 @@
           },
           {
             "name": "Viga larga: separacion maxima (barras superiores x)",
-            "status": "PASS",
+            "status": "FAIL",
             "demand_mm": 250.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           }
         ],
         "equilibrium_failures": []
@@ -1070,10 +1070,10 @@
           },
           {
             "name": "Viga larga: separacion maxima (barras inferiores x)",
-            "status": "PASS",
+            "status": "FAIL",
             "demand_mm": 350.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 152.75,
+            "clause": "C.10.5.4 y C.10.6.4"
           }
         ],
         "equilibrium_failures": []
@@ -1202,8 +1202,8 @@
             "name": "Viga larga: separacion maxima (barras inferiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           },
           {
             "name": "Viga larga: deformacion neta de traccion (barras superiores x)",
@@ -1223,8 +1223,8 @@
             "name": "Viga larga: separacion maxima (barras superiores x)",
             "status": "PASS",
             "demand_mm": 150.0,
-            "capacity_mm": 450.0,
-            "clause": "C.10.5.4"
+            "capacity_mm": 192.5,
+            "clause": "C.10.5.4 y C.10.6.4"
           }
         ],
         "equilibrium_failures": []
