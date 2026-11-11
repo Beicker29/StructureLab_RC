@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from structurelab_rc.codes.aci_318_25 import bearing as aci_bearing
+from structurelab_rc.codes.aci_318_25 import deep_beam as aci_deep_beam
 from structurelab_rc.codes.aci_318_25 import development as aci_development
 from structurelab_rc.codes.aci_318_25 import flexure as aci_flexure
 from structurelab_rc.codes.aci_318_25 import footing as aci_footing
@@ -13,6 +14,7 @@ from structurelab_rc.codes.aci_318_25 import shear as aci_shear
 from structurelab_rc.codes.aci_318_25 import strength_assumptions as aci_strength_assumptions
 from structurelab_rc.codes.aci_318_25 import torsion as aci_torsion
 from structurelab_rc.codes.nsr_10 import bearing as nsr_bearing
+from structurelab_rc.codes.nsr_10 import deep_beam as nsr_deep_beam
 from structurelab_rc.codes.nsr_10 import development as nsr_development
 from structurelab_rc.codes.nsr_10 import flexure as nsr_flexure
 from structurelab_rc.codes.nsr_10 import footing as nsr_footing
@@ -201,6 +203,18 @@ class Bearing(Protocol):
     def nominal_bearing(self, fc: float, a1: float, a2: float) -> float: ...
 
 
+class DeepBeam(Protocol):
+    def clauses(self) -> dict[str, str]: ...
+
+    def section_limit(self, fc: float, bw: float, d: float) -> float: ...
+
+    def min_distributed_ratio(self) -> float: ...
+
+    def max_distributed_spacing(self, d: float) -> float: ...
+
+    def max_curtain_spacing(self, bw: float) -> float | None: ...
+
+
 class Seismic(Protocol):
     def seismic_levels(self) -> frozenset[str]: ...
 
@@ -229,11 +243,12 @@ class Profile:
     development: Development
     bearing: Bearing
     plain: Plain
+    deep_beam: DeepBeam
 
 
 PROFILES = {
     "aci-318-25": Profile("aci-318-25", aci_strength_assumptions, aci_flexure, aci_shear, aci_torsion, aci_seismic, aci_footing,
-                          aci_development, aci_bearing, aci_plain),
+                          aci_development, aci_bearing, aci_plain, aci_deep_beam),
     "nsr-10": Profile("nsr-10", nsr_strength_assumptions, nsr_flexure, nsr_shear, nsr_torsion, nsr_seismic, nsr_footing,
-                      nsr_development, nsr_bearing, nsr_plain),
+                      nsr_development, nsr_bearing, nsr_plain, nsr_deep_beam),
 }

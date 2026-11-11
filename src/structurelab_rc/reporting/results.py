@@ -147,6 +147,7 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
         "columns": columns,
         "properties": _base_properties(footing, soil),
         "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin", "torsion_layers"}),
+        "deep_beam": footing.deep_beam,
         "status": _status(checks),
         "checks": [{**check_data(check), "case": check.case, "z [mm]": None if check.z is None else significant(check.z)}
                    for check in checks],
@@ -234,6 +235,7 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
             "id": member.id,
             "type": member.type,
             "length [mm]": member.length,
+            "deep_beam": member.deep_beam,
             "section": member.section.model_dump(exclude_none=True),
             "status": _status(own),
             "stations": stations,

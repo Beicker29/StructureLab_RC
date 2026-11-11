@@ -17,9 +17,7 @@ columnas (verificación, entrada desde ETABS), D-052 a D-087.
 
 ### Fase 1: zapatas combinadas completas
 
-1. Vigas de gran altura (ACI 318-25 9.9, NSR-10 C.11.7: luz libre ≤ 4h o cargas concentradas a menos de 2h del apoyo),
-   en la viga larga y en las vigas de la v1 (mismo código).
-2. Criterio para decidir si una zapata combinada trabaja en una dirección (13.3.2, como hoy) o en dos (13.3.4), con un
+1. Criterio para decidir si una zapata combinada trabaja en una dirección (13.3.2, como hoy) o en dos (13.3.4), con un
    aviso cuando sea muy ancha frente a la separación entre columnas; la norma no lo define (D-087).
 
 ### Fase 2: geotecnia, estabilidad y concreto simple
@@ -96,6 +94,8 @@ importación de ETABS y memorias (fases 0 a 2, D-001 a D-051).
    9.7.5.4, NSR-10 C.11.5.4.3) y gancho de 135° de los estribos cerrados (ACI 25.7.1.6, NSR-10 C.11.5.4.2). Aplican a
    las vigas y a la viga larga de la zapata combinada (D-088); necesitan datos por tramo que la entrada por estaciones
    no trae.
+3. Vigas de gran altura (D-089): desarrollo en los apoyos simples (ACI 9.9.4.5 y 9.9.4.6, NSR-10 C.12.10.6) y pandeo
+   lateral (NSR-10 C.10.7.2). El puntal-tensor queda fuera del alcance por decisión del usuario.
 
 ### Fase 3: requisitos sísmicos
 

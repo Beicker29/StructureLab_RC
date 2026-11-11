@@ -44,12 +44,17 @@ _BEAM_CONVENTIONS = (
     "Flexión con Pn = Pu y momentos respecto al centroide bruto (D-024); resistencia biaxial con la sección completa y "
     "deformación neta de tracción en los estados M3, M2 y biaxial (D-046).",
     "d no menor que 0.8h en As,min, cortante y torsión (D-043); en el cortante V3, no menor que 0.8bw (D-047).",
-    "La torsión se desprecia si Tu < φTth; si no, se verifica combinada con el cortante (D-037).",
+    "La torsión se desprecia si Tu < φTth; si no, se verifica combinada con el cortante (D-037). Las barras de piel "
+    "cuentan como Aℓ y las de torsión en las caras laterales como piel (D-090).",
+    "Viga de gran altura: la declara el usuario (deep_beam); se verifican el límite de sección, el refuerzo distribuido "
+    "transversal y longitudinal, su separación y las cortinas donde el perfil las pide (D-089).",
 )
 _BEAM_LIMITATIONS = (
     "Servicio: la separación por fisuración se verifica (D-081); espesor mínimo y deflexiones, falta implementación "
     "(subfase 2D, D-017, D-039).",
-    "Vigas de gran altura (ACI 9.9, NSR-10 C.11.7): falta implementación.",
+    "Vigas de gran altura: la resistencia por análisis no lineal o puntal-tensor (ACI 9.9.1.2 y capítulo 23, NSR-10 "
+    "C.11.7.2 y Apéndice C-A), el desarrollo en los apoyos simples (ACI 9.9.4.5 y 9.9.4.6, NSR-10 C.12.10.6) y el pandeo "
+    "lateral (NSR-10 C.10.7.2) no se verifican (D-089).",
     "Torsión de compatibilidad (Tu reducido a φTcr) y reducción de Aℓ en la zona comprimida: falta implementación.",
     "Torsión: la prolongación (bt + d) del refuerzo, el desarrollo de Aℓ en los extremos y el gancho de 135° de los "
     "estribos cerrados no se verifican (D-088).",
@@ -100,7 +105,8 @@ _COMBINED_LIMITATIONS = (
     "Si los perímetros de punzonamiento de las dos columnas se traslapan, se revisa además el perímetro común (D-086). Si "
     "la presión es nula en la línea de una columna, su franja usa la presión integrada en su ancho o, sin ella, la carga "
     "uniforme (D-085).",
-    "Vigas de gran altura (ACI 9.9, NSR-10 C.11.7), otras formas de zapata combinada y más de dos columnas: no cubiertas.",
+    "Viga larga de gran altura (deep_beam): la resistencia por análisis no lineal o puntal-tensor no se verifica (D-089). "
+    "Otras formas de zapata combinada y más de dos columnas: no cubiertas.",
 )
 _FOOTING_LIMITATIONS = (
     "Empuje pasivo sobre el pedestal y deslizamiento con suelo bajo nivel freático: no cubiertos (D-070).",
@@ -320,7 +326,7 @@ def beam_document(results: dict[str, Any], member: dict[str, Any], full: bool) -
     items: list[Located] = [(f"z = {station['z [mm]']:.0f} mm, caso {station['case'] or '–'}", check)
                             for station in member["stations"] for check in station["checks"]]
     head = [_title(f"Viga {member['id']}", results, [("Estaciones", str(len(member["stations"])))], items, member["status"]),
-            _summary(items)]
+            _summary(items), *_deep_alert(member.get("deep_beam", False), "La viga")]
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
         ("Propiedades geométricas y armado", lambda _: _beam_geometry(member)),
@@ -454,6 +460,17 @@ def _beam_moments(footing: dict[str, Any]) -> list[Block]:
             {"kind": "note", "text": "Parte negativa del momento transferido por flexión que la zapata no resiste con la malla superior "
                                      "ni con el concreto simple: la debe tomar la viga de cimentación; no se suma al momento de la "
                                      "zapata ni se verifica aquí (ACI 8.4.2.2, NSR-10 C.13.5.3; D-087)."}]
+
+
+def _deep_alert(deep: bool, subject: str) -> list[Block]:
+    """Aviso de viga de gran altura declarada (D-089): se verifican sus criterios, pero la resistencia es seccional."""
+    if not deep:
+        return []
+    return [{"kind": "alert", "text": f"{subject} está declarada de gran altura (ACI 9.9.1.1, NSR-10 C.11.7.1): se verifican "
+                                      "el límite de sección y el refuerzo distribuido; la flexión y el cortante son del cálculo "
+                                      "seccional, que no considera la distribución no lineal de deformaciones (ACI 9.9.1.2, "
+                                      "NSR-10 C.11.7.2). El análisis no lineal o el puntal-tensor quedan a cargo del analista "
+                                      "(D-089)."}]
 
 
 def _beam_alert(footing: dict[str, Any]) -> list[Block]:
@@ -610,7 +627,7 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
     meta = [("Columnas", " y ".join(column["id"] for column in footing["columns"])),
             ("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
     head = [_title(f"Zapata combinada {footing['id']}", results, meta, items, footing["status"]), _summary(items),
-            *_beam_alert(footing)]
+            *_beam_alert(footing), *_deep_alert(footing.get("deep_beam", False), "La viga en la dirección larga")]
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
         ("Propiedades geométricas, columnas, suelo y armado", lambda _: _combined_geometry(results, footing)),

@@ -1,0 +1,35 @@
+{
+  "description": "Vigas de gran altura (D-089): criterios de ACI 9.9 (no el puntal-tensor) frente al ACI MNL-17(21), volumen 2, capítulo 14, ejemplo de puntal-tensor 1, paso 11 (p. 210). Valores impresos del libro, sin modificar. El mismo ejemplo sirve para NSR-10 C.11.7, cuyas reglas coinciden con estos datos.",
+  "mnl_14_1": {
+    "data": {
+      "bw_in": 24.0,
+      "h_in": 90.0,
+      "fc_psi": 4000.0,
+      "fy_psi": 60000.0,
+      "Vu_kips": 456.0,
+      "tie_layers_from_bottom_in": [
+        3.0,
+        7.5,
+        12.0
+      ],
+      "tie_bars_per_layer": 4,
+      "tie_designation": "#9",
+      "web": {
+        "designation": "#5",
+        "spacing_in": 9.0,
+        "note": "No. 5 a 9 in en cada cara, vertical y horizontal"
+      }
+    },
+    "printed": {
+      "Av_over_bws": 0.00287,
+      "Avh_over_bws2": 0.00287,
+      "min_ratio": 0.0025,
+      "d_over_5_in": 16.5,
+      "spacing_limit_in": 12.0,
+      "d_in": 82.5,
+      "phi_used": 0.85,
+      "phi_Vn_limit_lb": 1064422.0
+    },
+    "notes": "El libro usa φ = 0.85 en 9.9.2.1 (con d = 82.5 in) y d = 83.5 in para d/5; ACI 318 da φ = 0.75 para cortante (Tabla 21.2.1). Se compara la capacidad nominal 0.83√f'c·bw·d (10√f'c en psi) y el paquete conserva φ = 0.75."
+  }
+}

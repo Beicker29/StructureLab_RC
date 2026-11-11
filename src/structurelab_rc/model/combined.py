@@ -52,7 +52,7 @@ class CombinedFooting(RectangularBase, _Input):
     top, las barras superiores paralelas a X (opcional: sin ellas, el momento negativo se revisa como concreto simple,
     D-072); stirrups, los estribos de la dirección larga, como en las vigas (opcional, D-081); torsion_layers, las capas
     de Aℓ de la viga larga con el formato de las vigas y role "torsion" (x desde la cara −Y, profundidad desde la cara
-    superior; opcional, D-088). fill_height,
+    superior; opcional, D-088); deep_beam declara que la viga larga es de gran altura (D-089). fill_height,
     pedestal_height, cover y las sobrecargas, como en la zapata aislada (D-057)."""
 
     id: str = Field(min_length=1)
@@ -70,6 +70,7 @@ class CombinedFooting(RectangularBase, _Input):
     stirrups: Stirrups | None = None
     skin: SkinBars | None = None
     torsion_layers: tuple[BarLayer, ...] = ()
+    deep_beam: bool = False
 
     @field_validator("surcharge_dead", "surcharge_live")
     @classmethod

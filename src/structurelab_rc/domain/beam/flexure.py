@@ -214,6 +214,9 @@ def _face_gaps(depths: list[float], start: float, end: float) -> float:
     return max(abs(b - a) for a, b in zip(points, points[1:], strict=False))
 
 
+SIDE_ROLES = frozenset({"skin", "torsion"})
+
+
 def skin_check(given: StationInput) -> Check | None:
     """Refuerzo superficial (ACI 9.7.2.3, NSR-10 C.10.6.7; D-083): con h mayor que el límite del perfil, barras de piel en
     las dos caras laterales dentro de h/2 desde la cara en tracción; en cada cara, la mayor separación entre la capa en
@@ -231,7 +234,8 @@ def skin_check(given: StationInput) -> Check | None:
     flexure = [bar.depth for bar in placed if bar.role == "flexure"]
     start = max(flexure) if bottom else min(flexure)
     half = section.h / 2
-    in_zone = [bar for bar in placed if bar.role == "skin" and (bar.depth >= half if bottom else bar.depth <= half)]
+    # Las barras de torsión en las caras laterales también sirven de piel (decisión del usuario, D-090).
+    in_zone = [bar for bar in placed if bar.role in SIDE_ROLES and (bar.depth >= half if bottom else bar.depth <= half)]
     worst: tuple[float, float, float, str] | None = None  # razón, s, s máx, cara
     for name, own in (("izquierda", [bar for bar in in_zone if bar.x <= section.bw / 2]),
                       ("derecha", [bar for bar in in_zone if bar.x > section.bw / 2])):

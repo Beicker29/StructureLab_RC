@@ -273,7 +273,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                                "ultimos requieren structurelab-rc[opt]; reemplaza design.method")
     curve = commands.add_parser("typology-curve", help="curva costo-N del diseno por tipologias (D-078)")
     curve.add_argument("project", type=Path, help="proyecto de diseno en JSON (columnas y bloque design)")
-    curve.add_argument("--output", type=Path, required=True, help="carpeta donde escribir curva.json, curva.csv, curva.svg y la memoria")
+    curve.add_argument("--output", type=Path, required=True, help="carpeta de salida: resultado.json, curva.csv, curva.svg y la memoria")
     curve.add_argument("--n", type=_counts, help="valores de N, por ejemplo 1-12 o 2,4,6 (por defecto, de 1 a 12 o al numero de columnas)")
     curve.add_argument("--workers", type=int, help="procesos en paralelo (por defecto, los nucleos del equipo; 1: sin paralelo)")
     curve.add_argument("--method", choices=("dp", "milp", "milp_iter"), help="reemplaza design.method")

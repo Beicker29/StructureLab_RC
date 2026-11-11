@@ -23,7 +23,9 @@ No importa el paquete. Unidades de trabajo: N y mm. Para cada caso mayorado:
    izquierda, tomada donde el cortante (a d de la cara). Umbral φTth = 0.75·0.083·√f'c·Acp²/pcp con Acp = B·h; si
    Tu ≥ φTth, la verificación combinada reemplaza al cortante: sin estribos no cumple; con estribos, sección
    (√((Vu/bd)² + (Tu·ph/1.7Aoh²)²) ≤ φ(Vc/bd + 0.66√f'c)), Av/s + 2At/s con At/s = Tu/(φ·2·0.85Aoh·fyt), mínimo
-   transversal y Aℓ = máx(Tu·ph/(φ·2·0.85Aoh·fy), Aℓ,min) frente a las capas de torsión.
+   transversal y Aℓ = máx(Tu·ph/(φ·2·0.85Aoh·fy), Aℓ,min) frente a las capas de torsión más las barras de piel.
+6. Piel y torsión se sirven mutuamente (decisión del usuario, D-090): las barras de piel cuentan como Aℓ y las capas de
+   torsión, con barras cerca de las dos caras laterales, cuentan como piel (con su recubrimiento lateral).
 
 Uso: python tests/oracles/derive_combined_beam.py
 """
@@ -216,6 +218,27 @@ def _design(profile: dict, layers: list[tuple[float, float]], b: float, h: float
     return 0.0 if state is None else _F._phi(state["et"], profile) * abs(state["Mn"])
 
 
+def _side_bars(f: dict, rows: list[dict]) -> list[tuple[float, float, float]]:
+    """(profundidad, recubrimiento lateral, área de la capa) de las barras en las caras laterales: la piel, a la
+    separación declarada desde la capa inferior hacia arriba y por dentro del estribo, y las capas de torsión (D-090)."""
+    out = []
+    stirrup = BARS[f["stirrups"]["designation"]][0] if f.get("stirrups") else 0.0
+    skin = f.get("skin")
+    if skin:
+        db, ab = BARS[skin["designation"]]
+        bottom_row = next(row for row in rows if row["face"] == "bottom")
+        top_row = next((row for row in rows if row["face"] == "top"), None)
+        limit = top_row["depth"] if top_row else f["cover"] + stirrup + db / 2
+        depth = bottom_row["depth"] - skin["spacing"]
+        while depth > limit + 1.0:
+            out.append((depth, f["cover"] + stirrup, 2 * ab))
+            depth -= skin["spacing"]
+    for layer in f.get("torsion_layers", []):
+        cc = min(min(bar["x"], f["ly"] - bar["x"]) - BARS[bar["designation"]][0] / 2 for bar in layer["bars"])
+        out.append((layer["depth"], cc, sum(BARS[bar["designation"]][1] for bar in layer["bars"])))
+    return out
+
+
 def _skin_check(folder: str, f: dict, rows: list[dict], moment: float) -> dict | None:
     """Refuerzo superficial (ACI 9.7.2.3, NSR-10 C.10.6.7) en la viga larga con h > 900 mm: barras en las dos caras a la
     separación vertical declarada desde la capa inferior hacia arriba; en la zona de h/2 desde la cara en tracción, la
@@ -225,27 +248,19 @@ def _skin_check(folder: str, f: dict, rows: list[dict], moment: float) -> dict |
     if h <= 900.0 or moment == 0:
         return None
     clause = CLAUSES[folder]["skin"]
-    skin = f.get("skin")
     bottom_row = next(row for row in rows if row["face"] == "bottom")
     top_row = next((row for row in rows if row["face"] == "top"), None)
     tension_depth = bottom_row["depth"] if moment > 0 else (top_row["depth"] if top_row else bottom_row["depth"])
-    depths: list[float] = []
-    if skin:
-        db = BARS[skin["designation"]][0]
-        stirrup = BARS[f["stirrups"]["designation"]][0] if f.get("stirrups") else 0.0
-        limit = top_row["depth"] if top_row else f["cover"] + stirrup + db / 2
-        depth = bottom_row["depth"] - skin["spacing"]
-        while depth > limit + 1.0:
-            depths.append(depth)
-            depth -= skin["spacing"]
-    zone = [d for d in depths if (d >= h / 2 if moment > 0 else d <= h / 2)]
+    sides = _side_bars(f, rows)
+    zone = [(d, cc) for d, cc, _ in sides if (d >= h / 2 if moment > 0 else d <= h / 2)]
     if not zone:
         return {"name": "Flexion: refuerzo superficial", "status": "FAIL", "clause": clause}
-    ordered = sorted(zone, key=lambda d: abs(d - tension_depth))
+    ordered = sorted((d for d, _ in zone), key=lambda d: abs(d - tension_depth))
     points = [tension_depth, *ordered, h / 2]
     gap = max(abs(b - a) for a, b in zip(points, points[1:], strict=False))
     fs = 2 / 3 * FY
-    limit = min(380 * 280 / fs - 2.5 * f["cover"], 300 * 280 / fs)
+    cc = min(c for _, c in zone)
+    limit = min(380 * 280 / fs - 2.5 * cc, 300 * 280 / fs)
     return {"name": "Flexion: refuerzo superficial", "status": "PASS" if gap <= limit else "FAIL", "demand": gap,
             "capacity": limit, "clause": clause}
 
@@ -373,7 +388,7 @@ def _torsion_checks(folder: str, f: dict, rows: list[dict], given: tuple[float, 
     base = 0.42 * math.sqrt(FC) * acp / fy
     al_min = max(min(base - at_s * ph, base - 0.175 * b / fy * ph), 0.0)
     al_required = max(tu * ph / (phi * 2 * a0 * fy), al_min)
-    al_provided = sum(BARS[bar["designation"]][1] for layer in f.get("torsion_layers", []) for bar in layer["bars"])
+    al_provided = sum(area for _, _, area in _side_bars(f, rows))  # capas de torsión y piel (D-090)
     minimum = max(0.062 * math.sqrt(FC), 0.35) * b / fy
     return [threshold,
             {"name": "Torsion: dimensiones de la seccion", "status": "PASS" if stress <= stress_limit else "FAIL",
@@ -492,6 +507,15 @@ CASES = [
               torsion_layers=[{"depth": depth, "role": "torsion",
                                "bars": [{"designation": "#8", "x": x} for x in (150.0, 490.0, 830.0, 1170.0, 1510.0, 1850.0)]}
                               for depth in (250.0, 350.0)])),
+    ("piel-como-torsion", "h = 1000 mm, columna desplazada en Y y estribos cerrados: la piel #5 c/200 aporta Aℓ (D-090)",
+     _footing([_column("C1", -2000.0, [_load("U1", 1800.0, mx=-80.0)], y=450.0), _column("C2", 2000.0, [_load("U1", 1700.0)])],
+              h=1000.0, skin={"designation": "#5", "spacing": 200.0},
+              stirrups={"designation": "#5", "legs": 8, "spacing": 120.0, "closed": True})),
+    ("torsion-como-piel", "h = 1000 mm sin skin: las capas de torsión cerca de las caras cumplen el refuerzo superficial (D-090)",
+     _footing([_column("C1", -2000.0, [_load("U1", 1800.0)]), _column("C2", 2000.0, [_load("U1", 1800.0)])], h=1000.0,
+              torsion_layers=[{"depth": depth, "role": "torsion",
+                               "bars": [{"designation": "#5", "x": 90.0}, {"designation": "#5", "x": 1910.0}]}
+                              for depth in (500.0, 650.0, 800.0)])),
     ("torsion-sin-superior", "sin barras superiores y columna desplazada: concreto simple y torsión sin estribos (D-088)",
      _footing([_column("C1", -2000.0, [_load("U1", 900.0)], y=450.0), _column("C2", 2000.0, [_load("U1", 900.0)], y=-450.0)],
               top=None)),

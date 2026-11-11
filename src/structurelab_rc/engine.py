@@ -176,8 +176,8 @@ class CurveReport:
 def typology_curve_file(
     path: Path, output: Path, counts: Sequence[int] | None = None, workers: int = 1, method: str | None = None
 ) -> tuple[CurveReport | None, Check]:
-    """Curva costo–N del diseño por tipologías (D-078): curva.json, curva.csv, curva.svg y la memoria (memoria_curva.txt
-    y, si fpdf2 está instalado, memoria_curva.pdf) en la carpeta de salida."""
+    """Curva costo–N del diseño por tipologías (D-078): resultado.json, curva.csv, curva.svg y la memoria (memoria.txt y,
+    si fpdf2 está instalado, memoria.pdf) en la carpeta de salida, con los mismos nombres que las demás salidas."""
     ctx, validation = _design_context(path, method)
     if ctx is None:
         return None, validation
@@ -192,12 +192,12 @@ def typology_curve_file(
     data = curve_data(points, ctx.design.method, time.perf_counter() - begin)
     data = {"project": str(path), "profile": ctx.project.profile, **data}
     output.mkdir(parents=True, exist_ok=True)
-    json_path, csv_path, svg_path = output / "curva.json", output / "curva.csv", output / "curva.svg"
+    json_path, csv_path, svg_path = output / "resultado.json", output / "curva.csv", output / "curva.svg"
     json_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     csv_path.write_text(curve_csv(data), encoding="utf-8", newline="\n")
     svg_path.write_text(curve_svg(data), encoding="utf-8", newline="\n")
     blocks = curve_document(data, {"description": ctx.project.description, "profile": ctx.project.profile}, str(svg_path))
-    memoir_path, pdf_path = output / "memoria_curva.txt", output / "memoria_curva.pdf"
+    memoir_path, pdf_path = output / "memoria.txt", output / "memoria.pdf"
     memoir_path.write_text(render_text([blocks]), encoding="utf-8", newline="\n")
     files: tuple[Path, ...] = (json_path, csv_path, svg_path, memoir_path)
     if write_pdf([blocks], pdf_path):

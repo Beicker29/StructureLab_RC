@@ -869,8 +869,9 @@
   catálogo y su cobertura (`milp_iter`, que siguen creciendo: un punto puede salir igual o más barato que el diseño
   suelto con ese N) o la tabla de tramos (`milp` y `dp`: cada punto igual al diseño suelto). Cada punto lleva el f'c,
   el costo, el ahorro frente al N anterior, si el costo sube, la certificación del MILP del f'c elegido, las tipologías
-  distintas y las repetidas (con `at_limit`). `reporting/curve.py` arma `curva.json`, `curva.csv`, `curva.svg` y los
-  bloques de la memoria (`memoria_curva.txt` y `.pdf`); los renderizadores tienen el bloque `image` (el PDF incrusta
+  distintas y las repetidas (con `at_limit`). `reporting/curve.py` arma `resultado.json`, `curva.csv`, `curva.svg` y los
+  bloques de la memoria (`memoria.txt` y `.pdf`; hasta el 2026-11-11 `curva.json` y `memoria_curva.*`, renombrados para
+  usar los nombres de las demás salidas); los renderizadores tienen el bloque `image` (el PDF incrusta
   el SVG). La saturación no tiene umbral automático: repetidas y ahorro marginal pequeño se muestran para el ingeniero.
 - **Resultado (ETABS, 73 columnas, N = 1 a 12, `milp_iter`, 16 procesos):** NSR-10 en 1 355 s y ACI 318-25 en
   1 434 s; óptimo certificado en todos los puntos, sin repetidas y sin subidas; N = 6 coincide con el diseño suelto.
@@ -1193,6 +1194,58 @@
   (cumple At, Aℓ y sección) y `torsion-sin-superior` (concreto simple y torsión sin estribos), y `momentos-sismo`
   pasa a revisar torsión. Se detectan las mutaciones sin ∫y·q, con el signo de Mx cambiado y con Tu en la cara. Con
   estribos, el oráculo ubica las barras por dentro del estribo; la mutación que lo omite se detecta.
+
+### D-089: vigas de gran altura (v3 Fase 1.2)
+
+- **Fecha:** 2026-11-11
+- **Referencias:** ACI 318-25 9.9 (texto del PDF) y NSR-10 C.11.7 (imagen del PDF, C-200 y C-201) y C.10.7.
+- **Decisiones del usuario:**
+  1. La condición de viga alta (ACI 9.9.1.1, NSR-10 C.11.7.1) la declara el usuario en el JSON: `deep_beam: true` en el
+     miembro o en la zapata combinada (su viga larga), también en las plantillas de ETABS; por defecto `false`.
+  2. No se implementa el puntal-tensor. Se verifican los criterios de vigas altas: límites de sección, de refuerzo y
+     detallamiento del refuerzo.
+  3. Opción B: la flexión y el cortante seccionales se mantienen; la memoria avisa al comienzo que no consideran la
+     distribución no lineal de deformaciones (ACI 9.9.1.2, NSR-10 C.11.7.2) y que el análisis no lineal o el
+     puntal-tensor quedan a cargo del analista.
+- **Verificaciones** (`domain/beam/deep.py`, comunes a vigas y a la viga larga; fórmulas en `codes/<perfil>/deep_beam.py`),
+  en cada estación de un miembro declarado alto:
+  - límite de sección Vu ≤ φ·0.83√f'c·bw·d, con el φ y el d del cortante (ACI 9.9.2.1; NSR-10 C.11.7.3, √f'c ≤ 8.3 MPa
+    por C.11.1.2);
+  - refuerzo distribuido transversal: ramas·Ab/s ≥ 0.0025·bw (ACI 9.9.3.1(a); NSR-10 C.11.7.4.1);
+  - refuerzo distribuido longitudinal: cada capa intermedia (todas menos la superior y la inferior, de cualquier
+    función) frente a 0.0025·bw por su altura tributaria; sin capas intermedias no cumple (ACI 9.9.3.1(b); NSR-10
+    C.11.7.4.2);
+  - separación: la de los estribos y el mayor salto vertical entre capas frente a la menor entre d/5 y 300 mm (ACI
+    9.9.4.3; NSR-10 C.11.7.4.1 y C.11.7.4.2);
+  - cortinas (solo ACI 9.9.4.4, con bw > 200 mm): las ramas de los estribos, una cerca de cada cara, a no más de
+    600 mm a lo ancho; NSR-10 C.11.7.4 pide el refuerzo en las dos caras sin ese límite;
+  - As,min (ACI 9.9.3.2, NSR-10 C.10.7.3): la verificación de vigas que ya existe.
+- **Sin verificar** (limitaciones de las memorias): la resistencia no lineal o por puntal-tensor, el desarrollo en los
+  apoyos simples (ACI 9.9.4.5 y 9.9.4.6, NSR-10 C.12.10.6) y el pandeo lateral (NSR-10 C.10.7.2).
+- **Referencia:** ACI MNL-17(21), volumen 2, ejemplo de puntal-tensor 1, paso 11 (p. 210), solo sus criterios de 9.9:
+  Av/(bw·s) y Avh/(bw·s2) = 0.00287 (±1 %, el #5 del catálogo tiene 199 mm² frente a 0.31 in²), s = 9 in frente a d/5 y
+  300 mm (el libro, 12 in) y la capacidad nominal 0.83√f'c·bw·d con d = 82.5 in (±0.2 %). **Diferencia del libro:**
+  aplica φ = 0.85 en 9.9.2.1 (1064 kip); ACI 318 da φ = 0.75 para cortante (Tabla 21.2.1), que el paquete conserva
+  (939 kip); la prueba compara la capacidad nominal. El libro usa además d = 83.5 in para d/5 y 82.5 in en 9.9.2.1.
+- **Ejemplo:** `viga_alta.json` (los dos perfiles), la viga del manual en SI (600 × 2300 mm, 12 #9 en dos capas, malla #5
+  c/200 mm en cada cara); cumple. La primera versión ponía tres capas de 4 #9 y la piel no cumplía ACI 9.7.2.3
+  (D-083 cuenta solo las barras `skin`); se ajustó el ejemplo, no el código.
+- **Oráculo:** `derive_deep_beam.py` (seis casos: cumple, límite de sección, distribuido escaso, cortinas, sin capas
+  intermedias y no declarada); se detectan las mutaciones de la altura tributaria, la separación vertical y las capas
+  extremas.
+
+### D-090: el refuerzo de piel sirve como Aℓ de torsión y la torsión como piel
+
+- **Fecha:** 2026-11-11
+- **Decisión del usuario:** el refuerzo de piel puede usarse como refuerzo longitudinal de torsión y para cumplir el
+  refuerzo superficial (ACI 318-25 9.7.2.3, NSR-10 C.10.6.7). El texto de 9.7.2.3 no lo dice expresamente (solo permite
+  incluir la piel en la resistencia con un análisis de compatibilidad); queda como criterio del usuario.
+- **Regla, común a vigas y viga larga** (`SIDE_ROLES` en `domain/beam/flexure.py`): Aℓ provisto suma las capas `torsion`
+  y `skin`; el refuerzo superficial cuenta las barras `skin` y `torsion` dentro de h/2 desde la cara en tracción, con su
+  recubrimiento lateral; el diámetro mínimo de Aℓ (9.5 mm, D-088) se exige a las dos. Las capas de flexión siguen sin
+  contar como Aℓ (D-027). El refuerzo distribuido de las vigas altas ya contaba todas las capas intermedias (D-089).
+- **Oráculo:** casos `piel-como-torsion` y `torsion-como-piel` en `derive_combined_beam.py`; las mutaciones que vuelven a
+  separar los roles se detectan. Ningún ejemplo combinaba piel y torsión: sus verificaciones no cambian.
 
 ## Consultas abiertas
 

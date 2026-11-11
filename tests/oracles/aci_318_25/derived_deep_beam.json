@@ -1,0 +1,743 @@
+{
+  "description": "Criterios de vigas de gran altura (D-089): límite de sección, refuerzo distribuido, su separación y cortinas.",
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated"
+  },
+  "tolerance_rel": 1e-07,
+  "cases": [
+    {
+      "id": "cumple",
+      "description": "viga de transferencia de 400 × 1500 mm con estribos #4 c/200 y piel 2#4 cada 250 mm: cumple todo",
+      "member": {
+        "id": "cumple",
+        "type": "beam",
+        "length": 4000.0,
+        "section": {
+          "bw": 400.0,
+          "h": 1500.0,
+          "cover": 40.0
+        },
+        "stations": [
+          {
+            "z": 0.0,
+            "layout": {
+              "layers": [
+                {
+                  "depth": 60.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#6",
+                    "#6"
+                  ]
+                },
+                {
+                  "depth": 180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 430.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 680.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 930.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 1180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 1433.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8"
+                  ]
+                }
+              ],
+              "stirrups": {
+                "designation": "#4",
+                "legs": 2,
+                "spacing": 200.0,
+                "closed": true
+              }
+            },
+            "demands": {
+              "Pu_kN": 0.0,
+              "Mu_kNm": 1500.0,
+              "M2_kNm": 0.0,
+              "Vu_kN": 900.0,
+              "V3_kN": 0.0,
+              "Tu_kNm": 0.0
+            }
+          }
+        ],
+        "deep_beam": true
+      },
+      "expected": [
+        {
+          "name": "Viga alta: limite de seccion",
+          "status": "PASS",
+          "demand": 900000.0,
+          "capacity": 1888098.091120268,
+          "clause": "9.9.2.1"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido transversal",
+          "status": "PASS",
+          "demand": 1.0,
+          "capacity": 1.29,
+          "clause": "9.9.3.1(a)"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido longitudinal",
+          "status": "PASS",
+          "demand": 251.5,
+          "capacity": 258.0,
+          "clause": "9.9.3.1(b)"
+        },
+        {
+          "name": "Viga alta: separacion del refuerzo distribuido",
+          "status": "PASS",
+          "demand": 253.0,
+          "capacity": 286.6,
+          "clause": "9.9.4.3"
+        },
+        {
+          "name": "Viga alta: cortinas",
+          "status": "PASS",
+          "demand": 307.3,
+          "capacity": 600.0,
+          "clause": "9.9.4.4"
+        }
+      ]
+    },
+    {
+      "id": "limite-seccion",
+      "description": "Vu mayor que φ0.83√f'c·bw·d",
+      "member": {
+        "id": "limite-seccion",
+        "type": "beam",
+        "length": 4000.0,
+        "section": {
+          "bw": 400.0,
+          "h": 1500.0,
+          "cover": 40.0
+        },
+        "stations": [
+          {
+            "z": 0.0,
+            "layout": {
+              "layers": [
+                {
+                  "depth": 60.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#6",
+                    "#6"
+                  ]
+                },
+                {
+                  "depth": 180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 430.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 680.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 930.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 1180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 1433.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8"
+                  ]
+                }
+              ],
+              "stirrups": {
+                "designation": "#4",
+                "legs": 2,
+                "spacing": 200.0,
+                "closed": true
+              }
+            },
+            "demands": {
+              "Pu_kN": 0.0,
+              "Mu_kNm": 1500.0,
+              "M2_kNm": 0.0,
+              "Vu_kN": 2000.0,
+              "V3_kN": 0.0,
+              "Tu_kNm": 0.0
+            }
+          }
+        ],
+        "deep_beam": true
+      },
+      "expected": [
+        {
+          "name": "Viga alta: limite de seccion",
+          "status": "FAIL",
+          "demand": 2000000.0,
+          "capacity": 1888098.091120268,
+          "clause": "9.9.2.1"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido transversal",
+          "status": "PASS",
+          "demand": 1.0,
+          "capacity": 1.29,
+          "clause": "9.9.3.1(a)"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido longitudinal",
+          "status": "PASS",
+          "demand": 251.5,
+          "capacity": 258.0,
+          "clause": "9.9.3.1(b)"
+        },
+        {
+          "name": "Viga alta: separacion del refuerzo distribuido",
+          "status": "PASS",
+          "demand": 253.0,
+          "capacity": 286.6,
+          "clause": "9.9.4.3"
+        },
+        {
+          "name": "Viga alta: cortinas",
+          "status": "PASS",
+          "demand": 307.3,
+          "capacity": 600.0,
+          "clause": "9.9.4.4"
+        }
+      ]
+    },
+    {
+      "id": "distribuido-escaso",
+      "description": "piel 2#3 y estribos c/300 mm: no cumplen el refuerzo distribuido ni su separación",
+      "member": {
+        "id": "distribuido-escaso",
+        "type": "beam",
+        "length": 4000.0,
+        "section": {
+          "bw": 400.0,
+          "h": 1500.0,
+          "cover": 40.0
+        },
+        "stations": [
+          {
+            "z": 0.0,
+            "layout": {
+              "layers": [
+                {
+                  "depth": 60.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#6",
+                    "#6"
+                  ]
+                },
+                {
+                  "depth": 180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#3",
+                    "#3"
+                  ]
+                },
+                {
+                  "depth": 430.0,
+                  "role": "skin",
+                  "bars": [
+                    "#3",
+                    "#3"
+                  ]
+                },
+                {
+                  "depth": 680.0,
+                  "role": "skin",
+                  "bars": [
+                    "#3",
+                    "#3"
+                  ]
+                },
+                {
+                  "depth": 930.0,
+                  "role": "skin",
+                  "bars": [
+                    "#3",
+                    "#3"
+                  ]
+                },
+                {
+                  "depth": 1180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#3",
+                    "#3"
+                  ]
+                },
+                {
+                  "depth": 1433.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8"
+                  ]
+                }
+              ],
+              "stirrups": {
+                "designation": "#4",
+                "legs": 2,
+                "spacing": 300.0,
+                "closed": true
+              }
+            },
+            "demands": {
+              "Pu_kN": 0.0,
+              "Mu_kNm": 1500.0,
+              "M2_kNm": 0.0,
+              "Vu_kN": 900.0,
+              "V3_kN": 0.0,
+              "Tu_kNm": 0.0
+            }
+          }
+        ],
+        "deep_beam": true
+      },
+      "expected": [
+        {
+          "name": "Viga alta: limite de seccion",
+          "status": "PASS",
+          "demand": 900000.0,
+          "capacity": 1888098.091120268,
+          "clause": "9.9.2.1"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido transversal",
+          "status": "FAIL",
+          "demand": 1.0,
+          "capacity": 0.86,
+          "clause": "9.9.3.1(a)"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido longitudinal",
+          "status": "FAIL",
+          "demand": 251.5,
+          "capacity": 142.0,
+          "clause": "9.9.3.1(b)"
+        },
+        {
+          "name": "Viga alta: separacion del refuerzo distribuido",
+          "status": "FAIL",
+          "demand": 300.0,
+          "capacity": 286.6,
+          "clause": "9.9.4.3"
+        },
+        {
+          "name": "Viga alta: cortinas",
+          "status": "PASS",
+          "demand": 307.3,
+          "capacity": 600.0,
+          "clause": "9.9.4.4"
+        }
+      ]
+    },
+    {
+      "id": "cortinas",
+      "description": "bw = 900 mm con estribos de dos ramas: cortinas a más de 600 mm (ACI)",
+      "member": {
+        "id": "cortinas",
+        "type": "beam",
+        "length": 4000.0,
+        "section": {
+          "bw": 900.0,
+          "h": 1500.0,
+          "cover": 40.0
+        },
+        "stations": [
+          {
+            "z": 0.0,
+            "layout": {
+              "layers": [
+                {
+                  "depth": 60.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#6",
+                    "#6"
+                  ]
+                },
+                {
+                  "depth": 180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 430.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 680.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 930.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 1180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 1433.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8"
+                  ]
+                }
+              ],
+              "stirrups": {
+                "designation": "#4",
+                "legs": 2,
+                "spacing": 200.0,
+                "closed": true
+              }
+            },
+            "demands": {
+              "Pu_kN": 0.0,
+              "Mu_kNm": 1500.0,
+              "M2_kNm": 0.0,
+              "Vu_kN": 1500.0,
+              "V3_kN": 0.0,
+              "Tu_kNm": 0.0
+            }
+          }
+        ],
+        "deep_beam": true
+      },
+      "expected": [
+        {
+          "name": "Viga alta: limite de seccion",
+          "status": "PASS",
+          "demand": 1500000.0,
+          "capacity": 4248220.705020603,
+          "clause": "9.9.2.1"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido transversal",
+          "status": "FAIL",
+          "demand": 2.25,
+          "capacity": 1.29,
+          "clause": "9.9.3.1(a)"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido longitudinal",
+          "status": "FAIL",
+          "demand": 565.875,
+          "capacity": 258.0,
+          "clause": "9.9.3.1(b)"
+        },
+        {
+          "name": "Viga alta: separacion del refuerzo distribuido",
+          "status": "PASS",
+          "demand": 253.0,
+          "capacity": 286.6,
+          "clause": "9.9.4.3"
+        },
+        {
+          "name": "Viga alta: cortinas",
+          "status": "FAIL",
+          "demand": 807.3,
+          "capacity": 600.0,
+          "clause": "9.9.4.4"
+        }
+      ]
+    },
+    {
+      "id": "sin-intermedias",
+      "description": "sin capas intermedias: no hay refuerzo distribuido longitudinal",
+      "member": {
+        "id": "sin-intermedias",
+        "type": "beam",
+        "length": 4000.0,
+        "section": {
+          "bw": 400.0,
+          "h": 1500.0,
+          "cover": 40.0
+        },
+        "stations": [
+          {
+            "z": 0.0,
+            "layout": {
+              "layers": [
+                {
+                  "depth": 60.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#6",
+                    "#6"
+                  ]
+                },
+                {
+                  "depth": 1433.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8"
+                  ]
+                }
+              ],
+              "stirrups": {
+                "designation": "#4",
+                "legs": 2,
+                "spacing": 200.0,
+                "closed": true
+              }
+            },
+            "demands": {
+              "Pu_kN": 0.0,
+              "Mu_kNm": 1500.0,
+              "M2_kNm": 0.0,
+              "Vu_kN": 900.0,
+              "V3_kN": 0.0,
+              "Tu_kNm": 0.0
+            }
+          }
+        ],
+        "deep_beam": true
+      },
+      "expected": [
+        {
+          "name": "Viga alta: limite de seccion",
+          "status": "PASS",
+          "demand": 900000.0,
+          "capacity": 1888098.091120268,
+          "clause": "9.9.2.1"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido transversal",
+          "status": "PASS",
+          "demand": 1.0,
+          "capacity": 1.29,
+          "clause": "9.9.3.1(a)"
+        },
+        {
+          "name": "Viga alta: refuerzo distribuido longitudinal",
+          "status": "FAIL"
+        },
+        {
+          "name": "Viga alta: separacion del refuerzo distribuido",
+          "status": "FAIL",
+          "demand": 1373.0,
+          "capacity": 286.6,
+          "clause": "9.9.4.3"
+        },
+        {
+          "name": "Viga alta: cortinas",
+          "status": "PASS",
+          "demand": 307.3,
+          "capacity": 600.0,
+          "clause": "9.9.4.4"
+        }
+      ]
+    },
+    {
+      "id": "no-declarada",
+      "description": "la misma viga sin deep_beam: no hay verificaciones de viga alta",
+      "member": {
+        "id": "no-declarada",
+        "type": "beam",
+        "length": 4000.0,
+        "section": {
+          "bw": 400.0,
+          "h": 1500.0,
+          "cover": 40.0
+        },
+        "stations": [
+          {
+            "z": 0.0,
+            "layout": {
+              "layers": [
+                {
+                  "depth": 60.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#6",
+                    "#6"
+                  ]
+                },
+                {
+                  "depth": 180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 430.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 680.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 930.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 1180.0,
+                  "role": "skin",
+                  "bars": [
+                    "#4",
+                    "#4"
+                  ]
+                },
+                {
+                  "depth": 1433.0,
+                  "role": "flexure",
+                  "bars": [
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8",
+                    "#8"
+                  ]
+                }
+              ],
+              "stirrups": {
+                "designation": "#4",
+                "legs": 2,
+                "spacing": 200.0,
+                "closed": true
+              }
+            },
+            "demands": {
+              "Pu_kN": 0.0,
+              "Mu_kNm": 1500.0,
+              "M2_kNm": 0.0,
+              "Vu_kN": 900.0,
+              "V3_kN": 0.0,
+              "Tu_kNm": 0.0
+            }
+          }
+        ]
+      },
+      "expected": []
+    }
+  ]
+}

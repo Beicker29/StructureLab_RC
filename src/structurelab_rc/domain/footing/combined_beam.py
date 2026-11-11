@@ -25,6 +25,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
 from structurelab_rc.domain.basis import Basis
+from structurelab_rc.domain.beam.deep import deep_beam_checks
 from structurelab_rc.domain.beam.station import checks_for, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
@@ -223,8 +224,8 @@ def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> Mem
     rows = (mat_rows(footing, footing.bottom, bars)["x"], top_row(footing, bars))
     section, layout = beam_member(footing, rows, bars)
     placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
-    return Member.model_construct(id=footing.id, type="beam", statically_determinate=None, length=footing.lx, section=section,
-                                  stations=(placeholder,))
+    return Member.model_construct(id=footing.id, type="beam", statically_determinate=None, deep_beam=footing.deep_beam,
+                                  length=footing.lx, section=section, stations=(placeholder,))
 
 
 def critical_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
@@ -278,7 +279,8 @@ def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, give
         # Sin barras superiores: flexión de concreto simple (D-072) y el cortante (y la torsión) de vigas.
         flexure = plain_check(basis, footing, "x", -moment, (section.label, beam.case, _sentence(section.label)))
         given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
-        shear_only = [replace(check, member=footing.id, z=z, case=beam.case) for check in shear_and_torsion_checks(given_station)]
+        deep = deep_beam_checks(given_station) if footing.deep_beam else ()
+        shear_only = [replace(check, member=footing.id, z=z, case=beam.case) for check in (*shear_and_torsion_checks(given_station), *deep)]
         return [replace(flexure, z=z), *(_with_section(check, section.label) for check in shear_only)]
     checks = checks_for(StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True))
     return [_with_section(replace(check, member=footing.id), section.label) for check in checks]

@@ -32,6 +32,7 @@ class TemplateMember(_Input):
     type: Literal["beam", "column", "footing", "wall", "slab"]
     etabs_unique_name: str = Field(min_length=1)
     statically_determinate: bool | None = None
+    deep_beam: bool = False
     length: PositiveFloat
     section: Section
     segments: tuple[Segment, ...] = Field(min_length=1)
@@ -122,6 +123,7 @@ class TemplateCombinedFooting(_Input):
     stirrups: dict[str, Any] | None = None
     skin: dict[str, Any] | None = None
     torsion_layers: list[dict[str, Any]] | None = None
+    deep_beam: bool = False
 
     @model_validator(mode="after")
     def _check_sources(self) -> Self:

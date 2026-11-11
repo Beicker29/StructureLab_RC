@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from dataclasses import replace
 
 from structurelab_rc.codes.registry import Profile
+from structurelab_rc.domain.beam.deep import deep_beam_checks
 from structurelab_rc.domain.beam.flexure import (
     MIN_REINFORCEMENT_M2,
     NET_TENSILE_STRAIN_BIAXIAL,
@@ -72,7 +73,8 @@ def checks_for(given: StationInput) -> tuple[Check, ...]:
         flexure = flexure_checks(profile, materials, member, station, bars)
         if given.foundation:  # la zapata no tiene M2: las verificaciones del eje débil no aplican (D-083)
             flexure = tuple(check for check in flexure if check.name not in _WEAK_AXIS)
-        checks = (*flexure, *(() if skin is None else (skin,)), *shear_and_torsion_checks(given))
+        deep = deep_beam_checks(given) if member.deep_beam else ()
+        checks = (*flexure, *(() if skin is None else (skin,)), *shear_and_torsion_checks(given), *deep)
     return tuple(replace(check, member=member.id, z=station.z, case=station.case) for check in checks)
 
 

@@ -127,6 +127,7 @@ La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en los dos perfil
 | `top` | | Barras superiores paralelas a X (`designation`, `spacing`, `end`: `straight` o `hook`, como el `end` de la malla), opcional: sin ellas, el momento negativo se revisa como concreto simple (D-072). |
 | `stirrups` | | Estribos de la dirección larga, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
 | `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
+| `deep_beam` | sí/no | La viga larga es de gran altura (declarado por el usuario): se verifican los criterios de vigas altas como en las vigas (D-089). |
 | `torsion_layers` | | Capas de Aℓ de la viga larga con el formato de las capas de vigas (`depth` desde la cara superior, `role: "torsion"`, `bars` con x desde la cara −Y); opcional; sin ellas, Aℓ = 0 (D-088). |
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
@@ -201,10 +202,10 @@ escribe:
 
 | Archivo | Contenido |
 | --- | --- |
-| `curva.json` | `method`, `seconds` y `points`: por N, `N`, `fc [MPa]`, `cost`, `saving` y `saving [%]` (frente al N anterior), `saving_from_first` y `saving_from_first [%]` (acumulado frente al primer N), `rises` (el costo sube), `status` y `certified` (estado del MILP del f'c elegido; null con `dp`), `distinct_count`, `duplicates` (con `at_limit`) y `failure` si no tiene solución. |
+| `resultado.json` | `method`, `seconds` y `points`: por N, `N`, `fc [MPa]`, `cost`, `saving` y `saving [%]` (frente al N anterior), `saving_from_first` y `saving_from_first [%]` (acumulado frente al primer N), `rises` (el costo sube), `status` y `certified` (estado del MILP del f'c elegido; null con `dp`), `distinct_count`, `duplicates` (con `at_limit`) y `failure` si no tiene solución. |
 | `curva.csv` | Los mismos puntos, separados por punto y coma. |
 | `curva.svg` | Costo total frente a N: puntos naranjas con tipologías repetidas, rojos si el costo sube. |
-| `memoria_curva.txt`, `memoria_curva.pdf` | Memoria de la curva: datos del proyecto, la gráfica (incrustada en el PDF), la tabla de puntos y su lectura. |
+| `memoria.txt`, `memoria.pdf` | Memoria de la curva: datos del proyecto, la gráfica (incrustada en el PDF), la tabla de puntos y su lectura. |
 
 Lo que no depende de N se calcula una vez por f'c y se conserva entre valores de N: con `milp_iter`, el catálogo y su
 cobertura, que siguen creciendo (un punto puede salir igual o más barato que el diseño suelto con ese N); con `milp` y

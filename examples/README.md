@@ -6,7 +6,7 @@ del perfil; los campos de entrada y de salida están, una sola vez, en [docs/for
 ```text
 examples/
 ├── aci_318_25/
-│   ├── vigas/       viga_rectangular.json, viga_t.json, plantilla_vigas_etabs.json
+│   ├── vigas/       viga_rectangular.json, viga_t.json, viga_alta.json, plantilla_vigas_etabs.json
 │   └── zapatas/     zapata_centrica.json, zapata_combinada.json, diseno_tipologias.json,
 │                    plantilla_zapatas_etabs.json, plantilla_combinadas_etabs.json,
 │                    plantilla_diseno_zapatas_etabs.json

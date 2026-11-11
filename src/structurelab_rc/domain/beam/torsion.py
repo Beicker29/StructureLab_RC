@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 
 from structurelab_rc.codes.registry import Profile
+from structurelab_rc.domain.beam.flexure import SIDE_ROLES
 from structurelab_rc.domain.beam.geometry import inside_web, interior_limits, placed_bars
 from structurelab_rc.domain.beam.shear import SPACING, ShearTerms, concrete_lambda, leg_spacing_across, shear_terms
 from structurelab_rc.domain.beam.station_input import StationInput
@@ -70,7 +71,7 @@ def _longitudinal_detailing(profile: Profile, member: Member, station: Station, 
     if gaps and max(gaps) > limit:
         problems.append(f"hay capas separadas {max(gaps):.0f} mm en altura")
     minimum = torsion.min_longitudinal_diameter(layout.stirrups.spacing)
-    thin = [bar for bar in placed if bar.role == "torsion" and bar.diameter < minimum]
+    thin = [bar for bar in placed if bar.role in SIDE_ROLES and bar.diameter < minimum]
     if thin:
         problems.append(f"barras de torsion con diametro menor que {minimum:.1f} mm")
     clause = torsion.clauses()["detailing"]
@@ -103,7 +104,8 @@ def _checks(given: StationInput, terms: ShearTerms) -> list[Check]:
         torsion.required_longitudinal(tu, at_s, a0, ph, fyt, fy),
         torsion.min_longitudinal(materials.fc, acp, fy, at_s, ph, fyt, section.bw),
     )
-    al_provided = sum(bar.area for bar in placed_bars(station.layout, section, bars) if bar.role == "torsion")
+    # La piel cuenta como Aℓ además de las capas de torsión; las de flexión no (D-027, D-090).
+    al_provided = sum(bar.area for bar in placed_bars(station.layout, section, bars) if bar.role in SIDE_ROLES)
     minimum = torsion.min_transverse(materials.fc, section.bw, fyt)
     required_vs = max(vu / phi - terms.vc, 0.0)
     along = min(torsion.max_spacing(ph), shear.max_spacing(required_vs, materials.fc, section.bw, terms.d))

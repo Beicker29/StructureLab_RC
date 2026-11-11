@@ -33,6 +33,7 @@ Referencia de la entrada y la salida de la verificación de vigas, común a los 
 | `id` | texto | Identificador único. |
 | `type` | texto | Tipo de miembro; esta carpeta usa `beam`. |
 | `statically_determinate` | sí/no | Si la viga es isostática; solo se exige para As,min con el ala a tracción. |
+| `deep_beam` | sí/no | Viga de gran altura declarada por el usuario (ACI 9.9.1.1, NSR-10 C.11.7.1); opcional, por defecto no (D-089). |
 | `length` | mm | Longitud del miembro. |
 | `section.bw` | mm | Ancho del alma. |
 | `section.h` | mm | Altura total. |
@@ -92,10 +93,15 @@ Cada verificación de `resultado.json` tiene:
 | Flexión: resistencia | φMn biaxial con Pn = Pu frente a Mu y M2; valores `phi`, `Mn3`, `Mn2`, `theta` (orientación del eje neutro), `c`, `et`. |
 | Flexión: deformación neta de tracción (M3, M2, biaxial) | εt mínima del perfil frente a la εt de cada estado. |
 | Flexión: acero mínimo (M3, M2) | As,min frente al acero a tracción del lado en tracción (más allá de la mitad de la altura), con d ≥ 0.8h; si As < As,min, basta 4/3 del As requerido por el momento de la estación (ACI 9.6.1.3, NSR-10 C.10.5.3; valores `As,min` y `As analisis`). |
-| Flexión: refuerzo superficial | Solo con h > 900 mm (ACI 9.7.2.3, NSR-10 C.10.6.7): en cada cara lateral, la mayor separación entre la capa en tracción, las barras `skin` y el límite h/2 frente al control de agrietamiento con cc a la cara lateral; sin barras de piel en una cara, FAIL. |
+| Flexión: refuerzo superficial | Solo con h > 900 mm (ACI 9.7.2.3, NSR-10 C.10.6.7): en cada cara lateral, la mayor separación entre la capa en tracción, las barras `skin` o `torsion` (D-090) y el límite h/2 frente al control de agrietamiento con cc a la cara lateral; sin barras de piel en una cara, FAIL. |
 | Flexión: separación por fisuración | Separación entre barras vecinas de la capa más cercana a la cara en tracción frente a 380·(280/fs) − 2.5·cc ≤ 300·(280/fs), fs = 2/3·fy (ACI 24.3.2, NSR-10 C.10.6.4); con una sola barra, el ancho de esa cara. Valores `cc` y `barras`. |
 | Cortante: resistencia, dimensiones de la sección, refuerzo mínimo, separación máxima | Vc + Vs, límite de la sección, Av,min y separaciones en la dirección V2. |
 | Cortante V3: ... | Las mismas verificaciones en la dirección V3; d ≥ 0.8bw. |
 | Cortante: interacción V2-V3 | Solo ACI 318-25: interacción de los cortantes en dos direcciones. |
 | Torsión: umbral | Si Tu < φTth la torsión se desprecia (valores `Tu` y `phi Tth`). |
-| Torsión: dimensiones, refuerzo transversal y longitudinal, mínimos y distribución | Verificación combinada con el cortante cuando la torsión no es despreciable. |
+| Torsión: dimensiones, refuerzo transversal y longitudinal, mínimos y distribución | Verificación combinada con el cortante cuando la torsión no es despreciable; Aℓ provisto suma las capas `torsion` y `skin` (D-027, D-090). |
+| Viga alta: límite de sección | Solo con `deep_beam`: Vu frente a φ·0.83√f'c·bw·d (ACI 9.9.2.1, NSR-10 C.11.7.3; valores `phi`, `d`). |
+| Viga alta: refuerzo distribuido transversal | Ramas·Ab/s de los estribos frente a 0.0025·bw (ACI 9.9.3.1(a), NSR-10 C.11.7.4.1). |
+| Viga alta: refuerzo distribuido longitudinal | La capa intermedia que gobierna frente a 0.0025·bw por su altura tributaria (ACI 9.9.3.1(b), NSR-10 C.11.7.4.2; valor `capa`). |
+| Viga alta: separación del refuerzo distribuido | La separación de los estribos y el mayor salto vertical entre capas frente a la menor entre d/5 y 300 mm (valores `s estribos`, `sd vertical`). |
+| Viga alta: cortinas | Solo ACI 318-25 con bw > 200 mm: separación de las ramas a lo ancho frente a 600 mm (9.9.4.4). |

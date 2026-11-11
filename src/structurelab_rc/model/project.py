@@ -116,11 +116,13 @@ class Station(_Input):
 
 
 class Member(_Input):
-    """type declara el tipo de miembro; statically_determinate solo se exige para As,min con el ala a tracción (D-021)."""
+    """type declara el tipo de miembro; statically_determinate solo se exige para As,min con el ala a tracción (D-021);
+    deep_beam declara que es viga de gran altura (ACI 9.9.1.1, NSR-10 C.11.7.1): se verifican sus criterios (D-089)."""
 
     id: str = Field(min_length=1)
     type: Literal["beam", "column", "footing", "wall", "slab"]
     statically_determinate: bool | None = None
+    deep_beam: bool = False
     length: PositiveFloat
     section: Section
     stations: tuple[Station, ...] = Field(min_length=1)

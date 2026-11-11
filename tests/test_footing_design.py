@@ -531,10 +531,10 @@ def test_cli_writes_the_curve_and_its_memoir(tmp_path: Path) -> None:
     source.write_text(json.dumps(_curve_data("milp_iter")), encoding="utf-8")
     output = tmp_path / "curva"
     assert main(["typology-curve", str(source), "--output", str(output), "--n", "1-2,3", "--workers", "1"]) == 0
-    data = json.loads((output / "curva.json").read_text(encoding="utf-8"))
+    data = json.loads((output / "resultado.json").read_text(encoding="utf-8"))
     assert [row["N"] for row in data["points"]] == [1, 2, 3]
     assert (output / "curva.svg").read_text(encoding="utf-8").startswith("<svg")
-    assert "Curva costo–N" in (output / "memoria_curva.txt").read_text(encoding="utf-8")
+    assert "Curva costo–N" in (output / "memoria.txt").read_text(encoding="utf-8")
     assert (output / "curva.csv").exists()
 
 
