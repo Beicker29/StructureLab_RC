@@ -1028,7 +1028,9 @@
 - **Reglas propias (no ambiguas en la norma):** en una estación en la cara de una columna, el cortante es el de la
   sección a d (ACI 9.4.3.2 y 13.2.7.2): sin esto, el código de vigas revisaba el cortante en la cara. Aplica a la viga
   larga y a las franjas. La malla y fuera de las franjas cumple el mínimo de losa (ACI 13.3.2.1 y 7.6.1.1, NSR-10
-  C.10.5.4) y la separación de 3h y 450 mm. El tipo de extremo de todas las barras es el `end` de la malla inferior.
+  C.10.5.4) y la separación de 3h y 450 mm. El tipo de extremo (rectas o con gancho estándar, que cambia ld por ldh en
+  el desarrollo): las barras de la malla inferior y el `band` usan el `end` de la malla; las superiores declaran el
+  suyo (`top.end`, decisión del usuario).
 - **Reutilización:** `transferred_load` (carga que atraviesa la sección crítica: la acción de la columna como carga
   neta equivalente menos la carga neta dentro del área crítica), `punching_checks`, `bar_anchorage`, `bearing_area`,
   `bearing_checks` y `dowel_checks` salen de la zapata aislada sin cambiar sus resultados (huella idéntica); la acción

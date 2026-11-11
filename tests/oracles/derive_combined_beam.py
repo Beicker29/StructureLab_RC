@@ -332,7 +332,7 @@ def _footing(columns: list[dict], **changes: object) -> dict:
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
             "bottom": {"first": "x", "end": "straight", "x": {"designation": "#7", "spacing": 150.0},
                        "y": {"designation": "#5", "spacing": 200.0}},
-            "top": {"designation": "#7", "spacing": 150.0}}
+            "top": {"designation": "#7", "spacing": 150.0, "end": "straight"}}
     data.update(changes)
     return {key: value for key, value in data.items() if value is not None}
 
@@ -344,7 +344,7 @@ CASES = [
      _footing([_column("C1", -2700.0, [_load("U1", 900.0)], cx=450.0), _column("C2", 1000.0, [_load("U1", 1600.0)], cx=500.0, cy=500.0)],
               lx=6000.0, ly=2400.0, h=800.0, bottom={"first": "x", "end": "straight", "x": {"designation": "#8", "spacing": 150.0},
                                                        "y": {"designation": "#5", "spacing": 200.0}},
-              top={"designation": "#8", "spacing": 150.0})),
+              top={"designation": "#8", "spacing": 150.0, "end": "straight"})),
     ("momentos-sismo", "dos casos: gravedad y sismo con My, Vx, pedestal y columnas desplazadas en Y",
      _footing([_column("C1", -2200.0, [_load("U1", 1100.0, mx=20.0), _load("U2", 800.0, dead=1.0, live=0.5, my=250.0,
          vx=90.0, seismic=True)],
@@ -359,17 +359,17 @@ CASES = [
     ("cortante-con-estribos", "la misma zapata delgada con estribos: Vs, Av,min (ACI 7.6.3.1) y d del acero a tracción",
      _footing([_column("C1", -2000.0, [_load("U1", 2200.0)]), _column("C2", 2000.0, [_load("U1", 2200.0)])], h=550.0,
               stirrups={"designation": "#4", "legs": 8, "spacing": 250.0, "closed": True},
-              top={"designation": "#8", "spacing": 120.0})),
+              top={"designation": "#8", "spacing": 120.0, "end": "straight"})),
     ("minimo-excepcion", "cargas pequeñas: As < As,min de vigas pero ≥ 4/3 del requerido (excepción)",
      _footing([_column("C1", -1500.0, [_load("U1", 250.0)]), _column("C2", 1500.0, [_load("U1", 250.0)])], lx=4500.0,
               bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 250.0},
                   "y": {"designation": "#5", "spacing": 250.0}},
-              top={"designation": "#5", "spacing": 250.0})),
+              top={"designation": "#5", "spacing": 250.0, "end": "straight"})),
     ("minimo-no-cumple", "As menor que As,min y que 4/3 del requerido",
      _footing([_column("C1", -1200.0, [_load("U1", 1300.0)]), _column("C2", 1200.0, [_load("U1", 1300.0)])],
               bottom={"first": "y", "end": "straight", "x": {"designation": "#4", "spacing": 350.0},
                   "y": {"designation": "#5", "spacing": 200.0}},
-              top={"designation": "#8", "spacing": 120.0})),
+              top={"designation": "#8", "spacing": 120.0, "end": "straight"})),
     ("contacto-parcial", "momento grande: contacto parcial, la carga uniforme supera la presión en un voladizo",
      _footing([_column("C1", -2000.0, [_load("U1", 900.0, my=900.0, live=0.0, dead=1.2)]),
                _column("C2", 2000.0, [_load("U1", 400.0, my=900.0, live=0.0, dead=1.2)])])),

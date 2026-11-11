@@ -189,10 +189,10 @@ def _excess(basis: Basis, section: tuple[float, float, float], provided: float, 
 def _development_check(basis: Basis, footing: CombinedFooting, row: BarRow, anchorage: tuple[float, bool, float, float],
                        text: tuple[str, str]) -> Check:
     """anchorage = (menor separación, malla inferior, As requerido / As suministrado, longitud disponible); text = (nombre,
-    nota). El tipo de extremo es el de la malla inferior (D-082)."""
+    nota). El tipo de extremo es el de la malla inferior o el de las barras superiores (D-082)."""
     spacing, bottom, excess, available = anchorage
     name, note = text
-    end = footing.bottom.end
+    end = footing.bottom.end if bottom or footing.top is None else footing.top.end
     bar = bar_anchorage(row, (end, spacing, bottom), (footing.h, footing.cover), excess)
     required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
     ends = "Barras con gancho estandar" if end == "hook" else "Barras rectas"

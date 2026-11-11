@@ -236,7 +236,7 @@ def test_project_with_a_combined_footing_runs_every_structural_check(tmp_path: P
     for column, beam_column in zip(footing["columns"], _oracle("nsr_10", "derived_combined_beam")["cases"][0]["footing"]["columns"],
                                    strict=True):
         column["loads"] = column["loads"] + beam_column["loads"]
-    footing["top"] = {"designation": "#7", "spacing": 150.0}
+    footing["top"] = {"designation": "#7", "spacing": 150.0, "end": "straight"}
     footing["bottom"]["x"] = {"designation": "#7", "spacing": 150.0}
     checks = _project(tmp_path, footing)
     by_name = {check.name: check for check in checks}

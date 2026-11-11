@@ -28,7 +28,7 @@
   "cases": [
     {
       "id": "interiores",
-      "description": "dos columnas interiores simétricas, con band bajo cada una",
+      "description": "dos columnas interiores simétricas, con band bajo cada una; barras superiores con gancho y malla recta",
       "footing": {
         "id": "ZC",
         "lx": 6000.0,
@@ -111,7 +111,8 @@
         },
         "top": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "hook"
         }
       },
       "expected": [
@@ -614,9 +615,9 @@
         {
           "name": "Desarrollo barras superiores x",
           "status": "PASS",
-          "demand": 300.0,
+          "demand": 177.6,
           "capacity": 2924.999988371764,
-          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4; C.12.2.5 y C.12.5.3(d)",
+          "clause": "C.12.5.1 y C.12.5.2; C.12.2.5 y C.12.5.3(d)",
           "where": ""
         },
         {
@@ -776,7 +777,8 @@
         },
         "top": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         }
       },
       "expected": [
@@ -1461,7 +1463,8 @@
         },
         "top": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         }
       },
       "expected": [
@@ -2612,7 +2615,8 @@
         },
         "top": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "hook"
         }
       },
       "expected": [
@@ -3256,7 +3260,8 @@
         },
         "top": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         }
       },
       "expected": [

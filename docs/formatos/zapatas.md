@@ -123,7 +123,7 @@ La memoria llega en V3J.4.
 | `columns[].band` | | Refuerzo transversal adicional bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation` y `spacing` (opcional). |
 | `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; las dos columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
 | `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
-| `top` | | Barras superiores paralelas a X (`designation`, `spacing`), opcional: sin ellas, el momento negativo se revisa como concreto simple (D-072). |
+| `top` | | Barras superiores paralelas a X (`designation`, `spacing`, `end`: `straight` o `hook`, como el `end` de la malla), opcional: sin ellas, el momento negativo se revisa como concreto simple (D-072). |
 | `stirrups` | | Estribos de la dirección larga, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)

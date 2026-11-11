@@ -95,7 +95,8 @@
         },
         "top": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         }
       },
       "expected": {
@@ -493,7 +494,8 @@
         },
         "top": {
           "designation": "#8",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         }
       },
       "expected": {
@@ -864,7 +866,8 @@
         },
         "top": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         }
       },
       "expected": {
@@ -1775,7 +1778,8 @@
         },
         "top": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         }
       },
       "expected": {
@@ -2177,7 +2181,8 @@
         },
         "top": {
           "designation": "#8",
-          "spacing": 120.0
+          "spacing": 120.0,
+          "end": "straight"
         },
         "stirrups": {
           "designation": "#4",
@@ -2585,7 +2590,8 @@
         },
         "top": {
           "designation": "#5",
-          "spacing": 250.0
+          "spacing": 250.0,
+          "end": "straight"
         }
       },
       "expected": {
@@ -2885,7 +2891,8 @@
         },
         "top": {
           "designation": "#8",
-          "spacing": 120.0
+          "spacing": 120.0,
+          "end": "straight"
         }
       },
       "expected": {
@@ -3234,7 +3241,8 @@
         },
         "top": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         }
       },
       "expected": {

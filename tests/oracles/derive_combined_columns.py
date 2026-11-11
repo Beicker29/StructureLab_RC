@@ -265,7 +265,7 @@ def _develop(folder: str, f: dict, bar: tuple[float, float, float, bool], given:
     """bar = (db, separación, profundidad desde la cara opuesta, malla inferior); given = (razón As, disponible, nombre, nota)."""
     db, spacing, depth, bottom = bar
     ratio, available, name, _ = given
-    hook = f["bottom"]["end"] == "hook"
+    hook = (f["bottom"] if bottom else f["top"])["end"] == "hook"
     permitted = level == LEVELS[folder]["bajo"] and (not hook or folder == "nsr_10")
     excess = ratio if permitted else 1.0
     if hook:
@@ -409,15 +409,16 @@ def _footing(columns: list[dict], **changes: object) -> dict:
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
             "bottom": {"first": "x", "end": "straight", "x": {"designation": "#7", "spacing": 150.0},
                        "y": {"designation": "#6", "spacing": 150.0}},
-            "top": {"designation": "#7", "spacing": 150.0}}
+            "top": {"designation": "#7", "spacing": 150.0, "end": "straight"}}
     data.update(changes)
     return {key: value for key, value in data.items() if value is not None}
 
 
 BAND = {"designation": "#7", "spacing": 120.0}
 CASES = [
-    ("interiores", "dos columnas interiores simétricas, con band bajo cada una",
-     _footing([_column("C1", -1800.0, [_load("U1", 1300.0)], band=BAND), _column("C2", 1800.0, [_load("U1", 1300.0)], band=BAND)])),
+    ("interiores", "dos columnas interiores simétricas, con band bajo cada una; barras superiores con gancho y malla recta",
+     _footing([_column("C1", -1800.0, [_load("U1", 1300.0)], band=BAND), _column("C2", 1800.0, [_load("U1", 1300.0)], band=BAND)],
+              top={"designation": "#7", "spacing": 150.0, "end": "hook"})),
     ("borde", "columna de borde (perímetro de 3 lados, αs = 30), cargas desiguales, sin band",
      _footing([_column("C1", -2775.0, [_load("U1", 900.0)]), _column("C2", 1200.0, [_load("U1", 1800.0)], cx=500.0, cy=500.0)])),
     ("momentos", "dos casos con My, Mx, Vx y columnas desplazadas en Y; pedestal",
@@ -429,7 +430,7 @@ CASES = [
      _footing([_column("C1", -1800.0, [_load("U1", 2600.0)], cx=300.0, cy=300.0, dowels={"designation": "#8", "count": 8}),
                _column("C2", 1800.0, [_load("U1", 2600.0)], cx=300.0, cy=300.0, dowels=None)],
               bottom={"first": "y", "end": "hook", "x": {"designation": "#8", "spacing": 120.0},
-                      "y": {"designation": "#5", "spacing": 300.0}})),
+                      "y": {"designation": "#5", "spacing": 300.0}}, top={"designation": "#7", "spacing": 150.0, "end": "hook"})),
     ("delgada", "zapata delgada: punzonamiento, flexión y cortante de las franjas no cumplen; C2 grande, con A2/A1 < 4",
      _footing([_column("C1", -1800.0, [_load("U1", 2200.0)]), _column("C2", 1800.0, [_load("U1", 2200.0)], cx=1000.0, cy=1000.0)],
               h=450.0)),

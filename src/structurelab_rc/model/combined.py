@@ -3,7 +3,7 @@ D-055, D-057): geometría en mm, sobrecargas en kN/m² al declarar; X es la dire
 columnas, con el origen en el centroide de la base. Las propiedades derivadas se calculan; nunca se declaran.
 """
 
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
@@ -11,6 +11,13 @@ from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLo
 from structurelab_rc.model.reinforcement import Stirrups
 
 COLUMNS = 2
+
+
+class TopBars(BarSet):
+    """Barras superiores paralelas a X de la zapata combinada; end declara cómo terminan: rectas o con gancho estándar
+    (D-082)."""
+
+    end: Literal["straight", "hook"]
 
 
 class CombinedColumn(_Input):
@@ -49,7 +56,7 @@ class CombinedFooting(_Input):
     surcharge_live: NonNegativeFloat = Field(validation_alias="surcharge_live_kNm2")
     columns: tuple[CombinedColumn, ...] = Field(min_length=COLUMNS, max_length=COLUMNS)
     bottom: Mat
-    top: BarSet | None = None
+    top: TopBars | None = None
     stirrups: Stirrups | None = None
 
     @field_validator("surcharge_dead", "surcharge_live")
