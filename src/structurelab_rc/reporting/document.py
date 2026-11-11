@@ -105,6 +105,8 @@ _COMBINED_LIMITATIONS = (
     "Si los perímetros de punzonamiento de las dos columnas se traslapan, se revisa además el perímetro común (D-086). Si "
     "la presión es nula en la línea de una columna, su franja usa la presión integrada en su ancho o, sin ella, la carga "
     "uniforme (D-085).",
+    "Revisión en una dirección (ACI 13.3.2); el comportamiento en dos direcciones (13.3.4) no está implementado y se avisa "
+    "cuando B ≥ ℓn, la luz libre entre las caras de las columnas (D-091).",
     "Viga larga de gran altura (deep_beam): la resistencia por análisis no lineal o puntal-tensor no se verifica (D-089). "
     "Otras formas de zapata combinada y más de dos columnas: no cubiertas.",
 )
@@ -462,6 +464,17 @@ def _beam_moments(footing: dict[str, Any]) -> list[Block]:
                                      "zapata ni se verifica aquí (ACI 8.4.2.2, NSR-10 C.13.5.3; D-087)."}]
 
 
+def _two_way_alert(footing: dict[str, Any]) -> list[Block]:
+    """Aviso de zapata ancha (D-091): B ≥ ℓn; se revisa en una dirección, pero puede trabajar en dos."""
+    warning = footing.get("two_way_warning")
+    if not warning:
+        return []
+    return [{"kind": "alert", "text": f"El ancho B = {number(warning['B [mm]'], 'mm')} mm alcanza la luz libre entre columnas "
+                                      f"ℓn = {number(warning['ln [mm]'], 'mm')} mm (B/ℓn = {warning['B/ln']:.2f}): la zapata "
+                                      "puede trabajar en dos direcciones (ACI 13.3.4). Se revisa en una dirección (ACI "
+                                      "13.3.2); la revisión en dos direcciones no está implementada (D-091)."}]
+
+
 def _deep_alert(deep: bool, subject: str) -> list[Block]:
     """Aviso de viga de gran altura declarada (D-089): se verifican sus criterios, pero la resistencia es seccional."""
     if not deep:
@@ -627,7 +640,8 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
     meta = [("Columnas", " y ".join(column["id"] for column in footing["columns"])),
             ("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
     head = [_title(f"Zapata combinada {footing['id']}", results, meta, items, footing["status"]), _summary(items),
-            *_beam_alert(footing), *_deep_alert(footing.get("deep_beam", False), "La viga en la dirección larga")]
+            *_beam_alert(footing), *_deep_alert(footing.get("deep_beam", False), "La viga en la dirección larga"),
+            *_two_way_alert(footing)]
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
         ("Propiedades geométricas, columnas, suelo y armado", lambda _: _combined_geometry(results, footing)),

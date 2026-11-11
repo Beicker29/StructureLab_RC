@@ -241,7 +241,9 @@ propiedades calculadas, el número de casos y las verificaciones, y `foundation_
 de la viga y `M [kN-m]`): los momentos transferidos que debe tomar la viga de cimentación (D-087). Las zapatas
 combinadas van en `combined_footings`: la
 geometría, las columnas (`columns[]`, cada una con sus cargas), las propiedades calculadas de la base, el armado
-(`bottom`, `top`, `stirrups`, `skin`, `torsion_layers`) y las verificaciones, cada una con su `case`, su `z [mm]` (posición en la viga
+(`bottom`, `top`, `stirrups`, `skin`, `torsion_layers`), `deep_beam`, `two_way_warning` (B, ℓn y B/ℓn si B ≥ ℓn, la luz
+libre entre las caras de las columnas: puede trabajar en dos direcciones, D-091; null si no) y las verificaciones, cada
+una con su `case`, su `z [mm]` (posición en la viga
 larga desde −X o en la franja desde −Y; nula en las demás) y en `note` la sección, la franja o la columna. Su memoria
 separa la viga larga (flexión, cortante y torsión, D-088) de las franjas transversales y trae la planta de presiones con las dos columnas y la tabla de
 esfuerzos de punzonamiento en cada esquina.

@@ -12,7 +12,7 @@ from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.checks import COMBINED_STRUCTURAL
-from structurelab_rc.domain.footing.combined_beam import beam_case, long_beam_checks
+from structurelab_rc.domain.footing.combined_beam import beam_case, long_beam_checks, two_way_warning
 from structurelab_rc.domain.footing.combined_columns import column_checks
 from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.footing.service import BEARING, CONTACT, combined_service_checks
@@ -331,3 +331,21 @@ def test_valid_torsion_layers_pass_and_reach_the_report(tmp_path: Path) -> None:
     report_file(path, tmp_path / "salida")
     text = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
     assert "2 #5 a 400 mm" in text and "Viga en la dirección larga: torsión" in text
+
+
+def test_wide_footing_warns_about_two_way_behaviour(tmp_path: Path) -> None:
+    """D-091: con B ≥ ℓn (luz libre entre las caras de las columnas) se avisa que la zapata puede trabajar en dos
+    direcciones; se sigue revisando en una y el estado no cambia. El ejemplo (B = 2600, ℓn = 4475 mm) no avisa."""
+    data: dict[str, Any] = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    footing = data["combined_footings"][0]
+    assert two_way_warning(CombinedFooting.model_validate(footing)) is None
+    footing["ly"] = 4500.0
+    warning = two_way_warning(CombinedFooting.model_validate(footing))
+    assert warning is not None
+    assert warning.clear_span == pytest.approx(4475.0) and warning.ratio == pytest.approx(4500.0 / 4475.0)
+    path = tmp_path / "ancha.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    report_file(path, tmp_path / "salida")
+    results = json.loads((tmp_path / "salida" / "resultado.json").read_text(encoding="utf-8"))
+    assert results["combined_footings"][0]["two_way_warning"]["ln [mm]"] == pytest.approx(4475.0)
+    assert "puede trabajar en dos direcciones" in (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")

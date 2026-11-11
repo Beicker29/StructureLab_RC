@@ -17,8 +17,10 @@ columnas (verificación, entrada desde ETABS), D-052 a D-087.
 
 ### Fase 1: zapatas combinadas completas
 
-1. Criterio para decidir si una zapata combinada trabaja en una dirección (13.3.2, como hoy) o en dos (13.3.4), con un
-   aviso cuando sea muy ancha frente a la separación entre columnas; la norma no lo define (D-087).
+1. Zapata combinada en dos direcciones (ACI 13.3.4, capítulo 8): declarar el comportamiento e implementar sus
+   verificaciones (mínimo 0.0018·Ag en cada dirección, separación 2h y 450 mm, sin torsión de viga, Av,min ni piel, y un
+   criterio de reparto entre franjas de columna y centrales). Hoy se revisa en una dirección y se avisa si B ≥ ℓn
+   (D-091).
 
 ### Fase 2: geotecnia, estabilidad y concreto simple
 
@@ -74,10 +76,13 @@ Cada tipo entra con verificación, diseño, despiece y dibujo sobre las fases 3 
 
 1. Medianera con viga de amarre (pausada, con 7 preguntas abiertas).
 2. Zapatas combinadas de otras formas o con más de dos columnas.
-3. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
-4. Losas de cimentación.
-5. Pilotes y dados.
-6. Muros.
+3. Zapata combinada en T invertida (viga de cimentación sobre una zarpa más ancha) y zapata corrida (strip footing)
+   bajo una fila de columnas o un muro: la viga y las aletas de la zarpa, con la presión del suelo, revisadas con el
+   código de vigas y de losas en una dirección (ACI 13.3.2, NSR-10 C.15).
+4. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
+5. Losas de cimentación.
+6. Pilotes y dados.
+7. Muros.
 
 ## v1: vigas (pendientes)
 

@@ -21,16 +21,16 @@
     "memoria.txt": "04457a41913c27e5d8f819eafdbe2522d65830e25187b92bc7e76bdfe6d228b2"
   },
   "examples/aci_318_25/zapatas/plantilla_combinadas_etabs.json": {
-    "resultado.json": "8c93e061aadb60aedabfddf4b4fc8988295c22b0e40814031204df4280a9457d",
-    "memoria.txt": "e01b3d8fca781ef69ed36874f709bec8e0eb131b618042d84ac4726a89dd96ef"
+    "resultado.json": "bb1de6454b431c6942556c945b1d78c3a3b9df94a66aaff84f983953040a2e36",
+    "memoria.txt": "37a9d7238a7eb41f4b0eb085fdb855a1b809712e70d430a00e1a52fd95f6fced"
   },
   "examples/aci_318_25/zapatas/zapata_centrica.json": {
     "resultado.json": "96ceb8100417a32a787e27638ab9362f8d051dc5682461ad5f00e389cd253ed0",
     "memoria.txt": "15aeb30b48ead21c0355e644e37753f1d023c3b92805d1d666706ee61284c65a"
   },
   "examples/aci_318_25/zapatas/zapata_combinada.json": {
-    "resultado.json": "100d823a81db43d22ad3be43cac95281e2e0e1d9241915586a006c80f885655a",
-    "memoria.txt": "fdb5ab14e7326cde574b876c6c8addcdf3aed4dced9d2208001bfe22fac7c0f0"
+    "resultado.json": "11517429f5767a7bca2a705e232f476ffb0e29d07ed8aafc1c9c1137a0974b94",
+    "memoria.txt": "e74782830c9a873f81282e68365ecf245f19d6b70067f131ff63a3cf3bc63081"
   },
   "examples/nsr_10/vigas/plantilla_vigas_etabs.json": {
     "resultado.json": "3cf08eadb0f80570ccde6fe73a84d948d83514e3bc04c980dc4bcc96c740de20",
@@ -54,15 +54,15 @@
     "memoria.txt": "756ac30de3f25b37d99e0428357a8e5fff2ea78a41e538b1155d210d0e6455bf"
   },
   "examples/nsr_10/zapatas/plantilla_combinadas_etabs.json": {
-    "resultado.json": "29451adf879e20235753d10128f0bb927fdfc8a329380aa7b4215caa2e962471",
-    "memoria.txt": "30d1c92a29e884b10addcf8211cffb277206b99751fe2231deb2e19403140421"
+    "resultado.json": "dc21abb93c53ec5b530dbe866a82f47ef7597078e19bf0f86779980491db51cb",
+    "memoria.txt": "8baf039ca2b0c2c9dd4c03166310b6b5d8e3565e9ac7723c87d9fee2c4cf71b8"
   },
   "examples/nsr_10/zapatas/zapata_centrica.json": {
     "resultado.json": "5772f335b46b4c5ad89f5b4d8abd5dfe885629c806fac3d17a6893cd1b76cb33",
     "memoria.txt": "09657a75f47a441e87ec70738a8f6fb511ae7082aefb94816ea2b8e9b6237e19"
   },
   "examples/nsr_10/zapatas/zapata_combinada.json": {
-    "resultado.json": "b47e07b932429b0013c4564d73f15772a9fa685252dd8e69bd65864a885280f8",
-    "memoria.txt": "26afc618a8f5bf069acdd594c398c6b3b2390e9f278f3f0b8c7292dc24d8db9b"
+    "resultado.json": "a7351ef39acc37756be1b122684395e97cbac190fbdd2af6863c1737e1742c37",
+    "memoria.txt": "204d920ededffbc285d2f8758fd837d8fa744e58e6461a7bf7b80581af2e1f8b"
   }
 }

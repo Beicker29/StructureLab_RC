@@ -219,6 +219,26 @@ def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None],
     return Section(bw=footing.ly, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
 
 
+@dataclass(frozen=True)
+class TwoWayWarning:
+    """Zapata ancha para revisarla en una dirección (D-091): B ≥ ℓn, la luz libre entre las caras de las columnas."""
+
+    width: float
+    clear_span: float
+
+    @property
+    def ratio(self) -> float:
+        return self.width / self.clear_span
+
+
+def two_way_warning(footing: CombinedFooting) -> TwoWayWarning | None:
+    """Aviso si el ancho B alcanza la luz libre ℓn entre las caras de las dos columnas a lo largo de X (criterio del
+    usuario, D-091): la zapata se sigue revisando en una dirección (ACI 13.3.2), pero puede trabajar en dos (13.3.4)."""
+    first, second = sorted(footing.columns, key=lambda column: column.x)
+    clear_span = (second.x - second.cx / 2) - (first.x + first.cx / 2)
+    return TwoWayWarning(footing.ly, clear_span) if footing.ly >= clear_span else None
+
+
 def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> Member:
     """La viga larga como miembro de vigas, con una estación de referencia que lleva su armado."""
     rows = (mat_rows(footing, footing.bottom, bars)["x"], top_row(footing, bars))

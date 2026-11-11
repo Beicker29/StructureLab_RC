@@ -1247,6 +1247,22 @@
 - **Oráculo:** casos `piel-como-torsion` y `torsion-como-piel` en `derive_combined_beam.py`; las mutaciones que vuelven a
   separar los roles se detectan. Ningún ejemplo combinaba piel y torsión: sus verificaciones no cambian.
 
+### D-091: zapata combinada en una o en dos direcciones
+
+- **Fecha:** 2026-11-11
+- **Problema:** ACI 318-25 13.3.2 (cimentaciones en una dirección, capítulos 7 y 9) y 13.3.4 (combinadas y losas de
+  cimentación en dos direcciones, capítulo 8; sin método directo; presión acorde con el suelo) no dicen cuándo una
+  zapata combinada trabaja en una u otra forma; NSR-10 C.15.10 remite a los requisitos apropiados del reglamento.
+- **Decisión del usuario:**
+  1. Se sigue revisando en una dirección (viga larga y franjas transversales, D-080 a D-083) y se avisa cuando la
+     zapata es ancha: **B ≥ ℓn**, la luz libre entre las caras de las dos columnas a lo largo de X.
+  2. La revisión en dos direcciones (declarar el comportamiento e implementar el capítulo 8: mínimo 0.0018·Ag,
+     separación 2h, sin torsión de viga ni Av,min ni piel, reparto entre franjas de columna y centrales) queda pendiente
+     en la hoja de ruta.
+- **Implementación:** `two_way_warning` en `domain/footing/combined_beam.py`; el resultado trae `two_way_warning` (B, ℓn y
+  B/ℓn, o null) y la memoria un aviso al comienzo y una limitación. El aviso no cambia el estado. El ejemplo ZC1
+  (B = 2600, ℓn = 4475 mm) no avisa.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

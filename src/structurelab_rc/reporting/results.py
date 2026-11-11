@@ -9,6 +9,7 @@ from typing import Any
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.check import Check
+from structurelab_rc.domain.footing.combined_beam import two_way_warning
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingLoad, RectangularBase, Soil
@@ -148,11 +149,20 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
         "properties": _base_properties(footing, soil),
         "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin", "torsion_layers"}),
         "deep_beam": footing.deep_beam,
+        "two_way_warning": _two_way(footing),
         "status": _status(checks),
         "checks": [{**check_data(check), "case": check.case, "z [mm]": None if check.z is None else significant(check.z)}
                    for check in checks],
         "foundation_beam_moments": beam_moments(checks),
     }
+
+
+def _two_way(footing: CombinedFooting) -> dict[str, float] | None:
+    """B, ℓn y B/ℓn si la zapata es ancha para revisarla en una dirección (D-091); None si no."""
+    warning = two_way_warning(footing)
+    if warning is None:
+        return None
+    return {"B [mm]": significant(warning.width), "ln [mm]": significant(warning.clear_span), "B/ln": significant(warning.ratio)}
 
 
 NEGATIVE_TRANSFER = "Transferencia de momento: parte negativa"
