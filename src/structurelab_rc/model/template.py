@@ -124,6 +124,7 @@ class TemplateCombinedFooting(_Input):
     skin: dict[str, Any] | None = None
     torsion_layers: list[dict[str, Any]] | None = None
     deep_beam: bool = False
+    beam: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def _check_sources(self) -> Self:

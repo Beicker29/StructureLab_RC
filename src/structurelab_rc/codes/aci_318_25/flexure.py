@@ -24,6 +24,8 @@ def clauses() -> dict[str, str]:
         "min_reinforcement_exception": "9.6.1.3",
         "skin": "9.7.2.3",
         "crack_spacing": "24.3.2 y 24.3.2.1",
+        "isolated_flange": "6.3.2.2",
+        "flange_tension": "24.3.4",
     }
 
 
@@ -84,3 +86,14 @@ def skin_reinforcement_depth() -> float:
 def determinate_flange_width(bw: float, bf: float) -> float:
     """9.6.1.2: ancho para As,min en viga isostática con el ala a tracción."""
     return min(bf, 2 * bw)
+
+
+def isolated_flange_width(bw: float, hf: float) -> float | None:
+    """6.3.2.2: ancho efectivo del ala de una viga T aislada que la usa como área a compresión, ≤ 4bw, si el ala tiene
+    espesor ≥ 0.5bw; None si no lo tiene (el ala no cuenta)."""
+    return 4 * bw if hf >= 0.5 * bw else None
+
+
+def flange_tension_width(bf: float, clear_span: float, span: float) -> float:
+    """24.3.4: ancho en que se reparte el refuerzo de un ala a tracción, el menor entre bf y ℓn/10 (luz libre)."""
+    return min(bf, clear_span / 10)

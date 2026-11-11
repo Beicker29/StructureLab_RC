@@ -20,13 +20,14 @@ ROOT = Path(__file__).parent.parent
 FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
 # examples/<perfil>/<elemento>/*.json: los mismos ejemplos para los dos perfiles (D-073). Las plantillas de ETABS
 # (plantilla_*_etabs.json) leen los Excel compartidos de examples/etabs/<elemento>/; entran en la huella la de vigas y
-# la de zapatas combinadas (D-084), que importa dos zapatas (las de zapatas aisladas importan 57 a 73 apoyos y su
-# diseño tarda minutos).
+# las de zapatas combinadas (D-084) y en T invertida (D-093), que importan pocas zapatas (las de zapatas aisladas
+# importan 57 a 73 apoyos y su diseño tarda minutos).
 EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*/*.json")
                   if path.parts[-3] != "etabs" and not path.name.startswith("plantilla_"))
 ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/vigas/plantilla_vigas_etabs.json")))
 COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
-                              for path in (ROOT / "examples").glob("*/zapatas/plantilla_combinadas_etabs.json")))
+                              for name in ("plantilla_combinadas_etabs.json", "plantilla_t_invertida_etabs.json")
+                              for path in (ROOT / "examples").glob(f"*/zapatas/{name}")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "Element Forces - Beams.xlsx"
 REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "Joint Reactions - Servicio.xlsx",
              ROOT / "examples" / "etabs" / "zapatas" / "Joint Reactions - Ultimas.xlsx")

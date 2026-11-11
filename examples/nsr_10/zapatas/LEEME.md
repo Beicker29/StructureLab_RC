@@ -8,6 +8,7 @@ Zapatas aisladas y combinadas según NSR-10 Título C (v3, en curso). Los campos
 | `zapata_centrica.json` | Ejemplo de zapata aislada céntrica: Z1 de planta cuadrada centrada bajo una columna cuadrada con pedestal. Fuerzas en la base de la columna, ejes globales. Datos ilustrativos. |
 | `diseno_tipologias.json` | Diseño por tipologías (D-069): 6 columnas, 6 zapatas tipo, f'c de 21, 24.5 y 28 MPa con sus precios. |
 | `plantilla_diseno_zapatas_etabs.json` | Diseño por tipologías desde los Excel compartidos de `examples/etabs/zapatas/`: cada Unique Name es una columna de 500 × 800 mm (cx × cy) con la zapata centrada; 6 tipologías y f'c de 21, 24.5 y 28 MPa. **Datos supuestos.** El diseño de los 73 apoyos tarda varios minutos. |
+| `plantilla_t_invertida_etabs.json` | Zapata combinada en T invertida desde los mismos Excel (D-093): ZT-1 toma de ETABS las cargas de servicio y mayoradas de los nudos 15 y 1659; viga de 1000 × 1700 mm sobre zarpa de 9.0 × 3.6 × 0.6 m. **Datos supuestos.** |
 | `plantilla_combinadas_etabs.json` | Zapatas combinadas desde los mismos Excel (D-084): ZC-A toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos y ZC-B solo las de servicio, con las mayoradas escritas en la plantilla. **Datos supuestos.** |
 | `plantilla_zapatas_etabs.json` | Verificación desde los mismos Excel con tres tipos de zapata; cubre 57 de los 73 apoyos. **Dimensiones, columnas, mallas, suelo, relleno y sobrecargas supuestos.** Las combinaciones con sismo van marcadas `"seismic": true` en `load_factors`. |
 | `zapata_combinada.json` | Ejemplo de zapata combinada: ZC1 rectangular de 7.0 × 2.6 m bajo dos columnas (C1 de 500 × 500 mm cerca del borde −X y C2 de 550 × 550 mm desplazada 150 mm en Y), con cargas de servicio y mayoradas, sismo en X y refuerzo transversal (band) bajo cada columna. La torsión de la viga larga queda bajo φTth (D-088). Datos ilustrativos (D-080 a D-083). |
@@ -41,6 +42,8 @@ structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - 
 structurelab-rc report results/nsr_10/zapatas/etabs.json --output results/nsr_10/zapatas/etabs
 structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/plantilla_combinadas_etabs.json --output results/nsr_10/zapatas/combinadas_etabs.json
 structurelab-rc report results/nsr_10/zapatas/combinadas_etabs.json --output results/nsr_10/zapatas/combinadas_etabs
+structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/plantilla_t_invertida_etabs.json --output results/nsr_10/zapatas/plantilla_t_invertida_etabs/proyecto.json
+structurelab-rc report results/nsr_10/zapatas/plantilla_t_invertida_etabs/proyecto.json --output results/nsr_10/zapatas/plantilla_t_invertida_etabs
 structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/plantilla_diseno_zapatas_etabs.json --output results/nsr_10/zapatas/diseno_etabs.json
 structurelab-rc design-footings results/nsr_10/zapatas/diseno_etabs.json --output results/nsr_10/zapatas/diseno_etabs
 ```

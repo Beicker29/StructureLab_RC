@@ -78,9 +78,8 @@ entrada desde ETABS si aplica); su diseño, despiece y dibujo se agregan con las
 1. Medianera con viga de amarre (pausada; las preguntas abiertas no quedaron escritas en el repositorio y se
    reformulan al empezar).
 2. Zapatas combinadas de otras formas o con más de dos columnas.
-3. Zapata combinada en T invertida (viga de cimentación sobre una zarpa más ancha) y zapata corrida (strip footing)
-   bajo una fila de columnas o un muro: la viga y las aletas de la zarpa, con la presión del suelo, revisadas con el
-   código de vigas y de losas en una dirección (ACI 13.3.2, NSR-10 C.15).
+3. Zapata corrida (strip footing) bajo un muro (los criterios se revisan al empezar) y T invertida o zapata corrida
+   con más de dos columnas. La T invertida de dos columnas está hecha (D-093).
 4. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
 5. Losas de cimentación.
 6. Pilotes y dados.

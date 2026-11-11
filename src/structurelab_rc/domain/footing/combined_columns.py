@@ -227,21 +227,24 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     return checks
 
 
-def _outside_checks(basis: Basis, footing: CombinedFooting, row: BarRow) -> list[Check]:
-    """La malla y fuera de las franjas: mínimo de losa por unidad de longitud y separación de 3h y 450 mm."""
+def outside_checks(basis: Basis, footing: CombinedFooting, row: BarRow,
+                   names: tuple[str, str] = (OUTSIDE_MINIMUM, OUTSIDE_SPACING)) -> list[Check]:
+    """La malla y fuera de las franjas (o las aletas de la T invertida, D-093): mínimo de losa por unidad de longitud y
+    separación de 3h y 450 mm; names = (nombre del mínimo, nombre de la separación)."""
     profile = basis.profile
     spacing = footing.bottom.y.spacing
     required = profile.footing.min_reinforcement_ratio(basis.materials.fy) * footing.h * 1000.0
     provided = row.bar_area / spacing * 1000.0
     maximum = profile.footing.combined_max_bar_spacing(footing.h)
     clauses = profile.footing.clauses()
-    return [Check(OUTSIDE_MINIMUM, Status.PASS if provided >= required else Status.FAIL, clause=clauses["combined_min_reinforcement"],
+    minimum_name, spacing_name = names
+    return [Check(minimum_name, Status.PASS if provided >= required else Status.FAIL, clause=clauses["combined_min_reinforcement"],
                   demand=required, capacity=provided, unit="mm2/m", member=footing.id),
-            Check(OUTSIDE_SPACING, Status.PASS if spacing <= maximum else Status.FAIL, clause=clauses["combined_spacing"],
+            Check(spacing_name, Status.PASS if spacing <= maximum else Status.FAIL, clause=clauses["combined_spacing"],
                   demand=spacing, capacity=maximum, unit="mm", member=footing.id)]
 
 
-def _excess(basis: Basis, section: tuple[float, float, float], provided: float, moment: float) -> float:
+def steel_excess(basis: Basis, section: tuple[float, float, float], provided: float, moment: float) -> float:
     """As requerido / As suministrado (≤ 1): el mayor entre el de análisis y el mínimo de vigas efectivo. section = (ancho,
     h, d)."""
     width, h, depth = section
@@ -253,20 +256,21 @@ def _excess(basis: Basis, section: tuple[float, float, float], provided: float, 
     return min(max(analysis, profile.flexure.effective_min_reinforcement(as_min, analysis)) / provided, 1.0)
 
 
-def _development_check(basis: Basis, footing: CombinedFooting, row: BarRow, anchorage: tuple[float, bool, float, float],
-                       text: tuple[str, str]) -> Check:
+def bar_development_check(basis: Basis, footing: CombinedFooting, row: BarRow, anchorage: tuple[float, bool, float, float],
+                          text: tuple[str, str]) -> Check:
     """anchorage = (menor separación, malla inferior, As requerido / As suministrado, longitud disponible); text = (nombre,
     nota). El tipo de extremo es el de la malla inferior o el de las barras superiores (D-082)."""
     spacing, bottom, excess, available = anchorage
     name, note = text
     end = footing.bottom.end if bottom or footing.top is None else footing.top.end
-    bar = bar_anchorage(row, (end, spacing, bottom), (footing.h, footing.cover), excess)
+    # La altura bajo las barras superiores es la total (en la T invertida, la de la viga, D-093).
+    bar = bar_anchorage(row, (end, spacing, bottom), (footing.total_height, footing.cover), excess)
     required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
     ends = "Barras con gancho estandar" if end == "hook" else "Barras rectas"
     return replace(development_check(name, required, available, f"{note}; {ends}"), member=footing.id)
 
 
-def _x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tuple[BarRow, BarRow | None], cases: Cases) -> list[Check]:
+def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tuple[BarRow, BarRow | None], cases: Cases) -> list[Check]:
     """Barras x desde la sección de mayor momento de su signo hasta el extremo más cercano, menos el recubrimiento."""
     bottom, top = rows
     positive, negative = extreme_moments(footing, soil, cases)
@@ -277,11 +281,12 @@ def _x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tup
         moment, x = moment_at
         if row is None or moment <= 0:
             continue
-        excess = _excess(basis, (footing.ly, footing.h, row.depth), row.area, moment)
+        # En la T invertida la sección no es rectangular: sin reducción por As requerido / As provisto (D-093).
+        excess = 1.0 if footing.beam is not None else steel_excess(basis, (footing.ly, footing.h, row.depth), row.area, moment)
         available = min(x + half, half - x) - footing.cover
         sign = "positivo" if label == "inferiores" else "negativo"
         note = f"Desde la seccion de mayor momento {sign} (z = {x + half:.0f} mm)"
-        checks.append(_development_check(basis, footing, row, (spacing, label == "inferiores", excess, available),
+        checks.append(bar_development_check(basis, footing, row, (spacing, label == "inferiores", excess, available),
                                          (f"{DEVELOPMENT} barras {label} x", note)))
     return checks
 
@@ -300,14 +305,14 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
             moment = max([moment, *(demand[1] for demand in demands if demand[3].startswith("cara"))])
         if moment <= 0:
             continue
-        excess = _excess(basis, (member.section.bw, footing.h, row.depth), provided, moment)
+        excess = steel_excess(basis, (member.section.bw, footing.h, row.depth), provided, moment)
         available = min(half - (column.y + column.cy / 2), column.y - column.cy / 2 + half) - footing.cover
         spacing = min(footing.bottom.y.spacing, column.band.spacing if column.band else footing.bottom.y.spacing)
         note = f"Franja transversal de la columna {column.id}, desde la cara de la columna"
-        checks.append(_development_check(basis, footing, row, (spacing, True, excess, available),
+        checks.append(bar_development_check(basis, footing, row, (spacing, True, excess, available),
                                          (f"{DEVELOPMENT} barras y (franja de la columna {column.id})", note)))
         if band is not None and band.diameter != row.diameter:
-            checks.append(_development_check(basis, footing, band, (spacing, True, excess, available),
+            checks.append(bar_development_check(basis, footing, band, (spacing, True, excess, available),
                                              (f"{DEVELOPMENT} refuerzo band (columna {column.id})", note)))
     return checks
 
@@ -319,8 +324,8 @@ def column_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases: Cas
     checks = _punching(basis, footing, soil, bottom, cases)
     for index in range(len(footing.columns)):
         checks += _strip_checks(basis, footing, soil, (bottom["y"], index), cases)
-    checks += _outside_checks(basis, footing, bottom["y"])
-    checks += _x_development(basis, footing, soil, (bottom["x"], rows["top"]), cases)
+    checks += outside_checks(basis, footing, bottom["y"])
+    checks += x_development(basis, footing, soil, (bottom["x"], rows["top"]), cases)
     checks += _y_development(basis, footing, soil, bottom["y"], cases)
     first = footing.bottom.first
     for index, column in enumerate(footing.columns):

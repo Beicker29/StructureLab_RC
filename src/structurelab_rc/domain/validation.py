@@ -100,7 +100,7 @@ def _footing_errors(footing: Footing, specs: dict[str, RebarSpec]) -> Iterator[S
     yield from _dowel_errors(footing.column.dowels, specs, where)
 
 
-def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> Iterator[StructuredError]:
+def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], profile: Profile) -> Iterator[StructuredError]:
     """Lo mismo para una zapata combinada (D-080): malla inferior, barras superiores en X, refuerzo transversal bajo cada
     columna y pasadores."""
     where = {"member": footing.id}
@@ -121,7 +121,7 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> I
         yield invalid_input(f"La barra '{name}' de las capas de torsion no esta en el catalogo", **where)
     if footing.torsion_layers and not missing and _catalogued(footing, specs):
         # Las barras de Aℓ dentro del estribo de la viga larga, con la regla de las vigas (D-088).
-        member = long_beam_member(footing, list(specs.values()))
+        member = long_beam_member(footing, list(specs.values()), profile)
         yield from _bar_errors(member, member.stations[0], list(specs.values()))
 
 
@@ -145,5 +145,5 @@ def validate_project(project: Project, bars: Sequence[RebarSpec]) -> Check:
     for footing in project.footings:
         errors.extend(_footing_errors(footing, specs))
     for combined in project.combined_footings:
-        errors.extend(_combined_errors(combined, specs))
+        errors.extend(_combined_errors(combined, specs, profile))
     return check_from_errors(CHECK_NAME, errors)

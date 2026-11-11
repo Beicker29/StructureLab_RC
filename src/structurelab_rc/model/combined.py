@@ -7,7 +7,7 @@ from typing import Literal, Self
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
-from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Mat, RectangularBase, _Input
+from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Mat, RectangularBase, Soil, _Input
 from structurelab_rc.model.reinforcement import BarLayer, Stirrups
 
 COLUMNS = 2
@@ -19,6 +19,14 @@ class SkinBars(_Input):
 
     designation: str = Field(min_length=1)
     spacing: PositiveFloat
+
+
+class FoundationBeam(_Input):
+    """Viga de la zapata combinada en T invertida (D-093): alma de ancho width centrada en Y sobre la zarpa, con altura
+    total height medida desde la base (la zarpa tiene el espesor h de la zapata)."""
+
+    width: PositiveFloat
+    height: PositiveFloat
 
 
 class TopBars(BarSet):
@@ -52,7 +60,8 @@ class CombinedFooting(RectangularBase, _Input):
     top, las barras superiores paralelas a X (opcional: sin ellas, el momento negativo se revisa como concreto simple,
     D-072); stirrups, los estribos de la dirección larga, como en las vigas (opcional, D-081); torsion_layers, las capas
     de Aℓ de la viga larga con el formato de las vigas y role "torsion" (x desde la cara −Y, profundidad desde la cara
-    superior; opcional, D-088); deep_beam declara que la viga larga es de gran altura (D-089). fill_height,
+    superior; opcional, D-088); deep_beam declara que la viga larga es de gran altura (D-089); beam la vuelve una T
+    invertida: h es el espesor de la zarpa y la viga, con las columnas encima, va centrada en Y (D-093). fill_height,
     pedestal_height, cover y las sobrecargas, como en la zapata aislada (D-057)."""
 
     id: str = Field(min_length=1)
@@ -71,6 +80,7 @@ class CombinedFooting(RectangularBase, _Input):
     skin: SkinBars | None = None
     torsion_layers: tuple[BarLayer, ...] = ()
     deep_beam: bool = False
+    beam: FoundationBeam | None = None
 
     @field_validator("surcharge_dead", "surcharge_live")
     @classmethod
@@ -85,8 +95,9 @@ class CombinedFooting(RectangularBase, _Input):
         first, second = sorted(self.columns, key=lambda column: column.x)
         if first.x + first.cx / 2 >= second.x - second.cx / 2:
             raise ValueError(f"las columnas de la zapata combinada '{self.id}' se traslapan a lo largo de X")
+        self._check_beam()
         for layer in self.torsion_layers:
-            if layer.role != "torsion" or layer.depth >= self.h:
+            if layer.role != "torsion" or layer.depth >= self.total_height:
                 raise ValueError(f"las capas de torsion de la zapata combinada '{self.id}' deben tener role 'torsion' y quedar "
                                  "dentro del espesor")
         if 2 * self.cover >= self.h:
@@ -103,10 +114,48 @@ class CombinedFooting(RectangularBase, _Input):
                              "con los mismos factores y la misma marca de sismo")
         return self
 
+    def _check_beam(self) -> None:
+        """T invertida (D-093): viga más alta que la zarpa y más angosta que la base, columnas dentro de su ancho, barras
+        superiores obligatorias (con momento negativo la cara superior de la viga queda a tracción) y sin band."""
+        beam = self.beam
+        if beam is None:
+            return
+        if beam.height <= self.h or beam.width >= self.ly:
+            raise ValueError(f"la viga de la zapata combinada '{self.id}' debe ser más alta que la zarpa y más angosta que la base")
+        for column in self.columns:
+            if abs(column.y) + column.cy / 2 > beam.width / 2:
+                raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' se sale del ancho de la viga")
+            if column.band is not None:
+                raise ValueError(f"la zapata combinada en T invertida '{self.id}' no usa band (columna '{column.id}')")
+        if self.top is None:
+            raise ValueError(f"la zapata combinada en T invertida '{self.id}' requiere barras superiores (top) en la viga")
+
+    @property
+    def total_height(self) -> float:
+        """Altura total: la de la viga en la T invertida (D-093) o el espesor h, en mm."""
+        return self.h if self.beam is None else self.beam.height
+
+    @property
+    def stem_height(self) -> float:
+        """Altura del alma de la viga sobre la zarpa (0 sin viga), en mm."""
+        return self.total_height - self.h
+
     @property
     def column_area(self) -> float:
         """Área de las dos columnas (o pedestales), en mm²: el relleno y las sobrecargas ocupan el resto de la base."""
         return sum(column.area for column in self.columns)
+
+    def weights(self, soil: "Soil") -> tuple[float, float, float]:
+        """Pesos de la zapata (zarpa y viga), de los pedestales y del relleno, en N (D-093): el relleno ocupa la base sobre
+        la zarpa menos la viga y, sobre la viga, su ancho menos las columnas."""
+        if self.beam is None:
+            return super().weights(soil)
+        web = self.beam.width * self.lx
+        footing = soil.unit_weight_concrete * (self.area * self.h + web * self.stem_height)
+        pedestal = soil.unit_weight_concrete * self.column_area * self.pedestal_height
+        over_beam = max(self.fill_height - self.stem_height, 0.0)
+        fill = soil.unit_weight_fill * ((self.area - web) * self.fill_height + (web - self.column_area) * over_beam)
+        return footing, pedestal, fill
 
     def cases(self) -> list[tuple[FootingLoad, ...]]:
         """Los casos de carga, cada uno con la carga de cada columna (en el orden de columns)."""

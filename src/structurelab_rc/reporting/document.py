@@ -88,6 +88,10 @@ _COMBINED_CONVENTIONS = (
     "Torsión de la viga larga por equilibrio: el momento estático de cada columna respecto al eje X (F·y − Mx + H·Vy) "
     "menos el de la carga neta del suelo; Tu se toma a d de la cara, como el cortante, y se desprecia si Tu < φTth; si "
     "no, se verifica combinada con el cortante con el código de vigas y las capas de Aℓ declaradas (D-088).",
+    "T invertida (beam): la viga larga es una T volteada con el ala de viga aislada (≤ 4bw y solo si h ≥ 0.5bw, ACI "
+    "6.3.2.2, NSR-10 C.8.12.4), las barras x inferiores dentro del ala y As,min con el ala a tracción por ser isostática; "
+    "las aletas son voladizos por metro desde la cara de la viga; sin punzonamiento, franjas ni transferencia γf·Msc: la "
+    "carga de la columna la toma la viga (D-093).",
     "Franja transversal bajo cada columna de ancho columna + d/2 a cada lado, con la carga de la columna repartida en el "
     "ancho con la forma de la presión, revisada también con el código de vigas (D-080, D-082); el par de la columna que "
     "la franja no equilibra lo lleva la viga larga como torsión y Vy como fuerza axial de la franja se desprecia (D-088).",
@@ -561,6 +565,8 @@ def _combined_where(check: dict[str, Any]) -> str:
     z = check.get("z [mm]")
     if note.startswith("Franja"):
         return f"{case}, {note}" + (f" (z = {z:.0f} mm desde −Y)" if z is not None else "")
+    if note.startswith("Aleta"):
+        return f"{case}, {note}"
     if note.startswith("Columna"):
         return f"{case}, {note}"
     if z is not None:
@@ -577,7 +583,10 @@ def _bar_text(bars: dict[str, Any] | None, extra: str = "") -> str:
 def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[Block]:
     g = footing["geometry [mm]"]
     rows = [["Largo a lo largo de X (lx)", number(g["lx"], "mm"), "mm"], ["Ancho a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
-            ["Espesor (h)", number(g["h"], "mm"), "mm"], ["Recubrimiento libre", number(g["cover"], "mm"), "mm"],
+            ["Espesor (h)" if not g.get("beam") else "Espesor de la zarpa (h)", number(g["h"], "mm"), "mm"],
+            *([["Ancho de la viga (bw, T invertida)", number(g["beam"]["width"], "mm"), "mm"],
+               ["Altura total de la viga (H)", number(g["beam"]["height"], "mm"), "mm"]] if g.get("beam") else []),
+            ["Recubrimiento libre", number(g["cover"], "mm"), "mm"],
             ["Altura de los pedestales", number(g["pedestal_height"], "mm"), "mm"],
             ["Altura del relleno", number(g["fill_height"], "mm"), "mm"],
             ["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
@@ -640,7 +649,9 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
     """Memoria de una zapata combinada (D-080 a D-083): la viga larga y las franjas transversales con las verificaciones de
     vigas, el punzonamiento con los esfuerzos de cada esquina, el desarrollo, el aplastamiento y los pasadores."""
     items: list[Located] = [(_combined_where(check), check) for check in footing["checks"]]
-    strips = [item for item in items if item[1]["note"].startswith("Franja")]
+    strips = [item for item in items if item[1]["note"].startswith(("Franja", "Aleta"))]
+    inverted = bool(footing["geometry [mm]"].get("beam"))
+    across = "Aletas de la zarpa" if inverted else "Franjas transversales"
     beam = [item for item in items if item[1].get("z [mm]") is not None and not item[1]["note"].startswith("Franja")]
     others = [item for item in items if item not in strips and item not in beam]
     counts = {kind: sum(1 for load in footing["columns"][0]["loads"] if load["kind"] == kind) for kind in ("service", "factored")}
@@ -658,10 +669,10 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         ("Viga en la dirección larga: momento flector", lambda n: _chapter("flexure", n, beam, full)),
         ("Viga en la dirección larga: fuerza cortante", lambda n: _chapter("shear", n, beam, full)),
         ("Viga en la dirección larga: torsión", lambda n: _chapter("torsion", n, beam, full)),
-        ("Franjas transversales: momento flector", lambda n: _chapter("flexure", n, strips, full)),
-        ("Franjas transversales: fuerza cortante", lambda n: _chapter("shear", n, strips, full)),
-        (_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full), *_punching_corners(others),
-                                                 *_beam_moments(footing)]),
+        (f"{across}: momento flector", lambda n: _chapter("flexure", n, strips, full)),
+        (f"{across}: fuerza cortante", lambda n: _chapter("shear", n, strips, full)),
+        *([] if inverted else [(_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full),
+                                                                        *_punching_corners(others), *_beam_moments(footing)])]),
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, others, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, others, full)),
         ("Índices DCR", lambda _: _dcr(items)),

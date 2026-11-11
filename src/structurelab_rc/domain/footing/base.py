@@ -59,11 +59,22 @@ def _dead_per_area(footing: CombinedFooting, soil: Soil) -> float:
     return soil.unit_weight_fill * footing.fill_height + footing.surcharge_dead
 
 
+def stem_line_load(footing: CombinedFooting, soil: Soil) -> float:
+    """Carga muerta por unidad de longitud del alma de la T invertida, sin factores (D-093): su concreto menos el relleno
+    que desplaza (la carga uniforme cuenta el relleno en toda la base); 0 sin viga. En N/mm."""
+    if footing.beam is None:
+        return 0.0
+    stem = footing.stem_height
+    return footing.beam.width * (soil.unit_weight_concrete * stem - soil.unit_weight_fill * min(stem, footing.fill_height))
+
+
 def column_vertical(footing: CombinedFooting, soil: Soil, column: CombinedColumn, load: FootingLoad) -> float:
     """Fuerza vertical hacia abajo en el eje de una columna de la zapata combinada, en N: P más su pedestal, menos el
-    relleno y las sobrecargas que la columna desplaza (que la carga uniforme cuenta en toda la base)."""
+    relleno y las sobrecargas que la columna desplaza (que la carga uniforme cuenta en toda la base). En la T invertida,
+    la columna solo desplaza el relleno que queda sobre la viga (D-093)."""
     area = column.area
-    at_column = load.dead_factor * (soil.unit_weight_concrete * area * footing.pedestal_height - _dead_per_area(footing, soil) * area)
+    displaced = soil.unit_weight_fill * max(footing.fill_height - footing.stem_height, 0.0) + footing.surcharge_dead
+    at_column = load.dead_factor * (soil.unit_weight_concrete * area * footing.pedestal_height - displaced * area)
     return load.p + at_column - load.live_factor * footing.surcharge_live * area
 
 
@@ -72,9 +83,11 @@ def combined_resultant(footing: CombinedFooting, soil: Soil, loads: tuple[Footin
     h + pedestal, su pedestal y el área que ocupa (sin relleno ni sobrecarga), y la zapata, el relleno y las sobrecargas
     en el centroide; los factores de carga muerta y viva son los del caso, iguales en las dos columnas."""
     case = loads[0]
-    height = footing.h + footing.pedestal_height
-    footing_weight, _, _ = footing.weights(soil)
-    n = (case.dead_factor * (footing_weight + _dead_per_area(footing, soil) * footing.area)
+    height = footing.total_height + footing.pedestal_height
+    slab = soil.unit_weight_concrete * footing.area * footing.h
+    # El alma de la T invertida va centrada a todo lo largo: suma a N sin momento (D-093).
+    stem = stem_line_load(footing, soil) * footing.lx
+    n = (case.dead_factor * (slab + stem + _dead_per_area(footing, soil) * footing.area)
          + case.live_factor * footing.surcharge_live * footing.area)
     mx = my = 0.0
     weight = n

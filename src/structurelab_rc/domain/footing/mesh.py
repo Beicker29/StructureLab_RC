@@ -88,16 +88,19 @@ def stirrup_diameter(footing: Footing | CombinedFooting, bars: Sequence[RebarSpe
     return next(bar.diameter_mm for bar in bars if bar.designation == footing.stirrups.designation)
 
 
-def _row(footing: Footing | CombinedFooting, direction: str, bar_set: BarSet, spec: RebarSpec,
-         faces: tuple[float, float]) -> BarRow:
-    """faces = (distancia del centro de la barra a su cara, diámetro del estribo que la encierra lateralmente)."""
+def _row(footing: Footing | CombinedFooting, direction: str, bar: tuple[BarSet, RebarSpec],
+         faces: tuple[float, float], section: tuple[float, float] | None = None) -> BarRow:
+    """bar = (barras declaradas, su especificación); faces = (distancia del centro de la barra a su cara, diámetro del
+    estribo que la encierra lateralmente); section = (ancho, altura) donde van las barras, si no son la base y su espesor
+    h (las barras superiores de la T invertida van en la viga, D-093)."""
+    bar_set, spec = bar
     from_face, stirrup = faces
-    width = footing.ly if direction == "x" else footing.lx
+    width, thickness = section or ((footing.ly if direction == "x" else footing.lx), footing.h)
     # Los estribos de la combinada encierran las barras x por los lados ±Y; a lo largo de X no hay estribo en los extremos.
     half = width / 2 - footing.cover - (stirrup if direction == "x" else 0.0) - spec.diameter_mm / 2
     band = band_limits(footing, direction) if isinstance(footing, Footing) else None
     positions, inner = _positions(-half, half, bar_set, band)
-    return BarRow(direction, bar_set.designation, spec.diameter_mm, spec.area_mm2, footing.h - from_face, width,
+    return BarRow(direction, bar_set.designation, spec.diameter_mm, spec.area_mm2, thickness - from_face, width,
                   tuple(positions), band, tuple(inner))
 
 
@@ -109,12 +112,14 @@ def mat_rows(footing: Footing | CombinedFooting, mat: Mat, bars: Sequence[RebarS
     first_diameter = specs[getattr(mat, mat.first).designation].diameter_mm
     stirrup = stirrup_diameter(footing, bars)
     cover = footing.cover + stirrup
+    # En la T invertida los estribos van en el alma: no encierran por los lados las barras de la zarpa (D-093).
+    lateral = 0.0 if isinstance(footing, CombinedFooting) and footing.beam is not None else stirrup
     rows = {}
     for index, direction in enumerate(order):
         bar_set: BarSet = getattr(mat, direction)
         spec = specs[bar_set.designation]
         from_face = cover + spec.diameter_mm / 2 if index == 0 else cover + first_diameter + spec.diameter_mm / 2
-        rows[direction] = _row(footing, direction, bar_set, spec, (from_face, stirrup))
+        rows[direction] = _row(footing, direction, (bar_set, spec), (from_face, lateral))
     return rows
 
 
@@ -124,4 +129,5 @@ def top_row(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> BarRow | Non
         return None
     spec = next(bar for bar in bars if bar.designation == footing.top.designation)
     stirrup = stirrup_diameter(footing, bars)
-    return _row(footing, "x", footing.top, spec, (footing.cover + stirrup + spec.diameter_mm / 2, stirrup))
+    section = None if footing.beam is None else (footing.beam.width, footing.total_height)
+    return _row(footing, "x", (footing.top, spec), (footing.cover + stirrup + spec.diameter_mm / 2, stirrup), section)

@@ -8,7 +8,7 @@ examples/
 ├── aci_318_25/
 │   ├── vigas/       viga_rectangular.json, viga_t.json, viga_alta.json, plantilla_vigas_etabs.json
 │   └── zapatas/     zapata_centrica.json, zapata_combinada.json, diseno_tipologias.json,
-│                    plantilla_zapatas_etabs.json, plantilla_combinadas_etabs.json,
+│                    plantilla_zapatas_etabs.json, plantilla_combinadas_etabs.json, plantilla_t_invertida_etabs.json,
 │                    plantilla_diseno_zapatas_etabs.json
 ├── nsr_10/          los mismos ejemplos, con los mismos datos, para NSR-10
 │   ├── vigas/

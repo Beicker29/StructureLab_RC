@@ -100,6 +100,10 @@ def _shear_moment(beam: dict, x: float) -> tuple[float, float]:
     if x > -hx:
         force, sx, _ = _S._net(beam["plane"], beam["w"], (-hx, -hy, x, hy))
     shear, moment = force, x * force - sx
+    # Carga lineal hacia abajo del alma de la T invertida (derive_inverted_t.py), en toda la longitud.
+    span = min(max(x + hx, 0.0), beam["lx"])
+    shear -= beam.get("line", 0.0) * span
+    moment -= beam.get("line", 0.0) * span**2 / 2
     for column in beam["columns"]:
         if column["x"] < x:
             shear -= column["force"]

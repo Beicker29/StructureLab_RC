@@ -19,17 +19,24 @@ cimentación). Lo propio de la zapata: sin barras superiores, el momento negativ
 cambian V ni M: producen la torsión T(x), que cierra en cero en los dos extremos por el equilibrio global; Tu se toma
 donde se toma el cortante (a d de la cara, ACI 9.4.4.3, NSR-10 C.11.5.2.4) y la revisa la torsión de vigas, con las
 capas de Aℓ declaradas en torsion_layers (D-088).
+
+En la T invertida (D-093) la viga larga es una T con el ala abajo (la zarpa): se revisa con el código de vigas volteando
+la sección (profundidades desde la cara inferior y el momento con el signo cambiado, así el ala queda arriba), con el
+ala efectiva de viga aislada del perfil (ACI 6.3.2.2, NSR-10 C.8.12.4: ≤ 4bw y solo si hf ≥ 0.5bw), las barras x
+inferiores que caen dentro de ella y el miembro estáticamente determinado (As,min con el ala a tracción). El peso del
+alma entra como carga lineal a lo largo de X.
 """
 
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
+from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.deep import deep_beam_checks
 from structurelab_rc.domain.beam.station import checks_for, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.footing.base import column_vertical
+from structurelab_rc.domain.footing.base import column_vertical, stem_line_load
 from structurelab_rc.domain.footing.flexure import plain_check
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_row
@@ -79,6 +86,7 @@ class BeamCase:
     columns: tuple[ColumnForce, ...]
     lx: float
     ly: float
+    line: float = 0.0  # carga lineal hacia abajo del alma de la T invertida, mayorada (N/mm, D-093)
 
     @property
     def case(self) -> str:
@@ -90,13 +98,17 @@ class BeamCase:
             return 0.0, 0.0, 0.0
         return self.pressure.net(((-hx, -hy), (x, -hy), (x, hy), (-hx, hy)))
 
+    def _span(self, x: float) -> float:
+        return min(max(x + self.lx / 2, 0.0), self.lx)
+
     def shear(self, x: float) -> float:
         force, _, _ = self._left(x)
-        return force - sum(column.force for column in self.columns if column.x < x)
+        return force - self.line * self._span(x) - sum(column.force for column in self.columns if column.x < x)
 
     def moment(self, x: float) -> float:
         force, sx, _ = self._left(x)
-        return x * force - sx - sum(column.force * (x - column.x) - column.couple for column in self.columns if column.x < x)
+        stem = self.line * self._span(x) ** 2 / 2
+        return x * force - sx - stem - sum(column.force * (x - column.x) - column.couple for column in self.columns if column.x < x)
 
     def torque(self, x: float) -> float:
         """T(x) del cuerpo libre a la izquierda, respecto al eje X (D-088)."""
@@ -105,14 +117,15 @@ class BeamCase:
 
 
 def beam_case(footing: CombinedFooting, soil: Soil, pressure: FactoredCase, loads: tuple[FootingLoad, ...]) -> BeamCase:
-    height = footing.h + footing.pedestal_height
+    height = footing.total_height + footing.pedestal_height
     columns = []
     for column, load in zip(footing.columns, loads, strict=True):
         force = column_vertical(footing, soil, column, load)
         columns.append(ColumnForce(column.id, column.x, column.cx / 2, force, load.my + height * load.vx,
                                    force * column.y - load.mx + height * load.vy))
     columns.sort(key=lambda column: column.x)
-    return BeamCase(pressure, tuple(columns), footing.lx, footing.ly)
+    line = loads[0].dead_factor * stem_line_load(footing, soil)
+    return BeamCase(pressure, tuple(columns), footing.lx, footing.ly, line)
 
 
 def _regions(beam: BeamCase) -> list[tuple[float, float, str]]:
@@ -239,13 +252,59 @@ def two_way_warning(footing: CombinedFooting) -> TwoWayWarning | None:
     return TwoWayWarning(footing.ly, clear_span) if footing.ly >= clear_span else None
 
 
-def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> Member:
-    """La viga larga como miembro de vigas, con una estación de referencia que lleva su armado."""
-    rows = (mat_rows(footing, footing.bottom, bars)["x"], top_row(footing, bars))
-    section, layout = beam_member(footing, rows, bars)
+def flange_width(profile: Profile, footing: CombinedFooting) -> float | None:
+    """Ancho efectivo del ala de la T invertida (D-093): el de viga aislada del perfil, sin pasar de la base; None si
+    el ala no cuenta (hf < 0.5bw) o no hay viga."""
+    if footing.beam is None:
+        return None
+    width = profile.flexure.isolated_flange_width(footing.beam.width, footing.h)
+    return None if width is None else min(width, footing.ly)
+
+
+def _t_beam_member(profile: Profile, footing: CombinedFooting, bars: Sequence[RebarSpec]) -> tuple[Section, ReinforcementLayout]:
+    """La viga de la T invertida volteada (D-093): alma bw × H con el ala (la zarpa) arriba; x desde la cara −Y del alma,
+    profundidades desde la cara inferior de la zapata. Barras x inferiores dentro del ala efectiva (o del alma si el ala
+    no cuenta), barras superiores, piel y capas de torsión (declaradas desde la cara superior, aquí volteadas)."""
+    assert footing.beam is not None and footing.top is not None
+    total, web = footing.total_height, footing.beam.width
+    bottom = mat_rows(footing, footing.bottom, bars)["x"]
+    top = top_row(footing, bars)
+    assert top is not None
+    width = flange_width(profile, footing)
+    reach = (width if width is not None else web) / 2
+    from_bottom = footing.h - bottom.depth  # centro de las barras inferiores sobre la cara inferior
+    layers = [BarLayer(depth=from_bottom, role="flexure",
+                       bars=tuple(BarPosition(designation=bottom.designation, x=y + web / 2) for y in bottom.positions
+                                  if abs(y) <= reach + _EDGE)),
+              BarLayer(depth=top.depth, role="flexure",
+                       bars=tuple(BarPosition(designation=top.designation, x=y + web / 2) for y in top.positions))]
+    if footing.skin is not None:
+        spec = next(bar for bar in bars if bar.designation == footing.skin.designation)
+        inset = footing.cover + stirrup_diameter(footing, bars) + spec.diameter_mm / 2
+        depth = from_bottom + footing.skin.spacing
+        while depth < top.depth - _TOUCH:
+            layers.append(BarLayer(depth=depth, role="skin", bars=(BarPosition(designation=spec.designation, x=inset),
+                                                                   BarPosition(designation=spec.designation, x=web - inset))))
+            depth += footing.skin.spacing
+    layers += [layer.model_copy(update={"depth": total - layer.depth}) for layer in footing.torsion_layers]
+    layers.sort(key=lambda layer: layer.depth)
+    overhang = None if width is None else (width - web) / 2
+    section = Section(bw=web, h=total, cover=footing.cover, hf=None if overhang is None else footing.h,
+                      overhang_x_neg=overhang, overhang_x_pos=overhang)
+    return section, ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
+
+
+def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec], profile: Profile | None = None) -> Member:
+    """La viga larga como miembro de vigas, con una estación de referencia que lleva su armado. La de la T invertida va
+    volteada y es estáticamente determinada (sus fuerzas salen de la estática con la presión de Bellos, D-093)."""
+    if footing.beam is not None:
+        assert profile is not None
+        section, layout = _t_beam_member(profile, footing, bars)
+    else:
+        section, layout = beam_member(footing, (mat_rows(footing, footing.bottom, bars)["x"], top_row(footing, bars)), bars)
     placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
-    return Member.model_construct(id=footing.id, type="beam", statically_determinate=None, deep_beam=footing.deep_beam,
-                                  length=footing.lx, section=section, stations=(placeholder,))
+    return Member.model_construct(id=footing.id, type="beam", statically_determinate=True if footing.beam is not None else None,
+                                  deep_beam=footing.deep_beam, length=footing.lx, section=section, stations=(placeholder,))
 
 
 def critical_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
@@ -288,7 +347,8 @@ def _with_section(check: Check, label: str) -> Check:
 
 def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
     beam, section, has_top = given
-    moment = beam.moment(section.x)
+    # La T invertida va volteada: su momento cambia de signo (D-093).
+    moment = beam.moment(section.x) * (-1.0 if footing.beam is not None else 1.0)
     # El cortante y la torsión, a d de la cara si la sección es una cara de columna (ACI 9.4.3.2 y 9.4.4.3).
     at = section.x if section.shear_x is None else section.shear_x
     z = section.x + footing.lx / 2
@@ -319,13 +379,15 @@ def long_beam_checks(
     """Las verificaciones de vigas en las secciones críticas de cada caso mayorado y la separación de las barras x."""
     bottom = mat_rows(footing, footing.bottom, basis.bars)["x"]
     top = top_row(footing, basis.bars)
-    member = long_beam_member(footing, basis.bars)
+    member = long_beam_member(footing, basis.bars, basis.profile)
+    depth = footing.stem_height + bottom.depth  # d de las barras inferiores desde la cara superior de la viga
     checks = []
     for pressure, loads in cases:
         beam = beam_case(footing, soil, pressure, loads)
-        for critical in critical_sections(beam, bottom.depth):
+        for critical in critical_sections(beam, depth):
             checks += _station_checks(basis, footing, member, (beam, critical, top is not None))
     checks.append(_spacing_check(basis, footing, footing.bottom.x.spacing, BARS["bottom"]))
-    if footing.top is not None:
+    # En la T invertida las barras superiores son de la viga: su separación la controla la fisuración de vigas (D-093).
+    if footing.top is not None and footing.beam is None:
         checks.append(_spacing_check(basis, footing, footing.top.spacing, BARS["top"]))
     return checks

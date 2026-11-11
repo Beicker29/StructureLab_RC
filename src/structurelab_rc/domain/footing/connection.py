@@ -76,7 +76,9 @@ def _development_checks(
 
 @dataclass(frozen=True)
 class Support:
-    """Columna (o pedestal) sobre la zapata: sección cx × cy centrada en (x, y), sus pasadores y la nota de sus checks."""
+    """Columna (o pedestal) sobre la zapata: sección cx × cy centrada en (x, y), sus pasadores y la nota de sus checks.
+    surface = (largo en X, ancho en Y, altura) de lo que la soporta, centrado en el origen, si no es la base con su
+    espesor h: en la T invertida, la cara superior de la viga y su altura total (D-093)."""
 
     cx: float
     cy: float
@@ -84,14 +86,16 @@ class Support:
     y: float
     dowels: Dowels | None
     note: str
+    surface: tuple[float, float, float] | None = None
 
 
 def bearing_area(footing: FootingBase, support: Support) -> tuple[float, float]:
     """A1 (columna) y A2: base del tronco de pirámide de pendiente 1:2 bajo A1, contenido en la zapata."""
-    hx, hy = footing.lx / 2, footing.ly / 2
+    length, width, depth = support.surface or (footing.lx, footing.ly, footing.h)
+    hx, hy = length / 2, width / 2
     gaps = (hx - (support.x + support.cx / 2), support.x - support.cx / 2 + hx,
             hy - (support.y + support.cy / 2), support.y - support.cy / 2 + hy)
-    spread = min(2 * footing.h, *gaps)
+    spread = min(2 * depth, *gaps)
     return support.cx * support.cy, (support.cx + 2 * spread) * (support.cy + 2 * spread)
 
 
@@ -145,7 +149,8 @@ def dowel_checks(basis: Basis, footing: FootingBase, support: Support, bottom: t
                     demand=required, capacity=area, unit="mm2", note=support.note)]
     # Los pasadores bajan hasta la malla inferior y se apoyan en ella; su gancho no cuenta a compresión (D-065).
     first, second = bottom
-    available = footing.h - footing.cover - first.diameter - second.diameter
+    depth = footing.h if support.surface is None else support.surface[2]
+    available = depth - footing.cover - first.diameter - second.diameter
     required_ldc = required_length(profile, materials, BarAnchorage(spec.diameter_mm, "compression"), basis.seismic_level)
     checks.append(replace(development_check(DOWELS_ANCHORAGE, required_ldc, available), member=footing.id, note=support.note))
     return checks, area

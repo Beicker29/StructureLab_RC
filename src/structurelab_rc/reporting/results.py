@@ -144,7 +144,7 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
                for column in footing.columns]
     return {
         "id": footing.id,
-        "geometry [mm]": _geometry(footing, set()),
+        "geometry [mm]": _geometry(footing, {"beam"}),
         "columns": columns,
         "properties": _base_properties(footing, soil),
         "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin", "torsion_layers"}),

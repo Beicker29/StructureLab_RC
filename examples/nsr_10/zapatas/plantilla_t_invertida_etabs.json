@@ -1,0 +1,159 @@
+{
+  "description": "Plantilla de importación de una zapata combinada en T invertida (D-093) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx': ZT-1 toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos (Unique Name 15 y 1659). Viga de 1000 × 1700 mm sobre una zarpa de 3600 × 600 mm. DATOS DE EJEMPLO: dimensiones, posiciones, columnas, armado, suelo, relleno y sobrecargas son supuestos.",
+  "profile": "nsr-10",
+  "seismic": {
+    "level": "DES",
+    "justification": "Capacidad especial de disipación de energía (DES) declarada por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.45,
+    "adhesion_kPa": 0.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "load_factors": {
+    "SERVICIO 1 (D+L)": {
+      "dead": 1.0,
+      "live": 1.0
+    },
+    "SERVICIO 2 (D+EX+EZ)": {
+      "dead": 1.0,
+      "live": 0.0,
+      "seismic": true
+    },
+    "SERVICIO 3 (D+EY+EZ)": {
+      "dead": 1.0,
+      "live": 0.0,
+      "seismic": true
+    },
+    "SERVICIO 4 (D+L+EX+EZ)": {
+      "dead": 1.0,
+      "live": 1.0,
+      "seismic": true
+    },
+    "SERVICIO 5  (D+L+EY+EZ)": {
+      "dead": 1.0,
+      "live": 1.0,
+      "seismic": true
+    },
+    "COMB0 (1.4D)": {
+      "dead": 1.4,
+      "live": 0.0
+    },
+    "COMB1 (1.2D+1.6L)": {
+      "dead": 1.2,
+      "live": 1.6
+    },
+    "COMB4A (1.2D+L+EX+EZ)": {
+      "dead": 1.2,
+      "live": 1.0,
+      "seismic": true
+    },
+    "COMB4B (1.2D+L+EY+EZ)": {
+      "dead": 1.2,
+      "live": 1.0,
+      "seismic": true
+    },
+    "COMB6A (0.9+EX+EZ)": {
+      "dead": 0.9,
+      "live": 0.0,
+      "seismic": true
+    },
+    "COMB6B (0.9D+EY+EZ)": {
+      "dead": 0.9,
+      "live": 0.0,
+      "seismic": true
+    }
+  },
+  "combined_footings": [
+    {
+      "id": "ZT-1",
+      "lx": 9000.0,
+      "ly": 3600,
+      "h": 600,
+      "cover": 75.0,
+      "fill_height": 1500.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "loads_source": {
+        "service": "etabs",
+        "factored": "etabs"
+      },
+      "beam": {
+        "width": 1000,
+        "height": 1700
+      },
+      "bottom": {
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#8",
+          "spacing": 100.0
+        },
+        "y": {
+          "designation": "#6",
+          "spacing": 150.0
+        }
+      },
+      "top": {
+        "designation": "#8",
+        "spacing": 99.0,
+        "end": "straight"
+      },
+      "stirrups": {
+        "designation": "#5",
+        "legs": 4,
+        "spacing": 150.0,
+        "closed": true
+      },
+      "skin": {
+        "designation": "#6",
+        "spacing": 150.0
+      },
+      "columns": [
+        {
+          "id": "C15",
+          "etabs_unique_name": "15",
+          "cx": 600.0,
+          "cy": 600.0,
+          "x": -2700.0,
+          "y": 0.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 8
+          }
+        },
+        {
+          "id": "C1659",
+          "etabs_unique_name": "1659",
+          "cx": 600.0,
+          "cy": 600.0,
+          "x": 2700.0,
+          "y": 0.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 8
+          }
+        }
+      ]
+    }
+  ]
+}

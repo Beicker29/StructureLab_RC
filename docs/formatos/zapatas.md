@@ -128,6 +128,7 @@ La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en los dos perfil
 | `stirrups` | | Estribos de la dirección larga, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
 | `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
 | `deep_beam` | sí/no | La viga larga es de gran altura (declarado por el usuario): se verifican los criterios de vigas altas como en las vigas (D-089). |
+| `beam` | mm | T invertida (D-093): `width` (bw) y `height` (H, altura total desde la base) de la viga centrada en Y sobre la zarpa de espesor `h`. Las columnas deben caber en bw; `top` es obligatorio y va en la viga; `band` no aplica; `torsion_layers` miden x desde la cara −Y del alma. |
 | `torsion_layers` | | Capas de Aℓ de la viga larga con el formato de las capas de vigas (`depth` desde la cara superior, `role: "torsion"`, `bars` con x desde la cara −Y); opcional; sin ellas, Aℓ = 0 (D-088). |
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)

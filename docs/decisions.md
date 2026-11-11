@@ -1283,6 +1283,41 @@
   - el diseño por tipologías con apoyos en distintos niveles de cimentación no se implementará; todas las zapatas del
     diseño usan el relleno y el pedestal del bloque `design`.
 
+### D-093: zapata combinada en T invertida de dos columnas (v3 Fase 5.3a)
+
+- **Fecha:** 2026-11-11
+- **Decisiones del usuario:**
+  1. Se declara con un bloque `beam: {"width": bw, "height": H}` en `combined_footings`: h es el espesor de la zarpa y H
+     la altura total; la viga va centrada en Y, las columnas caben en su ancho, `band` no aplica y las barras superiores
+     son obligatorias. Las cargas de las columnas salen del Excel de ETABS o se declaran (la plantilla acepta `beam`).
+  2. Dirección larga con el código de vigas y la sección T volteada (profundidades desde la cara inferior, momento con
+     el signo cambiado, el ala arriba). **Ala de viga aislada** (ACI 318-25 6.3.2.2, NSR-10 C.8.12.4, verificados en el
+     PDF): bf = min(4bw, B) y solo si h ≥ 0.5bw; si no, solo el alma. La tabla de 6.3.2.1 (8h, sw/2, ℓn/8) es para vigas
+     con losa y almas vecinas: no aplica.
+  3. Las barras x inferiores cuentan dentro de bf; la viga es estáticamente determinada (sus fuerzas salen de la
+     estática con la presión de Bellos), así que As,min con el ala a tracción usa min(bf, 2bw) (ACI 9.6.1.2, NSR-10
+     C.10.5.2). Reparto del ala a tracción (ACI 24.3.4 con ℓn/10; NSR-10 C.10.6.6 con la luz entre centros / 10): si
+     el ancho de reparto es menor que bf debe haber barras en las zonas exteriores.
+  4. Aletas: voladizos por metro desde la cara de la viga; m(x) y v(x) con la presión de Bellos integrada en Y y la
+     carga uniforme de la zarpa, el relleno y las sobrecargas; se barre X y gobierna el mayor (como las franjas de la
+     combinada). Flexión y εt con la malla y, cortante en una dirección con el Vc de cimentación, mínimo de losa y
+     separación de 3h y 450 mm, desarrollo de las barras y desde la cara de la viga; con momento negativo, concreto
+     simple (D-072).
+  5. Sin punzonamiento, franjas transversales ni transferencia γf·Msc: la carga de la columna la toma la viga.
+     Aplastamiento con A2 dentro de la cara superior de la viga (lx × bw, altura H) y pasadores anclados en H.
+- **Pesos:** la zarpa y el alma (carga lineal bw·(γc·(H − h) − γf·min(H − h, D1)) a lo largo de X); el relleno sobre la
+  zarpa menos el alma y, sobre la viga, menos las columnas; el cortante horizontal actúa a H + pedestal.
+- **Otros ajustes:** las barras superiores de la T van en el ancho de la viga; los estribos no recortan lateralmente
+  las barras de la zarpa; el desarrollo de las barras x no se reduce por As requerido / As provisto (la sección no es
+  rectangular) y el de las superiores usa la altura total para el factor de posición; la separación de las barras
+  superiores la controla la fisuración de vigas.
+- **Ejemplo:** `plantilla_t_invertida_etabs.json` (los dos perfiles): ZT-1 con los nudos 15 y 1659 del Excel, viga de
+  1000 × 1700 mm sobre zarpa de 9.0 × 3.6 × 0.6 m; cumple (máxima razón 0.98, refuerzo superficial). Con alma de 800 o
+  900 mm aparecía torsión por los casos con EY y mandaba Aℓ,min con el Acp de la T; se ajustó el ejemplo.
+- **Oráculo:** `derive_inverted_t.py` (cumple, ala delgada, aleta escasa y momento positivo); se detectan las mutaciones
+  del ala igual a B, sin el límite hf ≥ 0.5bw, sin el peso del alma, sin la regla isostática, aletas sin la carga
+  uniforme y A2 sobre la base.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

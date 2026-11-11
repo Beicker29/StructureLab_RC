@@ -6,6 +6,7 @@ from structurelab_rc.domain.footing.combined_beam import long_beam_checks
 from structurelab_rc.domain.footing.combined_columns import column_checks
 from structurelab_rc.domain.footing.connection import connection_checks
 from structurelab_rc.domain.footing.flexure import flexure_checks
+from structurelab_rc.domain.footing.inverted_t import inverted_t_checks
 from structurelab_rc.domain.footing.loads import combined_factored_cases, factored_cases
 from structurelab_rc.domain.footing.service import combined_service_checks, service_checks
 from structurelab_rc.domain.footing.shear import shear_checks
@@ -38,7 +39,9 @@ def combined_footing_checks(basis: Basis, footing: CombinedFooting, soil: Soil) 
         error = incomplete("La zapata combinada no tiene casos mayorados", member=footing.id)
         return [*service, Check(COMBINED_STRUCTURAL, Status.INCOMPLETE, (error,), member=footing.id)]
     cases, failures = combined_factored_cases(footing, soil)
-    return [*service, *failures, *long_beam_checks(basis, footing, soil, cases), *column_checks(basis, footing, soil, cases)]
+    # La T invertida no tiene punzonamiento ni franjas: sus aletas y columnas se revisan aparte (D-093).
+    own = inverted_t_checks if footing.beam is not None else column_checks
+    return [*service, *failures, *long_beam_checks(basis, footing, soil, cases), *own(basis, footing, soil, cases)]
 
 
 def footing_checks(basis: Basis, footing: Footing, soil: Soil) -> list[Check]:
