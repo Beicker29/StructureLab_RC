@@ -98,11 +98,19 @@ y del relleno, y fuerzas de las sobrecargas. Salen en `resultado.json`, en `foot
 ## Zapata combinada (`combined_footings[]`, D-080)
 
 Zapata rectangular de dos columnas, solo verificación. X es la dirección larga: las dos columnas van a distintas x. Usa
-el mismo `soil` que las zapatas aisladas. Por ahora se verifican la parte geotécnica con la resultante de las dos
-columnas (V3J.1) y, con los casos mayorados, la viga en la dirección larga con las verificaciones de vigas en sus
-secciones críticas (V3J.2 y D-081: cada check lleva `z`, la posición desde el borde −X, y en `note` la sección; Vc y
-Av,min de cimentación) y la separación de 3h y 450 mm; las franjas transversales, el punzonamiento,
-el desarrollo y los pasadores quedan `BLOCKED` hasta V3J.3, y la memoria llega en V3J.4.
+el mismo `soil` que las zapatas aisladas. Se verifican la parte geotécnica con la resultante de las dos columnas
+(V3J.1) y, con los casos mayorados:
+
+- la viga en la dirección larga con las verificaciones de vigas en sus secciones críticas (V3J.2, D-081): cada check
+  lleva `z`, la posición desde el borde −X, y en `note` la sección; Vc y Av,min de cimentación; separación de 3h y
+  450 mm;
+- por columna (V3J.3, D-082): el punzonamiento, la franja transversal (también con las verificaciones de vigas, con
+  `z` desde el borde −Y y `note` "Franja transversal de la columna …, cara ±Y" o "a d de la cara ±Y"), el aplastamiento
+  y los pasadores (`note` "Columna …"); la malla y fuera de las franjas (mínimo de losa y separación); el desarrollo de
+  las barras x desde la sección de mayor momento de su signo y de las barras y de cada franja desde la cara de la
+  columna.
+
+La memoria llega en V3J.4.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
@@ -112,7 +120,7 @@ el desarrollo y los pasadores quedan `BLOCKED` hasta V3J.3, y la memoria llega e
 | `columns[].cx`, `columns[].cy` | mm | Sección (cx a lo largo de X). |
 | `columns[].x`, `columns[].y` | mm | Posición del eje de la columna respecto al centroide de la base. |
 | `columns[].dowels` | | Pasadores, como en la zapata aislada (opcional; sin ellos sus verificaciones quedan INCOMPLETE). |
-| `columns[].band` | | Refuerzo transversal adicional bajo la columna, paralelo a Y, en el ancho de su franja: `designation` y `spacing` (opcional). |
+| `columns[].band` | | Refuerzo transversal adicional bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation` y `spacing` (opcional). |
 | `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; las dos columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
 | `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
 | `top` | | Barras superiores paralelas a X (`designation`, `spacing`), opcional: sin ellas, el momento negativo se revisa como concreto simple (D-072). |

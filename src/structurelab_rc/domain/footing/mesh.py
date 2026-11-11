@@ -40,7 +40,8 @@ class BarRow:
         return len(self.band_positions) * self.bar_area
 
 
-def _uniform(low: float, high: float, spacing: float) -> list[float]:
+def uniform_positions(low: float, high: float, spacing: float) -> list[float]:
+    """Barras a la separación dada, centradas en el rango útil [low, high]."""
     count = math.floor((high - low) / spacing + _TOLERANCE) + 1
     offset = (high - low - (count - 1) * spacing) / 2
     return [low + offset + index * spacing for index in range(count)]
@@ -49,13 +50,13 @@ def _uniform(low: float, high: float, spacing: float) -> list[float]:
 def _positions(low: float, high: float, bar_set: BarSet, band: tuple[float, float] | None) -> tuple[list[float], list[float]]:
     """Posiciones de todas las barras y de las que caen en la franja (si la hay)."""
     if bar_set.band_spacing is None:
-        positions = _uniform(low, high, bar_set.spacing)
+        positions = uniform_positions(low, high, bar_set.spacing)
         if band is None:
             return positions, []
         return positions, [p for p in positions if band[0] - _TOLERANCE <= p <= band[1] + _TOLERANCE]
     assert band is not None
     start, end = max(band[0], low), min(band[1], high)
-    inner = _uniform(start, end, bar_set.band_spacing)
+    inner = uniform_positions(start, end, bar_set.band_spacing)
     left, right = [], []
     position = inner[0] - bar_set.spacing
     while position >= low - _TOLERANCE:

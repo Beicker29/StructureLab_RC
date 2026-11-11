@@ -29,6 +29,7 @@ def clauses() -> dict[str, str]:
         "dowels": "C.15.8.2.1",
         "dowel_excess": "C.15.8.1.2(a)",
         "combined_spacing": "C.10.5.4",
+        "combined_min_reinforcement": "C.10.5.4 y C.7.12.2.1",
         "combined_min_shear": "C.11.4.6.1(a)",
     }
 

@@ -22,7 +22,7 @@ from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
 from structurelab_rc.domain.footing.checks import footing_checks
-from structurelab_rc.domain.footing.connection import bearing_area
+from structurelab_rc.domain.footing.connection import bearing_area, footing_support
 from structurelab_rc.domain.footing.flexure import PLAIN, face_moments
 from structurelab_rc.domain.footing.loads import factored_cases
 from structurelab_rc.domain.footing.service import service_checks
@@ -212,7 +212,7 @@ def _dowel_options(ctx: Context, typology: Typology, column: DesignColumn) -> li
     """Pasadores candidatos, de menor a mayor área: cubren 0.005Ag y la compresión que excede φBn (D-065), en número
     par, al menos 4; el anclaje lo decide la verificación."""
     footing = footing_for(ctx, typology, column, None)
-    a1, a2 = bearing_area(footing)
+    a1, a2 = bearing_area(footing, footing_support(footing))
     bearing = ctx.profile.bearing
     phi = bearing.strength_reduction()
     capacity = phi * bearing.nominal_bearing(typology.fc, a1, a2)

@@ -46,6 +46,21 @@ class SoilPressure:
     def at(self, x: float, y: float) -> float:
         return max(self.p0 + self.gx * x + self.gy * y, 0.0)
 
+    def along_y(self, x: float, y0: float, y1: float) -> tuple[float, float]:
+        """∫p dy y ∫y·p dy sobre la línea de abscisa x entre y0 y y1, con la presión recortada en cero."""
+        a, b = self.p0 + self.gx * x, self.gy
+        low, high = y0, y1
+        if b == 0:
+            if a <= 0:
+                return 0.0, 0.0
+        else:
+            root = -a / b
+            low, high = (max(low, root), high) if b > 0 else (low, min(high, root))
+        if high <= low:
+            return 0.0, 0.0
+        return (a * (high - low) + b * (high**2 - low**2) / 2,
+                a * (high**2 - low**2) / 2 + b * (high**3 - low**3) / 3)
+
     def corners(self) -> tuple[float, float, float, float]:
         """Presión en las esquinas (−x, −y), (+x, −y), (+x, +y) y (−x, +y)."""
         a, b, c, d = (self.at(x, y) for x, y in self.base())

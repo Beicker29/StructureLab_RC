@@ -21,8 +21,8 @@ class _Input(BaseModel):
 
 
 class FootingBase(Protocol):
-    """Lo que la revisión geotécnica necesita de una zapata, aislada o combinada (D-080): su base rectangular, su
-    espesor y la altura del relleno."""
+    """Lo que las revisiones comunes necesitan de una zapata, aislada o combinada (D-080): su base rectangular, su
+    espesor, su recubrimiento y la altura del relleno."""
 
     @property
     def id(self) -> str: ...
@@ -35,6 +35,9 @@ class FootingBase(Protocol):
 
     @property
     def h(self) -> float: ...
+
+    @property
+    def cover(self) -> float: ...
 
     @property
     def fill_height(self) -> float: ...

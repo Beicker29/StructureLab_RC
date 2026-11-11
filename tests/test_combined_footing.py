@@ -12,6 +12,7 @@ from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.checks import COMBINED_STRUCTURAL
 from structurelab_rc.domain.footing.combined_beam import beam_case, long_beam_checks
+from structurelab_rc.domain.footing.combined_columns import column_checks
 from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.footing.service import BEARING, CONTACT, combined_service_checks
 from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING
@@ -36,6 +37,8 @@ def _oracle(folder: str, name: str = "derived_combined_service") -> dict[str, An
 
 CASES = [pytest.param(profile, case, id=f"{profile}-{case['id']}") for profile, folder in FOLDERS.items()
          for case in _oracle(folder)["cases"]]
+COLUMN_CASES = [pytest.param(profile, case, id=f"{profile}-{case['id']}") for profile, folder in FOLDERS.items()
+                for case in _oracle(folder, "derived_combined_columns")["cases"]]
 BEAM_CASES = [pytest.param(profile, case, id=f"{profile}-{case['id']}") for profile, folder in FOLDERS.items()
               for case in _oracle(folder, "derived_combined_beam")["cases"]]
 
@@ -83,6 +86,12 @@ def _beam_checks(profile: str, footing: CombinedFooting, oracle: dict[str, Any])
     return [*failures, *long_beam_checks(basis, footing, soil, cases)]
 
 
+def _noise(check: Check) -> float:
+    """Tolerancia absoluta para el ruido numérico de los valores casi nulos: cortantes y momentos donde V = 0 (N, N·mm) y
+    áreas por análisis de momentos pequeños (mm²)."""
+    return {"N": 0.1, "N*mm": 0.1, "mm2": 1e-6}.get(check.unit, 0.0)
+
+
 def _station_key(check: Check) -> tuple[str, str, float | None]:
     return check.name, check.case or "", None if check.z is None else round(check.z, 3)
 
@@ -105,10 +114,52 @@ def test_long_beam_checks_match_oracle(profile: str, case: dict[str, Any]) -> No
         for field in ("demand", "capacity"):
             if field in item:
                 # abs: el cortante donde V = 0 es ruido numérico (≈1e-3 N).
-                assert getattr(check, field) == pytest.approx(item[field], rel=tolerance, abs=0.1), (key, field)
+                assert getattr(check, field) == pytest.approx(item[field], rel=tolerance, abs=_noise(check)), (key, field)
         for field in ("demand_Nmm", "capacity_Nmm"):
             if field in item:
-                assert getattr(check, field.removesuffix("_Nmm")) == pytest.approx(item[field], rel=tolerance, abs=0.1), (key, field)
+                expected_value = pytest.approx(item[field], rel=tolerance, abs=_noise(check))
+                assert getattr(check, field.removesuffix("_Nmm")) == expected_value, (key, field)
+        values = dict(check.values)
+        if "as_min" in item:
+            assert values["As,min"] == pytest.approx(item["as_min"], rel=tolerance), key
+        if "analysis" in item:
+            assert values["As analisis"] == pytest.approx(item["analysis"], rel=tolerance, abs=1e-6), key
+        if "clause" in item:
+            assert check.clause == item["clause"], key
+
+
+def _where(check: Check) -> str:
+    """Columna o franja de un check de V3J.3 (la nota empieza con ella); el desarrollo ya la lleva en el nombre."""
+    if check.name.startswith("Desarrollo") or not check.note.startswith(("Franja", "Columna")):
+        return ""
+    return check.note.split(",")[0].split(":")[0]
+
+
+@pytest.mark.parametrize(("profile", "case"), COLUMN_CASES)
+def test_column_checks_match_oracle(profile: str, case: dict[str, Any]) -> None:
+    """V3J.3 (D-082) frente al oráculo: punzonamiento, franjas con las reglas de vigas, malla y fuera de las franjas,
+    desarrollo, aplastamiento y pasadores; mismos checks, estados, demandas, capacidades y numerales."""
+    oracle = _oracle(FOLDERS[profile], "derived_combined_columns")
+    tolerance = oracle["tolerance_rel"]
+    footing = CombinedFooting.model_validate(case["footing"])
+    soil = Soil.model_validate(oracle["soil"])
+    cases, failures = combined_factored_cases(footing, soil)
+    assert not failures
+    basis = Basis(PROFILES[profile], Materials.model_validate(oracle["materials"]), BARS, oracle["seismic_level"])
+    expected = case["expected"]
+    names = {item["name"] for item in expected}
+    checks = [check for check in column_checks(basis, footing, soil, cases) if check.name in names]
+    got = {(check.name, check.case or "", None if check.z is None else round(check.z, 3), _where(check)): check for check in checks}
+    wanted = {(item["name"], item.get("case", ""), None if "z_mm" not in item else round(item["z_mm"], 3), item.get("where", "")): item
+              for item in expected}
+    assert len(got) == len(checks)
+    assert set(got) == set(wanted)
+    for key, item in wanted.items():
+        check = got[key]
+        assert str(check.status) == item["status"], key
+        for field in ("demand", "capacity"):
+            if field in item:
+                assert getattr(check, field) == pytest.approx(item[field], rel=tolerance, abs=_noise(check)), (key, field)
         values = dict(check.values)
         if "as_min" in item:
             assert values["As,min"] == pytest.approx(item["as_min"], rel=tolerance), key
@@ -178,16 +229,20 @@ def test_project_without_factored_cases_is_incomplete(tmp_path: Path) -> None:
     assert by_name[COMBINED_STRUCTURAL].status is Status.INCOMPLETE
 
 
-def test_project_with_a_combined_footing_is_blocked_until_v3j3(tmp_path: Path) -> None:
-    """Con la viga larga revisada (V3J.2), lo que falta (franjas, punzonamiento, desarrollo y pasadores) deja la zapata
-    BLOCKED: nunca PASS sin estar completa."""
+def test_project_with_a_combined_footing_runs_every_structural_check(tmp_path: Path) -> None:
+    """Con V3J.3 la zapata combinada ya no queda BLOCKED: viga larga, punzonamiento, franjas, desarrollo, aplastamiento y
+    pasadores (sin pasadores declarados, INCOMPLETE: no se suponen)."""
     footing = _footing()
     for column, beam_column in zip(footing["columns"], _oracle("nsr_10", "derived_combined_beam")["cases"][0]["footing"]["columns"],
                                    strict=True):
         column["loads"] = column["loads"] + beam_column["loads"]
     footing["top"] = {"designation": "#7", "spacing": 150.0}
     footing["bottom"]["x"] = {"designation": "#7", "spacing": 150.0}
-    by_name = {check.name: check for check in _project(tmp_path, footing)}
+    checks = _project(tmp_path, footing)
+    by_name = {check.name: check for check in checks}
     assert by_name["Validacion de entrada"].status is Status.PASS
-    assert by_name["Flexion: resistencia"].status is Status.PASS
-    assert by_name[COMBINED_STRUCTURAL].status is Status.BLOCKED
+    assert {"Flexion: resistencia", "Punzonamiento", "Aplastamiento en la zapata", "Desarrollo barras inferiores x",
+            "Malla inferior y: acero minimo fuera de las franjas"} <= set(by_name)
+    assert not any(check.status is Status.BLOCKED for check in checks)
+    assert by_name["Pasadores: area minima"].status is Status.INCOMPLETE
+    assert COMBINED_STRUCTURAL not in by_name

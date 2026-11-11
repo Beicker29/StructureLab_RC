@@ -942,7 +942,7 @@
   9. Imagen en planta de la presión del suelo en cada esquina, para zapatas aisladas y combinadas: el caso de servicio
      que gobierna la presión admisible, con una tabla de las esquinas de todos los casos de servicio; las presiones las
      calcula la revisión geotécnica y la memoria solo las dibuja.
-- **Subfases:** V3J.1 modelo, entrada y revisión geotécnica; V3J.2 viga en la dirección larga; V3J.3 franjas
+- **Subfases (V3J.1 a V3J.3 hechas, D-081 y D-082):** V3J.1 modelo, entrada y revisión geotécnica; V3J.2 viga en la dirección larga; V3J.3 franjas
   transversales, punzonamiento, desarrollo, aplastamiento y pasadores; V3J.4 memoria, ejemplos y documentación. La
   imagen de presiones de las zapatas aisladas va primero, por separado.
 - **V3J.1 (hecha):** `model/combined.py` (`CombinedFooting`, `CombinedColumn`; bloque `combined_footings` del proyecto);
@@ -1009,6 +1009,40 @@
   plantillas de ETABS); ninguno tenía As < As,min. Oráculo `derive_combined_beam.py` rehecho con las reglas de vigas
   escritas aparte (compatibilidad de deformaciones con las dos capas); 9 casos por perfil; 5 de 5 mutaciones
   detectadas.
+
+### D-082: franjas transversales, punzonamiento y conexión de la zapata combinada (V3J.3)
+
+- **Fecha:** 2026-11-10
+- **Referencias:** ACI 318-25 13.2.7.2, 9.4.3.2, 22.6, 8.4.4.2, 8.6.1.2, 22.8.3.2, 16.3, 25.4; NSR-10 C.15.5, C.11.1.3,
+  C.11.11, C.10.14, C.15.8, C.12; Wight 15-6; ACI MNL-17(21) ejemplo 5.
+- **Decisión del usuario:**
+  1. Las franjas transversales se revisan con el código de vigas en modo cimentación, como la viga larga (D-081): As,min
+     de vigas (como Wight: bw = columna + d), fisuración y cortante en las caras y a d de ellas. Esto reemplaza el
+     0.0018·Ag de D-080 punto 6 para las franjas. La carga es la de D-080 punto 5; las barras, las y de la malla
+     inferior que caen en la franja y el `band` de la columna, en una capa.
+  2. El cortante en una dirección en el sentido transversal se incluye (por la misma vía de vigas), aunque ni Wight ni
+     el manual lo revisan.
+  3. Desarrollo de las barras x desde la sección de mayor momento de su signo hasta el extremo más cercano, como el
+     manual; barras y de cada franja desde la cara de la columna hasta el borde. As requerido/As suministrado: el mayor
+     entre el de análisis y el mínimo de vigas efectivo.
+- **Reglas propias (no ambiguas en la norma):** en una estación en la cara de una columna, el cortante es el de la
+  sección a d (ACI 9.4.3.2 y 13.2.7.2): sin esto, el código de vigas revisaba el cortante en la cara. Aplica a la viga
+  larga y a las franjas. La malla y fuera de las franjas cumple el mínimo de losa (ACI 13.3.2.1 y 7.6.1.1, NSR-10
+  C.10.5.4) y la separación de 3h y 450 mm. El tipo de extremo de todas las barras es el `end` de la malla inferior.
+- **Reutilización:** `transferred_load` (carga que atraviesa la sección crítica: la acción de la columna como carga
+  neta equivalente menos la carga neta dentro del área crítica), `punching_checks`, `bar_anchorage`, `bearing_area`,
+  `bearing_checks` y `dowel_checks` salen de la zapata aislada sin cambiar sus resultados (huella idéntica); la acción
+  de cada columna es F = `column_vertical` con ∫x·q = F·x + My + H·Vx y ∫y·q = F·y − Mx + H·Vy.
+- **Oráculo:** `derive_combined_columns.py`, 5 casos por perfil (interiores con band, columna de borde, momentos y dos
+  casos, ganchos con pasadores que toman el exceso de aplastamiento y sin pasadores, zapata delgada con A2/A1 < 4);
+  resistencia de las franjas con un cálculo biaxial propio (con las barras asimétricas en la franja el eje neutro se
+  inclina, D-046); 7 de 7 mutaciones detectadas.
+- **Referencias:** Wight: Mu de la franja interior 405 kip·ft y As,min de las franjas 7.04 y 3.99 in² (±1 % y ±2 %).
+  Manual: franjas 286.3 y 458.6 frente a 286 y 460 kip·ft; φvc 188.5 frente a 189.7 psi; φBn 1768 kip; pasadores
+  2.0 in² y ldc 16.39 frente a 16.6 in (ACI, −1.25 %: fy/(4.2√f'c) en SI frente a fy/(50√f'c), D-015; ±2 %). El Vu de
+  punzonamiento del manual (459.4 kips) no se compara: resta la presión bruta; aquí la neta (478.7 kips).
+- **Consecuencia:** con el control de fisuración de vigas, las franjas con recubrimiento de 75 mm y la malla y en
+  segunda capa piden separaciones de ≈120 mm; el armado transversal del manual (#7 @ 6 in) no cumpliría.
 
 ## Consultas abiertas
 

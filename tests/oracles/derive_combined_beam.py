@@ -202,9 +202,10 @@ def _design(profile: dict, layers: list[tuple[float, float]], b: float, h: float
     return 0.0 if state is None else _F._phi(state["et"], profile) * abs(state["Mn"])
 
 
-def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float) -> list[dict]:
-    """Resistencia, εt (M3), As,min (M3) con la excepción de 4/3 y la separación por fisuración, como en las vigas."""
-    profile, b, h = _F.PROFILES[folder], f["ly"], f["h"]
+def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float, width: float | None = None) -> list[dict]:
+    """Resistencia, εt (M3), As,min (M3) con la excepción de 4/3 y la separación por fisuración, como en las vigas. width:
+    el ancho de la sección (por omisión, el de la viga larga, ly)."""
+    profile, b, h = _F.PROFILES[folder], f["ly"] if width is None else width, f["h"]
     layers = _oriented(rows, h, moment)
     state = _state(layers, b, h)
     assert state is not None
@@ -248,11 +249,13 @@ def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float) -> li
     return checks
 
 
-def _shear_checks(folder: str, f: dict, rows: list[dict], given: tuple[float, float]) -> list[dict]:
+def _shear_checks(folder: str, f: dict, rows: list[dict], given: tuple[float, float],
+                  section: tuple[float, dict | None] | None = None) -> list[dict]:
     """Cortante de vigas en modo cimentación: d y ρw del acero a tracción (d ≥ 0.8h), Vc de cimentación, Vs de los
     estribos (Vs ≤ 0.66√f'c·b·d) y Av,min si Vu > φVc (ACI 7.6.3.1; NSR-10 no lo exige en zapatas)."""
     shear, moment = given
-    b, h = f["ly"], f["h"]
+    b, stirrups = (f["ly"], f.get("stirrups")) if section is None else section
+    h = f["h"]
     layers = _oriented(rows, h, moment)
     state = _state(layers, b, h)
     if state is None or not any(strain > 0 for strain in state["strains"]):
@@ -261,7 +264,6 @@ def _shear_checks(folder: str, f: dict, rows: list[dict], given: tuple[float, fl
     area = sum(a for _, a in pulled)
     d = max(sum(depth * a for depth, a in pulled) / area, 0.8 * h)
     vc = _S._one_way_vc(folder, b, d, area / (b * d), abs(shear), abs(moment))
-    stirrups = f.get("stirrups")
     fyt = 420.0
     transverse = 0.0 if stirrups is None else stirrups["legs"] * BARS[stirrups["designation"]][1] / stirrups["spacing"]
     vs = transverse * fyt * d
@@ -290,8 +292,16 @@ def _expected(folder: str, f: dict, level: str) -> dict:
         if beam is None:
             failures.append(case)
             continue
-        for x in _stations(beam, rows[0]["depth"]):
-            shear, moment = _shear_moment(beam, x)
+        depth = rows[0]["depth"]
+        for x in _stations(beam, depth):
+            moment = _shear_moment(beam, x)[1]
+            # En una cara de columna, el cortante es el de la sección a d hacia el tramo (ACI 9.4.3.2, 13.2.7.2).
+            shear_at = x
+            for face, side in _faces(beam):
+                at_d = face + side * depth
+                if abs(face - x) <= 1e-6 * f["lx"] and any(low < at_d < high and low <= face <= high for low, high in _regions(beam)):
+                    shear_at = at_d
+            shear = _shear_moment(beam, shear_at)[0]
             z = x + f["lx"] / 2
             if moment < 0 and not f.get("top"):
                 station = [_F._plain(f, "x", -moment, case, profile, level), *_shear_checks(folder, f, rows, (shear, moment))]

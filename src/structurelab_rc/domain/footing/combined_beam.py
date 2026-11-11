@@ -55,8 +55,12 @@ class ColumnForce:
 
 @dataclass(frozen=True)
 class CriticalSection:
+    """Sección crítica en x; shear_x es donde se toma el cortante si no es en x: en una cara de columna, la sección a d
+    de ella (ACI 9.4.3.2 y 13.2.7.2, NSR-10 C.11.1.3 y C.15.5.2; D-082)."""
+
     x: float
     label: str
+    shear_x: float | None = None
 
 
 @dataclass(frozen=True)
@@ -154,6 +158,16 @@ def shear_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
     return sections
 
 
+def _at_face_shear(beam: BeamCase, section: CriticalSection, depth: float) -> CriticalSection:
+    """En una cara de columna, el cortante se toma en la sección a d de ella, si queda dentro del tramo."""
+    for face, _ in _faces(beam):
+        if abs(face.x - section.x) <= _EDGE * beam.lx:
+            target = f"a d de la {face.label}"
+            match = next((other for other in shear_sections(beam, depth) if other.label == target), None)
+            return section if match is None else replace(section, shear_x=match.x)
+    return section
+
+
 def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None]) -> tuple[Section, ReinforcementLayout]:
     """La viga larga como viga: sección B × h con el recubrimiento de la zapata, las barras inferiores y superiores x
     como capas (x desde la cara −Y, profundidad desde la cara superior) y los estribos declarados (D-081)."""
@@ -173,8 +187,25 @@ def critical_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
     moments = [(beam.moment(section.x), section) for section in moment_sections(beam)]
     largest, smallest = max(moments, key=lambda item: item[0]), min(moments, key=lambda item: item[0])
     chosen = ([largest[1]] if largest[0] > 0 else []) + ([smallest[1]] if smallest[0] < 0 else [])
-    unique = {section.x: section for section in [*chosen, *shear_sections(beam, depth)]}
+    chosen = [_at_face_shear(beam, section, depth) for section in chosen]
+    unique = {section.x: section for section in [*shear_sections(beam, depth), *chosen]}
     return sorted(unique.values(), key=lambda section: section.x)
+
+
+def extreme_moments(footing: CombinedFooting, soil: Soil,
+                    cases: list[tuple[FactoredCase, tuple[FootingLoad, ...]]]) -> tuple[tuple[float, float], tuple[float, float]]:
+    """El mayor momento positivo y el mayor negativo (este con signo positivo) de la viga larga en todos los casos, con su
+    x; (0, 0) si no hay momento de ese signo. Las secciones de desarrollo de las barras x (D-082)."""
+    positive, negative = (0.0, 0.0), (0.0, 0.0)
+    for pressure, loads in cases:
+        beam = beam_case(footing, soil, pressure, loads)
+        for section in moment_sections(beam):
+            moment = beam.moment(section.x)
+            if moment > positive[0]:
+                positive = (moment, section.x)
+            if -moment > negative[0]:
+                negative = (-moment, section.x)
+    return positive, negative
 
 
 def _with_section(check: Check, label: str) -> Check:
@@ -184,7 +215,8 @@ def _with_section(check: Check, label: str) -> Check:
 
 def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
     beam, section, has_top = given
-    moment, shear = beam.moment(section.x), beam.shear(section.x)
+    moment = beam.moment(section.x)
+    shear = beam.shear(section.x if section.shear_x is None else section.shear_x)
     z = section.x + footing.lx / 2
     station = Station.model_construct(z=z, layout=member.stations[0].layout, case=beam.case,
                                       demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))

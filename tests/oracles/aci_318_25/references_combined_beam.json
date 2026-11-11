@@ -1,5 +1,5 @@
 {
-  "description": "Viga larga de zapatas combinadas (D-080, V3J.2) frente a Wight, ejemplo 15-6, y al ACI MNL-17(21), capítulo 11, ejemplo de cimentaciones 5. Valores impresos de los libros, sin modificar; presión neta de las columnas (sin pesos propios), como Wight.",
+  "description": "Zapatas combinadas (D-080 a D-082): viga larga (V3J.2) y columnas, franjas, punzonamiento y conexión (V3J.3) frente a Wight, ejemplo 15-6, y al ACI MNL-17(21), capítulo 11, ejemplo de cimentaciones 5. Valores impresos de los libros, sin modificar; presión neta de las columnas (sin pesos propios), como Wight.",
   "wight_15_6": {
     "data": {
       "lx_in": 304.0,
@@ -33,6 +33,10 @@
         "designation": "#8",
         "spacing_mm": 160.0,
         "bars": 15
+      },
+      "bottom_y": {
+        "designation": "#8",
+        "spacing_mm": 300.0
       }
     },
     "expected": {
@@ -41,7 +45,10 @@
       "one_way_Vu_kips": 307.0,
       "one_way_phi_Vc_kips": 288.0,
       "As_min_in2": 11.7,
-      "one_way_shear": "FAIL"
+      "one_way_shear": "FAIL",
+      "strip_Mu_interior_kipft": 405.0,
+      "strip_As_min_interior_in2": 7.04,
+      "strip_As_min_exterior_in2": 3.99
     },
     "tolerance_rel": {
       "Mu_negative_kipft": 0.01,
@@ -51,9 +58,12 @@
         "aci_318_25": 0.03,
         "nsr_10": 0.04
       },
-      "As_min_in2": 0.02
+      "As_min_in2": 0.02,
+      "strip_Mu_interior_kipft": 0.01,
+      "strip_As_min_interior_in2": 0.02,
+      "strip_As_min_exterior_in2": 0.02
     },
-    "notes": "Wight pone estribos porque Vu > φVc; sin estribos en el modelo la revisión es FAIL (D-080, 6b). φVc: 0.17√f'c en SI frente a 2√f'c en psi (+2.3 %, D-015); en NSR-10 gobierna C.11.2.2 (+3.5 %). As,min: 1.4/fy en SI frente a 200/fy (+1.4 %)."
+    "notes": "Wight pone estribos porque Vu > φVc; sin estribos en el modelo la revisión es FAIL (D-080, 6b). φVc: 0.17√f'c en SI frente a 2√f'c en psi (+2.3 %, D-015); en NSR-10 gobierna C.11.2.2 (+3.5 %). As,min: 1.4/fy en SI frente a 200/fy (+1.4 %). Franjas (V3J.3): Wight usa la carga de la columna repartida en B (90 k/ft) y el As,min de vigas con bw = columna + d (d = 35.5 in); 1.4/fy en SI frente a 200/fy (+1.4 %)."
   },
   "mnl_example_5": {
     "data": {
@@ -76,7 +86,15 @@
           "cx_in": 20.0,
           "cy_in": 20.0,
           "x_from_edge_in": 132.0,
-          "Pu_kips": 568.0
+          "Pu_kips": 568.0,
+          "band": {
+            "designation": "#7",
+            "spacing_mm": 152.4
+          },
+          "dowels": {
+            "designation": "#7",
+            "count": 4
+          }
         }
       ],
       "top": {
@@ -88,18 +106,37 @@
         "designation": "#9",
         "spacing_mm": 304.8,
         "bars": 10
+      },
+      "bottom_y": {
+        "designation": "#7",
+        "spacing_mm": 279.4
       }
     },
     "expected": {
       "As_min_in2": 10.0,
-      "M_exterior_edge_face_kipft": 2.0
+      "M_exterior_edge_face_kipft": 2.0,
+      "strip_Mu_exterior_kipft": 286.0,
+      "strip_Mu_interior_kipft": 460.0,
+      "punching_phi_vc_interior_psi": 189.7,
+      "bearing_phi_Bn_interior_kips": 1768.0,
+      "dowel_min_area_in2": 2.0,
+      "dowel_ldc_in": 16.6
     },
     "tolerance_rel": {
-      "As_min_in2": 0.025
+      "As_min_in2": 0.025,
+      "strip_Mu_exterior_kipft": 0.01,
+      "strip_Mu_interior_kipft": 0.01,
+      "punching_phi_vc_interior_psi": 0.01,
+      "bearing_phi_Bn_interior_kips": 0.01,
+      "dowel_min_area_in2": 0.001,
+      "dowel_ldc_in": {
+        "aci_318_25": 0.02,
+        "nsr_10": 0.01
+      }
     },
     "tolerance_abs": {
       "M_exterior_edge_face_kipft": 0.5
     },
-    "notes": "Solo As,min y el momento en la cara exterior de la columna de borde: los diagramas del manual no se reproducen con sus propios datos (con wu = 68.2 k/ft el máximo da 507 kip·ft, no 576) y usa la presión bruta uniforme; aquí, la neta de Bellos (trapezoidal). As,min: 1.4/fy en SI y d = 26.44 in frente a 200/fy y 26.4 in, y el libro imprime 10.0 por 10.03 (+2.0 %)."
+    "notes": "Solo As,min y el momento en la cara exterior de la columna de borde: los diagramas del manual no se reproducen con sus propios datos (con wu = 68.2 k/ft el máximo da 507 kip·ft, no 576) y usa la presión bruta uniforme; aquí, la neta de Bellos (trapezoidal). As,min: 1.4/fy en SI y d = 26.44 in frente a 200/fy y 26.4 in, y el libro imprime 10.0 por 10.03 (+2.0 %). V3J.3: franjas con Pu/B (el manual redondea q a 60 k/ft); φvc con 0.33√f'c en SI frente a 4√f'c; el Vu de punzonamiento no se compara: el manual resta la presión bruta (7.2 ksf) y aquí la neta de Bellos. ldc de los pasadores: ACI 318-25 en SI usa fy/(4.2√f'c) y el manual fy/(50√f'c) en psi (−1.25 %, D-015: no se convierten constantes), de ahí ±2 % en ACI."
   }
 }

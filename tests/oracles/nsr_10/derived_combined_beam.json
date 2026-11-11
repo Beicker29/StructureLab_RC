@@ -342,8 +342,8 @@
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 334159.333333333,
-            "capacity": 839468.452414162,
+            "demand": 69462.02399999974,
+            "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
             "z_mm": 5225.0
@@ -689,8 +689,8 @@
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 555429.4861111115,
-            "capacity": 1124251.430795731,
+            "demand": 312507.18874806026,
+            "capacity": 1059119.1421845236,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
             "z_mm": 4250.0
@@ -1060,8 +1060,8 @@
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 332527.831425,
-            "capacity": 839468.452414162,
+            "demand": 30642.038099243306,
+            "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
             "z_mm": 5325.0
@@ -1162,7 +1162,7 @@
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 654340.1041662326,
+            "demand": 535938.323072187,
             "capacity": 839468.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U2",
@@ -1556,8 +1556,8 @@
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 127492.66666666666,
-            "capacity": 843774.0803340252,
+            "demand": 26502.024000000005,
+            "capacity": 828355.6322299016,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
             "z_mm": 775.0
@@ -2022,8 +2022,8 @@
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 566659.333333333,
-            "capacity": 576371.8394551862,
+            "demand": 300585.35733333323,
+            "capacity": 520408.2393319817,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
             "z_mm": 5225.0
@@ -2426,8 +2426,8 @@
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 566659.333333333,
-            "capacity": 1299108.7268968418,
+            "demand": 227468.02399999974,
+            "capacity": 1207583.1889001708,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
             "z_mm": 5225.0
@@ -2972,8 +2972,8 @@
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 420394.0,
-            "capacity": 756399.7045614013,
+            "demand": 160504.27333333343,
+            "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
             "z_mm": 2025.0
@@ -3320,8 +3320,8 @@
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 761693.9444444445,
-            "capacity": 781922.181978137,
+            "demand": 669731.7244444444,
+            "capacity": 773380.9608612515,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
             "z_mm": 1225.0

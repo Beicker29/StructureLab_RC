@@ -7,18 +7,19 @@ fuera de él. La carga neta sale de domain/footing/loads.py; la resistencia, de 
 """
 
 from collections.abc import Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 
 from structurelab_rc.codes.registry import Profile
+from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.footing.loads import FactoredCase, column_faces
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.shear_strength import TransferredLoad, TwoWayShear, concrete_lambda, two_way_shear
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError
-from structurelab_rc.mechanics.perimeter import critical_perimeter
+from structurelab_rc.mechanics.perimeter import Perimeter, critical_perimeter
 from structurelab_rc.model.catalog import RebarSpec
-from structurelab_rc.model.footing import Footing
+from structurelab_rc.model.footing import Footing, FootingBase
 from structurelab_rc.model.project import Materials
 
 PUNCHING = "Punzonamiento"
@@ -51,15 +52,21 @@ def _one_way(profile: Profile, materials: Materials, footing: Footing, row: BarR
                  note=f"Seccion a d de la cara {face} de la columna")
 
 
-def _punching_load(footing: Footing, case: FactoredCase, region: tuple[tuple[float, float], tuple[float, float]],
-                   centroid: tuple[float, float]) -> TransferredLoad:
-    """Carga neta fuera del área crítica: la de toda la base menos la del área crítica (la columna queda dentro de ambas)."""
-    hx, hy = footing.lx / 2, footing.ly / 2
-    (x0, y0), (x1, y1) = region
-    total = case.net(((-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy)))
+def transferred_load(column: tuple[float, float, float], case: FactoredCase, perimeter: Perimeter) -> TransferredLoad:
+    """Carga que atraviesa la sección crítica: la acción de la columna expresada como carga neta equivalente (fuerza y
+    momentos estáticos ∫q, ∫x·q, ∫y·q) menos la carga neta dentro del área crítica, con los momentos respecto al
+    centroide del perímetro."""
+    (x0, y0), (x1, y1) = perimeter.region
     inside = case.net(((x0, y0), (x1, y0), (x1, y1), (x0, y1)))
-    force, sx, sy = (a - b for a, b in zip(total, inside, strict=True))
-    return TransferredLoad(force, sx - centroid[0] * force, sy - centroid[1] * force)
+    force, sx, sy = (a - b for a, b in zip(column, inside, strict=True))
+    xc, yc = perimeter.centroid
+    return TransferredLoad(force, sx - xc * force, sy - yc * force)
+
+
+def _punching_load(footing: Footing, case: FactoredCase, perimeter: Perimeter) -> TransferredLoad:
+    """En la zapata aislada, la acción de la columna equivale a la carga neta de toda la base."""
+    hx, hy = footing.lx / 2, footing.ly / 2
+    return transferred_load(case.net(((-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy))), case, perimeter)
 
 
 def _punching(
@@ -71,39 +78,61 @@ def _punching(
     perimeter = critical_perimeter((column.offset_x, column.offset_y), column.cx, column.cy, depth, ((-hx, -hy), (hx, hy)))
     if not perimeter.sides:
         return two_way_shear(profile, materials, perimeter, (column.cx, column.cy, 1.0), TransferredLoad(0.0, 0.0, 0.0)), None
-    load = _punching_load(footing, case, perimeter.region, perimeter.centroid)
+    load = _punching_load(footing, case, perimeter)
     loaded = (column.cx, column.cy, profile.footing.punching_size_factor())
     return two_way_shear(profile, materials, perimeter, loaded, load), load
+
+
+@dataclass(frozen=True)
+class PunchedColumn:
+    """Columna que punzona: sección cx × cy centrada en (x, y), las barras inferiores de la zapata y la nota del check."""
+
+    cx: float
+    cy: float
+    x: float
+    y: float
+    bottom: dict[str, BarRow]
+    note: str
+
+
+def punching_checks(basis: Basis, footing: FootingBase, column: PunchedColumn, given: tuple[TwoWayShear | StructuredError,
+                    TransferredLoad | None, str]) -> list[Check]:
+    """El punzonamiento de una columna y, si aplica, el acero mínimo por punzonamiento (ACI 8.6.1.2)."""
+    profile, materials = basis.profile, basis.materials
+    result, load, case = given
+    clause = profile.shear.clauses()["punching"]
+    if isinstance(result, StructuredError):
+        return [Check(PUNCHING, Status.BLOCKED, (result,), clause, member=footing.id, case=case)]
+    assert load is not None
+    values = (("Vu", load.force), ("b0", result.perimeter.length), ("d", result.perimeter.depth), ("alpha s", result.alpha_s),
+              ("gamma v x", result.gamma_v[0]), ("gamma v y", result.gamma_v[1]), ("vuv", result.vuv))
+    checks = [Check(PUNCHING, Status.PASS if result.vu <= result.phi_vc else Status.FAIL, clause=clause, member=footing.id,
+                    case=case, demand=result.vu, capacity=result.phi_vc, unit="MPa", values=values, note=column.note)]
+    checks.extend(replace(check, case=case) for check in _punching_minimum(profile, materials, (footing, column), result))
+    return checks
 
 
 def _punching_checks(
     profile: Profile, materials: Materials, footing: Footing, bottom: dict[str, BarRow], case: FactoredCase
 ) -> list[Check]:
-    clause = profile.shear.clauses()["punching"]
     result, load = _punching(profile, materials, footing, bottom, case)
-    if isinstance(result, StructuredError):
-        return [Check(PUNCHING, Status.BLOCKED, (result,), clause, member=footing.id, case=case.case)]
-    assert load is not None
-    values = (("Vu", load.force), ("b0", result.perimeter.length), ("d", result.perimeter.depth), ("alpha s", result.alpha_s),
-              ("gamma v x", result.gamma_v[0]), ("gamma v y", result.gamma_v[1]), ("vuv", result.vuv))
-    checks = [Check(PUNCHING, Status.PASS if result.vu <= result.phi_vc else Status.FAIL, clause=clause, member=footing.id,
-                    case=case.case, demand=result.vu, capacity=result.phi_vc, unit="MPa", values=values)]
-    checks.extend(replace(check, case=case.case) for check in _punching_minimum(profile, materials, footing, bottom, result))
-    return checks
+    column = footing.column
+    punched = PunchedColumn(column.cx, column.cy, column.offset_x, column.offset_y, bottom, "")
+    return punching_checks(Basis(profile, materials, (), ""), footing, punched, (result, load, case.case))
 
 
 def _punching_minimum(
-    profile: Profile, materials: Materials, footing: Footing, bottom: dict[str, BarRow], result: TwoWayShear
+    profile: Profile, materials: Materials, given: tuple[FootingBase, PunchedColumn], result: TwoWayShear
 ) -> list[Check]:
     """ACI 8.6.1.2 (D-059): con vuv alto, As,min en el ancho bslab alrededor de la columna, en cada dirección."""
     lam = concrete_lambda(profile, materials)
     if isinstance(lam, StructuredError):
         return []
-    column = footing.column
+    footing, column = given
     checks = []
-    for direction, row in bottom.items():
+    for direction, row in column.bottom.items():
         across = column.cy if direction == "x" else column.cx
-        centre = column.offset_y if direction == "x" else column.offset_x
+        centre = column.y if direction == "x" else column.x
         bslab = profile.shear.effective_slab_width(across, footing.h)
         required = profile.shear.punching_min_reinforcement(
             vuv=result.vuv, fc=materials.fc, lam=lam, lam_s=profile.footing.punching_size_factor(), alpha_s=result.alpha_s,
@@ -113,7 +142,7 @@ def _punching_minimum(
         provided = sum(row.bar_area for position in row.positions if abs(position - centre) <= bslab / 2 + 1e-6)
         checks.append(Check(f"Acero minimo por punzonamiento (barras {direction})", Status.PASS if provided >= required else Status.FAIL,
                             clause=profile.footing.clauses()["punching_min_reinforcement"], member=footing.id,
-                            demand=required, capacity=provided, unit="mm2", values=(("bslab", bslab),)))
+                            demand=required, capacity=provided, unit="mm2", values=(("bslab", bslab),), note=column.note))
     return checks
 
 
