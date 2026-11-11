@@ -274,10 +274,12 @@ def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
 
 
 def _run(target: Path, output: Path | None, workers: int | None, full: bool) -> int:
-    """Un ejemplo, o todos los de una carpeta (cada uno en su carpeta de salida; con --output, debajo de ella)."""
+    """Un ejemplo, o todos los de una carpeta (cada uno en su carpeta de salida; con --output, debajo de ella). Las
+    copias congeladas de las pruebas (subcarpetas pruebas/, D-098) se corren solo si se pide esa carpeta."""
     if not target.is_dir():
         return _run_one(target, output, workers, full)
-    examples = sorted(path for path in target.rglob("*.json") if "results" not in path.parts)
+    examples = sorted(path for path in target.rglob("*.json")
+                      if not {"results", "pruebas"} & set(path.relative_to(target).parts[:-1]))
     codes = []
     for path in examples:
         own = None if output is None else output / path.parent.relative_to(target) / path.stem

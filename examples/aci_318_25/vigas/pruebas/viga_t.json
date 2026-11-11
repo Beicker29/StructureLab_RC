@@ -1,0 +1,118 @@
+{
+  "description": "Viga T con el ala en la cara superior (salientes de 350 mm a cada lado): en el apoyo (z = 0) hay torsión (Tu ≥ φTth, umbral calculado con las alas efectivas), con estribos cerrados #4 y dos barras #8 de torsión, porque Aℓ,min crece con el ala; en el centro de luz solo flexión y cortante. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior; cover es el recubrimiento libre a los estribos.",
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "intermediate",
+    "justification": "Pórtico intermedio (equivalente a DMO) declarado por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated"
+  },
+  "members": [
+    {
+      "id": "V-1",
+      "type": "beam",
+      "statically_determinate": false,
+      "length": 6000.0,
+      "section": {
+        "bw": 300.0,
+        "h": 500.0,
+        "cover": 40.0,
+        "hf": 100.0,
+        "overhang_x_neg": 350.0,
+        "overhang_x_pos": 350.0
+      },
+      "stations": [
+        {
+          "z": 0.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 60.0,
+                "role": "flexure",
+                "bars": [
+                  "#6",
+                  "#6",
+                  "#6",
+                  "#6"
+                ]
+              },
+              {
+                "depth": 250.0,
+                "role": "torsion",
+                "bars": [
+                  "#8",
+                  "#8"
+                ]
+              },
+              {
+                "depth": 440.0,
+                "role": "flexure",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#4",
+              "legs": 2,
+              "spacing": 100.0,
+              "closed": true
+            }
+          },
+          "demands": {
+            "Pu_kN": 0.0,
+            "Mu_kNm": -150.0,
+            "M2_kNm": 0.0,
+            "Vu_kN": 120.0,
+            "V3_kN": 0.0,
+            "Tu_kNm": 15.0
+          }
+        },
+        {
+          "z": 3000.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 60.0,
+                "role": "flexure",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 440.0,
+                "role": "flexure",
+                "bars": [
+                  "#8",
+                  "#8",
+                  "#8"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#3",
+              "legs": 2,
+              "spacing": 175.0,
+              "closed": true
+            }
+          },
+          "demands": {
+            "Pu_kN": 25.0,
+            "Mu_kNm": 180.0,
+            "M2_kNm": 0.0,
+            "Vu_kN": 10.0,
+            "V3_kN": 0.0,
+            "Tu_kNm": 0.0
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -6,9 +6,13 @@ Verificación de vigas según NSR-10 Título C. Los campos de entrada y de salid
 | Ejemplo | Qué muestra |
 | --- | --- |
 | `viga_rectangular.json` | Viga rectangular: en el apoyo (z = 0) hay torsión de equilibrio (Tu ≥ φTth), con estribos cerrados #4 y dos barras #6 de torsión a media altura (role = torsion, no cuentan como As); en el centro de luz solo flexión y cortante. |
-| `plantilla_vigas_etabs.json` | Plantilla de importación de ETABS (vigas B34 y B37) para el Excel compartido `examples/etabs/vigas/Element Forces - Beams.xlsx`: perfil, nivel sísmico, materiales, secciones y armado por tramos. |
+| `viga_rectangular_etabs.json` | Plantilla de importación de ETABS (vigas B34 y B37) para el Excel compartido `examples/etabs/vigas/Element Forces - Beams.xlsx`: perfil, nivel sísmico, materiales, secciones y armado por tramos. |
 | `viga_alta.json` | Viga de transferencia de gran altura (`deep_beam: true`) con la geometría del ACI MNL-17(21), volumen 2, ejemplo de puntal-tensor 1, en SI: 600 × 2300 mm, 12 #9 en dos capas y malla #5 c/200 mm en cada cara; se verifican el límite de sección y el refuerzo distribuido, y la memoria avisa que la flexión y el cortante son seccionales (D-089). |
 | `viga_t.json` | Viga T con el ala en la cara superior (salientes de 350 mm a cada lado): en el apoyo (z = 0) hay torsión (Tu ≥ φTth, umbral calculado con las alas efectivas), con estribos cerrados #4 y dos barras #8 de torsión, porque Aℓ,min crece con el ala; en el centro de luz solo flexión y cortante. |
+
+Estos archivos son **para iterar**: se pueden cambiar libremente para probar parámetros. Las pruebas, las huellas y la CI
+leen solo la copia congelada de [`pruebas/`](pruebas/LEEME.md) (D-098). Nombres: `<tipo>.json` con las cargas
+declaradas y `<tipo>_etabs.json` con las cargas de los Excel de ETABS.
 
 ## Cómo correrlos
 
@@ -17,7 +21,7 @@ memorias `memoria.txt` y `memoria.pdf`. La plantilla de ETABS lee su Excel de `e
 plantilla), se importa sola y deja además el `proyecto.json` importado.
 
 ```console
-structurelab-rc run examples/nsr_10/vigas/plantilla_vigas_etabs.json
+structurelab-rc run examples/nsr_10/vigas/viga_rectangular_etabs.json
 structurelab-rc run examples/nsr_10/vigas/viga_alta.json
 structurelab-rc run examples/nsr_10/vigas/viga_rectangular.json
 structurelab-rc run examples/nsr_10/vigas/viga_t.json

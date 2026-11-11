@@ -18,20 +18,22 @@ from structurelab_rc.engine import design_footings, import_etabs, import_etabs_f
 
 ROOT = Path(__file__).parent.parent
 FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
-# examples/<perfil>/<elemento>/*.json: los mismos ejemplos para los dos perfiles (D-073). Las plantillas de ETABS
-# (plantilla_*_etabs.json) leen los Excel compartidos de examples/etabs/<elemento>/; entran en la huella la de vigas y
+# Las pruebas usan solo las copias congeladas de examples/<perfil>/<elemento>/pruebas/ (D-098): los ejemplos de afuera
+# son para que el usuario itere. Los mismos ejemplos para los dos perfiles (D-073). Las plantillas de ETABS
+# (<tipo>_etabs.json, D-098) leen los Excel de examples/etabs/<elemento>/pruebas/; entran en la huella la de vigas y
 # las de zapatas combinadas (D-084) y en T invertida (D-093), que importan pocas zapatas (las de zapatas aisladas
 # importan 57 a 73 apoyos y su diseño tarda minutos).
 # La curva costo-N (curva_*.json, D-096) repite el diseño para cada N: tarda minutos con un proceso y no entra en la huella.
-EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*/*.json")
-                  if path.parts[-3] != "etabs" and not path.name.startswith(("plantilla_", "curva_")))
-ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/vigas/plantilla_vigas_etabs.json")))
+EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*/pruebas/*.json")
+                  if path.parts[-4] != "etabs" and not path.stem.endswith("_etabs") and not path.name.startswith("curva_"))
+ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
+                     for path in (ROOT / "examples").glob("*/vigas/pruebas/viga_rectangular_etabs.json")))
 COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
-                              for name in ("plantilla_combinadas_etabs.json", "plantilla_t_invertida_etabs.json")
-                              for path in (ROOT / "examples").glob(f"*/zapatas/{name}")))
-WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "Element Forces - Beams.xlsx"
-REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "Joint Reactions - Servicio.xlsx",
-             ROOT / "examples" / "etabs" / "zapatas" / "Joint Reactions - Ultimas.xlsx")
+                              for name in ("zapata_combinada_etabs.json", "zapata_t_invertida_etabs.json")
+                              for path in (ROOT / "examples").glob(f"*/zapatas/pruebas/{name}")))
+WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "pruebas" / "Element Forces - Beams.xlsx"
+REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx",
+             ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Ultimas.xlsx")
 UPDATE = os.environ.get("STRUCTURELAB_UPDATE_FINGERPRINTS") == "1"
 
 

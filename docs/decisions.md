@@ -1460,6 +1460,29 @@
     tienen momento negativo, así que esas barras no se desarrollan como refuerzo a tracción.
   - Huellas actualizadas; las plantillas de zapatas se calcularon con las plantillas y los Excel del commit.
 
+### D-098: ejemplos para iterar, copia congelada para las pruebas y nombres estandarizados
+
+- **Fecha:** 2026-11-11
+- **Problema:** el usuario itera cambiando los ejemplos y los Excel de ETABS, y esos mismos archivos alimentaban las
+  pruebas, las huellas y la CI: cada cambio local rompía pruebas, y cada commit obligaba a separar sus datos de los del
+  cambio.
+- **Decisiones del usuario:**
+  1. En cada carpeta de ejemplos, una subcarpeta `pruebas/` con la copia que usan las pruebas; afuera, los archivos para
+     iterar. Los dos quedan versionados en Git.
+  2. Nombres: `<tipo>.json` con las cargas declaradas y `<tipo>_etabs.json` con las cargas de los Excel. Cambian
+     `plantilla_vigas_etabs` → `viga_rectangular_etabs` (B34 y B37, 300 × 500), `plantilla_zapatas_etabs` →
+     `zapata_centrica_etabs`, `plantilla_combinadas_etabs` → `zapata_combinada_etabs`, `plantilla_t_invertida_etabs` →
+     `zapata_t_invertida_etabs` y `plantilla_diseno_zapatas_etabs` → `diseno_tipologias_etabs`. Las decisiones
+     anteriores conservan los nombres de su época.
+- **Implementación:**
+  - `examples/<perfil>/<elemento>/pruebas/` y `examples/etabs/<elemento>/pruebas/`: copia del commit 544d440 (no de
+    los cambios locales del usuario). Las plantillas de `pruebas/` leen los Excel de `examples/etabs/<elemento>/pruebas/`.
+  - Pruebas, huellas (`tests/fingerprints.json`, con las rutas de `pruebas/`) y CI leen solo `pruebas/`; las plantillas
+    se reconocen por el sufijo `_etabs`.
+  - `run` sobre una carpeta salta las subcarpetas `pruebas/` (se corren pidiéndolas); su salida por defecto es
+    `results/<perfil>/<elemento>/pruebas/<ejemplo>/`.
+- **Diferencias:** ninguna de cálculo: las 18 huellas calculadas desde `pruebas/` son iguales a las anteriores.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

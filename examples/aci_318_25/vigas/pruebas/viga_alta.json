@@ -1,0 +1,296 @@
+{
+  "description": "Viga de transferencia de gran altura (deep_beam declarada, D-089), con la geometría del ACI MNL-17(21), volumen 2, ejemplo de puntal-tensor 1, llevada a SI: 600 × 2300 mm, dos cargas de 2030 kN a un tercio de la luz; 12 #9 abajo en dos capas, malla #5 c/200 mm en cada cara (estribos de dos ramas y capas horizontales de 2 #5). Se verifican el límite de sección y el refuerzo distribuido; la flexión y el cortante son seccionales y la memoria lo advierte. Unidades: mm y MPa; demandas mayoradas en kN y kN·m; depth desde la fibra superior; cover libre a los estribos.",
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "intermediate",
+    "justification": "Pórtico intermedio (equivalente a DMO) declarado por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated"
+  },
+  "members": [
+    {
+      "id": "VT-1",
+      "type": "beam",
+      "deep_beam": true,
+      "length": 7670.0,
+      "section": {
+        "bw": 600.0,
+        "h": 2300.0,
+        "cover": 40.0
+      },
+      "stations": [
+        {
+          "z": 1000.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 60.0,
+                "role": "flexure",
+                "bars": [
+                  "#9",
+                  "#9"
+                ]
+              },
+              {
+                "depth": 200.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 400.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 600.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 800.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1000.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1200.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1400.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1600.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1800.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 2000.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 2115.0,
+                "role": "flexure",
+                "bars": [
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9"
+                ]
+              },
+              {
+                "depth": 2230.0,
+                "role": "flexure",
+                "bars": [
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#5",
+              "legs": 2,
+              "spacing": 200.0,
+              "closed": true
+            }
+          },
+          "demands": {
+            "Pu_kN": 0.0,
+            "Mu_kNm": 2030.0,
+            "M2_kNm": 0.0,
+            "Vu_kN": 2030.0,
+            "V3_kN": 0.0,
+            "Tu_kNm": 0.0
+          }
+        },
+        {
+          "z": 3835.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 60.0,
+                "role": "flexure",
+                "bars": [
+                  "#9",
+                  "#9"
+                ]
+              },
+              {
+                "depth": 200.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 400.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 600.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 800.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1000.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1200.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1400.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1600.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 1800.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 2000.0,
+                "role": "skin",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 2115.0,
+                "role": "flexure",
+                "bars": [
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9"
+                ]
+              },
+              {
+                "depth": 2230.0,
+                "role": "flexure",
+                "bars": [
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9",
+                  "#9"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#5",
+              "legs": 2,
+              "spacing": 200.0,
+              "closed": true
+            }
+          },
+          "demands": {
+            "Pu_kN": 0.0,
+            "Mu_kNm": 4640.0,
+            "M2_kNm": 0.0,
+            "Vu_kN": 0.0,
+            "V3_kN": 0.0,
+            "Tu_kNm": 0.0
+          }
+        }
+      ]
+    }
+  ]
+}

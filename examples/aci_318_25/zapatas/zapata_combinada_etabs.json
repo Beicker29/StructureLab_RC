@@ -7,14 +7,14 @@
     "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
   },
   "materials": {
-    "fc": 28.0,
+    "fc": 24.5,
     "fy": 420.0,
     "fyt": 420.0,
     "concrete": "normalweight",
     "coating": "uncoated"
   },
   "soil": {
-    "allowable_pressure_kPa": 250.0,
+    "allowable_pressure_kPa": 300.0,
     "min_contact_fraction": 0.5,
     "unit_weight_concrete_kNm3": 24.0,
     "unit_weight_fill_kNm3": 18.0,
@@ -86,12 +86,12 @@
   "combined_footings": [
     {
       "id": "ZC-A",
-      "principal_direction": "x",
-      "lx": 9000.0,
-      "ly": 3800.0,
-      "h": 1100.0,
+      "principal_direction": "y",
+      "lx": 4100,
+      "ly": 6000.0,
+      "h": 9.0,
       "cover": 75.0,
-      "fill_height": 1500.0,
+      "fill_height": 300.0,
       "pedestal_height": 0.0,
       "surcharge_dead_kNm2": 2.0,
       "surcharge_live_kNm2": 5.0,
@@ -102,11 +102,11 @@
       "columns": [
         {
           "id": "C15",
-          "etabs_unique_name": "15",
-          "cx": 600.0,
-          "cy": 600.0,
-          "x": -2700.0,
-          "y": 0.0,
+          "etabs_unique_name": "253",
+          "cx": 1100.0,
+          "cy": 500.0,
+          "x": 0.0,
+          "y": -2330,
           "dowels": {
             "designation": "#6",
             "count": 8
@@ -118,11 +118,11 @@
         },
         {
           "id": "C1659",
-          "etabs_unique_name": "1659",
-          "cx": 600.0,
-          "cy": 600.0,
-          "x": 2700.0,
-          "y": 0.0,
+          "etabs_unique_name": "202",
+          "cx": 450.0,
+          "cy": 800.0,
+          "x": 0.0,
+          "y": -1750.0,
           "dowels": {
             "designation": "#6",
             "count": 8
@@ -134,133 +134,7 @@
         }
       ],
       "bottom": {
-        "first": "x",
-        "end": "straight",
-        "x": {
-          "designation": "#8",
-          "spacing": 150.0
-        },
-        "y": {
-          "designation": "#6",
-          "spacing": 140.0
-        }
-      },
-      "top": {
-        "designation": "#8",
-        "spacing": 140.0,
-        "end": "straight"
-      },
-      "top_transverse": {
-        "designation": "#5",
-        "spacing": 300.0,
-        "end": "straight"
-      },
-      "skin": {
-        "designation": "#5",
-        "spacing": 180.0
-      }
-    },
-    {
-      "id": "ZC-B",
-      "principal_direction": "x",
-      "lx": 9000.0,
-      "ly": 3800.0,
-      "h": 1100.0,
-      "cover": 75.0,
-      "fill_height": 1500.0,
-      "pedestal_height": 0.0,
-      "surcharge_dead_kNm2": 2.0,
-      "surcharge_live_kNm2": 5.0,
-      "loads_source": {
-        "service": "etabs",
-        "factored": "json"
-      },
-      "columns": [
-        {
-          "id": "C1273",
-          "etabs_unique_name": "1273",
-          "cx": 600.0,
-          "cy": 600.0,
-          "x": -2700.0,
-          "y": 0.0,
-          "dowels": {
-            "designation": "#6",
-            "count": 8
-          },
-          "band": {
-            "designation": "#7",
-            "spacing": 110.0
-          },
-          "loads": [
-            {
-              "case": "1.2D+1.6L",
-              "kind": "factored",
-              "dead_factor": 1.2,
-              "live_factor": 1.6,
-              "P_kN": 3450.0,
-              "Vx_kN": 0.0,
-              "Vy_kN": 0.0,
-              "Mx_kNm": 0.0,
-              "My_kNm": 0.0
-            },
-            {
-              "case": "1.2D+L+EX",
-              "kind": "factored",
-              "dead_factor": 1.2,
-              "live_factor": 1.0,
-              "P_kN": 3000.0,
-              "Vx_kN": 150.0,
-              "Vy_kN": 0.0,
-              "Mx_kNm": 0.0,
-              "My_kNm": 400.0,
-              "seismic": true
-            }
-          ]
-        },
-        {
-          "id": "C1601",
-          "etabs_unique_name": "1601",
-          "cx": 600.0,
-          "cy": 600.0,
-          "x": 2700.0,
-          "y": 0.0,
-          "dowels": {
-            "designation": "#6",
-            "count": 8
-          },
-          "band": {
-            "designation": "#7",
-            "spacing": 110.0
-          },
-          "loads": [
-            {
-              "case": "1.2D+1.6L",
-              "kind": "factored",
-              "dead_factor": 1.2,
-              "live_factor": 1.6,
-              "P_kN": 3850.0,
-              "Vx_kN": 0.0,
-              "Vy_kN": 0.0,
-              "Mx_kNm": 0.0,
-              "My_kNm": 0.0
-            },
-            {
-              "case": "1.2D+L+EX",
-              "kind": "factored",
-              "dead_factor": 1.2,
-              "live_factor": 1.0,
-              "P_kN": 3350.0,
-              "Vx_kN": 160.0,
-              "Vy_kN": 0.0,
-              "Mx_kNm": 0.0,
-              "My_kNm": 420.0,
-              "seismic": true
-            }
-          ]
-        }
-      ],
-      "bottom": {
-        "first": "x",
+        "first": "y",
         "end": "straight",
         "x": {
           "designation": "#8",

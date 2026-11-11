@@ -13,15 +13,16 @@ from structurelab_rc.model.design import CurveSettings
 from structurelab_rc.model.project import Project
 
 ROOT = Path(__file__).parent.parent
-EXAMPLES = sorted(path for path in (ROOT / "examples").glob("*/*/*.json"))
+# Solo las copias congeladas de pruebas/ (D-098); las de afuera son para que el usuario itere.
+EXAMPLES = sorted(path for path in (ROOT / "examples").glob("*/*/pruebas/*.json"))
 
 
 def _expected_kind(path: Path) -> str:
     name = path.name
-    if name.startswith("plantilla_diseno_"):
-        return "etabs_design"
-    if name.startswith("plantilla_"):
-        return "etabs_beams" if path.parent.name == "vigas" else "etabs_footings"
+    if path.stem.endswith("_etabs"):
+        if name.startswith("diseno_"):
+            return "etabs_design"
+        return "etabs_beams" if path.parts[-3] == "vigas" else "etabs_footings"
     if name.startswith("diseno_"):
         return "design"
     if name.startswith("curva_"):
@@ -29,12 +30,12 @@ def _expected_kind(path: Path) -> str:
     return "project"
 
 
-@pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: f"{path.parts[-3]}-{path.parent.name}-{path.stem}")
+@pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: f"{path.parts[-4]}-{path.parts[-3]}-{path.stem}")
 def test_every_example_has_a_run_plan(path: Path) -> None:
     """Cada ejemplo del repositorio se corre con `run`: su tipo sale del contenido y las plantillas traen sus Excel."""
     plan = run_plan(path)
     assert plan.kind == _expected_kind(path)
-    assert plan.output == ROOT / "results" / path.parts[-3] / path.parent.name / path.stem
+    assert plan.output == ROOT / "results" / path.parts[-4] / path.parts[-3] / "pruebas" / path.stem
     for excel in (plan.workbook, plan.service, plan.factored):
         assert excel is None or excel.exists()
     if plan.kind.startswith("etabs"):
@@ -46,7 +47,7 @@ def test_default_output_outside_the_examples(tmp_path: Path) -> None:
 
 
 def test_a_template_without_its_excel_is_a_clear_error(tmp_path: Path) -> None:
-    template = json.loads((ROOT / "examples/nsr_10/zapatas/plantilla_t_invertida_etabs.json").read_text(encoding="utf-8"))
+    template = json.loads((ROOT / "examples/nsr_10/zapatas/pruebas/zapata_t_invertida_etabs.json").read_text(encoding="utf-8"))
     template.pop("etabs_files")
     path = tmp_path / "plantilla.json"
     path.write_text(json.dumps(template), encoding="utf-8")
@@ -55,7 +56,7 @@ def test_a_template_without_its_excel_is_a_clear_error(tmp_path: Path) -> None:
 
 
 def test_the_imported_project_leaves_out_etabs_files() -> None:
-    template = ROOT / "examples/nsr_10/zapatas/plantilla_t_invertida_etabs.json"
+    template = ROOT / "examples/nsr_10/zapatas/pruebas/zapata_t_invertida_etabs.json"
     plan = run_plan(template)
     project, _, check = import_etabs_footings(plan.service, plan.factored, template)
     assert project is not None and "etabs_files" not in project
@@ -74,7 +75,7 @@ def test_curve_settings_reject_bad_text() -> None:
 
 def test_run_writes_the_results_memoirs_and_figures(tmp_path: Path) -> None:
     out = tmp_path / "salida"
-    assert main(["run", str(ROOT / "examples/nsr_10/zapatas/zapata_combinada.json"), "--output", str(out)]) == 0
+    assert main(["run", str(ROOT / "examples/nsr_10/zapatas/pruebas/zapata_combinada.json"), "--output", str(out)]) == 0
     names = {path.name for path in out.iterdir()}
     assert {"resultado.json", "memoria.txt", "presion_ZC1.svg", "diagrama_ZC1_longitudinal.svg",
             "diagrama_ZC1_transversal.svg"} <= names
@@ -83,9 +84,24 @@ def test_run_writes_the_results_memoirs_and_figures(tmp_path: Path) -> None:
 def test_run_a_folder_runs_each_example_in_its_own_folder(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     folder = tmp_path / "ejemplos"
     folder.mkdir()
-    for name in ("vigas/viga_t.json", "zapatas/zapata_centrica.json"):
+    for name in ("vigas/pruebas/viga_t.json", "zapatas/pruebas/zapata_centrica.json"):
         shutil.copy(ROOT / "examples/nsr_10" / name, folder / Path(name).name)
     assert main(["run", str(folder), "--output", str(tmp_path / "salida")]) == 0
     for stem in ("viga_t", "zapata_centrica"):
         assert (tmp_path / "salida" / stem / "memoria.txt").exists()
     assert "Resumen" in capsys.readouterr().out
+
+
+def test_run_a_folder_skips_the_frozen_test_copies(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """D-098: correr la carpeta de un elemento corre los ejemplos para iterar, no las copias de pruebas/; la carpeta
+    pruebas/ se corre si se pide ella misma."""
+    folder = tmp_path / "zapatas"
+    (folder / "pruebas").mkdir(parents=True)
+    shutil.copy(ROOT / "examples/nsr_10/zapatas/pruebas/zapata_centrica.json", folder / "mia.json")
+    shutil.copy(ROOT / "examples/nsr_10/zapatas/pruebas/zapata_centrica.json", folder / "pruebas" / "congelada.json")
+    assert main(["run", str(folder), "--output", str(tmp_path / "salida")]) == 0
+    assert (tmp_path / "salida" / "mia" / "memoria.txt").exists()
+    assert not (tmp_path / "salida" / "pruebas").exists()
+    assert main(["run", str(folder / "pruebas"), "--output", str(tmp_path / "otra")]) == 0
+    assert (tmp_path / "otra" / "congelada" / "memoria.txt").exists()
+    capsys.readouterr()

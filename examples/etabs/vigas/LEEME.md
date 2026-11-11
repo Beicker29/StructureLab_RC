@@ -1,5 +1,8 @@
 # Excel de ETABS: vigas
 
+Estos Excel son **para iterar** (los leen las plantillas de la carpeta de cada perfil). Las pruebas leen la copia
+congelada de [`pruebas/`](pruebas/LEEME.md) (D-098).
+
 Tabla compartida por los dos perfiles. Las plantillas que la leen están en la carpeta de cada perfil, con los mismos
 datos: [aci_318_25/vigas](../../aci_318_25/vigas/LEEME.md) y [nsr_10/vigas](../../nsr_10/vigas/LEEME.md) (D-073). Las
 columnas que se leen, la conversión de signos y los campos de la plantilla están en

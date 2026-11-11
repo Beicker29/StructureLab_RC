@@ -20,9 +20,9 @@ from structurelab_rc.model.template import EtabsFootingTemplate
 from structurelab_rc.setup import load_engine
 
 EXAMPLES = Path(__file__).parent.parent / "examples"
-SERVICE = EXAMPLES / "etabs" / "zapatas" / "Joint Reactions - Servicio.xlsx"
-FACTORED = EXAMPLES / "etabs" / "zapatas" / "Joint Reactions - Ultimas.xlsx"
-TEMPLATE = EXAMPLES / "nsr_10" / "zapatas" / "plantilla_zapatas_etabs.json"
+SERVICE = EXAMPLES / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx"
+FACTORED = EXAMPLES / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Ultimas.xlsx"
+TEMPLATE = EXAMPLES / "nsr_10" / "zapatas" / "pruebas" / "zapata_centrica_etabs.json"
 HEADERS = ("Story", "Label", "Unique Name", "Output Case", "Case Type", "Step Type", "FX", "FY", "FZ", "MX", "MY", "MZ")
 UNITS = {"FX": "kN", "FY": "kN", "FZ": "kN", "MX": "kN-m", "MY": "kN-m", "MZ": "kN-m"}
 SOIL = {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.6, "unit_weight_concrete_kNm3": 24.0,
@@ -320,7 +320,7 @@ def test_cli_omits_an_excel_with_a_dash(tmp_path: Path, capsys: pytest.CaptureFi
 
 def test_example_combined_template_imports() -> None:
     """La plantilla de ejemplo de zapatas combinadas (D-084): ZC-A con todo desde ETABS y ZC-B con las mayoradas escritas."""
-    template = EXAMPLES / "nsr_10" / "zapatas" / "plantilla_combinadas_etabs.json"
+    template = EXAMPLES / "nsr_10" / "zapatas" / "pruebas" / "zapata_combinada_etabs.json"
     project, summary, check = import_etabs_footings(SERVICE, FACTORED, template)
     assert check.status is Status.PASS
     assert project is not None and summary is not None

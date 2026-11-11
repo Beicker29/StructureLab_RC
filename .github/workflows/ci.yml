@@ -43,13 +43,14 @@ jobs:
         run: |
           # Ruta nativa del wheel (en Windows, Git Bash no convierte una ruta que termina en [pdf]).
           wheel=$(python -c "import glob, os; print(os.path.abspath(glob.glob('dist/*.whl')[0]))")
-          example="$PWD/examples/nsr_10/vigas/viga_t.json"
-          footing="$PWD/examples/nsr_10/zapatas/zapata_centrica.json"
-          design="$PWD/examples/nsr_10/zapatas/diseno_tipologias.json"
-          workbook="$PWD/examples/etabs/vigas/Element Forces - Beams.xlsx"
-          template="$PWD/examples/nsr_10/vigas/plantilla_vigas_etabs.json"
-          footings="$PWD/examples/etabs/zapatas"
-          footing_template="$PWD/examples/nsr_10/zapatas/plantilla_zapatas_etabs.json"
+          # Copias congeladas de pruebas/ (D-098): las de afuera son para iterar.
+          example="$PWD/examples/nsr_10/vigas/pruebas/viga_t.json"
+          footing="$PWD/examples/nsr_10/zapatas/pruebas/zapata_centrica.json"
+          design="$PWD/examples/nsr_10/zapatas/pruebas/diseno_tipologias.json"
+          workbook="$PWD/examples/etabs/vigas/pruebas/Element Forces - Beams.xlsx"
+          template="$PWD/examples/nsr_10/vigas/pruebas/viga_rectangular_etabs.json"
+          footings="$PWD/examples/etabs/zapatas/pruebas"
+          footing_template="$PWD/examples/nsr_10/zapatas/pruebas/zapata_centrica_etabs.json"
           cd "$RUNNER_TEMP"
           python -m venv clean
           if [ "$RUNNER_OS" = "Windows" ]; then bin=clean/Scripts; else bin=clean/bin; fi

@@ -29,7 +29,7 @@ Con una carpeta, corre todos sus ejemplos:
 
 ```console
 structurelab-rc run examples/nsr_10/zapatas/zapata_combinada.json
-structurelab-rc run examples/nsr_10/vigas/plantilla_vigas_etabs.json
+structurelab-rc run examples/nsr_10/vigas/viga_rectangular_etabs.json
 structurelab-rc run examples/nsr_10/zapatas/curva_tipologias.json
 structurelab-rc run examples
 ```
@@ -42,9 +42,9 @@ structurelab-rc catalog
 structurelab-rc validate examples/nsr_10/vigas/viga_t.json
 structurelab-rc verify examples/nsr_10/vigas/viga_t.json
 structurelab-rc report examples/nsr_10/zapatas/zapata_centrica.json --output results/nsr_10/zapatas/zapata_centrica
-structurelab-rc import-etabs "examples/etabs/vigas/Element Forces - Beams.xlsx" examples/nsr_10/vigas/plantilla_vigas_etabs.json --output results/nsr_10/vigas/etabs.json
+structurelab-rc import-etabs "examples/etabs/vigas/Element Forces - Beams.xlsx" examples/nsr_10/vigas/viga_rectangular_etabs.json --output results/nsr_10/vigas/etabs.json
 structurelab-rc report results/nsr_10/vigas/etabs.json --output results/nsr_10/vigas/etabs
-structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/plantilla_zapatas_etabs.json --output results/nsr_10/zapatas/etabs.json
+structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/zapata_centrica_etabs.json --output results/nsr_10/zapatas/etabs.json
 structurelab-rc design-footings examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
 structurelab-rc typology-curve examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias_curva
 ```
@@ -133,8 +133,9 @@ el diseño (D-075); requiere el extra `opt` (`pip install structurelab-rc[opt]`)
 
 - `examples/<perfil>/<elemento>/*.json` (`vigas`, `zapatas`): entradas válidas y documentadas, versionadas en Git. Los dos
   perfiles tienen los mismos ejemplos con los mismos datos (solo cambian el perfil y el nivel sísmico equivalente), para
-  poder comparar resultados; las plantillas de ETABS (`plantilla_*_etabs.json`) están en la carpeta de su perfil y leen
-  los Excel compartidos de `examples/etabs/<elemento>/` (D-073). Cada carpeta tiene un `LEEME.md`
+  poder comparar resultados; `<tipo>.json` trae las cargas declaradas y `<tipo>_etabs.json` es la plantilla que las toma
+  de los Excel compartidos de `examples/etabs/<elemento>/` (D-073, D-098). Los archivos de cada carpeta son para iterar;
+  las pruebas, las huellas y la CI leen solo la copia congelada de `pruebas/` (D-098). Cada carpeta tiene un `LEEME.md`
   con sus ejemplos y lo propio del perfil; los campos de entrada y de salida están en
   [docs/formatos/](docs/formatos/) y el índice en [examples/README.md](examples/README.md).
 - `results/`: salida generada, ignorada por Git. Nunca se edita a mano.

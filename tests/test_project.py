@@ -18,12 +18,25 @@ from structurelab_rc.model.project import Demands, Materials, Project, Section
 from structurelab_rc.setup import load_engine
 
 _ROOT = Path(__file__).parent.parent / "examples"
-_ALL = sorted(path for path in _ROOT.glob("*/*/*.json") if path.parts[-3] != "etabs")
-# Los ejemplos diseno_*.json y curva_*.json son proyectos de diseño por tipologías (D-069, D-096) y las
-# plantilla_*_etabs.json, plantillas de importación de ETABS (D-073); el resto son proyectos de verificación.
-TEMPLATES = [path for path in _ALL if path.name.startswith("plantilla_")]
-EXAMPLES = [path for path in _ALL if not path.name.startswith(("diseno_", "curva_", "plantilla_"))]
-DESIGN_EXAMPLES = [path for path in _ALL if path.name.startswith(("diseno_", "curva_"))]
+# Solo las copias congeladas de examples/<perfil>/<elemento>/pruebas/ (D-098); las de afuera son para iterar.
+_ALL = sorted(path for path in _ROOT.glob("*/*/pruebas/*.json") if path.parts[-4] != "etabs")
+
+
+def _profile(path: Path) -> str:
+    return path.parts[-4]
+
+
+def _element(path: Path) -> str:
+    return path.parts[-3]
+
+
+def _id(path: Path) -> str:
+    return f"{_profile(path)}-{_element(path)}-{path.stem}"
+# Los ejemplos <tipo>_etabs.json son plantillas de importación de ETABS (D-073, D-098); diseno_*.json y curva_*.json,
+# proyectos de diseño por tipologías (D-069, D-096); el resto son proyectos de verificación.
+TEMPLATES = [path for path in _ALL if path.stem.endswith("_etabs")]
+EXAMPLES = [path for path in _ALL if path not in TEMPLATES and not path.name.startswith(("diseno_", "curva_"))]
+DESIGN_EXAMPLES = [path for path in _ALL if path not in TEMPLATES and path.name.startswith(("diseno_", "curva_"))]
 _LEVELS = {"ordinary": "DMI", "intermediate": "DMO", "special": "DES"}
 BARS = load_engine().bars
 BASE: dict[str, Any] = {
@@ -64,22 +77,22 @@ def _validate(project: Project) -> tuple[Status, list[StructuredError]]:
     return check.status, list(check.errors)
 
 
-@pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: f"{path.parts[-3]}-{path.parent.name}-{path.stem}")
+@pytest.mark.parametrize("path", EXAMPLES, ids=_id)
 def test_examples_load_and_validate(path: Path) -> None:
     assert validate_file(path).status is Status.PASS
 
 
-@pytest.mark.parametrize("path", TEMPLATES, ids=lambda path: f"{path.parts[-3]}-{path.parent.name}-{path.stem}")
+@pytest.mark.parametrize("path", TEMPLATES, ids=_id)
 def test_etabs_templates_load(path: Path) -> None:
-    loader = load_template if path.parent.name == "vigas" else load_footing_template
-    assert loader(path).profile == ("aci-318-25" if path.parts[-3] == "aci_318_25" else "nsr-10")
+    loader = load_template if _element(path) == "vigas" else load_footing_template
+    assert loader(path).profile == ("aci-318-25" if _profile(path) == "aci_318_25" else "nsr-10")
 
 
-@pytest.mark.parametrize("path", sorted(_ROOT.glob("aci_318_25/*/*.json")), ids=lambda path: f"{path.parent.name}-{path.stem}")
+@pytest.mark.parametrize("path", sorted(_ROOT.glob("aci_318_25/*/pruebas/*.json")), ids=lambda path: f"{_element(path)}-{path.stem}")
 def test_examples_are_the_same_for_both_profiles(path: Path) -> None:
     """D-073: cada ejemplo de ACI 318-25 tiene su gemelo en NSR-10 con los mismos datos; solo cambian el perfil y el nivel
     sísmico equivalente (y su justificación)."""
-    twin = _ROOT / "nsr_10" / path.parent.name / path.name
+    twin = _ROOT / "nsr_10" / _element(path) / "pruebas" / path.name
     aci, nsr = (json.loads(item.read_text(encoding="utf-8")) for item in (path, twin))
     assert (aci["profile"], nsr["profile"]) == ("aci-318-25", "nsr-10")
     assert _LEVELS[aci["seismic"]["level"]] == nsr["seismic"]["level"]
@@ -89,14 +102,14 @@ def test_examples_are_the_same_for_both_profiles(path: Path) -> None:
     assert aci == nsr
 
 
-@pytest.mark.parametrize("path", DESIGN_EXAMPLES, ids=lambda path: f"{path.parts[-3]}-{path.stem}")
+@pytest.mark.parametrize("path", DESIGN_EXAMPLES, ids=lambda path: f"{_profile(path)}-{path.stem}")
 def test_design_examples_load(path: Path) -> None:
     project = load_design_project(path)
     assert project.design.typologies <= len(project.columns)
 
 
 def test_there_are_examples_for_both_profiles() -> None:
-    assert {(path.parts[-3], path.parent.name) for path in EXAMPLES} >= {
+    assert {(_profile(path), _element(path)) for path in EXAMPLES} >= {
         (profile, element) for profile in ("aci_318_25", "nsr_10") for element in ("vigas", "zapatas")}
 
 

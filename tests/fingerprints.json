@@ -1,75 +1,75 @@
 {
-  "examples/aci_318_25/vigas/plantilla_vigas_etabs.json": {
+  "examples/aci_318_25/vigas/pruebas/viga_rectangular_etabs.json": {
     "resultado.json": "51803915f4cce2ffff9ab397e8dddaed043af9900df7442f9e9f61b75eeb6d7c",
     "memoria.txt": "768924623279e832c3350f4e91d43ddc3ca7eea5d16e46ce23803b29723511f3"
   },
-  "examples/aci_318_25/vigas/viga_alta.json": {
+  "examples/aci_318_25/vigas/pruebas/viga_alta.json": {
     "resultado.json": "97e597ccc5e8f512be8c2a2469842aec222edb54484ccfc5ad952e4b1ab0a659",
     "memoria.txt": "efa3a7ee695a8b26a2dbf79ac97fe468ae73181c7e8007da09d5eced515d30d2"
   },
-  "examples/aci_318_25/vigas/viga_rectangular.json": {
+  "examples/aci_318_25/vigas/pruebas/viga_rectangular.json": {
     "resultado.json": "030c6029a8241455f47c55e9a546f8e3693977a7e79f03aa43966c7daae40f0f",
     "memoria.txt": "5b01a3064e9f74fcc68ae143578142cb2ca581449a524016a924062bd05f4f34"
   },
-  "examples/aci_318_25/vigas/viga_t.json": {
+  "examples/aci_318_25/vigas/pruebas/viga_t.json": {
     "resultado.json": "0e4566bd45dd3e5c0522bee38dcb25779574810bc2ce6a771f9589bb35243bc1",
     "memoria.txt": "43a06c2e4515a0397357c17ec9f9e2bb4dfe60f5bf2854e09b86b72f6bae8968"
   },
-  "examples/aci_318_25/zapatas/diseno_tipologias.json": {
+  "examples/aci_318_25/zapatas/pruebas/diseno_tipologias.json": {
     "proyecto.json": "19de511a877e34828ab42332f1c93757f8702eb2658d6f8518ea3d68c4f64acf",
     "resultado.json": "3b3d921a4586063b8802480a2127db7d620f1b4f9e000e15031e4ceff7125d09",
     "memoria.txt": "a350b2264f56652fd144298844fa725230719c4d35891aed4661113013287341"
   },
-  "examples/aci_318_25/zapatas/plantilla_combinadas_etabs.json": {
+  "examples/aci_318_25/zapatas/pruebas/zapata_combinada_etabs.json": {
     "resultado.json": "5cc7528ee47599d5daad4e72bdcaccd43e45c0b5213ac57ed5a5b0e9b20d0fce",
     "memoria.txt": "70672f8d8baa298a93bdfe695a7b8dc8701570d36d8accde91b1b660da81bd99"
   },
-  "examples/aci_318_25/zapatas/plantilla_t_invertida_etabs.json": {
+  "examples/aci_318_25/zapatas/pruebas/zapata_t_invertida_etabs.json": {
     "resultado.json": "d78be8ebfb5efb8759cde9bb91ccf8c26853d3e5d00f87d4e246902290eead7d",
     "memoria.txt": "1a0d13dc714c651466912a8c350bc425a02d06a060e3c667e43ff16815fab119"
   },
-  "examples/aci_318_25/zapatas/zapata_centrica.json": {
+  "examples/aci_318_25/zapatas/pruebas/zapata_centrica.json": {
     "resultado.json": "1ce3d8c0f858a3ecc1c81a1d84fbf2a8bc4624efd411620b97d8286c36e06d2e",
     "memoria.txt": "ef5ed538453cd930debd70db7c9a43bd3efd82e52cab5840c386afbe85ff41c6"
   },
-  "examples/aci_318_25/zapatas/zapata_combinada.json": {
+  "examples/aci_318_25/zapatas/pruebas/zapata_combinada.json": {
     "resultado.json": "2d1080d940312fc82fa2688669318a9b6a7d7bcc2984fd82f96e87e7ab8f6d7c",
     "memoria.txt": "ef94848155ea5cb471d22d6409ddd094f1237341dca7fbd9c489f64d70d7ae5a"
   },
-  "examples/nsr_10/vigas/plantilla_vigas_etabs.json": {
+  "examples/nsr_10/vigas/pruebas/viga_rectangular_etabs.json": {
     "resultado.json": "76f30b541bcb667a5b7063b913f12ff8f152bc54bab64d929dc547861fd4e5a0",
     "memoria.txt": "c84dc1cc8032dcb1fb2393108fc58bef6c76c46fc58a30fa42d932b13edf956a"
   },
-  "examples/nsr_10/vigas/viga_alta.json": {
+  "examples/nsr_10/vigas/pruebas/viga_alta.json": {
     "resultado.json": "9ce65f37ed4fe7d1f9ff4bda6efc5e6e523c69003c8863a4d791bfcc9f718fcb",
     "memoria.txt": "b226673ce71b69aebd718fd0ef187e507c5c2a6537cd6d52563f8123a1833688"
   },
-  "examples/nsr_10/vigas/viga_rectangular.json": {
+  "examples/nsr_10/vigas/pruebas/viga_rectangular.json": {
     "resultado.json": "1d8fa80ce1ad003aa74948a7e55d5c2551e31b182bd533db8ee39e603ca70152",
     "memoria.txt": "1ec055c8e6db03a2b411cc9676bbae74ecb22d4941ab56f9e0d6e13b1eea634b"
   },
-  "examples/nsr_10/vigas/viga_t.json": {
+  "examples/nsr_10/vigas/pruebas/viga_t.json": {
     "resultado.json": "853548ff78e2a271bfef89140eeef5dc56582ed4868af487d8a518d9421df71b",
     "memoria.txt": "1a864a768871f09a8cfdbf1e7dc62b27f089e49f7a7442c0511e6166010bb644"
   },
-  "examples/nsr_10/zapatas/diseno_tipologias.json": {
+  "examples/nsr_10/zapatas/pruebas/diseno_tipologias.json": {
     "proyecto.json": "f0e06a7caa282ff1940263118bb90b0a3a22cd6002aee78a8048bae14d7960f3",
     "resultado.json": "b4e2025e09420dabc8e2d9b5f894011211259fdca36eb47344608532b762fb93",
     "memoria.txt": "dc34597c01baf5babae546f8e52695ca13ef30e62efe33e4aefb3a4da852a513"
   },
-  "examples/nsr_10/zapatas/plantilla_combinadas_etabs.json": {
+  "examples/nsr_10/zapatas/pruebas/zapata_combinada_etabs.json": {
     "resultado.json": "0e2365da5d620306fdc48188688f93dc612169207d051a7f8dbee2560b15168c",
     "memoria.txt": "8445c5259d022114abfebf17eb97495fffa844131abd0add2c845e764708226e"
   },
-  "examples/nsr_10/zapatas/plantilla_t_invertida_etabs.json": {
+  "examples/nsr_10/zapatas/pruebas/zapata_t_invertida_etabs.json": {
     "resultado.json": "44391072d276abf16d0eb55c671e182297acd5a3b0975a3ded616006b6cc0539",
     "memoria.txt": "7dbdcd1a9b785e646a09333cd7f3a1847caf7e7c5a6a67ac3b5a716f417303be"
   },
-  "examples/nsr_10/zapatas/zapata_centrica.json": {
+  "examples/nsr_10/zapatas/pruebas/zapata_centrica.json": {
     "resultado.json": "7203ee574b6b4d90a6c5bc6949849e99fe00f8bbc3236295c053754fac2f65b6",
     "memoria.txt": "f1c83f8f3f4efd0de03c3523d2f3b98649d2372a8b33185046337bf1682a957f"
   },
-  "examples/nsr_10/zapatas/zapata_combinada.json": {
+  "examples/nsr_10/zapatas/pruebas/zapata_combinada.json": {
     "resultado.json": "e42ccb74cf16dc6124d0247c07f151ba393beb3fb8de509c08bbdb671b524247",
     "memoria.txt": "35143651e62cef7e484114f681eb1ffab94c172e58d86335fbe9306be1d8c5ab"
   }

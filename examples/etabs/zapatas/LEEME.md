@@ -1,5 +1,8 @@
 # Excel de ETABS: zapatas
 
+Estos Excel son **para iterar** (los leen las plantillas de la carpeta de cada perfil). Las pruebas leen la copia
+congelada de [`pruebas/`](pruebas/LEEME.md) (D-098).
+
 Tablas compartidas por los dos perfiles. Las plantillas que las leen están en la carpeta de cada perfil, con los mismos
 datos: [aci_318_25/zapatas](../../aci_318_25/zapatas/LEEME.md) y [nsr_10/zapatas](../../nsr_10/zapatas/LEEME.md)
 (D-073). Las columnas que se leen, la conversión de signos y los campos de la plantilla están en

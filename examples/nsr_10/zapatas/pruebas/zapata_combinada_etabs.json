@@ -1,6 +1,6 @@
 {
   "description": "Plantilla de importación de zapatas combinadas para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (D-084). ZC-A toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos; ZC-B toma de ETABS solo las de servicio y trae las mayoradas escritas aquí. DATOS DE EJEMPLO: dimensiones, posiciones, columnas, mallas, suelo, relleno, sobrecargas y cargas escritas son supuestos para probar la importación. Unidades: mm, MPa, kPa, kN/m2, kN/m3, kN y kN-m.",
-  "etabs_files": {"service": "../../etabs/zapatas/Joint Reactions - Servicio.xlsx", "factored": "../../etabs/zapatas/Joint Reactions - Ultimas.xlsx"},
+  "etabs_files": {"service": "../../../etabs/zapatas/pruebas/Joint Reactions - Servicio.xlsx", "factored": "../../../etabs/zapatas/pruebas/Joint Reactions - Ultimas.xlsx"},
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",

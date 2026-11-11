@@ -1,0 +1,286 @@
+{
+  "description": "Plantilla de importación de zapatas para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (73 apoyos en 4 niveles de cimentación). DATOS DE EJEMPLO: dimensiones, columnas, mallas, suelo, relleno y sobrecargas son supuestos para probar la importación; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3.",
+  "etabs_files": {"service": "../../../etabs/zapatas/pruebas/Joint Reactions - Servicio.xlsx", "factored": "../../../etabs/zapatas/pruebas/Joint Reactions - Ultimas.xlsx"},
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "special",
+    "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.45,
+    "adhesion_kPa": 0.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "load_factors": {
+    "SERVICIO 1 (D+L)": {
+      "dead": 1.0,
+      "live": 1.0
+    },
+    "SERVICIO 2 (D+EX+EZ)": {
+      "dead": 1.0,
+      "live": 0.0,
+      "seismic": true
+    },
+    "SERVICIO 3 (D+EY+EZ)": {
+      "dead": 1.0,
+      "live": 0.0,
+      "seismic": true
+    },
+    "SERVICIO 4 (D+L+EX+EZ)": {
+      "dead": 1.0,
+      "live": 1.0,
+      "seismic": true
+    },
+    "SERVICIO 5  (D+L+EY+EZ)": {
+      "dead": 1.0,
+      "live": 1.0,
+      "seismic": true
+    },
+    "COMB0 (1.4D)": {
+      "dead": 1.4,
+      "live": 0.0
+    },
+    "COMB1 (1.2D+1.6L)": {
+      "dead": 1.2,
+      "live": 1.6
+    },
+    "COMB4A (1.2D+L+EX+EZ)": {
+      "dead": 1.2,
+      "live": 1.0,
+      "seismic": true
+    },
+    "COMB4B (1.2D+L+EY+EZ)": {
+      "dead": 1.2,
+      "live": 1.0,
+      "seismic": true
+    },
+    "COMB6A (0.9+EX+EZ)": {
+      "dead": 0.9,
+      "live": 0.0,
+      "seismic": true
+    },
+    "COMB6B (0.9D+EY+EZ)": {
+      "dead": 0.9,
+      "live": 0.0,
+      "seismic": true
+    }
+  },
+  "footings": [
+    {
+      "id": "Z1",
+      "etabs_unique_names": [
+        "1657",
+        "150",
+        "6",
+        "1655",
+        "1659",
+        "28",
+        "1641",
+        "1637",
+        "1656",
+        "1670",
+        "1672",
+        "1671",
+        "1273",
+        "1636",
+        "1658"
+      ],
+      "lx": 3600.0,
+      "ly": 3600.0,
+      "h": 800.0,
+      "cover": 75.0,
+      "fill_height": 1500.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "column": {
+        "cx": 600.0,
+        "cy": 600.0,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "dowels": {
+          "designation": "#6",
+          "count": 8
+        }
+      },
+      "bottom": {
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#6",
+          "spacing": 150.0
+        },
+        "y": {
+          "designation": "#6",
+          "spacing": 150.0
+        }
+      },
+      "top": {
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#5",
+          "spacing": 250.0
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 250.0
+        }
+      }
+    },
+    {
+      "id": "Z2",
+      "etabs_unique_names": [
+        "1601",
+        "19",
+        "1225",
+        "1599",
+        "161",
+        "157",
+        "1619",
+        "971",
+        "1604",
+        "1621",
+        "1614",
+        "1606",
+        "1616",
+        "1603",
+        "21",
+        "1612",
+        "1626",
+        "1631"
+      ],
+      "lx": 3900.0,
+      "ly": 3900.0,
+      "h": 900.0,
+      "cover": 75.0,
+      "fill_height": 1500.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "column": {
+        "cx": 600.0,
+        "cy": 600.0,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "dowels": {
+          "designation": "#6",
+          "count": 8
+        }
+      },
+      "bottom": {
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#6",
+          "spacing": 150.0
+        },
+        "y": {
+          "designation": "#6",
+          "spacing": 150.0
+        }
+      },
+      "top": {
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#5",
+          "spacing": 250.0
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 250.0
+        }
+      }
+    },
+    {
+      "id": "Z3",
+      "etabs_unique_names": [
+        "1618",
+        "1610",
+        "1600",
+        "1629",
+        "1608",
+        "1624",
+        "1620",
+        "1642",
+        "1602",
+        "1613",
+        "1633",
+        "1615",
+        "1605",
+        "1617",
+        "1611",
+        "1607",
+        "1609",
+        "1625",
+        "1630",
+        "1622",
+        "1632",
+        "1627",
+        "1628",
+        "1623"
+      ],
+      "lx": 4200.0,
+      "ly": 4200.0,
+      "h": 1000.0,
+      "cover": 75.0,
+      "fill_height": 1500.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "column": {
+        "cx": 600.0,
+        "cy": 600.0,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "dowels": {
+          "designation": "#6",
+          "count": 8
+        }
+      },
+      "bottom": {
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#6",
+          "spacing": 150.0
+        },
+        "y": {
+          "designation": "#6",
+          "spacing": 150.0
+        }
+      },
+      "top": {
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#5",
+          "spacing": 250.0
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 250.0
+        }
+      }
+    }
+  ]
+}

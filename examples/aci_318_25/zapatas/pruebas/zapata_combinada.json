@@ -1,0 +1,219 @@
+{
+  "description": "Ejemplo de zapata combinada: ZC1 rectangular de 7.0 × 2.6 m bajo dos columnas (C1 de 500 × 500 mm cerca del borde −X y C2 de 550 × 550 mm), con cargas de servicio y mayoradas, sismo en X y refuerzo transversal (band) bajo cada columna y barras superiores transversales (top_transverse, D-097). Fuerzas en la base de cada columna, ejes globales. Datos ilustrativos. Unidades: mm, MPa, kPa, kN/m2, kN/m3, kN y kN-m.",
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "special",
+    "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.45,
+    "adhesion_kPa": 0.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "combined_footings": [
+    {
+      "id": "ZC1",
+      "principal_direction": "x",
+      "lx": 7000.0,
+      "ly": 2600.0,
+      "h": 800.0,
+      "cover": 75.0,
+      "fill_height": 1200.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "columns": [
+        {
+          "id": "C1",
+          "cx": 500.0,
+          "cy": 500.0,
+          "x": -2750.0,
+          "y": 0.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 8
+          },
+          "band": {
+            "designation": "#6",
+            "spacing": 120.0
+          },
+          "loads": [
+            {
+              "case": "D+L",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "P_kN": 900.0,
+              "Vx_kN": 6.0,
+              "Vy_kN": 4.0,
+              "Mx_kNm": -10.0,
+              "My_kNm": 15.0
+            },
+            {
+              "case": "D+0.7EX",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 0.0,
+              "P_kN": 700.0,
+              "Vx_kN": 40.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 90.0,
+              "seismic": true
+            },
+            {
+              "case": "1.2D+1.6L",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.6,
+              "P_kN": 1250.0,
+              "Vx_kN": 8.0,
+              "Vy_kN": 6.0,
+              "Mx_kNm": -14.0,
+              "My_kNm": 21.0
+            },
+            {
+              "case": "1.2D+L+EX",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.0,
+              "P_kN": 1080.0,
+              "Vx_kN": 60.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 130.0,
+              "seismic": true
+            },
+            {
+              "case": "0.9D+EX",
+              "kind": "factored",
+              "dead_factor": 0.9,
+              "live_factor": 0.0,
+              "P_kN": 560.0,
+              "Vx_kN": 55.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 125.0,
+              "seismic": true
+            }
+          ]
+        },
+        {
+          "id": "C2",
+          "cx": 550.0,
+          "cy": 550.0,
+          "x": 2250.0,
+          "y": 150.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 8
+          },
+          "band": {
+            "designation": "#6",
+            "spacing": 120.0
+          },
+          "loads": [
+            {
+              "case": "D+L",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "P_kN": 1300.0,
+              "Vx_kN": -5.0,
+              "Vy_kN": 6.0,
+              "Mx_kNm": 12.0,
+              "My_kNm": -18.0
+            },
+            {
+              "case": "D+0.7EX",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 0.0,
+              "P_kN": 1000.0,
+              "Vx_kN": 45.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 100.0,
+              "seismic": true
+            },
+            {
+              "case": "1.2D+1.6L",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.6,
+              "P_kN": 1820.0,
+              "Vx_kN": -7.0,
+              "Vy_kN": 8.0,
+              "Mx_kNm": 17.0,
+              "My_kNm": -25.0
+            },
+            {
+              "case": "1.2D+L+EX",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.0,
+              "P_kN": 1560.0,
+              "Vx_kN": 65.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 145.0,
+              "seismic": true
+            },
+            {
+              "case": "0.9D+EX",
+              "kind": "factored",
+              "dead_factor": 0.9,
+              "live_factor": 0.0,
+              "P_kN": 800.0,
+              "Vx_kN": 60.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 140.0,
+              "seismic": true
+            }
+          ]
+        }
+      ],
+      "bottom": {
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#7",
+          "spacing": 150.0
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 130.0
+        }
+      },
+      "top": {
+        "designation": "#7",
+        "spacing": 130.0,
+        "end": "straight"
+      },
+      "top_transverse": {
+        "designation": "#5",
+        "spacing": 300.0,
+        "end": "straight"
+      }
+    }
+  ]
+}

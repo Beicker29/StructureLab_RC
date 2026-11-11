@@ -72,6 +72,11 @@ Una fuente de verdad por concepto ([arquitectura](docs/architecture.md)).
   su perfil y los Excel compartidos en `examples/etabs/<elemento>/`. Cada carpeta tiene un `LEEME.md` corto (ejemplos y lo propio del perfil) y
   los campos de entrada y salida se documentan una sola vez, en `docs/formatos/<elemento>.md`.
   `results/` es salida generada e ignorada, con la misma estructura de carpetas (D-058).
+- Nombres: `<tipo>.json` con cargas declaradas y `<tipo>_etabs.json` con cargas de los Excel de ETABS (D-098).
+- Los ejemplos de cada carpeta (y sus Excel) son del usuario para iterar: no se usan en pruebas y no se commitean sus
+  cambios locales sin pedirlo. Pruebas, huellas y CI leen solo la copia congelada `pruebas/` de cada carpeta
+  (`examples/<perfil>/<elemento>/pruebas/` y `examples/etabs/<elemento>/pruebas/`), que cambia solo con un cambio
+  registrado (D-098).
 - La huella de los ejemplos se calcula sobre el JSON de resultado, la memoria en texto,
   la cartilla y `<nombre>_drawing.json`, sin fecha. Nunca sobre el DXF ni el PDF.
 - Cambios de cálculo requieren casos en el oráculo independiente

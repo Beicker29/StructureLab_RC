@@ -1,0 +1,114 @@
+{
+  "description": "Viga rectangular: en el apoyo (z = 0) hay torsión de equilibrio (Tu ≥ φTth), con estribos cerrados #4 y dos barras #6 de torsión a media altura (role = torsion, no cuentan como As); en el centro de luz solo flexión y cortante. Unidades: mm y MPa; demandas mayoradas en kN y kN·m, Pu positiva en compresión; depth se mide desde la fibra superior; cover es el recubrimiento libre a los estribos.",
+  "profile": "nsr-10",
+  "seismic": {
+    "level": "DMO",
+    "justification": "Capacidad moderada de disipación de energía (DMO) declarada por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fc": 28.0,
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated"
+  },
+  "members": [
+    {
+      "id": "V-1",
+      "type": "beam",
+      "length": 6000.0,
+      "section": {
+        "bw": 300.0,
+        "h": 500.0,
+        "cover": 40.0
+      },
+      "stations": [
+        {
+          "z": 0.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 60.0,
+                "role": "flexure",
+                "bars": [
+                  "#6",
+                  "#6",
+                  "#6",
+                  "#6"
+                ]
+              },
+              {
+                "depth": 250.0,
+                "role": "torsion",
+                "bars": [
+                  "#6",
+                  "#6"
+                ]
+              },
+              {
+                "depth": 440.0,
+                "role": "flexure",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#4",
+              "legs": 2,
+              "spacing": 100.0,
+              "closed": true
+            }
+          },
+          "demands": {
+            "Pu_kN": 0.0,
+            "Mu_kNm": -150.0,
+            "M2_kNm": 0.0,
+            "Vu_kN": 120.0,
+            "V3_kN": 0.0,
+            "Tu_kNm": 20.0
+          }
+        },
+        {
+          "z": 3000.0,
+          "layout": {
+            "layers": [
+              {
+                "depth": 60.0,
+                "role": "flexure",
+                "bars": [
+                  "#5",
+                  "#5"
+                ]
+              },
+              {
+                "depth": 440.0,
+                "role": "flexure",
+                "bars": [
+                  "#8",
+                  "#8",
+                  "#8"
+                ]
+              }
+            ],
+            "stirrups": {
+              "designation": "#3",
+              "legs": 2,
+              "spacing": 200.0,
+              "closed": true
+            }
+          },
+          "demands": {
+            "Pu_kN": 25.0,
+            "Mu_kNm": 180.0,
+            "M2_kNm": 0.0,
+            "Vu_kN": 10.0,
+            "V3_kN": 0.0,
+            "Tu_kNm": 0.0
+          }
+        }
+      ]
+    }
+  ]
+}
