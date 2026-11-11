@@ -146,7 +146,7 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
         "geometry [mm]": _geometry(footing, set()),
         "columns": columns,
         "properties": _base_properties(footing, soil),
-        "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin"}),
+        "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin", "torsion_layers"}),
         "status": _status(checks),
         "checks": [{**check_data(check), "case": check.case, "z [mm]": None if check.z is None else significant(check.z)}
                    for check in checks],

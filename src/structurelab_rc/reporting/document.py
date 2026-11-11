@@ -51,6 +51,8 @@ _BEAM_LIMITATIONS = (
     "(subfase 2D, D-017, D-039).",
     "Vigas de gran altura (ACI 9.9, NSR-10 C.11.7): falta implementación.",
     "Torsión de compatibilidad (Tu reducido a φTcr) y reducción de Aℓ en la zona comprimida: falta implementación.",
+    "Torsión: la prolongación (bt + d) del refuerzo, el desarrollo de Aℓ en los extremos y el gancho de 135° de los "
+    "estribos cerrados no se verifican (D-088).",
     "Secciones huecas a torsión: no cubiertas.",
     "Requisitos sísmicos de vigas (Fase 3): falta implementación.",
 )
@@ -78,8 +80,12 @@ _COMBINED_CONVENTIONS = (
     "la base, que entra en la presión, en la viga larga y en el punzonamiento.",
     "Viga en la dirección larga revisada con el código de vigas en sus secciones críticas (mayores momentos y a d de las "
     "caras), con Vc y Av,min de cimentación; en una cara de columna el cortante es el de la sección a d (D-081, D-082).",
+    "Torsión de la viga larga por equilibrio: el momento estático de cada columna respecto al eje X (F·y − Mx + H·Vy) "
+    "menos el de la carga neta del suelo; Tu se toma a d de la cara, como el cortante, y se desprecia si Tu < φTth; si "
+    "no, se verifica combinada con el cortante con el código de vigas y las capas de Aℓ declaradas (D-088).",
     "Franja transversal bajo cada columna de ancho columna + d/2 a cada lado, con la carga de la columna repartida en el "
-    "ancho con la forma de la presión, revisada también con el código de vigas (D-080, D-082).",
+    "ancho con la forma de la presión, revisada también con el código de vigas (D-080, D-082); el par de la columna que "
+    "la franja no equilibra lo lleva la viga larga como torsión y Vy como fuerza axial de la franja se desprecia (D-088).",
     "Punzonamiento por columna con la carga neta de Bellos dentro del perímetro crítico; el esfuerzo se evalúa en cada "
     "esquina con el cortante directo y el del momento transferido en los dos ejes, y gobierna la mayor (D-083).",
     "Acero mínimo por punzonamiento (ACI 8.6.1.2) aplicado a la zapata combinada por criterio del usuario, aunque 13.3.2.1 "
@@ -88,8 +94,9 @@ _COMBINED_CONVENTIONS = (
     "dentro de bslab; no se suma al momento de la zapata y su parte negativa la debe tomar la viga de cimentación (D-087).",
 )
 _COMBINED_LIMITATIONS = (
-    "Torsión por Vy y por columnas desplazadas en Y: falta implementación; en las franjas solo entran por la forma de la "
-    "presión (D-080).",
+    "Torsión de compatibilidad (Tu reducido a φTcr) y reducción de Aℓ en la zona comprimida: falta implementación.",
+    "Torsión: la prolongación (bt + d) del refuerzo, el desarrollo de Aℓ en los extremos y el gancho de 135° de los "
+    "estribos cerrados no se verifican (D-088).",
     "Si los perímetros de punzonamiento de las dos columnas se traslapan, se revisa además el perímetro común (D-086). Si "
     "la presión es nula en la línea de una columna, su franja usa la presión integrada en su ancho o, sin ella, la carga "
     "uniforme (D-085).",
@@ -549,7 +556,8 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list
             ["Barras superiores x", _bar_text(top, f"; barras {_ENDS[top['end']]}" if top else "")],
             ["Estribos de la viga larga", "no hay" if stirrups is None else
              f"{stirrups['legs']} ramas {stirrups['designation']} c/{stirrups['spacing']:.0f} mm"],
-            ["Refuerzo superficial (caras largas)", _bar_text(skin, " en vertical" if skin else "")]]
+            ["Refuerzo superficial (caras largas)", _bar_text(skin, " en vertical" if skin else "")],
+            ["Capas de torsión (Aℓ)", _torsion_layers_text(reinforcement.get("torsion_layers") or [])]]
     return [{"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": rows},
             {"kind": "table",
              "headers": ["Columna", "cx (mm)", "cy (mm)", "x (mm)", "y (mm)", "Pasadores", "Refuerzo bajo la columna (band)"],
@@ -574,6 +582,23 @@ def _combined_demands(footing: dict[str, Any], figure: Path | None) -> list[Bloc
     return blocks + _soil_pressures(footing, figure)
 
 
+def _torsion_layers_text(layers: list[dict[str, Any]]) -> str:
+    """Las capas de Aℓ de la viga larga (D-088): número de barras, designación y profundidad de cada capa."""
+    if not layers:
+        return "no hay"
+    texts = []
+    for layer in layers:
+        bars = layer["bars"]
+        if isinstance(bars, dict):
+            names = [bars["designation"]]
+            count = int((bars["end"] - bars["start"]) / bars["spacing"] + 1e-9) + 1
+        else:
+            names = [bar if isinstance(bar, str) else bar["designation"] for bar in bars]
+            count = len(names)
+        texts.append(f"{count} {names[0]} a {layer['depth']:.0f} mm")
+    return "; ".join(texts)
+
+
 def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None) -> list[Block]:
     """Memoria de una zapata combinada (D-080 a D-083): la viga larga y las franjas transversales con las verificaciones de
     vigas, el punzonamiento con los esfuerzos de cada esquina, el desarrollo, el aplastamiento y los pasadores."""
@@ -594,6 +619,7 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
         ("Viga en la dirección larga: momento flector", lambda n: _chapter("flexure", n, beam, full)),
         ("Viga en la dirección larga: fuerza cortante", lambda n: _chapter("shear", n, beam, full)),
+        ("Viga en la dirección larga: torsión", lambda n: _chapter("torsion", n, beam, full)),
         ("Franjas transversales: momento flector", lambda n: _chapter("flexure", n, strips, full)),
         ("Franjas transversales: fuerza cortante", lambda n: _chapter("shear", n, strips, full)),
         (_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full), *_punching_corners(others),

@@ -7,7 +7,7 @@ _SQRT_FC_MAX = 8.3
 _FY_MAX = 420.0
 _THETA = math.radians(45.0)
 _SPACING_MAX = 300.0
-_BAR_DIAMETER_MIN = 10.0
+_BAR_DIAMETER_MIN = 9.5  # 9.7.5.2 dice 10 mm: se toma como la barra No. 10 del ACI en SI, de 9.5 mm (D-088)
 
 
 def clauses() -> dict[str, str]:

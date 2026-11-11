@@ -1149,6 +1149,51 @@
   de la franja y `band_spacing` en `derive_footing_flexure.py`, con un caso de franja concentrada que no cumple fuera de
   ella; las mutaciones γv en lugar de γf y sin malla superior en la parte negativa se detectan.
 
+### D-088: torsión de la viga larga por Vy y columnas desplazadas en Y (v3 Fase 1.1)
+
+- **Fecha:** 2026-11-11
+- **Referencias:** ACI 318-25 13.3.2.1 (combinadas con los capítulos 7 y 9), 9.5.4.1 (la torsión se desprecia si
+  Tu < φTth) y 9.4.4.3 (Tu en la sección a d de la cara); NSR-10 C.15.10.1 (las zapatas que soportan más de una
+  columna se diseñan para las cargas mayoradas con los requisitos del reglamento, entre ellos C.11.5), C.11.5.1 y
+  C.11.5.2.4, verificados en la imagen del PDF (C-184 a C-195 y C-297).
+- **Decisiones del usuario:**
+  1. La torsión de la viga larga se calcula por equilibrio y se verifica con el código de torsión de vigas.
+  2. Las franjas transversales se mantienen (forma de la presión, momentos desde los bordes libres); el par de la
+     columna que la franja no equilibra lo lleva la viga larga como torsión; Vy como fuerza axial de la franja se
+     desprecia. La columna desplazada en Y ya entraba en las franjas (caras en su `y`).
+  3. Solo verificación, con código común: la torsión de vigas (`domain/beam/torsion.py`) y
+     `shear_and_torsion_checks` de `domain/beam/station.py` sirven a las vigas y a la viga larga. Sin propuesta de
+     refuerzo; el diseño queda para la v3 Fase 3.
+- **Reglas:** T(x) = ∫y·q dA de la carga neta a la izquierda − Σ (F·y − Mx + (h + hp)·Vy) de las columnas a la
+  izquierda; cierra en cero en los dos extremos por el equilibrio global. Tu se toma donde se toma el cortante (a d de
+  la cara). Acp = B·h. En modo cimentación la rama de torsión no agrega el cortante del eje débil, y sin barras
+  superiores con momento negativo también se revisa la torsión (antes solo el cortante).
+- **Entrada:** `torsion_layers`, capas de Aℓ con el formato de las vigas y `role: "torsion"` (x desde la cara −Y,
+  profundidad desde la superior), validadas como en las vigas (catálogo y barras dentro del estribo); sin ellas,
+  Aℓ = 0. La memoria tiene el capítulo "Viga en la dirección larga: torsión" y la fila "Capas de torsión (Aℓ)".
+- **Ejemplo:** C2 de `zapata_combinada.json` pasa a y = +150 mm: Tu máx. 171.3 kN·m < φTth 209.6 kN·m, las
+  verificaciones no cambian. La ZC-A de la plantilla de ETABS: 438.1 < 587.3 kN·m.
+- **Revisión de la torsión contra la norma (pedida por el usuario):** ACI 318-25 9.2.4.4, 9.4.4.3, 9.5.4, 9.6.4, 9.7.5,
+  9.7.6.3, 22.5.5.1 y 22.7, y NSR-10 C.11.5.1 a C.11.5.6 (imágenes del PDF, C-184 a C-195). Correctos: umbral con Nu y
+  alas, √f'c ≤ 8.3 MPa, fy y fyt ≤ 420 MPa, θ = 45°, A0 = 0.85Aoh, At/s y Aℓ (22.7.6.1(b) y C.11-22 coinciden con
+  θ = 45°), solo ramas exteriores, estribos cerrados, (Av + 2At)min, Aℓ,min (las dos formas son equivalentes),
+  límite de la sección con el Vc de 22.5 (o de cimentación), separación ph/8 y 300 mm, y Aℓ en el perímetro con
+  barras en las esquinas. Decisiones del usuario:
+  1. Diámetro mínimo de Aℓ de 9.5 mm en los dos perfiles: NSR-10 C.11.5.6.2 admite la barra No. 3 (3/8") o 10M; el
+     "10 mm" de ACI 9.7.5.2 se toma como la barra No. 10 del ACI en SI (9.5 mm). Antes, 10 mm rechazaba la #3.
+  2. Zapata combinada con estribos: el recubrimiento es al estribo; las mallas, las barras superiores y la piel quedan
+     por dentro de él (antes d quedaba sobrestimado en un diámetro de estribo y Aoh ya suponía el recubrimiento al
+     estribo). Sin estribos no cambia nada.
+  3. Prolongación (bt + d), desarrollo de Aℓ en los extremos y gancho de 135° de los estribos: a la hoja de ruta (v1
+     Fase 2) y a las limitaciones de las memorias de vigas y de zapatas combinadas.
+  Se conserva el criterio conservador de D-027: Aℓ solo cuenta las capas `torsion` (9.5.4.3 y C.11.5.3.8 permiten
+  sumarlo al acero de flexión). En el ACI, la fila de la Tabla 22.5.5.1 con torsión se elige comparando el refuerzo
+  transversal total con (Av + 2At)min.
+- **Oráculo:** `derive_combined_beam.py` calcula T(x) y la verificación combinada aparte; casos `torsion-con-estribos`
+  (cumple At, Aℓ y sección) y `torsion-sin-superior` (concreto simple y torsión sin estribos), y `momentos-sismo`
+  pasa a revisar torsión. Se detectan las mutaciones sin ∫y·q, con el signo de Mx cambiado y con Tu en la cara. Con
+  estribos, el oráculo ubica las barras por dentro del estribo; la mutación que lo omite se detecta.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

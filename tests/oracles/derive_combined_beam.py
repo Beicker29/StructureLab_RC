@@ -19,6 +19,11 @@ No importa el paquete. Unidades de trabajo: N y mm. Para cada caso mayorado:
    cortante con Vc de cimentación, estribos y Av,min de cimentación. Sin barras superiores y M < 0, la flexión es de
    concreto simple (D-072); el cortante sigue la regla de vigas (las barras inferiores quedan a tracción cerca de la cara
    comprimida y d = 0.8h, D-043). Separación 3h y 450 mm por capa.
+5. Torsión (D-088): T(x) = ∫y·q dA de la carga neta a la izquierda − Σ (F·y − Mx + (h + hp)·Vy) de las columnas a la
+   izquierda, tomada donde el cortante (a d de la cara). Umbral φTth = 0.75·0.083·√f'c·Acp²/pcp con Acp = B·h; si
+   Tu ≥ φTth, la verificación combinada reemplaza al cortante: sin estribos no cumple; con estribos, sección
+   (√((Vu/bd)² + (Tu·ph/1.7Aoh²)²) ≤ φ(Vc/bd + 0.66√f'c)), Av/s + 2At/s con At/s = Tu/(φ·2·0.85Aoh·fyt), mínimo
+   transversal y Aℓ = máx(Tu·ph/(φ·2·0.85Aoh·fy), Aℓ,min) frente a las capas de torsión.
 
 Uso: python tests/oracles/derive_combined_beam.py
 """
@@ -79,7 +84,8 @@ def _beam(f: dict, case: str) -> dict | None:
         my += load["My_kNm"] * 1e6 + r[2] * vx - r[0] * (-force)
         n += force
         columns.append({"id": column["id"], "x": column["x"], "half": column["cx"] / 2, "force": force,
-                        "couple": load["My_kNm"] * 1e6 + (h + hp) * vx})
+                        "couple": load["My_kNm"] * 1e6 + (h + hp) * vx,
+                        "torque": force * column["y"] - load["Mx_kNm"] * 1e6 + (h + hp) * vy})
     if n <= 0 or abs(my / n) >= lx / 2 or abs(mx / n) >= ly / 2:
         return None
     plane, _ = _P.solve(lx, ly, n, my / n, -mx / n)
@@ -97,6 +103,12 @@ def _shear_moment(beam: dict, x: float) -> tuple[float, float]:
             shear -= column["force"]
             moment -= column["force"] * (x - column["x"]) - column["couple"]
     return shear, moment
+
+
+def _torque(beam: dict, x: float) -> float:
+    hx, hy = beam["lx"] / 2, beam["ly"] / 2
+    sy = _S._net(beam["plane"], beam["w"], (-hx, -hy, x, hy))[2] if x > -hx else 0.0
+    return sy - sum(column["torque"] for column in beam["columns"] if column["x"] < x)
 
 
 def _regions(beam: dict) -> list[tuple[float, float]]:
@@ -150,18 +162,20 @@ def _stations(beam: dict, depth: float) -> list[float]:
 
 
 def _rows(f: dict) -> list[dict]:
-    """Capas de barras x (profundidad desde la cara superior): inferior y, si hay, superior."""
+    """Capas de barras x (profundidad desde la cara superior): inferior y, si hay, superior. Con estribos, el
+    recubrimiento es al estribo y las barras quedan por dentro de él (D-088)."""
     mat = f["bottom"]
     first = mat["first"]
+    cover = f["cover"] + (BARS[f["stirrups"]["designation"]][0] if f.get("stirrups") else 0.0)
     d1 = BARS[mat[first]["designation"]][0]
     db, ab = BARS[mat["x"]["designation"]]
-    offset = f["cover"] + db / 2 if first == "x" else f["cover"] + d1 + db / 2
-    n = _F._count(f["ly"], f["cover"], db, mat["x"]["spacing"])
+    offset = cover + db / 2 if first == "x" else cover + d1 + db / 2
+    n = _F._count(f["ly"], cover, db, mat["x"]["spacing"])
     rows = [{"face": "bottom", "depth": f["h"] - offset, "area": n * ab, "spacing": mat["x"]["spacing"], "cc": offset - db / 2}]
     if f.get("top"):
         db, ab = BARS[f["top"]["designation"]]
-        n = _F._count(f["ly"], f["cover"], db, f["top"]["spacing"])
-        rows.append({"face": "top", "depth": f["cover"] + db / 2, "area": n * ab, "spacing": f["top"]["spacing"], "cc": f["cover"]})
+        n = _F._count(f["ly"], cover, db, f["top"]["spacing"])
+        rows.append({"face": "top", "depth": cover + db / 2, "area": n * ab, "spacing": f["top"]["spacing"], "cc": cover})
     return rows
 
 
@@ -218,7 +232,8 @@ def _skin_check(folder: str, f: dict, rows: list[dict], moment: float) -> dict |
     depths: list[float] = []
     if skin:
         db = BARS[skin["designation"]][0]
-        limit = top_row["depth"] if top_row else f["cover"] + db / 2
+        stirrup = BARS[f["stirrups"]["designation"]][0] if f.get("stirrups") else 0.0
+        limit = top_row["depth"] if top_row else f["cover"] + stirrup + db / 2
         depth = bottom_row["depth"] - skin["spacing"]
         while depth > limit + 1.0:
             depths.append(depth)
@@ -295,15 +310,10 @@ def _shear_checks(folder: str, f: dict, rows: list[dict], given: tuple[float, fl
     estribos (Vs ≤ 0.66√f'c·b·d) y Av,min si Vu > φVc (ACI 7.6.3.1; NSR-10 no lo exige en zapatas)."""
     shear, moment = given
     b, stirrups = (f["ly"], f.get("stirrups")) if section is None else section
-    h = f["h"]
-    layers = _oriented(rows, h, moment)
-    state = _state(layers, b, h)
-    if state is None or not any(strain > 0 for strain in state["strains"]):
+    terms = _vc_d(folder, f, rows, given, b)
+    if terms is None:
         return [{"name": "Cortante: resistencia", "status": "BLOCKED"}]
-    pulled = [(depth, area) for (depth, area), strain in zip(layers, state["strains"], strict=True) if strain > 0]
-    area = sum(a for _, a in pulled)
-    d = max(sum(depth * a for depth, a in pulled) / area, 0.8 * h)
-    vc = _S._one_way_vc(folder, b, d, area / (b * d), abs(shear), abs(moment))
+    vc, d = terms
     fyt = 420.0
     transverse = 0.0 if stirrups is None else stirrups["legs"] * BARS[stirrups["designation"]][1] / stirrups["spacing"]
     vs = transverse * fyt * d
@@ -320,10 +330,66 @@ def _shear_checks(folder: str, f: dict, rows: list[dict], given: tuple[float, fl
     return checks
 
 
+def _vc_d(folder: str, f: dict, rows: list[dict], given: tuple[float, float], b: float) -> tuple[float, float] | None:
+    """Vc de cimentación y d del acero a tracción (d ≥ 0.8h); None si no hay acero a tracción."""
+    shear, moment = given
+    h = f["h"]
+    layers = _oriented(rows, h, moment)
+    state = _state(layers, b, h)
+    if state is None or not any(strain > 0 for strain in state["strains"]):
+        return None
+    pulled = [(depth, area) for (depth, area), strain in zip(layers, state["strains"], strict=True) if strain > 0]
+    area = sum(a for _, a in pulled)
+    d = max(sum(depth * a for depth, a in pulled) / area, 0.8 * h)
+    return _S._one_way_vc(folder, b, d, area / (b * d), abs(shear), abs(moment)), d
+
+
+def _torsion_checks(folder: str, f: dict, rows: list[dict], given: tuple[float, float, float]) -> list[dict] | None:
+    """Torsión de la viga larga (D-088); None si Tu < φTth (el cortante se revisa solo)."""
+    shear, moment, torque = given
+    b, h, cover, phi, fy = f["ly"], f["h"], f["cover"], 0.75, 420.0
+    acp, pcp = b * h, 2 * (b + h)
+    limit = phi * 0.083 * math.sqrt(FC) * acp**2 / pcp
+    tu, vu = abs(torque), abs(shear)
+    if tu == 0 or tu < limit:
+        return None
+    threshold = {"name": "Torsion: umbral", "status": "PASS", "values": {"Tu": tu, "phi Tth": limit}}
+    stirrups = f.get("stirrups")
+    if stirrups is None:
+        return [threshold, {"name": "Torsion: refuerzo transversal", "status": "FAIL"}]
+    terms = _vc_d(folder, f, rows, (shear, moment), b)
+    assert terms is not None
+    vc, d = terms
+    ds, ab = BARS[stirrups["designation"]]
+    transverse = stirrups["legs"] * ab / stirrups["spacing"]
+    x1, y1 = b - 2 * cover - ds, h - 2 * cover - ds
+    aoh, ph = x1 * y1, 2 * (x1 + y1)
+    a0 = 0.85 * aoh
+    at_s = tu / (phi * 2 * a0 * fy)
+    av_s = max(vu / phi - vc, 0.0) / (fy * d)
+    ok = stirrups["closed"] and av_s + 2 * at_s <= transverse and at_s <= ab / stirrups["spacing"]
+    stress = math.hypot(vu / (b * d), tu * ph / (1.7 * aoh**2))
+    stress_limit = phi * (vc / (b * d) + 0.66 * math.sqrt(FC))
+    base = 0.42 * math.sqrt(FC) * acp / fy
+    al_min = max(min(base - at_s * ph, base - 0.175 * b / fy * ph), 0.0)
+    al_required = max(tu * ph / (phi * 2 * a0 * fy), al_min)
+    al_provided = sum(BARS[bar["designation"]][1] for layer in f.get("torsion_layers", []) for bar in layer["bars"])
+    minimum = max(0.062 * math.sqrt(FC), 0.35) * b / fy
+    return [threshold,
+            {"name": "Torsion: dimensiones de la seccion", "status": "PASS" if stress <= stress_limit else "FAIL",
+             "demand": stress, "capacity": stress_limit},
+            {"name": "Torsion: refuerzo transversal", "status": "PASS" if ok else "FAIL", "demand": av_s + 2 * at_s,
+             "capacity": transverse},
+            {"name": "Torsion: refuerzo transversal minimo", "status": "PASS" if transverse >= minimum else "FAIL",
+             "demand": minimum, "capacity": transverse},
+            {"name": "Torsion: refuerzo longitudinal", "status": "PASS" if al_provided >= al_required else "FAIL",
+             "demand": al_required, "capacity": al_provided}]
+
+
 def _expected(folder: str, f: dict, level: str) -> dict:
     rows = _rows(f)
     profile = _F.PROFILES[folder]
-    checks, failures = [], []
+    checks, failures, torques = [], [], []
     for load in f["columns"][0]["loads"]:
         if load["kind"] != "factored":
             continue
@@ -342,18 +408,22 @@ def _expected(folder: str, f: dict, level: str) -> dict:
                 if abs(face - x) <= 1e-6 * f["lx"] and any(low < at_d < high and low <= face <= high for low, high in _regions(beam)):
                     shear_at = at_d
             shear = _shear_moment(beam, shear_at)[0]
+            torque = _torque(beam, shear_at)
             z = x + f["lx"] / 2
+            torques.append({"case": case, "x": x, "at": shear_at, "tu_Nmm": torque})
+            torsion = _torsion_checks(folder, f, rows, (shear, moment, torque))
+            shear_part = _shear_checks(folder, f, rows, (shear, moment)) if torsion is None else torsion
             if moment < 0 and not f.get("top"):
-                station = [_F._plain(f, "x", -moment, case, profile, level), *_shear_checks(folder, f, rows, (shear, moment))]
+                station = [_F._plain(f, "x", -moment, case, profile, level), *shear_part]
             else:
-                station = _flexure_checks(folder, f, rows, moment) + _shear_checks(folder, f, rows, (shear, moment))
+                station = _flexure_checks(folder, f, rows, moment) + shear_part
             checks += [{**item, "case": case, "z_mm": z} for item in station]
     maximum = min(3 * f["h"], 450.0)
     for row in rows:
         bars = "barras inferiores x" if row["face"] == "bottom" else "barras superiores x"
         checks.append({"name": f"Viga larga: separacion maxima ({bars})", "status": "PASS" if row["spacing"] <= maximum else "FAIL",
                        "demand": row["spacing"], "capacity": maximum, "clause": CLAUSES[folder]["spacing"]})
-    return {"checks": checks, "equilibrium_failures": failures}
+    return {"checks": checks, "equilibrium_failures": failures, "torques": torques}
 
 
 def _load(case: str, p: float, dead: float = 1.2, live: float = 1.6, mx: float = 0.0, my: float = 0.0, vx: float = 0.0,
@@ -415,6 +485,16 @@ CASES = [
               bottom={"first": "y", "end": "straight", "x": {"designation": "#4", "spacing": 350.0},
                   "y": {"designation": "#5", "spacing": 200.0}},
               top={"designation": "#8", "spacing": 120.0, "end": "straight"})),
+    ("torsion-con-estribos", "columna desplazada 400 mm en Y con Mx y Vy: Tu ≥ φTth, estribos cerrados y capas de Aℓ (D-088)",
+     _footing([_column("C1", -2000.0, [_load("U1", 1500.0, mx=-60.0, vy=40.0)], y=400.0),
+               _column("C2", 2000.0, [_load("U1", 1500.0)])], h=600.0,
+              stirrups={"designation": "#5", "legs": 8, "spacing": 100.0, "closed": True},
+              torsion_layers=[{"depth": depth, "role": "torsion",
+                               "bars": [{"designation": "#8", "x": x} for x in (150.0, 490.0, 830.0, 1170.0, 1510.0, 1850.0)]}
+                              for depth in (250.0, 350.0)])),
+    ("torsion-sin-superior", "sin barras superiores y columna desplazada: concreto simple y torsión sin estribos (D-088)",
+     _footing([_column("C1", -2000.0, [_load("U1", 900.0)], y=450.0), _column("C2", 2000.0, [_load("U1", 900.0)], y=-450.0)],
+              top=None)),
     ("contacto-parcial", "momento grande: contacto parcial, la carga uniforme supera la presión en un voladizo",
      _footing([_column("C1", -2000.0, [_load("U1", 900.0, my=900.0, live=0.0, dead=1.2)]),
                _column("C2", 2000.0, [_load("U1", 400.0, my=900.0, live=0.0, dead=1.2)])])),

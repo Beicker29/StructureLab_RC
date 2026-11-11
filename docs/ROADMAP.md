@@ -17,11 +17,9 @@ columnas (verificación, entrada desde ETABS), D-052 a D-087.
 
 ### Fase 1: zapatas combinadas completas
 
-1. Vy y columnas desplazadas en Y: carga directa en las franjas (Mx + H·Vy) y torsión en la viga larga. Consultar antes
-   el tratamiento de la torsión en cimentaciones.
-2. Vigas de gran altura (ACI 318-25 9.9, NSR-10 C.11.7: luz libre ≤ 4h o cargas concentradas a menos de 2h del apoyo),
+1. Vigas de gran altura (ACI 318-25 9.9, NSR-10 C.11.7: luz libre ≤ 4h o cargas concentradas a menos de 2h del apoyo),
    en la viga larga y en las vigas de la v1 (mismo código).
-3. Criterio para decidir si una zapata combinada trabaja en una dirección (13.3.2, como hoy) o en dos (13.3.4), con un
+2. Criterio para decidir si una zapata combinada trabaja en una dirección (13.3.2, como hoy) o en dos (13.3.4), con un
    aviso cuando sea muy ancha frente a la separación entre columnas; la norma no lo define (D-087).
 
 ### Fase 2: geotecnia, estabilidad y concreto simple
@@ -93,7 +91,11 @@ importación de ETABS y memorias (fases 0 a 2, D-001 a D-051).
 1. Servicio: espesor mínimo y deflexiones; requieren cargas de servicio en la entrada (D-017, D-039). En ACI,
    fr = 0.62λ√f'c según la fe de erratas de 19.2.3.1 (D-067).
 2. Torsión: reducción a φTcr en torsión de compatibilidad (ACI 22.7.3.2, NSR-10 C.11.5.2.2), Aℓ en la zona comprimida
-   por flexión (ACI 9.5.4.5, NSR-10 C.11.5.3.9) y secciones huecas (ACI 22.7.7.1(b), NSR-10 C.11.5.3.1(b)).
+   por flexión (ACI 9.5.4.5, NSR-10 C.11.5.3.9) y secciones huecas (ACI 22.7.7.1(b), NSR-10 C.11.5.3.1(b)); prolongación
+   (bt + d) del refuerzo de torsión (ACI 9.7.5.3 y 9.7.6.3.2, NSR-10 C.11.5.6.3), desarrollo de Aℓ en los extremos (ACI
+   9.7.5.4, NSR-10 C.11.5.4.3) y gancho de 135° de los estribos cerrados (ACI 25.7.1.6, NSR-10 C.11.5.4.2). Aplican a
+   las vigas y a la viga larga de la zapata combinada (D-088); necesitan datos por tramo que la entrada por estaciones
+   no trae.
 
 ### Fase 3: requisitos sísmicos
 

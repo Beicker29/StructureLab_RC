@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.basis import Basis
@@ -17,10 +18,11 @@ from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.footing.service import BEARING, CONTACT, combined_service_checks
 from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING
 from structurelab_rc.domain.status import Status
-from structurelab_rc.engine import run_project
+from structurelab_rc.domain.validation import validate_project
+from structurelab_rc.engine import report_file, run_project
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Soil
-from structurelab_rc.model.project import Materials
+from structurelab_rc.model.project import Materials, Project
 from structurelab_rc.setup import load_engine
 
 ORACLES = Path(__file__).parent / "oracles"
@@ -126,6 +128,21 @@ def test_long_beam_checks_match_oracle(profile: str, case: dict[str, Any]) -> No
             assert values["As analisis"] == pytest.approx(item["analysis"], rel=tolerance, abs=1e-6), key
         if "clause" in item:
             assert check.clause == item["clause"], key
+        for name, value in item.get("values", {}).items():
+            assert values[name] == pytest.approx(value, rel=tolerance), (key, name)
+
+
+@pytest.mark.parametrize(("profile", "case"), BEAM_CASES)
+def test_long_beam_torque_matches_oracle(profile: str, case: dict[str, Any]) -> None:
+    """T(x) de la viga larga (D-088) en cada estación, donde se toma el cortante, frente al oráculo: torque de cada
+    columna F·y − Mx + H·Vy menos ∫y·q de la carga neta a la izquierda."""
+    oracle = _oracle(FOLDERS[profile], "derived_combined_beam")
+    footing = CombinedFooting.model_validate(case["footing"])
+    soil = Soil.model_validate(oracle["soil"])
+    cases, _ = combined_factored_cases(footing, soil)
+    beams = {pressure.case: beam_case(footing, soil, pressure, loads) for pressure, loads in cases}
+    for item in case["expected"]["torques"]:
+        assert beams[item["case"]].torque(item["at"]) == pytest.approx(item["tu_Nmm"], rel=oracle["tolerance_rel"], abs=1.0), item
 
 
 def _where(check: Check) -> str:
@@ -275,3 +292,42 @@ def test_strip_load_shape_falls_back_when_the_column_line_has_no_pressure(case_i
     second = [check for check in stations if check.note.startswith("Franja transversal de la columna C2,")]
     assert first and all(text in check.note for check in first)
     assert second and not any(text in check.note for check in second)
+
+
+EXAMPLE = Path(__file__).parent.parent / "examples" / "nsr_10" / "zapatas" / "zapata_combinada.json"
+
+
+def _with_torsion_layers(layers: list[dict[str, Any]]) -> dict[str, Any]:
+    data: dict[str, Any] = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    data["combined_footings"][0]["torsion_layers"] = layers
+    return data
+
+
+@pytest.mark.parametrize(("layers", "message"), [
+    ([{"depth": 400.0, "role": "torsion", "bars": ["#99", "#99"]}], "'#99' de las capas de torsion no esta en el catalogo"),
+    ([{"depth": 400.0, "role": "torsion", "bars": [{"designation": "#5", "x": 20.0}, {"designation": "#5", "x": 2500.0}]}],
+     "queda fuera del estribo"),
+])
+def test_torsion_layers_are_validated_like_beam_layers(layers: list[dict[str, Any]], message: str) -> None:
+    """D-088: las capas de Aℓ de la viga larga usan el catálogo y la regla de las vigas (barras dentro del estribo)."""
+    check = validate_project(Project.model_validate(_with_torsion_layers(layers)), BARS)
+    assert check.status is not Status.PASS
+    assert any(message in error.message for error in check.errors)
+
+
+@pytest.mark.parametrize("layer", [{"depth": 400.0, "role": "flexure", "bars": ["#5", "#5"]},
+                                   {"depth": 900.0, "role": "torsion", "bars": ["#5", "#5"]}])
+def test_torsion_layers_need_the_torsion_role_and_fit_in_the_thickness(layer: dict[str, Any]) -> None:
+    with pytest.raises(ValidationError, match="role 'torsion'"):
+        Project.model_validate(_with_torsion_layers([layer]))
+
+
+def test_valid_torsion_layers_pass_and_reach_the_report(tmp_path: Path) -> None:
+    layers = [{"depth": 400.0, "role": "torsion", "bars": [{"designation": "#5", "x": 100.0}, {"designation": "#5", "x": 2500.0}]}]
+    project = Project.model_validate(_with_torsion_layers(layers))
+    assert validate_project(project, BARS).status is Status.PASS
+    path = tmp_path / "zc.json"
+    path.write_text(json.dumps(_with_torsion_layers(layers)), encoding="utf-8")
+    report_file(path, tmp_path / "salida")
+    text = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
+    assert "2 #5 a 400 mm" in text and "Viga en la dirección larga: torsión" in text

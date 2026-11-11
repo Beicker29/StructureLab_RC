@@ -8,7 +8,7 @@ from typing import Literal, Self
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
 from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Mat, RectangularBase, _Input
-from structurelab_rc.model.reinforcement import Stirrups
+from structurelab_rc.model.reinforcement import BarLayer, Stirrups
 
 COLUMNS = 2
 
@@ -50,7 +50,9 @@ class CombinedColumn(_Input):
 class CombinedFooting(RectangularBase, _Input):
     """Zapata combinada de espesor h con dos columnas a lo largo de X. bottom es la malla inferior en las dos direcciones;
     top, las barras superiores paralelas a X (opcional: sin ellas, el momento negativo se revisa como concreto simple,
-    D-072); stirrups, los estribos de la dirección larga, como en las vigas (opcional, D-081). fill_height,
+    D-072); stirrups, los estribos de la dirección larga, como en las vigas (opcional, D-081); torsion_layers, las capas
+    de Aℓ de la viga larga con el formato de las vigas y role "torsion" (x desde la cara −Y, profundidad desde la cara
+    superior; opcional, D-088). fill_height,
     pedestal_height, cover y las sobrecargas, como en la zapata aislada (D-057)."""
 
     id: str = Field(min_length=1)
@@ -67,6 +69,7 @@ class CombinedFooting(RectangularBase, _Input):
     top: TopBars | None = None
     stirrups: Stirrups | None = None
     skin: SkinBars | None = None
+    torsion_layers: tuple[BarLayer, ...] = ()
 
     @field_validator("surcharge_dead", "surcharge_live")
     @classmethod
@@ -81,6 +84,10 @@ class CombinedFooting(RectangularBase, _Input):
         first, second = sorted(self.columns, key=lambda column: column.x)
         if first.x + first.cx / 2 >= second.x - second.cx / 2:
             raise ValueError(f"las columnas de la zapata combinada '{self.id}' se traslapan a lo largo de X")
+        for layer in self.torsion_layers:
+            if layer.role != "torsion" or layer.depth >= self.h:
+                raise ValueError(f"las capas de torsion de la zapata combinada '{self.id}' deben tener role 'torsion' y quedar "
+                                 "dentro del espesor")
         if 2 * self.cover >= self.h:
             raise ValueError(f"el recubrimiento de la zapata combinada '{self.id}' no deja espacio para las mallas")
         if any(bar_set.band_spacing is not None for bar_set in (self.bottom.x, self.bottom.y)):

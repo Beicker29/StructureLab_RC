@@ -101,8 +101,9 @@ def test_interior_legs_do_not_resist_torsion() -> None:
 
 
 def test_thin_torsion_bars_fail_the_detailing() -> None:
+    # #3 (9.5 mm) cumple el piso de 9.5 mm (D-088), pero no 0.042·s = 10.5 mm con s = 250 mm.
     thin = TORSION_BARS | {"bars": ["#3", "#3", "#3", "#3"]}
-    check = _checks(_member([TOP, BOTTOM, thin], stirrups=STIRRUPS | {"spacing": 150.0}))[DETAILING]
+    check = _checks(_member([TOP, BOTTOM, thin], stirrups=STIRRUPS | {"spacing": 250.0}))[DETAILING]
     assert check.status is Status.FAIL
     assert "diametro" in check.note
 
@@ -126,10 +127,11 @@ def test_oversized_section_fails_the_combined_limit() -> None:
     assert _checks(_member(Tu_kNm=80.0, Vu_kN=250.0))[SECTION].status is Status.FAIL
 
 
-def test_minimum_bar_diameter_has_a_10_mm_floor() -> None:
+def test_minimum_bar_diameter_admits_the_no_3_bar() -> None:
+    """ACI 9.7.5.2 (10 mm, la barra No. 10 en SI) y NSR-10 C.11.5.6.2 (No. 3 o 10M): piso de 9.5 mm (D-088)."""
     for profile in ("aci-318-25", "nsr-10"):
         torsion = PROFILES[profile].torsion
-        assert torsion.min_longitudinal_diameter(100.0) == pytest.approx(10.0)
+        assert torsion.min_longitudinal_diameter(100.0) == pytest.approx(9.5)
         assert torsion.min_longitudinal_diameter(300.0) == pytest.approx(0.042 * 300.0)
 
 

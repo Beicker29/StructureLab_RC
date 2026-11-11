@@ -7,7 +7,7 @@ _SQRT_FC_MAX = 8.3
 _FY_MAX = 420.0
 _THETA = math.radians(45.0)
 _SPACING_MAX = 300.0
-_BAR_DIAMETER_MIN = 10.0
+_BAR_DIAMETER_MIN = 9.5  # C.11.5.6.2: barra No. 3 (3/8", 9.5 mm) o 10M (D-088)
 
 
 def clauses() -> dict[str, str]:

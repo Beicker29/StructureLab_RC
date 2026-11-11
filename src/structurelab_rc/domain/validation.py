@@ -5,6 +5,7 @@ from collections.abc import Iterator, Sequence
 from structurelab_rc.codes.registry import PROFILES, Profile
 from structurelab_rc.domain.beam.geometry import flange_limits, interior_limits, placed_bars
 from structurelab_rc.domain.check import Check, check_from_errors
+from structurelab_rc.domain.footing.combined_beam import long_beam_member
 from structurelab_rc.errors import StructuredError, incomplete, invalid_input
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
@@ -115,6 +116,20 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> I
         yield invalid_input(f"La barra '{footing.skin.designation}' del refuerzo superficial no esta en el catalogo", **where)
     if footing.stirrups is not None and footing.stirrups.designation not in specs:
         yield invalid_input(f"La barra '{footing.stirrups.designation}' de los estribos no esta en el catalogo", **where)
+    missing = sorted({name for layer in footing.torsion_layers for name in layer.designations()} - set(specs))
+    for name in missing:
+        yield invalid_input(f"La barra '{name}' de las capas de torsion no esta en el catalogo", **where)
+    if footing.torsion_layers and not missing and _catalogued(footing, specs):
+        # Las barras de Aℓ dentro del estribo de la viga larga, con la regla de las vigas (D-088).
+        member = long_beam_member(footing, list(specs.values()))
+        yield from _bar_errors(member, member.stations[0], list(specs.values()))
+
+
+def _catalogued(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> bool:
+    """Las barras de la viga larga (mallas, superiores, piel y estribos) están en el catálogo."""
+    names = {footing.bottom.x.designation, footing.bottom.y.designation}
+    names |= {item.designation for item in (footing.top, footing.skin, footing.stirrups) if item is not None}
+    return names <= set(specs)
 
 
 def validate_project(project: Project, bars: Sequence[RebarSpec]) -> Check:

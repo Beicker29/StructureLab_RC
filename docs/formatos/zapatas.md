@@ -127,6 +127,7 @@ La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en los dos perfil
 | `top` | | Barras superiores paralelas a X (`designation`, `spacing`, `end`: `straight` o `hook`, como el `end` de la malla), opcional: sin ellas, el momento negativo se revisa como concreto simple (D-072). |
 | `stirrups` | | Estribos de la dirección larga, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
 | `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
+| `torsion_layers` | | Capas de Aℓ de la viga larga con el formato de las capas de vigas (`depth` desde la cara superior, `role: "torsion"`, `bars` con x desde la cara −Y); opcional; sin ellas, Aℓ = 0 (D-088). |
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 
@@ -239,9 +240,9 @@ propiedades calculadas, el número de casos y las verificaciones, y `foundation_
 de la viga y `M [kN-m]`): los momentos transferidos que debe tomar la viga de cimentación (D-087). Las zapatas
 combinadas van en `combined_footings`: la
 geometría, las columnas (`columns[]`, cada una con sus cargas), las propiedades calculadas de la base, el armado
-(`bottom`, `top`, `stirrups`, `skin`) y las verificaciones, cada una con su `case`, su `z [mm]` (posición en la viga
+(`bottom`, `top`, `stirrups`, `skin`, `torsion_layers`) y las verificaciones, cada una con su `case`, su `z [mm]` (posición en la viga
 larga desde −X o en la franja desde −Y; nula en las demás) y en `note` la sección, la franja o la columna. Su memoria
-separa la viga larga de las franjas transversales y trae la planta de presiones con las dos columnas y la tabla de
+separa la viga larga (flexión, cortante y torsión, D-088) de las franjas transversales y trae la planta de presiones con las dos columnas y la tabla de
 esfuerzos de punzonamiento en cada esquina.
 
 ## Verificaciones de zapatas

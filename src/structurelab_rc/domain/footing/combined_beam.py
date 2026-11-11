@@ -8,6 +8,7 @@ libre a su izquierda:
 
     V(x) = ∫q dA − Σ F_c                         (columnas con x_c < x)
     M(x) = x·∫q dA − ∫x·q dA − Σ [F_c·(x − x_c) − C_c]
+    T(x) = ∫y·q dA − Σ T_c,   T_c = F_c·y_c − Mx_c + (h + pedestal)·Vy_c   (D-088)
 
 M positivo tracciona la cara inferior, como Mu de las vigas. La viga larga se revisa con el código de vigas (D-081):
 una sección rectangular B × h con las barras inferiores y superiores x como capas y los estribos opcionales, y una
@@ -15,21 +16,22 @@ estación por sección crítica de cada caso (el mayor momento positivo y el may
 con V = 0, y el cortante a d de cada cara hacia su tramo), con las verificaciones de vigas en modo cimentación (Vc y Av,min de
 cimentación). Lo propio de la zapata: sin barras superiores, el momento negativo lo resiste el concreto simple
 (D-072), y la separación de 3h y 450 mm (ACI 7.7.2.3, NSR-10 C.10.5.4). Mx, Vy y la posición en Y de las columnas no
-cambian la viga: actúan en el sentido transversal (su torsión queda pendiente, D-080).
+cambian V ni M: producen la torsión T(x), que cierra en cero en los dos extremos por el equilibrio global; Tu se toma
+donde se toma el cortante (a d de la cara, ACI 9.4.4.3, NSR-10 C.11.5.2.4) y la revisa la torsión de vigas, con las
+capas de Aℓ declaradas en torsion_layers (D-088).
 """
 
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
 from structurelab_rc.domain.basis import Basis
-from structurelab_rc.domain.beam.shear import shear_checks
-from structurelab_rc.domain.beam.station import checks_for
+from structurelab_rc.domain.beam.station import checks_for, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.flexure import plain_check
 from structurelab_rc.domain.footing.loads import FactoredCase
-from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_row
+from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_row
 from structurelab_rc.domain.status import Status
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
@@ -47,13 +49,15 @@ _TOUCH = 1.0  # mm: una barra de piel a menos de esto de la capa superior se omi
 
 @dataclass(frozen=True)
 class ColumnForce:
-    """Fuerza vertical hacia abajo (N) y par (N·mm, positivo según My) de una columna en su eje x; half = cx/2."""
+    """Fuerza vertical hacia abajo (N) y par (N·mm, positivo según My) de una columna en su eje x; half = cx/2; torque,
+    su momento estático respecto al eje X, F·y − Mx + H·Vy (N·mm), el que la viga larga lleva como torsión (D-088)."""
 
     id: str
     x: float
     half: float
     force: float
     couple: float
+    torque: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -79,27 +83,34 @@ class BeamCase:
     def case(self) -> str:
         return self.pressure.case
 
-    def _left(self, x: float) -> tuple[float, float]:
+    def _left(self, x: float) -> tuple[float, float, float]:
         hx, hy = self.lx / 2, self.ly / 2
         if x <= -hx:
-            return 0.0, 0.0
-        force, sx, _ = self.pressure.net(((-hx, -hy), (x, -hy), (x, hy), (-hx, hy)))
-        return force, sx
+            return 0.0, 0.0, 0.0
+        return self.pressure.net(((-hx, -hy), (x, -hy), (x, hy), (-hx, hy)))
 
     def shear(self, x: float) -> float:
-        force, _ = self._left(x)
+        force, _, _ = self._left(x)
         return force - sum(column.force for column in self.columns if column.x < x)
 
     def moment(self, x: float) -> float:
-        force, sx = self._left(x)
+        force, sx, _ = self._left(x)
         return x * force - sx - sum(column.force * (x - column.x) - column.couple for column in self.columns if column.x < x)
+
+    def torque(self, x: float) -> float:
+        """T(x) del cuerpo libre a la izquierda, respecto al eje X (D-088)."""
+        _, _, sy = self._left(x)
+        return sy - sum(column.torque for column in self.columns if column.x < x)
 
 
 def beam_case(footing: CombinedFooting, soil: Soil, pressure: FactoredCase, loads: tuple[FootingLoad, ...]) -> BeamCase:
     height = footing.h + footing.pedestal_height
-    columns = sorted((ColumnForce(column.id, column.x, column.cx / 2, column_vertical(footing, soil, column, load),
-                                  load.my + height * load.vx)
-                      for column, load in zip(footing.columns, loads, strict=True)), key=lambda column: column.x)
+    columns = []
+    for column, load in zip(footing.columns, loads, strict=True):
+        force = column_vertical(footing, soil, column, load)
+        columns.append(ColumnForce(column.id, column.x, column.cx / 2, force, load.my + height * load.vx,
+                                   force * column.y - load.mx + height * load.vy))
+    columns.sort(key=lambda column: column.x)
     return BeamCase(pressure, tuple(columns), footing.lx, footing.ly)
 
 
@@ -178,8 +189,9 @@ def _skin_layers(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], b
         return []
     spec = next(bar for bar in bars if bar.designation == footing.skin.designation)
     bottom, top = rows
-    limit = footing.h - top.depth if top is not None else footing.cover + spec.diameter_mm / 2
-    inset = footing.cover + spec.diameter_mm / 2
+    stirrup = stirrup_diameter(footing, bars)
+    limit = footing.h - top.depth if top is not None else footing.cover + stirrup + spec.diameter_mm / 2
+    inset = footing.cover + stirrup + spec.diameter_mm / 2  # por dentro del estribo, si lo hay (D-088)
     layers = []
     depth = bottom.depth - footing.skin.spacing
     while depth > limit + _TOUCH:
@@ -202,7 +214,17 @@ def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None],
         layers.insert(0, BarLayer(depth=footing.h - top.depth, role="flexure",
                                   bars=tuple(BarPosition(designation=top.designation, x=x + half) for x in top.positions)))
     layers += _skin_layers(footing, rows, bars)
+    layers += footing.torsion_layers
     return Section(bw=footing.ly, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
+
+
+def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> Member:
+    """La viga larga como miembro de vigas, con una estación de referencia que lleva su armado."""
+    rows = (mat_rows(footing, footing.bottom, bars)["x"], top_row(footing, bars))
+    section, layout = beam_member(footing, rows, bars)
+    placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
+    return Member.model_construct(id=footing.id, type="beam", statically_determinate=None, length=footing.lx, section=section,
+                                  stations=(placeholder,))
 
 
 def critical_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
@@ -246,15 +268,17 @@ def _with_section(check: Check, label: str) -> Check:
 def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
     beam, section, has_top = given
     moment = beam.moment(section.x)
-    shear = beam.shear(section.x if section.shear_x is None else section.shear_x)
+    # El cortante y la torsión, a d de la cara si la sección es una cara de columna (ACI 9.4.3.2 y 9.4.4.3).
+    at = section.x if section.shear_x is None else section.shear_x
     z = section.x + footing.lx / 2
     station = Station.model_construct(z=z, layout=member.stations[0].layout, case=beam.case,
-                                      demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))
+                                      demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(at), v3=0.0,
+                                                                      tu=beam.torque(at)))
     if moment < 0 and not has_top:
-        # Sin barras superiores: flexión de concreto simple (D-072) y el cortante de vigas, que necesita acero a tracción.
+        # Sin barras superiores: flexión de concreto simple (D-072) y el cortante (y la torsión) de vigas.
         flexure = plain_check(basis, footing, "x", -moment, (section.label, beam.case, _sentence(section.label)))
         given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
-        shear_only = [replace(check, member=footing.id, z=z, case=beam.case) for check in shear_checks(given_station)]
+        shear_only = [replace(check, member=footing.id, z=z, case=beam.case) for check in shear_and_torsion_checks(given_station)]
         return [replace(flexure, z=z), *(_with_section(check, section.label) for check in shear_only)]
     checks = checks_for(StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True))
     return [_with_section(replace(check, member=footing.id), section.label) for check in checks]
@@ -273,10 +297,7 @@ def long_beam_checks(
     """Las verificaciones de vigas en las secciones críticas de cada caso mayorado y la separación de las barras x."""
     bottom = mat_rows(footing, footing.bottom, basis.bars)["x"]
     top = top_row(footing, basis.bars)
-    section, layout = beam_member(footing, (bottom, top), basis.bars)
-    placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
-    member = Member.model_construct(id=footing.id, type="beam", statically_determinate=None, length=footing.lx, section=section,
-                                    stations=(placeholder,))
+    member = long_beam_member(footing, basis.bars)
     checks = []
     for pressure, loads in cases:
         beam = beam_case(footing, soil, pressure, loads)

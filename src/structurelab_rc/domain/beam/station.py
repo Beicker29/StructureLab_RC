@@ -37,7 +37,10 @@ def _out_of_scope(profile: Profile, materials: Materials, member: Member, statio
     return None
 
 
-def _shear_and_torsion(given: StationInput) -> tuple[Check, ...]:
+def shear_and_torsion_checks(given: StationInput) -> tuple[Check, ...]:
+    """Cortante y torsión de una estación (D-088: común a las vigas y a la viga larga de la zapata combinada). Si Tu es
+    despreciable, el cortante solo; si no, el umbral y la verificación combinada de torsión y cortante. En modo
+    cimentación no hay eje débil ni interacción (D-083)."""
     profile, materials, member, station = given.profile, given.materials, given.member, given.station
     missing = missing_demands(station)
     if missing is not None:
@@ -53,6 +56,8 @@ def _shear_and_torsion(given: StationInput) -> tuple[Check, ...]:
         return (threshold,)
     torsion = torsion_checks(given)
     at_s = next((dict(check.values).get("At/s", 0.0) for check in torsion if check.name == TRANSVERSE), 0.0)
+    if given.foundation:
+        return threshold, *torsion
     return threshold, *torsion, *weak_shear_checks(given, at_s)
 
 
@@ -67,7 +72,7 @@ def checks_for(given: StationInput) -> tuple[Check, ...]:
         flexure = flexure_checks(profile, materials, member, station, bars)
         if given.foundation:  # la zapata no tiene M2: las verificaciones del eje débil no aplican (D-083)
             flexure = tuple(check for check in flexure if check.name not in _WEAK_AXIS)
-        checks = (*flexure, *(() if skin is None else (skin,)), *_shear_and_torsion(given))
+        checks = (*flexure, *(() if skin is None else (skin,)), *shear_and_torsion_checks(given))
     return tuple(replace(check, member=member.id, z=station.z, case=station.case) for check in checks)
 
 

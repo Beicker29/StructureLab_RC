@@ -121,6 +121,7 @@ class TemplateCombinedFooting(_Input):
     top: dict[str, Any] | None = None
     stirrups: dict[str, Any] | None = None
     skin: dict[str, Any] | None = None
+    torsion_layers: list[dict[str, Any]] | None = None
 
     @model_validator(mode="after")
     def _check_sources(self) -> Self:
