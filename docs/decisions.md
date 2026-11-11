@@ -1072,6 +1072,22 @@
   aplican; ejemplo `zapata_combinada.json` igual en los dos perfiles; propiedades derivadas de la base comunes
   (`RectangularBase`).
 
+### D-084: zapatas combinadas desde los Excel de ETABS (V3K)
+
+- **Fecha:** 2026-11-10
+- **Decisión del usuario:**
+  1. Cada columna de una zapata combinada se identifica por el Unique Name de su nudo de ETABS.
+  2. Por zapata, `loads_source` dice si las cargas de servicio y las mayoradas salen de los Excel (`etabs`) o de la
+     plantilla (`json`, en `columns[].loads`); así sirve solo el Excel de servicio, solo el de últimas o ambos.
+  3. En la línea de comandos se conserva el orden `SERVICIO ULTIMAS PLANTILLA` y un `-` omite un Excel; si una zapata lo
+     pide, la importación falla con un error claro.
+- **Reglas:** la convención de signos y los factores por combinación son los de la zapata aislada (D-055); la plantilla
+  puede traer zapatas aisladas, combinadas o ambas, sin repetir Unique Names. Un tipo de carga que viene de ETABS no
+  puede traer casos escritos en la plantilla, ni uno que viene de la plantilla dejarlos vacíos. Con un solo Excel, las
+  combinaciones del otro que estén en `load_factors` no se reclaman.
+- **Ejemplo:** `plantilla_combinadas_etabs.json` en los dos perfiles con los mismos datos (ZC-A desde ETABS, ZC-B con las
+  mayoradas escritas); entra en la huella. El diseño por tipologías sigue pidiendo los dos Excel.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

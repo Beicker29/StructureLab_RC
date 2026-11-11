@@ -203,3 +203,106 @@ def test_example_workbooks_import(tmp_path: Path) -> None:
     code = main(["import-etabs-footings", str(SERVICE), str(FACTORED), str(TEMPLATE), "--output", str(output)])
     assert code == 0
     assert json.loads(output.read_text(encoding="utf-8")) == project
+
+
+# --- V3K: zapatas combinadas desde los Excel de ETABS (D-084) ---------------------------------------------------------
+
+def _joint_row(unique: str, case: str, forces: tuple[float, float, float, float, float]) -> dict[str, str]:
+    values = (*forces, 0.0)
+    return {"Story": "Base", "Label": f"L{unique}", "Unique Name": unique, "Output Case": case, "Case Type": "Combination",
+            "Step Type": "", **{name: str(value) for name, value in zip(HEADERS[6:], values, strict=True)}}
+
+
+def _json_load(case: str, kind: str, p: float) -> dict[str, Any]:
+    dead, live = (1.0, 1.0) if kind == "service" else (1.2, 1.6)
+    return {"case": case, "kind": kind, "dead_factor": dead, "live_factor": live, "P_kN": p, "Vx_kN": 0.0, "Vy_kN": 0.0,
+            "Mx_kNm": 0.0, "My_kNm": 0.0}
+
+
+def _combined_template(source: dict[str, str], loads: dict[str, list[dict[str, Any]]] | None = None) -> EtabsFootingTemplate:
+    loads = loads or {}
+    mat = {"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0}, "y": {"designation": "#5", "spacing": 150.0}}
+    columns = [{"id": name, "etabs_unique_name": unique, "cx": 450.0, "cy": 450.0, "x": x, "y": 0.0, "loads": loads.get(name, [])}
+               for name, unique, x in (("C1", "10", -2000.0), ("C2", "11", 2000.0))]
+    combined = {"id": "ZC", "lx": 6000.0, "ly": 2000.0, "h": 700.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
+                "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "loads_source": source, "columns": columns, "bottom": mat}
+    data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
+            "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}, "soil": SOIL,
+            "load_factors": {"S1": {"dead": 1.0, "live": 1.0}, "U1": {"dead": 1.2, "live": 1.6}}, "combined_footings": [combined]}
+    return EtabsFootingTemplate.model_validate(data)
+
+
+SERVICE_ROWS = Table(HEADERS, UNITS, (_joint_row("10", "S1", (10.0, -20.0, 500.0, 30.0, -40.0)),
+                                      _joint_row("11", "S1", (0.0, 0.0, 800.0, 0.0, 0.0))))
+FACTORED_ROWS = Table(HEADERS, UNITS, (_joint_row("10", "U1", (1.0, 2.0, 700.0, 3.0, 4.0)),
+                                       _joint_row("11", "U1", (0.0, 0.0, 1100.0, 0.0, 0.0))))
+
+
+def test_combined_footing_takes_both_kinds_from_etabs() -> None:
+    """Cada columna recibe las reacciones de su nudo, con el signo de la acción sobre la zapata (P = FZ, el resto opuesto)."""
+    project, summary = build_footing_project(_combined_template({"service": "etabs", "factored": "etabs"}), SERVICE_ROWS, FACTORED_ROWS)
+    footing = project["combined_footings"][0]
+    assert "footings" not in project and "loads_source" not in footing
+    c1, c2 = footing["columns"]
+    assert "etabs_unique_name" not in c1
+    assert {load["case"]: load["P_kN"] for load in c1["loads"]} == {"S1": 500.0, "U1": 700.0}
+    assert {load["case"]: load["P_kN"] for load in c2["loads"]} == {"S1": 800.0, "U1": 1100.0}
+    service = next(load for load in c1["loads"] if load["case"] == "S1")
+    assert (service["Vx_kN"], service["Vy_kN"], service["Mx_kNm"], service["My_kNm"]) == (-10.0, 20.0, -30.0, 40.0)
+    assert (summary.footings, summary.service_cases, summary.factored_cases) == (1, ("S1",), ("U1",))
+    assert validate_project(Project.model_validate(project), load_engine().bars).status is Status.PASS
+
+
+@pytest.mark.parametrize(("source", "tables", "json_kind"), [
+    ({"service": "etabs", "factored": "json"}, (SERVICE_ROWS, None), "factored"),
+    ({"service": "json", "factored": "etabs"}, (None, FACTORED_ROWS), "service"),
+])
+def test_combined_footing_mixes_etabs_and_template_loads(source: dict[str, str], tables: tuple[Table | None, Table | None],
+                                                         json_kind: str) -> None:
+    """Un tipo de carga sale del Excel y el otro de la plantilla; el Excel que no se usa puede omitirse."""
+    loads = {name: [_json_load("J1", json_kind, p)] for name, p in (("C1", 600.0), ("C2", 900.0))}
+    project, _ = build_footing_project(_combined_template(source, loads), *tables)
+    c1, c2 = project["combined_footings"][0]["columns"]
+    assert {load["kind"] for load in c1["loads"]} == {"service", "factored"}
+    assert next(load["P_kN"] for load in c2["loads"] if load["case"] == "J1") == 900.0
+    Project.model_validate(project)
+
+
+def test_combined_footing_needs_the_excel_it_uses_and_its_joints() -> None:
+    with pytest.raises(EtabsImportError, match="Falta el Excel de cargas mayoradas"):
+        build_footing_project(_combined_template({"service": "etabs", "factored": "etabs"}), SERVICE_ROWS, None)
+    lonely = Table(HEADERS, UNITS, (_joint_row("10", "S1", (0.0, 0.0, 500.0, 0.0, 0.0)),))
+    loads = {name: [_json_load("J1", "factored", 600.0)] for name in ("C1", "C2")}
+    with pytest.raises(EtabsImportError, match="'11' no tiene combinaciones en la tabla de servicio"):
+        build_footing_project(_combined_template({"service": "etabs", "factored": "json"}, loads), lonely, None)
+
+
+@pytest.mark.parametrize(("source", "loads", "message"), [
+    ({"service": "etabs", "factored": "json"}, {}, "no trae casos 'factored'"),
+    ({"service": "etabs", "factored": "etabs"}, {"C1": [_json_load("S9", "service", 1.0)]}, "trae casos 'service'"),
+])
+def test_combined_template_sources_are_validated(source: dict[str, str], loads: dict[str, list[dict[str, Any]]], message: str) -> None:
+    with pytest.raises(ValidationError, match=message):
+        _combined_template(source, loads)
+
+
+def test_cli_omits_an_excel_with_a_dash(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    template = tmp_path / "plantilla.json"
+    loads = {name: [_json_load("J1", "factored", 600.0)] for name in ("C1", "C2")}
+    template.write_text(json.dumps(_combined_template({"service": "etabs", "factored": "json"}, loads).model_dump(mode="json")),
+                        encoding="utf-8")
+    output = tmp_path / "proyecto.json"
+    assert main(["import-etabs-footings", str(SERVICE), "-", str(template), "--output", str(output)]) == 1  # nudos 10 y 11 no existen
+    assert "no tiene combinaciones" in capsys.readouterr().out
+
+
+def test_example_combined_template_imports() -> None:
+    """La plantilla de ejemplo de zapatas combinadas (D-084): ZC-A con todo desde ETABS y ZC-B con las mayoradas escritas."""
+    template = EXAMPLES / "nsr_10" / "zapatas" / "plantilla_combinadas_etabs.json"
+    project, summary, check = import_etabs_footings(SERVICE, FACTORED, template)
+    assert check.status is Status.PASS
+    assert project is not None and summary is not None
+    first, second = project["combined_footings"]
+    assert summary.footings == 2 and "footings" not in project
+    assert all(len(column["loads"]) == 19 for column in first["columns"])  # 9 de servicio y 10 mayorados de ETABS
+    assert all(len(column["loads"]) == 11 for column in second["columns"])  # 9 de servicio de ETABS y 2 escritos

@@ -119,12 +119,13 @@ def import_etabs(workbook: Path, template_path: Path) -> tuple[dict[str, Any] | 
 
 
 def import_etabs_footings(
-    service: Path, factored: Path, template_path: Path
+    service: Path | None, factored: Path | None, template_path: Path
 ) -> tuple[dict[str, Any] | None, FootingImportSummary | None, Check]:
-    """Proyecto de zapatas a partir de las reacciones de servicio y mayoradas de ETABS y la plantilla (D-055)."""
+    """Proyecto de zapatas a partir de las reacciones de servicio y mayoradas de ETABS y la plantilla (D-055). Un Excel
+    puede omitirse (None) si la plantilla no pide cargas de su tipo (zapatas combinadas, D-084)."""
     try:
         template = load_footing_template(template_path)
-        tables = [read_table(path, etabs_footings.SHEET) for path in (service, factored)]
+        tables = [None if path is None else read_table(path, etabs_footings.SHEET) for path in (service, factored)]
         if isinstance(template, EtabsFootingDesignTemplate):
             project, summary = build_footing_design_project(template, *tables)
             design = validate_input(project, FootingDesignProject)

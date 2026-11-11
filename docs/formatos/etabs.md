@@ -58,3 +58,27 @@ ETABS reporta la fuerza del apoyo sobre la estructura. Sobre la zapata actúa la
 | `footings[].lx`, `ly`, `h`, `cover`, `fill_height`, `pedestal_height` | mm | Igual que en el proyecto. |
 | `footings[].surcharge_dead_kNm2`, `surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas muerta y viva. |
 | `footings[].column`, `bottom`, `top` | objeto | Columna y mallas, igual que en el proyecto. |
+
+`footings[]` y `combined_footings[]` son opcionales, pero la plantilla trae al menos uno. Un Unique Name no puede
+repetirse entre zapatas.
+
+### Zapatas combinadas (D-084)
+
+`combined_footings[]` tiene el formato de la zapata combinada del proyecto (ver [zapatas](zapatas.md)), con dos
+diferencias:
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `combined_footings[].columns[].etabs_unique_name` | texto | Unique Name del nudo de ETABS del que salen las reacciones de la columna. |
+| `combined_footings[].loads_source` | objeto | `{"service": "etabs" o "json", "factored": "etabs" o "json"}` (por defecto `etabs` los dos): de dónde salen las cargas de cada tipo. Con `etabs`, de la tabla de ese tipo con los factores de `load_factors`; con `json`, de `columns[].loads` de la plantilla, con el formato del proyecto. |
+| `combined_footings[].columns[].loads` | lista | Solo los casos de los tipos que vienen de la plantilla; las dos columnas deben terminar con los mismos casos. |
+
+Cada zapata combinada de la plantilla es una zapata del proyecto (su `id` se conserva). Si ninguna zapata pide cargas de
+un tipo a ETABS, su Excel puede omitirse escribiendo `-` en su lugar:
+
+```console
+structurelab-rc import-etabs-footings "Joint Reactions - Servicio.xlsx" - plantilla.json --output proyecto.json
+```
+
+Si una zapata pide un Excel omitido, la importación falla con "Falta el Excel de …". Con un solo Excel, las combinaciones
+del otro que estén en `load_factors` no se reclaman.

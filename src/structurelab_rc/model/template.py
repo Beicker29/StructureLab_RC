@@ -4,7 +4,7 @@ from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, model_validator
 
-from structurelab_rc.model.footing import Column, Mat
+from structurelab_rc.model.footing import Column, Dowels, Mat
 from structurelab_rc.model.project import Materials, Section, SeismicFacts
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 
@@ -79,6 +79,70 @@ class TemplateFooting(_Input):
         return self
 
 
+class LoadsSource(_Input):
+    """De dónde salen las cargas de cada tipo de una zapata combinada (D-084): del Excel de ETABS de ese tipo
+    ("etabs") o de la plantilla ("json", en columns[].loads)."""
+
+    service: Literal["etabs", "json"] = "etabs"
+    factored: Literal["etabs", "json"] = "etabs"
+
+
+class TemplateCombinedColumn(_Input):
+    """Columna de una zapata combinada en la plantilla: la del proyecto (D-080), con el Unique Name del nudo de ETABS
+    del que salen sus reacciones; loads trae solo los casos de los tipos que vienen de la plantilla."""
+
+    id: str = Field(min_length=1)
+    etabs_unique_name: str = Field(min_length=1)
+    cx: PositiveFloat
+    cy: PositiveFloat
+    x: float
+    y: float
+    dowels: Dowels | None = None
+    band: dict[str, Any] | None = None
+    loads: tuple[dict[str, Any], ...] = ()
+
+
+class TemplateCombinedFooting(_Input):
+    """Zapata combinada de la plantilla (D-084): la del proyecto con columnas de ETABS y el origen de cada tipo de carga.
+    El armado y la geometría se validan con el proyecto que se genera."""
+
+    id: str = Field(min_length=1)
+    lx: PositiveFloat
+    ly: PositiveFloat
+    h: PositiveFloat
+    cover: PositiveFloat
+    fill_height: NonNegativeFloat
+    pedestal_height: NonNegativeFloat
+    surcharge_dead_kNm2: NonNegativeFloat
+    surcharge_live_kNm2: NonNegativeFloat
+    loads_source: LoadsSource = LoadsSource()
+    columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2, max_length=2)
+    bottom: dict[str, Any]
+    top: dict[str, Any] | None = None
+    stirrups: dict[str, Any] | None = None
+    skin: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def _check_sources(self) -> Self:
+        sources = {"service": self.loads_source.service, "factored": self.loads_source.factored}
+        for column in self.columns:
+            kinds = {load.get("kind") for load in column.loads}
+            for kind, source in sources.items():
+                if source == "json" and kind not in kinds:
+                    raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' no trae casos '{kind}' "
+                                     "y loads_source los pide de la plantilla")
+                if source == "etabs" and kind in kinds:
+                    raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' trae casos '{kind}' que "
+                                     "loads_source toma de ETABS")
+        if self.columns[0].etabs_unique_name == self.columns[1].etabs_unique_name:
+            raise ValueError(f"las dos columnas de la zapata combinada '{self.id}' tienen el mismo Unique Name")
+        return self
+
+    def etabs_kinds(self) -> tuple[str, ...]:
+        """Los tipos de carga que salen de los Excel de ETABS."""
+        return tuple(kind for kind in ("service", "factored") if getattr(self.loads_source, kind) == "etabs")
+
+
 class LoadFactors(_Input):
     """Factores de carga muerta y viva de una combinación de ETABS (D-054, D-057) y si incluye sismo (D-070)."""
 
@@ -100,13 +164,17 @@ class EtabsFootingTemplate(_Input):
     materials: Materials
     soil: dict[str, float]
     load_factors: dict[str, LoadFactors] = Field(min_length=1)
-    footings: tuple[TemplateFooting, ...] = Field(min_length=1)
+    footings: tuple[TemplateFooting, ...] = ()
+    combined_footings: tuple[TemplateCombinedFooting, ...] = ()
 
     @model_validator(mode="after")
     def _check_names(self) -> Self:
+        if not self.footings and not self.combined_footings:
+            raise ValueError("la plantilla debe tener al menos una zapata aislada (footings) o combinada (combined_footings)")
         names = [name for footing in self.footings for name in footing.etabs_unique_names]
+        names += [column.etabs_unique_name for footing in self.combined_footings for column in footing.columns]
         if len(set(names)) != len(names):
-            raise ValueError("un Unique Name aparece en dos tipos de zapata")
+            raise ValueError("un Unique Name aparece en dos zapatas")
         return self
 
 

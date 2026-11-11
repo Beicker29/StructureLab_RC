@@ -14,17 +14,22 @@ from pathlib import Path
 
 import pytest
 
-from structurelab_rc.engine import design_footings, import_etabs, report_file
+from structurelab_rc.engine import design_footings, import_etabs, import_etabs_footings, report_file
 
 ROOT = Path(__file__).parent.parent
 FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
 # examples/<perfil>/<elemento>/*.json: los mismos ejemplos para los dos perfiles (D-073). Las plantillas de ETABS
-# (plantilla_*_etabs.json) leen los Excel compartidos de examples/etabs/<elemento>/; solo la de vigas entra en la huella
-# (las de zapatas importan 57 a 73 apoyos y su diseño tarda minutos).
+# (plantilla_*_etabs.json) leen los Excel compartidos de examples/etabs/<elemento>/; entran en la huella la de vigas y
+# la de zapatas combinadas (D-084), que importa dos zapatas (las de zapatas aisladas importan 57 a 73 apoyos y su
+# diseño tarda minutos).
 EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*/*.json")
                   if path.parts[-3] != "etabs" and not path.name.startswith("plantilla_"))
 ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/vigas/plantilla_vigas_etabs.json")))
+COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
+                              for path in (ROOT / "examples").glob("*/zapatas/plantilla_combinadas_etabs.json")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "Element Forces - Beams.xlsx"
+REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "Joint Reactions - Servicio.xlsx",
+             ROOT / "examples" / "etabs" / "zapatas" / "Joint Reactions - Ultimas.xlsx")
 UPDATE = os.environ.get("STRUCTURELAB_UPDATE_FINGERPRINTS") == "1"
 
 
@@ -39,15 +44,15 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
         report_file(project, work / "salida")
         digests = {file: hashlib.sha256((work / "salida" / file).read_bytes()).hexdigest() for file in files}
         return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **digests}
-    if name in ETABS:
-        data, _, _ = import_etabs(WORKBOOK, project)
+    if name in ETABS or name in COMBINED_ETABS:
+        data = import_etabs(WORKBOOK, project)[0] if name in ETABS else import_etabs_footings(*REACTIONS, project)[0]
         project = work / "etabs.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     report_file(project, work / "salida")
     return {file: hashlib.sha256((work / "salida" / file).read_bytes()).hexdigest() for file in ("resultado.json", "memoria.txt")}
 
 
-@pytest.mark.parametrize("name", [*EXAMPLES, *ETABS])
+@pytest.mark.parametrize("name", [*EXAMPLES, *ETABS, *COMBINED_ETABS])
 def test_fingerprint_is_stable(name: str, tmp_path: Path) -> None:
     current = _fingerprint(name, tmp_path)
     stored = json.loads(FINGERPRINTS.read_text(encoding="utf-8")) if FINGERPRINTS.exists() else {}

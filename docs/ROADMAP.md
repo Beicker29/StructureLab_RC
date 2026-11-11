@@ -3,8 +3,8 @@
 Herramienta de oficina. La v1 cubre vigas con los perfiles `aci-318-25` y `nsr-10`.
 Cada fase se cierra con pruebas, huella y decisiones registradas antes de abrir la siguiente.
 
-**Orden vigente:** cerradas las subfases 2A, 2B, 2C, 2E y 2F, sigue la v3 (zapatas). Quedan pendientes
-la subfase 2D, las Fases 3 a 5 de vigas, las mejoras de la memoria y la v2.
+**Orden vigente (2026-11-10):** cerradas las subfases 2A, 2B, 2C, 2E y 2F y la v3 hasta V3J, los pendientes siguen el
+plan de etapas de la sección final, empezando por V3K (zapatas combinadas desde los Excel de ETABS).
 
 ## v1: vigas
 
@@ -87,8 +87,47 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
   V3J.1 modelo, entrada y revisión geotécnica; V3J.2 viga en la dirección larga con el código de vigas; V3J.3 franjas
   transversales, punzonamiento, desarrollo, aplastamiento y pasadores; V3J.4 memoria, ejemplos y documentación.
 
-Pendientes de la v3: diseño por tipologías con apoyos en distintos niveles de cimentación (hoy todas las zapatas usan el mismo relleno y el mismo pedestal del bloque `design`; los Excel de ejemplo tienen 4 niveles y por decisión del usuario no se considera ningún efecto por ahora), factores por estribos o espirales en el desarrollo (ψr, con vigas y columnas, D-071), empuje pasivo sobre el pedestal y suelo bajo nivel freático en la
-estabilidad (D-070), excepción de viviendas para el concreto simple en cimentaciones con sismo alto (D-072), en zapatas combinadas los efectos de Vy y de las columnas desplazadas en Y sobre la viga larga (torsión) y las franjas (D-080), el
-punzonamiento de dos columnas cuyos perímetros críticos se traslapan (columnas muy juntas: hoy cada una se revisa por
-separado, D-082), la franja transversal de una columna donde la presión del suelo es nula (hoy BLOCKED, D-082), vigas de gran altura (ACI 318-25 9.9, NSR-10 C.11.7: luz libre ≤ 4h o cargas concentradas a menos de 2h del apoyo), en vigas y en la viga larga de las zapatas combinadas, zapatas combinadas de otras formas o con más de dos columnas, medianeras con viga de amarre, losas de cimentación, pilotes, zapatas
-escalonadas, zapatas rotadas, pedestal de sección distinta a la columna y muros (D-052, D-055).
+## Plan de los pendientes (2026-11-10)
+
+Una etapa por vez; cada punto con su plan, oráculo, pruebas y huella antes del siguiente.
+
+**Etapa 1. Zapatas en uso: entrada y resultados de ETABS**
+1. **V3K Zapatas combinadas desde los Excel de ETABS (hecha, D-084):** plantilla con las dos columnas de cada zapata por el Unique
+   Name de su nodo; por zapata, las cargas de servicio y las mayoradas salen de los Excel (`etabs`) o de la plantilla
+   (`json`), así sirve solo el Excel de servicio, solo el de últimas o ambos.
+2. Correr de nuevo el diseño por tipologías desde ETABS con D-079 (N = 6 y curva costo–N), diferido.
+3. Limpiar las salidas viejas de `results/` (hecho: `results/etabs/` y las corridas e3a/e3b).
+
+**Etapa 2. Zapatas combinadas completas** (D-080 a D-083)
+1. Franja transversal de una columna donde la presión del suelo es nula (hoy BLOCKED).
+2. Punzonamiento de dos columnas cuyos perímetros críticos se traslapan: perímetro común (hoy cada una por separado).
+3. Vy y columnas desplazadas en Y: carga directa en las franjas (Mx + H·Vy) y torsión en la viga larga (consultar el
+   tratamiento de la torsión en cimentaciones).
+4. Vigas de gran altura (ACI 318-25 9.9, NSR-10 C.11.7: luz libre ≤ 4h o cargas concentradas a menos de 2h del apoyo),
+   en vigas y en la viga larga.
+
+**Etapa 3. Geotecnia y estabilidad**
+1. Empuje pasivo sobre el pedestal y suelo bajo nivel freático (D-070).
+2. Diseño por tipologías con apoyos en distintos niveles de cimentación (hoy todas las zapatas usan el mismo relleno y el
+   mismo pedestal del bloque `design`; los Excel de ejemplo tienen 4 niveles).
+
+**Etapa 4. Desarrollo y concreto simple**
+1. Factores por estribos o espirales en el desarrollo (ψr, D-071), junto con las columnas.
+2. Excepción de viviendas de una o dos familias para el concreto simple en cimentaciones con sismo alto (D-072).
+
+**Etapa 5. Tipos de cimentación nuevos, uno por vez** (D-052, D-055)
+1. Medianera con viga de amarre (pausada, con 7 preguntas abiertas).
+2. Zapatas combinadas de otras formas o con más de dos columnas.
+3. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
+4. Losas de cimentación.
+5. Pilotes y dados.
+6. Muros.
+
+**Etapa 6. Lo que falta de vigas (v1)**
+1. 2D Servicio: espesor mínimo y deflexiones (requieren cargas de servicio en la entrada, D-017).
+2. Torsión: reducción de compatibilidad, Aℓ en la zona comprimida y secciones huecas.
+3. Fase 3 (sísmica), Fase 4 (diseño) y Fase 5 (despiece y dibujo).
+
+**Etapa 7. v2 y revisión de referencias**
+1. Columnas, luego losas y muros; interfaz web y API.
+2. Páginas restantes de la fe de erratas del ACI 318-25 (C-016), cuando estén disponibles.

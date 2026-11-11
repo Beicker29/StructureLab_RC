@@ -80,8 +80,13 @@ def _import_etabs(workbook: Path, template: Path, output: Path) -> int:
     return 0
 
 
-def _import_etabs_footings(service: Path, factored: Path, template: Path, output: Path) -> int:
-    project, summary, check = import_etabs_footings(service, factored, template)
+def _optional_path(value: str) -> Path | None:
+    """Un Excel de ETABS, o "-" para omitirlo (D-084)."""
+    return None if value == "-" else Path(value)
+
+
+def _import_etabs_footings(service: str, factored: str, template: Path, output: Path) -> int:
+    project, summary, check = import_etabs_footings(_optional_path(service), _optional_path(factored), template)
     print(f"{check.name}: {check.status}")
     _print_errors(check)
     if project is None or summary is None or check.status is Status.FAIL:
@@ -253,8 +258,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     importer.add_argument("--output", type=Path, required=True, help="ruta del proyecto JSON a escribir")
     footings = commands.add_parser("import-etabs-footings",
                                    help="genera un proyecto de zapatas desde las reacciones de ETABS y una plantilla")
-    footings.add_argument("service", type=Path, help="Excel de ETABS con las reacciones de servicio (Joint Reactions)")
-    footings.add_argument("factored", type=Path, help="Excel de ETABS con las reacciones mayoradas (Joint Reactions)")
+    footings.add_argument("service", help="Excel de ETABS con las reacciones de servicio (Joint Reactions), o - para omitirlo")
+    footings.add_argument("factored", help="Excel de ETABS con las reacciones mayoradas (Joint Reactions), o - para omitirlo")
     footings.add_argument("template", type=Path, help="plantilla JSON con los tipos de zapata y el suelo")
     footings.add_argument("--output", type=Path, required=True, help="ruta del proyecto JSON a escribir")
     designer = commands.add_parser("design-footings", help="disena zapatas por tipologias desde un proyecto de diseno")
