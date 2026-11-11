@@ -1045,6 +1045,27 @@
   punzonamiento del manual (459.4 kips) no se compara: resta la presión bruta; aquí la neta (478.7 kips).
 - **Consecuencia:** con el control de fisuración de vigas, las franjas con recubrimiento de 75 mm y la malla y en
   segunda capa piden separaciones de ≈120 mm; el armado transversal del manual (#7 @ 6 in) no cumpliría.
+  Decisión del usuario: se conserva el control de fisuración en las franjas.
+
+### D-083: refuerzo superficial y esfuerzos de punzonamiento por esquina
+
+- **Fecha:** 2026-11-10
+- **Referencias:** ACI 318-25 9.7.2.3 y 24.3.2; NSR-10 C.10.6.7 y C.10.6.4.
+- **Decisión del usuario:** aplicar el refuerzo superficial y reportar en las memorias los esfuerzos de punzonamiento.
+  1. Refuerzo superficial en el código de vigas, con un rol de capa nuevo, `skin`, que no cuenta como As (como la
+     torsión, D-027). Con h mayor que 900 mm, en cada cara lateral debe haber barras de piel en la zona de h/2 desde la
+     cara en tracción, y la mayor separación entre la capa en tracción, las barras de piel (de la más cercana a la más
+     lejana) y el límite h/2 no excede el control de agrietamiento con fs = (2/3)·fy y cc la distancia libre de la barra
+     de piel a la cara lateral. Sin barras de piel en una cara, FAIL. Lectura propia de "uniformemente distribuido en h/2"
+     (la norma no fija cómo medirlo): cuenta también el tramo de la última barra al límite h/2.
+  2. En la zapata combinada aplica a la viga larga, cuyas caras laterales son las caras largas de la zapata (campo
+     `skin`: barra y separación vertical, al recubrimiento de la cara, desde la capa inferior hacia arriba sin llegar a
+     la superior). No aplica a las franjas transversales: sus caras laterales quedan dentro del concreto.
+  3. El punzonamiento reporta, además de vu, el esfuerzo en cada esquina del perímetro crítico (cortante directo más el
+     del momento transferido en los dos ejes, con la carga neta de Bellos dentro del área crítica), Msc, Jc y el
+     centroide del perímetro; gobierna la esquina de mayor esfuerzo. Valores `esquina i x`, `esquina i y`, `esquina i v`,
+     ordenadas por y y luego por x. Aplica a las zapatas aisladas y a las combinadas.
+- **Pendiente anotado:** vigas de gran altura (ACI 9.9, NSR-10 C.11.7).
 
 ## Consultas abiertas
 

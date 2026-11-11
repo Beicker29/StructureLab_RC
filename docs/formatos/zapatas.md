@@ -125,6 +125,7 @@ La memoria llega en V3J.4.
 | `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
 | `top` | | Barras superiores paralelas a X (`designation`, `spacing`, `end`: `straight` o `hook`, como el `end` de la malla), opcional: sin ellas, el momento negativo se revisa como concreto simple (D-072). |
 | `stirrups` | | Estribos de la dirección larga, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
+| `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 
@@ -256,7 +257,7 @@ H = h + altura del pedestal. Las excentricidades son ex = My base/N y ey = −Mx
 | Franja central malla … | Zapata rectangular: As en la franja frente a γs·As. | ACI 13.3.3.3; NSR-10 C.15.4.4.2 |
 | Altura mínima de la zapata | 150 mm, medidos como pide cada perfil. | ACI 13.3.1.2; NSR-10 C.15.7 |
 | Cortante en una dirección (barras x o y) | Por caso mayorado: Vu de la carga neta más allá de la sección a d de cada cara frente a φVc, con la d de esa dirección. | ACI 13.2.6.2(a) y 13.2.7.2; NSR-10 C.15.5 y C.11.2 |
-| Punzonamiento | Por caso mayorado: esfuerzo máximo vu = Vu/(b0·d) + γv·Msc·c/Jc en los dos ejes, en el perímetro a d/2 (recortado con la base: αs = 40, 30 o 20), frente a φvc. Valores: Vu, b0, d, αs, γv y vuv. | ACI 22.6.5.2, 22.6.5.3 y 8.4.4.2; NSR-10 C.11.11.2.1 y C.11.11.7 |
+| Punzonamiento | Por caso mayorado: esfuerzo máximo vu = Vu/(b0·d) + γv·Msc·c/Jc en los dos ejes, en el perímetro a d/2 (recortado con la base: αs = 40, 30 o 20), frente a φvc. Valores: Vu, b0, d, αs, γv, vuv, Msc y Jc en cada eje, el centroide del perímetro (xc, yc) y el esfuerzo en cada esquina (`esquina i x`, `esquina i y`, `esquina i v`, D-083). | ACI 22.6.5.2, 22.6.5.3 y 8.4.4.2; NSR-10 C.11.11.2.1 y C.11.11.7 |
 | Acero mínimo por punzonamiento (barras x o y) | Solo ACI, cuando vuv > φ0.17√f'c: As,min de 8.6.1.2 frente a las barras de la malla inferior dentro de bslab. | ACI 8.6.1.2 |
 | Desarrollo malla … (barras x o y) | Longitud de desarrollo (recta o con gancho) frente a la disponible desde la cara de la columna hasta el extremo de la barra. La superior, solo con momento negativo. | ACI 25.4.2 y 25.4.3; NSR-10 C.12.2 y C.12.5 |
 | Pasadores: área mínima | Área de los pasadores frente a 0.005 por el área de la columna. | ACI 16.3.4.1; NSR-10 C.15.8.2.1 |

@@ -50,7 +50,7 @@ El programa calcula el área bruta, el ancho del ala y las alas efectivas a tors
 | `z` | mm | Posición a lo largo del miembro, desde el extremo inicial. |
 | `case` | texto | Nombre del estado de carga (opcional, informativo). |
 | `layout.layers[].depth` | mm | Profundidad del centro de la capa, desde la fibra superior. |
-| `layout.layers[].role` | texto | `flexure` (As de flexión) o `torsion` (Aℓ; no cuenta como As). |
+| `layout.layers[].role` | texto | `flexure` (As de flexión), `torsion` (Aℓ; no cuenta como As) o `skin` (refuerzo superficial en las caras laterales, D-083; no cuenta como As). |
 | `layout.layers[].bars` | lista | Tres formas: solo designaciones (`["#6", "#6"]`, repartidas entre las esquinas del estribo); barras con posición (`{"designation": "#6", "x": 60}`, x desde la cara −3 del alma); o barras por separación (`{"designation": "#4", "spacing": 200, "from": -300, "to": 600}`, para la malla del ala). |
 | `layout.stirrups.designation` | texto | Barra del estribo, del catálogo (`structurelab-rc catalog`). |
 | `layout.stirrups.legs` | - | Número de ramas verticales (≥ 2). |
@@ -92,6 +92,7 @@ Cada verificación de `resultado.json` tiene:
 | Flexión: resistencia | φMn biaxial con Pn = Pu frente a Mu y M2; valores `phi`, `Mn3`, `Mn2`, `theta` (orientación del eje neutro), `c`, `et`. |
 | Flexión: deformación neta de tracción (M3, M2, biaxial) | εt mínima del perfil frente a la εt de cada estado. |
 | Flexión: acero mínimo (M3, M2) | As,min frente al acero a tracción del lado en tracción (más allá de la mitad de la altura), con d ≥ 0.8h; si As < As,min, basta 4/3 del As requerido por el momento de la estación (ACI 9.6.1.3, NSR-10 C.10.5.3; valores `As,min` y `As analisis`). |
+| Flexión: refuerzo superficial | Solo con h > 900 mm (ACI 9.7.2.3, NSR-10 C.10.6.7): en cada cara lateral, la mayor separación entre la capa en tracción, las barras `skin` y el límite h/2 frente al control de agrietamiento con cc a la cara lateral; sin barras de piel en una cara, FAIL. |
 | Flexión: separación por fisuración | Separación entre barras vecinas de la capa más cercana a la cara en tracción frente a 380·(280/fs) − 2.5·cc ≤ 300·(280/fs), fs = 2/3·fy (ACI 24.3.2, NSR-10 C.10.6.4); con una sola barra, el ancho de esa cara. Valores `cc` y `barras`. |
 | Cortante: resistencia, dimensiones de la sección, refuerzo mínimo, separación máxima | Vc + Vs, límite de la sección, Av,min y separaciones en la dirección V2. |
 | Cortante V3: ... | Las mismas verificaciones en la dirección V3; d ≥ 0.8bw. |

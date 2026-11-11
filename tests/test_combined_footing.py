@@ -165,6 +165,13 @@ def test_column_checks_match_oracle(profile: str, case: dict[str, Any]) -> None:
             assert values["As,min"] == pytest.approx(item["as_min"], rel=tolerance), key
         if "analysis" in item:
             assert values["As analisis"] == pytest.approx(item["analysis"], rel=tolerance, abs=1e-6), key
+        if "corners" in item:
+            # Esfuerzo de punzonamiento en cada esquina del perímetro crítico, ordenadas por y y luego por x.
+            for index, (x, y, stress) in enumerate(item["corners"], start=1):
+                assert values[f"esquina {index} x"] == pytest.approx(x, abs=1e-6), key
+                assert values[f"esquina {index} y"] == pytest.approx(y, abs=1e-6), key
+                assert values[f"esquina {index} v"] == pytest.approx(stress, rel=tolerance), key
+            assert f"esquina {len(item['corners']) + 1} v" not in values
         if "clause" in item:
             assert check.clause == item["clause"], key
 

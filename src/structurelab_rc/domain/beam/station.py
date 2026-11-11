@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import replace
 
 from structurelab_rc.codes.registry import Profile
-from structurelab_rc.domain.beam.flexure import flexure_checks
+from structurelab_rc.domain.beam.flexure import flexure_checks, skin_check
 from structurelab_rc.domain.beam.shear import interaction_check, missing_demands, shear_checks, weak_shear_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.beam.torsion import TRANSVERSE, threshold_check, torsion_checks
@@ -54,7 +54,9 @@ def checks_for(given: StationInput) -> tuple[Check, ...]:
     if blocking is not None:
         checks: tuple[Check, ...] = (blocking,)
     else:
-        checks = (*flexure_checks(profile, materials, member, station, bars), *_shear_and_torsion(given))
+        skin = skin_check(given)
+        flexure = flexure_checks(profile, materials, member, station, bars)
+        checks = (*flexure, *(() if skin is None else (skin,)), *_shear_and_torsion(given))
     return tuple(replace(check, member=member.id, z=station.z, case=station.case) for check in checks)
 
 

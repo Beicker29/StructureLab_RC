@@ -11,6 +11,7 @@ from structurelab_rc.domain.beam.flexure import (
     NET_TENSILE_STRAIN,
     NET_TENSILE_STRAIN_BIAXIAL,
     NET_TENSILE_STRAIN_M2,
+    SKIN,
     STRENGTH,
 )
 from structurelab_rc.domain.beam.station import SCOPE, station_checks
@@ -203,3 +204,39 @@ def test_weak_axis_minimum_reinforcement_uses_h_and_the_total_width() -> None:
     # Ancho h = 500 mm y d no menor que 0.8·bw = 240 mm: el mayor entre 0.25√f'c/fy y 1.4/fy por h·d.
     depth = check.demand / (1.4 / 420.0 * 500.0)  # type: ignore[operator]
     assert depth >= 240.0 - 1e-6
+
+
+def _skin_layer(depth: float, bw: float = 400.0) -> dict[str, Any]:
+    inset = 40.0 + 12.7 / 2
+    return {"bars": [{"designation": "#4", "x": inset}, {"designation": "#4", "x": bw - inset}], "depth": depth, "role": "skin"}
+
+
+@pytest.mark.parametrize("profile", ["aci-318-25", "nsr-10"])
+@pytest.mark.parametrize(("skin", "status", "gap"), [
+    ([740.0, 540.0], Status.PASS, 200.0),
+    ([600.0], Status.FAIL, 340.0),
+    ([900.0], Status.FAIL, 400.0),  # la última barra de piel queda lejos de h/2
+])
+def test_skin_reinforcement_of_a_deep_beam(profile: str, skin: list[float], status: Status, gap: float) -> None:
+    """h > 900 mm: barras de piel en las dos caras dentro de h/2 desde la cara en tracción; la mayor separación entre la
+    capa en tracción (940), las de piel y h/2 (500) frente a 380·280/fs − 2.5·cc ≤ 300·280/fs con cc a la cara lateral
+    (ACI 9.7.2.3, NSR-10 C.10.6.7; D-083). Las barras de piel no cuentan como As."""
+    layers = [{"bars": ["#8", "#8", "#8", "#8"], "depth": 940.0, "role": "flexure"}, *(_skin_layer(depth) for depth in skin)]
+    member = _member(layers, {"Pu_kN": 0.0, "Mu_kNm": 400.0, "M2_kNm": 0.0}, section={"bw": 400.0, "h": 1000.0, "cover": 40.0})
+    checks = _checks(member, profile)
+    fs = 2 / 3 * MATERIALS.fy
+    cc = 40.0
+    assert checks[SKIN].status is status
+    assert checks[SKIN].demand == pytest.approx(gap)
+    assert checks[SKIN].capacity == pytest.approx(min(380 * 280 / fs - 2.5 * cc, 300 * 280 / fs))
+    plain = _checks(_member(layers[:1], {"Pu_kN": 0.0, "Mu_kNm": 400.0, "M2_kNm": 0.0},
+                            section={"bw": 400.0, "h": 1000.0, "cover": 40.0}), profile)
+    assert checks[STRENGTH].capacity == pytest.approx(plain[STRENGTH].capacity)
+
+
+def test_deep_beam_without_skin_reinforcement_fails_and_shallow_beams_skip_it() -> None:
+    layers = [{"bars": ["#8", "#8", "#8"], "depth": 940.0, "role": "flexure"}]
+    deep = _checks(_member(layers, {"Pu_kN": 0.0, "Mu_kNm": 300.0, "M2_kNm": 0.0}, section={"bw": 400.0, "h": 1000.0, "cover": 40.0}))
+    assert deep[SKIN].status is Status.FAIL
+    assert "Falta el refuerzo superficial" in deep[SKIN].errors[0].message
+    assert SKIN not in _checks(_member(BOTTOM, {"Pu_kN": 0.0, "Mu_kNm": 180.0, "M2_kNm": 0.0}))

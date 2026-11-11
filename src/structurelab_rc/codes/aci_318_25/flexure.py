@@ -7,6 +7,7 @@ _PHI_TENSION = 0.90
 _TRANSITION_SPAN = 0.003
 _FY_MAX_AS_MIN = 550.0
 _EXEMPTION_FACTOR = 4 / 3
+_SKIN_DEPTH = 900.0
 _CRACK_SPACING = 380.0
 _CRACK_SPACING_CAP = 300.0
 _CRACK_STRESS = 280.0
@@ -21,6 +22,7 @@ def clauses() -> dict[str, str]:
         "axial_limit": "9.5.2.1",
         "min_reinforcement": "9.6.1.2",
         "min_reinforcement_exception": "9.6.1.3",
+        "skin": "9.7.2.3",
         "crack_spacing": "24.3.2 y 24.3.2.1",
     }
 
@@ -71,6 +73,12 @@ def crack_control_spacing(fy: float, cc: float) -> float:
     (24.3.2.1) y cc la menor distancia de la superficie del refuerzo a la cara en tracción; en mm."""
     fs = _SERVICE_STRESS * fy
     return min(_CRACK_SPACING * _CRACK_STRESS / fs - _CRACK_COVER * cc, _CRACK_SPACING_CAP * _CRACK_STRESS / fs)
+
+
+def skin_reinforcement_depth() -> float:
+    """9.7.2.3: con h mayor que 900 mm, refuerzo superficial longitudinal en las dos caras laterales, en h/2 desde la cara en
+    tracción, con la separación de 24.3.2 y cc a la cara lateral; en mm."""
+    return _SKIN_DEPTH
 
 
 def determinate_flange_width(bw: float, bf: float) -> float:

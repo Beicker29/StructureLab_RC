@@ -24,6 +24,7 @@ NET_TENSILE_STRAIN_BIAXIAL = "Flexion: deformacion neta de traccion (biaxial)"
 MIN_REINFORCEMENT = "Flexion: acero minimo (M3)"
 MIN_REINFORCEMENT_M2 = "Flexion: acero minimo (M2)"
 CRACK_SPACING = "Flexion: separacion por fisuracion"
+SKIN = "Flexion: refuerzo superficial"
 # d de As,min, del cortante y de la torsión: no menor que 0.8h (D-043).
 MIN_DEPTH_RATIO = 0.8
 _BISECTION_STEPS = 200
@@ -203,6 +204,50 @@ def _weak_min_reinforcement(given: StationInput, weak: SectionState, m2: float) 
     depth = max(centroid, MIN_DEPTH_RATIO * section.flange_width)
     required = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, section.h, depth)
     return _min_check(profile, MIN_REINFORCEMENT_M2, (required, abs(m2)), provided, _weak_design(given, weak))
+
+
+def _face_gaps(depths: list[float], start: float, end: float) -> float:
+    """Mayor separación a lo largo de una cara lateral: de la capa en tracción (start) a las barras de piel y de la
+    última al límite h/2 (end)."""
+    ordered = sorted(depths, key=lambda depth: abs(depth - start))
+    points = [start, *ordered, end]
+    return max(abs(b - a) for a, b in zip(points, points[1:], strict=False))
+
+
+def skin_check(given: StationInput) -> Check | None:
+    """Refuerzo superficial (ACI 9.7.2.3, NSR-10 C.10.6.7; D-083): con h mayor que el límite del perfil, barras de piel en
+    las dos caras laterales dentro de h/2 desde la cara en tracción; en cada cara, la mayor separación entre la capa en
+    tracción, las barras de piel y el límite h/2 no excede el control de agrietamiento con cc a la cara lateral. None si
+    no aplica (h menor o sin caras laterales libres)."""
+    profile, materials, section = given.profile, given.materials, given.member.section
+    if not given.side_faces or section.h <= profile.flexure.skin_reinforcement_depth():
+        return None
+    clause = profile.flexure.clauses()["skin"]
+    mu = given.station.demands.mu or 0.0
+    if mu == 0:
+        return Check(SKIN, Status.PASS, clause=clause, note="Sin momento no hay cara en traccion")
+    placed = placed_bars(given.station.layout, section, given.bars)
+    bottom = mu > 0
+    flexure = [bar.depth for bar in placed if bar.role == "flexure"]
+    start = max(flexure) if bottom else min(flexure)
+    half = section.h / 2
+    in_zone = [bar for bar in placed if bar.role == "skin" and (bar.depth >= half if bottom else bar.depth <= half)]
+    worst: tuple[float, float, float, str] | None = None  # razón, s, s máx, cara
+    for name, own in (("izquierda", [bar for bar in in_zone if bar.x <= section.bw / 2]),
+                      ("derecha", [bar for bar in in_zone if bar.x > section.bw / 2])):
+        if not own:
+            error = invalid_input(f"Falta el refuerzo superficial en la cara lateral {name} (h > "
+                                  f"{profile.flexure.skin_reinforcement_depth():.0f} mm)")
+            return Check(SKIN, Status.FAIL, (error,), clause)
+        cc = min(min(bar.x, section.bw - bar.x) - bar.diameter / 2 for bar in own)
+        limit = profile.flexure.crack_control_spacing(materials.fy, cc)
+        gap = _face_gaps([bar.depth for bar in own], start, half)
+        if worst is None or gap / limit > worst[0]:
+            worst = (gap / limit, gap, limit, name)
+    assert worst is not None
+    _, gap, limit, name = worst
+    return Check(SKIN, Status.PASS if gap <= limit else Status.FAIL, clause=clause, demand=gap, capacity=limit, unit="mm",
+                 note=f"Gobierna la cara lateral {name}; zona de h/2 desde la cara {'inferior' if bottom else 'superior'}")
 
 
 def _crack_check(given: StationInput, mu: float) -> Check:

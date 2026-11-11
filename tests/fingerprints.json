@@ -13,12 +13,12 @@
   },
   "examples/aci_318_25/zapatas/diseno_tipologias.json": {
     "proyecto.json": "19de511a877e34828ab42332f1c93757f8702eb2658d6f8518ea3d68c4f64acf",
-    "resultado.json": "90cf3d9c0f7c627b4e7552bf7033d6bad47018e83e9db7f2636f106f8f891688",
-    "memoria.txt": "1431d0c2bc9f3bfed24c5662fb993290a9a1da203c1c7b9ee0e0dbe5d6e3ad80"
+    "resultado.json": "494244262c7935775df167065a92f489b51769426b54797ea897e7b96c276d16",
+    "memoria.txt": "8e37ac7322d27b7d950d64ffc3faf59b680e7f6cd2ae09fa9e8ea170d9f6df8e"
   },
   "examples/aci_318_25/zapatas/zapata_aislada.json": {
-    "resultado.json": "eca1ef28e0dee95409da41938bd6dc2e382a9de7d708b8f3e87a2f3c7cf4c490",
-    "memoria.txt": "02fac538e6f838f063c0725943725fa3123a65386f4137e8d8342d8f0a820f73"
+    "resultado.json": "38347e839a8a4c6e451be27db8e9ba2c887cdf8b4ef52a017c03f74fff96d828",
+    "memoria.txt": "d9fd7cebf907f0c504c5de9c09625b1b1e9fabea5475c8703d7b5f28ba1f470e"
   },
   "examples/nsr_10/vigas/plantilla_vigas_etabs.json": {
     "resultado.json": "f2b6501bcdd28b757cea660fad065c2dce780ceb6dcdc47871def5b688a05345",
@@ -34,11 +34,11 @@
   },
   "examples/nsr_10/zapatas/diseno_tipologias.json": {
     "proyecto.json": "f0e06a7caa282ff1940263118bb90b0a3a22cd6002aee78a8048bae14d7960f3",
-    "resultado.json": "b687fd49aefc57d9b6aac33e9617d10ffbe5c56d49d855b5d5096c685c1b050f",
-    "memoria.txt": "87b7567dfd4ec27dd583b82bdaadebed642e418bdd73691e7ee4a45a3573b1ae"
+    "resultado.json": "97b69d4b770b93e8d56c9a43a3c45ac27ad2021a4408ebd2ee01d8e4dc935ab6",
+    "memoria.txt": "b02a035255487e3b217c57d335dc4ccea3e88b6e4ea9e7b231649995769ea68f"
   },
   "examples/nsr_10/zapatas/zapata_aislada.json": {
-    "resultado.json": "b2725317f917274f635c1f9bf1f542506e6b2763406e114ef564664e31281ea9",
-    "memoria.txt": "3391b65d4cc054ce2eaf0c28f8ddc2a96464f4d76893a23f2221c8c76fc82248"
+    "resultado.json": "49aa03c26e3f2d579d690a5deb8d13c6282f99740fa03deae57baac744c020c7",
+    "memoria.txt": "7bf8f5040eedb1bad3a86f8195178fcea1c1079070100c527cd41e175caa76ae"
   }
 }

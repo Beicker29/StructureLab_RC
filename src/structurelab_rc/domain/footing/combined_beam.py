@@ -18,6 +18,7 @@ cimentación). Lo propio de la zapata: sin barras superiores, el momento negativ
 cambian la viga: actúan en el sentido transversal (su torsión queda pendiente, D-080).
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
 from structurelab_rc.domain.basis import Basis
@@ -30,6 +31,7 @@ from structurelab_rc.domain.footing.flexure import plain_check
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_row
 from structurelab_rc.domain.status import Status
+from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import FootingLoad, Soil
 from structurelab_rc.model.project import Demands, Member, Section, Station
@@ -40,6 +42,7 @@ BARS = {"bottom": "barras inferiores x", "top": "barras superiores x"}
 _SUBDIVISIONS = 64
 _BISECTION_STEPS = 200
 _EDGE = 1e-6
+_TOUCH = 1.0  # mm: una barra de piel a menos de esto de la capa superior se omite
 
 
 @dataclass(frozen=True)
@@ -168,9 +171,29 @@ def _at_face_shear(beam: BeamCase, section: CriticalSection, depth: float) -> Cr
     return section
 
 
-def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None]) -> tuple[Section, ReinforcementLayout]:
+def _skin_layers(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], bars: Sequence[RebarSpec]) -> list[BarLayer]:
+    """Refuerzo superficial (D-083): una barra en cada cara lateral, a la separación vertical declarada desde la capa
+    inferior hacia arriba, sin llegar a la capa superior (o al recubrimiento si no hay barras superiores)."""
+    if footing.skin is None:
+        return []
+    spec = next(bar for bar in bars if bar.designation == footing.skin.designation)
+    bottom, top = rows
+    limit = footing.h - top.depth if top is not None else footing.cover + spec.diameter_mm / 2
+    inset = footing.cover + spec.diameter_mm / 2
+    layers = []
+    depth = bottom.depth - footing.skin.spacing
+    while depth > limit + _TOUCH:
+        layers.append(BarLayer(depth=depth, role="skin", bars=(BarPosition(designation=spec.designation, x=inset),
+                                                               BarPosition(designation=spec.designation, x=footing.ly - inset))))
+        depth -= footing.skin.spacing
+    return layers
+
+
+def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None],
+                bars: Sequence[RebarSpec]) -> tuple[Section, ReinforcementLayout]:
     """La viga larga como viga: sección B × h con el recubrimiento de la zapata, las barras inferiores y superiores x
-    como capas (x desde la cara −Y, profundidad desde la cara superior) y los estribos declarados (D-081)."""
+    como capas (x desde la cara −Y, profundidad desde la cara superior), el refuerzo superficial y los estribos
+    declarados (D-081, D-083)."""
     bottom, top = rows
     half = footing.ly / 2
     layers = [BarLayer(depth=bottom.depth, role="flexure",
@@ -178,6 +201,7 @@ def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None]) ->
     if top is not None:
         layers.insert(0, BarLayer(depth=footing.h - top.depth, role="flexure",
                                   bars=tuple(BarPosition(designation=top.designation, x=x + half) for x in top.positions)))
+    layers += _skin_layers(footing, rows, bars)
     return Section(bw=footing.ly, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
 
 
@@ -243,7 +267,7 @@ def long_beam_checks(
     """Las verificaciones de vigas en las secciones críticas de cada caso mayorado y la separación de las barras x."""
     bottom = mat_rows(footing, footing.bottom, basis.bars)["x"]
     top = top_row(footing, basis.bars)
-    section, layout = beam_member(footing, (bottom, top))
+    section, layout = beam_member(footing, (bottom, top), basis.bars)
     placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
     member = Member.model_construct(id=footing.id, type="beam", statically_determinate=None, length=footing.lx, section=section,
                                     stations=(placeholder,))

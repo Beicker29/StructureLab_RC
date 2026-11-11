@@ -104,8 +104,15 @@ def punching_checks(basis: Basis, footing: FootingBase, column: PunchedColumn, g
     if isinstance(result, StructuredError):
         return [Check(PUNCHING, Status.BLOCKED, (result,), clause, member=footing.id, case=case)]
     assert load is not None
-    values = (("Vu", load.force), ("b0", result.perimeter.length), ("d", result.perimeter.depth), ("alpha s", result.alpha_s),
-              ("gamma v x", result.gamma_v[0]), ("gamma v y", result.gamma_v[1]), ("vuv", result.vuv))
+    xc, yc = result.perimeter.centroid
+    values: tuple[tuple[str, float], ...] = (
+        ("Vu", load.force), ("b0", result.perimeter.length), ("d", result.perimeter.depth), ("alpha s", result.alpha_s),
+        ("gamma v x", result.gamma_v[0]), ("gamma v y", result.gamma_v[1]), ("vuv", result.vuv),
+        ("Msc x", load.moment_along_x), ("Msc y", load.moment_along_y), ("Jc x", result.jc[0]), ("Jc y", result.jc[1]),
+        ("xc", xc), ("yc", yc))
+    # Esfuerzo en cada esquina del perímetro (cortante directo más el del momento transferido); gobierna la mayor.
+    for index, (x, y, stress) in enumerate(result.corners, start=1):
+        values += ((f"esquina {index} x", x), (f"esquina {index} y", y), (f"esquina {index} v", stress))
     checks = [Check(PUNCHING, Status.PASS if result.vu <= result.phi_vc else Status.FAIL, clause=clause, member=footing.id,
                     case=case, demand=result.vu, capacity=result.phi_vc, unit="MPa", values=values, note=column.note)]
     checks.extend(replace(check, case=case) for check in _punching_minimum(profile, materials, (footing, column), result))

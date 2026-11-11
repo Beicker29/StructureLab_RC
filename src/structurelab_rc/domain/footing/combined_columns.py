@@ -153,7 +153,8 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
         for y, moment, shear, label in demands:
             station = Station.model_construct(z=y + footing.ly / 2, layout=member.stations[0].layout, case=pressure.case,
                                               demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))
-            given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
+            # Las caras laterales de la franja quedan dentro del concreto: sin refuerzo superficial (D-083).
+            given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
             for check in checks_for(given):
                 note = f"{title}, {label}" + (f": {check.note}" if check.note else "")
                 checks.append(replace(check, note=note))

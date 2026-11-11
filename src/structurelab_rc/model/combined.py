@@ -13,6 +13,14 @@ from structurelab_rc.model.reinforcement import Stirrups
 COLUMNS = 2
 
 
+class SkinBars(_Input):
+    """Refuerzo superficial en las caras laterales largas (y = ±ly/2) de la zapata combinada: barras paralelas a X a la
+    separación vertical spacing, al recubrimiento de la cara (ACI 9.7.2.3, NSR-10 C.10.6.7; D-083)."""
+
+    designation: str = Field(min_length=1)
+    spacing: PositiveFloat
+
+
 class TopBars(BarSet):
     """Barras superiores paralelas a X de la zapata combinada; end declara cómo terminan: rectas o con gancho estándar
     (D-082)."""
@@ -58,6 +66,7 @@ class CombinedFooting(_Input):
     bottom: Mat
     top: TopBars | None = None
     stirrups: Stirrups | None = None
+    skin: SkinBars | None = None
 
     @field_validator("surcharge_dead", "surcharge_live")
     @classmethod

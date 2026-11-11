@@ -109,7 +109,9 @@ def _punching(folder: str, f: dict, beam: dict, index: int, case: str) -> list[d
     gx, gy = 1 - 1 / (1 + 2 / 3 * math.sqrt(b1 / b2)), 1 - 1 / (1 + 2 / 3 * math.sqrt(b2 / b1))
     jx, jy = _S._jc(sides, depth, 0, xc), _S._jc(sides, depth, 1, yc)
     vuv = vu / (b0 * depth)
-    stress = max(vuv + gx * msx * (x - xc) / jx + gy * msy * (y - yc) / jy for x, y in {p for side in sides for p in side})
+    corners = sorted(([x, y, vuv + gx * msx * (x - xc) / jx + gy * msy * (y - yc) / jy] for x, y in {p for side in sides for p in side}),
+                     key=lambda corner: (corner[1], corner[0]))
+    stress = max(corner[2] for corner in corners)
     alpha = {0: 40.0, 1: 30.0, 2: 20.0}[outside]
     beta = max(c["cx"], c["cy"]) / min(c["cx"], c["cy"])
     if folder == "aci_318_25":
@@ -118,7 +120,7 @@ def _punching(folder: str, f: dict, beam: dict, index: int, case: str) -> list[d
         vc = min(0.17 * (1 + 2 / beta), 0.083 * (alpha * depth / b0 + 2), 0.33) * math.sqrt(FC)
     where = f"Columna {c['id']}"
     checks = [{"name": "Punzonamiento", "case": case, "where": where, "status": "PASS" if stress <= PHI * vc else "FAIL",
-               "demand": stress, "capacity": PHI * vc}]
+               "demand": stress, "capacity": PHI * vc, "corners": corners}]
     if folder == "aci_318_25" and vuv > PHI * 0.17 * math.sqrt(FC):
         for direction in ("x", "y"):
             row = rows[direction]

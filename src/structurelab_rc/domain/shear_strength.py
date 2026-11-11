@@ -22,7 +22,8 @@ def concrete_lambda(profile: Profile, materials: Materials) -> float | Structure
 
 @dataclass(frozen=True)
 class TwoWayShear:
-    """Esfuerzos en MPa y momentos en N·mm. vu es el máximo en el perímetro; vuv, el de la fuerza sin momento."""
+    """Esfuerzos en MPa y momentos en N·mm. vu es el máximo en el perímetro; vuv, el de la fuerza sin momento; corners,
+    el esfuerzo en cada esquina del perímetro (x, y, v), ordenadas por y y luego por x; jc, el Jc de cada eje."""
 
     vu: float
     vuv: float
@@ -30,6 +31,8 @@ class TwoWayShear:
     alpha_s: float
     gamma_v: tuple[float, float]
     perimeter: Perimeter
+    corners: tuple[tuple[float, float, float], ...] = ()
+    jc: tuple[float, float] = (0.0, 0.0)
 
 
 @dataclass(frozen=True)
@@ -61,8 +64,9 @@ def two_way_shear(
     gamma_y = 1 - shear.moment_transfer_fraction(y1 - y0, x1 - x0)
     jx, jy = perimeter.polar(0), perimeter.polar(1)
     xc, yc = perimeter.centroid
-    vu = max(vuv + gamma_x * load.moment_along_x * (x - xc) / jx + gamma_y * load.moment_along_y * (y - yc) / jy
-             for x, y in perimeter.corners())
+    corners = tuple(sorted(((x, y, vuv + gamma_x * load.moment_along_x * (x - xc) / jx + gamma_y * load.moment_along_y * (y - yc) / jy)
+                            for x, y in perimeter.corners()), key=lambda corner: (corner[1], corner[0])))
+    vu = max(corner[2] for corner in corners)
     beta = max(c1, c2) / min(c1, c2)
     vc = shear.punching_concrete_stress(fc=materials.fc, lam=lam, lam_s=lam_s, beta=beta, alpha_s=alpha_s, d=d, b0=b0)
-    return TwoWayShear(vu, vuv, shear.strength_reduction() * vc, alpha_s, (gamma_x, gamma_y), perimeter)
+    return TwoWayShear(vu, vuv, shear.strength_reduction() * vc, alpha_s, (gamma_x, gamma_y), perimeter, corners, (jx, jy))

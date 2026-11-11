@@ -52,9 +52,9 @@ PHI_SHEAR = _S.PHI
 SCAN, GOLDEN_STEPS = 4000, 200
 ECU, ES, BETA1 = 0.003, 200000.0, 0.85
 CLAUSES = {"aci_318_25": {"strength": "9.5.1.1(a) y Tabla 21.2.2", "min": "9.6.1.2 y 9.6.1.3", "crack": "24.3.2 y 24.3.2.1",
-                          "shear": "13.2.6.2(a) y 13.2.7.2", "min_shear": "13.3.2.1 y 7.6.3.1",
+                          "skin": "9.7.2.3", "shear": "13.2.6.2(a) y 13.2.7.2", "min_shear": "13.3.2.1 y 7.6.3.1",
                           "spacing": "13.3.2.1 y 7.7.2.3"},
-           "nsr_10": {"strength": "C.9.3.2.1 y C.9.3.2.2", "min": "C.10.5.1 y C.10.5.2 y C.10.5.3", "crack": "C.10.6.4",
+           "nsr_10": {"strength": "C.9.3.2.1 y C.9.3.2.2", "min": "C.10.5.1 y C.10.5.2 y C.10.5.3", "crack": "C.10.6.4", "skin": "C.10.6.7",
                       "shear": "C.15.5.1, C.15.5.2 y C.11.2", "min_shear": "C.11.4.6.1(a)", "spacing": "C.10.5.4"}}
 
 
@@ -202,6 +202,39 @@ def _design(profile: dict, layers: list[tuple[float, float]], b: float, h: float
     return 0.0 if state is None else _F._phi(state["et"], profile) * abs(state["Mn"])
 
 
+def _skin_check(folder: str, f: dict, rows: list[dict], moment: float) -> dict | None:
+    """Refuerzo superficial (ACI 9.7.2.3, NSR-10 C.10.6.7) en la viga larga con h > 900 mm: barras en las dos caras a la
+    separación vertical declarada desde la capa inferior hacia arriba; en la zona de h/2 desde la cara en tracción, la
+    mayor separación entre la capa en tracción, las barras de piel y el límite h/2 frente al control de agrietamiento
+    con cc = recubrimiento (cara lateral)."""
+    h = f["h"]
+    if h <= 900.0 or moment == 0:
+        return None
+    clause = CLAUSES[folder]["skin"]
+    skin = f.get("skin")
+    bottom_row = next(row for row in rows if row["face"] == "bottom")
+    top_row = next((row for row in rows if row["face"] == "top"), None)
+    tension_depth = bottom_row["depth"] if moment > 0 else (top_row["depth"] if top_row else bottom_row["depth"])
+    depths: list[float] = []
+    if skin:
+        db = BARS[skin["designation"]][0]
+        limit = top_row["depth"] if top_row else f["cover"] + db / 2
+        depth = bottom_row["depth"] - skin["spacing"]
+        while depth > limit + 1.0:
+            depths.append(depth)
+            depth -= skin["spacing"]
+    zone = [d for d in depths if (d >= h / 2 if moment > 0 else d <= h / 2)]
+    if not zone:
+        return {"name": "Flexion: refuerzo superficial", "status": "FAIL", "clause": clause}
+    ordered = sorted(zone, key=lambda d: abs(d - tension_depth))
+    points = [tension_depth, *ordered, h / 2]
+    gap = max(abs(b - a) for a, b in zip(points, points[1:], strict=False))
+    fs = 2 / 3 * FY
+    limit = min(380 * 280 / fs - 2.5 * f["cover"], 300 * 280 / fs)
+    return {"name": "Flexion: refuerzo superficial", "status": "PASS" if gap <= limit else "FAIL", "demand": gap,
+            "capacity": limit, "clause": clause}
+
+
 def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float, width: float | None = None) -> list[dict]:
     """Resistencia, εt (M3), As,min (M3) con la excepción de 4/3 y la separación por fisuración, como en las vigas. width:
     el ancho de la sección (por omisión, el de la viga larga, ly)."""
@@ -240,6 +273,10 @@ def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float, width
             effective = min(as_min, 4 / 3 * hi * provided)
             minimum.update(status="PASS" if provided >= effective else "FAIL", demand=effective, analysis=hi * provided)
     checks.append(minimum)
+    # El refuerzo superficial solo en la viga larga (width None): las franjas no tienen caras laterales libres (D-083).
+    skin = _skin_check(folder, f, rows, moment) if width is None else None
+    if skin is not None:
+        checks.append(skin)
     face = "bottom" if moment > 0 else "top"
     row = next(row for row in rows if row["face"] == face)
     fs = 2 / 3 * FY
@@ -360,6 +397,11 @@ CASES = [
      _footing([_column("C1", -2000.0, [_load("U1", 2200.0)]), _column("C2", 2000.0, [_load("U1", 2200.0)])], h=550.0,
               stirrups={"designation": "#4", "legs": 8, "spacing": 250.0, "closed": True},
               top={"designation": "#8", "spacing": 120.0, "end": "straight"})),
+    ("alta-con-piel", "h = 1000 mm (> 900): refuerzo superficial en las dos caras a 200 mm",
+     _footing([_column("C1", -2000.0, [_load("U1", 1800.0)]), _column("C2", 2000.0, [_load("U1", 1800.0)])], h=1000.0,
+              skin={"designation": "#4", "spacing": 200.0})),
+    ("alta-sin-piel", "h = 1000 mm sin refuerzo superficial: no cumple 9.7.2.3 / C.10.6.7",
+     _footing([_column("C1", -2000.0, [_load("U1", 1800.0)]), _column("C2", 2000.0, [_load("U1", 1800.0)])], h=1000.0)),
     ("minimo-excepcion", "cargas pequeñas: As < As,min de vigas pero ≥ 4/3 del requerido (excepción)",
      _footing([_column("C1", -1500.0, [_load("U1", 250.0)]), _column("C2", 1500.0, [_load("U1", 250.0)])], lx=4500.0,
               bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 250.0},

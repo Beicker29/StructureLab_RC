@@ -111,6 +111,8 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> I
         if column.band is not None:
             yield from _bar_set_errors(f"el refuerzo transversal bajo la columna '{column.id}'", column.band, specs, where)
         yield from _dowel_errors(column.dowels, specs, {**where, "column": column.id})
+    if footing.skin is not None and footing.skin.designation not in specs:
+        yield invalid_input(f"La barra '{footing.skin.designation}' del refuerzo superficial no esta en el catalogo", **where)
     if footing.stirrups is not None and footing.stirrups.designation not in specs:
         yield invalid_input(f"La barra '{footing.stirrups.designation}' de los estribos no esta en el catalogo", **where)
 

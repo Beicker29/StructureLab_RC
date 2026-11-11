@@ -37,13 +37,14 @@ class BarLayer(BaseModel):
 
     bars admite tres formas (D-040, D-045): solo designaciones, repartidas de forma uniforme en el alma entre las
     esquinas interiores del estribo; barras con posición x; o barras iguales por separación. role declara su función:
-    las capas de torsión (Aℓ) no cuentan como As de flexión (D-027).
+    las capas de torsión (Aℓ, D-027) y las de refuerzo superficial (skin, ACI 9.7.2.3 / NSR-10 C.10.6.7, D-083) no
+    cuentan como As de flexión.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     depth: PositiveFloat
-    role: Literal["flexure", "torsion"]
+    role: Literal["flexure", "torsion", "skin"]
     bars: tuple[str, ...] | tuple[BarPosition, ...] | BarSpacing
 
     @model_validator(mode="after")
