@@ -73,14 +73,15 @@ def _bar_set_errors(name: str, bar_set: BarSet, specs: dict[str, RebarSpec], whe
         yield invalid_input(f"La separacion de {name} no deja espacio libre", **where)
 
 
-def _layers_errors(layers: list[tuple[str, list[BarSet]]], h: float, cover: float, specs: dict[str, RebarSpec],
+def _layers_errors(layers: list[tuple[str, list[tuple[str, BarSet]]]], h: float, cover: float, specs: dict[str, RebarSpec],
                    where: dict[str, str]) -> Iterator[StructuredError]:
-    """Barras del catálogo con separación libre positiva, y las capas y los recubrimientos dentro del espesor h."""
+    """Barras del catálogo con separación libre positiva, y las capas y los recubrimientos dentro del espesor h. layers:
+    (nombre de la malla, [(dirección de las barras, barras)])."""
     thickness = 2 * cover
     for name, bar_sets in layers:
-        for index, bar_set in enumerate(bar_sets):
-            yield from _bar_set_errors(f"las barras {'xy'[index] if len(bar_sets) > 1 else 'x'} de la malla {name}", bar_set, specs, where)
-        thickness += sum(specs[bar_set.designation].diameter_mm for bar_set in bar_sets if bar_set.designation in specs)
+        for direction, bar_set in bar_sets:
+            yield from _bar_set_errors(f"las barras {direction} de la malla {name}", bar_set, specs, where)
+        thickness += sum(specs[bar_set.designation].diameter_mm for _, bar_set in bar_sets if bar_set.designation in specs)
     if thickness >= h:
         yield invalid_input("Las mallas y los recubrimientos no caben en el espesor de la zapata", **where)
 
@@ -93,9 +94,9 @@ def _dowel_errors(dowels: Dowels | None, specs: dict[str, RebarSpec], where: dic
 def _footing_errors(footing: Footing, specs: dict[str, RebarSpec]) -> Iterator[StructuredError]:
     """Barras del catálogo, separación libre positiva y mallas dentro del espesor."""
     where = {"member": footing.id}
-    layers = [("inferior", [footing.bottom.x, footing.bottom.y])]
+    layers = [("inferior", [("x", footing.bottom.x), ("y", footing.bottom.y)])]
     if footing.top is not None:
-        layers.append(("superior", [footing.top.x, footing.top.y]))
+        layers.append(("superior", [("x", footing.top.x), ("y", footing.top.y)]))
     yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
     yield from _dowel_errors(footing.column.dowels, specs, where)
 
@@ -104,9 +105,12 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], prof
     """Lo mismo para una zapata combinada (D-080): malla inferior, barras superiores en X, refuerzo transversal bajo cada
     columna y pasadores."""
     where = {"member": footing.id}
-    layers = [("inferior", [footing.bottom.x, footing.bottom.y])]
-    if footing.top is not None:
-        layers.append(("superior", [footing.top]))
+    layers = [("inferior", [("x", footing.bottom.x), ("y", footing.bottom.y)])]
+    # Superiores x y, debajo de ellas, las transversales (D-097): sus diámetros cuentan en el espesor.
+    top: list[tuple[str, BarSet]] = [(direction, bars) for direction, bars in (("x", footing.top), ("y", footing.top_transverse))
+                                     if bars is not None]
+    if top:
+        layers.append(("superior", top))
     yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
     for column in footing.columns:
         if column.band is not None:
@@ -128,7 +132,7 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], prof
 def _catalogued(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> bool:
     """Las barras de la viga larga (mallas, superiores, piel y estribos) están en el catálogo."""
     names = {footing.bottom.x.designation, footing.bottom.y.designation}
-    names |= {item.designation for item in (footing.top, footing.skin, footing.stirrups) if item is not None}
+    names |= {item.designation for item in (footing.top, footing.top_transverse, footing.skin, footing.stirrups) if item is not None}
     return names <= set(specs)
 
 

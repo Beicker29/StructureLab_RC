@@ -600,10 +600,15 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list
                 _bar_text(column.get("band"))] for column in footing["columns"]]
     reinforcement = footing["reinforcement"]
     top = reinforcement.get("top")
+    transverse = reinforcement.get("top_transverse")
     stirrups = reinforcement.get("stirrups")
     skin = reinforcement.get("skin")
+    # La T invertida aún no admite barras superiores transversales (D-097).
+    top_y = [] if g.get("beam") else [["Barras superiores y (todo el largo)",
+                                       _bar_text(transverse, f"; barras {_ENDS[transverse['end']]}" if transverse else "")]]
     bars = [["Malla inferior", _mat_text(reinforcement["bottom"])],
             ["Barras superiores x", _bar_text(top, f"; barras {_ENDS[top['end']]}" if top else "")],
+            *top_y,
             ["Estribos de la viga larga", "no hay" if stirrups is None else
              f"{stirrups['legs']} ramas {stirrups['designation']} c/{stirrups['spacing']:.0f} mm"],
             ["Refuerzo superficial (caras largas)", _bar_text(skin, " en vertical" if skin else "")],

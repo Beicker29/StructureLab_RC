@@ -49,7 +49,9 @@ def _one_way(profile: Profile, materials: Materials, footing: Footing, row: BarR
     assert worst is not None
     _, demand, capacity, face = worst
     return Check(name, Status.PASS if demand <= capacity else Status.FAIL, clause=clause, member=footing.id, case=case.case,
-                 demand=demand, capacity=capacity, unit="N", values=(("phi", phi), ("Vc", capacity / phi), ("d", row.depth)),
+                 demand=demand, capacity=capacity, unit="N",
+                 values=(("phi", phi), ("Vc", capacity / phi), ("bw", row.width), ("d", row.depth),
+                         ("rho w", row.area / (row.width * row.depth)), ("lambda", lam), ("fc", materials.fc)),
                  note=f"Seccion a d de la cara {face} de la columna")
 
 

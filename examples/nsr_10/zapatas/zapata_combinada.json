@@ -1,5 +1,5 @@
 {
-  "description": "Ejemplo de zapata combinada: ZC1 rectangular de 7.0 × 2.6 m bajo dos columnas (C1 de 500 × 500 mm cerca del borde −X y C2 de 550 × 550 mm), con cargas de servicio y mayoradas, sismo en X y refuerzo transversal (band) bajo cada columna. Fuerzas en la base de cada columna, ejes globales. Datos ilustrativos. Unidades: mm, MPa, kPa, kN/m2, kN/m3, kN y kN-m.",
+  "description": "Ejemplo de zapata combinada: ZC1 rectangular de 7.0 × 2.6 m bajo dos columnas (C1 de 500 × 500 mm cerca del borde −X y C2 de 550 × 550 mm), con cargas de servicio y mayoradas, sismo en X y refuerzo transversal (band) bajo cada columna y barras superiores transversales (top_transverse, D-097). Fuerzas en la base de cada columna, ejes globales. Datos ilustrativos. Unidades: mm, MPa, kPa, kN/m2, kN/m3, kN y kN-m.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",
@@ -207,6 +207,11 @@
       "top": {
         "designation": "#7",
         "spacing": 130.0,
+        "end": "straight"
+      },
+      "top_transverse": {
+        "designation": "#5",
+        "spacing": 300.0,
         "end": "straight"
       }
     }

@@ -148,7 +148,9 @@ def _flexure(basis: Basis, footing: CombinedFooting, row: BarRow, per_metre: flo
         if isinstance(strength, MomentStrength):
             checks.append(Check(FLEXURE, Status.PASS if strength.design >= moment * STRIP else Status.FAIL, clause=clause,
                                 demand=moment * STRIP, capacity=strength.design, unit="N*mm", member=footing.id, case=case,
-                                values=(("phi", strength.phi), ("Mn", strength.nominal), ("d", row.depth), ("As", per_metre)),
+                                values=(("phi", strength.phi), ("Mn", strength.nominal), ("b", STRIP), ("h", footing.h),
+                                        ("d", row.depth), ("As", per_metre), ("fc", materials.fc), ("fy", materials.fy),
+                                        ("a", strength.state.a)),
                                 note=note))
         else:
             checks.append(replace(check_from_errors(FLEXURE, [strength]), clause=clause, member=footing.id, case=case))
@@ -190,7 +192,9 @@ def _shear(basis: Basis, footing: CombinedFooting, row: BarRow, per_metre: float
                                                 rho_w=per_metre / (STRIP * row.depth), vu=vu, mu=mu)
     phi = profile.shear.strength_reduction()
     return Check(SHEAR, Status.PASS if vu <= phi * vc else Status.FAIL, clause=clause, demand=vu, capacity=phi * vc, unit="N",
-                 member=footing.id, case=case, values=(("phi", phi), ("Vc", vc), ("d", row.depth)),
+                 member=footing.id, case=case,
+                 values=(("phi", phi), ("Vc", vc), ("bw", STRIP), ("d", row.depth), ("rho w", per_metre / (STRIP * row.depth)),
+                         ("lambda", lam), ("fc", materials.fc)),
                  note=f"Aleta {_side(side)}, seccion a d de la cara de la viga en x = {x:.0f} mm, por metro")
 
 
@@ -235,7 +239,7 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
     checks += outside_checks(basis, footing, row, (MINIMUM, SPACING))
     cantilever = (footing.ly - footing.beam.width) / 2
     excess = steel_excess(basis, (STRIP, footing.h, row.depth), per_metre, largest * STRIP) if largest > 0 else 1.0
-    checks.append(bar_development_check(basis, footing, row, (footing.bottom.y.spacing, True, excess, cantilever - footing.cover),
+    checks.append(bar_development_check(basis, footing, row, (footing.bottom.y.spacing, "bottom", excess, cantilever - footing.cover),
                                         (DEVELOPMENT, "Desde la cara de la viga hasta el borde de la zarpa")))
     checks += _tension_flange(basis, footing, bottom["x"])
     checks += x_development(basis, footing, soil, (bottom["x"], top_row(footing, basis.bars)), cases)

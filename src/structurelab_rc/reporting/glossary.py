@@ -57,6 +57,8 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Viga larga: separacion", "requirements", "s", "s,máx"),
     ("Malla inferior y: acero minimo", "requirements", "As,min", "As"),
     ("Malla inferior y: separacion", "requirements", "s", "s,máx"),
+    ("Retraccion y temperatura: cuantia", "requirements", "ρ·h", "As inferior + superior"),
+    ("Retraccion y temperatura: separacion", "requirements", "s", "s,máx"),
     ("Flexion malla", "flexure", "Mu", "φMn"),
     ("Flexion concreto simple", "flexure", "Mu", "φMn"),
     ("Deformacion neta de traccion malla", "requirements", "εt,min", "εt"),
@@ -158,6 +160,13 @@ VALUES = {
     "A1": ("Área cargada", "A1"),
     "A2": ("Base del tronco de pirámide de apoyo", "A2"),
     "beta1": ("Factor del bloque de esfuerzos", "β1"),
+    "b": ("Ancho efectivo de la sección", "b"),
+    "h": ("Altura de la sección", "h"),
+    "bw": ("Ancho de la sección a cortante", "bw"),
+    "a": ("Profundidad del bloque de compresión", "a"),
+    "fc": ("Resistencia especificada del concreto", "f'c"),
+    "fy": ("Fluencia especificada del acero", "fy"),
+    "rho w": ("Cuantía del acero a tracción (As/(bw·d))", "ρw"),
     "ecu": ("Deformación máxima del concreto", "εcu"),
     "alpha1": ("Factor de esfuerzo del bloque equivalente", "0.85"),
     "Es": ("Módulo de elasticidad del acero", "Es"),
@@ -182,7 +191,8 @@ _ACCENTS = {"Presion": "Presión", "Flexion": "Flexión", "Deformacion": "Deform
             "minimo": "mínimo", "minima": "mínima", "Separacion": "Separación", "separacion": "separación",
             "maxima": "máxima", "direccion": "dirección", "area": "área", "compresion": "compresión",
             "Torsion": "Torsión", "seccion": "sección", "interaccion": "interacción", "verificacion": "verificación",
-            "Validacion": "Validación", "distribucion": "distribución", "Area": "Área"}
+            "Validacion": "Validación", "distribucion": "distribución", "Area": "Área", "Retraccion": "Retracción",
+            "cuantia": "cuantía"}
 
 
 def display(name: str) -> str:

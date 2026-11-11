@@ -30,7 +30,7 @@ _VALUE_UNITS = {"Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi T
                 "p esquina +x+y": "N/mm2", "p esquina -x+y": "N/mm2", "h calculo": "mm", "Sm": "mm3", "Msc x": "N*mm",
                 "Msc y": "N*mm", "Jc x": "mm4", "Jc y": "mm4", "xc": "mm", "yc": "mm", "cc": "mm", "As,min": "mm2",
                 "As analisis": "mm2", "x": "mm", "Msc": "N*mm", "gamma f Msc": "N*mm", "As bslab": "mm2",
-                "para la viga": "N*mm"}
+                "para la viga": "N*mm", "b": "mm", "h": "mm", "bw": "mm", "a": "mm", "fc": "MPa", "fy": "MPa"}
 # Valores con número: "esquina 3 v" (esfuerzo de punzonamiento en la esquina 3) y sus coordenadas (D-083).
 _CORNER_UNITS = {"x": "mm", "y": "mm", "v": "MPa"}
 
@@ -151,7 +151,8 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
         "geometry [mm]": _geometry(footing, {"beam", *(["principal_direction"] if footing.principal_direction == "y" else [])}),
         "columns": columns,
         "properties": _base_properties(footing, soil),
-        "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin", "torsion_layers"}),
+        "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "top_transverse", "stirrups", "skin",
+                                                                  "torsion_layers"}),
         "deep_beam": footing.deep_beam,
         "two_way_warning": _two_way(footing),
         "status": _status(checks),

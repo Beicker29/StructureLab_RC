@@ -91,7 +91,8 @@ def _plain_concrete(basis: Basis, footing: FootingBase, section: tuple[str, floa
     strength = plain_rectangular_moment(basis.profile, basis.materials, width, footing.h, cast_against_soil=True)
     if isinstance(strength, StructuredError):
         return replace(check_from_errors(name, [strength]), clause=clause, member=member, case=load_case)
-    values = (("phi", strength.phi), ("Mn", strength.nominal), ("h calculo", strength.thickness), ("Sm", strength.modulus))
+    values = (("phi", strength.phi), ("Mn", strength.nominal), ("b", width), ("h calculo", strength.thickness),
+              ("Sm", strength.modulus), ("fc", basis.materials.fc))
     return Check(name, Status.PASS if strength.design >= demand else Status.FAIL, clause=clause, demand=demand,
                  capacity=strength.design, unit="N*mm", values=values, note=note, member=member,
                  case=load_case)
@@ -119,7 +120,11 @@ def _strength_checks(basis: Basis, footing: Footing, rows: dict[str, dict[str, B
                 if isinstance(strength, StructuredError):
                     checks.append(replace(check_from_errors(name, [strength]), clause=clause, member=member, case=load_case))
                     continue
-                values = (("phi", strength.phi), ("Mn", strength.nominal), ("d", row.depth), ("As", row.area),
+                beta1 = profile.strength_assumptions.beta1(materials.fc)
+                # Los datos de la resistencia, sin el procedimiento (D-097).
+                values = (("phi", strength.phi), ("Mn", strength.nominal), ("b", row.width), ("h", footing.h), ("d", row.depth),
+                          ("As", row.area), ("fc", materials.fc), ("fy", materials.fy),
+                          *((("beta1", beta1),) if beta1 is not None else ()), ("a", strength.state.a), ("c", strength.state.c),
                           ("et", strength.state.extreme_strain))
                 status = Status.PASS if strength.design >= demand else Status.FAIL
                 checks.append(Check(name, status, clause=clause, demand=max(demand, 0.0), capacity=strength.design,

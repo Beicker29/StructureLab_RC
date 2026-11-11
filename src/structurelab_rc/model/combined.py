@@ -40,8 +40,9 @@ class TopBars(BarSet):
 
 class CombinedColumn(_Input):
     """Columna cx × cy (cx a lo largo de X) con su eje en (x, y) respecto al centroide de la base; dowels son sus
-    pasadores (si faltan, sus verificaciones quedan INCOMPLETE) y band el refuerzo transversal adicional bajo ella,
-    paralelo a Y, en el ancho de su franja (opcional). loads son sus casos de carga en la base de la columna."""
+    pasadores (si faltan, sus verificaciones quedan INCOMPLETE) y band el refuerzo inferior transversal bajo ella,
+    paralelo a Y, en el ancho de su franja (opcional): si lo hay, es el único refuerzo inferior transversal de esa zona y
+    la malla inferior en Y va fuera de ella (D-097). loads son sus casos de carga en la base de la columna."""
 
     id: str = Field(min_length=1)
     cx: PositiveFloat
@@ -78,6 +79,7 @@ class CombinedFooting(RectangularBase, _Input):
     columns: tuple[CombinedColumn, ...] = Field(min_length=COLUMNS, max_length=COLUMNS)
     bottom: Mat
     top: TopBars | None = None
+    top_transverse: TopBars | None = None  # barras superiores paralelas a Y, uniformes en todo el largo (D-097)
     stirrups: Stirrups | None = None
     skin: SkinBars | None = None
     torsion_layers: tuple[BarLayer, ...] = ()
@@ -154,6 +156,9 @@ class CombinedFooting(RectangularBase, _Input):
                 raise ValueError(f"la zapata combinada en T invertida '{self.id}' no usa band (columna '{column.id}')")
         if self.top is None:
             raise ValueError(f"la zapata combinada en T invertida '{self.id}' requiere barras superiores (top) en la viga")
+        if self.top_transverse is not None:
+            raise ValueError(f"la zapata combinada en T invertida '{self.id}' aun no admite top_transverse (D-097: pendiente "
+                             "para las aletas)")
 
     @property
     def total_height(self) -> float:

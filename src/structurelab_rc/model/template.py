@@ -142,6 +142,7 @@ class TemplateCombinedFooting(_Input):
     columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2, max_length=2)
     bottom: dict[str, Any]
     top: dict[str, Any] | None = None
+    top_transverse: dict[str, Any] | None = None
     stirrups: dict[str, Any] | None = None
     skin: dict[str, Any] | None = None
     torsion_layers: list[dict[str, Any]] | None = None

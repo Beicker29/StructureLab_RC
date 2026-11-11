@@ -82,6 +82,9 @@ def test_inverted_t_input_is_validated() -> None:
     footing = _oracle("nsr_10")["cases"][0]["footing"]
     for change, message in (({"beam": {"width": 600.0, "height": 300.0}}, "más alta que la zarpa"),
                             ({"top": None}, "requiere barras superiores"),
-                            ({"beam": {"width": 400.0, "height": 850.0}}, "se sale del ancho de la viga")):
+                            ({"beam": {"width": 400.0, "height": 850.0}}, "se sale del ancho de la viga"),
+                            # D-097: las barras superiores transversales aún no aplican a las aletas.
+                            ({"top_transverse": {"designation": "#5", "spacing": 200.0, "end": "straight"}},
+                             "aun no admite top_transverse")):
         with pytest.raises(ValidationError, match=message):
             CombinedFooting.model_validate({**footing, **change})

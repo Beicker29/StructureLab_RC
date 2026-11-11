@@ -123,6 +123,17 @@ def mat_rows(footing: Footing | CombinedFooting, mat: Mat, bars: Sequence[RebarS
     return rows
 
 
+def top_transverse_row(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> BarRow | None:
+    """Las barras superiores paralelas a Y de una zapata combinada (D-097), uniformes en todo el largo, debajo de las
+    superiores x si las hay; depth es su altura efectiva desde la cara inferior. None si no las tiene."""
+    if footing.top_transverse is None:
+        return None
+    spec = next(bar for bar in bars if bar.designation == footing.top_transverse.designation)
+    above = 0.0 if footing.top is None else next(bar.diameter_mm for bar in bars if bar.designation == footing.top.designation)
+    from_face = footing.cover + stirrup_diameter(footing, bars) + above + spec.diameter_mm / 2
+    return _row(footing, "y", (footing.top_transverse, spec), (from_face, 0.0))
+
+
 def top_row(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> BarRow | None:
     """Las barras superiores paralelas a X de una zapata combinada, una sola capa; None si no las tiene."""
     if footing.top is None:

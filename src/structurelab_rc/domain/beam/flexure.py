@@ -283,6 +283,20 @@ def _strain_check(name: str, profile: Profile, materials: Materials, strain: flo
     return net_tensile_strain_check(name, profile.flexure.clauses()["net_tensile_strain"], profile, materials, strain)
 
 
+def _strength_data(given: StationInput, state: SectionState) -> tuple[tuple[str, float], ...]:
+    """Los datos de la resistencia, sin el procedimiento (D-097): ancho y altura de la sección, d y As del acero a tracción
+    (barras con deformación positiva; d desde la fibra extrema comprimida), f'c, fy, β1 y la profundidad a del bloque."""
+    section, materials = given.member.section, given.materials
+    tension = [bar for bar in state.bars if bar.strain > 0]
+    area = sum(bar.area for bar in tension)
+    data = [("b", section.bw), ("h", section.h)]
+    if area > 0:
+        data += [("d", sum(bar.depth * bar.area for bar in tension) / area), ("As", area)]
+    beta1 = given.profile.strength_assumptions.beta1(materials.fc)
+    data += [("fc", materials.fc), ("fy", materials.fy), *([("beta1", beta1)] if beta1 is not None else []), ("a", state.a)]
+    return tuple(data)
+
+
 def _biaxial_checks(given: StationInput) -> tuple[Check, ...]:
     """Resistencia biaxial, εt del eje débil y del estado biaxial, y As,min del eje débil."""
     profile, materials, demands = given.profile, given.materials, given.station.demands
@@ -299,7 +313,7 @@ def _biaxial_checks(given: StationInput) -> tuple[Check, ...]:
     demand = math.hypot(demands.mu, demands.m2)
     capacity = phi * math.hypot(biaxial.mn3, biaxial.mn2)
     values = (("phi", phi), ("Mn3", biaxial.mn3), ("Mn2", biaxial.mn2), ("theta", math.degrees(biaxial.theta)),
-              ("c", biaxial.c), ("et", biaxial.extreme_strain))
+              ("c", biaxial.c), ("et", biaxial.extreme_strain), *_strength_data(given, biaxial))
     strength = Check(STRENGTH, Status.PASS if capacity >= demand else Status.FAIL, clause=clause,
                      demand=demand, capacity=capacity, unit="N*mm", values=values)
     moments = demands.mu != 0 or demands.m2 != 0

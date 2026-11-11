@@ -109,10 +109,16 @@ el mismo `soil` que las zapatas aisladas. Se verifican la parte geotécnica con 
   D-086), la franja transversal (también con las verificaciones de vigas, con
   `z` desde el borde −Y y `note` "Franja transversal de la columna …, cara ±Y", "a d de la cara ±Y" o "mayor momento
   negativo hacia el borde ±Y"; su carga es la neta: la fuerza de la columna con la forma de la presión menos los pesos y
-  las sobrecargas, y el momento negativo, sin barras superiores transversales, es de concreto simple, D-095), el
-  aplastamiento y los pasadores (`note` "Columna …"); la malla y fuera de las franjas (mínimo de losa y separación); el
-  desarrollo de las barras x desde la sección de mayor momento de su signo y de las barras y de cada franja desde la cara
-  de la columna.
+  las sobrecargas, D-095; abajo lleva el band si lo hay o, si no, la malla y, y arriba las barras de `top_transverse`
+  que caen en ella; el momento negativo, sin esas barras, es de concreto simple, D-072, D-097), el aplastamiento y los
+  pasadores (`note` "Columna …"); la separación de la malla y (3h y 450 mm); retracción y temperatura por zona (D-097):
+  por metro, inferior más superior de cada dirección ≥ ρ·h y cada capa a s ≤ min(5h, 450 mm), en X en todo el ancho y
+  en Y fuera de las zonas de band y en cada zona de band (ACI 24.4.3.2 y 24.4.3.3; NSR-10 C.7.12.2.1 y C.7.12.2.2); el
+  desarrollo de las barras x desde la sección de mayor momento de su signo y, en cada franja, de las barras inferiores
+  (band o malla y) y de las superiores transversales (con momento negativo) desde la cara de la columna.
+
+Las verificaciones de resistencia traen en `values` los datos con que se calculan (D-097): flexión, b, h, d, As, f'c, fy,
+β1 y a (en zapatas, además c y εt); cortante, bw, d, ρw, λ y f'c; concreto simple, b, h de cálculo, Sm y f'c.
 
 Las notas de las secciones de la viga larga y de las franjas terminan con el signo del momento ("momento positivo" o
 "momento negativo"); la memoria revisa por separado el momento positivo y el negativo en las dos direcciones y trae los
@@ -128,10 +134,11 @@ los dos perfiles.
 | `columns[].cx`, `columns[].cy` | mm | Sección (cx a lo largo de X). |
 | `columns[].x`, `columns[].y` | mm | Posición del eje de la columna respecto al centroide de la base. |
 | `columns[].dowels` | | Pasadores, como en la zapata aislada (opcional; sin ellos sus verificaciones quedan INCOMPLETE). |
-| `columns[].band` | | Refuerzo transversal adicional bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation` y `spacing` (opcional). |
+| `columns[].band` | | Refuerzo transversal inferior bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation` y `spacing` (opcional). Es el único refuerzo inferior transversal de esa zona: la malla inferior y va solo fuera de las zonas de band (D-097). |
 | `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; las dos columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
 | `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
 | `top` | | Barras superiores paralelas a X (`designation`, `spacing`, `end`: `straight` o `hook`, como el `end` de la malla), opcional: sin ellas, el momento negativo se revisa como concreto simple (D-072). |
+| `top_transverse` | | Barras superiores paralelas a Y, uniformes en todo el largo, debajo de las de `top` (mismos campos que `top`), opcional: toman el momento negativo de las franjas transversales; sin ellas, ese momento se revisa como concreto simple (D-097). Aún no se admite en la T invertida. |
 | `stirrups` | | Estribos de la dirección larga, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
 | `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
 | `deep_beam` | sí/no | La viga larga es de gran altura (declarado por el usuario): se verifican los criterios de vigas altas como en las vigas (D-089). |

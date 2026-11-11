@@ -150,6 +150,11 @@
         "spacing": 140.0,
         "end": "straight"
       },
+      "top_transverse": {
+        "designation": "#5",
+        "spacing": 300.0,
+        "end": "straight"
+      },
       "skin": {
         "designation": "#5",
         "spacing": 180.0
@@ -269,6 +274,11 @@
       "top": {
         "designation": "#8",
         "spacing": 140.0,
+        "end": "straight"
+      },
+      "top_transverse": {
+        "designation": "#5",
+        "spacing": 300.0,
         "end": "straight"
       },
       "skin": {

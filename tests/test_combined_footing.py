@@ -14,7 +14,7 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.checks import COMBINED_STRUCTURAL
 from structurelab_rc.domain.footing.combined_beam import beam_case, long_beam_checks, two_way_warning
-from structurelab_rc.domain.footing.combined_columns import column_checks, strip_demands
+from structurelab_rc.domain.footing.combined_columns import column_checks, strip_demands, strip_limits, transverse_bottom
 from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
 from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.footing.mesh import mat_rows
@@ -237,6 +237,31 @@ def test_combined_footing_input_is_validated(change: dict[str, Any], message: st
         CombinedFooting.model_validate(footing)
 
 
+def test_band_is_the_only_bottom_transverse_steel_in_its_zone() -> None:
+    """D-097: la malla inferior y va solo fuera de las zonas de band (la franja de cada columna con band)."""
+    case = next(case for case in _oracle("nsr_10", "derived_combined_columns")["cases"] if case["id"] == "interiores")
+    footing = CombinedFooting.model_validate(case["footing"])
+    row = mat_rows(footing, footing.bottom, BARS)["y"]
+    kept = transverse_bottom(footing, row)
+    zones = [strip_limits(footing, column, row.depth) for column in footing.columns]
+    assert 0 < len(kept.positions) < len(row.positions)
+    assert not any(x0 <= position <= x1 for position in kept.positions for x0, x1 in zones)
+    # Sin band, la malla queda completa.
+    plain = footing.model_copy(update={"columns": tuple(column.model_copy(update={"band": None}) for column in footing.columns)})
+    assert transverse_bottom(plain, row) == row
+
+
+def test_top_transverse_bars_must_be_in_the_catalog() -> None:
+    footing = _footing(top_transverse={"designation": "#99", "spacing": 200.0, "end": "straight"})
+    project = Project.model_validate({"description": "prueba", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "prueba"},
+                                      "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight",
+                                                    "coating": "uncoated"},
+                                      "soil": _oracle("nsr_10")["soil"], "combined_footings": [footing]})
+    check = validate_project(project, BARS)
+    assert check.status is not Status.PASS
+    assert any("'#99' de las barras y de la malla superior" in error.message for error in check.errors)
+
+
 def _project(tmp_path: Path, footing: dict[str, Any]) -> list[Check]:
     oracle = _oracle("nsr_10")
     project = {"description": "prueba", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "prueba"},
@@ -269,7 +294,7 @@ def test_project_with_a_combined_footing_runs_every_structural_check(tmp_path: P
     by_name = {check.name: check for check in checks}
     assert by_name["Validacion de entrada"].status is Status.PASS
     assert {"Flexion: resistencia", "Punzonamiento", "Aplastamiento en la zapata", "Desarrollo barras inferiores x",
-            "Malla inferior y: acero minimo fuera de las franjas"} <= set(by_name)
+            "Retraccion y temperatura: cuantia (barras y, en todo el largo)"} <= set(by_name)
     assert not any(check.status is Status.BLOCKED for check in checks)
     assert by_name["Pasadores: area minima"].status is Status.INCOMPLETE
     assert COMBINED_STRUCTURAL not in by_name
@@ -328,6 +353,7 @@ def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_pat
     along_x = project["combined_footings"][0]
     if variant == "t invertida":
         along_x["beam"] = {"width": 900.0, "height": along_x["h"] + 800.0}
+        along_x.pop("top_transverse", None)  # la T invertida aún no la admite (D-097)
         for column in along_x["columns"]:
             column.pop("band", None)
     along_y = {**_footing_along_global_y(along_x), "id": "ZCY"}

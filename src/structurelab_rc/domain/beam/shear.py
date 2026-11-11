@@ -36,6 +36,7 @@ class ShearTerms:
     vs_max: float
     fyt: float
     transverse: float
+    rho_w: float = 0.0  # cuantía del acero a tracción, As/(bw·d): se reporta en la memoria (D-097)
 
 
 def missing_demands(station: Station) -> Check | None:
@@ -97,7 +98,7 @@ def shear_terms(given: StationInput, minimum: float) -> ShearTerms | Check:
             ag=section.area, vu=abs(demands.vu), mu=abs(demands.mu), av_ge_min=transverse >= minimum,
         )
     fyt = min(materials.fyt, shear.max_stirrup_yield())
-    return ShearTerms(lam, d, vc, shear.max_steel_shear(materials.fc, section.bw, d), fyt, transverse)
+    return ShearTerms(lam, d, vc, shear.max_steel_shear(materials.fc, section.bw, d), fyt, transverse, rho_w)
 
 
 def leg_spacing_across(member: Member, station: Station, bars: Sequence[RebarSpec]) -> float | None:
@@ -128,7 +129,10 @@ def shear_checks(given: StationInput) -> tuple[Check, ...]:
     strength_clause = profile.footing.clauses()["one_way_shear"] if given.foundation else clauses["strength"]
     checks = [
         Check(STRENGTH, Status.PASS if capacity >= vu else Status.FAIL, clause=strength_clause,
-              demand=vu, capacity=capacity, unit="N", values=(("phi", phi), ("Vc", vc), ("Vs", vs), ("d", d))),
+              demand=vu, capacity=capacity, unit="N",
+              # Los datos de Vc, sin el procedimiento (D-097): ancho, altura efectiva, cuantía, λ y f'c.
+              values=(("phi", phi), ("Vc", vc), ("Vs", vs), ("bw", bw), ("d", d), ("rho w", terms.rho_w), ("lambda", terms.lam),
+                      ("fc", fc))),
         Check(SECTION, Status.PASS if vu <= phi * (vc + terms.vs_max) else Status.FAIL, clause=clauses["section"],
               demand=vu, capacity=phi * (vc + terms.vs_max), unit="N"),
     ]

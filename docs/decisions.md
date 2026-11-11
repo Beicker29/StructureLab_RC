@@ -1399,6 +1399,67 @@
   proyecto. Los `LEEME` y el README quedan con un comando por ejemplo.
 - **Huella:** la curva (`curva_*.json`) no entra: repite el diseño para cada N y tarda minutos con un proceso.
 
+### D-097: band exclusivo, barras superiores transversales, retracción y temperatura por zona y datos de resistencia
+
+- **Fecha:** 2026-11-11
+- **Problema:** en la zapata combinada, el band se sumaba a la malla inferior y dentro de su franja; no había forma de
+  declarar barras superiores en la dirección transversal (el negativo de las franjas era siempre de concreto simple,
+  D-095); el mínimo fuera de las franjas era el de losa solo con la malla inferior; y la memoria no mostraba los datos
+  con que se calcula cada resistencia (por ejemplo, el ancho de la franja).
+- **Decisiones del usuario:**
+  1. El band es el único refuerzo inferior transversal en su zona, que es la franja de la columna (columna + d/2 a cada
+     lado, D-080); la malla inferior y va solo fuera de las zonas de band.
+  2. `top_transverse`: barras superiores paralelas a Y, uniformes en todo el largo, debajo de las superiores x.
+  3. Retracción y temperatura por zona, con el refuerzo inferior más el superior de cada dirección, por metro. Reemplaza
+     el mínimo de losa fuera de las franjas. Por ahora solo en la zapata combinada; queda pendiente evaluar si aplica a
+     los demás elementos y a las aletas de la T invertida.
+  4. Datos de resistencia en la memoria de vigas y zapatas: los valores que entran al cálculo (por ejemplo, β1), no su
+     procedimiento.
+- **Norma (PDF en `references/`):**
+  - ACI 318-25 24.4.3.2 (tabla): ρ ≥ 0.0018 sobre el área bruta, para todo fy. 24.4.3.3: separación ≤ min(5h, 450 mm).
+    R24.4.3.2 permite repartir el área entre las dos caras.
+  - NSR-10 C.7.12.2.1: 0.0020 con fy ≤ 350 MPa; 0.0018 con 420 MPa; 0.0018·420/fy ≥ 0.0014 si es mayor (por grado,
+    D-062). C.7.12.2.2: separación ≤ 5 veces el espesor y ≤ 450 mm. CR7.12.2 permite repartir entre las caras.
+  - CR7.12.1 aclara que estas disposiciones son para losas estructurales, no para losas sobre el terreno. Aplicarlas a
+    la zapata combinada es criterio del usuario, no exigencia de la norma.
+- **Implementación:**
+  - `codes/<perfil>/footing.py`: `shrinkage_temperature_ratio(fy)` y `shrinkage_temperature_max_spacing(h)`, con el
+    numeral `shrinkage_temperature`. En NSR-10, `min_reinforcement_ratio` usa la misma cuantía.
+  - `model/combined.py`: `top_transverse` (opcional). Si la zapata tiene viga (T invertida), se rechaza: pendiente para
+    las aletas.
+  - `combined_columns`:
+    - `transverse_bottom` quita de la malla y las barras que caen en las zonas de band, para punzonamiento, transferencia
+      y franjas.
+    - `strip_member` arma la franja con el band (o la malla y) abajo y las superiores transversales arriba. Con barras
+      superiores en la franja, el momento negativo lo revisan las reglas de vigas; sin ellas, sigue siendo de concreto
+      simple (D-095).
+    - En la transferencia de momento, la parte negativa en Y usa las superiores transversales en bslab.
+    - Desarrollo: el band (o la malla y) con el mayor momento positivo de las caras, y las superiores transversales con
+      el mayor momento negativo de la franja.
+    - `shrinkage_checks`: zonas X en todo el ancho (malla x + top), Y fuera de las zonas de band (malla y +
+      top_transverse) y cada zona de band (band + top_transverse); cuantía por zona y separación por capa. Se conserva
+      la separación de la malla y de 3h y 450 mm (flexión en una dirección).
+  - Datos de resistencia:
+    - Flexión de vigas y franjas: b, h, d, As, f'c, fy, β1, a.
+    - Flexión de zapatas: además c y εt.
+    - Cortante: bw, d, ρw, λ, f'c.
+    - Concreto simple de la franja: b y f'c.
+- **Control:** oráculo `derive_combined_columns.py`. El band es exclusivo en las franjas, el punzonamiento y la
+  transferencia; la retracción se revisa por zona; el nuevo caso `superior-transversal` tiene band solo en C1 y momento
+  negativo tomado por las barras superiores (resistencia biaxial con la sección reflejada).
+- **Diferencias en los ejemplos:**
+  - `zapata_combinada.json` (los dos perfiles): ningún estado cambia (PASS antes y después).
+    - En las franjas, el acero baja de 4631 a 2840 mm² (C1) y de 5114 a 3124 mm² (C2) porque la malla ya no se suma
+      al band; φMn baja alrededor del 37 %.
+    - La mayor relación sube de 0.941 a 0.974 (acero mínimo de la franja de C1).
+    - El mínimo fuera de las franjas se reemplaza por 9 verificaciones de retracción y temperatura, todas PASS.
+  - Vigas y zapata céntrica: los mismos valores; solo se agregan datos de resistencia.
+  - Por pedido del usuario, `zapata_combinada.json` y `plantilla_combinadas_etabs.json` (los dos perfiles) declaran
+    `top_transverse` #5 c/300 recto. En `zapata_combinada.json` sigue todo en PASS (380 verificaciones, mayor relación
+    0.974); la retracción en Y sube a 2194 mm²/m fuera del band y a 3030 mm²/m en cada zona de band; las franjas no
+    tienen momento negativo, así que esas barras no se desarrollan como refuerzo a tracción.
+  - Huellas actualizadas; las plantillas de zapatas se calcularon con las plantillas y los Excel del commit.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

@@ -9,6 +9,8 @@ _MIN_DEPTH = 150.0
 _SIZE_FACTOR = 1.0
 _DOWEL_RATIO = 0.005
 _ONE_WAY_SPACING_THICKNESS = 3.0
+_SHRINKAGE_RATIO = 0.0018
+_SHRINKAGE_SPACING_THICKNESS = 5.0
 
 
 def clauses() -> dict[str, str]:
@@ -29,7 +31,19 @@ def clauses() -> dict[str, str]:
         "combined_spacing": "13.3.2.1 y 7.7.2.3",
         "combined_min_reinforcement": "13.3.2.1 y 7.6.1.1",
         "combined_min_shear": "13.3.2.1 y 7.6.3.1",
+        "shrinkage_temperature": "24.4.3.2 y 24.4.3.3",
     }
+
+
+def shrinkage_temperature_ratio(fy: float) -> float:
+    """24.4.3.2: As de retracción y temperatura ≥ 0.0018 del área bruta, sin depender de fy (R24.4.3.2); el área puede
+    repartirse entre las dos caras (R24.4.3.2, R7.6.1.1)."""
+    return _SHRINKAGE_RATIO
+
+
+def shrinkage_temperature_max_spacing(h: float) -> float:
+    """24.4.3.3: la separación del refuerzo de retracción y temperatura no excede el menor de 5h y 450 mm, en mm."""
+    return min(_SHRINKAGE_SPACING_THICKNESS * h, _MAX_SPACING)
 
 
 def min_reinforcement_ratio(fy: float) -> float:

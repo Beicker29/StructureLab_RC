@@ -50,7 +50,8 @@ def test_results_hold_every_station_and_check(tmp_path: Path) -> None:
 def test_phi_in_the_memoir_comes_from_the_results(tmp_path: Path) -> None:
     results, text = _report(tmp_path)
     strength = next(check for check in results["members"][0]["stations"][0]["checks"] if check["name"] == "Flexion: resistencia")
-    assert f"Factor de reducción de resistencia  φ        {strength['values']['phi']:.4f}" in text
+    # El ancho de la columna de parámetros depende de la etiqueta más larga de la tabla: se compara sin el relleno.
+    assert re.search(rf"Factor de reducción de resistencia +φ +{strength['values']['phi']:.4f}", text)
 
 
 BEAM_CHAPTERS = ("1. Propiedades mecánicas de los materiales", "2. Propiedades geométricas y armado", "3. Solicitaciones",

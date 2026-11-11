@@ -12,6 +12,7 @@ _GRADE_420 = 420.0
 _RATIO_LOW_GRADE = 0.0020
 _RATIO_420 = 0.0018
 _RATIO_FLOOR = 0.0014
+_SHRINKAGE_SPACING_THICKNESS = 5.0
 
 
 def clauses() -> dict[str, str]:
@@ -32,17 +33,30 @@ def clauses() -> dict[str, str]:
         "combined_spacing": "C.10.5.4",
         "combined_min_reinforcement": "C.10.5.4 y C.7.12.2.1",
         "combined_min_shear": "C.11.4.6.1(a)",
+        "shrinkage_temperature": "C.7.12.2.1 y C.7.12.2.2",
     }
 
 
-def min_reinforcement_ratio(fy: float) -> float:
-    """C.10.5.4 remite a C.7.12.2.1, leído por tramos (D-062): 0.0020 con fy ≤ 350 MPa (grados 280 y 350), 0.0018 con
-    350 < fy ≤ 420 MPa (grado 420) y 0.0018·420/fy con fy > 420 MPa, no menor que 0.0014."""
+def shrinkage_temperature_ratio(fy: float) -> float:
+    """C.7.12.2.1, leído por tramos (D-062): cuantía sobre el área bruta de 0.0020 con fy ≤ 350 MPa (grados 280 y 350),
+    0.0018 con 350 < fy ≤ 420 MPa (grado 420) y 0.0018·420/fy con fy > 420 MPa, no menor que 0.0014; puede repartirse
+    entre las dos caras (CR7.12.2)."""
     if fy <= _GRADE_350:
         return _RATIO_LOW_GRADE
     if fy <= _GRADE_420:
         return _RATIO_420
     return max(_RATIO_420 * _GRADE_420 / fy, _RATIO_FLOOR)
+
+
+def shrinkage_temperature_max_spacing(h: float) -> float:
+    """C.7.12.2.2: la separación del refuerzo de retracción y temperatura no es mayor que 5 veces el espesor ni que
+    450 mm, en mm."""
+    return min(_SHRINKAGE_SPACING_THICKNESS * h, _MAX_SPACING)
+
+
+def min_reinforcement_ratio(fy: float) -> float:
+    """C.10.5.4 remite a C.7.12.2.1 (D-062): la misma cuantía de retracción y temperatura."""
+    return shrinkage_temperature_ratio(fy)
 
 
 def max_bar_spacing(h: float) -> float:
