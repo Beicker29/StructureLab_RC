@@ -4,8 +4,9 @@ Herramienta de oficina para elementos de concreto reforzado con los perfiles `ac
 pendiente; lo hecho está en [decisions.md](decisions.md) y en el historial de Git. Cada fase se cierra con plan
 aprobado, oráculo, pruebas y huella antes de abrir la siguiente.
 
-**Orden vigente (2026-11-10):** v3 fases 1 a 5, luego v1 fases 2 a 5, luego v2. El diseño, el despiece y el dibujo se
-construyen primero en zapatas (v3 fases 3 y 4) con piezas neutras que después reutilizan las vigas (v1 fases 4 y 5).
+**Orden vigente (2026-11-11, prioridad del usuario):** v3 Fase 5 (tipos de cimentación nuevos), luego v3 fases 1 a 4,
+luego v1 fases 2 a 5, luego v2. El diseño, el despiece y el dibujo se construyen en zapatas (v3 fases 3 y 4) con piezas
+neutras que después reutilizan las vigas (v1 fases 4 y 5).
 
 **Pendiente sin fase:** correr de nuevo el diseño por tipologías desde ETABS con D-079 (N = 6 y curva costo–N); diferido
 por el usuario.
@@ -71,9 +72,11 @@ existente. Sin fórmulas propias; si nada cumple, `FAIL` con el motivo y los lí
 
 ### Fase 5: tipos de cimentación nuevos, uno por vez (D-052, D-055)
 
-Cada tipo entra con verificación, diseño, despiece y dibujo sobre las fases 3 y 4.
+Prioridad del usuario (2026-11-11): va antes que las fases 1 a 4. Cada tipo entra primero con su verificación (y su
+entrada desde ETABS si aplica); su diseño, despiece y dibujo se agregan con las fases 3 y 4.
 
-1. Medianera con viga de amarre (pausada, con 7 preguntas abiertas).
+1. Medianera con viga de amarre (pausada; las preguntas abiertas no quedaron escritas en el repositorio y se
+   reformulan al empezar).
 2. Zapatas combinadas de otras formas o con más de dos columnas.
 3. Zapata combinada en T invertida (viga de cimentación sobre una zarpa más ancha) y zapata corrida (strip footing)
    bajo una fila de columnas o un muro: la viga y las aletas de la zarpa, con la presión del suelo, revisadas con el
