@@ -7,7 +7,7 @@ from typing import Literal, Self
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
-from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Mat, Soil, _Input
+from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Mat, RectangularBase, _Input
 from structurelab_rc.model.reinforcement import Stirrups
 
 COLUMNS = 2
@@ -47,7 +47,7 @@ class CombinedColumn(_Input):
         return self.cx * self.cy
 
 
-class CombinedFooting(_Input):
+class CombinedFooting(RectangularBase, _Input):
     """Zapata combinada de espesor h con dos columnas a lo largo de X. bottom es la malla inferior en las dos direcciones;
     top, las barras superiores paralelas a X (opcional: sin ellas, el momento negativo se revisa como concreto simple,
     D-072); stirrups, los estribos de la dirección larga, como en las vigas (opcional, D-081). fill_height,
@@ -96,11 +96,6 @@ class CombinedFooting(_Input):
         return self
 
     @property
-    def area(self) -> float:
-        """Área de la base, en mm²."""
-        return self.lx * self.ly
-
-    @property
     def column_area(self) -> float:
         """Área de las dos columnas (o pedestales), en mm²: el relleno y las sobrecargas ocupan el resto de la base."""
         return sum(column.area for column in self.columns)
@@ -110,9 +105,3 @@ class CombinedFooting(_Input):
         by_column = [{(load.kind, load.case): load for load in column.loads} for column in self.columns]
         return [tuple(own[key] for own in by_column) for key in by_column[0]]
 
-    def weights(self, soil: Soil) -> tuple[float, float, float]:
-        """Pesos de la zapata, de los dos pedestales y del relleno, en N."""
-        footing = soil.unit_weight_concrete * self.area * self.h
-        pedestals = soil.unit_weight_concrete * self.column_area * self.pedestal_height
-        fill = soil.unit_weight_fill * (self.area - self.column_area) * self.fill_height
-        return footing, pedestals, fill

@@ -4,7 +4,13 @@ from collections.abc import Sequence
 from dataclasses import replace
 
 from structurelab_rc.codes.registry import Profile
-from structurelab_rc.domain.beam.flexure import flexure_checks, skin_check
+from structurelab_rc.domain.beam.flexure import (
+    MIN_REINFORCEMENT_M2,
+    NET_TENSILE_STRAIN_BIAXIAL,
+    NET_TENSILE_STRAIN_M2,
+    flexure_checks,
+    skin_check,
+)
 from structurelab_rc.domain.beam.shear import interaction_check, missing_demands, shear_checks, weak_shear_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.beam.torsion import TRANSVERSE, threshold_check, torsion_checks
@@ -15,6 +21,7 @@ from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.project import Materials, Member, Station
 
 SCOPE = "Viga: alcance"
+_WEAK_AXIS = frozenset({NET_TENSILE_STRAIN_M2, NET_TENSILE_STRAIN_BIAXIAL, MIN_REINFORCEMENT_M2})
 
 
 def _out_of_scope(profile: Profile, materials: Materials, member: Member, station: Station) -> Check | None:
@@ -37,6 +44,8 @@ def _shear_and_torsion(given: StationInput) -> tuple[Check, ...]:
         return (missing,)
     threshold = threshold_check(profile, materials, member, station)
     if threshold is None:
+        if given.foundation:  # la zapata no tiene cortante V3: sin eje débil ni interacción (D-083)
+            return shear_checks(given)
         checks = (*shear_checks(given), *weak_shear_checks(given))
         interaction = interaction_check(profile, checks)
         return checks if interaction is None else (*checks, interaction)
@@ -56,6 +65,8 @@ def checks_for(given: StationInput) -> tuple[Check, ...]:
     else:
         skin = skin_check(given)
         flexure = flexure_checks(profile, materials, member, station, bars)
+        if given.foundation:  # la zapata no tiene M2: las verificaciones del eje débil no aplican (D-083)
+            flexure = tuple(check for check in flexure if check.name not in _WEAK_AXIS)
         checks = (*flexure, *(() if skin is None else (skin,)), *_shear_and_torsion(given))
     return tuple(replace(check, member=member.id, z=station.z, case=station.case) for check in checks)
 

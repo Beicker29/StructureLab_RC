@@ -232,8 +232,14 @@ def extreme_moments(footing: CombinedFooting, soil: Soil,
     return positive, negative
 
 
+def _sentence(text: str) -> str:
+    """La primera letra en mayúscula, sin tocar el resto (los nombres de las columnas y los ejes)."""
+    return text[:1].upper() + text[1:]
+
+
 def _with_section(check: Check, label: str) -> Check:
-    note = label.capitalize() if not check.note else f"{label.capitalize()}: {check.note}"
+    title = _sentence(label)
+    note = title if not check.note else f"{title}: {check.note}"
     return replace(check, note=note)
 
 
@@ -246,7 +252,7 @@ def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, give
                                       demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))
     if moment < 0 and not has_top:
         # Sin barras superiores: flexión de concreto simple (D-072) y el cortante de vigas, que necesita acero a tracción.
-        flexure = plain_check(basis, footing, "x", -moment, (section.label, beam.case, section.label.capitalize()))
+        flexure = plain_check(basis, footing, "x", -moment, (section.label, beam.case, _sentence(section.label)))
         given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
         shear_only = [replace(check, member=footing.id, z=z, case=beam.case) for check in shear_checks(given_station)]
         return [replace(flexure, z=z), *(_with_section(check, section.label) for check in shear_only)]

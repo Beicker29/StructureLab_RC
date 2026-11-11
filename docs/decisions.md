@@ -942,7 +942,7 @@
   9. Imagen en planta de la presión del suelo en cada esquina, para zapatas aisladas y combinadas: el caso de servicio
      que gobierna la presión admisible, con una tabla de las esquinas de todos los casos de servicio; las presiones las
      calcula la revisión geotécnica y la memoria solo las dibuja.
-- **Subfases (V3J.1 a V3J.3 hechas, D-081 y D-082):** V3J.1 modelo, entrada y revisión geotécnica; V3J.2 viga en la dirección larga; V3J.3 franjas
+- **Subfases (todas hechas; D-081 a D-083):** V3J.1 modelo, entrada y revisión geotécnica; V3J.2 viga en la dirección larga; V3J.3 franjas
   transversales, punzonamiento, desarrollo, aplastamiento y pasadores; V3J.4 memoria, ejemplos y documentación. La
   imagen de presiones de las zapatas aisladas va primero, por separado.
 - **V3J.1 (hecha):** `model/combined.py` (`CombinedFooting`, `CombinedColumn`; bloque `combined_footings` del proyecto);
@@ -1066,6 +1066,11 @@
      centroide del perímetro; gobierna la esquina de mayor esfuerzo. Valores `esquina i x`, `esquina i y`, `esquina i v`,
      ordenadas por y y luego por x. Aplica a las zapatas aisladas y a las combinadas.
 - **Pendiente anotado:** vigas de gran altura (ACI 9.9, NSR-10 C.11.7).
+- **V3J.4 (hecha):** resultado `combined_footings` y memoria propia (viga larga y franjas por separado, planta de
+  presiones con las dos columnas y tabla de esfuerzos de punzonamiento por esquina, también en las zapatas aisladas);
+  en modo cimentación las estaciones no llevan las verificaciones del eje débil (M2, V3 e interacción V2-V3), que no
+  aplican; ejemplo `zapata_combinada.json` igual en los dos perfiles; propiedades derivadas de la base comunes
+  (`RectangularBase`).
 
 ## Consultas abiertas
 

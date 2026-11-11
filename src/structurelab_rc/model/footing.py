@@ -164,7 +164,67 @@ class FootingLoad(_Input):
         return value * NMM_PER_KNM
 
 
-class Footing(_Input):
+class RectangularBase:
+    """Propiedades derivadas de una base rectangular lx × ly con columnas (o pedestales) de área column_area, comunes a
+    la zapata aislada y a la combinada; se calculan, nunca se declaran."""
+
+    lx: float
+    ly: float
+    h: float
+    fill_height: float
+    pedestal_height: float
+    surcharge_dead: float
+    surcharge_live: float
+
+    @property
+    def column_area(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def area(self) -> float:
+        """Área de la base, en mm²."""
+        return self.lx * self.ly
+
+    @property
+    def inertia_x(self) -> float:
+        """Inercia de la base respecto al eje X (flexión en la dirección Y), en mm⁴."""
+        return self.lx * self.ly**3 / 12
+
+    @property
+    def inertia_y(self) -> float:
+        """Inercia de la base respecto al eje Y (flexión en la dirección X), en mm⁴."""
+        return self.ly * self.lx**3 / 12
+
+    @property
+    def modulus_x(self) -> float:
+        """Módulo de sección respecto al eje X, en mm³."""
+        return self.lx * self.ly**2 / 6
+
+    @property
+    def modulus_y(self) -> float:
+        """Módulo de sección respecto al eje Y, en mm³."""
+        return self.ly * self.lx**2 / 6
+
+    @property
+    def kern(self) -> tuple[float, float]:
+        """Semidiagonales del núcleo central (lx/6, ly/6): con |ex|/lx + |ey|/ly ≤ 1/6 todo el contacto se comprime."""
+        return self.lx / 6, self.ly / 6
+
+    def weights(self, soil: "Soil") -> tuple[float, float, float]:
+        """Pesos de la zapata, de los pedestales y del relleno, en N. El relleno ocupa la base menos las columnas o
+        pedestales."""
+        footing = soil.unit_weight_concrete * self.area * self.h
+        pedestal = soil.unit_weight_concrete * self.column_area * self.pedestal_height
+        fill = soil.unit_weight_fill * (self.area - self.column_area) * self.fill_height
+        return footing, pedestal, fill
+
+    def surcharges(self) -> tuple[float, float]:
+        """Fuerzas de las sobrecargas muerta y viva sobre el área de la base menos la de las columnas, en N."""
+        area = self.area - self.column_area
+        return self.surcharge_dead * area, self.surcharge_live * area
+
+
+class Footing(RectangularBase, _Input):
     """Zapata aislada de espesor h. fill_height es la altura del relleno sobre la zapata y pedestal_height la del
     pedestal, que tiene la sección de la columna; cover es el recubrimiento libre de las mallas. top es la malla
     superior, o None si no la hay. surcharge_dead y surcharge_live son las sobrecargas superimpuestas muerta y viva
@@ -216,47 +276,5 @@ class Footing(_Input):
         return "y" if self.lx > self.ly else "x"
 
     @property
-    def area(self) -> float:
-        """Área de la base, en mm²."""
-        return self.lx * self.ly
-
-    @property
-    def inertia_x(self) -> float:
-        """Inercia de la base respecto al eje X (flexión en la dirección Y), en mm⁴."""
-        return self.lx * self.ly**3 / 12
-
-    @property
-    def inertia_y(self) -> float:
-        """Inercia de la base respecto al eje Y (flexión en la dirección X), en mm⁴."""
-        return self.ly * self.lx**3 / 12
-
-    @property
-    def modulus_x(self) -> float:
-        """Módulo de sección respecto al eje X, en mm³."""
-        return self.lx * self.ly**2 / 6
-
-    @property
-    def modulus_y(self) -> float:
-        """Módulo de sección respecto al eje Y, en mm³."""
-        return self.ly * self.lx**2 / 6
-
-    @property
-    def kern(self) -> tuple[float, float]:
-        """Semidiagonales del núcleo central (lx/6, ly/6): con |ex|/lx + |ey|/ly ≤ 1/6 todo el contacto se comprime."""
-        return self.lx / 6, self.ly / 6
-
-    @property
     def column_area(self) -> float:
         return self.column.cx * self.column.cy
-
-    def weights(self, soil: Soil) -> tuple[float, float, float]:
-        """Pesos de la zapata, del pedestal y del relleno, en N. El relleno ocupa la base menos la columna o el pedestal."""
-        footing = soil.unit_weight_concrete * self.area * self.h
-        pedestal = soil.unit_weight_concrete * self.column_area * self.pedestal_height
-        fill = soil.unit_weight_fill * (self.area - self.column_area) * self.fill_height
-        return footing, pedestal, fill
-
-    def surcharges(self) -> tuple[float, float]:
-        """Fuerzas de las sobrecargas muerta y viva sobre el área de la base menos la de la columna, en N."""
-        area = self.area - self.column_area
-        return self.surcharge_dead * area, self.surcharge_live * area

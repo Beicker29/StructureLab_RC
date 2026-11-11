@@ -6,10 +6,10 @@ VALUES: nombre de un valor intermedio → (descripción, símbolo).
 
 STATUS_TEXT = {"PASS": "CUMPLE", "FAIL": "NO CUMPLE", "INCOMPLETE": "INCOMPLETO", "BLOCKED": "BLOQUEADO"}
 PROFILE_NAMES = {"aci-318-25": "ACI CODE-318-25", "nsr-10": "NSR-10 Título C"}
-UNITS = {"kN-m": "kN·m", "mm3": "mm³", "mm2": "mm²", "mm2/mm": "mm²/mm", "kN/m2": "kN/m²", "kN/m3": "kN/m³", "m2": "m²", "m3": "m³",
-         "m4": "m⁴", "deg": "°", "-": "–", "": "–"}
-DECIMALS = {"kN·m": 1, "kN": 1, "kPa": 1, "mm": 0, "mm³": 0, "mm²": 0, "mm²/mm": 3, "MPa": 2, "°": 2, "–": 4, "m²": 3, "m³": 3,
-            "m⁴": 3, "kN/m²": 1, "kN/m³": 1}
+UNITS = {"kN-m": "kN·m", "mm4": "mm⁴", "mm3": "mm³", "mm2": "mm²", "mm2/mm": "mm²/mm", "mm2/m": "mm²/m",
+         "kN/m2": "kN/m²", "kN/m3": "kN/m³", "m2": "m²", "m3": "m³", "m4": "m⁴", "deg": "°", "-": "–", "": "–"}
+DECIMALS = {"kN·m": 1, "kN": 1, "kPa": 1, "mm": 0, "mm⁴": 0, "mm³": 0, "mm²": 0, "mm²/m": 0, "mm²/mm": 3, "MPa": 2,
+            "°": 2, "–": 4, "m²": 3, "m³": 3, "m⁴": 3, "kN/m²": 1, "kN/m³": 1}
 
 # Orden de los prefijos: el primero que coincide gobierna (los más específicos van antes).
 CHECKS: tuple[tuple[str, str, str, str], ...] = (
@@ -17,6 +17,8 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Flexion: resistencia", "flexure", "Mu", "φMn"),
     ("Flexion: deformacion neta", "requirements", "εt,min", "εt"),
     ("Flexion: acero minimo", "requirements", "As,min", "As"),
+    ("Flexion: separacion por fisuracion", "requirements", "s", "s,máx"),
+    ("Flexion: refuerzo superficial", "requirements", "s", "s,máx"),
     ("Cortante: interaccion", "shear", "", ""),
     ("Cortante V3: resistencia", "shear", "Vu3", "φVn3"),
     ("Cortante: resistencia", "shear", "Vu", "φVn"),
@@ -38,6 +40,11 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Volcamiento", "geotechnical", "FS·Mo", "Mr"),
     ("Zapata: equilibrio", "geotechnical", "", ""),
     ("Zapata: verificacion estructural", "flexure", "", ""),
+    ("Zapata combinada: verificacion estructural", "flexure", "", ""),
+    ("Franja transversal: carga", "flexure", "", ""),
+    ("Viga larga: separacion", "requirements", "s", "s,máx"),
+    ("Malla inferior y: acero minimo", "requirements", "As,min", "As"),
+    ("Malla inferior y: separacion", "requirements", "s", "s,máx"),
     ("Flexion malla", "flexure", "Mu", "φMn"),
     ("Flexion concreto simple", "flexure", "Mu", "φMn"),
     ("Deformacion neta de traccion malla", "requirements", "εt,min", "εt"),
@@ -50,6 +57,8 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Cortante en una direccion", "one_way", "Vu", "φVc"),
     ("Punzonamiento", "punching", "vu", "φvc"),
     ("Desarrollo malla", "development", "ℓ requerida", "ℓ disponible"),
+    ("Desarrollo barras", "development", "ℓ requerida", "ℓ disponible"),
+    ("Desarrollo refuerzo band", "development", "ℓ requerida", "ℓ disponible"),
     ("Pasadores: anclaje", "development", "ℓdc", "espacio disponible"),
     ("Aplastamiento", "bearing", "Pu", "φBn"),
     ("Pasadores: compresion", "bearing", "As requerida", "As de pasadores"),
@@ -57,6 +66,17 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
 
 VALUES = {
     "phi": ("Factor de reducción de resistencia", "φ"),
+    "Msc x": ("Momento transferido por cortante que varía a lo largo de X", "Msc,x"),
+    "Msc y": ("Momento transferido por cortante que varía a lo largo de Y", "Msc,y"),
+    "Jc x": ("Propiedad Jc de la sección crítica (esfuerzo que varía a lo largo de X)", "Jc,x"),
+    "Jc y": ("Propiedad Jc de la sección crítica (esfuerzo que varía a lo largo de Y)", "Jc,y"),
+    "xc": ("Centroide del perímetro crítico en X", "xc"),
+    "yc": ("Centroide del perímetro crítico en Y", "yc"),
+    "cc": ("Recubrimiento libre a la cara en tracción o lateral", "cc"),
+    "As,min": ("Acero mínimo", "As,min"),
+    "As analisis": ("Acero requerido por análisis", "As,req"),
+    "barras": ("Barras en la capa en tracción", "n"),
+    "x": ("Posición de la sección", "x"),
     "Mn3": ("Momento nominal respecto del eje 3", "Mn3"),
     "Mn2": ("Momento nominal respecto del eje 2", "Mn2"),
     "Mn": ("Momento nominal", "Mn"),

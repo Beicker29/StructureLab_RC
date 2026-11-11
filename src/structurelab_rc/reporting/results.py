@@ -10,7 +10,8 @@ from typing import Any
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
-from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingLoad, Soil
+from structurelab_rc.model.combined import CombinedFooting
+from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingLoad, RectangularBase, Soil
 from structurelab_rc.model.project import Demands, Project
 from structurelab_rc.reporting.units import kN, kNm, kPa
 
@@ -24,7 +25,11 @@ _VALUE_UNITS = {"Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi T
                 "b0": "mm", "vuv": "MPa", "bslab": "mm", "A1": "mm2", "A2": "mm2", "Av/s": "mm2/mm", "At/s": "mm2/mm",
                 "At/s rama exterior": "mm2/mm", "mu N": "N", "ca Ac": "N", "Pp x": "N", "Pp y": "N", "V": "N", "R": "N",
                 "Mo": "N*mm", "Mr": "N*mm", "qa": "N/mm2", "p esquina -x-y": "N/mm2", "p esquina +x-y": "N/mm2",
-                "p esquina +x+y": "N/mm2", "p esquina -x+y": "N/mm2", "h calculo": "mm", "Sm": "mm3"}
+                "p esquina +x+y": "N/mm2", "p esquina -x+y": "N/mm2", "h calculo": "mm", "Sm": "mm3", "Msc x": "N*mm",
+                "Msc y": "N*mm", "Jc x": "mm4", "Jc y": "mm4", "xc": "mm", "yc": "mm", "cc": "mm", "As,min": "mm2",
+                "As analisis": "mm2", "x": "mm"}
+# Valores con número: "esquina 3 v" (esfuerzo de punzonamiento en la esquina 3) y sus coordenadas (D-083).
+_CORNER_UNITS = {"x": "mm", "y": "mm", "v": "MPa"}
 
 
 def significant(value: float) -> float:
@@ -47,6 +52,8 @@ def _unit(unit: str) -> str:
 
 def _value_key(name: str) -> tuple[str, str]:
     unit = _VALUE_UNITS.get(name, "")
+    if name.startswith("esquina "):
+        unit = _CORNER_UNITS.get(name.rsplit(" ", 1)[-1], "")
     shown = _unit(unit) if unit else ""
     return (f"{name} [{shown}]" if shown else name), unit
 
@@ -83,8 +90,8 @@ _MM3_PER_M3 = 1e9
 _MM4_PER_M4 = 1e12
 
 
-def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str, Any]:
-    """Zapata con sus propiedades derivadas de las dimensiones (nunca declaradas) y sus verificaciones."""
+def _base_properties(footing: RectangularBase, soil: Soil) -> dict[str, float]:
+    """Propiedades derivadas de las dimensiones de la base (nunca declaradas), comunes a la zapata aislada y la combinada."""
     footing_weight, pedestal_weight, fill_weight = footing.weights(soil)
     dead_surcharge, live_surcharge = footing.surcharges()
     kern_x, kern_y = footing.kern
@@ -102,19 +109,45 @@ def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str,
         "Sobrecarga muerta [kN]": kN(dead_surcharge),
         "Sobrecarga viva [kN]": kN(live_surcharge),
     }
-    geometry = footing.model_dump(mode="json", include={"lx", "ly", "h", "cover", "fill_height", "pedestal_height", "column"})
+    return {key: significant(value) for key, value in properties.items()}
+
+
+def _geometry(footing: Footing | CombinedFooting, include: set[str]) -> dict[str, Any]:
+    geometry = footing.model_dump(mode="json", include={"lx", "ly", "h", "cover", "fill_height", "pedestal_height", *include})
     geometry["surcharge_dead [kN/m2]"] = significant(footing.surcharge_dead / MPA_PER_KPA)
     geometry["surcharge_live [kN/m2]"] = significant(footing.surcharge_live / MPA_PER_KPA)
+    return geometry
+
+
+def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str, Any]:
+    """Zapata con sus propiedades derivadas de las dimensiones (nunca declaradas) y sus verificaciones."""
     return {
         "id": footing.id,
-        "geometry [mm]": geometry,
-        "properties": {key: significant(value) for key, value in properties.items()},
+        "geometry [mm]": _geometry(footing, {"column"}),
+        "properties": _base_properties(footing, soil),
         "reinforcement": {"bottom": footing.bottom.model_dump(mode="json"),
                           "top": None if footing.top is None else footing.top.model_dump(mode="json")},
         "loads": [_load_data(load) for load in footing.loads],
         "status": _status(checks),
         # En las zapatas cada verificación lleva su caso de carga (None si vale para toda la zapata).
         "checks": [{**check_data(check), "case": check.case} for check in checks],
+    }
+
+
+def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Check]) -> dict[str, Any]:
+    """Zapata combinada (D-080): geometría, columnas con sus cargas, propiedades derivadas, armado y verificaciones con su
+    caso, su posición z (viga larga o franja) y su nota (la sección o la columna)."""
+    columns = [{**column.model_dump(mode="json", exclude={"loads"}), "loads": [_load_data(load) for load in column.loads]}
+               for column in footing.columns]
+    return {
+        "id": footing.id,
+        "geometry [mm]": _geometry(footing, set()),
+        "columns": columns,
+        "properties": _base_properties(footing, soil),
+        "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin"}),
+        "status": _status(checks),
+        "checks": [{**check_data(check), "case": check.case, "z [mm]": None if check.z is None else significant(check.z)}
+                   for check in checks],
     }
 
 
@@ -184,7 +217,7 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
             "stations": stations,
         })
     results["members"] = members
-    if project.footings and project.soil is not None:
+    if (project.footings or project.combined_footings) and project.soil is not None:
         soil = project.soil
         results["soil"] = {"qa [kPa]": significant(soil.allowable_pressure / MPA_PER_KPA),
                            "contacto minimo [-]": soil.min_contact_fraction,
@@ -199,4 +232,8 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
                            "factor sismo qa [-]": soil.seismic_bearing_factor}
         results["footings"] = [footing_data(footing, soil, [check for check in station_checks if check.member == footing.id])
                                for footing in project.footings]
+        if project.combined_footings:
+            results["combined_footings"] = [
+                combined_footing_data(footing, soil, [check for check in station_checks if check.member == footing.id])
+                for footing in project.combined_footings]
     return results

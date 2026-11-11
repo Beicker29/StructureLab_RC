@@ -83,9 +83,9 @@ Se entrega en subfases, cada una con su oráculo y la CI en verde:
   común a vigas y columnas.
 - **V3I Concreto simple (hecha, D-072):** momento negativo sin malla superior resistido por el concreto simple donde el
   nivel sísmico lo permite; el diseño prueba primero sin malla superior; lista explícita de f'c a evaluar.
-- **V3J Zapatas combinadas (en curso, D-080):** solo verificación, dos columnas, rectangular, presión de Bellos.
-  V3J.1 modelo, entrada y revisión geotécnica (hecha); V3J.2 viga en la dirección larga (hecha); V3J.3 (hecha) franjas transversales,
-  punzonamiento, desarrollo, aplastamiento y pasadores; V3J.4 memoria, ejemplos y documentación.
+- **V3J Zapatas combinadas (hecha, D-080 a D-083):** solo verificación, dos columnas, rectangular, presión de Bellos.
+  V3J.1 modelo, entrada y revisión geotécnica; V3J.2 viga en la dirección larga con el código de vigas; V3J.3 franjas
+  transversales, punzonamiento, desarrollo, aplastamiento y pasadores; V3J.4 memoria, ejemplos y documentación.
 
 Pendientes de la v3: diseño por tipologías con apoyos en distintos niveles de cimentación (hoy todas las zapatas usan el mismo relleno y el mismo pedestal del bloque `design`; los Excel de ejemplo tienen 4 niveles y por decisión del usuario no se considera ningún efecto por ahora), factores por estribos o espirales en el desarrollo (ψr, con vigas y columnas, D-071), empuje pasivo sobre el pedestal y suelo bajo nivel freático en la
 estabilidad (D-070), excepción de viviendas para el concreto simple en cimentaciones con sismo alto (D-072), en zapatas combinadas los efectos de Vy y de las columnas desplazadas en Y sobre la viga larga (torsión) y las franjas (D-080), el

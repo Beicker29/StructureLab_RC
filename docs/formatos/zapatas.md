@@ -110,7 +110,7 @@ el mismo `soil` que las zapatas aisladas. Se verifican la parte geotécnica con 
   las barras x desde la sección de mayor momento de su signo y de las barras y de cada franja desde la cara de la
   columna.
 
-La memoria llega en V3J.4.
+La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en los dos perfiles.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
@@ -234,7 +234,12 @@ Cada verificación de `resultado.json` tiene:
 | `errors` | Errores estructurados (`code`, `message`, `details`) cuando el estado no es PASS. |
 
 En zapatas, `resultado.json` agrega `soil` (datos del suelo en kPa y kN/m³) y `footings`, con la geometría, las
-propiedades calculadas, el número de casos y las verificaciones.
+propiedades calculadas, el número de casos y las verificaciones. Las zapatas combinadas van en `combined_footings`: la
+geometría, las columnas (`columns[]`, cada una con sus cargas), las propiedades calculadas de la base, el armado
+(`bottom`, `top`, `stirrups`, `skin`) y las verificaciones, cada una con su `case`, su `z [mm]` (posición en la viga
+larga desde −X o en la franja desde −Y; nula en las demás) y en `note` la sección, la franja o la columna. Su memoria
+separa la viga larga de las franjas transversales y trae la planta de presiones con las dos columnas y la tabla de
+esfuerzos de punzonamiento en cada esquina.
 
 ## Verificaciones de zapatas
 

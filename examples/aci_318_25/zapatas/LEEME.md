@@ -1,6 +1,6 @@
 # Zapatas, perfil aci-318-25
 
-Zapatas aisladas según ACI CODE-318-25 (v3, en curso). Los campos de entrada y de salida están en
+Zapatas aisladas y combinadas según ACI CODE-318-25 (v3, en curso). Los campos de entrada y de salida están en
 [docs/formatos/zapatas.md](../../../docs/formatos/zapatas.md).
 
 | Ejemplo | Qué muestra |
@@ -9,16 +9,20 @@ Zapatas aisladas según ACI CODE-318-25 (v3, en curso). Los campos de entrada y 
 | `plantilla_diseno_zapatas_etabs.json` | Diseño por tipologías desde los Excel compartidos de `examples/etabs/zapatas/`: cada Unique Name es una columna de 500 × 800 mm (cx × cy) con la zapata centrada; 6 tipologías y f'c de 21, 24.5 y 28 MPa. **Datos supuestos.** El diseño de los 73 apoyos tarda varios minutos. |
 | `plantilla_zapatas_etabs.json` | Verificación desde los mismos Excel con tres tipos de zapata; cubre 57 de los 73 apoyos. **Dimensiones, columnas, mallas, suelo, relleno y sobrecargas supuestos.** Las combinaciones con sismo van marcadas `"seismic": true` en `load_factors`. |
 | `zapata_aislada.json` | Ejemplo de zapatas aisladas: Z1 centrada bajo columna cuadrada con pedestal y Z2 rectangular con la columna desplazada 400 mm en X. Fuerzas en la base de la columna, ejes globales. Datos ilustrativos. |
+| `zapata_combinada.json` | Ejemplo de zapata combinada: ZC1 rectangular de 7.0 × 2.6 m bajo dos columnas (C1 de 500 × 500 mm cerca del borde −X y C2 de 550 × 550 mm), con cargas de servicio y mayoradas, sismo en X y refuerzo transversal (band) bajo cada columna. Datos ilustrativos (D-080 a D-083). |
 
 Estado actual: se verifican la presión admisible y el contacto con el suelo (V3C) y toda la parte estructural
 (V3D): flexión con las mallas, As,min, separación, franja central, altura mínima, cortante en una dirección,
-punzonamiento, desarrollo de las barras, aplastamiento y pasadores.
+punzonamiento, desarrollo de las barras, aplastamiento y pasadores. Zapatas combinadas (V3J, solo verificación): la
+revisión geotécnica, la viga en la dirección larga y las franjas transversales con el código de vigas, el punzonamiento
+por columna, el desarrollo, el aplastamiento y los pasadores.
 
 ## Cómo correrlos
 
 ```console
 structurelab-rc verify examples/aci_318_25/zapatas/zapata_aislada.json
 structurelab-rc report examples/aci_318_25/zapatas/zapata_aislada.json --output results/aci_318_25/zapatas/zapata_aislada
+structurelab-rc report examples/aci_318_25/zapatas/zapata_combinada.json --output results/aci_318_25/zapatas/zapata_combinada
 ```
 
 Diseño por tipologías:

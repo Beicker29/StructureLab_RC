@@ -47,9 +47,9 @@ _BEAM_CONVENTIONS = (
     "La torsión se desprecia si Tu < φTth; si no, se verifica combinada con el cortante (D-037).",
 )
 _BEAM_LIMITATIONS = (
-    "Servicio (fisuración, espesor mínimo y deflexiones): falta implementación (subfase 2D, D-017, D-039).",
-    "Excepción de As,min cuando As supera en un tercio al requerido: falta implementación; la verificación queda "
-    "bloqueada si As < As,min (D-022).",
+    "Servicio: la separación por fisuración se verifica (D-081); espesor mínimo y deflexiones, falta implementación "
+    "(subfase 2D, D-017, D-039).",
+    "Vigas de gran altura (ACI 9.9, NSR-10 C.11.7): falta implementación.",
     "Torsión de compatibilidad (Tu reducido a φTcr) y reducción de Aℓ en la zona comprimida: falta implementación.",
     "Secciones huecas a torsión: no cubiertas.",
     "Requisitos sísmicos de vigas (Fase 3): falta implementación.",
@@ -69,13 +69,32 @@ _FOOTING_CONVENTIONS = (
     "Deslizamiento (fricción, adherencia sobre el área en contacto y pasiva afectada por su factor) y volcamiento con los "
     "casos de servicio y los factores de seguridad declarados por el usuario, sísmicos en los casos marcados (D-070).",
 )
+_COMBINED_CONVENTIONS = (
+    "Zapata combinada rectangular de dos columnas, rígida, con la presión lineal y sin tracción de Bellos y Bakas (2017) "
+    "de la resultante de las dos columnas; X es la dirección larga y el origen es el centroide de la base (D-080).",
+    "Las fuerzas de cada columna actúan en su eje a la altura h + pedestal: el cortante horizontal produce un momento en "
+    "la base, que entra en la presión, en la viga larga y en el punzonamiento.",
+    "Viga en la dirección larga revisada con el código de vigas en sus secciones críticas (mayores momentos y a d de las "
+    "caras), con Vc y Av,min de cimentación; en una cara de columna el cortante es el de la sección a d (D-081, D-082).",
+    "Franja transversal bajo cada columna de ancho columna + d/2 a cada lado, con la carga de la columna repartida en el "
+    "ancho con la forma de la presión, revisada también con el código de vigas (D-080, D-082).",
+    "Punzonamiento por columna con la carga neta de Bellos dentro del perímetro crítico; el esfuerzo se evalúa en cada "
+    "esquina con el cortante directo y el del momento transferido en los dos ejes, y gobierna la mayor (D-083).",
+)
+_COMBINED_LIMITATIONS = (
+    "Torsión por Vy y por columnas desplazadas en Y: falta implementación; en las franjas solo entran por la forma de la "
+    "presión (D-080).",
+    "Punzonamiento de dos columnas cuyos perímetros críticos se traslapan y franja de una columna con presión nula: falta "
+    "implementación (D-082).",
+    "Vigas de gran altura (ACI 9.9, NSR-10 C.11.7), otras formas de zapata combinada y más de dos columnas: no cubiertas.",
+)
 _FOOTING_LIMITATIONS = (
     "Empuje pasivo sobre el pedestal y deslizamiento con suelo bajo nivel freático: no cubiertos (D-070).",
     "Momento negativo sin malla superior como concreto simple solo donde el perfil lo permite con el nivel sísmico; la "
     "excepción de viviendas de una o dos familias de hasta tres pisos no está implementada (D-072).",
     "Aplastamiento del lado de la columna, empalme de los pasadores y tracción en la interfaz: se verificarán con las "
     "columnas (D-059).",
-    "Zapatas combinadas, medianeras con viga de amarre, rotadas, escalonadas, losas de cimentación y pilotes: no cubiertas.",
+    "Medianeras con viga de amarre, rotadas, escalonadas, losas de cimentación y pilotes: no cubiertas.",
 )
 _SOURCES = "Los factores φ, las capacidades y los numerales provienen del resultado de cada verificación."
 
@@ -314,10 +333,36 @@ def _mat_text(mat: dict[str, Any] | None) -> str:
     return f"{sets}; primero {mat['first']}; barras {_ENDS[mat['end']]}"
 
 
+def _soil_rows(results: dict[str, Any]) -> list[list[str]]:
+    soil = results["soil"]
+    return [["Presión admisible bruta (qa)", number(soil["qa [kPa]"], "kPa"), "kPa"],
+            ["Factor de aumento de qa en combinaciones con sismo", number(soil["factor sismo qa [-]"], "–"), "–"],
+            ["Fracción mínima de contacto", number(soil["contacto minimo [-]"], "–"), "–"],
+            ["Peso unitario del concreto (γc)", number(soil["gamma concreto [kN/m3]"], "kN/m³"), "kN/m³"],
+            ["Peso unitario del relleno (γf)", number(soil["gamma relleno [kN/m3]"], "kN/m³"), "kN/m³"],
+            ["Coeficiente de fricción suelo–zapata (μ)", number(soil["mu [-]"], "–"), "–"],
+            ["Adherencia suelo–zapata (ca)", number(soil["ca [kPa]"], "kPa"), "kPa"],
+            ["Coeficiente de empuje pasivo (Kp)", number(soil["Kp [-]"], "–"), "–"],
+            ["Cohesión del suelo (c)", number(soil["c [kPa]"], "kPa"), "kPa"],
+            ["Factor del empuje pasivo (fp)", number(soil["fp [-]"], "–"), "–"],
+            ["FS mínimo al deslizamiento: sin sismo / con sismo",
+             f"{number(soil['FS deslizamiento [-]'], '–')} / {number(soil['FS deslizamiento sismo [-]'], '–')}", "–"],
+            ["FS mínimo al volcamiento: sin sismo / con sismo",
+             f"{number(soil['FS volcamiento [-]'], '–')} / {number(soil['FS volcamiento sismo [-]'], '–')}", "–"]]
+
+
+def _properties_rows(footing: dict[str, Any]) -> list[list[str]]:
+    rows = []
+    for key, value in footing["properties"].items():
+        name, unit = unit_of(key)
+        description, symbol = describe(name)
+        rows.append([f"{description} ({symbol})", number(value, unit), unit])
+    return rows
+
+
 def _footing_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[Block]:
     g = footing["geometry [mm]"]
     column = g["column"]
-    soil = results["soil"]
     rows = [["Largo a lo largo de X (lx)", number(g["lx"], "mm"), "mm"], ["Ancho a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
             ["Espesor (h)", number(g["h"], "mm"), "mm"], ["Recubrimiento libre de las mallas", number(g["cover"], "mm"), "mm"],
             ["Columna a lo largo de X (cx)", number(column["cx"], "mm"), "mm"],
@@ -327,25 +372,8 @@ def _footing_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[
             ["Altura del pedestal", number(g["pedestal_height"], "mm"), "mm"], ["Altura del relleno", number(g["fill_height"], "mm"), "mm"],
             ["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
             ["Sobrecarga viva (qL)", number(g["surcharge_live [kN/m2]"], "kN/m²"), "kN/m²"]]
-    soil_rows = [["Presión admisible bruta (qa)", number(soil["qa [kPa]"], "kPa"), "kPa"],
-                 ["Factor de aumento de qa en combinaciones con sismo", number(soil["factor sismo qa [-]"], "–"), "–"],
-                 ["Fracción mínima de contacto", number(soil["contacto minimo [-]"], "–"), "–"],
-                 ["Peso unitario del concreto (γc)", number(soil["gamma concreto [kN/m3]"], "kN/m³"), "kN/m³"],
-                 ["Peso unitario del relleno (γf)", number(soil["gamma relleno [kN/m3]"], "kN/m³"), "kN/m³"],
-                 ["Coeficiente de fricción suelo–zapata (μ)", number(soil["mu [-]"], "–"), "–"],
-                 ["Adherencia suelo–zapata (ca)", number(soil["ca [kPa]"], "kPa"), "kPa"],
-                 ["Coeficiente de empuje pasivo (Kp)", number(soil["Kp [-]"], "–"), "–"],
-                 ["Cohesión del suelo (c)", number(soil["c [kPa]"], "kPa"), "kPa"],
-                 ["Factor del empuje pasivo (fp)", number(soil["fp [-]"], "–"), "–"],
-                 ["FS mínimo al deslizamiento: sin sismo / con sismo",
-                  f"{number(soil['FS deslizamiento [-]'], '–')} / {number(soil['FS deslizamiento sismo [-]'], '–')}", "–"],
-                 ["FS mínimo al volcamiento: sin sismo / con sismo",
-                  f"{number(soil['FS volcamiento [-]'], '–')} / {number(soil['FS volcamiento sismo [-]'], '–')}", "–"]]
-    properties = []
-    for key, value in footing["properties"].items():
-        name, unit = unit_of(key)
-        description, symbol = describe(name)
-        properties.append([f"{description} ({symbol})", number(value, unit), unit])
+    soil_rows = _soil_rows(results)
+    properties = _properties_rows(footing)
     dowels = column.get("dowels")
     reinforcement = [["Malla inferior", _mat_text(footing["reinforcement"]["bottom"])],
                      ["Malla superior", _mat_text(footing["reinforcement"]["top"])],
@@ -376,8 +404,18 @@ def _soil_pressures(footing: dict[str, Any], figure: Path | None) -> list[Block]
     return blocks
 
 
+_LOAD_KEYS = ("P [kN]", "Vx [kN]", "Vy [kN]", "Mx [kN-m]", "My [kN-m]")
+
+
+def _loads_table(loads: list[dict[str, Any]], column: str | None = None) -> Block:
+    rows = [[*([column] if column else []), load["case"], f"{load['dead_factor']:.2f}", f"{load['live_factor']:.2f}",
+             "sí" if load["seismic"] else "no", *(number(load[key], unit_of(key)[1]) for key in _LOAD_KEYS)] for load in loads]
+    headers = [*(["Columna"] if column else []), "Caso", "Factor D", "Factor L", "Sismo",
+               *(f"{unit_of(key)[0]} ({unit_of(key)[1]})" for key in _LOAD_KEYS)]
+    return {"kind": "table", "headers": headers, "rows": rows}
+
+
 def _footing_demands(footing: dict[str, Any], figure: Path | None = None) -> list[Block]:
-    keys = ("P [kN]", "Vx [kN]", "Vy [kN]", "Mx [kN-m]", "My [kN-m]")
     blocks: list[Block] = [{"kind": "p", "text": "Fuerzas de la columna sobre la zapata, en la base de la columna; P > 0 en compresión."}]
     for kind, title in (("service", "Casos de servicio"), ("factored", "Casos mayorados")):
         loads = [load for load in footing["loads"] if load["kind"] == kind]
@@ -385,11 +423,35 @@ def _footing_demands(footing: dict[str, Any], figure: Path | None = None) -> lis
         if not loads:
             blocks.append({"kind": "p", "text": "No aplica: ningún caso de este tipo."})
             continue
-        rows = [[load["case"], f"{load['dead_factor']:.2f}", f"{load['live_factor']:.2f}", "sí" if load["seismic"] else "no",
-                 *(number(load[key], unit_of(key)[1]) for key in keys)] for load in loads]
-        headers = ["Caso", "Factor D", "Factor L", "Sismo", *(f"{unit_of(key)[0]} ({unit_of(key)[1]})" for key in keys)]
-        blocks.append({"kind": "table", "headers": headers, "rows": rows})
+        blocks.append(_loads_table(loads))
     return blocks + _soil_pressures(footing, figure)
+
+
+def _punching_corners(items: list[Located]) -> list[Block]:
+    """Esfuerzo de punzonamiento en cada esquina del perímetro crítico, por caso (y columna): cortante directo más el del
+    momento transferido en los dos ejes; gobierna la mayor (D-083)."""
+    rows = []
+    for where, check in items:
+        if check["name"] != "Punzonamiento":
+            continue
+        values = check["values"]
+        stresses = [values[key] for key in values if key.startswith("esquina ") and key.split(" ")[2] == "v"]
+        if not stresses:
+            continue
+        top = max(stresses)
+        index = 1
+        while f"esquina {index} v [MPa]" in values:
+            stress = values[f"esquina {index} v [MPa]"]
+            x, y = values[f"esquina {index} x [mm]"], values[f"esquina {index} y [mm]"]
+            rows.append([where, str(index), number(x, "mm"), number(y, "mm"),
+                         f"{stress:.3f}", "gobierna" if stress == top else ""])
+            index += 1
+    if not rows:
+        return []
+    return [{"kind": "h2", "text": "Esfuerzos de punzonamiento en las esquinas del perímetro crítico"},
+            {"kind": "table", "headers": ["Ubicación", "Esquina", "x (mm)", "y (mm)", "vu (MPa)", ""], "rows": rows},
+            {"kind": "note", "text": "Coordenadas respecto al centroide de la base. vu = Vu/(b0·d) + γv,x·Msc,x·(x − xc)/Jc,x + "
+                                     "γv,y·Msc,y·(y − yc)/Jc,y, con la carga neta de Bellos dentro del área crítica."}]
 
 
 def footing_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None) -> list[Block]:
@@ -405,11 +467,105 @@ def footing_document(results: dict[str, Any], footing: dict[str, Any], full: boo
         (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
         (_CHAPTER_TITLES["flexure"], lambda n: _chapter("flexure", n, items, full)),
         (_CHAPTER_TITLES["one_way"], lambda n: _chapter("one_way", n, items, full)),
-        (_CHAPTER_TITLES["punching"], lambda n: _chapter("punching", n, items, full)),
+        (_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, items, full), *_punching_corners(items)]),
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, items, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, items, full)),
         ("Índices DCR", lambda _: _dcr(items)),
         ("Notas y limitaciones", lambda _: _notes(results, _FOOTING_CONVENTIONS, _FOOTING_LIMITATIONS)),
+    ]
+    return _assemble(head, chapters)
+
+
+def _combined_where(check: dict[str, Any]) -> str:
+    """Ubicación de una verificación de la zapata combinada: el caso y la viga larga (z y sección), la franja o la columna."""
+    case = f"caso {check['case']}" if check.get("case") else "toda la zapata"
+    note = check["note"].split(":")[0].split(";")[0]
+    z = check.get("z [mm]")
+    if note.startswith("Franja"):
+        return f"{case}, {note}" + (f" (z = {z:.0f} mm desde −Y)" if z is not None else "")
+    if note.startswith("Columna"):
+        return f"{case}, {note}"
+    if z is not None:
+        return f"{case}, viga larga en z = {z:.0f} mm desde −X ({note[:1].lower() + note[1:]})"
+    return case
+
+
+def _bar_text(bars: dict[str, Any] | None, extra: str = "") -> str:
+    if bars is None:
+        return "no hay"
+    return f"{bars['designation']} c/{bars['spacing']:.0f} mm{extra}"
+
+
+def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[Block]:
+    g = footing["geometry [mm]"]
+    rows = [["Largo a lo largo de X (lx)", number(g["lx"], "mm"), "mm"], ["Ancho a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
+            ["Espesor (h)", number(g["h"], "mm"), "mm"], ["Recubrimiento libre", number(g["cover"], "mm"), "mm"],
+            ["Altura de los pedestales", number(g["pedestal_height"], "mm"), "mm"],
+            ["Altura del relleno", number(g["fill_height"], "mm"), "mm"],
+            ["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
+            ["Sobrecarga viva (qL)", number(g["surcharge_live [kN/m2]"], "kN/m²"), "kN/m²"]]
+    columns = [[column["id"], number(column["cx"], "mm"), number(column["cy"], "mm"), number(column["x"], "mm"), number(column["y"], "mm"),
+                f"{column['dowels']['count']} {column['dowels']['designation']}" if column.get("dowels") else "no declarados",
+                _bar_text(column.get("band"))] for column in footing["columns"]]
+    reinforcement = footing["reinforcement"]
+    top = reinforcement.get("top")
+    stirrups = reinforcement.get("stirrups")
+    skin = reinforcement.get("skin")
+    bars = [["Malla inferior", _mat_text(reinforcement["bottom"])],
+            ["Barras superiores x", _bar_text(top, f"; barras {_ENDS[top['end']]}" if top else "")],
+            ["Estribos de la viga larga", "no hay" if stirrups is None else
+             f"{stirrups['legs']} ramas {stirrups['designation']} c/{stirrups['spacing']:.0f} mm"],
+            ["Refuerzo superficial (caras largas)", _bar_text(skin, " en vertical" if skin else "")]]
+    return [{"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": rows},
+            {"kind": "table",
+             "headers": ["Columna", "cx (mm)", "cy (mm)", "x (mm)", "y (mm)", "Pasadores", "Refuerzo bajo la columna (band)"],
+             "rows": columns},
+            {"kind": "note", "text": "x e y ubican el eje de cada columna respecto al centroide de la base."},
+            {"kind": "table", "headers": ["Suelo y pesos (dato del usuario)", "Valor", "Unidad"], "rows": _soil_rows(results)},
+            {"kind": "p", "text": "Propiedades calculadas a partir de las dimensiones (nunca declaradas):"},
+            {"kind": "table", "headers": ["Propiedad", "Valor", "Unidad"], "rows": _properties_rows(footing)},
+            {"kind": "table", "headers": ["Refuerzo", "Descripción"], "rows": bars}]
+
+
+def _combined_demands(footing: dict[str, Any], figure: Path | None) -> list[Block]:
+    blocks: list[Block] = [{"kind": "p", "text": "Fuerzas de cada columna sobre la zapata, en la base de la columna; P > 0 en compresión."}]
+    for kind, title in (("service", "Casos de servicio"), ("factored", "Casos mayorados")):
+        blocks.append({"kind": "h2", "text": title})
+        tables = [_loads_table([load for load in column["loads"] if load["kind"] == kind], column["id"]) for column in footing["columns"]]
+        rows = [row for table in tables for row in table["rows"]]
+        if not rows:
+            blocks.append({"kind": "p", "text": "No aplica: ningún caso de este tipo."})
+            continue
+        blocks.append({**tables[0], "rows": rows})
+    return blocks + _soil_pressures(footing, figure)
+
+
+def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None) -> list[Block]:
+    """Memoria de una zapata combinada (D-080 a D-083): la viga larga y las franjas transversales con las verificaciones de
+    vigas, el punzonamiento con los esfuerzos de cada esquina, el desarrollo, el aplastamiento y los pasadores."""
+    items: list[Located] = [(_combined_where(check), check) for check in footing["checks"]]
+    strips = [item for item in items if item[1]["note"].startswith("Franja")]
+    beam = [item for item in items if item[1].get("z [mm]") is not None and not item[1]["note"].startswith("Franja")]
+    others = [item for item in items if item not in strips and item not in beam]
+    counts = {kind: sum(1 for load in footing["columns"][0]["loads"] if load["kind"] == kind) for kind in ("service", "factored")}
+    meta = [("Columnas", " y ".join(column["id"] for column in footing["columns"])),
+            ("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
+    head = [_title(f"Zapata combinada {footing['id']}", results, meta, items, footing["status"]), _summary(items)]
+    chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
+        ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
+        ("Propiedades geométricas, columnas, suelo y armado", lambda _: _combined_geometry(results, footing)),
+        ("Solicitaciones", lambda _: _combined_demands(footing, figure)),
+        (_CHAPTER_TITLES["geotechnical"], lambda n: _chapter("geotechnical", n, others, full)),
+        (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
+        ("Viga en la dirección larga: momento flector", lambda n: _chapter("flexure", n, beam, full)),
+        ("Viga en la dirección larga: fuerza cortante", lambda n: _chapter("shear", n, beam, full)),
+        ("Franjas transversales: momento flector", lambda n: _chapter("flexure", n, strips, full)),
+        ("Franjas transversales: fuerza cortante", lambda n: _chapter("shear", n, strips, full)),
+        (_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full), *_punching_corners(others)]),
+        (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, others, full)),
+        (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, others, full)),
+        ("Índices DCR", lambda _: _dcr(items)),
+        ("Notas y limitaciones", lambda _: _notes(results, _COMBINED_CONVENTIONS, _COMBINED_LIMITATIONS)),
     ]
     return _assemble(head, chapters)
 
@@ -425,4 +581,6 @@ def report_documents(results: dict[str, Any], *, full: bool = False, figures: di
     documents = [beam_document(results, member, full) for member in results["members"]]
     documents += [footing_document(results, footing, full, (figures or {}).get(footing["id"]))
                   for footing in results.get("footings", [])]
+    documents += [combined_document(results, footing, full, (figures or {}).get(footing["id"]))
+                  for footing in results.get("combined_footings", [])]
     return documents

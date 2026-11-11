@@ -158,3 +158,26 @@ def test_footing_report_draws_the_soil_pressure_in_plan(tmp_path: Path) -> None:
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     assert "Presión del suelo en las esquinas (casos de servicio)" in text and "archivo presion_Z1.svg" in text
 
+
+
+def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> None:
+    """V3J.4 (D-080 a D-083): la memoria de la zapata combinada separa la viga larga de las franjas, dibuja la planta con
+    las dos columnas y trae los esfuerzos de punzonamiento en cada esquina; el resultado trae combined_footings."""
+    example = EXAMPLE.parent.parent / "zapatas" / "zapata_combinada.json"
+    report = report_file(example, tmp_path)
+    results = json.loads((tmp_path / "resultado.json").read_text(encoding="utf-8"))
+    footing = results["combined_footings"][0]
+    assert [column["id"] for column in footing["columns"]] == ["C1", "C2"]
+    assert all("case" in check and "z [mm]" in check for check in footing["checks"])
+    figure = tmp_path / "presion_ZC1.svg"
+    assert figure in report.files
+    svg = figure.read_text(encoding="utf-8")
+    assert svg.count("<circle") == 4 and svg.count('fill="#9aa4b2"') == 2  # las cuatro esquinas y las dos columnas
+    text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
+    assert text.count("# Memoria de cálculo — Zapata combinada ZC1") == 1
+    for chapter in ("Viga en la dirección larga: momento flector", "Viga en la dirección larga: fuerza cortante",
+                    "Franjas transversales: momento flector", "Franjas transversales: fuerza cortante",
+                    "Revisión de cortante en dos direcciones (punzonamiento)", "Revisión de aplastamiento y pasadores"):
+        assert chapter in text
+    assert "Esfuerzos de punzonamiento en las esquinas del perímetro crítico" in text and "gobierna" in text
+    assert "Cortante V3" not in text  # el eje débil no aplica a la zapata

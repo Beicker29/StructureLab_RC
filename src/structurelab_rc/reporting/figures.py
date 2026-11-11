@@ -1,6 +1,6 @@
 """Figuras de la memoria que no son resultados nuevos: aquí no se calcula nada, solo se dibuja lo que ya trae el
-resultado (D-080). Presión del suelo en planta: la zapata, sus columnas, los ejes y la presión en cada esquina del caso
-de servicio que gobierna la presión admisible.
+resultado (D-080). Presión del suelo en planta: la zapata (aislada o combinada), sus columnas, los ejes y la presión en
+cada esquina del caso de servicio que gobierna la presión admisible.
 """
 
 from pathlib import Path
@@ -27,13 +27,16 @@ def governing_pressure(checks: list[dict[str, Any]]) -> dict[str, Any] | None:
 def pressure_figures(results: dict[str, Any], folder: Path) -> dict[str, Path]:
     """Escribe presion_<zapata>.svg por cada zapata con la presión en las esquinas y devuelve sus rutas (D-080)."""
     figures = {}
-    for footing in results.get("footings", []):
+    footings = [(footing, [{"cx": footing["geometry [mm]"]["column"]["cx"], "cy": footing["geometry [mm]"]["column"]["cy"],
+                            "x": footing["geometry [mm]"]["column"]["offset_x"], "y": footing["geometry [mm]"]["column"]["offset_y"]}])
+                for footing in results.get("footings", [])]
+    footings += [(footing, [{key: column[key] for key in ("cx", "cy", "x", "y")} for column in footing["columns"]])
+                 for footing in results.get("combined_footings", [])]
+    for footing, columns in footings:
         governing = governing_pressure(footing["checks"])
         if governing is None:
             continue
         geometry = footing["geometry [mm]"]
-        column = geometry["column"]
-        columns = [{"cx": column["cx"], "cy": column["cy"], "x": column["offset_x"], "y": column["offset_y"]}]
         path = folder / f"presion_{footing['id']}.svg"
         path.write_text(pressure_svg(geometry["lx"], geometry["ly"], columns, governing), encoding="utf-8", newline="\n")
         figures[footing["id"]] = path
