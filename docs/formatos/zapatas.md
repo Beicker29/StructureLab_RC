@@ -5,7 +5,8 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 ## Convenciones
 
 - Ejes globales de ETABS con origen en el centroide de la base: X a lo largo de `lx`, Y a lo largo de `ly`, Z hacia
-  arriba. Las zapatas rotadas aún no se admiten.
+  arriba. Las zapatas aisladas rotadas aún no se admiten. Las zapatas combinadas y en T invertida declaran con
+  `principal_direction` si su viga va en la X o en la Y global y se escriben, como todo, en ejes globales (D-094).
 - Las fuerzas son las que la columna aplica sobre la zapata, en la base de la columna (a la altura h + pedestal):
   `P_kN` positiva en compresión, `Vx_kN` y `Vy_kN` horizontales, `Mx_kNm` y `My_kNm` con la regla de la mano derecha.
   Una fuerza P aplicada en x > 0 produce My > 0.
@@ -116,6 +117,7 @@ La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en los dos perfil
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `id`, `lx`, `ly`, `h`, `cover`, `fill_height`, `pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2` | | Como en la zapata aislada. |
+| `principal_direction` | texto | Dirección principal (la de la viga que une las columnas) en ejes globales de ETABS: `x` (por defecto) o `y` (D-094). Todo se escribe en ejes globales, como está la zapata en planta: con `y`, `ly` es la dimensión paralela a la viga, las columnas van a distintas `y` y `bottom.y` son las barras paralelas a la viga. `top`, estribos, refuerzo superficial, capas de torsión, `band` y la viga de la T no tienen dirección propia: van paralelos o transversales a la viga. El cálculo trabaja en ejes de la viga (X = +Y global, Y = −X global): con `y`, al cargar se intercambian lx y ly, las columnas pasan a x = y, y = −x, con cx = cy y cy = cx, las mallas x e y (y `first`) se intercambian y las cargas pasan a Vx = Vy, Vy = −Vx, Mx = My y My = −Mx. Los resultados y la memoria quedan en ejes de la viga; con `y`, `resultado.json` trae `principal_direction` en `geometry [mm]` y la memoria lo advierte. |
 | `columns[]` | lista | Exactamente dos columnas. |
 | `columns[].id` | texto | Identificador de la columna. |
 | `columns[].cx`, `columns[].cy` | mm | Sección (cx a lo largo de X). |

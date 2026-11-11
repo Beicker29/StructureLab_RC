@@ -9,6 +9,10 @@ No importa el paquete. Unidades de trabajo: kN, m y kPa. Para cada caso:
    derive_soil_pressure.py; presión admisible qa (× 1.33 con sismo, D-079) y contacto mínimo.
 3. Deslizamiento (D-070): μ·N + ca·Ac + fp·Pp con la fuerza horizontal total de las dos columnas, en la dirección de la
    resultante y en cada eje; volcamiento: N·L/2 frente a |M| en cada eje.
+4. Dirección principal en la Y global (D-094): la zapata está escrita en ejes globales y se pasa a los de la viga con
+   la matriz de giro de +90° alrededor de Z (X de la viga = +Y global, Y de la viga = −X global), aplicada a la posición
+   de las columnas, a la fuerza y al par como vectores; las dimensiones y la sección de las columnas se intercambian.
+   Los resultados quedan en ejes de la viga.
 
 Uso: python tests/oracles/derive_combined_service.py
 """
@@ -41,7 +45,33 @@ def _cross(r: tuple[float, float, float], f: tuple[float, float, float]) -> tupl
     return (r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0])
 
 
-def _expected(footing: dict, case: str) -> dict:
+_BEAM_AXES = ((0.0, 1.0), (-1.0, 0.0))  # filas: X e Y de la viga expresados en ejes globales (viga en la Y global)
+
+
+def _rotate(vector: tuple[float, float]) -> tuple[float, float]:
+    vx, vy = (sum(a * b for a, b in zip(row, vector, strict=True)) for row in _BEAM_AXES)
+    return vx, vy
+
+
+def _in_beam_axes(footing: dict) -> dict:
+    """La zapata en ejes de la viga: con la viga en la Y global, v' = R·v para las posiciones, las fuerzas y los pares;
+    lx' = ly, ly' = lx y la sección de cada columna se intercambia."""
+    if footing.get("principal_direction", "x") == "x":
+        return footing
+    columns = []
+    for column in footing["columns"]:
+        x, y = _rotate((column["x"], column["y"]))
+        loads = []
+        for load in column["loads"]:
+            vx, vy = _rotate((load["Vx_kN"], load["Vy_kN"]))
+            mx, my = _rotate((load["Mx_kNm"], load["My_kNm"]))
+            loads.append({**load, "Vx_kN": vx, "Vy_kN": vy, "Mx_kNm": mx, "My_kNm": my})
+        columns.append({**column, "x": x, "y": y, "cx": column["cy"], "cy": column["cx"], "loads": loads})
+    return {**footing, "lx": footing["ly"], "ly": footing["lx"], "columns": columns}
+
+
+def _expected(declared: dict, case: str) -> dict:
+    footing = _in_beam_axes(declared)
     lx, ly, h = footing["lx"] / 1e3, footing["ly"] / 1e3, footing["h"] / 1e3
     hp, hf = footing["pedestal_height"] / 1e3, footing["fill_height"] / 1e3
     loads = [next(load for load in column["loads"] if load["case"] == case) for column in footing["columns"]]
@@ -127,6 +157,13 @@ CASES = [
     ("sin-equilibrio", "momento enorme: resultante fuera de la base",
      _footing([_column("C1", -2000.0, [_load("D", 100.0, my=4000.0, live=0.0)]),
                _column("C2", 2000.0, [_load("D", 100.0, my=4000.0, live=0.0)])])),
+    ("viga-en-y", "viga en la Y global (D-094), escrita en ejes globales: ly a lo largo de la viga, columnas a distintas y "
+                  "(una corrida en X y rectangular), cortantes y momentos de ETABS en los dos ejes y con sismo",
+     _footing([{**_column("C1", -120.0, [_load("D+0.7E", 950.0, vx=-20.0, vy=60.0, mx=-150.0, my=40.0, live=0.0, seismic=True)],
+                          cx=400.0, cy=500.0), "y": -2000.0},
+               {**_column("C2", 0.0, [_load("D+0.7E", 1250.0, vx=25.0, vy=80.0, mx=-180.0, my=-30.0, live=0.0, seismic=True)]),
+                "y": 2000.0}],
+              lx=2000.0, ly=6000.0, principal_direction="y")),
 ]
 
 

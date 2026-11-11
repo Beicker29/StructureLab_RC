@@ -1,9 +1,11 @@
-"""Zapata combinada rectangular de dos columnas (D-080). Las mismas unidades y ejes que la zapata aislada (D-052,
-D-055, D-057): geometría en mm, sobrecargas en kN/m² al declarar; X es la dirección larga, a lo largo de la cual van las
-columnas, con el origen en el centroide de la base. Las propiedades derivadas se calculan; nunca se declaran.
+"""Zapata combinada rectangular de dos columnas (D-080). Las mismas unidades que la zapata aislada (D-052, D-055, D-057):
+geometría en mm, sobrecargas en kN/m² al declarar. Se declara en ejes globales de ETABS, con el origen en el centroide de
+la base; principal_direction dice en qué eje va la viga que une las columnas. El cálculo trabaja en ejes de la viga (X a
+lo largo de ella): con la dirección principal en la Y global, la geometría, el armado y las cargas se rotan al cargar
+(D-094). Las propiedades derivadas se calculan; nunca se declaran.
 """
 
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
@@ -81,6 +83,27 @@ class CombinedFooting(RectangularBase, _Input):
     torsion_layers: tuple[BarLayer, ...] = ()
     deep_beam: bool = False
     beam: FoundationBeam | None = None
+    principal_direction: Literal["x", "y"] = "x"
+
+    @model_validator(mode="before")
+    @classmethod
+    def _to_beam_axes(cls, data: Any) -> Any:
+        """Dirección principal en la Y global (D-094): la zapata se escribe en ejes globales (ly a lo largo de la viga,
+        columnas a distintas y, bottom.y paralela a la viga) y se pasa a los ejes de la viga, en los que trabaja todo el
+        cálculo, con un giro de +90° alrededor de Z (X de la viga = +Y global, Y de la viga = −X global): lx' = ly,
+        ly' = lx; columnas x' = y, y' = −x, cx' = cy, cy' = cx; las mallas x e y (y first) se intercambian; cargas
+        Vx' = Vy, Vy' = −Vx, Mx' = My, My' = −Mx (P no cambia). top, estribos, refuerzo superficial, capas de torsión,
+        band y la viga de la T no tienen dirección propia: ya van paralelos o transversales a la viga. El modelo queda en
+        ejes de la viga: no se vuelve a serializar como entrada."""
+        if not isinstance(data, dict) or data.get("principal_direction") != "y":
+            return data
+        rotated = {**data, "lx": data.get("ly"), "ly": data.get("lx"),
+                   "columns": [_column_to_beam_axes(column) for column in data.get("columns", [])]}
+        bottom = data.get("bottom")
+        if isinstance(bottom, dict):
+            first = {"x": "y", "y": "x"}.get(bottom.get("first", ""), bottom.get("first"))
+            rotated["bottom"] = {**bottom, "first": first, "x": bottom.get("y"), "y": bottom.get("x")}
+        return rotated
 
     @field_validator("surcharge_dead", "surcharge_live")
     @classmethod
@@ -161,4 +184,26 @@ class CombinedFooting(RectangularBase, _Input):
         """Los casos de carga, cada uno con la carga de cada columna (en el orden de columns)."""
         by_column = [{(load.kind, load.case): load for load in column.loads} for column in self.columns]
         return [tuple(own[key] for own in by_column) for key in by_column[0]]
+
+
+_GLOBAL_KEYS = ("Vx_kN", "Vy_kN", "Mx_kNm", "My_kNm")
+
+
+def _column_to_beam_axes(column: Any) -> Any:
+    """Una columna de entrada (ejes globales) en los ejes de una viga en la Y global (D-094)."""
+    if not isinstance(column, dict):
+        return column  # la validación de la columna reporta lo que falte
+    moved = {**column, "loads": [_load_to_beam_axes(load) for load in column.get("loads", [])]}
+    if "x" in column and "y" in column:
+        moved["x"], moved["y"] = column["y"], -column["x"]
+    if "cx" in column and "cy" in column:
+        moved["cx"], moved["cy"] = column["cy"], column["cx"]
+    return moved
+
+
+def _load_to_beam_axes(load: Any) -> Any:
+    """Un caso de carga de entrada (kN, kN·m, ejes globales) rotado a los ejes de una viga en la Y global (D-094)."""
+    if not isinstance(load, dict) or not all(key in load for key in _GLOBAL_KEYS):
+        return load  # la validación del caso reporta lo que falte
+    return {**load, "Vx_kN": load["Vy_kN"], "Vy_kN": -load["Vx_kN"], "Mx_kNm": load["My_kNm"], "My_kNm": -load["Mx_kNm"]}
 

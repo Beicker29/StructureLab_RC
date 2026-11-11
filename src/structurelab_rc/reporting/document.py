@@ -582,7 +582,9 @@ def _bar_text(bars: dict[str, Any] | None, extra: str = "") -> str:
 
 def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[Block]:
     g = footing["geometry [mm]"]
-    rows = [["Largo a lo largo de X (lx)", number(g["lx"], "mm"), "mm"], ["Ancho a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
+    along_y = g.get("principal_direction") == "y"  # D-094: la memoria va en ejes de la viga
+    rows = [["Largo de la viga (ly declarado)" if along_y else "Largo a lo largo de X (lx)", number(g["lx"], "mm"), "mm"],
+            ["Ancho (lx declarado)" if along_y else "Ancho a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
             ["Espesor (h)" if not g.get("beam") else "Espesor de la zarpa (h)", number(g["h"], "mm"), "mm"],
             *([["Ancho de la viga (bw, T invertida)", number(g["beam"]["width"], "mm"), "mm"],
                ["Altura total de la viga (H)", number(g["beam"]["height"], "mm"), "mm"]] if g.get("beam") else []),
@@ -609,10 +611,22 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list
              "headers": ["Columna", "cx (mm)", "cy (mm)", "x (mm)", "y (mm)", "Pasadores", "Refuerzo bajo la columna (band)"],
              "rows": columns},
             {"kind": "note", "text": "x e y ubican el eje de cada columna respecto al centroide de la base."},
+            *_principal_direction_note(g),
             {"kind": "table", "headers": ["Suelo y pesos (dato del usuario)", "Valor", "Unidad"], "rows": _soil_rows(results)},
             {"kind": "p", "text": "Propiedades calculadas a partir de las dimensiones (nunca declaradas):"},
             {"kind": "table", "headers": ["Propiedad", "Valor", "Unidad"], "rows": _properties_rows(footing)},
             {"kind": "table", "headers": ["Refuerzo", "Descripción"], "rows": bars}]
+
+
+def _principal_direction_note(geometry: dict[str, Any]) -> list[Block]:
+    """Dirección principal en la Y global (D-094): la memoria está en ejes de la viga y lo advierte."""
+    if geometry.get("principal_direction") != "y":
+        return []
+    return [{"kind": "note", "text": "Dirección principal (viga) en la Y global de ETABS: X e Y de esta memoria son los ejes de "
+                                     "la viga (X = +Y global, Y = −X global). Los datos declarados en ejes globales se rotaron "
+                                     "a estos ejes: lx = ly declarado y ly = lx declarado; columnas x = y declarado, y = −x "
+                                     "declarado, cx = cy y cy = cx; las mallas x e y intercambiadas; cargas Vx = Vy, Vy = −Vx, "
+                                     "Mx = My y My = −Mx globales (D-094)."}]
 
 
 def _combined_demands(footing: dict[str, Any], figure: Path | None) -> list[Block]:

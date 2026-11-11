@@ -144,7 +144,8 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
                for column in footing.columns]
     return {
         "id": footing.id,
-        "geometry [mm]": _geometry(footing, {"beam"}),
+        # La dirección principal solo se escribe si es la Y global (D-094): con X, la salida no cambia.
+        "geometry [mm]": _geometry(footing, {"beam", *(["principal_direction"] if footing.principal_direction == "y" else [])}),
         "columns": columns,
         "properties": _base_properties(footing, soil),
         "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin", "torsion_layers"}),

@@ -297,6 +297,54 @@ def test_strip_load_shape_falls_back_when_the_column_line_has_no_pressure(case_i
 EXAMPLE = Path(__file__).parent.parent / "examples" / "nsr_10" / "zapatas" / "zapata_combinada.json"
 
 
+def _to_global_y(load: dict[str, Any]) -> dict[str, Any]:
+    """Las cargas que, con la viga en la Y global, ETABS daría para el caso escrito en ejes de la viga (inversa de D-094)."""
+    return {**load, "Vx_kN": -load["Vy_kN"], "Vy_kN": load["Vx_kN"], "Mx_kNm": -load["My_kNm"], "My_kNm": load["Mx_kNm"]}
+
+
+def _footing_along_global_y(footing: dict[str, Any]) -> dict[str, Any]:
+    """La misma zapata girada en planta para que su viga vaya en la Y global, escrita en ejes globales como la escribe el
+    usuario (D-094): ly a lo largo de la viga, columnas a distintas y, mallas x e y intercambiadas y cargas globales."""
+    rotated = json.loads(json.dumps(footing))
+    rotated["principal_direction"], rotated["lx"], rotated["ly"] = "y", footing["ly"], footing["lx"]
+    bottom = footing["bottom"]
+    rotated["bottom"] = {**bottom, "first": "y" if bottom["first"] == "x" else "x", "x": bottom["y"], "y": bottom["x"]}
+    for column in rotated["columns"]:
+        column["x"], column["y"] = -column["y"], column["x"]
+        column["cx"], column["cy"] = column["cy"], column["cx"]
+        column["loads"] = [_to_global_y(load) for load in column["loads"]]
+    return rotated
+
+
+@pytest.mark.parametrize("variant", ["combinada", "t invertida"])
+def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_path: Path) -> None:
+    """D-094: la misma zapata con la viga en la X global y girada en planta con la viga en la Y global (escrita en ejes
+    globales: ly a lo largo de la viga y cargas de ETABS) da las mismas verificaciones, valor por valor; la memoria
+    advierte la dirección principal solo en la Y."""
+    project = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    along_x = project["combined_footings"][0]
+    if variant == "t invertida":
+        along_x["beam"] = {"width": 900.0, "height": along_x["h"] + 800.0}
+        for column in along_x["columns"]:
+            column.pop("band", None)
+    along_y = {**_footing_along_global_y(along_x), "id": "ZCY"}
+    assert along_y["ly"] > along_y["lx"] and along_y["columns"][0]["y"] != along_y["columns"][1]["y"]
+    project["combined_footings"] = [along_x, along_y]
+    path = tmp_path / "proyecto.json"
+    path.write_text(json.dumps(project), encoding="utf-8")
+    _, checks = run_project(path)
+
+    def own(member: str) -> list[tuple[Any, ...]]:
+        return [(c.name, c.status, c.case, c.demand, c.capacity, c.values, c.z, c.note) for c in checks if c.member == member]
+
+    assert own(along_x["id"]) and own(along_x["id"]) == own("ZCY")
+    report_file(path, tmp_path / "salida")
+    results = json.loads((tmp_path / "salida" / "resultado.json").read_text(encoding="utf-8"))
+    geometries = {footing["id"]: footing["geometry [mm]"] for footing in results["combined_footings"]}
+    assert "principal_direction" not in geometries[along_x["id"]] and geometries["ZCY"]["principal_direction"] == "y"
+    assert (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8").count("Dirección principal (viga) en la Y global") == 1
+
+
 def _with_torsion_layers(layers: list[dict[str, Any]]) -> dict[str, Any]:
     data: dict[str, Any] = json.loads(EXAMPLE.read_text(encoding="utf-8"))
     data["combined_footings"][0]["torsion_layers"] = layers

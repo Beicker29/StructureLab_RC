@@ -1318,6 +1318,33 @@
   del ala igual a B, sin el límite hf ≥ 0.5bw, sin el peso del alma, sin la regla isostática, aletas sin la carga
   uniforme y A2 sobre la base.
 
+### D-094: dirección principal de las zapatas combinadas y en T invertida
+
+- **Fecha:** 2026-11-11
+- **Problema:** la zapata combinada (D-080) y la T invertida (D-093) se modelan como una viga a lo largo de X, con las
+  cargas en ejes globales de ETABS y sin rotarlas. Una zapata cuyas columnas están alineadas en la Y global no se podía
+  declarar: intercambiar X e Y en la plantilla dejaba las fuerzas mal asignadas, y rotarlas en los Excel ensucia el
+  flujo de trabajo con ETABS.
+- **Decisión del usuario:** cada zapata combinada o en T invertida declara su dirección principal, la de la viga,
+  con `principal_direction`: `x` (por defecto, el comportamiento anterior) o `y`. El JSON se escribe en ejes globales,
+  como está la zapata en planta: con `y`, `ly` es la dimensión paralela a la viga y las columnas van a distintas `y`.
+  Los Excel de ETABS no se modifican. Los resultados y la memoria quedan en ejes de la viga, con una nota que explica
+  el giro (recomendación aceptada por el usuario).
+- **Implementación:**
+  1. El cálculo trabaja en ejes de la viga (X a lo largo de ella). Con `y`, `model/combined.py` pasa la zapata a esos
+     ejes al cargar el proyecto, donde ya se hacen las conversiones: giro de +90° alrededor de Z (X de la viga = +Y
+     global, Y de la viga = −X global). Se intercambian lx y ly; las columnas pasan a x' = y, y' = −x, con cx' = cy y
+     cy' = cx; las mallas x e y (y `first`) se intercambian; las cargas, como vectores: Vx' = Vy, Vy' = −Vx, Mx' = My,
+     My' = −Mx (P no cambia). `top`, estribos, refuerzo superficial, capas de torsión, `band` y la viga de la T no
+     tienen dirección propia. `domain/`, `mechanics/` y los perfiles no cambian.
+  2. La plantilla de ETABS acepta el campo y pasa al proyecto la geometría y las fuerzas tal cual.
+  3. Con `y`, `resultado.json` trae `principal_direction` en `geometry [mm]` y la memoria nombra las dimensiones
+     ("Largo de la viga (ly declarado)") y advierte el giro; con `x` la salida no cambia.
+- **Control:** la misma zapata con la viga en X y girada en planta con la viga en Y (escrita en ejes globales) da las
+  mismas verificaciones, valor por valor, en la combinada y en la T invertida; la importación conserva geometría y
+  fuerzas y el modelo las rota; caso `viga-en-y` en `derive_combined_service.py`, con su propia matriz de giro, escrito
+  en ejes globales. Los ejemplos declaran `principal_direction: "x"` de forma explícita; la huella no cambia.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

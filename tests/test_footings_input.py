@@ -219,13 +219,19 @@ def _json_load(case: str, kind: str, p: float) -> dict[str, Any]:
             "Mx_kNm": 0.0, "My_kNm": 0.0}
 
 
-def _combined_template(source: dict[str, str], loads: dict[str, list[dict[str, Any]]] | None = None) -> EtabsFootingTemplate:
+def _combined_template(source: dict[str, str], loads: dict[str, list[dict[str, Any]]] | None = None,
+                       principal: str = "x") -> EtabsFootingTemplate:
+    """Plantilla con una zapata combinada; con principal "y", la misma zapata con la viga en la Y global, escrita en ejes
+    globales (ly a lo largo de la viga y columnas a distintas y, D-094)."""
     loads = loads or {}
     mat = {"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0}, "y": {"designation": "#5", "spacing": 150.0}}
-    columns = [{"id": name, "etabs_unique_name": unique, "cx": 450.0, "cy": 450.0, "x": x, "y": 0.0, "loads": loads.get(name, [])}
-               for name, unique, x in (("C1", "10", -2000.0), ("C2", "11", 2000.0))]
-    combined = {"id": "ZC", "lx": 6000.0, "ly": 2000.0, "h": 700.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
-                "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "loads_source": source, "columns": columns, "bottom": mat}
+    along = "x" if principal == "x" else "y"
+    columns = [{"id": name, "etabs_unique_name": unique, "cx": 450.0, "cy": 450.0, "x": 0.0, "y": 0.0, along: position,
+                "loads": loads.get(name, [])} for name, unique, position in (("C1", "10", -2000.0), ("C2", "11", 2000.0))]
+    lx, ly = (6000.0, 2000.0) if principal == "x" else (2000.0, 6000.0)
+    combined = {"id": "ZC", "lx": lx, "ly": ly, "h": 700.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
+                "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "loads_source": source, "columns": columns, "bottom": mat,
+                "principal_direction": principal}
     data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
             "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}, "soil": SOIL,
             "load_factors": {"S1": {"dead": 1.0, "live": 1.0}, "U1": {"dead": 1.2, "live": 1.6}}, "combined_footings": [combined]}
@@ -251,6 +257,22 @@ def test_combined_footing_takes_both_kinds_from_etabs() -> None:
     assert (service["Vx_kN"], service["Vy_kN"], service["Mx_kNm"], service["My_kNm"]) == (-10.0, 20.0, -30.0, 40.0)
     assert (summary.footings, summary.service_cases, summary.factored_cases) == (1, ("S1",), ("U1",))
     assert validate_project(Project.model_validate(project), load_engine().bars).status is Status.PASS
+
+
+def test_principal_direction_y_keeps_the_etabs_forces_and_rotates_them_on_load() -> None:
+    """D-094: con la viga en la Y global, la plantilla se escribe en ejes globales y el proyecto conserva la geometría y
+    las fuerzas de ETABS tal cual; el modelo las rota a los ejes de la viga al cargar: lx' = ly, columnas x' = y,
+    y' = −x, y cargas Vx' = Vy, Vy' = −Vx, Mx' = My, My' = −Mx."""
+    template = _combined_template({"service": "etabs", "factored": "etabs"}, principal="y")
+    project, _ = build_footing_project(template, SERVICE_ROWS, FACTORED_ROWS)
+    data = project["combined_footings"][0]
+    assert (data["principal_direction"], data["lx"], data["ly"], data["columns"][0]["y"]) == ("y", 2000.0, 6000.0, -2000.0)
+    service = next(load for load in data["columns"][0]["loads"] if load["case"] == "S1")
+    assert (service["Vx_kN"], service["Vy_kN"], service["Mx_kNm"], service["My_kNm"]) == (-10.0, 20.0, -30.0, 40.0)
+    footing = Project.model_validate(project).combined_footings[0]
+    assert (footing.lx, footing.ly, footing.columns[0].x, footing.columns[0].y) == (6000.0, 2000.0, -2000.0, 0.0)
+    loaded = next(load for load in footing.columns[0].loads if load.case == "S1")
+    assert (loaded.p, loaded.vx, loaded.vy, loaded.mx, loaded.my) == (500e3, 20e3, 10e3, 40e6, 30e6)
 
 
 @pytest.mark.parametrize(("source", "tables", "json_kind"), [

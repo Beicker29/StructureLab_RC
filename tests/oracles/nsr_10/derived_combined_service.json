@@ -577,6 +577,105 @@
           "equilibrium": false
         }
       }
+    },
+    {
+      "id": "viga-en-y",
+      "description": "viga en la Y global (D-094), escrita en ejes globales: ly a lo largo de la viga, columnas a distintas y (una corrida en X y rectangular), cortantes y momentos de ETABS en los dos ejes y con sismo",
+      "footing": {
+        "id": "ZC",
+        "lx": 2000.0,
+        "ly": 6000.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 400.0,
+            "cy": 500.0,
+            "x": -120.0,
+            "y": -2000.0,
+            "loads": [
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "P_kN": 950.0,
+                "Vx_kN": -20.0,
+                "Vy_kN": 60.0,
+                "Mx_kNm": -150.0,
+                "My_kNm": 40.0,
+                "seismic": true
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 0.0,
+            "y": 2000.0,
+            "loads": [
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "P_kN": 1250.0,
+                "Vx_kN": 25.0,
+                "Vy_kN": 80.0,
+                "Mx_kNm": -180.0,
+                "My_kNm": -30.0,
+                "seismic": true
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        },
+        "principal_direction": "y"
+      },
+      "expected": {
+        "D+0.7E": {
+          "N_kN": 2633.55,
+          "Mx_base_kNm": -100.02,
+          "My_base_kNm": 1027.9,
+          "equilibrium": true,
+          "ex_mm": 390.3096580661085,
+          "ey_mm": 37.979153613943154,
+          "pmax_kPa": 330.12583333333333,
+          "corners_kPa": [
+            108.79916666666668,
+            280.11583333333334,
+            330.12583333333333,
+            158.80916666666667
+          ],
+          "capacity_kPa": 399.0,
+          "bearing": "PASS",
+          "contact_fraction": 1.0,
+          "contact": "PASS",
+          "sliding_demand_kN": 154.0,
+          "sliding_capacity_kN": 1487.805,
+          "sliding": "PASS",
+          "overturning_demand_kNm": 1541.8500000000001,
+          "overturning_capacity_kNm": 7900.650000000001,
+          "overturning": "PASS"
+        }
+      }
     }
   ]
 }

@@ -125,6 +125,7 @@ class TemplateCombinedFooting(_Input):
     torsion_layers: list[dict[str, Any]] | None = None
     deep_beam: bool = False
     beam: dict[str, Any] | None = None
+    principal_direction: Literal["x", "y"] = "x"  # eje global de la viga (D-094); las fuerzas de ETABS no se tocan
 
     @model_validator(mode="after")
     def _check_sources(self) -> Self:

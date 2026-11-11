@@ -51,6 +51,30 @@ structurelab-rc design-footings results/nsr_10/zapatas/diseno_etabs.json --outpu
 El diseño usa por defecto el método `milp` (D-075), que requiere `pip install structurelab-rc[opt]`; `--method dp`
 usa solo la DP.
 
+## Todos los ejemplos, los dos perfiles
+
+Desde la raíz del repositorio, en PowerShell (las salidas quedan en `results/<perfil>/zapatas/`, ignorada por Git):
+
+```powershell
+$svc = "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx"
+$ult = "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx"
+foreach ($p in "aci_318_25", "nsr_10") {
+    $ex = "examples/$p/zapatas"; $out = "results/$p/zapatas"
+    structurelab-rc report "$ex/zapata_centrica.json" --output "$out/zapata_centrica"
+    structurelab-rc report "$ex/zapata_combinada.json" --output "$out/zapata_combinada"
+    structurelab-rc design-footings "$ex/diseno_tipologias.json" --output "$out/diseno_tipologias"
+    structurelab-rc report "$out/diseno_tipologias/proyecto.json" --output "$out/diseno_tipologias"
+    structurelab-rc typology-curve "$ex/diseno_tipologias.json" --output "$out/diseno_tipologias_curva"
+    foreach ($t in "zapatas", "combinadas", "t_invertida") {
+        structurelab-rc import-etabs-footings $svc $ult "$ex/plantilla_${t}_etabs.json" --output "$out/${t}_etabs.json"
+        structurelab-rc report "$out/${t}_etabs.json" --output "$out/${t}_etabs"
+    }
+    # Diseño por tipologías de los 73 apoyos: tarda bastante; omítalo si no lo necesita.
+    structurelab-rc import-etabs-footings $svc $ult "$ex/plantilla_diseno_zapatas_etabs.json" --output "$out/diseno_etabs.json"
+    structurelab-rc design-footings "$out/diseno_etabs.json" --output "$out/diseno_etabs"
+}
+```
+
 ## Propio de este perfil
 
 - `profile`: `nsr-10`; `seismic.level`: `DMI`, `DMO` o `DES`.

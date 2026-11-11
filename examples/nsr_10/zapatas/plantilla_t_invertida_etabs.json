@@ -85,6 +85,7 @@
   "combined_footings": [
     {
       "id": "ZT-1",
+      "principal_direction": "x",
       "lx": 9000.0,
       "ly": 3600,
       "h": 600,
