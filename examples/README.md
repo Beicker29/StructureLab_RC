@@ -7,7 +7,8 @@ del perfil; los campos de entrada y de salida están, una sola vez, en [docs/for
 examples/
 ├── aci_318_25/
 │   ├── vigas/       viga_rectangular.json, viga_t.json, plantilla_vigas_etabs.json
-│   └── zapatas/     zapata_aislada.json, diseno_tipologias.json, plantilla_zapatas_etabs.json,
+│   └── zapatas/     zapata_centrica.json, zapata_combinada.json, diseno_tipologias.json,
+│                    plantilla_zapatas_etabs.json, plantilla_combinadas_etabs.json,
 │                    plantilla_diseno_zapatas_etabs.json
 ├── nsr_10/          los mismos ejemplos, con los mismos datos, para NSR-10
 │   ├── vigas/
@@ -20,7 +21,8 @@ examples/
 Cada ejemplo de ACI 318-25 tiene su gemelo en NSR-10 con los mismos datos; solo cambian el perfil y el nivel sísmico
 equivalente (`ordinary` ↔ DMI, `intermediate` ↔ DMO, `special` ↔ DES), para poder comparar resultados (D-073).
 
-Las salidas van a `results/`, con la misma estructura (`results/<perfil>/<elemento>/`).
+Las salidas van a `results/`, con la misma estructura (`results/<perfil>/<elemento>/`) y una carpeta con el nombre
+de cada ejemplo; la curva costo–N del diseño por tipologías va en `<ejemplo>_curva`.
 `results/` es salida generada: Git solo guarda sus carpetas vacías.
 
 | Carpeta | Instructivo |

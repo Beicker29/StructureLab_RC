@@ -96,11 +96,11 @@ def test_invalid_input_produces_a_short_report(tmp_path: Path) -> None:
 
 
 def test_footing_memoir_has_its_fixed_chapters(tmp_path: Path) -> None:
-    footing = Path(__file__).parent.parent / "examples" / "nsr_10" / "zapatas" / "zapata_aislada.json"
+    footing = Path(__file__).parent.parent / "examples" / "nsr_10" / "zapatas" / "zapata_centrica.json"
     report_file(footing, tmp_path)
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     results = json.loads((tmp_path / "resultado.json").read_text(encoding="utf-8"))
-    assert text.count("# Memoria de cálculo — Zapata ") == len(results["footings"]) == 2
+    assert text.count("# Memoria de cálculo — Zapata ") == len(results["footings"]) == 1
     for chapter in ("4. Revisión geotécnica: presión, contacto y estabilidad", "8. Revisión de cortante en dos direcciones",
                     "10. Revisión de aplastamiento y pasadores", "11. Índices DCR", "12. Notas y limitaciones"):
         assert f"## {chapter}" in text
@@ -150,7 +150,7 @@ def test_cli_report_writes_the_files(tmp_path: Path, capsys: pytest.CaptureFixtu
 def test_footing_report_draws_the_soil_pressure_in_plan(tmp_path: Path) -> None:
     """D-080: la memoria de cada zapata trae la planta con la presión en las esquinas del caso que gobierna y la tabla de
     las esquinas de todos los casos de servicio; el SVG queda en la carpeta del report."""
-    report = report_file(EXAMPLE.parent.parent / "zapatas" / "zapata_aislada.json", tmp_path)
+    report = report_file(EXAMPLE.parent.parent / "zapatas" / "zapata_centrica.json", tmp_path)
     figure = tmp_path / "presion_Z1.svg"
     assert figure in report.files
     svg = figure.read_text(encoding="utf-8")

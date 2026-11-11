@@ -44,7 +44,7 @@ jobs:
           # Ruta nativa del wheel (en Windows, Git Bash no convierte una ruta que termina en [pdf]).
           wheel=$(python -c "import glob, os; print(os.path.abspath(glob.glob('dist/*.whl')[0]))")
           example="$PWD/examples/nsr_10/vigas/viga_t.json"
-          footing="$PWD/examples/nsr_10/zapatas/zapata_aislada.json"
+          footing="$PWD/examples/nsr_10/zapatas/zapata_centrica.json"
           design="$PWD/examples/nsr_10/zapatas/diseno_tipologias.json"
           workbook="$PWD/examples/etabs/vigas/Element Forces - Beams.xlsx"
           template="$PWD/examples/nsr_10/vigas/plantilla_vigas_etabs.json"

@@ -1,9 +1,9 @@
 {
-  "description": "Ejemplo de zapatas aisladas: Z1 centrada bajo columna cuadrada con pedestal y Z2 rectangular con la columna desplazada 400 mm en X. Fuerzas en la base de la columna, ejes globales. Datos ilustrativos. Unidades: mm, MPa, kPa, kN/m2, kN/m3, kN y kN-m.",
-  "profile": "nsr-10",
+  "description": "Ejemplo de zapata aislada céntrica: Z1 centrada bajo columna cuadrada con pedestal. Fuerzas en la base de la columna, ejes globales. Datos ilustrativos. Unidades: mm, MPa, kPa, kN/m2, kN/m3, kN y kN-m.",
+  "profile": "aci-318-25",
   "seismic": {
-    "level": "DES",
-    "justification": "Capacidad especial de disipación de energía (DES) declarada por el ingeniero para este ejemplo."
+    "level": "special",
+    "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
   },
   "materials": {
     "fc": 28.0,
@@ -143,88 +143,6 @@
           "Vy_kN": 3.0,
           "Mx_kNm": -8.0,
           "My_kNm": 210.0
-        }
-      ]
-    },
-    {
-      "id": "Z2",
-      "lx": 3000.0,
-      "ly": 2200.0,
-      "h": 550.0,
-      "cover": 75.0,
-      "fill_height": 1000.0,
-      "pedestal_height": 0.0,
-      "surcharge_dead_kNm2": 2.0,
-      "surcharge_live_kNm2": 5.0,
-      "column": {
-        "cx": 400.0,
-        "cy": 600.0,
-        "offset_x": 400.0,
-        "offset_y": 0.0,
-        "dowels": {
-          "designation": "#5",
-          "count": 8
-        }
-      },
-      "bottom": {
-        "first": "y",
-        "end": "straight",
-        "x": {
-          "designation": "#5",
-          "spacing": 175.0
-        },
-        "y": {
-          "designation": "#5",
-          "spacing": 175.0
-        }
-      },
-      "top": null,
-      "loads": [
-        {
-          "case": "D+L",
-          "kind": "service",
-          "dead_factor": 1.0,
-          "live_factor": 1.0,
-          "P_kN": 780.0,
-          "Vx_kN": 4.0,
-          "Vy_kN": 3.0,
-          "Mx_kNm": 9.0,
-          "My_kNm": -35.0
-        },
-        {
-          "case": "D+0.7EY",
-          "kind": "service",
-          "dead_factor": 1.0,
-          "live_factor": 0.0,
-          "seismic": true,
-          "P_kN": 610.0,
-          "Vx_kN": 3.0,
-          "Vy_kN": 35.0,
-          "Mx_kNm": 95.0,
-          "My_kNm": -28.0
-        },
-        {
-          "case": "1.2D+1.6L",
-          "kind": "factored",
-          "dead_factor": 1.2,
-          "live_factor": 1.6,
-          "P_kN": 1100.0,
-          "Vx_kN": 6.0,
-          "Vy_kN": 4.0,
-          "Mx_kNm": 12.0,
-          "My_kNm": -50.0
-        },
-        {
-          "case": "1.2D+L+EY",
-          "kind": "factored",
-          "dead_factor": 1.2,
-          "live_factor": 1.0,
-          "seismic": true,
-          "P_kN": 920.0,
-          "Vx_kN": 4.0,
-          "Vy_kN": 52.0,
-          "Mx_kNm": 140.0,
-          "My_kNm": -40.0
         }
       ]
     }

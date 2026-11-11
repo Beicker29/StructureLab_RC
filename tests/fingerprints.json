@@ -20,9 +20,9 @@
     "resultado.json": "52ac414c12009815130194d8fa3a7815f3c5d4d25784748c9bb201fc446552fd",
     "memoria.txt": "ffddf3437c4c2e781943f43a5cdd3194850ce3d326d76d8330eb921b75d47131"
   },
-  "examples/aci_318_25/zapatas/zapata_aislada.json": {
-    "resultado.json": "65c9eda20175fe1fd55d24b204f37114825bb18b2c757494bdc13b382414e703",
-    "memoria.txt": "96dfd2031923da9d38ac1d6a115aec9dc35860c6430a9076a9d358e7e921a322"
+  "examples/aci_318_25/zapatas/zapata_centrica.json": {
+    "resultado.json": "96ceb8100417a32a787e27638ab9362f8d051dc5682461ad5f00e389cd253ed0",
+    "memoria.txt": "15aeb30b48ead21c0355e644e37753f1d023c3b92805d1d666706ee61284c65a"
   },
   "examples/aci_318_25/zapatas/zapata_combinada.json": {
     "resultado.json": "e236748c1562017b970b37e6f4fe3256149d75fcc390d53da76dc4b414195239",
@@ -49,9 +49,9 @@
     "resultado.json": "8e9e43da00f461acb8cac7635796da2edefdfe69e8c5562c4e3efcd28c72f3e9",
     "memoria.txt": "f00b6a6d19b07d0b1b3e2e98ed09b3ab28d56e9eac85de95cd5053deb9bdd88b"
   },
-  "examples/nsr_10/zapatas/zapata_aislada.json": {
-    "resultado.json": "dd8dcd2e4ea912a65276a2217b79c955e7929cdaa8dc652b13cb646ac7395e4e",
-    "memoria.txt": "5826357a0232bbf1325d2371bd71e899ef2bc08db05cda2ecdfd8cb0a4e3da88"
+  "examples/nsr_10/zapatas/zapata_centrica.json": {
+    "resultado.json": "5772f335b46b4c5ad89f5b4d8abd5dfe885629c806fac3d17a6893cd1b76cb33",
+    "memoria.txt": "09657a75f47a441e87ec70738a8f6fb511ae7082aefb94816ea2b8e9b6237e19"
   },
   "examples/nsr_10/zapatas/zapata_combinada.json": {
     "resultado.json": "d5b1aec24f4da60c3f25077941f67b5fa2bb0e277ae7aeccb709ef13e8593443",
