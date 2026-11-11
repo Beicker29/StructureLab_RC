@@ -116,9 +116,11 @@
         }
       },
       "top": {
-        "designation": "#8",
-        "spacing": 99.0,
-        "end": "straight"
+        "end": "straight",
+        "x": {
+          "designation": "#8",
+          "spacing": 99.0
+        }
       },
       "stirrups": {
         "designation": "#5",

@@ -59,7 +59,7 @@ def _footing(data: dict[str, Any]) -> CombinedFooting:
         "surcharge_live_kNm2": 0.0, "columns": columns,
         "bottom": {"first": "x", "end": "straight", "x": bottom,
                    "y": {"designation": y_bars["designation"], "spacing": y_bars["spacing_mm"]}},
-        "top": {"designation": data["top"]["designation"], "spacing": data["top"]["spacing_mm"], "end": "straight"}})
+        "top": {"end": "straight", "x": {"designation": data["top"]["designation"], "spacing": data["top"]["spacing_mm"]}}})
 
 
 def _checks(profile: str, data: dict[str, Any]) -> tuple[CombinedFooting, list[Check]]:

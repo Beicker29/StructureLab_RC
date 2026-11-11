@@ -146,14 +146,16 @@
         }
       },
       "top": {
-        "designation": "#8",
-        "spacing": 140.0,
-        "end": "straight"
-      },
-      "top_transverse": {
-        "designation": "#5",
-        "spacing": 300.0,
-        "end": "straight"
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#8",
+          "spacing": 140.0
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 300.0
+        }
       },
       "skin": {
         "designation": "#5",
@@ -272,14 +274,16 @@
         }
       },
       "top": {
-        "designation": "#8",
-        "spacing": 140.0,
-        "end": "straight"
-      },
-      "top_transverse": {
-        "designation": "#5",
-        "spacing": 300.0,
-        "end": "straight"
+        "first": "x",
+        "end": "straight",
+        "x": {
+          "designation": "#8",
+          "spacing": 140.0
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 300.0
+        }
       },
       "skin": {
         "designation": "#5",

@@ -123,22 +123,29 @@ def mat_rows(footing: Footing | CombinedFooting, mat: Mat, bars: Sequence[RebarS
     return rows
 
 
-def top_transverse_row(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> BarRow | None:
-    """Las barras superiores paralelas a Y de una zapata combinada (D-097), uniformes en todo el largo, debajo de las
-    superiores x si las hay; depth es su altura efectiva desde la cara inferior. None si no las tiene."""
-    if footing.top_transverse is None:
-        return None
-    spec = next(bar for bar in bars if bar.designation == footing.top_transverse.designation)
-    above = 0.0 if footing.top is None else next(bar.diameter_mm for bar in bars if bar.designation == footing.top.designation)
-    from_face = footing.cover + stirrup_diameter(footing, bars) + above + spec.diameter_mm / 2
-    return _row(footing, "y", (footing.top_transverse, spec), (from_face, 0.0))
-
-
-def top_row(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> BarRow | None:
-    """Las barras superiores paralelas a X de una zapata combinada, una sola capa; None si no las tiene."""
-    if footing.top is None:
-        return None
-    spec = next(bar for bar in bars if bar.designation == footing.top.designation)
+def top_rows(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> dict[str, BarRow]:
+    """Las barras superiores de una zapata combinada (D-099), con la estructura de la malla inferior: x (paralelas a X,
+    encerradas lateralmente por los estribos; en la T invertida, en la viga, D-093) e y (transversales, uniformes en todo
+    el largo, D-097), cada una si se declara; la de top.first va más cerca de la cara superior, por dentro del estribo.
+    depth es la altura efectiva desde la cara inferior."""
+    top = footing.top
+    if top is None:
+        return {}
+    specs = {bar.designation: bar for bar in bars}
     stirrup = stirrup_diameter(footing, bars)
-    section = None if footing.beam is None else (footing.beam.width, footing.total_height)
-    return _row(footing, "x", (footing.top, spec), (footing.cover + stirrup + spec.diameter_mm / 2, stirrup), section)
+    nearest = top.nearest
+    other = "y" if nearest == "x" else "x"
+    near_set: BarSet | None = getattr(top, nearest)
+    assert near_set is not None
+    near_diameter = specs[near_set.designation].diameter_mm
+    rows = {}
+    for direction in (nearest, other):
+        bar_set: BarSet | None = getattr(top, direction)
+        if bar_set is None:
+            continue
+        spec = specs[bar_set.designation]
+        above = 0.0 if direction == nearest else near_diameter
+        from_face = footing.cover + stirrup + above + spec.diameter_mm / 2
+        section = None if direction == "y" or footing.beam is None else (footing.beam.width, footing.total_height)
+        rows[direction] = _row(footing, direction, (bar_set, spec), (from_face, stirrup if direction == "x" else 0.0), section)
+    return rows

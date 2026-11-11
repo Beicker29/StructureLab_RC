@@ -86,12 +86,15 @@ def _mesh_y(f: dict) -> list[float]:
 
 
 def _top_y(f: dict) -> dict | None:
-    """Barras superiores transversales (D-097), debajo de las superiores x: profundidad desde la cara superior."""
-    top = f.get("top_transverse")
+    """Barras superiores y (D-097, D-099): debajo de las x si estas van primero (first, o las únicas x); profundidad desde
+    la cara superior."""
+    mat = f.get("top") or {}
+    top = mat.get("y")
     if not top:
         return None
     db, ab = BARS[top["designation"]]
-    above = BARS[f["top"]["designation"]][0] if f.get("top") else 0.0
+    nearest = mat.get("first") or "y"
+    above = BARS[mat["x"]["designation"]][0] if nearest == "x" and mat.get("x") else 0.0
     half = f["lx"] / 2 - f["cover"] - db / 2
     return {"from_top": f["cover"] + above + db / 2, "db": db, "ab": ab, "spacing": top["spacing"],
             "positions": _uniform(-half, half, top["spacing"]), "cc": f["cover"] + above}
@@ -245,13 +248,14 @@ def _transfer(folder: str, f: dict, spec: dict, moments: dict[str, tuple[float, 
         out.append({**common, "name": f"Transferencia de momento por flexion (barras {direction})",
                     "status": "PASS" if demand <= phi * nominal else "FAIL", "capacity": phi * nominal})
         capacity = 0.0
-        if direction == "x" and f.get("top"):
-            db, ab = BARS[f["top"]["designation"]]
-            n = _F._count(f["ly"], f["cover"], db, f["top"]["spacing"])
+        if direction == "x" and _B.top_x(f):
+            top = _B.top_x(f)
+            db, ab = BARS[top["designation"]]
+            n = _F._count(f["ly"], f["cover"], db, top["spacing"])
             half = f["ly"] / 2 - f["cover"] - db / 2
-            start = -half + (2 * half - (n - 1) * f["top"]["spacing"]) / 2
-            top_area = sum(ab for i in range(n) if abs(start + i * f["top"]["spacing"] - centre) <= bslab / 2 + 1e-6)
-            nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - f["cover"] - db / 2, profile)
+            start = -half + (2 * half - (n - 1) * top["spacing"]) / 2
+            top_area = sum(ab for i in range(n) if abs(start + i * top["spacing"] - centre) <= bslab / 2 + 1e-6)
+            nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - f["cover"] - top["above"] - db / 2, profile)
             capacity = phi * nominal
         elif direction == "y" and _top_y(f):
             top = _top_y(f)
@@ -463,8 +467,8 @@ def _ratio(width: float, depth: float, area: float, moment: float) -> float:
 
 
 def _develop(folder: str, f: dict, bar: tuple[float, float, float, str], given: tuple[float, float, str, str], level: str) -> dict:
-    """bar = (db, separación, profundidad desde la cara opuesta, capa: "bottom", "top" o "top_transverse"); given = (razón
-    As, disponible, nombre, nota)."""
+    """bar = (db, separación, profundidad desde la cara opuesta, capa: "bottom" o "top", cuyo end aplica, D-099); given =
+    (razón As, disponible, nombre, nota)."""
     db, spacing, depth, layer = bar
     bottom = layer == "bottom"
     ratio, available, name, _ = given
@@ -499,11 +503,12 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
     rows = _bottom_rows(f)
     half = f["lx"] / 2
     x_rows = [(positive, rows["x"], "inferiores", "bottom")]
-    if f.get("top"):
-        db, ab = BARS[f["top"]["designation"]]
-        n = _F._count(f["ly"], f["cover"], db, f["top"]["spacing"])
-        x_rows.append((negative, {"depth": f["h"] - f["cover"] - db / 2, "db": db, "ab": ab, "positions": [0.0] * n,
-                                  "spacing": f["top"]["spacing"]}, "superiores", "top"))
+    top_x = _B.top_x(f)
+    if top_x:
+        db, ab = BARS[top_x["designation"]]
+        n = _F._count(f["ly"], f["cover"], db, top_x["spacing"])
+        x_rows.append((negative, {"depth": f["h"] - f["cover"] - top_x["above"] - db / 2, "db": db, "ab": ab,
+                                  "positions": [0.0] * n, "spacing": top_x["spacing"]}, "superiores", "top"))
     for (moment, x), row, label, bottom in x_rows:
         if moment <= 0:
             continue
@@ -531,7 +536,7 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
         if top is not None and negative_y > 1e3 and strip["top_area"] > 0:
             depth = f["h"] - top["from_top"]
             ratio = _ratio(strip["width"], depth, strip["top_area"], negative_y)
-            out.append(_develop(folder, f, (top["db"], top["spacing"], depth, "top_transverse"),
+            out.append(_develop(folder, f, (top["db"], top["spacing"], depth, "top"),
                                 (ratio, available, f"Desarrollo barras superiores y (franja de la columna {c['id']})", ""), level))
     return out
 
@@ -542,8 +547,9 @@ def _shrinkage(folder: str, f: dict) -> list[dict]:
     ratio, h = _shrinkage_ratio(folder), f["h"]
     required, maximum = ratio * h * 1000.0, min(5 * h, 450.0)
     clause = CLAUSES[folder]["shrinkage"]
-    top_x = [("superiores", f["top"])] if f.get("top") else []
-    top_y = [("superiores", f["top_transverse"])] if f.get("top_transverse") else []
+    mat = f.get("top") or {}
+    top_x = [("superiores", mat["x"])] if mat.get("x") else []
+    top_y = [("superiores", mat["y"])] if mat.get("y") else []
     banded = [c for c in f["columns"] if c.get("band")]
     zones = [("x", "en todo el ancho", [("inferiores", f["bottom"]["x"]), *top_x]),
              ("y", "fuera de las zonas de band" if banded else "en todo el largo", [("inferiores", f["bottom"]["y"]), *top_y])]
@@ -640,7 +646,7 @@ def _footing(columns: list[dict], **changes: object) -> dict:
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
             "bottom": {"first": "x", "end": "straight", "x": {"designation": "#7", "spacing": 150.0},
                        "y": {"designation": "#6", "spacing": 150.0}},
-            "top": {"designation": "#7", "spacing": 150.0, "end": "straight"}}
+            "top": _B.top_mat("#7", 150.0, "straight")}
     data.update(changes)
     return {key: value for key, value in data.items() if value is not None}
 
@@ -649,7 +655,7 @@ BAND = {"designation": "#7", "spacing": 120.0}
 CASES = [
     ("interiores", "dos columnas interiores simétricas, con band bajo cada una; barras superiores con gancho y malla recta",
      _footing([_column("C1", -1800.0, [_load("U1", 1300.0)], band=BAND), _column("C2", 1800.0, [_load("U1", 1300.0)], band=BAND)],
-              top={"designation": "#7", "spacing": 150.0, "end": "hook"})),
+              top=_B.top_mat("#7", 150.0, "hook"))),
     ("borde", "columna de borde (perímetro de 3 lados, αs = 30), cargas desiguales, sin band",
      _footing([_column("C1", -2775.0, [_load("U1", 900.0)]), _column("C2", 1200.0, [_load("U1", 1800.0)], cx=500.0, cy=500.0)])),
     ("momentos", "dos casos con My, Mx, Vx y columnas desplazadas en Y; pedestal",
@@ -661,7 +667,7 @@ CASES = [
      _footing([_column("C1", -1800.0, [_load("U1", 2600.0)], cx=300.0, cy=300.0, dowels={"designation": "#8", "count": 8}),
                _column("C2", 1800.0, [_load("U1", 2600.0)], cx=300.0, cy=300.0, dowels=None)],
               bottom={"first": "y", "end": "hook", "x": {"designation": "#8", "spacing": 120.0},
-                      "y": {"designation": "#5", "spacing": 300.0}}, top={"designation": "#7", "spacing": 150.0, "end": "hook"})),
+                      "y": {"designation": "#5", "spacing": 300.0}}, top=_B.top_mat("#7", 150.0, "hook"))),
     ("presion-nula-franja", "C1 en la zona sin presión: su franja toca la zona en contacto (forma integrada en la franja)",
      _footing([_column("C1", -2300.0, [_load("U1", 300.0, live=0.0)], dowels=None),
                _column("C2", 1800.0, [_load("U1", 2500.0, mx=500.0, my=1500.0, live=0.0)], dowels=None)])),
@@ -683,7 +689,12 @@ CASES = [
                              "malla y fuera de su zona; retracción y temperatura por zona",
      _footing([_column("C1", -1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)], band=BAND),
                _column("C2", 1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)])], ly=3000.0,
-              top_transverse={"designation": "#5", "spacing": 200.0, "end": "straight"})),
+              top=_B.top_mat("#7", 150.0, "straight", y=("#5", 200.0), first="x"))),
+    ("superior-primero-y", "el caso anterior con las barras superiores y más cerca de la cara superior (top.first = y, "
+                           "D-099): las x quedan debajo de ellas y las y suben",
+     _footing([_column("C1", -1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)], band=BAND),
+               _column("C2", 1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)])], ly=3000.0,
+              top=_B.top_mat("#7", 150.0, "straight", y=("#5", 200.0), first="y"))),
 ]
 
 

@@ -94,9 +94,11 @@
           }
         },
         "top": {
-          "designation": "#7",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
         }
       },
       "expected": {
@@ -531,9 +533,11 @@
           }
         },
         "top": {
-          "designation": "#8",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#8",
+            "spacing": 150.0
+          }
         }
       },
       "expected": {
@@ -935,9 +939,11 @@
           }
         },
         "top": {
-          "designation": "#7",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
         }
       },
       "expected": {
@@ -1947,9 +1953,11 @@
           }
         },
         "top": {
-          "designation": "#7",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
         }
       },
       "expected": {
@@ -2388,9 +2396,11 @@
           }
         },
         "top": {
-          "designation": "#8",
-          "spacing": 120.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#8",
+            "spacing": 120.0
+          }
         },
         "stirrups": {
           "designation": "#4",
@@ -2835,9 +2845,11 @@
           }
         },
         "top": {
-          "designation": "#7",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
         },
         "skin": {
           "designation": "#4",
@@ -3202,9 +3214,11 @@
           }
         },
         "top": {
-          "designation": "#7",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
         }
       },
       "expected": {
@@ -3557,9 +3571,11 @@
           }
         },
         "top": {
-          "designation": "#5",
-          "spacing": 250.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 250.0
+          }
         }
       },
       "expected": {
@@ -3884,9 +3900,11 @@
           }
         },
         "top": {
-          "designation": "#8",
-          "spacing": 120.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#8",
+            "spacing": 120.0
+          }
         }
       },
       "expected": {
@@ -4266,9 +4284,11 @@
           }
         },
         "top": {
-          "designation": "#7",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
         },
         "stirrups": {
           "designation": "#5",
@@ -4849,9 +4869,11 @@
           }
         },
         "top": {
-          "designation": "#7",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
         },
         "skin": {
           "designation": "#5",
@@ -5300,9 +5322,11 @@
           }
         },
         "top": {
-          "designation": "#7",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
         },
         "torsion_layers": [
           {
@@ -6054,9 +6078,11 @@
           }
         },
         "top": {
-          "designation": "#7",
-          "spacing": 150.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
         }
       },
       "expected": {

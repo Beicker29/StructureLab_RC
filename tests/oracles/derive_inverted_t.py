@@ -102,8 +102,8 @@ def _rows(f: dict) -> dict:
     from_bottom = f["cover"] + ds + (db / 2 if mat["first"] == "x" else BARS[mat["y"]["designation"]][0] + db / 2)
     reach = (_flange(f) or f["beam"]["width"]) / 2
     bottom = [y for y in _positions(f["ly"], f["cover"], db, mat["x"]["spacing"]) if abs(y) <= reach + 1e-6]
-    dt, at = BARS[f["top"]["designation"]]
-    top = _positions(f["beam"]["width"], f["cover"] + ds, dt, f["top"]["spacing"])
+    dt, at = BARS[f["top"]["x"]["designation"]]
+    top = _positions(f["beam"]["width"], f["cover"] + ds, dt, f["top"]["x"]["spacing"])
     all_bottom = _positions(f["ly"], f["cover"], db, mat["x"]["spacing"])
     return {"bottom_area": len(bottom) * ab, "from_bottom": from_bottom, "top_area": len(top) * at, "from_top": f["cover"] + ds + dt / 2,
             "bottom_all": all_bottom, "spacing": mat["x"]["spacing"]}
@@ -334,7 +334,7 @@ def _footing(**changes: object) -> dict:
             "beam": {"width": 600.0, "height": 900.0},
             "bottom": {"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0},
                        "y": {"designation": "#5", "spacing": 150.0}},
-            "top": {"designation": "#8", "spacing": 75.0, "end": "straight"},
+            "top": _B.top_mat("#8", 75.0, "straight"),
             "stirrups": {"designation": "#4", "legs": 4, "spacing": 120.0, "closed": True}}
     data.update(changes)
     return data

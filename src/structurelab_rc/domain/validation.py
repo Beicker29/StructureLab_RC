@@ -106,10 +106,10 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], prof
     columna y pasadores."""
     where = {"member": footing.id}
     layers = [("inferior", [("x", footing.bottom.x), ("y", footing.bottom.y)])]
-    # Superiores x y, debajo de ellas, las transversales (D-097): sus diámetros cuentan en el espesor.
-    top: list[tuple[str, BarSet]] = [(direction, bars) for direction, bars in (("x", footing.top), ("y", footing.top_transverse))
-                                     if bars is not None]
-    if top:
+    # Barras superiores x e y (D-099): sus diámetros cuentan en el espesor.
+    if footing.top is not None:
+        top: list[tuple[str, BarSet]] = [(direction, bars) for direction, bars in (("x", footing.top.x), ("y", footing.top.y))
+                                         if bars is not None]
         layers.append(("superior", top))
     yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
     for column in footing.columns:
@@ -132,7 +132,8 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], prof
 def _catalogued(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> bool:
     """Las barras de la viga larga (mallas, superiores, piel y estribos) están en el catálogo."""
     names = {footing.bottom.x.designation, footing.bottom.y.designation}
-    names |= {item.designation for item in (footing.top, footing.top_transverse, footing.skin, footing.stirrups) if item is not None}
+    top = (None, None) if footing.top is None else (footing.top.x, footing.top.y)
+    names |= {item.designation for item in (*top, footing.skin, footing.stirrups) if item is not None}
     return names <= set(specs)
 
 

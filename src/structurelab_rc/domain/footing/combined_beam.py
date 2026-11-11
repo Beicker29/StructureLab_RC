@@ -39,7 +39,7 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import column_vertical, stem_line_load
 from structurelab_rc.domain.footing.flexure import plain_check
 from structurelab_rc.domain.footing.loads import FactoredCase
-from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_row
+from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows
 from structurelab_rc.domain.status import Status
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
@@ -268,7 +268,7 @@ def _t_beam_member(profile: Profile, footing: CombinedFooting, bars: Sequence[Re
     assert footing.beam is not None and footing.top is not None
     total, web = footing.total_height, footing.beam.width
     bottom = mat_rows(footing, footing.bottom, bars)["x"]
-    top = top_row(footing, bars)
+    top = top_rows(footing, bars).get("x")
     assert top is not None
     width = flange_width(profile, footing)
     reach = (width if width is not None else web) / 2
@@ -301,7 +301,7 @@ def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec], profil
         assert profile is not None
         section, layout = _t_beam_member(profile, footing, bars)
     else:
-        section, layout = beam_member(footing, (mat_rows(footing, footing.bottom, bars)["x"], top_row(footing, bars)), bars)
+        section, layout = beam_member(footing, (mat_rows(footing, footing.bottom, bars)["x"], top_rows(footing, bars).get("x")), bars)
     placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
     return Member.model_construct(id=footing.id, type="beam", statically_determinate=True if footing.beam is not None else None,
                                   deep_beam=footing.deep_beam, length=footing.lx, section=section, stations=(placeholder,))
@@ -385,7 +385,7 @@ def long_beam_checks(
 ) -> list[Check]:
     """Las verificaciones de vigas en las secciones críticas de cada caso mayorado y la separación de las barras x."""
     bottom = mat_rows(footing, footing.bottom, basis.bars)["x"]
-    top = top_row(footing, basis.bars)
+    top = top_rows(footing, basis.bars).get("x")
     member = long_beam_member(footing, basis.bars, basis.profile)
     depth = footing.stem_height + bottom.depth  # d de las barras inferiores desde la cara superior de la viga
     checks = []
@@ -395,6 +395,6 @@ def long_beam_checks(
             checks += _station_checks(basis, footing, member, (beam, critical, top is not None))
     checks.append(_spacing_check(basis, footing, footing.bottom.x.spacing, BARS["bottom"]))
     # En la T invertida las barras superiores son de la viga: su separación la controla la fisuración de vigas (D-093).
-    if footing.top is not None and footing.beam is None:
-        checks.append(_spacing_check(basis, footing, footing.top.spacing, BARS["top"]))
+    if footing.top is not None and footing.top.x is not None and footing.beam is None:
+        checks.append(_spacing_check(basis, footing, footing.top.x.spacing, BARS["top"]))
     return checks

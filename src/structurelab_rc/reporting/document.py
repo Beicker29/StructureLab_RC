@@ -582,6 +582,17 @@ def _bar_text(bars: dict[str, Any] | None, extra: str = "") -> str:
     return f"{bars['designation']} c/{bars['spacing']:.0f} mm{extra}"
 
 
+def _top_text(top: dict[str, Any] | None) -> str:
+    """Las barras superiores de la zapata combinada (D-099): cada dirección declarada (y en todo el largo), la primera
+    y cómo terminan."""
+    if top is None:
+        return "no hay"
+    sets = [f"barras {direction} {top[direction]['designation']} c/{top[direction]['spacing']:.0f} mm"
+            + (" (todo el largo)" if direction == "y" else "") for direction in ("x", "y") if top.get(direction)]
+    first = f"; primero {top['first']}" if top.get("first") else ""
+    return f"{'; '.join(sets)}{first}; barras {_ENDS[top['end']]}"
+
+
 def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[Block]:
     g = footing["geometry [mm]"]
     along_y = g.get("principal_direction") == "y"  # D-094: la memoria va en ejes de la viga
@@ -599,16 +610,10 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list
                 f"{column['dowels']['count']} {column['dowels']['designation']}" if column.get("dowels") else "no declarados",
                 _bar_text(column.get("band"))] for column in footing["columns"]]
     reinforcement = footing["reinforcement"]
-    top = reinforcement.get("top")
-    transverse = reinforcement.get("top_transverse")
     stirrups = reinforcement.get("stirrups")
     skin = reinforcement.get("skin")
-    # La T invertida aún no admite barras superiores transversales (D-097).
-    top_y = [] if g.get("beam") else [["Barras superiores y (todo el largo)",
-                                       _bar_text(transverse, f"; barras {_ENDS[transverse['end']]}" if transverse else "")]]
     bars = [["Malla inferior", _mat_text(reinforcement["bottom"])],
-            ["Barras superiores x", _bar_text(top, f"; barras {_ENDS[top['end']]}" if top else "")],
-            *top_y,
+            ["Barras superiores", _top_text(reinforcement.get("top"))],
             ["Estribos de la viga larga", "no hay" if stirrups is None else
              f"{stirrups['legs']} ramas {stirrups['designation']} c/{stirrups['spacing']:.0f} mm"],
             ["Refuerzo superficial (caras largas)", _bar_text(skin, " en vertical" if skin else "")],

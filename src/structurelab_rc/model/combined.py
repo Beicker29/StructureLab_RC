@@ -31,11 +31,34 @@ class FoundationBeam(_Input):
     height: PositiveFloat
 
 
-class TopBars(BarSet):
-    """Barras superiores paralelas a X de la zapata combinada; end declara cómo terminan: rectas o con gancho estándar
-    (D-082)."""
+class TopMat(_Input):
+    """Barras superiores de la zapata combinada, con la estructura de la malla inferior (D-099): x son las paralelas a X
+    (a lo largo de la viga) y y las paralelas a Y (transversales, uniformes en todo el largo, D-097); cada dirección es
+    opcional, pero hay al menos una. first es la dirección más cercana a la cara superior: obligatoria con las dos. end
+    declara cómo terminan las dos: rectas o con gancho estándar (D-082)."""
 
+    first: Literal["x", "y"] | None = None
     end: Literal["straight", "hook"]
+    x: BarSet | None = None
+    y: BarSet | None = None
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        declared = [direction for direction in ("x", "y") if getattr(self, direction) is not None]
+        if not declared:
+            raise ValueError("top necesita barras x, y o las dos")
+        if self.x is not None and self.y is not None and self.first is None:
+            raise ValueError("top con barras x e y necesita first (la dirección más cercana a la cara superior)")
+        if self.first is not None and self.first not in declared:
+            raise ValueError(f"top.first es '{self.first}' pero top no declara barras {self.first}")
+        if any(getattr(self, direction).band_spacing is not None for direction in declared):
+            raise ValueError("top no usa band_spacing")
+        return self
+
+    @property
+    def nearest(self) -> str:
+        """La dirección más cercana a la cara superior: first o la única declarada."""
+        return self.first or ("x" if self.x is not None else "y")
 
 
 class CombinedColumn(_Input):
@@ -60,12 +83,13 @@ class CombinedColumn(_Input):
 
 class CombinedFooting(RectangularBase, _Input):
     """Zapata combinada de espesor h con dos columnas a lo largo de X. bottom es la malla inferior en las dos direcciones;
-    top, las barras superiores paralelas a X (opcional: sin ellas, el momento negativo se revisa como concreto simple,
-    D-072); stirrups, los estribos de la dirección larga, como en las vigas (opcional, D-081); torsion_layers, las capas
-    de Aℓ de la viga larga con el formato de las vigas y role "torsion" (x desde la cara −Y, profundidad desde la cara
-    superior; opcional, D-088); deep_beam declara que la viga larga es de gran altura (D-089); beam la vuelve una T
-    invertida: h es el espesor de la zarpa y la viga, con las columnas encima, va centrada en Y (D-093). fill_height,
-    pedestal_height, cover y las sobrecargas, como en la zapata aislada (D-057)."""
+    top, las barras superiores con la misma estructura (D-099; opcional: sin barras superiores en una dirección, su
+    momento negativo se revisa como concreto simple, D-072); stirrups, los estribos de la dirección larga, como en las
+    vigas (opcional, D-081); torsion_layers, las capas de Aℓ de la viga larga con el formato de las vigas y role
+    "torsion" (x desde la cara −Y, profundidad desde la cara superior; opcional, D-088); deep_beam declara que la viga
+    larga es de gran altura (D-089); beam la vuelve una T invertida: h es el espesor de la zarpa y la viga, con las
+    columnas encima, va centrada en Y (D-093). fill_height, pedestal_height, cover y las sobrecargas, como en la zapata
+    aislada (D-057)."""
 
     id: str = Field(min_length=1)
     lx: PositiveFloat
@@ -78,8 +102,7 @@ class CombinedFooting(RectangularBase, _Input):
     surcharge_live: NonNegativeFloat = Field(validation_alias="surcharge_live_kNm2")
     columns: tuple[CombinedColumn, ...] = Field(min_length=COLUMNS, max_length=COLUMNS)
     bottom: Mat
-    top: TopBars | None = None
-    top_transverse: TopBars | None = None  # barras superiores paralelas a Y, uniformes en todo el largo (D-097)
+    top: TopMat | None = None
     stirrups: Stirrups | None = None
     skin: SkinBars | None = None
     torsion_layers: tuple[BarLayer, ...] = ()
@@ -93,18 +116,22 @@ class CombinedFooting(RectangularBase, _Input):
         """Dirección principal en la Y global (D-094): la zapata se escribe en ejes globales (ly a lo largo de la viga,
         columnas a distintas y, bottom.y paralela a la viga) y se pasa a los ejes de la viga, en los que trabaja todo el
         cálculo, con un giro de +90° alrededor de Z (X de la viga = +Y global, Y de la viga = −X global): lx' = ly,
-        ly' = lx; columnas x' = y, y' = −x, cx' = cy, cy' = cx; las mallas x e y (y first) se intercambian; cargas
-        Vx' = Vy, Vy' = −Vx, Mx' = My, My' = −Mx (P no cambia). top, estribos, refuerzo superficial, capas de torsión,
-        band y la viga de la T no tienen dirección propia: ya van paralelos o transversales a la viga. El modelo queda en
-        ejes de la viga: no se vuelve a serializar como entrada."""
+        ly' = lx; columnas x' = y, y' = −x, cx' = cy, cy' = cx; las barras x e y (y first) de bottom y de top se
+        intercambian (D-099); cargas Vx' = Vy, Vy' = −Vx, Mx' = My, My' = −Mx (P no cambia). Estribos, refuerzo
+        superficial, capas de torsión, band y la viga de la T no tienen dirección propia: ya van paralelos o transversales
+        a la viga. El modelo queda en ejes de la viga: no se vuelve a serializar como entrada."""
         if not isinstance(data, dict) or data.get("principal_direction") != "y":
             return data
         rotated = {**data, "lx": data.get("ly"), "ly": data.get("lx"),
                    "columns": [_column_to_beam_axes(column) for column in data.get("columns", [])]}
-        bottom = data.get("bottom")
-        if isinstance(bottom, dict):
-            first = {"x": "y", "y": "x"}.get(bottom.get("first", ""), bottom.get("first"))
-            rotated["bottom"] = {**bottom, "first": first, "x": bottom.get("y"), "y": bottom.get("x")}
+        for name in ("bottom", "top"):
+            mat = data.get(name)
+            if isinstance(mat, dict):
+                swapped = {key: value for key, value in mat.items() if key not in ("x", "y", "first")}
+                swapped.update({new: mat[old] for old, new in (("x", "y"), ("y", "x")) if old in mat})
+                if "first" in mat:
+                    swapped["first"] = {"x": "y", "y": "x"}.get(mat["first"], mat["first"])
+                rotated[name] = swapped
         return rotated
 
     @field_validator("surcharge_dead", "surcharge_live")
@@ -154,11 +181,11 @@ class CombinedFooting(RectangularBase, _Input):
                 raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' se sale del ancho de la viga")
             if column.band is not None:
                 raise ValueError(f"la zapata combinada en T invertida '{self.id}' no usa band (columna '{column.id}')")
-        if self.top is None:
-            raise ValueError(f"la zapata combinada en T invertida '{self.id}' requiere barras superiores (top) en la viga")
-        if self.top_transverse is not None:
-            raise ValueError(f"la zapata combinada en T invertida '{self.id}' aun no admite top_transverse (D-097: pendiente "
-                             "para las aletas)")
+        if self.top is None or self.top.x is None:
+            raise ValueError(f"la zapata combinada en T invertida '{self.id}' requiere barras superiores (top.x) en la viga")
+        if self.top.y is not None:
+            raise ValueError(f"la zapata combinada en T invertida '{self.id}' aun no admite barras superiores y (top.y; D-097: "
+                             "pendiente para las aletas)")
 
     @property
     def total_height(self) -> float:

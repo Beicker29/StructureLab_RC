@@ -30,7 +30,7 @@ from structurelab_rc.domain.footing.combined_beam import extreme_moments, moment
 from structurelab_rc.domain.footing.connection import Support, bar_anchorage, bearing_checks, dowel_checks
 from structurelab_rc.domain.footing.flexure import plain_strip_check
 from structurelab_rc.domain.footing.loads import FactoredCase
-from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_row, top_transverse_row, uniform_positions
+from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows, uniform_positions
 from structurelab_rc.domain.footing.shear import PunchedColumn, punching_checks, transferred_load
 from structurelab_rc.domain.shear_strength import two_way_shear
 from structurelab_rc.domain.status import Status
@@ -87,9 +87,8 @@ def _punching_rows(basis: Basis, footing: CombinedFooting, bottom: dict[str, Bar
 
 
 def _top_rows(basis: Basis, footing: CombinedFooting) -> dict[str, tuple[BarRow, ...]]:
-    """Barras superiores alrededor de las columnas: en X (top) y en Y (top_transverse, D-097), si las hay."""
-    rows = {"x": top_row(footing, basis.bars), "y": top_transverse_row(footing, basis.bars)}
-    return {direction: (row,) for direction, row in rows.items() if row is not None}
+    """Barras superiores alrededor de las columnas: top.x y top.y (D-097, D-099), si las hay."""
+    return {direction: (row,) for direction, row in top_rows(footing, basis.bars).items()}
 
 
 def _overlap(footing: CombinedFooting, depth: float) -> bool:
@@ -260,7 +259,7 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     row, index = rows
     column = footing.columns[index]
     x0, x1 = strip_limits(footing, column, row.depth)
-    top = top_transverse_row(footing, basis.bars)
+    top = top_rows(footing, basis.bars).get("y")
     has_top = top is not None and bool(_inside(top, (x0, x1)))
     member = strip_member(footing, column, (row, _band_row(footing, column, row, basis), top))
     title = f"Franja transversal de la columna {column.id}"
@@ -277,7 +276,7 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
             given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
             if moment < 0 and not has_top:
                 # Momento negativo sin barras superiores transversales: concreto simple en el ancho de la franja (D-072,
-                # D-095) y el cortante de vigas. Con top_transverse lo revisa la flexión de vigas con esas barras (D-097).
+                # D-095) y el cortante de vigas. Con top.y lo revisa la flexión de vigas con esas barras (D-097).
                 note = section + (f": {shape}" if shape else "")
                 checks.append(replace(plain_strip_check(basis, footing, -moment, (label, pressure.case, note), x1 - x0), z=z))
                 selected = list(shear_and_torsion_checks(given))
@@ -321,8 +320,8 @@ def shrinkage_checks(basis: Basis, footing: CombinedFooting) -> list[Check]:
     required = ratio * h * 1000.0
     maximum = profile.footing.shrinkage_temperature_max_spacing(h)
     clause = profile.footing.clauses()["shrinkage_temperature"]
-    top_x = [("superiores", footing.top)] if footing.top is not None else []
-    top_y = [("superiores", footing.top_transverse)] if footing.top_transverse is not None else []
+    top_x = [("superiores", footing.top.x)] if footing.top is not None and footing.top.x is not None else []
+    top_y = [("superiores", footing.top.y)] if footing.top is not None and footing.top.y is not None else []
     banded = [column for column in footing.columns if column.band is not None]
     zones: list[tuple[str, str, list[tuple[str, BarSet]]]] = [
         ("x", "en todo el ancho", [("inferiores", footing.bottom.x), *top_x]),
@@ -355,15 +354,12 @@ def steel_excess(basis: Basis, section: tuple[float, float, float], provided: fl
 
 def bar_development_check(basis: Basis, footing: CombinedFooting, row: BarRow, anchorage: tuple[float, str, float, float],
                           text: tuple[str, str]) -> Check:
-    """anchorage = (menor separación, capa: "bottom", "top" o "top_transverse", As requerido / As suministrado, longitud
-    disponible); text = (nombre, nota). El tipo de extremo es el de la malla inferior, el de las barras superiores x
-    (D-082) o el de las superiores transversales (D-097)."""
+    """anchorage = (menor separación, capa: "bottom" o "top", As requerido / As suministrado, longitud disponible);
+    text = (nombre, nota). El tipo de extremo es el de la malla inferior o el de las barras superiores (D-082, D-099)."""
     spacing, layer, excess, available = anchorage
     name, note = text
     bottom = layer == "bottom"
-    ends = {"top": footing.top, "top_transverse": footing.top_transverse}
-    declared = ends.get(layer)
-    end = footing.bottom.end if bottom or declared is None else declared.end
+    end = footing.bottom.end if bottom or footing.top is None else footing.top.end
     # La altura bajo las barras superiores es la total (en la T invertida, la de la viga, D-093).
     bar = bar_anchorage(row, (end, spacing, bottom), (footing.total_height, footing.cover), excess)
     required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
@@ -377,8 +373,9 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     positive, negative = extreme_moments(footing, soil, cases)
     half = footing.lx / 2
     checks = []
+    top_spacing = footing.top.x.spacing if footing.top is not None and footing.top.x is not None else 0.0
     for moment_at, row, spacing, label in ((positive, bottom, footing.bottom.x.spacing, "inferiores"),
-                                           (negative, top, footing.top.spacing if footing.top else 0.0, "superiores")):
+                                           (negative, top, top_spacing, "superiores")):
         moment, x = moment_at
         if row is None or moment <= 0:
             continue
@@ -395,9 +392,9 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
 def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarRow, cases: Cases) -> list[Check]:
     """Barras y de cada franja desde la cara de la columna hasta el borde, menos el recubrimiento: las inferiores (el band
     si lo hay, que es el único refuerzo inferior de la franja, D-097; si no, la malla y) con el mayor momento positivo de
-    las caras, y las superiores transversales (D-097) con el mayor momento negativo de la franja."""
+    las caras, y las superiores y (D-097, D-099) con el mayor momento negativo de la franja."""
     half = footing.ly / 2
-    top = top_transverse_row(footing, basis.bars)
+    top = top_rows(footing, basis.bars).get("y")
     checks = []
     for index, column in enumerate(footing.columns):
         band = _band_row(footing, column, row, basis)
@@ -418,12 +415,12 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
             name = (f"{DEVELOPMENT} refuerzo band (columna {column.id})" if band is not None
                     else f"{DEVELOPMENT} barras y (franja de la columna {column.id})")
             checks.append(bar_development_check(basis, footing, bottom, (spacing, "bottom", excess, available), (name, note)))
-        if top is None or footing.top_transverse is None or negative <= _NEGLIGIBLE_MOMENT:
+        if top is None or footing.top is None or footing.top.y is None or negative <= _NEGLIGIBLE_MOMENT:
             continue
         top_area = len(_inside(top, limits)) * top.bar_area
         if top_area > 0:
             excess = steel_excess(basis, (width, footing.h, top.depth), top_area, negative)
-            checks.append(bar_development_check(basis, footing, top, (footing.top_transverse.spacing, "top_transverse", excess, available),
+            checks.append(bar_development_check(basis, footing, top, (footing.top.y.spacing, "top", excess, available),
                                                 (f"{DEVELOPMENT} barras superiores y (franja de la columna {column.id})", note)))
     return checks
 
@@ -440,7 +437,7 @@ def column_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases: Cas
     # 450 mm de la malla y sigue (flexión en una dirección).
     checks += shrinkage_checks(basis, footing)
     checks += [check for check in outside_checks(basis, footing, mesh["y"]) if check.name == OUTSIDE_SPACING]
-    checks += x_development(basis, footing, soil, (bottom["x"], top_row(footing, basis.bars)), cases)
+    checks += x_development(basis, footing, soil, (bottom["x"], top_rows(footing, basis.bars).get("x")), cases)
     checks += _y_development(basis, footing, soil, mesh["y"], cases)
     first = footing.bottom.first
     for index, column in enumerate(footing.columns):

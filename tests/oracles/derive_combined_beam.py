@@ -167,6 +167,29 @@ def _stations(beam: dict, depth: float) -> list[float]:
     return unique
 
 
+def top_mat(designation: str, spacing: float, end: str = "straight", y: tuple[str, float] | None = None,
+            first: str | None = None) -> dict:
+    """Las barras superiores de la zapata combinada con la estructura de la malla inferior (D-099): x = (designación,
+    separación) y, opcional, y = (designación, separación) con first."""
+    top: dict = {"end": end, "x": {"designation": designation, "spacing": spacing}}
+    if y is not None:
+        top["y"] = {"designation": y[0], "spacing": y[1]}
+    if first is not None:
+        top["first"] = first
+    return top
+
+
+def top_x(f: dict) -> dict | None:
+    """Las barras superiores x (designation, spacing, end) y el diámetro de las y que van más cerca de la cara superior
+    (above, 0 si las x van primero); None sin barras superiores x (D-099)."""
+    top = f.get("top")
+    if not top or not top.get("x"):
+        return None
+    nearest = top.get("first") or "x"
+    above = BARS[top["y"]["designation"]][0] if nearest == "y" and top.get("y") else 0.0
+    return {**top["x"], "end": top["end"], "above": above}
+
+
 def _rows(f: dict) -> list[dict]:
     """Capas de barras x (profundidad desde la cara superior): inferior y, si hay, superior. Con estribos, el
     recubrimiento es al estribo y las barras quedan por dentro de él (D-088)."""
@@ -178,10 +201,12 @@ def _rows(f: dict) -> list[dict]:
     offset = cover + db / 2 if first == "x" else cover + d1 + db / 2
     n = _F._count(f["ly"], cover, db, mat["x"]["spacing"])
     rows = [{"face": "bottom", "depth": f["h"] - offset, "area": n * ab, "spacing": mat["x"]["spacing"], "cc": offset - db / 2}]
-    if f.get("top"):
-        db, ab = BARS[f["top"]["designation"]]
-        n = _F._count(f["ly"], cover, db, f["top"]["spacing"])
-        rows.append({"face": "top", "depth": cover + db / 2, "area": n * ab, "spacing": f["top"]["spacing"], "cc": cover})
+    top = top_x(f)
+    if top:
+        db, ab = BARS[top["designation"]]
+        n = _F._count(f["ly"], cover, db, top["spacing"])
+        rows.append({"face": "top", "depth": cover + top["above"] + db / 2, "area": n * ab, "spacing": top["spacing"],
+                     "cc": cover + top["above"]})
     return rows
 
 
@@ -432,7 +457,7 @@ def _expected(folder: str, f: dict, level: str) -> dict:
             torques.append({"case": case, "x": x, "at": shear_at, "tu_Nmm": torque})
             torsion = _torsion_checks(folder, f, rows, (shear, moment, torque))
             shear_part = _shear_checks(folder, f, rows, (shear, moment)) if torsion is None else torsion
-            if moment < 0 and not f.get("top"):
+            if moment < 0 and not top_x(f):
                 station = [_F._plain(f, "x", -moment, case, profile, level), *shear_part]
             else:
                 station = _flexure_checks(folder, f, rows, moment) + shear_part
@@ -461,7 +486,7 @@ def _footing(columns: list[dict], **changes: object) -> dict:
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
             "bottom": {"first": "x", "end": "straight", "x": {"designation": "#7", "spacing": 150.0},
                        "y": {"designation": "#5", "spacing": 200.0}},
-            "top": {"designation": "#7", "spacing": 150.0, "end": "straight"}}
+            "top": top_mat("#7", 150.0, "straight")}
     data.update(changes)
     return {key: value for key, value in data.items() if value is not None}
 
@@ -473,7 +498,7 @@ CASES = [
      _footing([_column("C1", -2700.0, [_load("U1", 900.0)], cx=450.0), _column("C2", 1000.0, [_load("U1", 1600.0)], cx=500.0, cy=500.0)],
               lx=6000.0, ly=2400.0, h=800.0, bottom={"first": "x", "end": "straight", "x": {"designation": "#8", "spacing": 150.0},
                                                        "y": {"designation": "#5", "spacing": 200.0}},
-              top={"designation": "#8", "spacing": 150.0, "end": "straight"})),
+              top=top_mat("#8", 150.0, "straight"))),
     ("momentos-sismo", "dos casos: gravedad y sismo con My, Vx, pedestal y columnas desplazadas en Y",
      _footing([_column("C1", -2200.0, [_load("U1", 1100.0, mx=20.0), _load("U2", 800.0, dead=1.0, live=0.5, my=250.0,
          vx=90.0, seismic=True)],
@@ -488,7 +513,7 @@ CASES = [
     ("cortante-con-estribos", "la misma zapata delgada con estribos: Vs, Av,min (ACI 7.6.3.1) y d del acero a tracción",
      _footing([_column("C1", -2000.0, [_load("U1", 2200.0)]), _column("C2", 2000.0, [_load("U1", 2200.0)])], h=550.0,
               stirrups={"designation": "#4", "legs": 8, "spacing": 250.0, "closed": True},
-              top={"designation": "#8", "spacing": 120.0, "end": "straight"})),
+              top=top_mat("#8", 120.0, "straight"))),
     ("alta-con-piel", "h = 1000 mm (> 900): refuerzo superficial en las dos caras a 200 mm",
      _footing([_column("C1", -2000.0, [_load("U1", 1800.0)]), _column("C2", 2000.0, [_load("U1", 1800.0)])], h=1000.0,
               skin={"designation": "#4", "spacing": 200.0})),
@@ -498,12 +523,12 @@ CASES = [
      _footing([_column("C1", -1500.0, [_load("U1", 250.0)]), _column("C2", 1500.0, [_load("U1", 250.0)])], lx=4500.0,
               bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 250.0},
                   "y": {"designation": "#5", "spacing": 250.0}},
-              top={"designation": "#5", "spacing": 250.0, "end": "straight"})),
+              top=top_mat("#5", 250.0, "straight"))),
     ("minimo-no-cumple", "As menor que As,min y que 4/3 del requerido",
      _footing([_column("C1", -1200.0, [_load("U1", 1300.0)]), _column("C2", 1200.0, [_load("U1", 1300.0)])],
               bottom={"first": "y", "end": "straight", "x": {"designation": "#4", "spacing": 350.0},
                   "y": {"designation": "#5", "spacing": 200.0}},
-              top={"designation": "#8", "spacing": 120.0, "end": "straight"})),
+              top=top_mat("#8", 120.0, "straight"))),
     ("torsion-con-estribos", "columna desplazada 400 mm en Y con Mx y Vy: Tu ≥ φTth, estribos cerrados y capas de Aℓ (D-088)",
      _footing([_column("C1", -2000.0, [_load("U1", 1500.0, mx=-60.0, vy=40.0)], y=400.0),
                _column("C2", 2000.0, [_load("U1", 1500.0)])], h=600.0,

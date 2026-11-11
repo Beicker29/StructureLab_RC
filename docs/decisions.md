@@ -1483,6 +1483,32 @@
     `results/<perfil>/<elemento>/pruebas/<ejemplo>/`.
 - **Diferencias:** ninguna de cálculo: las 18 huellas calculadas desde `pruebas/` son iguales a las anteriores.
 
+### D-099: barras superiores de la zapata combinada con la estructura de la malla inferior
+
+- **Fecha:** 2026-11-11
+- **Decisión del usuario:** el refuerzo superior de la zapata combinada se declara con una estructura como la de
+  `bottom`, en lugar de `top` (barras x) y `top_transverse` (barras y, D-097) por separado.
+- **Formato:** `top: {"first", "end", "x", "y"}`.
+  - `x` (paralelas a X) e `y` (paralelas a Y, uniformes en todo el largo) son `{designation, spacing}`. Cada una es
+    opcional, pero se exige al menos una, porque una zapata puede necesitar barras superiores en una sola dirección.
+  - `first` es la dirección más cercana a la cara superior; es obligatoria si se declaran las dos.
+  - `end` aplica a las dos direcciones, como en `bottom`.
+  - Con `principal_direction: "y"` se intercambian x, y y `first`, como en `bottom` (D-094).
+  - En la T invertida, `top.x` es obligatorio (va en la viga) y `top.y` se rechaza; las aletas siguen pendientes.
+- **Implementación:**
+  - `model/combined.TopMat` reemplaza a `TopBars` y a `top_transverse`.
+  - `mesh.top_rows` reemplaza a `top_row` y `top_transverse_row`: la dirección de `first` queda por dentro del estribo
+    y la otra va debajo de ella. Con `first: "x"`, la geometría es la de antes.
+  - La plantilla de ETABS, la validación, `resultado.json` y la memoria (fila "Barras superiores") usan el formato nuevo.
+- **Control:**
+  - Oráculos de la viga larga, de las columnas y de la T invertida con la entrada nueva; sus valores esperados son los
+    mismos.
+  - Caso nuevo `superior-primero-y` (`top.first = y`).
+  - Los ejemplos de combinadas y de T invertida (`pruebas/` y los de iterar) quedaron convertidos.
+- **Diferencias:** ninguna de cálculo. Las verificaciones de los 6 ejemplos de combinadas y T invertida son idénticas,
+  valor por valor, a las del formato anterior. Sus huellas cambian solo porque cambia cómo se escribe `top` en
+  `resultado.json` y en la memoria.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

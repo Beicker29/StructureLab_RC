@@ -98,9 +98,11 @@
           }
         },
         "top": {
-          "designation": "#8",
-          "spacing": 75.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#8",
+            "spacing": 75.0
+          }
         },
         "stirrups": {
           "designation": "#4",
@@ -351,9 +353,11 @@
           }
         },
         "top": {
-          "designation": "#8",
-          "spacing": 75.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#8",
+            "spacing": 75.0
+          }
         },
         "stirrups": {
           "designation": "#4",
@@ -600,9 +604,11 @@
           }
         },
         "top": {
-          "designation": "#8",
-          "spacing": 75.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#8",
+            "spacing": 75.0
+          }
         },
         "stirrups": {
           "designation": "#4",
@@ -853,9 +859,11 @@
           }
         },
         "top": {
-          "designation": "#8",
-          "spacing": 75.0,
-          "end": "straight"
+          "end": "straight",
+          "x": {
+            "designation": "#8",
+            "spacing": 75.0
+          }
         },
         "stirrups": {
           "designation": "#4",

@@ -84,7 +84,7 @@ def test_inverted_t_input_is_validated() -> None:
                             ({"top": None}, "requiere barras superiores"),
                             ({"beam": {"width": 400.0, "height": 850.0}}, "se sale del ancho de la viga"),
                             # D-097: las barras superiores transversales aún no aplican a las aletas.
-                            ({"top_transverse": {"designation": "#5", "spacing": 200.0, "end": "straight"}},
-                             "aun no admite top_transverse")):
+                            ({"top": {"first": "x", "end": "straight", "x": {"designation": "#8", "spacing": 75.0},
+                                      "y": {"designation": "#5", "spacing": 200.0}}}, "aun no admite barras superiores y")):
         with pytest.raises(ValidationError, match=message):
             CombinedFooting.model_validate({**footing, **change})

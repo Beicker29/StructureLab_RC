@@ -151,7 +151,7 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
         "geometry [mm]": _geometry(footing, {"beam", *(["principal_direction"] if footing.principal_direction == "y" else [])}),
         "columns": columns,
         "properties": _base_properties(footing, soil),
-        "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "top_transverse", "stirrups", "skin",
+        "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin",
                                                                   "torsion_layers"}),
         "deep_beam": footing.deep_beam,
         "two_way_warning": _two_way(footing),
