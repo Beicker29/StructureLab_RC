@@ -665,7 +665,8 @@
      cortante sigue revisándose como concreto reforzado.
   2. Se permite con NSR-10 DMI y DMO (C.22.10.1 lo prohíbe con DES) y con ACI none, ordinary e intermediate (14.1.3 lo
      restringe en categorías D a F; special se toma como tales). Si no se permite, FAIL "requiere malla superior".
-  3. La excepción de viviendas de una o dos familias de hasta tres pisos no se implementa (pendiente).
+  3. La excepción de viviendas de una o dos familias de hasta tres pisos no se implementa: en este repositorio no se
+     aplican excepciones (decisión del usuario, 2026-11-11, D-092).
   4. El diseño por tipologías prueba primero sin malla superior y la agrega solo si hace falta.
   5. No se agrega la verificación de espesor mínimo de 200 mm: la altura mínima del concreto reforzado ya la supera.
   6. El diseño evalúa una lista explícita de f'c (`design.fc_options`), comerciales y con precio en `concrete_per_m3`;
@@ -1276,8 +1277,11 @@
      presión efectiva.
 - **Reportado en:** las limitaciones de las memorias de zapatas aisladas y combinadas, el README y la hoja de ruta
   (v3 Fase 2).
-- **Fuera del alcance (decisión del usuario):** el diseño por tipologías con apoyos en distintos niveles de cimentación
-  no se implementará en este repositorio; todas las zapatas del diseño usan el relleno y el pedestal del bloque `design`.
+- **Fuera del alcance (decisión del usuario):**
+  - las excepciones normativas, como la de viviendas de una o dos familias para el concreto simple en cimentaciones con
+    sismo alto (D-072), no se aplican en este repositorio;
+  - el diseño por tipologías con apoyos en distintos niveles de cimentación no se implementará; todas las zapatas del
+    diseño usan el relleno y el pedestal del bloque `design`.
 
 ## Consultas abiertas
 

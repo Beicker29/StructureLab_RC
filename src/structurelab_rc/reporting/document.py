@@ -120,7 +120,7 @@ _FOOTING_LIMITATIONS = (
     "Nivel freático: falta implementación; la presión, el contacto, el deslizamiento y el volcamiento se calculan sin agua "
     "(sin subpresión ni pesos sumergidos) (D-092).",
     "Momento negativo sin malla superior como concreto simple solo donde el perfil lo permite con el nivel sísmico; la "
-    "excepción de viviendas de una o dos familias de hasta tres pisos no está implementada (D-072).",
+    "excepción de viviendas de una o dos familias de hasta tres pisos no se aplica en este repositorio (D-072, D-092).",
     "Aplastamiento del lado de la columna, empalme de los pasadores y tracción en la interfaz: se verificarán con las "
     "columnas (D-059).",
     "Medianeras con viga de amarre, rotadas, escalonadas, losas de cimentación y pilotes: no cubiertas.",

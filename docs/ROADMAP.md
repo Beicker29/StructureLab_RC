@@ -22,12 +22,11 @@ columnas (verificación, entrada desde ETABS), D-052 a D-087.
    criterio de reparto entre franjas de columna y centrales). Hoy se revisa en una dirección y se avisa si B ≥ ℓn
    (D-091).
 
-### Fase 2: geotecnia, estabilidad y concreto simple
+### Fase 2: nivel freático
 
 1. Suelo bajo nivel freático: subpresión en la base, pesos sumergidos y pasiva con γ' (D-092). Antes de implementarlo,
    consultar cómo se declara, qué revisiones afecta y con qué presión se compara qa. El pedestal no aporta pasiva por
    decisión del usuario.
-2. Excepción de viviendas de una o dos familias para el concreto simple en cimentaciones con sismo alto (D-072).
 
 ### Fase 3: diseño (alcance de la Fase 4 de vigas)
 
