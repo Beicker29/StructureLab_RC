@@ -64,6 +64,8 @@ _FOOTING_CONVENTIONS = (
     "El contacto con el suelo se verifica con los casos de servicio; un caso sin equilibrio es NO CUMPLE (D-052, D-054).",
     "Verificación estructural con la carga neta de cada caso mayorado: flexión en las caras de la columna, cortante a d "
     "de la cara y punzonamiento a d/2 con transferencia de momento en los dos ejes (D-061, D-063).",
+    "Transferencia de momento por flexión (ACI 8.4.2.2, NSR-10 C.11.11.7.1 y C.13.5.3): γf·Msc frente a la malla inferior "
+    "dentro de bslab; no se suma al momento de la zapata y su parte negativa la debe tomar la viga de cimentación (D-087).",
     "Desarrollo con ψe según el recubrimiento declarado, ψcc en ganchos y el factor As requerido/As suministrado solo "
     "donde el perfil lo permite con el nivel sísmico declarado; ψr = 1.0 (D-071).",
     "Deslizamiento (fricción, adherencia sobre el área en contacto y pasiva afectada por su factor) y volcamiento con los "
@@ -80,6 +82,10 @@ _COMBINED_CONVENTIONS = (
     "ancho con la forma de la presión, revisada también con el código de vigas (D-080, D-082).",
     "Punzonamiento por columna con la carga neta de Bellos dentro del perímetro crítico; el esfuerzo se evalúa en cada "
     "esquina con el cortante directo y el del momento transferido en los dos ejes, y gobierna la mayor (D-083).",
+    "Acero mínimo por punzonamiento (ACI 8.6.1.2) aplicado a la zapata combinada por criterio del usuario, aunque 13.3.2.1 "
+    "la remite a los capítulos 7 y 9 (D-087).",
+    "Transferencia de momento por flexión (ACI 8.4.2.2, NSR-10 C.11.11.7.1 y C.13.5.3): γf·Msc frente a la malla inferior "
+    "dentro de bslab; no se suma al momento de la zapata y su parte negativa la debe tomar la viga de cimentación (D-087).",
 )
 _COMBINED_LIMITATIONS = (
     "Torsión por Vy y por columnas desplazadas en Y: falta implementación; en las franjas solo entran por la forma de la "
@@ -428,6 +434,32 @@ def _footing_demands(footing: dict[str, Any], figure: Path | None = None) -> lis
     return blocks + _soil_pressures(footing, figure)
 
 
+def _beam_moments(footing: dict[str, Any]) -> list[Block]:
+    """Momentos γf·Msc negativos que la zapata no resiste con malla superior ni concreto simple: los debe tomar la viga de
+    cimentación (D-087); se listan para que el analista los lleve al diseño de la viga."""
+    moments = footing.get("foundation_beam_moments", [])
+    if not moments:
+        return [{"kind": "p", "text": "La parte negativa de γf·Msc la resiste la zapata en todos los casos (malla superior o "
+                                      "concreto simple)."}]
+    rows = [[item["case"], item["column"] or "–", item["beam_direction"], number(item["M [kN-m]"], "kN·m")] for item in moments]
+    return [{"kind": "h2", "text": "Momentos para la viga de cimentación"},
+            {"kind": "table", "headers": ["Caso", "Columna", "Dirección de la viga", "M para la viga (kN·m)"], "rows": rows},
+            {"kind": "note", "text": "Parte negativa del momento transferido por flexión que la zapata no resiste con la malla superior "
+                                     "ni con el concreto simple: la debe tomar la viga de cimentación; no se suma al momento de la "
+                                     "zapata ni se verifica aquí (ACI 8.4.2.2, NSR-10 C.13.5.3; D-087)."}]
+
+
+def _beam_alert(footing: dict[str, Any]) -> list[Block]:
+    """Aviso al comienzo de la memoria si hay momentos que debe tomar la viga de cimentación (D-087)."""
+    moments = footing.get("foundation_beam_moments", [])
+    if not moments:
+        return []
+    largest = max(item["M [kN-m]"] for item in moments)
+    return [{"kind": "alert", "text": f"La viga de cimentación debe tomar momentos transferidos por la columna (hasta "
+                                      f"{number(largest, 'kN·m')} kN·m): ver la tabla \"Momentos para la viga de cimentación\" "
+                                      "en el capítulo de punzonamiento (D-087)."}]
+
+
 def _punching_corners(items: list[Located]) -> list[Block]:
     """Esfuerzo de punzonamiento en cada esquina del perímetro crítico, por caso (y columna): cortante directo más el del
     momento transferido en los dos ejes; gobierna la mayor (D-083)."""
@@ -459,7 +491,7 @@ def footing_document(results: dict[str, Any], footing: dict[str, Any], full: boo
     items: list[Located] = [(f"caso {check['case']}" if check.get("case") else "toda la zapata", check) for check in footing["checks"]]
     counts = {kind: sum(1 for load in footing["loads"] if load["kind"] == kind) for kind in ("service", "factored")}
     meta = [("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
-    head = [_title(f"Zapata {footing['id']}", results, meta, items, footing["status"]), _summary(items)]
+    head = [_title(f"Zapata {footing['id']}", results, meta, items, footing["status"]), _summary(items), *_beam_alert(footing)]
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
         ("Propiedades geométricas, suelo y armado", lambda _: _footing_geometry(results, footing)),
@@ -468,7 +500,8 @@ def footing_document(results: dict[str, Any], footing: dict[str, Any], full: boo
         (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
         (_CHAPTER_TITLES["flexure"], lambda n: _chapter("flexure", n, items, full)),
         (_CHAPTER_TITLES["one_way"], lambda n: _chapter("one_way", n, items, full)),
-        (_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, items, full), *_punching_corners(items)]),
+        (_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, items, full), *_punching_corners(items),
+                                                 *_beam_moments(footing)]),
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, items, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, items, full)),
         ("Índices DCR", lambda _: _dcr(items)),
@@ -551,7 +584,8 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
     counts = {kind: sum(1 for load in footing["columns"][0]["loads"] if load["kind"] == kind) for kind in ("service", "factored")}
     meta = [("Columnas", " y ".join(column["id"] for column in footing["columns"])),
             ("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
-    head = [_title(f"Zapata combinada {footing['id']}", results, meta, items, footing["status"]), _summary(items)]
+    head = [_title(f"Zapata combinada {footing['id']}", results, meta, items, footing["status"]), _summary(items),
+            *_beam_alert(footing)]
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
         ("Propiedades geométricas, columnas, suelo y armado", lambda _: _combined_geometry(results, footing)),
@@ -562,7 +596,8 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         ("Viga en la dirección larga: fuerza cortante", lambda n: _chapter("shear", n, beam, full)),
         ("Franjas transversales: momento flector", lambda n: _chapter("flexure", n, strips, full)),
         ("Franjas transversales: fuerza cortante", lambda n: _chapter("shear", n, strips, full)),
-        (_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full), *_punching_corners(others)]),
+        (_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full), *_punching_corners(others),
+                                                 *_beam_moments(footing)]),
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, others, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, others, full)),
         ("Índices DCR", lambda _: _dcr(items)),

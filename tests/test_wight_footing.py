@@ -70,7 +70,7 @@ def test_square_footing_flexure_matches_wight(profile: str) -> None:
         assert str(minimum.status) == "PASS"
 
     overrides = oracle["tolerance_overrides"]
-    shear = {check.name: check for check in shear_checks(PROFILES[profile], materials, footing, cases, load_engine().bars)}
+    shear = {check.name: check for check in shear_checks(basis, footing, cases)}
     for direction in ("x", "y"):
         one_way = shear[f"Cortante en una direccion (barras {direction})"]
         assert one_way.demand is not None and one_way.capacity is not None

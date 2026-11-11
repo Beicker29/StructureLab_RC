@@ -23,6 +23,7 @@ def clauses() -> dict[str, str]:
         "min_depth": "13.3.1.2",
         "one_way_shear": "13.2.6.2(a) y 13.2.7.2",
         "punching_min_reinforcement": "8.6.1.2",
+        "moment_transfer": "8.4.2.2.1 a 8.4.2.2.3 (13.3.3.1)",
         "dowels": "16.3.4.1",
         "dowel_excess": "16.3.3.4",
         "combined_spacing": "13.3.2.1 y 7.7.2.3",

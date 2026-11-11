@@ -132,7 +132,7 @@ def _where(check: Check) -> str:
     """Columna o franja de un check de V3J.3 (la nota empieza con ella); el desarrollo ya la lleva en el nombre."""
     if check.name.startswith("Desarrollo") or not check.note.startswith(("Franja", "Columna")):
         return ""
-    return check.note.split(",")[0].split(":")[0]
+    return check.note.split(",")[0].split(":")[0].split(";")[0]
 
 
 @pytest.mark.parametrize(("profile", "case"), COLUMN_CASES)

@@ -176,7 +176,52 @@ def _punching(folder: str, f: dict, plane: list[float], w: float, depth: float) 
             provided = sum(ab for i in range(n) if abs(start + i * spacing - centre) <= bslab / 2 + 1e-6)
             checks.append({"name": f"Acero minimo por punzonamiento (barras {direction})",
                            "status": "PASS" if provided >= required else "FAIL", "demand": required, "capacity": provided})
+    checks += _transfer(folder, f, {"x": (msx, 1 - gx), "y": (msy, 1 - gy)})
     return checks
+
+
+def _positions(f: dict, mat: dict, direction: str) -> tuple[list[float], float]:
+    """Posiciones (centradas) de las barras de una dirección de una malla y el área de cada una."""
+    db, ab = BARS[mat[direction]["designation"]]
+    width = f["ly"] if direction == "x" else f["lx"]
+    spacing = mat[direction]["spacing"]
+    n = math.floor((width - 2 * f["cover"] - db) / spacing + 1e-6) + 1
+    half = width / 2 - f["cover"] - db / 2
+    start = -half + (2 * half - (n - 1) * spacing) / 2
+    return [start + i * spacing for i in range(n)], ab
+
+
+def _transfer(folder: str, f: dict, moments: dict[str, tuple[float, float]], level: str = "") -> list[dict]:
+    """Transferencia de momento por flexión (ACI 8.4.2.2, NSR-10 C.11.11.7.1 y C.13.5.3; D-087): γf·|Msc| frente a φMn de
+    la malla inferior dentro de bslab = c + 3h; la parte negativa, frente a la malla superior en bslab o, sin ella, al
+    concreto simple si el nivel lo permite (siempre cumple: lo que falte lo toma la viga de cimentación)."""
+    c = f["column"]
+    profile = _F.PROFILES[folder]
+    depths = _depths(f)
+    out = []
+    for direction, (msc, gamma_f) in moments.items():
+        across, centre = (c["cy"], c["offset_y"]) if direction == "x" else (c["cx"], c["offset_x"])
+        bslab = across + 3 * f["h"]
+        positions, ab = _positions(f, f["bottom"], direction)
+        area = sum(ab for p in positions if abs(p - centre) <= bslab / 2 + 1e-6)
+        demand = gamma_f * abs(msc)
+        nominal, phi, _ = _F._strength(area, bslab, depths[direction], profile)
+        out.append({"name": f"Transferencia de momento por flexion (barras {direction})",
+                    "status": "PASS" if demand <= phi * nominal else "FAIL", "demand": demand, "capacity": phi * nominal})
+        capacity = 0.0
+        if f.get("top"):
+            top_positions, top_ab = _positions(f, f["top"], direction)
+            top_area = sum(top_ab for p in top_positions if abs(p - centre) <= bslab / 2 + 1e-6)
+            top_db = BARS[f["top"][direction]["designation"]][0]
+            first = BARS[f["top"][f["top"]["first"]]["designation"]][0]
+            offset = f["cover"] + top_db / 2 if direction == f["top"]["first"] else f["cover"] + first + top_db / 2
+            nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - offset, profile)
+            capacity = phi * nominal
+        elif level in profile["plain_levels"]:
+            capacity = 0.60 * 0.42 * math.sqrt(FC) * bslab * (f["h"] - 50.0) ** 2 / 6
+        negative = {"name": f"Transferencia de momento: parte negativa (barras {direction})", "status": "PASS", "capacity": capacity}
+        out.append({**negative, "demand": demand} if demand <= capacity else negative)  # sin demanda si la toma la viga
+    return out
 
 
 def _expected(folder: str, f: dict) -> list[dict]:

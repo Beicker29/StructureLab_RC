@@ -147,7 +147,7 @@ def _section_checks(
             checks.append(Check(_name("Separacion maxima", mat, direction), Status.PASS if largest <= max_spacing else Status.FAIL,
                                 clause=clauses["spacing"], demand=largest, capacity=max_spacing, unit="mm", member=member))
             if row.band is not None and (mat == "bottom" or has_negative_moment(cases, direction)):
-                checks.append(_band_check(profile, materials, footing, (mat, row), cases))
+                checks.extend(_band_checks(profile, materials, footing, (mat, row), cases))
     bottom = rows["bottom"]
     first = bottom[footing.bottom.first]
     second = bottom["y" if footing.bottom.first == "x" else "x"]
@@ -172,22 +172,27 @@ def required_mat_area(
     return max(needed, profile.footing.min_reinforcement_ratio(materials.fy) * row.width * footing.h)
 
 
-def _band_check(
+def _band_checks(
     profile: Profile, materials: Materials, footing: Footing, mat_row: tuple[str, BarRow], cases: list[FaceMoments]
-) -> Check:
-    """Franja central de la dirección corta: As en la franja ≥ γs·As, con As el mayor entre el requerido y As,min."""
+) -> list[Check]:
+    """Franja central de la dirección corta (ACI 13.3.3.3(b), NSR-10 C.15.4.4.2): As en la franja ≥ γs·As y fuera de
+    ella ≥ (1 − γs)·As (D-087), con As el mayor entre el requerido y As,min."""
     mat, row = mat_row
     total = required_mat_area(profile, materials, footing, mat_row, cases)
     name = _name("Franja central", mat, row.direction)
+    outside_name = _name("Fuera de la franja central", mat, row.direction)
     clause = profile.footing.clauses()["band"]
     if total is None:
         error = invalid_input("Ninguna cuantia alcanza el momento de la direccion corta", member=footing.id)
-        return Check(name, Status.FAIL, (error,), clause, member=footing.id)
+        return [Check(name, Status.FAIL, (error,), clause, member=footing.id)]
     beta = max(footing.lx, footing.ly) / min(footing.lx, footing.ly)
     gamma = profile.footing.band_fraction(beta)
-    required = gamma * total
-    return Check(name, Status.PASS if row.band_area >= required else Status.FAIL, clause=clause, demand=required,
-                 capacity=row.band_area, unit="mm2", values=(("gamma s", gamma), ("As", total)), member=footing.id)
+    required, outside = gamma * total, (1 - gamma) * total
+    values = (("gamma s", gamma), ("As", total))
+    return [Check(name, Status.PASS if row.band_area >= required else Status.FAIL, clause=clause, demand=required,
+                  capacity=row.band_area, unit="mm2", values=values, member=footing.id),
+            Check(outside_name, Status.PASS if row.area - row.band_area >= outside else Status.FAIL, clause=clause, demand=outside,
+                  capacity=row.area - row.band_area, unit="mm2", values=values, member=footing.id)]
 
 
 def flexure_checks(basis: Basis, footing: Footing, factored: list[FactoredCase]) -> list[Check]:

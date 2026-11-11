@@ -266,6 +266,12 @@
             "capacity": 2587.0
           },
           {
+            "name": "Fuera de la franja central malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 640.0,
+            "capacity": 796.0
+          },
+          {
             "name": "Deformacion neta de traccion malla inferior (barras x)",
             "status": "PASS",
             "capacity": 0.04783448943661972
@@ -315,6 +321,125 @@
             "status": "PASS",
             "demand": 150.0,
             "capacity": 490.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "franja-concentrada",
+      "description": "franja central con barras muy juntas y pocas fuera: fuera de la franja no alcanza (1 − γs)·As",
+      "footing": {
+        "id": "Z",
+        "lx": 3600.0,
+        "ly": 2000.0,
+        "h": 600.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 450.0,
+            "band_spacing": 110.0
+          }
+        },
+        "top": null,
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 1600.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 0.0
+          }
+        ]
+      },
+      "seismic_level": "DMO",
+      "expected": {
+        "checks": [
+          {
+            "name": "Flexion malla inferior (barras x)",
+            "case": "1.2D+1.6L",
+            "status": "FAIL",
+            "demand_Nmm": 549017437.5000001,
+            "capacity_Nmm": 494455113.29117644
+          },
+          {
+            "name": "Flexion malla inferior (barras y)",
+            "case": "1.2D+1.6L",
+            "status": "PASS",
+            "demand_Nmm": 239276987.5,
+            "capacity_Nmm": 775467690.9617647
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras x)",
+            "status": "PASS",
+            "capacity": 0.05476090065713181
+          },
+          {
+            "name": "Acero minimo malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 2160.0,
+            "capacity": 2587.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras y)",
+            "status": "PASS",
+            "capacity": 0.05938292175161521
+          },
+          {
+            "name": "Acero minimo malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 3887.9999999999995,
+            "capacity": 4179.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 450.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Franja central malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 2777.142857142857,
+            "capacity": 3781.0
+          },
+          {
+            "name": "Fuera de la franja central malla inferior (barras y)",
+            "status": "FAIL",
+            "demand": 1110.8571428571427,
+            "capacity": 398.0
+          },
+          {
+            "name": "Altura minima de la zapata",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 493.20000000000005
           }
         ]
       }
@@ -542,6 +667,12 @@
             "status": "PASS",
             "demand": 2520.0,
             "capacity": 2786.0
+          },
+          {
+            "name": "Fuera de la franja central malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 504.0,
+            "capacity": 796.0
           },
           {
             "name": "Altura minima de la zapata",

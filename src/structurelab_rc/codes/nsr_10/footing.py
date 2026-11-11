@@ -26,6 +26,7 @@ def clauses() -> dict[str, str]:
         "min_depth": "C.15.7",
         "one_way_shear": "C.15.5.1, C.15.5.2 y C.11.2",
         "punching_min_reinforcement": "no aplica en NSR-10",
+        "moment_transfer": "C.11.11.7.1 y C.13.5.3.2",
         "dowels": "C.15.8.2.1",
         "dowel_excess": "C.15.8.1.2(a)",
         "combined_spacing": "C.10.5.4",

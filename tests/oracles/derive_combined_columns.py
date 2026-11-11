@@ -47,6 +47,7 @@ FC, FY = _B.FC, _B.FY
 BARS = _B.BARS
 PHI = _S.PHI
 LEVELS = _K.LEVELS
+LEVEL = {folder: LEVELS[folder]["bajo"] for folder in LEVELS}
 CLAUSES = {"aci_318_25": {"min_y": "13.3.2.1 y 7.6.1.1", "spacing": "13.3.2.1 y 7.7.2.3"},
            "nsr_10": {"min_y": "C.10.5.4 y C.7.12.2.1", "spacing": "C.10.5.4"}}
 
@@ -93,7 +94,8 @@ def _punching(folder: str, f: dict, beam: dict, index: int, case: str) -> list[d
     extents = (c["x"] - (c["cx"] + depth) / 2, c["x"] + (c["cx"] + depth) / 2, c["y"] - (c["cy"] + depth) / 2,
                c["y"] + (c["cy"] + depth) / 2)
     return _punch(folder, f, beam, {"extents": extents, "c": (c["cx"], c["cy"]), "centre": (c["x"], c["y"]),
-                                    "total": _action(f, beam, index, case), "where": f"Columna {c['id']}", "case": case})
+                                    "total": _action(f, beam, index, case), "where": f"Columna {c['id']}", "case": case,
+                                    "indices": [index]})
 
 
 def _group(folder: str, f: dict, beam: dict, case: str) -> list[dict]:
@@ -112,13 +114,12 @@ def _group(folder: str, f: dict, beam: dict, case: str) -> list[dict]:
     total = tuple(a + b for a, b in zip(*actions, strict=True))
     names = " y ".join(c["id"] for c in f["columns"])
     return _punch(folder, f, beam, {"extents": extents, "c": size, "centre": centre, "total": total,
-                                    "where": f"Columnas {names} (perimetro comun)", "case": case})
+                                    "where": f"Columnas {names} (perimetro comun)", "case": case, "indices": [0, 1]})
 
 
 def _punch(folder: str, f: dict, beam: dict, spec: dict) -> list[dict]:
     """Punzonamiento de un área cargada: extents = bordes del perímetro sin recortar, c = dimensiones del área cargada,
     centre, total = acción (F, ∫x·q, ∫y·q), where y case."""
-    rows = _bottom_rows(f)
     depth = _depth(f)
     hx, hy = f["lx"] / 2, f["ly"] / 2
     left, right, bottom, top = spec["extents"]
@@ -157,14 +158,68 @@ def _punch(folder: str, f: dict, beam: dict, spec: dict) -> list[dict]:
                "demand": stress, "capacity": PHI * vc, "corners": corners}]
     if folder == "aci_318_25" and vuv > PHI * 0.17 * math.sqrt(FC):
         for direction in ("x", "y"):
-            row = rows[direction]
             across, centre = (cy, spec["centre"][1]) if direction == "x" else (cx, spec["centre"][0])
             bslab = across + 3 * f["h"]
             required = 5 * vuv * bslab * b0 / (PHI * alpha * FY)
-            provided = sum(row["ab"] for p in row["positions"] if abs(p - centre) <= bslab / 2 + 1e-6)
+            provided = sum(ab for p, ab in _bars(f, direction, spec["indices"]) if abs(p - centre) <= bslab / 2 + 1e-6)
             checks.append({"name": f"Acero minimo por punzonamiento (barras {direction})", "case": case, "where": where,
                            "status": "PASS" if provided >= required else "FAIL", "demand": required, "capacity": provided})
+    checks += _transfer(folder, f, spec, {"x": (msx, 1 - gx), "y": (msy, 1 - gy)})
     return checks
+
+
+def _bars(f: dict, direction: str, indices: list[int]) -> list[tuple[float, float]]:
+    """(posición, área) de las barras inferiores de una dirección: la malla y, en Y, el band de las columnas indicadas."""
+    rows = _bottom_rows(f)
+    row = rows[direction]
+    bars = [(p, row["ab"]) for p in row["positions"]]
+    if direction == "y":
+        for index in indices:
+            c = f["columns"][index]
+            band = c.get("band")
+            if not band:
+                continue
+            d = row["depth"]
+            x0, x1 = max(c["x"] - c["cx"] / 2 - d / 2, -f["lx"] / 2), min(c["x"] + c["cx"] / 2 + d / 2, f["lx"] / 2)
+            db, ab = BARS[band["designation"]]
+            edge = f["lx"] / 2 - f["cover"] - db / 2
+            bars += [(p, ab) for p in _uniform(max(x0 + db / 2, -edge), min(x1 - db / 2, edge), band["spacing"])]
+    return bars
+
+
+def _transfer(folder: str, f: dict, spec: dict, moments: dict[str, tuple[float, float]]) -> list[dict]:
+    """γf·|Msc| frente a la malla inferior en bslab (y el band) y su parte negativa frente a las barras superiores en bslab
+    (solo en X) o, sin ellas, al concreto simple si el nivel lo permite; la parte negativa siempre cumple (D-087)."""
+    profile = _F.PROFILES[folder]
+    rows = _bottom_rows(f)
+    cx, cy = spec["c"]
+    out = []
+    for direction, (msc, gamma_f) in moments.items():
+        across, centre = (cy, spec["centre"][1]) if direction == "x" else (cx, spec["centre"][0])
+        bslab = across + 3 * f["h"]
+        area = sum(ab for p, ab in _bars(f, direction, spec["indices"]) if abs(p - centre) <= bslab / 2 + 1e-6)
+        demand = gamma_f * abs(msc)
+        nominal, phi, _ = _F._strength(area, bslab, rows[direction]["depth"], profile)
+        common = {"case": spec["case"], "where": spec["where"], "demand": demand}
+        out.append({**common, "name": f"Transferencia de momento por flexion (barras {direction})",
+                    "status": "PASS" if demand <= phi * nominal else "FAIL", "capacity": phi * nominal})
+        capacity = 0.0
+        if direction == "x" and f.get("top"):
+            db, ab = BARS[f["top"]["designation"]]
+            n = _F._count(f["ly"], f["cover"], db, f["top"]["spacing"])
+            half = f["ly"] / 2 - f["cover"] - db / 2
+            start = -half + (2 * half - (n - 1) * f["top"]["spacing"]) / 2
+            top_area = sum(ab for i in range(n) if abs(start + i * f["top"]["spacing"] - centre) <= bslab / 2 + 1e-6)
+            nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - f["cover"] - db / 2, profile)
+            capacity = phi * nominal
+        elif LEVEL[folder] in profile["plain_levels"]:
+            capacity = 0.60 * 0.42 * math.sqrt(FC) * bslab * (f["h"] - 50.0) ** 2 / 6
+        negative = {**common, "name": f"Transferencia de momento: parte negativa (barras {direction})", "status": "PASS",
+                    "capacity": capacity}
+        if demand > capacity:  # la toma la viga: sin demanda (sin razón) en la zapata
+            negative.pop("demand")
+        out.append(negative)
+    return out
 
 
 def _strip(f: dict, index: int) -> dict:

@@ -107,6 +107,8 @@ Una etapa por vez; cada punto con su plan, oráculo, pruebas y huella antes del 
    tratamiento de la torsión en cimentaciones).
 4. Vigas de gran altura (ACI 318-25 9.9, NSR-10 C.11.7: luz libre ≤ 4h o cargas concentradas a menos de 2h del apoyo),
    en vigas y en la viga larga.
+5. Criterio para decidir si una zapata combinada trabaja en una dirección (13.3.2, como hoy) o en dos (13.3.4), con un
+   aviso cuando sea muy ancha frente a la separación entre columnas; la norma no lo define (D-087).
 
 **Etapa 3. Geotecnia y estabilidad**
 1. Empuje pasivo sobre el pedestal y suelo bajo nivel freático (D-070).

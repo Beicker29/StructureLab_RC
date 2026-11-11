@@ -126,6 +126,34 @@ def _count(width: float, cover: float, db: float, spacing: float) -> int:
     return math.floor((width - 2 * cover - db) / spacing + 1e-6) + 1
 
 
+def _band_limits(f: dict, direction: str) -> tuple[float, float]:
+    centre = f["column"]["offset_x"] if direction == "y" else f["column"]["offset_y"]
+    short = min(f["lx"], f["ly"])
+    return centre - short / 2, centre + short / 2
+
+
+def _positions(f: dict, mat: dict, direction: str) -> list[float]:
+    """Posiciones de las barras: uniformes y centradas; con band_spacing, a esa separación centradas en la franja y fuera
+    de ella a spacing desde la última barra de la franja hasta el rango útil (escrito aparte del paquete)."""
+    db = BARS[mat[direction]["designation"]][0]
+    width = f["ly"] if direction == "x" else f["lx"]
+    half = width / 2 - f["cover"] - db / 2
+    spacing, band_spacing = mat[direction]["spacing"], mat[direction].get("band_spacing")
+
+    def centred(low: float, high: float, step: float) -> list[float]:
+        count = math.floor((high - low) / step + 1e-6) + 1
+        offset = (high - low - (count - 1) * step) / 2
+        return [low + offset + i * step for i in range(count)]
+
+    if band_spacing is None:
+        return centred(-half, half, spacing)
+    band0, band1 = _band_limits(f, direction)
+    inner = centred(max(band0, -half), min(band1, half), band_spacing)
+    left = [inner[0] - k * spacing for k in range(1, 1000) if inner[0] - k * spacing >= -half - 1e-6]
+    right = [inner[-1] + k * spacing for k in range(1, 1000) if inner[-1] + k * spacing <= half + 1e-6]
+    return sorted(left) + inner + right
+
+
 def _rows(f: dict, mat: dict) -> dict[str, dict]:
     first = mat["first"]
     second = "y" if first == "x" else "x"
@@ -134,20 +162,18 @@ def _rows(f: dict, mat: dict) -> dict[str, dict]:
     for index, direction in enumerate((first, second)):
         db, ab = BARS[mat[direction]["designation"]]
         width = f["ly"] if direction == "x" else f["lx"]
-        n = _count(width, f["cover"], db, mat[direction]["spacing"])
+        positions = _positions(f, mat, direction)
+        n = len(positions)
         offset = f["cover"] + db / 2 if index == 0 else f["cover"] + d1 + db / 2
-        rows[direction] = {"width": width, "depth": f["h"] - offset, "area": n * ab, "count": n, "db": db, "ab": ab}
+        rows[direction] = {"width": width, "depth": f["h"] - offset, "area": n * ab, "count": n, "db": db, "ab": ab,
+                           "positions": positions}
     return rows
 
 
 def _band_count(f: dict, direction: str, row: dict, spacing: float) -> int:
-    """Barras uniformes (centradas en el ancho útil) que caen en la franja de ancho del lado corto."""
-    half = row["width"] / 2 - f["cover"] - row["db"] / 2
-    n = row["count"]
-    start = -half + (2 * half - (n - 1) * spacing) / 2
-    centre = f["column"]["offset_x"] if direction == "y" else f["column"]["offset_y"]
-    short = min(f["lx"], f["ly"])
-    return sum(1 for i in range(n) if centre - short / 2 - 1e-6 <= start + i * spacing <= centre + short / 2 + 1e-6)
+    """Barras de la fila que caen en la franja de ancho del lado corto, centrada en la columna."""
+    band0, band1 = _band_limits(f, direction)
+    return sum(1 for position in row["positions"] if band0 - 1e-6 <= position <= band1 + 1e-6)
 
 
 def _expected(f: dict, profile: dict, level: str) -> dict:
@@ -206,6 +232,10 @@ def _expected(f: dict, profile: dict, level: str) -> dict:
                 band = _band_count(f, direction, row, spacing) * row["ab"]
                 checks.append({"name": f"Franja central malla {label} (barras {direction})",
                                "status": "PASS" if band >= required else "FAIL", "demand": required, "capacity": band})
+                # Fuera de la franja, al menos (1 − γs)·As (ACI 13.3.3.3(b), NSR-10 C.15.4.4.2; D-087).
+                outside, rest = total - required, row["area"] - band
+                checks.append({"name": f"Fuera de la franja central malla {label} (barras {direction})",
+                               "status": "PASS" if rest >= outside else "FAIL", "demand": outside, "capacity": rest})
     bottom = rows["bottom"]
     first, second = bottom[f["bottom"]["first"]], bottom["y" if f["bottom"]["first"] == "x" else "x"]
     measured = profile["depth"](f["h"], f["cover"], first["db"], second["db"])
@@ -240,6 +270,11 @@ CASES = [
      _footing(lx=3200.0, ly=2200.0, h=600.0, column={"cx": 400.0, "cy": 500.0, "offset_x": 350.0, "offset_y": 0.0},
               bottom=_mat("y", ("#6", 200.0), ("#5", 180.0)), top=_mat("x", ("#4", 250.0), ("#4", 250.0)),
               loads=[_load("1.2D+1.6L", 1.2, 1.6, 1400.0, my=60.0), _load("0.9D+E", 0.9, 0.0, 450.0, my=420.0, vx=90.0)]), "alto"),
+    ("franja-concentrada", "franja central con barras muy juntas y pocas fuera: fuera de la franja no alcanza (1 − γs)·As",
+     _footing(lx=3600.0, ly=2000.0, h=600.0, column={"cx": 450.0, "cy": 450.0, "offset_x": 0.0, "offset_y": 0.0},
+              bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 150.0},
+                      "y": {"designation": "#5", "spacing": 450.0, "band_spacing": 110.0}},
+              loads=[_load("1.2D+1.6L", 1.2, 1.6, 1600.0)]), "bajo"),
     ("sin-malla-superior", "momento negativo sin malla superior con nivel alto: el concreto simple no se permite, FAIL",
      _footing(loads=[_load("0.9D+E", 0.9, 0.0, 300.0, my=330.0)]), "alto"),
     ("concreto-simple-cumple", "momento negativo moderado sin malla superior y nivel bajo: lo resiste el concreto simple",

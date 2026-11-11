@@ -25,9 +25,8 @@ def structural_checks(basis: Basis, footing: Footing, soil: Soil) -> list[Check]
         error = incomplete("La zapata no tiene casos mayorados", member=footing.id)
         return [Check(STRUCTURAL, Status.INCOMPLETE, (error,), member=footing.id)]
     cases, failures = factored_cases(footing, soil)
-    profile, materials, bars = basis.profile, basis.materials, basis.bars
     return [*failures, *flexure_checks(basis, footing, cases),
-            *shear_checks(profile, materials, footing, cases, bars), *connection_checks(basis, footing, cases)]
+            *shear_checks(basis, footing, cases), *connection_checks(basis, footing, cases)]
 
 
 def combined_footing_checks(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Check]:

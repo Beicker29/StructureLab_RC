@@ -43,6 +43,7 @@ from structurelab_rc.model.reinforcement import BarLayer, BarPosition, Reinforce
 OUTSIDE_MINIMUM = "Malla inferior y: acero minimo fuera de las franjas"
 OUTSIDE_SPACING = "Malla inferior y: separacion maxima"
 DEVELOPMENT = "Desarrollo"
+MINIMUM_NOTE = "criterio del usuario (D-087): 8.6.1.2 aplicado a la zapata combinada, aunque 13.3.2.1 la remite a los capitulos 7 y 9"
 Cases = list[tuple[FactoredCase, tuple[FootingLoad, ...]]]
 _TOLERANCE = 1e-6  # mm
 
@@ -66,12 +67,26 @@ def _punching(basis: Basis, footing: CombinedFooting, soil: Soil, bottom: dict[s
     checks = []
     for index, column in enumerate(footing.columns):
         perimeter = critical_perimeter((column.x, column.y), column.cx, column.cy, depth, bounds)
-        punched = PunchedColumn(column.cx, column.cy, column.x, column.y, bottom, _note(column))
+        punched = PunchedColumn(column.cx, column.cy, column.x, column.y, _punching_rows(basis, footing, bottom, [column]),
+                                _note(column), MINIMUM_NOTE, _top_rows(basis, footing))
         for pressure, loads in cases:
             load = transferred_load(column_action(footing, soil, column, loads[index]), pressure, perimeter)
             result = two_way_shear(profile, materials, perimeter, (column.cx, column.cy, loaded), load)
             checks += punching_checks(basis, footing, punched, (result, load, pressure.case))
     return checks + _group_punching(basis, footing, soil, (bottom, depth), cases)
+
+
+def _punching_rows(basis: Basis, footing: CombinedFooting, bottom: dict[str, BarRow],
+                   columns: list[CombinedColumn]) -> dict[str, tuple[BarRow, ...]]:
+    """Filas de barras inferiores alrededor de las columnas: la malla en las dos direcciones y, en Y, el band de cada una."""
+    bands = tuple(band for column in columns if (band := _band_row(footing, column, bottom["y"], basis)) is not None)
+    return {"x": (bottom["x"],), "y": (bottom["y"], *bands)}
+
+
+def _top_rows(basis: Basis, footing: CombinedFooting) -> dict[str, tuple[BarRow, ...]]:
+    """Barras superiores alrededor de las columnas: solo en X (la combinada no tiene barras superiores en Y)."""
+    top = top_row(footing, basis.bars)
+    return {} if top is None else {"x": (top,)}
 
 
 def _overlap(footing: CombinedFooting, depth: float) -> bool:
@@ -99,7 +114,8 @@ def _group_punching(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tu
     size, centre = (right - left, high - low), ((left + right) / 2, (low + high) / 2)
     bounds = ((-footing.lx / 2, -footing.ly / 2), (footing.lx / 2, footing.ly / 2))
     perimeter = critical_perimeter(centre, *size, depth, bounds)
-    punched = PunchedColumn(*size, *centre, bottom, f"Columnas {first.id} y {second.id} (perimetro comun)")
+    punched = PunchedColumn(*size, *centre, _punching_rows(basis, footing, bottom, [first, second]),
+                            f"Columnas {first.id} y {second.id} (perimetro comun)", MINIMUM_NOTE, _top_rows(basis, footing))
     checks = []
     for pressure, loads in cases:
         actions = [column_action(footing, soil, column, load) for column, load in zip(footing.columns, loads, strict=True)]

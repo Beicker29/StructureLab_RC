@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.footing.loads import factored_cases
 from structurelab_rc.domain.footing.shear import shear_checks
 from structurelab_rc.mechanics.perimeter import critical_perimeter
@@ -33,7 +34,8 @@ def test_shear_checks_match_oracle(profile: str, case: dict[str, Any]) -> None:
     oracle = _oracle(FOLDERS[profile])
     footing = Footing.model_validate(case["footing"])
     cases, _ = factored_cases(footing, Soil.model_validate(oracle["soil"]))
-    checks = shear_checks(PROFILES[profile], Materials.model_validate(oracle["materials"]), footing, cases, BARS)
+    basis = Basis(PROFILES[profile], Materials.model_validate(oracle["materials"]), BARS, case.get("seismic_level", ""))
+    checks = shear_checks(basis, footing, cases)
     got = {(check.name, check.case): check for check in checks}
     expected = {(item["name"], item["case"]): item for item in case["expected"]}
     assert set(got) == set(expected)
@@ -41,8 +43,12 @@ def test_shear_checks_match_oracle(profile: str, case: dict[str, Any]) -> None:
     for key, item in expected.items():
         check = got[key]
         assert str(check.status) == item["status"], key
-        assert check.demand == pytest.approx(item["demand"], rel=tolerance), key
-        assert check.capacity == pytest.approx(item["capacity"], rel=tolerance), key
+        noise = 1.0 if check.unit == "N*mm" else 0.0  # Msc casi nulo: ruido numérico en N·mm
+        if "demand" in item:
+            assert check.demand == pytest.approx(item["demand"], rel=tolerance, abs=noise), key
+        else:
+            assert check.demand is None, key
+        assert check.capacity == pytest.approx(item["capacity"], rel=tolerance, abs=noise), key
         if key[0] == "Punzonamiento":
             values = dict(check.values)
             assert values["alpha s"] == item["alpha_s"]

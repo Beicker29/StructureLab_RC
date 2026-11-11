@@ -147,6 +147,38 @@
           ]
         },
         {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1935482057.5588233
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
+        },
+        {
           "name": "Punzonamiento",
           "case": "U1",
           "where": "Columna C2",
@@ -175,6 +207,38 @@
               0.37251061846914874
             ]
           ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1935482057.5588233
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
         },
         {
           "name": "Flexion: resistencia",
@@ -857,6 +921,38 @@
           ]
         },
         {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 167547525.7672335,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 167547525.7672335,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 680578351.7647059
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
+        },
+        {
           "name": "Punzonamiento",
           "case": "U1",
           "where": "Columna C2",
@@ -885,6 +981,38 @@
               0.5163068784808867
             ]
           ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 674561.0097330094,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415919012.9786096
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 674561.0097330094,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415919012.9786096
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1276715435.0438504
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 299472590.899401
         },
         {
           "name": "Flexion: resistencia",
@@ -1587,6 +1715,38 @@
           ]
         },
         {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1030018.2559305669,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1030018.2559305669,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 23998400.89665767,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1808637951.4411767
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 23998400.89665767,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
+        },
+        {
           "name": "Punzonamiento",
           "case": "U1",
           "where": "Columna C2",
@@ -1615,6 +1775,38 @@
               0.4091851512063601
             ]
           ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 1030018.25593071,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 1030018.25593071,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 18001599.103342332,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1013394986.4705884
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 18001599.103342332,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
         },
         {
           "name": "Punzonamiento",
@@ -1647,6 +1839,38 @@
           ]
         },
         {
+          "case": "U2",
+          "where": "Columna C1",
+          "demand": 220805629.5462745,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U2",
+          "where": "Columna C1",
+          "demand": 220805629.5462745,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U2",
+          "where": "Columna C1",
+          "demand": 23759047.421330404,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1808637951.4411767
+        },
+        {
+          "case": "U2",
+          "where": "Columna C1",
+          "demand": 23759047.421330404,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
+        },
+        {
           "name": "Punzonamiento",
           "case": "U2",
           "where": "Columna C2",
@@ -1675,6 +1899,38 @@
               0.4238808732807942
             ]
           ]
+        },
+        {
+          "case": "U2",
+          "where": "Columna C2",
+          "demand": 267005629.5462745,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U2",
+          "where": "Columna C2",
+          "demand": 267005629.5462745,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U2",
+          "where": "Columna C2",
+          "demand": 540952.5786696017,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1013394986.4705884
+        },
+        {
+          "case": "U2",
+          "where": "Columna C2",
+          "demand": 540952.5786696017,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
         },
         {
           "name": "Flexion: resistencia",
@@ -2827,6 +3083,38 @@
           ]
         },
         {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 2244834648.0
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1412713513.5259516
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 398099707.1252595
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 277692766.1067173
+        },
+        {
           "name": "Punzonamiento",
           "case": "U1",
           "where": "Columna C2",
@@ -2855,6 +3143,38 @@
               0.9020110092031814
             ]
           ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 2244834648.0
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1412713513.5259516
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 398099707.1252595
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 277692766.1067173
         },
         {
           "name": "Flexion: resistencia",
@@ -3508,6 +3828,38 @@
           ]
         },
         {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1.4305114746093752e-07,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1.4305114746093752e-07,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 880866135.8823531
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
+        },
+        {
           "name": "Punzonamiento",
           "case": "U1",
           "where": "Columna C2",
@@ -3536,6 +3888,38 @@
               1.0267389006432226
             ]
           ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 888507854.68961,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 888507854.68961,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 292482011.49435014,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1145126766.0
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 292482011.49435014,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
         },
         {
           "name": "Flexion: resistencia",
@@ -4159,6 +4543,38 @@
           ]
         },
         {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1.4305114746093752e-07,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1.4305114746093752e-07,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 880866135.8823531
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
+        },
+        {
           "name": "Punzonamiento",
           "case": "U1",
           "where": "Columna C2",
@@ -4187,6 +4603,38 @@
               1.1971513612772307
             ]
           ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 889006995.2781892,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 889006995.2781892,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1415162158.9411764
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2.0429655111732617e-08,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1145126766.0
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2.0429655111732617e-08,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
         },
         {
           "name": "Flexion: resistencia",
@@ -4841,6 +5289,38 @@
           ]
         },
         {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 34023949.592083886,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1597560148.8
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 34023949.592083886,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1597560148.8
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1125190.630056195,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1210693754.117647
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1125190.630056195,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
+        },
+        {
           "name": "Punzonamiento",
           "case": "U1",
           "where": "Columna C2",
@@ -4871,6 +5351,38 @@
           ]
         },
         {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2236946.254246616,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1597560148.8
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2236946.254246616,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1597560148.8
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 47237857.05941066,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1211280688.2609627
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 47237857.05941066,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 299472590.899401
+        },
+        {
           "name": "Punzonamiento",
           "case": "U1",
           "where": "Columnas C1 y C2 (perimetro comun)",
@@ -4899,6 +5411,38 @@
               0.635872840010792
             ]
           ]
+        },
+        {
+          "case": "U1",
+          "where": "Columnas C1 y C2 (perimetro comun)",
+          "demand": 67172743.57331829,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1597560148.8
+        },
+        {
+          "case": "U1",
+          "where": "Columnas C1 y C2 (perimetro comun)",
+          "demand": 67172743.57331829,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1597560148.8
+        },
+        {
+          "case": "U1",
+          "where": "Columnas C1 y C2 (perimetro comun)",
+          "demand": 51163826.703724526,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1548439827.408474
+        },
+        {
+          "case": "U1",
+          "where": "Columnas C1 y C2 (perimetro comun)",
+          "demand": 51163826.703724526,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 389314368.16922134
         },
         {
           "name": "Flexion: resistencia",
@@ -5565,6 +6109,38 @@
           ]
         },
         {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 22168.948808383946,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 645135458.3470588
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 22168.948808383946,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 645135458.3470588
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 453774272.8235294
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 64006015.71727458
+        },
+        {
           "name": "Punzonamiento",
           "case": "U1",
           "where": "Columna C2",
@@ -5593,6 +6169,38 @@
               0.8445813586706806
             ]
           ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 178471.44122543337,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 750675397.1451814
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 178471.44122543337,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 750675397.1451814
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 526972191.4768461
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 83563409.40866403
         },
         {
           "name": "Flexion: resistencia",

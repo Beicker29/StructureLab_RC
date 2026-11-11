@@ -27,7 +27,8 @@ _VALUE_UNITS = {"Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi T
                 "Mo": "N*mm", "Mr": "N*mm", "qa": "N/mm2", "p esquina -x-y": "N/mm2", "p esquina +x-y": "N/mm2",
                 "p esquina +x+y": "N/mm2", "p esquina -x+y": "N/mm2", "h calculo": "mm", "Sm": "mm3", "Msc x": "N*mm",
                 "Msc y": "N*mm", "Jc x": "mm4", "Jc y": "mm4", "xc": "mm", "yc": "mm", "cc": "mm", "As,min": "mm2",
-                "As analisis": "mm2", "x": "mm"}
+                "As analisis": "mm2", "x": "mm", "Msc": "N*mm", "gamma f Msc": "N*mm", "As bslab": "mm2",
+                "para la viga": "N*mm"}
 # Valores con número: "esquina 3 v" (esfuerzo de punzonamiento en la esquina 3) y sus coordenadas (D-083).
 _CORNER_UNITS = {"x": "mm", "y": "mm", "v": "MPa"}
 
@@ -131,6 +132,7 @@ def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str,
         "status": _status(checks),
         # En las zapatas cada verificación lleva su caso de carga (None si vale para toda la zapata).
         "checks": [{**check_data(check), "case": check.case} for check in checks],
+        "foundation_beam_moments": beam_moments(checks),
     }
 
 
@@ -148,7 +150,27 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
         "status": _status(checks),
         "checks": [{**check_data(check), "case": check.case, "z [mm]": None if check.z is None else significant(check.z)}
                    for check in checks],
+        "foundation_beam_moments": beam_moments(checks),
     }
+
+
+NEGATIVE_TRANSFER = "Transferencia de momento: parte negativa"
+
+
+def beam_moments(checks: list[Check]) -> list[dict[str, Any]]:
+    """Momentos γf·Msc que debe tomar la viga de cimentación (D-087): la parte negativa del momento transferido que la
+    zapata no resiste. Por caso, columna (o grupo) y dirección de la viga (la de las barras que lo transmitirían)."""
+    out = []
+    for check in checks:
+        if not check.name.startswith(NEGATIVE_TRANSFER):
+            continue
+        moment = dict(check.values).get("para la viga", 0.0)
+        if moment > 0:
+            column = check.note.split(":")[0] if check.note.startswith("Columna") else ""
+            direction = check.name.rsplit(" ", 1)[-1].rstrip(")").upper()
+            out.append({"case": check.case, "column": column, "beam_direction": direction,
+                        "M [kN-m]": significant(kNm(moment))})
+    return out
 
 
 def _load_data(load: FootingLoad) -> dict[str, Any]:

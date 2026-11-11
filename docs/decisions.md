@@ -1119,6 +1119,36 @@
 - **Oráculo:** caso `columnas-juntas` (350 mm entre caras, menos que d), donde el grupo gobierna; las mutaciones que
   omiten el grupo o una de las columnas en su carga se detectan.
 
+### D-087: revisión de ACI 8.6.1.2 y 13.3.2 a 13.3.4; transferencia de momento por flexión
+
+- **Fecha:** 2026-11-10
+- **Revisión pedida por el usuario:** 8.6.1.2 estaba implementado; 13.3.2 (cimentaciones en una dirección, caps. 7 y 9)
+  y 13.3.3.2 se cumplen; 13.3.4 (presión acorde al suelo, sin método directo) se cumple en lo aplicable. Hallazgos y
+  decisiones:
+  1. En la combinada, el refuerzo `band` dentro de bslab ahora cuenta en 8.6.1.2 (antes solo la malla, conservador).
+  2. **Transferencia de momento por flexión** (ACI 8.4.2.2 por la remisión de 13.3.3.1 al cap. 8; NSR-10 C.11.11.7.1 →
+     C.13.5.3, porque C.15.5.1 remite el cortante de zapatas a C.11.11): en cada dirección, γf·|Msc| (γf = 1 − γv, con
+     el Msc del punzonamiento) frente a φMn de la malla inferior (más el band en la combinada) dentro de bslab = c + 1.5h a
+     cada lado. Es una revisión de la capacidad de transferencia y de concentración de refuerzo: γf·Msc **no se suma** al
+     momento de flexión de la zapata (decisión del usuario).
+  3. **Parte negativa de γf·Msc** (decisión del usuario): la resiste la malla superior dentro de bslab (en la combinada,
+     solo en X); si no la hay, el concreto simple en bslab si el nivel sísmico lo permite (D-072); si no alcanza, la debe
+     tomar la viga de cimentación, que el programa no diseña. La verificación cumple con aviso, sin razón
+     demanda/capacidad; el momento se reporta en `foundation_beam_moments` del resultado (caso, columna, dirección de la
+     viga y M en kN·m), en una tabla "Momentos para la viga de cimentación" del capítulo de punzonamiento y en un aviso al
+     comienzo de la memoria, para llevarlo fácilmente al diseño de la viga.
+  4. Zapatas aisladas rectangulares: nueva verificación de que fuera de la franja central quede al menos (1 − γs)·As
+     (ACI 13.3.3.3(b), NSR-10 C.15.4.4.2); antes solo se revisaba γs·As dentro de la franja.
+  5. **8.6.1.2 en la combinada: decisión de criterio del usuario.** 13.3.2.1 remite las combinadas a los capítulos 7 y 9,
+     que no lo piden; se conserva porque cubre el comportamiento en dos direcciones alrededor de cada columna. Queda en la
+     nota de la verificación y en las convenciones de la memoria.
+  6. Criterio de una o dos direcciones para la combinada (13.3.2 frente a 13.3.4): pendiente en la hoja de ruta; la norma
+     no lo define.
+- **Sin cambios en el punzonamiento:** vu, φvc, b0, αs, γv y Jc son los mismos (oráculo idéntico).
+- **Oráculos:** transferencia (positiva y negativa) en `derive_footing_shear.py` y `derive_combined_columns.py`; fuera
+  de la franja y `band_spacing` en `derive_footing_flexure.py`, con un caso de franja concentrada que no cumple fuera de
+  ella; las mutaciones γv en lugar de γf y sin malla superior en la parte negativa se detectan.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)
