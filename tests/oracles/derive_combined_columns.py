@@ -168,14 +168,38 @@ def _along_y(plane: list[float], x: float, y0: float, y1: float) -> tuple[float,
     return a * (hi - lo) + b * (hi**2 - lo**2) / 2, a * (hi**2 - lo**2) / 2 + b * (hi**3 - lo**3) / 3
 
 
+def _shape(f: dict, beam: dict, index: int, depth: float):  # noqa: ANN202
+    """Forma de la carga de la franja (D-085): la presión en la línea de la columna; si es nula, la integrada en el ancho
+    de la franja (recorte exacto del plano); si también, uniforme. Devuelve (función (y0, y1) → (∫q, ∫y·q), forma)."""
+    c = f["columns"][index]
+    half = f["ly"] / 2
+    plane = beam["plane"]
+    if _along_y(plane, c["x"], -half, half)[0] > 0:
+        return (lambda y0, y1: _along_y(plane, c["x"], y0, y1)), "linea"
+    x0, x1 = max(c["x"] - c["cx"] / 2 - depth / 2, -f["lx"] / 2), min(c["x"] + c["cx"] / 2 + depth / 2, f["lx"] / 2)
+
+    def strip(y0: float, y1: float) -> tuple[float, float]:
+        if y1 <= y0:
+            return 0.0, 0.0
+        poly = _B._P._clip([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], plane)
+        if len(poly) < 3:
+            return 0.0, 0.0
+        m = _B._P._moments(poly)
+        return plane[0] * m[0] + plane[1] * m[1] + plane[2] * m[2], plane[0] * m[2] + plane[1] * m[4] + plane[2] * m[5]
+
+    if strip(-half, half)[0] > 0:
+        return strip, "franja"
+    return (lambda y0, y1: (y1 - y0, (y1**2 - y0**2) / 2)), "uniforme"
+
+
 def _strip_sections(f: dict, beam: dict, index: int, case: str, depth: float) -> list[tuple[float, float, float, str]]:
     c = f["columns"][index]
     half = f["ly"] / 2
-    total, _ = _along_y(beam["plane"], c["x"], -half, half)
-    scale = _action(f, beam, index, case)[0] / total
+    shape, _ = _shape(f, beam, index, depth)
+    scale = _action(f, beam, index, case)[0] / shape(-half, half)[0]
 
     def beyond(at: float, side: float) -> tuple[float, float]:
-        load, first = _along_y(beam["plane"], c["x"], at, half) if side > 0 else _along_y(beam["plane"], c["x"], -half, at)
+        load, first = shape(at, half) if side > 0 else shape(-half, at)
         return scale * side * (first - at * load), scale * load
 
     out = []
@@ -244,9 +268,13 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
     for y, moment, shear, _ in _strip_sections(f, beam, index, case, strip["depth"]):
         items = _B._flexure_checks(folder, f, [strip["layer"]], moment, strip["width"])
         # Resistencia biaxial (D-046): con las barras asimétricas en la franja, el eje neutro se inclina.
-        nominal, strain = _biaxial(strip["bars"], strip["width"], f["h"])
-        capacity = _F._phi(strain, _F.PROFILES[folder]) * nominal
-        items[0] = {**items[0], "capacity": capacity, "status": "PASS" if capacity >= abs(moment) else "FAIL"}
+        if moment == 0:
+            # Sin momento no hay dirección de flexión: la capacidad biaxial no está definida; solo cuenta que cumple.
+            items[0] = {"name": items[0]["name"], "status": "PASS"}
+        else:
+            nominal, strain = _biaxial(strip["bars"], strip["width"], f["h"])
+            capacity = _F._phi(strain, _F.PROFILES[folder]) * nominal
+            items[0] = {**items[0], "capacity": capacity, "status": "PASS" if capacity >= abs(moment) else "FAIL"}
         items += _B._shear_checks(folder, f, [strip["layer"]], (shear, moment), (strip["width"], None))
         out += [{**item, "case": case, "z_mm": y + f["ly"] / 2, "where": where} for item in items]
     return out
@@ -433,6 +461,12 @@ CASES = [
                _column("C2", 1800.0, [_load("U1", 2600.0)], cx=300.0, cy=300.0, dowels=None)],
               bottom={"first": "y", "end": "hook", "x": {"designation": "#8", "spacing": 120.0},
                       "y": {"designation": "#5", "spacing": 300.0}}, top={"designation": "#7", "spacing": 150.0, "end": "hook"})),
+    ("presion-nula-franja", "C1 en la zona sin presión: su franja toca la zona en contacto (forma integrada en la franja)",
+     _footing([_column("C1", -2300.0, [_load("U1", 300.0, live=0.0)], dowels=None),
+               _column("C2", 1800.0, [_load("U1", 2500.0, mx=500.0, my=1500.0, live=0.0)], dowels=None)])),
+    ("presion-nula-uniforme", "C1 en la zona sin presión y toda su franja sin contacto (carga uniforme F/B)",
+     _footing([_column("C1", -2400.0, [_load("U1", 300.0, live=0.0)], dowels=None),
+               _column("C2", 1800.0, [_load("U1", 2500.0, my=1500.0, live=0.0)], dowels=None)])),
     ("delgada", "zapata delgada: punzonamiento, flexión y cortante de las franjas no cumplen; C2 grande, con A2/A1 < 4",
      _footing([_column("C1", -1800.0, [_load("U1", 2200.0)]), _column("C2", 1800.0, [_load("U1", 2200.0)], cx=1000.0, cy=1000.0)],
               h=450.0)),

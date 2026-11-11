@@ -88,8 +88,8 @@ def _beam_checks(profile: str, footing: CombinedFooting, oracle: dict[str, Any])
 
 def _noise(check: Check) -> float:
     """Tolerancia absoluta para el ruido numérico de los valores casi nulos: cortantes y momentos donde V = 0 (N, N·mm) y
-    áreas por análisis de momentos pequeños (mm²)."""
-    return {"N": 0.1, "N*mm": 0.1, "mm2": 1e-6}.get(check.unit, 0.0)
+    áreas por análisis de momentos pequeños (mm²) y esfuerzos de punzonamiento casi nulos (MPa)."""
+    return {"N": 0.1, "N*mm": 0.1, "mm2": 1e-6, "MPa": 1e-6}.get(check.unit, 0.0)
 
 
 def _station_key(check: Check) -> tuple[str, str, float | None]:
@@ -170,7 +170,7 @@ def test_column_checks_match_oracle(profile: str, case: dict[str, Any]) -> None:
             for index, (x, y, stress) in enumerate(item["corners"], start=1):
                 assert values[f"esquina {index} x"] == pytest.approx(x, abs=1e-6), key
                 assert values[f"esquina {index} y"] == pytest.approx(y, abs=1e-6), key
-                assert values[f"esquina {index} v"] == pytest.approx(stress, rel=tolerance), key
+                assert values[f"esquina {index} v"] == pytest.approx(stress, rel=tolerance, abs=1e-6), key
             assert f"esquina {len(item['corners']) + 1} v" not in values
         if "clause" in item:
             assert check.clause == item["clause"], key
@@ -253,3 +253,25 @@ def test_project_with_a_combined_footing_runs_every_structural_check(tmp_path: P
     assert not any(check.status is Status.BLOCKED for check in checks)
     assert by_name["Pasadores: area minima"].status is Status.INCOMPLETE
     assert COMBINED_STRUCTURAL not in by_name
+
+
+@pytest.mark.parametrize(("case_id", "text"), [
+    ("presion-nula-franja", "integrada en el ancho de la franja"),
+    ("presion-nula-uniforme", "carga uniforme F/B"),
+])
+def test_strip_load_shape_falls_back_when_the_column_line_has_no_pressure(case_id: str, text: str) -> None:
+    """D-085: sin presión en la línea de la columna, la franja usa la presión integrada en su ancho y, si también es nula,
+    la carga uniforme; nunca queda BLOCKED y la nota dice qué forma se usó (solo en la franja de esa columna)."""
+    oracle = _oracle("nsr_10", "derived_combined_columns")
+    case = next(item for item in oracle["cases"] if item["id"] == case_id)
+    footing = CombinedFooting.model_validate(case["footing"])
+    soil = Soil.model_validate(oracle["soil"])
+    cases, _ = combined_factored_cases(footing, soil)
+    basis = Basis(PROFILES["nsr-10"], Materials.model_validate(oracle["materials"]), BARS, oracle["seismic_level"])
+    checks = column_checks(basis, footing, soil, cases)
+    assert not any(check.status is Status.BLOCKED for check in checks)
+    stations = [check for check in checks if check.z is not None]  # las del desarrollo no llevan la forma de carga
+    first = [check for check in stations if check.note.startswith("Franja transversal de la columna C1,")]
+    second = [check for check in stations if check.note.startswith("Franja transversal de la columna C2,")]
+    assert first and all(text in check.note for check in first)
+    assert second and not any(text in check.note for check in second)

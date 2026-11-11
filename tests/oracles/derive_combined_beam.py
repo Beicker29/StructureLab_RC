@@ -246,7 +246,10 @@ def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float, width
     checks = [{"name": "Flexion: resistencia", "status": "PASS" if phi * state["Mn"] >= abs(moment) else "FAIL",
                "demand": abs(moment), "capacity": phi * state["Mn"], "clause": CLAUSES[folder]["strength"]}]
     if moment == 0:
-        return checks
+        # Sin momento, las reglas de vigas igual emiten εt, As,min y fisuración, que cumplen ("sin momento").
+        return checks + [{"name": name, "status": "PASS"} for name in ("Flexion: deformacion neta de traccion (M3)",
+                                                                      "Flexion: acero minimo (M3)",
+                                                                      "Flexion: separacion por fisuracion")]
     checks.append({"name": "Flexion: deformacion neta de traccion (M3)",
         "status": "PASS" if state["et"] >= profile["strain_min"] else "FAIL",
                    "capacity": state["et"]})

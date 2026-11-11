@@ -41,7 +41,6 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Zapata: equilibrio", "geotechnical", "", ""),
     ("Zapata: verificacion estructural", "flexure", "", ""),
     ("Zapata combinada: verificacion estructural", "flexure", "", ""),
-    ("Franja transversal: carga", "flexure", "", ""),
     ("Viga larga: separacion", "requirements", "s", "s,máx"),
     ("Malla inferior y: acero minimo", "requirements", "As,min", "As"),
     ("Malla inferior y: separacion", "requirements", "s", "s,máx"),

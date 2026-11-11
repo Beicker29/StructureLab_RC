@@ -6,15 +6,16 @@ F = `column_vertical` y momentos estáticos ∫x·q = F·x + My + H·Vx y ∫y·
 - Punzonamiento por columna: perímetro a d/2 recortado con la base y la carga que lo atraviesa, la acción de la columna
   menos la carga neta de Bellos dentro del área crítica (`transferred_load`, la misma de la zapata aislada).
 - Franja transversal bajo cada columna, de ancho columna + d/2 a cada lado (recortado con la base): la fuerza F de la
-  columna repartida en el ancho B con la forma de la presión de Bellos en la x de la columna, en voladizo desde las
-  caras ±Y. La franja se revisa con el código de vigas en modo cimentación (D-082): flexión, εt, As,min de vigas,
-  fisuración y cortante en las caras y a d de ellas, con las barras y de la malla inferior que caen en la franja y el
-  refuerzo `band` de la columna.
+  columna repartida en el ancho B con la forma de la presión de Bellos en la x de la columna (si es nula, la integrada en
+  el ancho de la franja y, si también, uniforme: D-085), en voladizo desde las caras ±Y. La franja se revisa con el
+  código de vigas en modo cimentación (D-082): flexión, εt, As,min de vigas, fisuración y cortante en las caras y a d
+  de ellas, con las barras y de la malla inferior que caen en la franja y el refuerzo `band` de la columna.
 - Fuera de las franjas, la malla y cumple el mínimo de losa y la separación de 3h y 450 mm.
 - Desarrollo: barras x desde la sección de mayor momento de su signo hasta el extremo más cercano; barras y de cada
   franja desde la cara de la columna hasta el borde. Aplastamiento y pasadores por columna, como en la zapata aislada.
 """
 
+from collections.abc import Callable
 from dataclasses import replace
 
 from structurelab_rc.domain.basis import Basis
@@ -32,14 +33,12 @@ from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_row, unifo
 from structurelab_rc.domain.footing.shear import PunchedColumn, punching_checks, transferred_load
 from structurelab_rc.domain.shear_strength import two_way_shear
 from structurelab_rc.domain.status import Status
-from structurelab_rc.errors import blocked
 from structurelab_rc.mechanics.perimeter import critical_perimeter
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting
 from structurelab_rc.model.footing import FootingLoad, Soil
 from structurelab_rc.model.project import Demands, Member, Section, Station
 from structurelab_rc.model.reinforcement import BarLayer, BarPosition, ReinforcementLayout
 
-STRIP_LOAD = "Franja transversal: carga"
 OUTSIDE_MINIMUM = "Malla inferior y: acero minimo fuera de las franjas"
 OUTSIDE_SPACING = "Malla inferior y: separacion maxima"
 DEVELOPMENT = "Desarrollo"
@@ -109,18 +108,36 @@ def strip_member(footing: CombinedFooting, column: CombinedColumn, rows: tuple[B
                                   section=Section(bw=x1 - x0, h=footing.h, cover=footing.cover), stations=(placeholder,))
 
 
+def _strip_shape(footing: CombinedFooting, pressure: FactoredCase, column: CombinedColumn,
+                 depth: float) -> tuple[Callable[[float, float], tuple[float, float]], str]:
+    """Forma de la carga de la franja en el ancho B (D-080, D-085): ∫q dy y ∫y·q dy entre y0 y y1, sin escalar. Primero la
+    presión en la línea de la columna; si es nula, la presión integrada en el ancho de la franja; si también es nula,
+    uniforme (equilibra el cortante de la viga larga, repartido en todo el ancho). La nota dice qué forma se usó."""
+    half = footing.ly / 2
+    if pressure.pressure.along_y(column.x, -half, half)[0] > 0:
+        return (lambda y0, y1: pressure.pressure.along_y(column.x, y0, y1)), ""
+    x0, x1 = strip_limits(footing, column, depth)
+
+    def strip(y0: float, y1: float) -> tuple[float, float]:
+        force, _, first = pressure.pressure.resultant(((x0, y0), (x1, y0), (x1, y1), (x0, y1))) if y1 > y0 else (0.0, 0.0, 0.0)
+        return force, first
+
+    if strip(-half, half)[0] > 0:
+        return strip, "carga con la forma de la presion integrada en el ancho de la franja (presion nula en la linea de la columna)"
+    return (lambda y0, y1: (y1 - y0, (y1**2 - y0**2) / 2)), "carga uniforme F/B (presion nula en toda la franja)"
+
+
 def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: CombinedColumn,
-                  given: tuple[float, float]) -> list[tuple[float, float, float, str]] | None:
-    """(y, Mu, Vu, sección) en las caras ±Y de la columna y a d de ellas, hacia el borde; None si la presión es nula en
-    la x de la columna. given = (F, d): la fuerza de la columna se reparte en el ancho B con la forma de la presión."""
+                  given: tuple[float, float]) -> tuple[list[tuple[float, float, float, str]], str]:
+    """(y, Mu, Vu, sección) en las caras ±Y de la columna y a d de ellas, hacia el borde, y la nota de la forma de carga
+    usada. given = (F, d): la fuerza de la columna se reparte en el ancho B con la forma de `_strip_shape`."""
     force, depth = given
     half = footing.ly / 2
-    total, _ = pressure.pressure.along_y(column.x, -half, half)
-    if total <= 0:
-        return None
-    scale = force / total
+    shape, note = _strip_shape(footing, pressure, column, depth)
+    scale = force / shape(-half, half)[0]
+
     def beyond(at: float, side: float) -> tuple[float, float]:
-        load, first = pressure.pressure.along_y(column.x, at, half) if side > 0 else pressure.pressure.along_y(column.x, -half, at)
+        load, first = shape(at, half) if side > 0 else shape(-half, at)
         return scale * side * (first - at * load), scale * load
 
     result = []
@@ -134,7 +151,7 @@ def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: Comb
         if inside:
             moment, shear = beyond(at_d, side)
             result.append((at_d, moment, shear, f"a d de la cara {name}"))
-    return result
+    return result, note
 
 
 def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tuple[BarRow, int], cases: Cases) -> list[Check]:
@@ -145,18 +162,14 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     checks = []
     for pressure, loads in cases:
         force = column_vertical(footing, soil, column, loads[index])
-        demands = strip_demands(footing, pressure, column, (force, row.depth))
-        if demands is None:
-            error = blocked(f"{title}: la presion del suelo es nula en la abscisa de la columna", member=footing.id, case=pressure.case)
-            checks.append(Check(STRIP_LOAD, Status.BLOCKED, (error,), member=footing.id, case=pressure.case, note=title))
-            continue
+        demands, shape = strip_demands(footing, pressure, column, (force, row.depth))
         for y, moment, shear, label in demands:
             station = Station.model_construct(z=y + footing.ly / 2, layout=member.stations[0].layout, case=pressure.case,
                                               demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))
             # Las caras laterales de la franja quedan dentro del concreto: sin refuerzo superficial (D-083).
             given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
             for check in checks_for(given):
-                note = f"{title}, {label}" + (f": {check.note}" if check.note else "")
+                note = f"{title}, {label}" + "".join(f": {text}" for text in (check.note, shape) if text)
                 checks.append(replace(check, note=note))
     return checks
 
@@ -230,7 +243,7 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
         provided = sum(bar.area for bar in placed_bars(member.stations[0].layout, member.section, basis.bars))
         moment = 0.0
         for pressure, loads in cases:
-            demands = strip_demands(footing, pressure, column, (column_vertical(footing, soil, column, loads[index]), row.depth)) or []
+            demands, _ = strip_demands(footing, pressure, column, (column_vertical(footing, soil, column, loads[index]), row.depth))
             moment = max([moment, *(demand[1] for demand in demands if demand[3].startswith("cara"))])
         if moment <= 0:
             continue

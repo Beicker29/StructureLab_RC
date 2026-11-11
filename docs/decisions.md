@@ -1088,6 +1088,20 @@
 - **Ejemplo:** `plantilla_combinadas_etabs.json` en los dos perfiles con los mismos datos (ZC-A desde ETABS, ZC-B con las
   mayoradas escritas); entra en la huella. El diseño por tipologías sigue pidiendo los dos Excel.
 
+### D-085: franja transversal sin presión en la línea de la columna (Etapa 2.1)
+
+- **Fecha:** 2026-11-10
+- **Problema:** la carga de la franja se reparte en el ancho con la forma de la presión de Bellos en la línea de la
+  columna (D-080 punto 5); si la columna cae en la zona sin contacto, esa forma no existe y la franja quedaba BLOCKED. La
+  norma y las referencias no tratan el caso.
+- **Decisión del usuario (respaldo en dos pasos):** si en la línea de la columna hay presión, nada cambia; si es nula, la
+  forma de la presión integrada en el ancho de la franja; si también es nula, la carga uniforme F/B, que equilibra el
+  cortante de la viga larga (repartido en todo el ancho por la teoría de vigas). La nota de cada verificación de la
+  franja dice qué forma se usó. La franja ya no queda BLOCKED.
+- **Oráculo:** dos casos nuevos en `derive_combined_columns.py` (columna sin presión con la franja en contacto parcial,
+  con Mx para que la forma en Y no sea uniforme, y columna con toda la franja sin contacto); la mutación que salta el paso
+  intermedio se detecta. Sin momento en un lado de la franja, la capacidad biaxial no está definida y no se compara.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

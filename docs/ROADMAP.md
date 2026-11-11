@@ -99,7 +99,8 @@ Una etapa por vez; cada punto con su plan, oráculo, pruebas y huella antes del 
 3. Limpiar las salidas viejas de `results/` (hecho: `results/etabs/` y las corridas e3a/e3b).
 
 **Etapa 2. Zapatas combinadas completas** (D-080 a D-083)
-1. Franja transversal de una columna donde la presión del suelo es nula (hoy BLOCKED).
+1. Franja transversal de una columna donde la presión del suelo es nula (hecha, D-085: forma integrada en la franja
+   o uniforme).
 2. Punzonamiento de dos columnas cuyos perímetros críticos se traslapan: perímetro común (hoy cada una por separado).
 3. Vy y columnas desplazadas en Y: carga directa en las franjas (Mx + H·Vy) y torsión en la viga larga (consultar el
    tratamiento de la torsión en cimentaciones).
