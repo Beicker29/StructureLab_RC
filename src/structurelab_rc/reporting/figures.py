@@ -1,6 +1,7 @@
 """Figuras de la memoria que no son resultados nuevos: aquí no se calcula nada, solo se dibuja lo que ya trae el
 resultado (D-080). Presión del suelo en planta: la zapata (aislada o combinada), sus columnas, los ejes y la presión en
-cada esquina del caso de servicio que gobierna la presión admisible.
+cada esquina del caso de servicio que gobierna la presión admisible. Diagramas de momento y cortante de las zapatas
+combinadas (D-095): la envolvente de los casos mayorados, en la dirección larga y en la transversal.
 """
 
 from pathlib import Path
@@ -82,3 +83,85 @@ def pressure_svg(lx: float, ly: float, columns: list[dict[str, float]], check: d
               f'fill="{_INK}">lx = {lx:.0f} mm, ly = {ly:.0f} mm; {check.get("note", "")}</text>',
               "</svg>"]
     return "\n".join(parts) + "\n"
+
+
+_PANEL = 220  # alto de cada panel de un diagrama
+_MAX_INK, _MIN_INK, _MARK = "#1f4e9c", "#c62828", "#8a94a3"
+
+
+def diagram_aspect(panels: int) -> float:
+    """Alto / ancho de una figura de diagramas con `panels` paneles (para la memoria)."""
+    return (_PANEL * panels + 40) / _WIDTH
+
+
+def diagram_figures(results: dict[str, Any], folder: Path) -> dict[str, tuple[Path, Path]]:
+    """Escribe diagrama_<zapata>_longitudinal.svg y diagrama_<zapata>_transversal.svg por cada zapata combinada con
+    diagramas (D-095) y devuelve sus rutas."""
+    figures = {}
+    for footing in results.get("combined_footings", []):
+        diagrams = footing.get("diagrams")
+        if not diagrams:
+            continue
+        longitudinal = folder / f"diagrama_{footing['id']}_longitudinal.svg"
+        transverse = folder / f"diagrama_{footing['id']}_transversal.svg"
+        longitudinal.write_text(diagrams_svg([diagrams["longitudinal"]]), encoding="utf-8", newline="\n")
+        transverse.write_text(diagrams_svg(diagrams["transverse"]), encoding="utf-8", newline="\n")
+        figures[footing["id"]] = (longitudinal, transverse)
+    return figures
+
+
+def diagrams_svg(envelopes: list[dict[str, Any]]) -> str:
+    """Un par de paneles (M arriba, V abajo) por envolvente: la curva del máximo (azul) y la del mínimo (rojo) de los casos
+    mayorados en cada posición, el eje cero, las marcas (columnas o caras) y los extremos con su caso."""
+    height = _PANEL * 2 * len(envelopes) + 40
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{_WIDTH}" height="{height}" viewBox="0 0 {_WIDTH} {height}">',
+             f'<rect x="0" y="0" width="{_WIDTH}" height="{height}" fill="#ffffff"/>']
+    for index, envelope in enumerate(envelopes):
+        unit = " por metro" if envelope["per_metre"] else ""
+        for row, (key, name, unit_text) in enumerate((("M", "Momento flector", "kN·m"), ("V", "Fuerza cortante", "kN"))):
+            top = 20 + _PANEL * (2 * index + row)
+            title = f"{envelope['title']}: {name.lower()} ({unit_text}{unit}), envolvente de los casos mayorados"
+            parts += _panel(envelope, key, top, title)
+    parts.append(f'<text x="{_WIDTH / 2}" y="{height - 10}" font-size="11" font-family="Helvetica" text-anchor="middle" '
+                 f'fill="{_INK}">Azul: máximo; rojo: mínimo. M &gt; 0 tracciona la cara inferior; V del cuerpo libre a la '
+                 f'izquierda.</text>')
+    parts.append("</svg>")
+    return "\n".join(parts) + "\n"
+
+
+def _panel(envelope: dict[str, Any], key: str, top: float, title: str) -> list[str]:
+    positions = envelope["positions [mm]"]
+    upper = envelope[f"{key} max [{'kN-m' if key == 'M' else 'kN'}]"]
+    lower = envelope[f"{key} min [{'kN-m' if key == 'M' else 'kN'}]"]
+    left, right = 70.0, _WIDTH - 30.0
+    plot_top, plot_bottom = top + 34, top + _PANEL - 36
+    start, end = min(positions), max(positions)
+    low, high = min(0.0, *lower), max(0.0, *upper)
+    span = (high - low) or 1.0
+
+    def point(position: float, value: float) -> tuple[float, float]:
+        x = left + (position - start) / ((end - start) or 1.0) * (right - left)
+        return x, plot_bottom - (value - low) / span * (plot_bottom - plot_top)
+
+    zero = point(start, 0.0)[1]
+    parts = [f'<text x="{_WIDTH / 2}" y="{top + 16}" font-size="12" font-family="Helvetica" text-anchor="middle" '
+             f'fill="{_INK}">{title}</text>',
+             f'<line x1="{left:.1f}" y1="{zero:.1f}" x2="{right:.1f}" y2="{zero:.1f}" stroke="{_INK}" stroke-width="1"/>']
+    for mark in envelope["marks"]:
+        x = point(mark["position [mm]"], 0.0)[0]
+        parts += [f'<line x1="{x:.1f}" y1="{plot_top:.1f}" x2="{x:.1f}" y2="{plot_bottom:.1f}" stroke="{_MARK}" '
+                  f'stroke-dasharray="4 3" stroke-width="1"/>',
+                  f'<text x="{x:.1f}" y="{plot_bottom + 14:.1f}" font-size="10" font-family="Helvetica" text-anchor="middle" '
+                  f'fill="{_MARK}">{mark["label"]}</text>']
+    for first, last in envelope["segments"]:
+        for values, color in ((upper, _MAX_INK), (lower, _MIN_INK)):
+            path = " ".join(f"{x:.1f},{y:.1f}" for x, y in (point(positions[i], values[i]) for i in range(first, last + 1)))
+            parts.append(f'<polyline points="{path}" fill="none" stroke="{color}" stroke-width="1.6"/>')
+    for label, value in ((f"{high:.1f}", high), (f"{low:.1f}", low)):
+        parts.append(f'<text x="{left - 6:.1f}" y="{point(start, value)[1] + 4:.1f}" font-size="10" font-family="Helvetica" '
+                     f'text-anchor="end" fill="{_INK}">{label}</text>')
+    parts.append(f'<text x="{left:.1f}" y="{plot_bottom + 28:.1f}" font-size="10" font-family="Helvetica" fill="{_INK}">'
+                 f'{start:.0f} mm</text>')
+    parts.append(f'<text x="{right:.1f}" y="{plot_bottom + 28:.1f}" font-size="10" font-family="Helvetica" text-anchor="end" '
+                 f'fill="{_INK}">{end:.0f} mm</text>')
+    return parts

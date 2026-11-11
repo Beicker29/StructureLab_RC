@@ -243,7 +243,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 256177593.75,
+          "demand": 256177593.75000006,
           "capacity": 1238949190.8426502,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -282,7 +282,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 178802.19166666665,
+          "demand": 178802.19166666668,
           "capacity": 477856.7453454988,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -300,7 +300,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 29658813.542708345,
+          "demand": 29658813.542708308,
           "capacity": 1238949190.8426502,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -339,7 +339,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 178802.19166666665,
+          "demand": 178802.19166666668,
           "capacity": 516294.4013024022,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -357,7 +357,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 256177593.75,
+          "demand": 256177593.75000006,
           "capacity": 1238949190.8426502,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -396,7 +396,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 178802.19166666665,
+          "demand": 178802.19166666668,
           "capacity": 477856.7453454988,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -414,7 +414,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 29658813.542708345,
+          "demand": 29658813.542708308,
           "capacity": 1238949190.8426502,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -453,7 +453,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 178802.19166666665,
+          "demand": 178802.19166666668,
           "capacity": 516294.4013024022,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -471,7 +471,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 256177593.75,
+          "demand": 256177593.75000006,
           "capacity": 1238949190.8426502,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -510,7 +510,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 178802.19166666665,
+          "demand": 178802.19166666668,
           "capacity": 477856.7453454988,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -528,7 +528,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 29658813.542708345,
+          "demand": 29658813.542708308,
           "capacity": 1238949190.8426502,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -567,7 +567,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 178802.19166666665,
+          "demand": 178802.19166666668,
           "capacity": 516294.4013024022,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -585,7 +585,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 256177593.75,
+          "demand": 256177593.75000006,
           "capacity": 1238949190.8426502,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -624,7 +624,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 178802.19166666665,
+          "demand": 178802.19166666668,
           "capacity": 477856.7453454988,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -642,7 +642,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 29658813.542708345,
+          "demand": 29658813.542708308,
           "capacity": 1238949190.8426502,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -681,7 +681,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 178802.19166666665,
+          "demand": 178802.19166666668,
           "capacity": 516294.4013024022,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -1057,7 +1057,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 123510.52499999998,
+          "demand": 123510.525,
           "capacity": 334869.262211478,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -1115,7 +1115,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 123510.52499999998,
+          "demand": 123510.525,
           "capacity": 334869.262211478,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -1173,7 +1173,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 123510.52499999998,
+          "demand": 123510.525,
           "capacity": 334869.262211478,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -1231,7 +1231,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 123510.52499999998,
+          "demand": 123510.525,
           "capacity": 334869.262211478,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -1249,7 +1249,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 336933333.33333343,
+          "demand": 336933333.3333334,
           "capacity": 471849314.0985842,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -1270,8 +1270,8 @@
           "as_min": 2451.3185416666665,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 1879.3983301609076,
-          "analysis": 1409.5487476206806,
+          "demand": 1879.398330160907,
+          "analysis": 1409.5487476206804,
           "case": "U1",
           "z_mm": 1450.0,
           "where": "Franja transversal de la columna C2"
@@ -1307,7 +1307,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 35129010.00000001,
+          "demand": 35129010.00000003,
           "capacity": 471849314.0985842,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -1328,8 +1328,8 @@
           "as_min": 2451.3185416666665,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 192.9691362974776,
-          "analysis": 144.7268522231082,
+          "demand": 192.96913629747772,
+          "analysis": 144.7268522231083,
           "case": "U1",
           "z_mm": 2093.25,
           "where": "Franja transversal de la columna C2"
@@ -1365,7 +1365,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 336933333.33333343,
+          "demand": 336933333.3333334,
           "capacity": 471849314.0985842,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -1386,8 +1386,8 @@
           "as_min": 2451.3185416666665,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 1879.3983301609076,
-          "analysis": 1409.5487476206806,
+          "demand": 1879.398330160907,
+          "analysis": 1409.5487476206804,
           "case": "U1",
           "z_mm": 950.0,
           "where": "Franja transversal de la columna C2"
@@ -1423,7 +1423,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 35129010.00000001,
+          "demand": 35129010.00000003,
           "capacity": 471849314.0985842,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -1444,8 +1444,8 @@
           "as_min": 2451.3185416666665,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 192.9691362974776,
-          "analysis": 144.7268522231082,
+          "demand": 192.96913629747772,
+          "analysis": 144.7268522231083,
           "case": "U1",
           "z_mm": 306.75,
           "where": "Franja transversal de la columna C2"
@@ -1935,7 +1935,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 137256236.2246435,
+          "demand": 137254440.83494994,
           "capacity": 1238646548.4970157,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -1974,7 +1974,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 60214.38339396054,
+          "demand": 60213.434757814175,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -1992,7 +1992,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 3966613.068131801,
+          "demand": 3966549.3667998314,
           "capacity": 1238646548.4970157,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -2031,7 +2031,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 60214.38339396054,
+          "demand": 60213.434757814175,
           "capacity": 516294.4013024022,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -2049,7 +2049,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 315563494.99742806,
+          "demand": 315567037.6156061,
           "capacity": 1238646548.4970157,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -2088,8 +2088,8 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 243082.9156061219,
-          "capacity": 481103.1813318462,
+          "demand": 243086.06916261103,
+          "capacity": 481103.2417092618,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
           "z_mm": 1175.0,
@@ -2106,7 +2106,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 64630290.69577327,
+          "demand": 64631208.69562417,
           "capacity": 1238646548.4970157,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -2145,7 +2145,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 243082.9156061219,
+          "demand": 243086.06916261103,
           "capacity": 516294.4013024022,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -2163,7 +2163,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 106206287.07923912,
+          "demand": 107045814.9096262,
           "capacity": 1238646548.4970157,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U2",
@@ -2202,7 +2202,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 47159.26775487552,
+          "demand": 47602.85192417062,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U2",
@@ -2220,7 +2220,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 3110867.341439416,
+          "demand": 3140654.2123401985,
           "capacity": 1238646548.4970157,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U2",
@@ -2259,7 +2259,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 47159.26775487552,
+          "demand": 47602.85192417062,
           "capacity": 516294.4013024022,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U2",
@@ -2277,7 +2277,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 217186845.39669552,
+          "demand": 215530310.01411536,
           "capacity": 1238646548.4970157,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U2",
@@ -2316,8 +2316,8 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 165807.8549433446,
-          "capacity": 480794.49095102854,
+          "demand": 164333.2455887293,
+          "capacity": 480750.78185612115,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U2",
           "z_mm": 1175.0,
@@ -2334,7 +2334,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 43804704.096924275,
+          "demand": 43375445.52098696,
           "capacity": 1238646548.4970157,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U2",
@@ -2373,7 +2373,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 165807.8549433446,
+          "demand": 164333.2455887293,
           "capacity": 516294.4013024022,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U2",
@@ -2391,7 +2391,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 368328932.16316605,
+          "demand": 368326340.98769987,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -2412,8 +2412,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "FAIL",
-          "demand": 2059.696795917445,
-          "analysis": 1544.772596938084,
+          "demand": 2059.68201388203,
+          "analysis": 1544.7615104115225,
           "case": "U1",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C2"
@@ -2431,7 +2431,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 280399.7188945378,
+          "demand": 280397.4255740032,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -2449,7 +2449,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 67540822.92297678,
+          "demand": 67540224.27578092,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -2470,8 +2470,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 371.6679421597294,
-          "analysis": 278.750956619797,
+          "demand": 371.6646362829838,
+          "analysis": 278.74847721223784,
           "case": "U1",
           "z_mm": 1918.25,
           "where": "Franja transversal de la columna C2"
@@ -2489,7 +2489,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 280399.7188945378,
+          "demand": 280397.4255740032,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -2507,7 +2507,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 198108476.9679132,
+          "demand": 198110039.35074982,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -2528,8 +2528,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 1097.6897895158559,
-          "analysis": 823.2673421368919,
+          "demand": 1097.6985377580756,
+          "analysis": 823.2739033185568,
           "case": "U1",
           "z_mm": 825.0,
           "where": "Franja transversal de la columna C2"
@@ -2547,7 +2547,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 105805.03853368053,
+          "demand": 105806.03904668824,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -2565,7 +2565,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 9615057.543768762,
+          "demand": 9615150.948577702,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -2586,8 +2586,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 52.75148264367349,
-          "analysis": 39.56361198275512,
+          "demand": 52.75199534892912,
+          "analysis": 39.56399651169684,
           "case": "U1",
           "z_mm": 181.75,
           "where": "Franja transversal de la columna C2"
@@ -2605,7 +2605,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 105805.03853368053,
+          "demand": 105806.03904668824,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -2623,7 +2623,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 270382965.06334686,
+          "demand": 271143316.67304033,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U2",
@@ -2644,8 +2644,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 1503.9619318178027,
-          "analysis": 1127.971448863352,
+          "demand": 1508.253044559034,
+          "analysis": 1131.1897834192755,
           "case": "U2",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C2"
@@ -2663,7 +2663,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 206722.3461302449,
+          "demand": 207395.2955243681,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U2",
@@ -2681,7 +2681,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 49921733.53523021,
+          "demand": 50097399.89396557,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U2",
@@ -2702,8 +2702,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 274.46055023187284,
-          "analysis": 205.8454126739046,
+          "demand": 275.42884791094957,
+          "analysis": 206.5716359332122,
           "case": "U2",
           "z_mm": 1918.25,
           "where": "Franja transversal de la columna C2"
@@ -2721,7 +2721,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 206722.3461302449,
+          "demand": 207395.2955243681,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U2",
@@ -2739,7 +2739,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 137256979.80538052,
+          "demand": 136798515.94590604,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U2",
@@ -2760,8 +2760,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 758.0726222177428,
-          "analysis": 568.5544666633072,
+          "demand": 755.5222559312217,
+          "analysis": 566.6416919484163,
           "case": "U2",
           "z_mm": 825.0,
           "where": "Franja transversal de la columna C2"
@@ -2779,7 +2779,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 72846.6506357082,
+          "demand": 72553.06122584941,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U2",
@@ -2797,7 +2797,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 6613093.504166268,
+          "demand": 6585684.90225856,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U2",
@@ -2818,8 +2818,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 36.27605781038671,
-          "analysis": 27.207043357790035,
+          "demand": 36.1256570538907,
+          "analysis": 27.094242790418026,
           "case": "U2",
           "z_mm": 181.75,
           "where": "Franja transversal de la columna C2"
@@ -2837,7 +2837,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 72846.6506357082,
+          "demand": 72553.06122584941,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U2",
@@ -3179,7 +3179,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "FAIL",
-          "demand": 596526000.0,
+          "demand": 596525999.9999999,
           "capacity": 198522039.00126478,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -3218,7 +3218,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 414402.9600000001,
+          "demand": 414402.96,
           "capacity": 435207.64750152663,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -3236,7 +3236,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 79347806.76600006,
+          "demand": 79347806.76600009,
           "capacity": 198522039.00126478,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -3257,8 +3257,8 @@
           "as_min": 2150.2356750000004,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 421.4102261168198,
-          "analysis": 316.0576695876149,
+          "demand": 421.41022611681996,
+          "analysis": 316.057669587615,
           "case": "U1",
           "z_mm": 2017.05,
           "where": "Franja transversal de la columna C1"
@@ -3276,7 +3276,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 414402.9600000001,
+          "demand": 414402.96,
           "capacity": 435207.64750152663,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -3294,7 +3294,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "FAIL",
-          "demand": 596526000.0,
+          "demand": 596525999.9999999,
           "capacity": 198522039.00126478,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -3308,236 +3308,6 @@
           "case": "U1",
           "z_mm": 1050.0,
           "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "capacity": 796.0,
-          "as_min": 2150.2356750000004,
-          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-          "status": "FAIL",
-          "demand": 2150.2356750000004,
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "FAIL",
-          "demand": 300.0,
-          "capacity": 192.4999999999999,
-          "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 414402.9600000001,
-          "capacity": 435207.64750152663,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: resistencia",
-          "status": "PASS",
-          "demand": 79347806.76600006,
-          "capacity": 198522039.00126478,
-          "clause": "C.9.3.2.1 y C.9.3.2.2",
-          "case": "U1",
-          "z_mm": 382.95000000000005,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
-          "status": "PASS",
-          "capacity": 0.11410140265232414,
-          "case": "U1",
-          "z_mm": 382.95000000000005,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "capacity": 796.0,
-          "as_min": 2150.2356750000004,
-          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-          "status": "PASS",
-          "demand": 421.4102261168198,
-          "analysis": 316.0576695876149,
-          "case": "U1",
-          "z_mm": 382.95000000000005,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "FAIL",
-          "demand": 300.0,
-          "capacity": 192.4999999999999,
-          "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 382.95000000000005,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 414402.9600000001,
-          "capacity": 435207.64750152663,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 382.95000000000005,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 382.95000000000005,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: resistencia",
-          "status": "FAIL",
-          "demand": 596526000.0,
-          "capacity": 198522039.00126478,
-          "clause": "C.9.3.2.1 y C.9.3.2.2",
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
-          "status": "PASS",
-          "capacity": 0.11410140265232414,
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "capacity": 796.0,
-          "as_min": 2150.2356750000004,
-          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-          "status": "FAIL",
-          "demand": 2150.2356750000004,
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "FAIL",
-          "demand": 300.0,
-          "capacity": 192.4999999999999,
-          "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 414402.9600000001,
-          "capacity": 435207.64750152663,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Flexion: resistencia",
-          "status": "PASS",
-          "demand": 79347806.76600006,
-          "capacity": 198522039.00126478,
-          "clause": "C.9.3.2.1 y C.9.3.2.2",
-          "case": "U1",
-          "z_mm": 2017.05,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
-          "status": "PASS",
-          "capacity": 0.11410140265232414,
-          "case": "U1",
-          "z_mm": 2017.05,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "capacity": 796.0,
-          "as_min": 2150.2356750000004,
-          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-          "status": "PASS",
-          "demand": 421.4102261168198,
-          "analysis": 316.0576695876149,
-          "case": "U1",
-          "z_mm": 2017.05,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "FAIL",
-          "demand": 300.0,
-          "capacity": 192.4999999999999,
-          "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 2017.05,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 414402.9600000001,
-          "capacity": 435207.64750152663,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 2017.05,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 2017.05,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Flexion: resistencia",
-          "status": "FAIL",
-          "demand": 596526000.0,
-          "capacity": 198522039.00126478,
-          "clause": "C.9.3.2.1 y C.9.3.2.2",
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C2"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
-          "status": "PASS",
-          "capacity": 0.11410140265232414,
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C2"
         },
         {
           "name": "Flexion: acero minimo (M3)",
@@ -3548,6 +3318,236 @@
           "demand": 2150.2356750000004,
           "case": "U1",
           "z_mm": 1050.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "FAIL",
+          "demand": 300.0,
+          "capacity": 192.4999999999999,
+          "clause": "C.10.6.4",
+          "case": "U1",
+          "z_mm": 1050.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 414402.96,
+          "capacity": 435207.64750152663,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 1050.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 1050.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 79347806.76600009,
+          "capacity": 198522039.00126478,
+          "clause": "C.9.3.2.1 y C.9.3.2.2",
+          "case": "U1",
+          "z_mm": 382.95000000000005,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.11410140265232414,
+          "case": "U1",
+          "z_mm": 382.95000000000005,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 796.0,
+          "as_min": 2150.2356750000004,
+          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
+          "status": "PASS",
+          "demand": 421.41022611681996,
+          "analysis": 316.057669587615,
+          "case": "U1",
+          "z_mm": 382.95000000000005,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "FAIL",
+          "demand": 300.0,
+          "capacity": 192.4999999999999,
+          "clause": "C.10.6.4",
+          "case": "U1",
+          "z_mm": 382.95000000000005,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 414402.96,
+          "capacity": 435207.64750152663,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 382.95000000000005,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 382.95000000000005,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "FAIL",
+          "demand": 596525999.9999999,
+          "capacity": 198522039.00126478,
+          "clause": "C.9.3.2.1 y C.9.3.2.2",
+          "case": "U1",
+          "z_mm": 1350.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.11410140265232414,
+          "case": "U1",
+          "z_mm": 1350.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 796.0,
+          "as_min": 2150.2356750000004,
+          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
+          "status": "FAIL",
+          "demand": 2150.2356750000004,
+          "case": "U1",
+          "z_mm": 1350.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "FAIL",
+          "demand": 300.0,
+          "capacity": 192.4999999999999,
+          "clause": "C.10.6.4",
+          "case": "U1",
+          "z_mm": 1350.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 414402.96,
+          "capacity": 435207.64750152663,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 1350.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 1350.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 79347806.76600009,
+          "capacity": 198522039.00126478,
+          "clause": "C.9.3.2.1 y C.9.3.2.2",
+          "case": "U1",
+          "z_mm": 2017.05,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.11410140265232414,
+          "case": "U1",
+          "z_mm": 2017.05,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 796.0,
+          "as_min": 2150.2356750000004,
+          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
+          "status": "PASS",
+          "demand": 421.41022611681996,
+          "analysis": 316.057669587615,
+          "case": "U1",
+          "z_mm": 2017.05,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "FAIL",
+          "demand": 300.0,
+          "capacity": 192.4999999999999,
+          "clause": "C.10.6.4",
+          "case": "U1",
+          "z_mm": 2017.05,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 414402.96,
+          "capacity": 435207.64750152663,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 2017.05,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 2017.05,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "FAIL",
+          "demand": 596525999.9999999,
+          "capacity": 198522039.00126478,
+          "clause": "C.9.3.2.1 y C.9.3.2.2",
+          "case": "U1",
+          "z_mm": 1050.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.11410140265232414,
+          "case": "U1",
+          "z_mm": 1050.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 796.0,
+          "as_min": 2150.2356750000004,
+          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
+          "status": "FAIL",
+          "demand": 2150.2356750000004,
+          "case": "U1",
+          "z_mm": 1050.0,
           "where": "Franja transversal de la columna C2"
         },
         {
@@ -3563,7 +3563,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 414402.9600000001,
+          "demand": 414402.96,
           "capacity": 435207.64750152663,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -3581,7 +3581,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 79347806.76600006,
+          "demand": 79347806.76600009,
           "capacity": 198522039.00126478,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -3602,8 +3602,8 @@
           "as_min": 2150.2356750000004,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 421.4102261168198,
-          "analysis": 316.0576695876149,
+          "demand": 421.41022611681996,
+          "analysis": 316.057669587615,
           "case": "U1",
           "z_mm": 382.95000000000005,
           "where": "Franja transversal de la columna C2"
@@ -3621,7 +3621,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 414402.9600000001,
+          "demand": 414402.96,
           "capacity": 435207.64750152663,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -3922,38 +3922,20 @@
           "capacity": 294027634.7012301
         },
         {
-          "name": "Flexion: resistencia",
-          "status": "PASS",
+          "name": "Flexion concreto simple (cara superior, barras y)",
           "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
           "status": "PASS",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "status": "PASS",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "PASS",
-          "case": "U1",
+          "demand_Nmm": 23695373.812500007,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
           "z_mm": 1425.0,
           "where": "Franja transversal de la columna C1"
         },
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 0.0,
-          "capacity": 474447.84825880226,
+          "demand": 16538.467350000003,
+          "capacity": 442547.54598566866,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
           "z_mm": 1425.0,
@@ -3968,38 +3950,20 @@
           "where": "Franja transversal de la columna C1"
         },
         {
-          "name": "Flexion: resistencia",
-          "status": "PASS",
+          "name": "Flexion concreto simple (cara superior, barras y)",
           "case": "U1",
-          "z_mm": 2068.25,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
           "status": "PASS",
-          "case": "U1",
-          "z_mm": 2068.25,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "status": "PASS",
-          "case": "U1",
-          "z_mm": 2068.25,
-          "where": "Franja transversal de la columna C1"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "PASS",
-          "case": "U1",
+          "demand_Nmm": 2743318.271681253,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
           "z_mm": 2068.25,
           "where": "Franja transversal de la columna C1"
         },
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 0.0,
-          "capacity": 474447.84825880226,
+          "demand": 16538.467350000003,
+          "capacity": 442547.54598566866,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
           "z_mm": 2068.25,
@@ -4016,7 +3980,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 252444865.63914284,
+          "demand": 331086811.85767096,
           "capacity": 471019349.3700797,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4037,8 +4001,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 1402.8299097461372,
-          "analysis": 1052.1224323096028,
+          "demand": 1847.6794543837373,
+          "analysis": 1385.759590787803,
           "case": "U1",
           "z_mm": 975.0,
           "where": "Franja transversal de la columna C1"
@@ -4056,7 +4020,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 286609.13721331087,
+          "demand": 386257.6674659571,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4074,7 +4038,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 62909340.50730701,
+          "demand": 85668514.81410408,
           "capacity": 471019349.3700797,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4095,8 +4059,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 346.09795475931935,
-          "analysis": 259.57346606948954,
+          "demand": 471.8686559941397,
+          "analysis": 353.9014919956048,
           "case": "U1",
           "z_mm": 331.75,
           "where": "Franja transversal de la columna C1"
@@ -4114,7 +4078,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 286609.13721331087,
+          "demand": 386257.6674659571,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4132,7 +4096,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 402360944.8144685,
+          "demand": 397959313.1981547,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4153,8 +4117,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "FAIL",
-          "demand": 2254.21171320537,
-          "analysis": 1690.6587849040277,
+          "demand": 2229.0116973230956,
+          "analysis": 1671.7587729923218,
           "case": "U1",
           "z_mm": 1425.0,
           "where": "Franja transversal de la columna C2"
@@ -4172,7 +4136,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 269181.2771356361,
+          "demand": 265550.4098696598,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4190,7 +4154,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 43978895.9731053,
+          "demand": 43344424.22818929,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4211,8 +4175,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 241.71323758811522,
-          "analysis": 181.2849281910864,
+          "demand": 238.21825289143615,
+          "analysis": 178.66368966857712,
           "case": "U1",
           "z_mm": 2068.25,
           "where": "Franja transversal de la columna C2"
@@ -4230,7 +4194,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 269181.2771356361,
+          "demand": 265550.4098696598,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4248,7 +4212,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "FAIL",
-          "demand": 585948414.5605314,
+          "demand": 590350046.1768454,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4287,7 +4251,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 420620.9686976971,
+          "demand": 424251.83596367354,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4305,7 +4269,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 70442051.55449879,
+          "demand": 71076523.29941481,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4326,8 +4290,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 387.6916724459867,
-          "analysis": 290.76875433449004,
+          "demand": 391.1965621060767,
+          "analysis": 293.3974215795576,
           "case": "U1",
           "z_mm": 331.75,
           "where": "Franja transversal de la columna C2"
@@ -4345,7 +4309,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 420620.9686976971,
+          "demand": 424251.83596367354,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4395,7 +4359,7 @@
         {
           "name": "Desarrollo barras y (franja de la columna C1)",
           "status": "PASS",
-          "demand": 311.20715401913577,
+          "demand": 409.89364465607224,
           "capacity": 900.0,
           "clause": "C.12.2.1, C.12.2.3 y C.12.2.4; C.12.2.5 y C.12.5.3(d)",
           "where": ""
@@ -4679,7 +4643,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 40796.956249999996,
+          "demand": 40796.95625,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4697,7 +4661,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 6767195.117968749,
+          "demand": 6767195.1179687455,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4718,8 +4682,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 37.12167615881758,
-          "analysis": 27.841257119113184,
+          "demand": 37.12167615881756,
+          "analysis": 27.84125711911317,
           "case": "U1",
           "z_mm": 2068.25,
           "where": "Franja transversal de la columna C1"
@@ -4737,7 +4701,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 40796.956249999996,
+          "demand": 40796.95625,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4795,7 +4759,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 40796.956249999996,
+          "demand": 40796.95625,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4813,7 +4777,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 6767195.117968749,
+          "demand": 6767195.1179687455,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4834,8 +4798,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 37.12167615881758,
-          "analysis": 27.841257119113184,
+          "demand": 37.12167615881756,
+          "analysis": 27.84125711911317,
           "case": "U1",
           "z_mm": 331.75,
           "where": "Franja transversal de la columna C1"
@@ -4853,7 +4817,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 40796.956249999996,
+          "demand": 40796.95625,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4871,7 +4835,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "FAIL",
-          "demand": 494154679.6875003,
+          "demand": 494154679.6875005,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4910,7 +4874,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 344901.12291666685,
+          "demand": 344901.12291666697,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4928,7 +4892,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 57210473.76380212,
+          "demand": 57210473.76380211,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -4950,7 +4914,7 @@
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
           "demand": 314.65202356667504,
-          "analysis": 235.98901767500632,
+          "analysis": 235.9890176750063,
           "case": "U1",
           "z_mm": 2068.25,
           "where": "Franja transversal de la columna C2"
@@ -4968,7 +4932,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 344901.12291666685,
+          "demand": 344901.12291666697,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -4986,7 +4950,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "FAIL",
-          "demand": 494154679.6874997,
+          "demand": 494154679.6874998,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5025,7 +4989,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 344901.12291666644,
+          "demand": 344901.12291666656,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5043,7 +5007,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 57210473.76380206,
+          "demand": 57210473.76380211,
           "capacity": 471321991.71571505,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5064,8 +5028,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 314.65202356667476,
-          "analysis": 235.9890176750061,
+          "demand": 314.65202356667504,
+          "analysis": 235.9890176750063,
           "case": "U1",
           "z_mm": 331.75,
           "where": "Franja transversal de la columna C2"
@@ -5083,7 +5047,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 344901.12291666644,
+          "demand": 344901.12291666656,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5447,7 +5411,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 319878854.95961946,
+          "demand": 318651212.54288006,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5468,8 +5432,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 1784.0445410854456,
-          "analysis": 1338.0334058140845,
+          "demand": 1777.079202209381,
+          "analysis": 1332.809401657036,
           "case": "U1",
           "z_mm": 1525.0,
           "where": "Franja transversal de la columna C1"
@@ -5487,7 +5451,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 237657.80247858443,
+          "demand": 236601.71605201464,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5505,7 +5469,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 51156038.55675343,
+          "demand": 50912923.648016036,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5526,8 +5490,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 281.2645887267163,
-          "analysis": 210.94844154503724,
+          "demand": 279.9243619017361,
+          "analysis": 209.94327142630212,
           "case": "U1",
           "z_mm": 2168.25,
           "where": "Franja transversal de la columna C1"
@@ -5545,7 +5509,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 237657.80247858443,
+          "demand": 236601.71605201464,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5563,7 +5527,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 343947702.7326882,
+          "demand": 345175345.14942753,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5584,8 +5548,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 1920.7965791162649,
-          "analysis": 1440.5974343371988,
+          "demand": 1927.7814675001707,
+          "analysis": 1445.8361006251282,
           "case": "U1",
           "z_mm": 1075.0,
           "where": "Franja transversal de la columna C1"
@@ -5603,7 +5567,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 258363.16675218477,
+          "demand": 259419.25317875447,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5621,7 +5585,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 55922488.17593891,
+          "demand": 56165603.084676325,
           "capacity": 471019349.37007755,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5642,8 +5606,8 @@
           "as_min": 2344.110208333333,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 307.5476064007754,
-          "analysis": 230.6607048005816,
+          "demand": 308.88853406665123,
+          "analysis": 231.66640054998842,
           "case": "U1",
           "z_mm": 431.75,
           "where": "Franja transversal de la columna C1"
@@ -5661,7 +5625,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 258363.16675218477,
+          "demand": 259419.25317875447,
           "capacity": 474447.84825880226,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5679,7 +5643,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 384763172.8291252,
+          "demand": 383549161.70290935,
           "capacity": 471849314.0985842,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5700,8 +5664,8 @@
           "as_min": 2451.3185416666665,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "FAIL",
-          "demand": 2151.5508007923513,
-          "analysis": 1613.6631005942634,
+          "demand": 2144.6259102723175,
+          "analysis": 1608.469432704238,
           "case": "U1",
           "z_mm": 1525.0,
           "where": "Franja transversal de la columna C2"
@@ -5719,7 +5683,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 285956.47551371326,
+          "demand": 284912.11548295885,
           "capacity": 496146.8122770416,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5737,7 +5701,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 61562467.823980995,
+          "demand": 61322052.37390223,
           "capacity": 471849314.0985842,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5758,8 +5722,8 @@
           "as_min": 2451.3185416666665,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 338.6168265387457,
-          "analysis": 253.96261990405932,
+          "demand": 337.2904125229204,
+          "analysis": 252.96780939219033,
           "case": "U1",
           "z_mm": 2168.25,
           "where": "Franja transversal de la columna C2"
@@ -5777,7 +5741,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 285956.47551371326,
+          "demand": 284912.11548295885,
           "capacity": 496146.8122770416,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5795,7 +5759,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 412084711.78625935,
+          "demand": 413298722.9124753,
           "capacity": 471849314.0985842,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5816,8 +5780,8 @@
           "as_min": 2451.3185416666665,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "FAIL",
-          "demand": 2307.634872460971,
-          "analysis": 1730.7261543457282,
+          "demand": 2314.580962001425,
+          "analysis": 1735.9357215010689,
           "case": "U1",
           "z_mm": 1075.0,
           "where": "Franja transversal de la columna C2"
@@ -5835,7 +5799,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 309459.9860247483,
+          "demand": 310504.34605550277,
           "capacity": 496146.8122770416,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5853,7 +5817,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 66973060.81063436,
+          "demand": 67213476.26071304,
           "capacity": 471849314.0985842,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -5874,8 +5838,8 @@
           "as_min": 2451.3185416666665,
           "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
           "status": "PASS",
-          "demand": 368.4764437129876,
-          "analysis": 276.3573327847407,
+          "demand": 369.8036071948011,
+          "analysis": 277.3527053961008,
           "case": "U1",
           "z_mm": 431.75,
           "where": "Franja transversal de la columna C2"
@@ -5893,7 +5857,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "PASS",
-          "demand": 309459.9860247483,
+          "demand": 310504.34605550277,
           "capacity": 496146.8122770416,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -5935,7 +5899,7 @@
         {
           "name": "Desarrollo barras y (franja de la columna C1)",
           "status": "PASS",
-          "demand": 426.11412309040384,
+          "demand": 427.6636674934658,
           "capacity": 1000.0,
           "clause": "C.12.2.1, C.12.2.3 y C.12.2.4; C.12.2.5 y C.12.5.3(d)",
           "where": ""
@@ -6205,7 +6169,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "FAIL",
-          "demand": 434419781.24999994,
+          "demand": 434419781.25,
           "capacity": 175764726.8435882,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -6244,7 +6208,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "FAIL",
-          "demand": 577398.4416666667,
+          "demand": 577398.4416666668,
           "capacity": 192664.53648468238,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -6262,7 +6226,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "FAIL",
-          "demand": 182385732.7614583,
+          "demand": 182385732.76145828,
           "capacity": 175764726.8435882,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -6301,7 +6265,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "FAIL",
-          "demand": 577398.4416666667,
+          "demand": 577398.4416666668,
           "capacity": 199436.3284561716,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -6319,7 +6283,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "FAIL",
-          "demand": 434419781.24999994,
+          "demand": 434419781.25,
           "capacity": 175764726.8435882,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -6358,7 +6322,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "FAIL",
-          "demand": 577398.4416666667,
+          "demand": 577398.4416666668,
           "capacity": 192664.53648468238,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -6376,7 +6340,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "FAIL",
-          "demand": 182385732.7614583,
+          "demand": 182385732.76145828,
           "capacity": 175764726.8435882,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -6415,7 +6379,7 @@
         {
           "name": "Cortante: resistencia",
           "status": "FAIL",
-          "demand": 577398.4416666667,
+          "demand": 577398.4416666668,
           "capacity": 199436.3284561716,
           "clause": "C.15.5.1, C.15.5.2 y C.11.2",
           "case": "U1",
@@ -6433,7 +6397,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 221316666.66666666,
+          "demand": 221316666.66666663,
           "capacity": 315415368.06916916,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -6490,7 +6454,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 57483870.72916667,
+          "demand": 57483870.72916669,
           "capacity": 315415368.06916916,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -6547,7 +6511,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 221316666.66666666,
+          "demand": 221316666.66666663,
           "capacity": 315415368.06916916,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -6604,7 +6568,7 @@
         {
           "name": "Flexion: resistencia",
           "status": "PASS",
-          "demand": 57483870.72916667,
+          "demand": 57483870.72916669,
           "capacity": 315415368.06916916,
           "clause": "C.9.3.2.1 y C.9.3.2.2",
           "case": "U1",
@@ -6750,6 +6714,648 @@
           "status": "PASS",
           "demand": 2200000.0,
           "capacity": 30939999.999999996,
+          "clause": "C.10.14.1 y C.9.3.2.4"
+        }
+      ]
+    },
+    {
+      "id": "negativo-transversal",
+      "description": "Mx grande en las dos columnas (D-095): la presión en la línea de cada columna se anula hacia −Y, la carga uniforme manda en ese voladizo y aparece el momento negativo transversal",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 3000.0,
+        "h": 750.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -1800.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 0.0,
+                "P_kN": 1000.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": -1100.0,
+                "My_kNm": 0.0
+              }
+            ],
+            "dowels": {
+              "designation": "#6",
+              "count": 4
+            }
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 1800.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 0.0,
+                "P_kN": 1000.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": -1100.0,
+                "My_kNm": 0.0
+              }
+            ],
+            "dowels": {
+              "designation": "#6",
+              "count": 4
+            }
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#6",
+            "spacing": 150.0
+          }
+        },
+        "top": {
+          "designation": "#7",
+          "spacing": 150.0,
+          "end": "straight"
+        }
+      },
+      "expected": [
+        {
+          "name": "Punzonamiento",
+          "case": "U1",
+          "where": "Columna C1",
+          "status": "PASS",
+          "demand": 0.6809819590118145,
+          "capacity": 1.3096468989769725,
+          "corners": [
+            [
+              -2351.7875,
+              -551.7875,
+              -0.06401604593277066
+            ],
+            [
+              -1248.2125,
+              -551.7875,
+              -0.06401604593277055
+            ],
+            [
+              -2351.7875,
+              551.7875,
+              0.6809819590118144
+            ],
+            [
+              -1248.2125,
+              551.7875,
+              0.6809819590118145
+            ]
+          ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1.4305114746093752e-07,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1778478068.5411766
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 1.4305114746093752e-07,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1778478068.5411766
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 644996757.453529,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1145126766.0
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
+        },
+        {
+          "name": "Punzonamiento",
+          "case": "U1",
+          "where": "Columna C2",
+          "status": "PASS",
+          "demand": 0.6809819590118145,
+          "capacity": 1.3096468989769725,
+          "corners": [
+            [
+              1248.2125,
+              -551.7875,
+              -0.06401604593277055
+            ],
+            [
+              2351.7875,
+              -551.7875,
+              -0.06401604593277066
+            ],
+            [
+              1248.2125,
+              551.7875,
+              0.6809819590118145
+            ],
+            [
+              2351.7875,
+              551.7875,
+              0.6809819590118144
+            ]
+          ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 1.4305114746093752e-07,
+          "name": "Transferencia de momento por flexion (barras x)",
+          "status": "PASS",
+          "capacity": 1778478068.5411766
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 1.4305114746093752e-07,
+          "name": "Transferencia de momento: parte negativa (barras x)",
+          "status": "PASS",
+          "capacity": 1778478068.5411766
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 644996757.453529,
+          "name": "Transferencia de momento por flexion (barras y)",
+          "status": "PASS",
+          "capacity": 1145126766.0
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "name": "Transferencia de momento: parte negativa (barras y)",
+          "status": "PASS",
+          "capacity": 294027634.7012301
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "FAIL",
+          "demand": 653378185.9940679,
+          "capacity": 471321991.71571505,
+          "clause": "C.9.3.2.1 y C.9.3.2.2",
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.0481152804483149,
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 1988.0,
+          "as_min": 2344.110208333333,
+          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
+          "status": "FAIL",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "FAIL",
+          "demand": 150.0,
+          "capacity": 137.0,
+          "clause": "C.10.6.4",
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "FAIL",
+          "demand": 541907.1181182708,
+          "capacity": 474447.84825880226,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 181560488.54188287,
+          "capacity": 471321991.71571505,
+          "clause": "C.9.3.2.1 y C.9.3.2.2",
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.0481152804483149,
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 1988.0,
+          "as_min": 2344.110208333333,
+          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
+          "status": "PASS",
+          "demand": 1005.1150788200305,
+          "analysis": 753.8363091150229,
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "FAIL",
+          "demand": 150.0,
+          "capacity": 137.0,
+          "clause": "C.10.6.4",
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "FAIL",
+          "demand": 541907.1181182708,
+          "capacity": 474447.84825880226,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion concreto simple (cara superior, barras y)",
+          "case": "U1",
+          "status": "PASS",
+          "demand_Nmm": 34100124.899788156,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
+          "z_mm": 1275.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 31494.127350000006,
+          "capacity": 442547.54598566866,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 1275.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 1275.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion concreto simple (cara superior, barras y)",
+          "case": "U1",
+          "status": "PASS",
+          "demand_Nmm": 9948207.476681255,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
+          "z_mm": 631.75,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 31494.127350000006,
+          "capacity": 442547.54598566866,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 631.75,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 631.75,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "FAIL",
+          "demand": 653378185.9940679,
+          "capacity": 471321991.71571505,
+          "clause": "C.9.3.2.1 y C.9.3.2.2",
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.0481152804483149,
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 1988.0,
+          "as_min": 2344.110208333333,
+          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
+          "status": "FAIL",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "FAIL",
+          "demand": 150.0,
+          "capacity": 137.0,
+          "clause": "C.10.6.4",
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "FAIL",
+          "demand": 541907.1181182708,
+          "capacity": 474447.84825880226,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 1725.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 181560488.54188287,
+          "capacity": 471321991.71571505,
+          "clause": "C.9.3.2.1 y C.9.3.2.2",
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.0481152804483149,
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 1988.0,
+          "as_min": 2344.110208333333,
+          "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
+          "status": "PASS",
+          "demand": 1005.1150788200305,
+          "analysis": 753.8363091150229,
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "FAIL",
+          "demand": 150.0,
+          "capacity": 137.0,
+          "clause": "C.10.6.4",
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "FAIL",
+          "demand": 541907.1181182708,
+          "capacity": 474447.84825880226,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 2368.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion concreto simple (cara superior, barras y)",
+          "case": "U1",
+          "status": "PASS",
+          "demand_Nmm": 34100124.899788156,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
+          "z_mm": 1275.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 31494.127350000006,
+          "capacity": 442547.54598566866,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 1275.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 1275.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion concreto simple (cara superior, barras y)",
+          "case": "U1",
+          "status": "PASS",
+          "demand_Nmm": 9948207.476681255,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
+          "z_mm": 631.75,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 31494.127350000006,
+          "capacity": 442547.54598566866,
+          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+          "case": "U1",
+          "z_mm": 631.75,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "C.11.4.6.1(a)",
+          "case": "U1",
+          "z_mm": 631.75,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Malla inferior y: acero minimo fuera de las franjas",
+          "status": "PASS",
+          "demand": 1349.9999999999998,
+          "capacity": 1893.3333333333333,
+          "clause": "C.10.5.4 y C.7.12.2.1",
+          "where": ""
+        },
+        {
+          "name": "Malla inferior y: separacion maxima",
+          "status": "PASS",
+          "demand": 150.0,
+          "capacity": 450.0,
+          "clause": "C.10.5.4",
+          "where": ""
+        },
+        {
+          "name": "Desarrollo barras inferiores x",
+          "status": "PASS",
+          "demand": 300.0,
+          "capacity": 900.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4; C.12.2.5 y C.12.5.3(d)",
+          "where": ""
+        },
+        {
+          "name": "Desarrollo barras superiores x",
+          "status": "PASS",
+          "demand": 300.0,
+          "capacity": 2924.999994097741,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4; C.12.2.5 y C.12.5.3(d)",
+          "where": ""
+        },
+        {
+          "name": "Desarrollo barras y (franja de la columna C1)",
+          "status": "PASS",
+          "demand": 441.02269126982117,
+          "capacity": 1200.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4",
+          "where": ""
+        },
+        {
+          "name": "Desarrollo barras y (franja de la columna C2)",
+          "status": "PASS",
+          "demand": 441.02269126982117,
+          "capacity": 1200.0,
+          "clause": "C.12.2.1, C.12.2.3 y C.12.2.4",
+          "where": ""
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "PASS",
+          "demand": 1012.5,
+          "capacity": 1136.0,
+          "where": "Columna C1"
+        },
+        {
+          "name": "Pasadores: anclaje a compresion",
+          "status": "PASS",
+          "demand": 363.8437202976025,
+          "capacity": 633.6999999999999,
+          "where": "Columna C1"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "U1",
+          "where": "Columna C1",
+          "status": "PASS",
+          "demand": 1000000.0,
+          "capacity": 6265350.0,
+          "clause": "C.10.14.1 y C.9.3.2.4"
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "PASS",
+          "demand": 1012.5,
+          "capacity": 1136.0,
+          "where": "Columna C2"
+        },
+        {
+          "name": "Pasadores: anclaje a compresion",
+          "status": "PASS",
+          "demand": 363.8437202976025,
+          "capacity": 633.6999999999999,
+          "where": "Columna C2"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "U1",
+          "where": "Columna C2",
+          "status": "PASS",
+          "demand": 1000000.0,
+          "capacity": 6265350.0,
           "clause": "C.10.14.1 y C.9.3.2.4"
         }
       ]

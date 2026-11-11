@@ -282,24 +282,37 @@ def _shape(f: dict, beam: dict, index: int, depth: float):  # noqa: ANN202
 
 
 def _strip_sections(f: dict, beam: dict, index: int, case: str, depth: float) -> list[tuple[float, float, float, str]]:
+    """Secciones de la franja con su carga neta (D-095): q(y) = s·forma(y) − w·b, con b el ancho de la franja, w la carga
+    uniforme mayorada (zapata, relleno y sobrecargas) y s tal que ∫q dy = F de la columna. Caras, a d de ellas y el mayor
+    momento negativo de cada voladizo (64 puntos entre la cara y el borde) si no está en la cara."""
     c = f["columns"][index]
     half = f["ly"] / 2
     shape, _ = _shape(f, beam, index, depth)
-    scale = _action(f, beam, index, case)[0] / shape(-half, half)[0]
+    x0, x1 = max(c["x"] - c["cx"] / 2 - depth / 2, -f["lx"] / 2), min(c["x"] + c["cx"] / 2 + depth / 2, f["lx"] / 2)
+    uniform = beam["w"] * (x1 - x0)
+    scale = (_action(f, beam, index, case)[0] + uniform * f["ly"]) / shape(-half, half)[0]
 
     def beyond(at: float, side: float) -> tuple[float, float]:
-        load, first = shape(at, half) if side > 0 else shape(-half, at)
-        return scale * side * (first - at * load), scale * load
+        y0, y1 = (at, half) if side > 0 else (-half, at)
+        load, first = shape(y0, y1)
+        net = scale * load - uniform * (y1 - y0)
+        net_first = scale * first - uniform * (y1**2 - y0**2) / 2
+        return side * (net_first - at * net), abs(net)
 
     out = []
     for side, face, name in ((1.0, c["y"] + c["cy"] / 2, "+Y"), (-1.0, c["y"] - c["cy"] / 2, "-Y")):
         at_d = face + side * depth
         inside = -half < at_d < half
-        moment, shear = beyond(face, side)
-        out.append((face, moment, beyond(at_d, side)[1] if inside else shear, f"cara {name}"))
+        face_moment, shear = beyond(face, side)
+        out.append((face, face_moment, beyond(at_d, side)[1] if inside else shear, f"cara {name}"))
         if inside:
             moment, shear = beyond(at_d, side)
             out.append((at_d, moment, shear, f"a d de la cara {name}"))
+        points = [face + side * (half - side * face) * k / 64 for k in range(1, 64)]
+        y = min(points, key=lambda point: beyond(point, side)[0])
+        moment, shear = beyond(y, side)
+        if moment < -1e3 and moment < face_moment:
+            out.append((y, moment, shear, f"mayor momento negativo hacia el borde {name}"))
     return out
 
 
@@ -355,6 +368,12 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
     where = f"Franja transversal de la columna {f['columns'][index]['id']}"
     out = []
     for y, moment, shear, _ in _strip_sections(f, beam, index, case, strip["depth"]):
+        if moment < 0:
+            # Sin barras superiores transversales: concreto simple en el ancho de la franja (D-072, D-095) y el cortante.
+            plain = _F._plain({**f, "lx": strip["width"]}, "y", -moment, case, _F.PROFILES[folder], LEVEL[folder])
+            items = [plain, *_B._shear_checks(folder, f, [strip["layer"]], (shear, moment), (strip["width"], None))]
+            out += [{**item, "case": case, "z_mm": y + f["ly"] / 2, "where": where} for item in items]
+            continue
         items = _B._flexure_checks(folder, f, [strip["layer"]], moment, strip["width"])
         # Resistencia biaxial (D-046): con las barras asimétricas en la franja, el eje neutro se inclina.
         if moment == 0:
@@ -563,6 +582,10 @@ CASES = [
     ("delgada", "zapata delgada: punzonamiento, flexión y cortante de las franjas no cumplen; C2 grande, con A2/A1 < 4",
      _footing([_column("C1", -1800.0, [_load("U1", 2200.0)]), _column("C2", 1800.0, [_load("U1", 2200.0)], cx=1000.0, cy=1000.0)],
               h=450.0)),
+    ("negativo-transversal", "Mx grande en las dos columnas (D-095): la presión en la línea de cada columna se anula hacia −Y, "
+                             "la carga uniforme manda en ese voladizo y aparece el momento negativo transversal",
+     _footing([_column("C1", -1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)]),
+               _column("C2", 1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)])], ly=3000.0)),
 ]
 
 

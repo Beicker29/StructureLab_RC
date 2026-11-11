@@ -106,6 +106,11 @@ class Flanges:
     def moment(self, x: float, side: float) -> float:
         return self._beyond(x, side, 0.0)[1]
 
+    def section(self, x: float, side: float, offset: float) -> tuple[float, float]:
+        """(V, M) por unidad de longitud en la sección a `offset` de la cara de la viga hacia el borde `side`: los
+        diagramas de las aletas (D-095)."""
+        return self._beyond(x, side, offset)
+
     def shear(self, x: float, side: float) -> tuple[float, float]:
         """Cortante y momento en la sección a d de la cara."""
         return self._beyond(x, side, self.depth)
@@ -161,7 +166,8 @@ def _plain(basis: Basis, footing: CombinedFooting, demand: float, location: tupl
         error = invalid_input(f"Momento negativo en la aleta sin barras superiores: {plain.clauses()['seismic']} no permite "
                               f"cimentaciones de concreto simple con nivel sismico {basis.seismic_level} (D-072)",
                               member=footing.id, case=case)
-        return Check(PLAIN, Status.FAIL, (error,), plain.clauses()["seismic"], demand=demand, unit="N*mm", member=footing.id, case=case)
+        return Check(PLAIN, Status.FAIL, (error,), plain.clauses()["seismic"], demand=demand, unit="N*mm", member=footing.id,
+                     case=case, note=f"{note}, por metro")
     strength = plain_rectangular_moment(basis.profile, basis.materials, STRIP, footing.h, cast_against_soil=True)
     if isinstance(strength, StructuredError):
         return replace(check_from_errors(PLAIN, [strength]), clause=plain.clauses()["flexure"], member=footing.id, case=case)

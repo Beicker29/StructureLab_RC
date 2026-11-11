@@ -107,12 +107,17 @@ el mismo `soil` que las zapatas aisladas. Se verifican la parte geotécnica con 
   450 mm;
 - por columna (V3J.3, D-082): el punzonamiento (y el del perímetro común si los de las dos columnas se traslapan,
   D-086), la franja transversal (también con las verificaciones de vigas, con
-  `z` desde el borde −Y y `note` "Franja transversal de la columna …, cara ±Y" o "a d de la cara ±Y"), el aplastamiento
-  y los pasadores (`note` "Columna …"); la malla y fuera de las franjas (mínimo de losa y separación); el desarrollo de
-  las barras x desde la sección de mayor momento de su signo y de las barras y de cada franja desde la cara de la
-  columna.
+  `z` desde el borde −Y y `note` "Franja transversal de la columna …, cara ±Y", "a d de la cara ±Y" o "mayor momento
+  negativo hacia el borde ±Y"; su carga es la neta: la fuerza de la columna con la forma de la presión menos los pesos y
+  las sobrecargas, y el momento negativo, sin barras superiores transversales, es de concreto simple, D-095), el
+  aplastamiento y los pasadores (`note` "Columna …"); la malla y fuera de las franjas (mínimo de losa y separación); el
+  desarrollo de las barras x desde la sección de mayor momento de su signo y de las barras y de cada franja desde la cara
+  de la columna.
 
-La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en los dos perfiles.
+Las notas de las secciones de la viga larga y de las franjas terminan con el signo del momento ("momento positivo" o
+"momento negativo"); la memoria revisa por separado el momento positivo y el negativo en las dos direcciones y trae los
+diagramas envolventes de momento y cortante (D-095). La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en
+los dos perfiles.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
@@ -225,6 +230,7 @@ El diseño del N elegido se obtiene con `design-footings` y se reverifica con `r
 | `memoria.txt` | Memoria de cálculo de cada elemento, una tras otra (D-068): resultado y DCR máximo, capítulos fijos con cada revisión en su ubicación gobernante, índices DCR y notas y limitaciones. |
 | `memoria.pdf` | Los mismos bloques en PDF, cada elemento desde una página nueva; requiere el extra `pdf` (`pip install structurelab-rc[pdf]`). |
 | `presion_<zapata>.svg` | Planta de cada zapata con la presión del suelo en cada esquina del caso de servicio que gobierna la presión admisible (D-080); el PDF la incrusta en el capítulo de solicitaciones, junto con la tabla de esquinas de todos los casos de servicio. Las presiones vienen en los valores de cada verificación de presión admisible (`p esquina -x-y`, `+x-y`, `+x+y` y `-x+y`, en kPa). |
+| `diagrama_<zapata>_longitudinal.svg`, `diagrama_<zapata>_transversal.svg` | Solo zapatas combinadas y en T invertida (D-095): diagramas de momento y cortante, envolvente de los casos mayorados (máximo en azul, mínimo en rojo), de la viga larga y de la dirección transversal (los voladizos de la franja de cada columna o, en la T, las aletas por metro). La memoria los muestra en el capítulo "Diagramas de momento y cortante" con la tabla de extremos; los datos vienen en `resultado.json`, en `combined_footings[].diagrams` (`longitudinal` y `transverse`: `positions [mm]`, `M max [kN-m]`, `M min [kN-m]`, `V max [kN]`, `V min [kN]`, `segments`, `marks` y `extremes` con el valor, la posición y el caso de cada extremo). M > 0 tracciona la cara inferior; V es el del cuerpo libre a la izquierda. |
 
 Cada verificación de `resultado.json` tiene:
 

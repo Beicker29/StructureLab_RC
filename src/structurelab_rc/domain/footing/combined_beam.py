@@ -334,6 +334,12 @@ def extreme_moments(footing: CombinedFooting, soil: Soil,
     return positive, negative
 
 
+def moment_sign(moment: float) -> str:
+    """El signo del momento (M > 0 tracciona la cara inferior) en la nota de la sección (D-095): la memoria separa por él
+    la revisión del momento positivo y la del negativo."""
+    return "momento negativo" if moment < 0 else "momento positivo"
+
+
 def _sentence(text: str) -> str:
     """La primera letra en mayúscula, sin tocar el resto (los nombres de las columnas y los ejes)."""
     return text[:1].upper() + text[1:]
@@ -347,7 +353,8 @@ def _with_section(check: Check, label: str) -> Check:
 
 def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
     beam, section, has_top = given
-    # La T invertida va volteada: su momento cambia de signo (D-093).
+    # La nota lleva el signo del momento físico (D-095); la T invertida va volteada: su momento cambia de signo (D-093).
+    section = replace(section, label=f"{section.label}, {moment_sign(beam.moment(section.x))}")
     moment = beam.moment(section.x) * (-1.0 if footing.beam is not None else 1.0)
     # El cortante y la torsión, a d de la cara si la sección es una cara de columna (ACI 9.4.3.2 y 9.4.4.3).
     at = section.x if section.shear_x is None else section.shear_x

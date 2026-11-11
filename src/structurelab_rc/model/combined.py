@@ -117,7 +117,9 @@ class CombinedFooting(RectangularBase, _Input):
                 raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' se sale de la base")
         first, second = sorted(self.columns, key=lambda column: column.x)
         if first.x + first.cx / 2 >= second.x - second.cx / 2:
-            raise ValueError(f"las columnas de la zapata combinada '{self.id}' se traslapan a lo largo de X")
+            # Se compara en ejes de la viga; el mensaje nombra el eje global en que la escribió el usuario (D-094).
+            raise ValueError(f"las columnas de la zapata combinada '{self.id}' se traslapan a lo largo de la viga (dirección "
+                             f"principal {self.principal_direction.upper()} global)")
         self._check_beam()
         for layer in self.torsion_layers:
             if layer.role != "torsion" or layer.depth >= self.total_height:

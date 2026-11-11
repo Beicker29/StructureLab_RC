@@ -17,6 +17,8 @@ from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.footing.checks import combined_footing_checks, footing_checks
+from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
+from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.errors import invalid_input
@@ -37,9 +39,9 @@ from structurelab_rc.model.project import Project
 from structurelab_rc.model.template import EtabsFootingDesignTemplate
 from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.reporting.document import report_documents
-from structurelab_rc.reporting.figures import pressure_figures
+from structurelab_rc.reporting.figures import diagram_figures, pressure_figures
 from structurelab_rc.reporting.pdf import write_pdf
-from structurelab_rc.reporting.results import build_results
+from structurelab_rc.reporting.results import Diagrams, build_results
 from structurelab_rc.reporting.text import render_text
 from structurelab_rc.setup import load_engine
 
@@ -87,20 +89,37 @@ class Report:
     pdf_written: bool
 
 
+def _combined_diagrams(project: Project | None, checks: tuple[Check, ...]) -> Diagrams:
+    """Diagramas envolventes de momento y cortante de cada zapata combinada con casos mayorados en equilibrio (D-095)."""
+    if project is None or project.soil is None or checks[0].status is Status.FAIL:
+        return {}
+    bars = load_engine().bars
+    profile = PROFILES[project.profile]
+    diagrams: Diagrams = {}
+    for footing in project.combined_footings:
+        cases, failures = combined_factored_cases(footing, project.soil)
+        if cases and not failures:
+            basis = Basis(profile, project.materials, bars, project.seismic.level)
+            diagrams[footing.id] = combined_diagrams(basis, footing, project.soil, cases)
+    return diagrams
+
+
 def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
-    """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050)."""
+    """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050), con
+    las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
     project, checks = run_project(path)
-    results = build_results(project, checks, __version__)
+    results = build_results(project, checks, __version__, _combined_diagrams(project, checks))
     output.mkdir(parents=True, exist_ok=True)
     figures = pressure_figures(results, output)
-    documents = report_documents(results, full=full, figures=figures)
+    diagram_files = diagram_figures(results, output)
+    documents = report_documents(results, full=full, figures=figures, diagrams=diagram_files)
     text = render_text(documents)
     result_path, memoir_path, pdf_path = output / "resultado.json", output / "memoria.txt", output / "memoria.pdf"
     result_path.write_text(json.dumps(results, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     memoir_path.write_text(text, encoding="utf-8", newline="\n")
     pdf_written = write_pdf(documents, pdf_path)
     files = (result_path, memoir_path, pdf_path) if pdf_written else (result_path, memoir_path)
-    files = (*files, *figures.values())
+    files = (*files, *figures.values(), *(path for paths in diagram_files.values() for path in paths))
     return Report(results["status"], files, pdf_written)
 
 

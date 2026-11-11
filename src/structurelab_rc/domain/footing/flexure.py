@@ -63,6 +63,18 @@ def _name(kind: str, mat: str, direction: str) -> str:
 def plain_check(basis: Basis, footing: FootingBase, direction: str, demand: float, location: tuple[str, str, str]) -> Check:
     """Momento negativo sin malla superior: concreto simple en todo el ancho, espesor h − 50 mm (D-072). location es la
     cara (o sección), el caso y la nota que describe la sección."""
+    return _plain_concrete(basis, footing, (direction, None), demand, location)
+
+
+def plain_strip_check(basis: Basis, footing: FootingBase, demand: float, location: tuple[str, str, str], width: float) -> Check:
+    """El momento negativo de la franja transversal de una zapata combinada (barras y), sin barras superiores
+    transversales: concreto simple en el ancho de la franja (D-072, D-095)."""
+    return _plain_concrete(basis, footing, ("y", width), demand, location)
+
+
+def _plain_concrete(basis: Basis, footing: FootingBase, section: tuple[str, float | None], demand: float,
+                    location: tuple[str, str, str]) -> Check:
+    direction, width = section
     face, load_case, note = location
     plain = basis.profile.plain
     name = f"{PLAIN} (cara superior, barras {direction})"
@@ -72,8 +84,10 @@ def plain_check(basis: Basis, footing: FootingBase, direction: str, demand: floa
         error = invalid_input(f"Momento negativo sin malla superior: {plain.clauses()['seismic']} no permite cimentaciones de "
                               f"concreto simple con nivel sismico {basis.seismic_level}; requiere malla superior (D-072)",
                               face=face, member=member, case=load_case)
-        return Check(name, Status.FAIL, (error,), plain.clauses()["seismic"], demand=demand, unit="N*mm", member=member, case=load_case)
-    width = footing.ly if direction == "x" else footing.lx
+        return Check(name, Status.FAIL, (error,), plain.clauses()["seismic"], demand=demand, unit="N*mm", member=member,
+                     case=load_case, note=note)
+    if width is None:
+        width = footing.ly if direction == "x" else footing.lx
     strength = plain_rectangular_moment(basis.profile, basis.materials, width, footing.h, cast_against_soil=True)
     if isinstance(strength, StructuredError):
         return replace(check_from_errors(name, [strength]), clause=clause, member=member, case=load_case)

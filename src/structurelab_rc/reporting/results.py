@@ -10,6 +10,7 @@ from typing import Any
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.combined_beam import two_way_warning
+from structurelab_rc.domain.footing.combined_diagrams import Envelope
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingLoad, RectangularBase, Soil
@@ -137,9 +138,11 @@ def footing_data(footing: Footing, soil: Soil, checks: list[Check]) -> dict[str,
     }
 
 
-def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Check]) -> dict[str, Any]:
-    """Zapata combinada (D-080): geometría, columnas con sus cargas, propiedades derivadas, armado y verificaciones con su
-    caso, su posición z (viga larga o franja) y su nota (la sección o la columna)."""
+def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Check],
+                          diagrams: tuple[Envelope, list[Envelope]] | None = None) -> dict[str, Any]:
+    """Zapata combinada (D-080): geometría, columnas con sus cargas, propiedades derivadas, armado, verificaciones con su
+    caso, su posición z (viga larga o franja) y su nota (la sección o la columna) y, si se calcularon, los diagramas
+    envolventes de momento y cortante (D-095)."""
     columns = [{**column.model_dump(mode="json", exclude={"loads"}), "loads": [_load_data(load) for load in column.loads]}
                for column in footing.columns]
     return {
@@ -155,6 +158,8 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
         "checks": [{**check_data(check), "case": check.case, "z [mm]": None if check.z is None else significant(check.z)}
                    for check in checks],
         "foundation_beam_moments": beam_moments(checks),
+        **({"diagrams": {"longitudinal": envelope_data(diagrams[0]), "transverse": [envelope_data(item) for item in diagrams[1]]}}
+           if diagrams is not None else {}),
     }
 
 
@@ -214,8 +219,28 @@ def _status(checks: list[Check]) -> str:
     return str(aggregate(check.status for check in checks)) if checks else str(Status.PASS)
 
 
-def build_results(project: Project | None, checks: tuple[Check, ...], version: str) -> dict[str, Any]:
-    """Resultado completo; si la entrada no cargó, solo la validación."""
+Diagrams = dict[str, tuple[Envelope, list[Envelope]]]  # id de la zapata combinada → longitudinal y transversales
+
+
+def envelope_data(envelope: Envelope) -> dict[str, Any]:
+    """Un diagrama envolvente en unidades de presentación (D-095): posiciones en mm, M en kN·m y V en kN (por metro en
+    las aletas de la T invertida)."""
+    return {"title": envelope.title, "per_metre": envelope.per_metre,
+            "positions [mm]": [significant(value) for value in envelope.positions],
+            "M max [kN-m]": [significant(kNm(value)) for value in envelope.moment_max],
+            "M min [kN-m]": [significant(kNm(value)) for value in envelope.moment_min],
+            "V max [kN]": [significant(kN(value)) for value in envelope.shear_max],
+            "V min [kN]": [significant(kN(value)) for value in envelope.shear_min],
+            "segments": [list(segment) for segment in envelope.segments],
+            "marks": [{"position [mm]": significant(position), "label": label} for position, label in envelope.marks],
+            "extremes": [{"quantity": quantity, "value": significant(kNm(value) if quantity.startswith("M") else kN(value)),
+                          "position [mm]": significant(position), "case": case}
+                         for quantity, value, position, case in envelope.extremes]}
+
+
+def build_results(project: Project | None, checks: tuple[Check, ...], version: str, diagrams: Diagrams | None = None) -> dict[str, Any]:
+    """Resultado completo; si la entrada no cargó, solo la validación. diagrams: los diagramas envolventes de las zapatas
+    combinadas (D-095), que calcula el dominio."""
     validation, station_checks = checks[0], checks[1:]
     results: dict[str, Any] = {
         "software": {"name": "structurelab-rc", "version": version},
@@ -269,6 +294,7 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
                                for footing in project.footings]
         if project.combined_footings:
             results["combined_footings"] = [
-                combined_footing_data(footing, soil, [check for check in station_checks if check.member == footing.id])
+                combined_footing_data(footing, soil, [check for check in station_checks if check.member == footing.id],
+                                      (diagrams or {}).get(footing.id))
                 for footing in project.combined_footings]
     return results

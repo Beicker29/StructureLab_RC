@@ -21,14 +21,15 @@ from dataclasses import replace
 
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.geometry import placed_bars
-from structurelab_rc.domain.beam.station import checks_for
+from structurelab_rc.domain.beam.station import checks_for, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.development import development_check, required_length
 from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
 from structurelab_rc.domain.footing.base import column_vertical
-from structurelab_rc.domain.footing.combined_beam import extreme_moments
+from structurelab_rc.domain.footing.combined_beam import extreme_moments, moment_sign
 from structurelab_rc.domain.footing.connection import Support, bar_anchorage, bearing_checks, dowel_checks
+from structurelab_rc.domain.footing.flexure import plain_strip_check
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_row, uniform_positions
 from structurelab_rc.domain.footing.shear import PunchedColumn, punching_checks, transferred_load
@@ -46,6 +47,8 @@ DEVELOPMENT = "Desarrollo"
 MINIMUM_NOTE = "criterio del usuario (D-087): 8.6.1.2 aplicado a la zapata combinada, aunque 13.3.2.1 la remite a los capitulos 7 y 9"
 Cases = list[tuple[FactoredCase, tuple[FootingLoad, ...]]]
 _TOLERANCE = 1e-6  # mm
+_SWEEP = 64  # puntos por voladizo para buscar el mayor momento negativo de la franja (D-095)
+_NEGLIGIBLE_MOMENT = 1e3  # N·mm: por debajo, no hay momento negativo que revisar
 
 
 def column_action(footing: CombinedFooting, soil: Soil, column: CombinedColumn, load: FootingLoad) -> tuple[float, float, float]:
@@ -180,30 +183,60 @@ def _strip_shape(footing: CombinedFooting, pressure: FactoredCase, column: Combi
     return (lambda y0, y1: (y1 - y0, (y1**2 - y0**2) / 2)), "carga uniforme F/B (presion nula en toda la franja)"
 
 
-def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: CombinedColumn,
-                  given: tuple[float, float]) -> tuple[list[tuple[float, float, float, str]], str]:
-    """(y, Mu, Vu, sección) en las caras ±Y de la columna y a d de ellas, hacia el borde, y la nota de la forma de carga
-    usada. given = (F, d): la fuerza de la columna se reparte en el ancho B con la forma de `_strip_shape`."""
+def strip_load(footing: CombinedFooting, pressure: FactoredCase, column: CombinedColumn,
+               given: tuple[float, float]) -> tuple[Callable[[float, float], tuple[float, float]], str]:
+    """Carga neta de la franja a lo largo de Y (D-095): la fuerza F de la columna repartida en el ancho B con la forma de
+    `_strip_shape` y la carga uniforme w (zapata, relleno y sobrecargas, mayorada) en el ancho b de la franja:
+    q(y) = s·forma(y) − w·b, con s tal que ∫q dy = F. Con la forma uniforme es F/B, como antes de D-095; donde la presión
+    se anula queda −w·b (hacia abajo). Devuelve (∫q dy, ∫y·q dy) entre y0 y y1 (N, N·mm) y la nota de la forma."""
     force, depth = given
     half = footing.ly / 2
     shape, note = _strip_shape(footing, pressure, column, depth)
-    scale = force / shape(-half, half)[0]
+    x0, x1 = strip_limits(footing, column, depth)
+    uniform = pressure.net_load * (x1 - x0)
+    scale = (force + uniform * footing.ly) / shape(-half, half)[0]
 
-    def beyond(at: float, side: float) -> tuple[float, float]:
-        load, first = shape(at, half) if side > 0 else shape(-half, at)
-        return scale * side * (first - at * load), scale * load
+    def load(y0: float, y1: float) -> tuple[float, float]:
+        force_part, first = shape(y0, y1)
+        return scale * force_part - uniform * (y1 - y0), scale * first - uniform * (y1**2 - y0**2) / 2
 
+    return load, note
+
+
+def strip_cantilever(footing: CombinedFooting, load: Callable[[float, float], tuple[float, float]], at: float,
+                     side: float) -> tuple[float, float]:
+    """(M, V) en y = at del voladizo de la franja hacia el borde `side` (+1: +Y; −1: −Y), con el cuerpo libre entre la
+    sección y el borde: M > 0 tracciona la cara inferior; V es la carga neta hacia arriba de ese tramo."""
+    half = footing.ly / 2
+    y0, y1 = (at, half) if side > 0 else (-half, at)
+    net, first = load(y0, y1)
+    return side * (first - at * net), net
+
+
+def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: CombinedColumn,
+                  given: tuple[float, float]) -> tuple[list[tuple[float, float, float, str]], str]:
+    """(y, Mu, Vu, sección) en las caras ±Y de la columna, a d de ellas hacia el borde y, en cada voladizo, en el mayor
+    momento negativo si no está en la cara (D-095), y la nota de la forma de carga usada. given = (F, d)."""
+    depth = given[1]
+    half = footing.ly / 2
+    load, note = strip_load(footing, pressure, column, given)
     result = []
     for side, face, name in ((1.0, column.y + column.cy / 2, "+Y"), (-1.0, column.y - column.cy / 2, "-Y")):
         at_d = face + side * depth
         inside = -half < at_d < half
-        if -half < face < half:
-            # En la cara, el cortante es el de la sección a d (ACI 9.4.3.2 y 13.2.7.2, NSR-10 C.11.1.3; D-082).
-            moment, shear = beyond(face, side)
-            result.append((face, moment, beyond(at_d, side)[1] if inside else shear, f"cara {name}"))
+        if not -half < face < half:
+            continue
+        # En la cara, el cortante es el de la sección a d (ACI 9.4.3.2 y 13.2.7.2, NSR-10 C.11.1.3; D-082).
+        moment, shear = strip_cantilever(footing, load, face, side)
+        result.append((face, moment, abs(strip_cantilever(footing, load, at_d, side)[1] if inside else shear), f"cara {name}"))
         if inside:
-            moment, shear = beyond(at_d, side)
-            result.append((at_d, moment, shear, f"a d de la cara {name}"))
+            moment, shear = strip_cantilever(footing, load, at_d, side)
+            result.append((at_d, moment, abs(shear), f"a d de la cara {name}"))
+        points = [face + side * (half - side * face) * index / _SWEEP for index in range(1, _SWEEP)]
+        y, moment = min(((point, strip_cantilever(footing, load, point, side)[0]) for point in points), key=lambda item: item[1])
+        if moment < -_NEGLIGIBLE_MOMENT and moment < strip_cantilever(footing, load, face, side)[0]:
+            shear = strip_cantilever(footing, load, y, side)[1]
+            result.append((y, moment, abs(shear), f"mayor momento negativo hacia el borde {name}"))
     return result, note
 
 
@@ -211,19 +244,30 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     row, index = rows
     column = footing.columns[index]
     member = strip_member(footing, column, (row, _band_row(footing, column, row, basis)))
+    x0, x1 = strip_limits(footing, column, row.depth)
     title = f"Franja transversal de la columna {column.id}"
     checks = []
     for pressure, loads in cases:
         force = column_vertical(footing, soil, column, loads[index])
         demands, shape = strip_demands(footing, pressure, column, (force, row.depth))
         for y, moment, shear, label in demands:
-            station = Station.model_construct(z=y + footing.ly / 2, layout=member.stations[0].layout, case=pressure.case,
+            z = y + footing.ly / 2
+            section = f"{title}, {label}, {moment_sign(moment)}"
+            station = Station.model_construct(z=z, layout=member.stations[0].layout, case=pressure.case,
                                               demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))
             # Las caras laterales de la franja quedan dentro del concreto: sin refuerzo superficial (D-083).
             given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
-            for check in checks_for(given):
-                note = f"{title}, {label}" + "".join(f": {text}" for text in (check.note, shape) if text)
-                checks.append(replace(check, note=note))
+            if moment < 0:
+                # Momento negativo sin barras superiores transversales: concreto simple en el ancho de la franja (D-072,
+                # D-095) y el cortante de vigas.
+                note = section + (f": {shape}" if shape else "")
+                checks.append(replace(plain_strip_check(basis, footing, -moment, (label, pressure.case, note), x1 - x0), z=z))
+                selected = list(shear_and_torsion_checks(given))
+            else:
+                selected = list(checks_for(given))
+            for check in selected:
+                note = section + "".join(f": {text}" for text in (check.note, shape) if text)
+                checks.append(replace(check, note=note, member=footing.id, case=pressure.case, z=z))
     return checks
 
 

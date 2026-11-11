@@ -1345,6 +1345,44 @@
   fuerzas y el modelo las rota; caso `viga-en-y` en `derive_combined_service.py`, con su propia matriz de giro, escrito
   en ejes globales. Los ejemplos declaran `principal_direction: "x"` de forma explícita; la huella no cambia.
 
+### D-095: momento positivo y negativo en las dos direcciones y diagramas de la zapata combinada
+
+- **Fecha:** 2026-11-11
+- **Problema:** la viga larga ya revisaba el momento positivo y el negativo, pero la memoria mostraba una sola flexión (la de
+  mayor DCR); las franjas transversales solo tenían momento positivo, porque su carga era la fuerza de la columna
+  repartida con la forma de la presión (D-080, D-085), sin los pesos; y no había diagramas de momento ni de cortante.
+- **Decisiones del usuario:**
+  1. Franja transversal con la carga neta real, como las aletas de la T invertida (D-093): q(y) = s·forma(y) − w·b, con w
+     la carga uniforme mayorada (zapata, relleno y sobrecargas: la misma `net_load` del caso), b el ancho de la franja y
+     s tal que ∫q dy = F de la columna. Con la forma uniforme es F/B, como antes; donde la presión baja o se anula, la
+     carga uniforme manda y aparece el momento negativo. Se revisa además, en cada voladizo, la sección del mayor momento
+     negativo (64 puntos entre la cara y el borde) si no está en la cara. Sin barras superiores transversales, el
+     negativo es de concreto simple en el ancho de la franja (D-072); si el nivel sísmico no lo permite, es FAIL.
+  2. Diagramas: la envolvente de todos los casos mayorados (máximo y mínimo en cada punto) con el caso de cada extremo.
+- **Implementación:**
+  - `combined_columns.strip_load` y `strip_cantilever` (franja), `flexure.plain_strip_check` (concreto simple con el ancho
+    de la franja). Cada sección de la viga larga y de las franjas lleva en su nota el signo del momento físico ("momento
+    positivo" o "momento negativo"); la memoria separa por él (y por "concreto simple" en el nombre) los capítulos
+    "momento positivo" y "momento negativo" de la viga larga y de la dirección transversal; si un signo no aparece, lo
+    dice.
+  - `domain/footing/combined_diagrams.py`: envolventes con las funciones de las verificaciones (sin fórmulas nuevas):
+    M(x) y V(x) de la viga larga (con el salto en el eje de cada columna), los voladizos de cada franja y, en la T
+    invertida, las aletas por metro en la sección x que gobierna cada caso. El motor los calcula, `resultado.json` los
+    trae en `combined_footings[].diagrams` y `figures.diagram_figures` los dibuja en
+    `diagrama_<zapata>_longitudinal.svg` y `diagrama_<zapata>_transversal.svg`; la memoria (texto y PDF) los muestra en el
+    capítulo "Diagramas de momento y cortante" con la tabla de los extremos.
+  - Correcciones de paso: la verificación de concreto simple no permitido conserva la nota de la sección (antes quedaba
+    sin ubicación) y, entre verificaciones sin razón, gobierna la de mayor demanda.
+- **Control:** oráculo `derive_combined_columns.py` con la carga neta escrita aparte y el caso `negativo-transversal` (Mx
+  grande: la presión se anula hacia −Y y aparece el negativo de concreto simple); los diagramas cierran en cero en los
+  bordes libres y, en la cara de la columna, dan el momento de la sección revisada; en la sección que gobierna la
+  flexión positiva de la viga larga, la envolvente vale lo mismo que la revisión (el pico cae en el eje de la columna,
+  modelada como carga puntual, y no se revisa ahí: la norma revisa en las caras).
+- **Diferencias en los ejemplos:** `zapata_combinada.json` (los dos perfiles): 370 verificaciones PASS antes y después;
+  cambian 72 valores de las franjas transversales entre −3 % y +2 % (efecto de la carga neta con presión variable); no
+  aparece momento negativo. Huellas actualizadas de `zapata_combinada.json` y de las plantillas de combinadas y T
+  invertida (estas, con las plantillas y los Excel del commit).
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

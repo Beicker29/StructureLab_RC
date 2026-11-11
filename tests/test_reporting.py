@@ -175,9 +175,30 @@ def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> 
     assert svg.count("<circle") == 4 and svg.count('fill="#9aa4b2"') == 2  # las cuatro esquinas y las dos columnas
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     assert text.count("# Memoria de cálculo — Zapata combinada ZC1") == 1
-    for chapter in ("Viga en la dirección larga: momento flector", "Viga en la dirección larga: fuerza cortante",
-                    "Franjas transversales: momento flector", "Franjas transversales: fuerza cortante",
-                    "Revisión de cortante en dos direcciones (punzonamiento)", "Revisión de aplastamiento y pasadores"):
+    for chapter in ("Diagramas de momento y cortante", "Viga en la dirección larga: momento positivo",
+                    "Viga en la dirección larga: momento negativo", "Viga en la dirección larga: fuerza cortante",
+                    "Franjas transversales: momento positivo", "Franjas transversales: momento negativo",
+                    "Franjas transversales: fuerza cortante", "Revisión de cortante en dos direcciones (punzonamiento)",
+                    "Revisión de aplastamiento y pasadores"):
         assert chapter in text
+    # D-095: diagramas envolventes en la salida, en la memoria y como figuras. En la sección que gobierna la flexión positiva
+    # de la viga larga (una cara de columna), la envolvente vale lo mismo que esa revisión: la sección está entre las
+    # candidatas de todos los casos. El pico del diagrama cae en el eje de la columna (carga puntual), no en la cara.
+    for name in ("diagrama_ZC1_longitudinal.svg", "diagrama_ZC1_transversal.svg"):
+        assert tmp_path / name in report.files and "<polyline" in (tmp_path / name).read_text(encoding="utf-8")
+    diagrams = footing["diagrams"]
+    assert [envelope["title"] for envelope in diagrams["transverse"]] == ["Franja transversal de la columna C1",
+                                                                          "Franja transversal de la columna C2"]
+    longitudinal = diagrams["longitudinal"]
+    assert longitudinal["positions [mm]"][0] == -3500 and longitudinal["positions [mm]"][-1] == 3500
+    flexure = [check for check in footing["checks"] if check["name"] == "Flexion: resistencia"
+               and "momento positivo" in check["note"] and not check["note"].startswith("Franja")]
+    governing = max(flexure, key=lambda check: check["demand"])
+    x = governing["z [mm]"] - 3500
+    positions, values = longitudinal["positions [mm]"], longitudinal["M max [kN-m]"]
+    k = next(index for index in range(len(positions) - 1) if positions[index] <= x <= positions[index + 1])
+    at = values[k] + (values[k + 1] - values[k]) * (x - positions[k]) / (positions[k + 1] - positions[k])
+    assert at == pytest.approx(governing["demand"], rel=0.02)
+    assert max(values) >= governing["demand"]
     assert "Esfuerzos de punzonamiento en las esquinas del perímetro crítico" in text and "gobierna" in text
     assert "Cortante V3" not in text  # el eje débil no aplica a la zapata

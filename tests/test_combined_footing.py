@@ -11,10 +11,13 @@ from pydantic import ValidationError
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
+from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.checks import COMBINED_STRUCTURAL
 from structurelab_rc.domain.footing.combined_beam import beam_case, long_beam_checks, two_way_warning
-from structurelab_rc.domain.footing.combined_columns import column_checks
+from structurelab_rc.domain.footing.combined_columns import column_checks, strip_demands
+from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
 from structurelab_rc.domain.footing.loads import combined_factored_cases
+from structurelab_rc.domain.footing.mesh import mat_rows
 from structurelab_rc.domain.footing.service import BEARING, CONTACT, combined_service_checks
 from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING
 from structurelab_rc.domain.status import Status
@@ -338,11 +341,37 @@ def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_pat
         return [(c.name, c.status, c.case, c.demand, c.capacity, c.values, c.z, c.note) for c in checks if c.member == member]
 
     assert own(along_x["id"]) and own(along_x["id"]) == own("ZCY")
+    overlapping = json.loads(json.dumps(along_y))
+    overlapping["columns"][1]["y"] = overlapping["columns"][0]["y"] + 200.0
+    with pytest.raises(ValueError, match=r"se traslapan a lo largo de la viga \(dirección principal Y global\)"):
+        CombinedFooting.model_validate(overlapping)
     report_file(path, tmp_path / "salida")
     results = json.loads((tmp_path / "salida" / "resultado.json").read_text(encoding="utf-8"))
     geometries = {footing["id"]: footing["geometry [mm]"] for footing in results["combined_footings"]}
     assert "principal_direction" not in geometries[along_x["id"]] and geometries["ZCY"]["principal_direction"] == "y"
     assert (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8").count("Dirección principal (viga) en la Y global") == 1
+
+
+def test_diagrams_close_at_the_free_edges_and_match_the_strip_faces() -> None:
+    """D-095: la envolvente de la viga larga y la de cada voladizo de franja valen cero en los bordes libres; en la cara de
+    la columna, el diagrama transversal da el momento de la sección revisada (strip_demands)."""
+    project = Project.model_validate(json.loads(EXAMPLE.read_text(encoding="utf-8")))
+    footing, soil = project.combined_footings[0], project.soil
+    assert soil is not None
+    basis = Basis(PROFILES[project.profile], project.materials, BARS, project.seismic.level)
+    cases, _ = combined_factored_cases(footing, soil)
+    longitudinal, transverse = combined_diagrams(basis, footing, soil, cases)
+    scale = max(map(abs, (*longitudinal.moment_max, *longitudinal.moment_min)))
+    for values in (longitudinal.moment_max, longitudinal.moment_min):
+        assert values[0] == pytest.approx(0.0, abs=1e-9 * scale) and values[-1] == pytest.approx(0.0, abs=1e-6 * scale)
+    depth = mat_rows(footing, footing.bottom, BARS)["y"].depth
+    for index, (column, envelope) in enumerate(zip(footing.columns, transverse, strict=True)):
+        (first, last), (second, _) = envelope.segments
+        assert envelope.moment_max[first] == 0.0 and envelope.shear_max[first] == 0.0  # borde −Y
+        faces = [max(moment for y, moment, _, label in strip_demands(footing, pressure, column,
+                                                                     (column_vertical(footing, soil, column, loads[index]), depth))[0]
+                     if label == "cara -Y") for pressure, loads in cases]
+        assert envelope.moment_max[last] == pytest.approx(max(faces), rel=1e-9)
 
 
 def _with_torsion_layers(layers: list[dict[str, Any]]) -> dict[str, Any]:

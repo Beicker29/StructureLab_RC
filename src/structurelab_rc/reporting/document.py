@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from structurelab_rc.domain.status import Status
-from structurelab_rc.reporting.figures import CORNERS, FIGURE_ASPECT, PRESSURE, corner_key, governing_pressure
+from structurelab_rc.reporting.figures import CORNERS, FIGURE_ASPECT, PRESSURE, corner_key, diagram_aspect, governing_pressure
 from structurelab_rc.reporting.glossary import PROFILE_NAMES, STATUS_TEXT, classify, describe, display, number, unit_of
 
 Block = dict[str, Any]
@@ -132,8 +132,10 @@ _FOOTING_LIMITATIONS = (
 _SOURCES = "Los factores φ, las capacidades y los numerales provienen del resultado de cada verificación."
 
 
-def _severity(check: dict[str, Any]) -> tuple[int, float]:
-    return _PRECEDENCE[check["status"]], check["ratio"] if check["ratio"] is not None else -1.0
+def _severity(check: dict[str, Any]) -> tuple[int, float, float]:
+    """Estado, razón y, entre las que no tienen razón (por ejemplo un concreto simple no permitido), la mayor demanda."""
+    return (_PRECEDENCE[check["status"]], check["ratio"] if check["ratio"] is not None else -1.0,
+            abs(check["demand"]) if check["ratio"] is None and check.get("demand") is not None else 0.0)
 
 
 def governing(items: Iterable[Located]) -> dict[str, Located]:
@@ -659,9 +661,55 @@ def _torsion_layers_text(layers: list[dict[str, Any]]) -> str:
     return "; ".join(texts)
 
 
-def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None) -> list[Block]:
+def _negative(item: Located) -> bool:
+    """Verificación del momento negativo (D-095): su sección lo dice en la nota, o es de concreto simple (cara superior)."""
+    check = item[1]
+    return "momento negativo" in (check["note"] or "") or "concreto simple" in check["name"]
+
+
+def _flexure_by_sign(number_text: str, items: list[Located], negative: bool, full: bool) -> list[Block]:
+    """La revisión del momento de un signo; si ningún caso lo produce, lo dice (D-095)."""
+    own = [item for item in items if _negative(item) == negative]
+    if not any(classify(check["name"])[0] == "flexure" for _, check in own):
+        sign = "negativo (tracción en la cara superior)" if negative else "positivo (tracción en la cara inferior)"
+        return [{"kind": "p", "text": f"No aplica: ningún caso mayorado produce momento {sign} en las secciones revisadas."}]
+    return _chapter("flexure", number_text, own, full)
+
+
+_EXTREMES = {"M+": ("Momento positivo máximo", "kN·m"), "M-": ("Momento negativo máximo", "kN·m"),
+             "V+": ("Cortante máximo", "kN"), "V-": ("Cortante mínimo", "kN")}
+
+
+def _diagrams(footing: dict[str, Any], files: tuple[Path, Path] | None) -> list[Block]:
+    """Diagramas envolventes de momento y cortante (D-095) y la tabla de sus extremos con el caso y la posición."""
+    diagrams = footing.get("diagrams")
+    if not diagrams:
+        return [{"kind": "p", "text": "No aplica: la zapata no tiene casos mayorados en equilibrio."}]
+    blocks: list[Block] = [{"kind": "p", "text": "Envolvente de los casos mayorados: en cada posición, el mayor y el menor valor "
+                                                 "entre todos los casos. M > 0 tracciona la cara inferior; V es el del cuerpo "
+                                                 "libre a la izquierda (desde −X en la dirección larga y desde −Y en la "
+                                                 "transversal). Posiciones desde el centroide de la base."}]
+    figures = (None, None) if files is None else files
+    for title, envelopes, figure in (("Dirección larga (principal)", [diagrams["longitudinal"]], figures[0]),
+                                     ("Dirección transversal", diagrams["transverse"], figures[1])):
+        blocks.append({"kind": "h2", "text": title})
+        if figure is not None:
+            blocks.append({"kind": "image", "path": str(figure), "aspect": diagram_aspect(2 * len(envelopes)),
+                           "caption": f"Diagramas de momento y cortante, {title.lower()}"})
+        for envelope in envelopes:
+            per_metre = " por metro" if envelope["per_metre"] else ""
+            rows = [[_EXTREMES[item["quantity"]][0], f"{number(item['value'], _EXTREMES[item['quantity']][1])} "
+                     f"{_EXTREMES[item['quantity']][1]}{per_metre}", number(item["position [mm]"], "mm"), item["case"]]
+                    for item in envelope["extremes"]]
+            blocks.append({"kind": "table", "headers": [envelope["title"], "Valor", "Posición (mm)", "Caso"], "rows": rows})
+    return blocks
+
+
+def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None,
+                      diagrams: tuple[Path, Path] | None = None) -> list[Block]:
     """Memoria de una zapata combinada (D-080 a D-083): la viga larga y las franjas transversales con las verificaciones de
-    vigas, el punzonamiento con los esfuerzos de cada esquina, el desarrollo, el aplastamiento y los pasadores."""
+    vigas, el momento positivo y el negativo por separado y sus diagramas envolventes (D-095), el punzonamiento con los
+    esfuerzos de cada esquina, el desarrollo, el aplastamiento y los pasadores."""
     items: list[Located] = [(_combined_where(check), check) for check in footing["checks"]]
     strips = [item for item in items if item[1]["note"].startswith(("Franja", "Aleta"))]
     inverted = bool(footing["geometry [mm]"].get("beam"))
@@ -678,12 +726,15 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
         ("Propiedades geométricas, columnas, suelo y armado", lambda _: _combined_geometry(results, footing)),
         ("Solicitaciones", lambda _: _combined_demands(footing, figure)),
+        ("Diagramas de momento y cortante", lambda _: _diagrams(footing, diagrams)),
         (_CHAPTER_TITLES["geotechnical"], lambda n: _chapter("geotechnical", n, others, full)),
         (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
-        ("Viga en la dirección larga: momento flector", lambda n: _chapter("flexure", n, beam, full)),
+        ("Viga en la dirección larga: momento positivo", lambda n: _flexure_by_sign(n, beam, False, full)),
+        ("Viga en la dirección larga: momento negativo", lambda n: _flexure_by_sign(n, beam, True, full)),
         ("Viga en la dirección larga: fuerza cortante", lambda n: _chapter("shear", n, beam, full)),
         ("Viga en la dirección larga: torsión", lambda n: _chapter("torsion", n, beam, full)),
-        (f"{across}: momento flector", lambda n: _chapter("flexure", n, strips, full)),
+        (f"{across}: momento positivo", lambda n: _flexure_by_sign(n, strips, False, full)),
+        (f"{across}: momento negativo", lambda n: _flexure_by_sign(n, strips, True, full)),
         (f"{across}: fuerza cortante", lambda n: _chapter("shear", n, strips, full)),
         *([] if inverted else [(_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full),
                                                                         *_punching_corners(others), *_beam_moments(footing)])]),
@@ -695,7 +746,8 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
     return _assemble(head, chapters)
 
 
-def report_documents(results: dict[str, Any], *, full: bool = False, figures: dict[str, Path] | None = None) -> list[list[Block]]:
+def report_documents(results: dict[str, Any], *, full: bool = False, figures: dict[str, Path] | None = None,
+                     diagrams: dict[str, tuple[Path, Path]] | None = None) -> list[list[Block]]:
     """Una memoria por elemento (vigas y luego zapatas); con la entrada inválida, una memoria corta de validación."""
     if "project" not in results:
         validation = results["validation"]
@@ -706,6 +758,6 @@ def report_documents(results: dict[str, Any], *, full: bool = False, figures: di
     documents = [beam_document(results, member, full) for member in results["members"]]
     documents += [footing_document(results, footing, full, (figures or {}).get(footing["id"]))
                   for footing in results.get("footings", [])]
-    documents += [combined_document(results, footing, full, (figures or {}).get(footing["id"]))
+    documents += [combined_document(results, footing, full, (figures or {}).get(footing["id"]), (diagrams or {}).get(footing["id"]))
                   for footing in results.get("combined_footings", [])]
     return documents
