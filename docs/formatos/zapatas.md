@@ -163,6 +163,7 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 | `design.milp_time_limit_s` | s | Límite de tiempo del MILP (por f'c con `milp`; por solución con `milp_iter`; por defecto 120). |
 | `design.iter_max` | - | Con `milp_iter`: iteraciones por f'c (por defecto 10). |
 | `design.iter_time_limit_s` | s | Con `milp_iter`: tiempo por f'c (por defecto 600). |
+| `curve.n` | - | Solo en el ejemplo de la curva costo-N (`curva_*.json`, D-096): los valores de N, como lista o como texto (`"1-6"`, `"2,4,6"`, `"1-4,8"`). Con `curve`, `run` corre la curva en lugar del diseño; `typology-curve --n` lo reemplaza. |
 
 Cada tipología se diseña con la planta (la primera viable y dos más), el espesor y las mallas de menor costo que aprueban
 todas las verificaciones (D-069, D-076). Los tramos de la tabla usan el menor espesor con solución; los diseños

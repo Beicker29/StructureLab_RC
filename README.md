@@ -22,6 +22,20 @@ Extras opcionales: `pdf` (fpdf2) y `cad` (ezdxf).
 
 ## Uso de la CLI
 
+Un solo comando por ejemplo (D-096): `run` reconoce el ejemplo por su contenido (proyecto de verificación, diseño por
+tipologías, curva costo-N o plantilla de ETABS, que lee sus Excel de `etabs_files`) y deja en
+`results/<perfil>/<elemento>/<ejemplo>/` el `resultado.json`, las memorias `memoria.txt` y `memoria.pdf` y las figuras.
+Con una carpeta, corre todos sus ejemplos:
+
+```console
+structurelab-rc run examples/nsr_10/zapatas/zapata_combinada.json
+structurelab-rc run examples/nsr_10/vigas/plantilla_vigas_etabs.json
+structurelab-rc run examples/nsr_10/zapatas/curva_tipologias.json
+structurelab-rc run examples
+```
+
+Los comandos de cada paso siguen disponibles:
+
 ```console
 structurelab-rc --version
 structurelab-rc catalog

@@ -15,11 +15,15 @@ from structurelab_rc.design.footing.typologies import Iteration, MilpInfo
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.engine import (
+    RUN_KINDS,
+    RunError,
+    RunPlan,
     design_footings,
     import_etabs,
     import_etabs_footings,
     profile_footings,
     report_file,
+    run_plan,
     typology_curve_file,
     validate_file,
     verify_file,
@@ -234,6 +238,57 @@ def _typology_curve(path: Path, output: Path, counts: list[int] | None, workers:
     return 0
 
 
+def _run_one(path: Path, output: Path | None, workers: int | None, full: bool) -> int:
+    """Un ejemplo de punta a punta (D-096): importa de ETABS si es una plantilla, diseña si es un diseño por tipologías y
+    deja en una sola carpeta resultado.json, memoria.txt, memoria.pdf y las figuras (o la curva costo-N)."""
+    try:
+        plan = run_plan(path, output)
+    except RunError as error:
+        print(error)
+        return 1
+    out = plan.output
+    print(f"Ejemplo: {path} ({RUN_KINDS[plan.kind]}); salida en {out}")
+    if plan.kind == "project":
+        return _report(path, out, full)
+    if plan.kind == "curve":
+        return _typology_curve(path, out, None, workers, None)
+    if plan.kind == "design":
+        return _design_footings(path, out, workers, False, None) or _report(out / "proyecto.json", out, full)
+    return _run_etabs(plan, workers, full)
+
+
+def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
+    """Plantilla de ETABS: importa sus Excel (etabs_files) y verifica el proyecto, o lo diseña si es de diseño."""
+    out = plan.output
+    imported = out / ("diseno.json" if plan.kind == "etabs_design" else "proyecto.json")
+    if plan.kind == "etabs_beams":
+        assert plan.workbook is not None
+        code = _import_etabs(plan.workbook, plan.path, imported)
+    else:
+        code = _import_etabs_footings(str(plan.service or "-"), str(plan.factored or "-"), plan.path, imported)
+    if code:
+        return code
+    if plan.kind == "etabs_design":
+        return _design_footings(imported, out, workers, False, None) or _report(out / "proyecto.json", out, full)
+    return _report(imported, out, full)
+
+
+def _run(target: Path, output: Path | None, workers: int | None, full: bool) -> int:
+    """Un ejemplo, o todos los de una carpeta (cada uno en su carpeta de salida; con --output, debajo de ella)."""
+    if not target.is_dir():
+        return _run_one(target, output, workers, full)
+    examples = sorted(path for path in target.rglob("*.json") if "results" not in path.parts)
+    codes = []
+    for path in examples:
+        own = None if output is None else output / path.parent.relative_to(target) / path.stem
+        print(f"\n=== {path}")
+        codes.append((path, _run_one(path, own, workers, full)))
+    print("\nResumen (0: cumple; 1: no cumple o error):")
+    for path, code in codes:
+        print(f"  {code}  {path}")
+    return 1 if any(code for _, code in codes) else 0
+
+
 def _tolerant_console() -> None:
     """Una consola que no tiene un carácter (por ejemplo, "≤" en cp1252 de Windows con la salida redirigida) lo reemplaza
     en lugar de interrumpir el comando cuando los resultados ya están escritos."""
@@ -277,6 +332,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     curve.add_argument("--n", type=_counts, help="valores de N, por ejemplo 1-12 o 2,4,6 (por defecto, de 1 a 12 o al numero de columnas)")
     curve.add_argument("--workers", type=int, help="procesos en paralelo (por defecto, los nucleos del equipo; 1: sin paralelo)")
     curve.add_argument("--method", choices=("dp", "milp", "milp_iter"), help="reemplaza design.method")
+    runner = commands.add_parser("run", help="corre un ejemplo de punta a punta (o todos los de una carpeta): resultado.json, "
+                                             "memorias PDF y TXT y figuras (D-096)")
+    runner.add_argument("target", type=Path, help="ejemplo JSON (proyecto, diseno, curva o plantilla de ETABS) o carpeta")
+    runner.add_argument("--output", type=Path, help="carpeta de salida (por defecto results/<perfil>/<elemento>/<nombre>)")
+    runner.add_argument("--workers", type=int, help="procesos en paralelo para el diseno y la curva")
+    runner.add_argument("--full", action="store_true", help="incluye en la memoria el detalle de todas las estaciones")
     reporter = commands.add_parser("report", help="verifica un proyecto y escribe resultado.json, memoria.txt y memoria.pdf")
     reporter.add_argument("project", type=Path, help="ruta del archivo JSON")
     reporter.add_argument("--output", type=Path, required=True, help="carpeta de salida, por ejemplo results/mi_proyecto")
@@ -284,6 +345,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     commands_by_name: dict[str, Callable[[], int]] = {
         "report": lambda: _report(args.project, args.output, args.full),
+        "run": lambda: _run(args.target, args.output, args.workers, args.full),
         "design-footings": lambda: _design_footings(args.project, args.output, args.workers, args.profile, args.method),
         "typology-curve": lambda: _typology_curve(args.project, args.output, args.n, args.workers, args.method),
         "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output),

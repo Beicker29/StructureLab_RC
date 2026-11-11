@@ -147,7 +147,7 @@ def build_footing_project(
     footings = [{"id": f"{joint.group}-{joint.label}", **bases[joint.group], "loads": joint.loads} for joint in joints
                 if joint.group in isolated]
     combined = _combined_footings(template, [joint for joint in joints if joint.group not in isolated])
-    project = template.model_dump(mode="json", exclude={"load_factors", "footings", "combined_footings"})
+    project = template.model_dump(mode="json", exclude={"load_factors", "footings", "combined_footings", "etabs_files"})
     if footings:
         project["footings"] = footings
     if combined:
@@ -165,6 +165,6 @@ def build_footing_design_project(
     sections = {str(index): group for index, group in enumerate(template.columns)}
     columns = [{"id": joint.label, "cx": sections[joint.group].cx, "cy": sections[joint.group].cy, "loads": joint.loads}
                for joint in joints]
-    project = template.model_dump(mode="json", exclude={"load_factors", "columns"})
+    project = template.model_dump(mode="json", exclude={"load_factors", "columns", "etabs_files"})
     project["columns"] = columns
     return project, _summary(columns, skipped)

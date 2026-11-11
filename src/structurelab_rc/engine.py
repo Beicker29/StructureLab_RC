@@ -46,6 +46,69 @@ from structurelab_rc.reporting.text import render_text
 from structurelab_rc.setup import load_engine
 
 
+class RunError(Exception):
+    """`run` no puede preparar el ejemplo: el archivo no se lee o la plantilla no declara sus Excel."""
+
+
+RUN_KINDS = {"project": "proyecto de verificación", "design": "diseño por tipologías", "curve": "curva costo-N",
+             "etabs_beams": "plantilla de vigas de ETABS", "etabs_footings": "plantilla de zapatas de ETABS",
+             "etabs_design": "plantilla de diseño de zapatas de ETABS"}
+
+
+@dataclass(frozen=True)
+class RunPlan:
+    """Lo que `run` hace con un ejemplo (D-096): su tipo, la carpeta de salida y los Excel de ETABS ya resueltos."""
+
+    kind: str
+    path: Path
+    output: Path
+    workbook: Path | None = None
+    service: Path | None = None
+    factored: Path | None = None
+
+
+def default_output(path: Path) -> Path:
+    """results/<perfil>/<elemento>/<nombre>/ para un ejemplo de examples/<perfil>/<elemento>/ (D-058), junto a la carpeta
+    examples; results/<nombre>/ en la carpeta actual para cualquier otro archivo."""
+    parts = path.resolve().parts
+    if "examples" in parts[:-1]:
+        index = len(parts) - 1 - parts[::-1].index("examples")
+        return Path(*parts[:index], "results", *parts[index + 1 : -1], path.stem)
+    return Path("results") / path.stem
+
+
+def run_plan(path: Path, output: Path | None = None) -> RunPlan:
+    """El tipo del ejemplo por su contenido (D-096): plantilla de ETABS (load_factors, o miembros con Unique Name) con sus
+    Excel en etabs_files (rutas relativas a la plantilla); diseño por tipologías (design y columns), curva costo-N si
+    trae curve; si no, un proyecto de verificación."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RunError(f"No se pudo leer {path}: {error}") from error
+    if not isinstance(data, dict):
+        raise RunError(f"{path} no es un objeto JSON")
+    out = output if output is not None else default_output(path)
+    files = data.get("etabs_files") or {}
+
+    def excel(key: str) -> Path | None:
+        value = files.get(key)
+        return None if value is None else (path.parent / value).resolve()
+
+    members = data.get("members") or []
+    if "load_factors" in data:
+        if not files:
+            raise RunError(f"La plantilla {path.name} no declara sus Excel de ETABS en etabs_files (D-096)")
+        return RunPlan("etabs_design" if "design" in data else "etabs_footings", path, out,
+                       service=excel("service"), factored=excel("factored"))
+    if any(isinstance(member, dict) and "etabs_unique_name" in member for member in members):
+        if "workbook" not in files:
+            raise RunError(f"La plantilla {path.name} no declara su Excel de ETABS en etabs_files.workbook (D-096)")
+        return RunPlan("etabs_beams", path, out, workbook=excel("workbook"))
+    if "design" in data and "columns" in data:
+        return RunPlan("curve" if "curve" in data else "design", path, out)
+    return RunPlan("project", path, out)
+
+
 def validate_file(path: Path) -> Check:
     try:
         project = load_project(path)
@@ -201,7 +264,12 @@ def typology_curve_file(
     if ctx is None:
         return None, validation
     columns = len(ctx.project.columns)
-    wanted = sorted(set(counts)) if counts else list(range(1, min(CURVE_MAX, columns) + 1))
+    if counts:
+        wanted = sorted(set(counts))
+    elif ctx.project.curve is not None:  # el ejemplo de la curva declara sus N (D-096)
+        wanted = sorted(ctx.project.curve.n)
+    else:
+        wanted = list(range(1, min(CURVE_MAX, columns) + 1))
     outside = [count for count in wanted if not 1 <= count <= columns]
     if outside:
         message = f"N debe estar entre 1 y el numero de columnas ({columns}): {', '.join(map(str, outside))}"

@@ -45,8 +45,29 @@ class TemplateMember(_Input):
         return self
 
 
+class BeamEtabsFiles(_Input):
+    """El Excel de ETABS de la plantilla de vigas, con la ruta relativa a la plantilla (D-096): `run` lo usa."""
+
+    workbook: str = Field(min_length=1)
+
+
+class FootingEtabsFiles(_Input):
+    """Los Excel de ETABS de una plantilla de zapatas, con rutas relativas a la plantilla (D-096): `run` los usa. Uno
+    puede faltar si ninguna zapata toma de ETABS cargas de ese tipo (D-084)."""
+
+    service: str | None = Field(default=None, min_length=1)
+    factored: str | None = Field(default=None, min_length=1)
+
+    @model_validator(mode="after")
+    def _check_any(self) -> Self:
+        if self.service is None and self.factored is None:
+            raise ValueError("etabs_files debe declarar al menos un Excel (service o factored)")
+        return self
+
+
 class EtabsTemplate(_Input):
-    """combinations limita las combinaciones que se importan; si falta, se importan todas."""
+    """combinations limita las combinaciones que se importan; si falta, se importan todas. etabs_files: el Excel, para
+    `run` (D-096)."""
 
     description: str
     profile: str
@@ -54,6 +75,7 @@ class EtabsTemplate(_Input):
     materials: Materials
     combinations: tuple[str, ...] | None = None
     members: tuple[TemplateMember, ...] = Field(min_length=1)
+    etabs_files: BeamEtabsFiles | None = None
 
 
 class TemplateFooting(_Input):
@@ -171,6 +193,7 @@ class EtabsFootingTemplate(_Input):
     load_factors: dict[str, LoadFactors] = Field(min_length=1)
     footings: tuple[TemplateFooting, ...] = ()
     combined_footings: tuple[TemplateCombinedFooting, ...] = ()
+    etabs_files: FootingEtabsFiles | None = None
 
     @model_validator(mode="after")
     def _check_names(self) -> Self:
@@ -203,6 +226,7 @@ class EtabsFootingDesignTemplate(_Input):
     load_factors: dict[str, LoadFactors] = Field(min_length=1)
     design: dict[str, Any]
     columns: tuple[TemplateColumns, ...] = Field(min_length=1)
+    etabs_files: FootingEtabsFiles | None = None
 
     @model_validator(mode="after")
     def _check_names(self) -> Self:

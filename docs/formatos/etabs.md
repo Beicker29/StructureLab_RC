@@ -18,6 +18,7 @@ dos estados de carga distintos. P cambia de signo para que la compresión sea po
 | --- | --- | --- |
 | `description`, `profile`, `seismic`, `materials` | | Igual que en el proyecto (ver [vigas](vigas.md)). |
 | `combinations` | lista | Combinaciones a importar; si falta, se importan todas. |
+| `etabs_files.workbook` | texto | Ruta del Excel de ETABS, relativa a la plantilla (D-096). La usa `run`, que importa y verifica con un solo comando; `import-etabs` recibe el Excel como argumento. |
 | `members[].id` | texto | Identificador de la viga. |
 | `members[].type` | texto | `beam`. |
 | `members[].etabs_unique_name` | texto | Unique Name del elemento en ETABS. |
@@ -52,6 +53,7 @@ ETABS reporta la fuerza del apoyo sobre la estructura. Sobre la zapata actúa la
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `description`, `profile`, `seismic`, `materials`, `soil` | | Igual que en el proyecto (ver [zapatas](zapatas.md)). |
+| `etabs_files` | objeto | `{"service": ..., "factored": ...}`: rutas de los Excel de servicio y de mayoradas, relativas a la plantilla (D-096); uno puede faltar si ninguna zapata toma de ETABS cargas de ese tipo. Las usa `run`; `import-etabs-footings` recibe los Excel como argumentos. También en la plantilla de diseño por tipologías. |
 | `load_factors` | objeto | Para cada combinación de las dos tablas, `{"dead": ..., "live": ...}`: factores de carga muerta y viva, y `"seismic": true` si la combinación incluye sismo (D-070; por defecto `false`). Una combinación sin factores es un error de importación. |
 | `footings[].id` | texto | Nombre del tipo de zapata. |
 | `footings[].etabs_unique_names` | lista | Unique Name de los apoyos de ETABS que usan este tipo. |

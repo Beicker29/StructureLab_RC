@@ -1383,6 +1383,22 @@
   aparece momento negativo. Huellas actualizadas de `zapata_combinada.json` y de las plantillas de combinadas y T
   invertida (estas, con las plantillas y los Excel del commit).
 
+### D-096: un solo comando por ejemplo (`run`)
+
+- **Fecha:** 2026-11-11
+- **Decisión del usuario:** cada ejemplo del repositorio se corre con un solo comando que deja en una carpeta el
+  `resultado.json`, las memorias PDF y TXT y las figuras. Las plantillas de ETABS declaran sus Excel (`etabs_files`,
+  rutas relativas a la plantilla). El diseño por tipologías y la curva costo-N son ejemplos distintos, cada uno con su
+  archivo: la curva es `curva_tipologias.json`, el mismo proyecto de `diseno_tipologias.json` con un bloque
+  `curve: {"n": "1-6"}`.
+- **Implementación:** `engine.run_plan` reconoce el ejemplo por su contenido (plantilla de ETABS: `load_factors`, o
+  miembros con `etabs_unique_name`; diseño: `design` y `columns`, curva si trae `curve`; si no, proyecto de
+  verificación), resuelve los Excel y la salida por defecto `results/<perfil>/<elemento>/<ejemplo>/` (D-058). La CLI
+  `run` encadena los pasos que ya existían (importar, diseñar, `report`, `typology-curve`); con una carpeta corre todos
+  sus ejemplos y resume. Los comandos de cada paso siguen disponibles. Las importaciones no copian `etabs_files` al
+  proyecto. Los `LEEME` y el README quedan con un comando por ejemplo.
+- **Huella:** la curva (`curva_*.json`) no entra: repite el diseño para cada N y tarda minutos con un proceso.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

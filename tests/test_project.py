@@ -19,11 +19,11 @@ from structurelab_rc.setup import load_engine
 
 _ROOT = Path(__file__).parent.parent / "examples"
 _ALL = sorted(path for path in _ROOT.glob("*/*/*.json") if path.parts[-3] != "etabs")
-# Los ejemplos diseno_*.json son proyectos de diseño por tipologías (D-069) y las plantilla_*_etabs.json, plantillas de
-# importación de ETABS (D-073); el resto son proyectos de verificación.
+# Los ejemplos diseno_*.json y curva_*.json son proyectos de diseño por tipologías (D-069, D-096) y las
+# plantilla_*_etabs.json, plantillas de importación de ETABS (D-073); el resto son proyectos de verificación.
 TEMPLATES = [path for path in _ALL if path.name.startswith("plantilla_")]
-EXAMPLES = [path for path in _ALL if not path.name.startswith(("diseno_", "plantilla_"))]
-DESIGN_EXAMPLES = [path for path in _ALL if path.name.startswith("diseno_")]
+EXAMPLES = [path for path in _ALL if not path.name.startswith(("diseno_", "curva_", "plantilla_"))]
+DESIGN_EXAMPLES = [path for path in _ALL if path.name.startswith(("diseno_", "curva_"))]
 _LEVELS = {"ordinary": "DMI", "intermediate": "DMO", "special": "DES"}
 BARS = load_engine().bars
 BASE: dict[str, Any] = {

@@ -111,7 +111,7 @@ def build_project(template: EtabsTemplate, table: Table) -> tuple[dict[str, Any]
         members.append(data)
     if errors:
         raise EtabsImportError(tuple(errors))
-    project = template.model_dump(mode="json", by_alias=True, exclude={"combinations", "members"}, exclude_none=True)
+    project = template.model_dump(mode="json", by_alias=True, exclude={"combinations", "members", "etabs_files"}, exclude_none=True)
     project["members"] = members
     cases = tuple(sorted({station["case"] for member in members for station in member["stations"]}))
     summary = ImportSummary(len(members), sum(len(member["stations"]) for member in members), cases, skipped)

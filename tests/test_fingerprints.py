@@ -22,8 +22,9 @@ FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
 # (plantilla_*_etabs.json) leen los Excel compartidos de examples/etabs/<elemento>/; entran en la huella la de vigas y
 # las de zapatas combinadas (D-084) y en T invertida (D-093), que importan pocas zapatas (las de zapatas aisladas
 # importan 57 a 73 apoyos y su diseño tarda minutos).
+# La curva costo-N (curva_*.json, D-096) repite el diseño para cada N: tarda minutos con un proceso y no entra en la huella.
 EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*/*.json")
-                  if path.parts[-3] != "etabs" and not path.name.startswith("plantilla_"))
+                  if path.parts[-3] != "etabs" and not path.name.startswith(("plantilla_", "curva_")))
 ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/vigas/plantilla_vigas_etabs.json")))
 COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                               for name in ("plantilla_combinadas_etabs.json", "plantilla_t_invertida_etabs.json")

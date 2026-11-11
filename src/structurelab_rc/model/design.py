@@ -103,6 +103,27 @@ class DesignColumn(_Input):
     loads: tuple[FootingLoad, ...] = Field(min_length=1)
 
 
+class CurveSettings(_Input):
+    """La curva costo–N (D-078) como ejemplo propio (D-096): los valores de N, como lista o como texto "1-6", "2,4,6" o
+    "1-4,8"."""
+
+    n: tuple[PositiveInt, ...] = Field(min_length=1)
+
+    @field_validator("n", mode="before")
+    @classmethod
+    def _ranges(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+        counts: set[int] = set()
+        for part in value.split(","):
+            low, _, high = part.strip().partition("-")
+            try:
+                counts.update(range(int(low), int(high or low) + 1))
+            except ValueError as error:
+                raise ValueError(f"valores de N no validos: {value}") from error
+        return tuple(sorted(counts))
+
+
 class FootingDesignProject(_Input):
     description: str
     profile: str
@@ -111,6 +132,7 @@ class FootingDesignProject(_Input):
     soil: Soil
     design: FootingDesign
     columns: tuple[DesignColumn, ...] = Field(min_length=1)
+    curve: CurveSettings | None = None  # solo el ejemplo de la curva costo–N (D-096)
 
     @model_validator(mode="after")
     def _check(self) -> Self:

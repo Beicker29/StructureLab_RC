@@ -1,5 +1,6 @@
 {
   "description": "Plantilla de importación de una zapata combinada en T invertida (D-093) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx': ZT-1 toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos (Unique Name 15 y 1659). Viga de 1000 × 1700 mm sobre una zarpa de 3600 × 600 mm. DATOS DE EJEMPLO: dimensiones, posiciones, columnas, armado, suelo, relleno y sobrecargas son supuestos.",
+  "etabs_files": {"service": "../../etabs/zapatas/Joint Reactions - Servicio.xlsx", "factored": "../../etabs/zapatas/Joint Reactions - Ultimas.xlsx"},
   "profile": "aci-318-25",
   "seismic": {
     "level": "special",

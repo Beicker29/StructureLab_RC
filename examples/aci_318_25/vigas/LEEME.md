@@ -12,13 +12,25 @@ Verificación de vigas según ACI CODE-318-25. Los campos de entrada y de salida
 
 ## Cómo correrlos
 
+Un solo comando por ejemplo (D-096). Cada uno deja en `results/aci_318_25/vigas/<ejemplo>/` el `resultado.json` y las
+memorias `memoria.txt` y `memoria.pdf`. La plantilla de ETABS lee su Excel de `etabs_files` (ruta relativa a la
+plantilla), se importa sola y deja además el `proyecto.json` importado.
+
 ```console
-structurelab-rc verify examples/aci_318_25/vigas/viga_t.json
-structurelab-rc report examples/aci_318_25/vigas/viga_t.json --output results/aci_318_25/vigas/viga_t
-structurelab-rc report examples/aci_318_25/vigas/viga_alta.json --output results/aci_318_25/vigas/viga_alta
-structurelab-rc import-etabs "examples/etabs/vigas/Element Forces - Beams.xlsx" examples/aci_318_25/vigas/plantilla_vigas_etabs.json --output results/aci_318_25/vigas/etabs.json
-structurelab-rc report results/aci_318_25/vigas/etabs.json --output results/aci_318_25/vigas/etabs
+structurelab-rc run examples/aci_318_25/vigas/plantilla_vigas_etabs.json
+structurelab-rc run examples/aci_318_25/vigas/viga_alta.json
+structurelab-rc run examples/aci_318_25/vigas/viga_rectangular.json
+structurelab-rc run examples/aci_318_25/vigas/viga_t.json
 ```
+
+Todos los ejemplos de esta carpeta, o los de todo el repositorio (cada uno en su carpeta de salida):
+
+```console
+structurelab-rc run examples/aci_318_25/vigas
+structurelab-rc run examples
+```
+
+Los comandos de cada paso (`import-etabs`, `verify`, `report`) siguen disponibles.
 
 ## Propio de este perfil
 
