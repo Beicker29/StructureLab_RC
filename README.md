@@ -108,6 +108,13 @@ las columnas. Escribe `proyecto.json`, un proyecto de verificación normal que `
 el proyecto de diseño. Por defecto (`design.method = "milp"`) una asignación óptima sobre el catálogo de la DP completa
 el diseño (D-075); requiere el extra `opt` (`pip install structurelab-rc[opt]`). `--method dp` usa solo la DP.
 
+### Supuestos de las zapatas
+
+- La presión del suelo es lineal y sin tracción bajo la zapata rígida (Bellos y Bakas, 2017).
+- El empuje pasivo del deslizamiento actúa solo sobre el espesor de la zapata; el pedestal no aporta pasiva (D-092).
+- No hay nivel freático: la presión, el contacto, la estabilidad y la revisión estructural se calculan sin subpresión
+  ni pesos sumergidos. Su implementación está pendiente en la [hoja de ruta](docs/ROADMAP.md) (D-092).
+
 ## Ejemplos y resultados
 
 - `examples/<perfil>/<elemento>/*.json` (`vigas`, `zapatas`): entradas válidas y documentadas, versionadas en Git. Los dos

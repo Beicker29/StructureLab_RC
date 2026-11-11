@@ -24,10 +24,10 @@ columnas (verificación, entrada desde ETABS), D-052 a D-087.
 
 ### Fase 2: geotecnia, estabilidad y concreto simple
 
-1. Empuje pasivo sobre el pedestal y suelo bajo nivel freático (D-070).
-2. Diseño por tipologías con apoyos en distintos niveles de cimentación (hoy todas usan el relleno y el pedestal del
-   bloque `design`; los Excel de ejemplo tienen 4 niveles).
-3. Excepción de viviendas de una o dos familias para el concreto simple en cimentaciones con sismo alto (D-072).
+1. Suelo bajo nivel freático: subpresión en la base, pesos sumergidos y pasiva con γ' (D-092). Antes de implementarlo,
+   consultar cómo se declara, qué revisiones afecta y con qué presión se compara qa. El pedestal no aporta pasiva por
+   decisión del usuario.
+2. Excepción de viviendas de una o dos familias para el concreto simple en cimentaciones con sismo alto (D-072).
 
 ### Fase 3: diseño (alcance de la Fase 4 de vigas)
 

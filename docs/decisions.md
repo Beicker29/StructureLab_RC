@@ -1263,6 +1263,22 @@
   B/ℓn, o null) y la memoria un aviso al comienzo y una limitación. El aviso no cambia el estado. El ejemplo ZC1
   (B = 2600, ℓn = 4475 mm) no avisa.
 
+### D-092: empuje pasivo sobre el pedestal y nivel freático
+
+- **Fecha:** 2026-11-11
+- **Decisión del usuario:**
+  1. El pedestal no aporta empuje pasivo: el pasivo del deslizamiento sigue actuando solo sobre el espesor h de la
+     zapata (D-070). Queda fuera de la hoja de ruta.
+  2. El nivel freático queda pendiente de implementar. Mientras tanto, la presión, el contacto, el deslizamiento, el
+     volcamiento y la revisión estructural se calculan sin agua (sin subpresión ni pesos sumergidos). Al implementarlo
+     se consultarán: cómo se declara (obligatorio con null por debajo de la base, u opcional), qué revisiones afecta
+     (solo las geotécnicas o también la estructural, con el factor de carga de la subpresión) y si qa se compara con la
+     presión efectiva.
+- **Reportado en:** las limitaciones de las memorias de zapatas aisladas y combinadas, el README y la hoja de ruta
+  (v3 Fase 2).
+- **Fuera del alcance (decisión del usuario):** el diseño por tipologías con apoyos en distintos niveles de cimentación
+  no se implementará en este repositorio; todas las zapatas del diseño usan el relleno y el pedestal del bloque `design`.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

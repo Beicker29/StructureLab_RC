@@ -99,6 +99,10 @@ _COMBINED_CONVENTIONS = (
     "dentro de bslab; no se suma al momento de la zapata y su parte negativa la debe tomar la viga de cimentación (D-087).",
 )
 _COMBINED_LIMITATIONS = (
+    "El pedestal no aporta empuje pasivo: el pasivo solo actúa sobre el espesor de la zapata (decisión del usuario, "
+    "D-092).",
+    "Nivel freático: falta implementación; la presión, el contacto, el deslizamiento y el volcamiento se calculan sin agua "
+    "(sin subpresión ni pesos sumergidos) (D-092).",
     "Torsión de compatibilidad (Tu reducido a φTcr) y reducción de Aℓ en la zona comprimida: falta implementación.",
     "Torsión: la prolongación (bt + d) del refuerzo, el desarrollo de Aℓ en los extremos y el gancho de 135° de los "
     "estribos cerrados no se verifican (D-088).",
@@ -111,7 +115,10 @@ _COMBINED_LIMITATIONS = (
     "Otras formas de zapata combinada y más de dos columnas: no cubiertas.",
 )
 _FOOTING_LIMITATIONS = (
-    "Empuje pasivo sobre el pedestal y deslizamiento con suelo bajo nivel freático: no cubiertos (D-070).",
+    "El pedestal no aporta empuje pasivo: el pasivo solo actúa sobre el espesor de la zapata (decisión del usuario, "
+    "D-092).",
+    "Nivel freático: falta implementación; la presión, el contacto, el deslizamiento y el volcamiento se calculan sin agua "
+    "(sin subpresión ni pesos sumergidos) (D-092).",
     "Momento negativo sin malla superior como concreto simple solo donde el perfil lo permite con el nivel sísmico; la "
     "excepción de viviendas de una o dos familias de hasta tres pisos no está implementada (D-072).",
     "Aplastamiento del lado de la columna, empalme de los pasadores y tracción en la interfaz: se verificarán con las "

@@ -105,7 +105,7 @@ def test_footing_memoir_has_its_fixed_chapters(tmp_path: Path) -> None:
                     "10. Revisión de aplastamiento y pasadores", "11. Índices DCR", "12. Notas y limitaciones"):
         assert f"## {chapter}" in text
     assert "Área de la base (A)" in text
-    assert "Empuje pasivo sobre el pedestal y deslizamiento con suelo bajo nivel freático: no cubiertos (D-070)." in text
+    assert "El pedestal no aporta empuje pasivo" in text and "Nivel freático: falta implementación" in text
     assert all("case" in check for check in results["footings"][0]["checks"])
 
 
