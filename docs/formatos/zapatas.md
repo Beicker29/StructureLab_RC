@@ -104,7 +104,8 @@ el mismo `soil` que las zapatas aisladas. Se verifican la parte geotécnica con 
 - la viga en la dirección larga con las verificaciones de vigas en sus secciones críticas (V3J.2, D-081): cada check
   lleva `z`, la posición desde el borde −X, y en `note` la sección; Vc y Av,min de cimentación; separación de 3h y
   450 mm;
-- por columna (V3J.3, D-082): el punzonamiento, la franja transversal (también con las verificaciones de vigas, con
+- por columna (V3J.3, D-082): el punzonamiento (y el del perímetro común si los de las dos columnas se traslapan,
+  D-086), la franja transversal (también con las verificaciones de vigas, con
   `z` desde el borde −Y y `note` "Franja transversal de la columna …, cara ±Y" o "a d de la cara ±Y"), el aplastamiento
   y los pasadores (`note` "Columna …"); la malla y fuera de las franjas (mínimo de losa y separación); el desarrollo de
   las barras x desde la sección de mayor momento de su signo y de las barras y de cada franja desde la cara de la

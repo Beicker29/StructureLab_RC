@@ -18,7 +18,7 @@
   },
   "examples/aci_318_25/zapatas/plantilla_combinadas_etabs.json": {
     "resultado.json": "cfe7b4680da487a32a79daf2b47c060aa204a328b29e5590fcf300dd92a743f9",
-    "memoria.txt": "ff3ed2be18e1081408afc73d20a7a205ddf88bef2ee1b2cbf86f7e6bc44a0b37"
+    "memoria.txt": "8d5aae4d5f0062c57334ff2a33d7b561dd92055e71e38980f8f26b9dcd08017f"
   },
   "examples/aci_318_25/zapatas/zapata_aislada.json": {
     "resultado.json": "e291cf7a1d02433b2deed76f751fb31958ae9d9568d82f3d0f291a9eff6e3e5a",
@@ -26,7 +26,7 @@
   },
   "examples/aci_318_25/zapatas/zapata_combinada.json": {
     "resultado.json": "53324a4b0c8f608f6652fb7791134cf4432faa8a64cc01a44cfb7bba87f663d0",
-    "memoria.txt": "b2143bbf1a87d8fe0aa861fde8a330340442cd68055da8d1bfe95317a4ecef67"
+    "memoria.txt": "3558035e974bd2274839786b000fc825d2e0a5e5a0f7c775fb94a18ffa8329ff"
   },
   "examples/nsr_10/vigas/plantilla_vigas_etabs.json": {
     "resultado.json": "6dd4462511a2379ec2f6883de2c4847e6f9dfb3a1f96da59ac496505d3cb7e3f",
@@ -47,7 +47,7 @@
   },
   "examples/nsr_10/zapatas/plantilla_combinadas_etabs.json": {
     "resultado.json": "0bbee3a6b73184af7a9fb664525de7ce78f5ed781cf3fbe10900f05c84738082",
-    "memoria.txt": "24eeca7a032d47b90aaa8df98136bab3126cc1cec34d685fab43f97065206825"
+    "memoria.txt": "896e122dfb849e2c638f827e9ead53e98b51af5bbd6d034597efe7def5e33608"
   },
   "examples/nsr_10/zapatas/zapata_aislada.json": {
     "resultado.json": "0b9a467e01043ed4df66f4ddbaf62c612bbba8f26798e30a55bd17910f01db25",
@@ -55,6 +55,6 @@
   },
   "examples/nsr_10/zapatas/zapata_combinada.json": {
     "resultado.json": "ce8f2733bc0fa87d40f48f5898cd1de81fb7744bc49bd78fb282a0ae349ecfb6",
-    "memoria.txt": "09da573adc2814096879db5b6e1a0b0021c257e47b1375ab3df03d5f73fc3058"
+    "memoria.txt": "01ecf5b2bc2453f1577c56ed0d20fe5e656884757bc4f0553b7f46b2832947aa"
   }
 }

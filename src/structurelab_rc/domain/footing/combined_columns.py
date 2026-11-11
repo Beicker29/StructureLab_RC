@@ -4,7 +4,8 @@ Acción de cada columna como carga neta equivalente (la misma que entra en la re
 F = `column_vertical` y momentos estáticos ∫x·q = F·x + My + H·Vx y ∫y·q = F·y − Mx + H·Vy, con H = h + pedestal.
 
 - Punzonamiento por columna: perímetro a d/2 recortado con la base y la carga que lo atraviesa, la acción de la columna
-  menos la carga neta de Bellos dentro del área crítica (`transferred_load`, la misma de la zapata aislada).
+  menos la carga neta de Bellos dentro del área crítica (`transferred_load`, la misma de la zapata aislada). Si los
+  perímetros de las dos columnas se traslapan, además el perímetro común (D-086).
 - Franja transversal bajo cada columna, de ancho columna + d/2 a cada lado (recortado con la base): la fuerza F de la
   columna repartida en el ancho B con la forma de la presión de Bellos en la x de la columna (si es nula, la integrada en
   el ancho de la franja y, si también, uniforme: D-085), en voladizo desde las caras ±Y. La franja se revisa con el
@@ -70,6 +71,42 @@ def _punching(basis: Basis, footing: CombinedFooting, soil: Soil, bottom: dict[s
             load = transferred_load(column_action(footing, soil, column, loads[index]), pressure, perimeter)
             result = two_way_shear(profile, materials, perimeter, (column.cx, column.cy, loaded), load)
             checks += punching_checks(basis, footing, punched, (result, load, pressure.case))
+    return checks + _group_punching(basis, footing, soil, (bottom, depth), cases)
+
+
+def _overlap(footing: CombinedFooting, depth: float) -> bool:
+    """Los perímetros críticos de las dos columnas (a d/2 de sus caras, sin recortar) se traslapan."""
+    first, second = footing.columns
+    apart_x = abs(first.x - second.x) >= (first.cx + second.cx) / 2 + depth
+    apart_y = abs(first.y - second.y) >= (first.cy + second.cy) / 2 + depth
+    return not (apart_x or apart_y)
+
+
+def _group_punching(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tuple[dict[str, BarRow], float],
+                    cases: Cases) -> list[Check]:
+    """Perímetro común de las dos columnas si sus perímetros se traslapan (ACI R13.2.7.2, NSR-10 CR15.5.2; D-086): el
+    menor rectángulo que contiene los dos perímetros, que es el perímetro a d/2 de la caja que contiene las dos columnas,
+    recortado con la base; la carga es la suma de las acciones de las dos columnas menos la carga neta dentro de él. Se
+    agrega a las revisiones individuales, que se conservan."""
+    bottom, depth = rows
+    if not _overlap(footing, depth):
+        return []
+    first, second = footing.columns
+    left = min(first.x - first.cx / 2, second.x - second.cx / 2)
+    right = max(first.x + first.cx / 2, second.x + second.cx / 2)
+    low = min(first.y - first.cy / 2, second.y - second.cy / 2)
+    high = max(first.y + first.cy / 2, second.y + second.cy / 2)
+    size, centre = (right - left, high - low), ((left + right) / 2, (low + high) / 2)
+    bounds = ((-footing.lx / 2, -footing.ly / 2), (footing.lx / 2, footing.ly / 2))
+    perimeter = critical_perimeter(centre, *size, depth, bounds)
+    punched = PunchedColumn(*size, *centre, bottom, f"Columnas {first.id} y {second.id} (perimetro comun)")
+    checks = []
+    for pressure, loads in cases:
+        actions = [column_action(footing, soil, column, load) for column, load in zip(footing.columns, loads, strict=True)]
+        total = (actions[0][0] + actions[1][0], actions[0][1] + actions[1][1], actions[0][2] + actions[1][2])
+        load = transferred_load(total, pressure, perimeter)
+        result = two_way_shear(basis.profile, basis.materials, perimeter, (*size, basis.profile.footing.punching_size_factor()), load)
+        checks += punching_checks(basis, footing, punched, (result, load, pressure.case))
     return checks
 
 

@@ -1102,6 +1102,23 @@
   con Mx para que la forma en Y no sea uniforme, y columna con toda la franja sin contacto); la mutación que salta el paso
   intermedio se detecta. Sin momento en un lado de la franja, la capacidad biaxial no está definida y no se compara.
 
+### D-086: punzonamiento con perímetros críticos traslapados (Etapa 2.2)
+
+- **Fecha:** 2026-11-10
+- **Referencias:** ACI 318-25 R13.2.7.2 y NSR-10 CR15.5.2 (comentario, no articulado): si los perímetros de cortante se
+  traslapan, b0 es la porción de la menor envolvente de los perímetros individuales que resiste el cortante del grupo.
+- **Decisión del usuario:**
+  1. Envolvente: el menor rectángulo que contiene los dos perímetros, recortado con la base. Es el perímetro a d/2 de la
+     caja que contiene las dos columnas; exacto con las columnas alineadas en Y y el mismo cy, un poco mayor que la
+     envolvente convexa si no.
+  2. Se agrega la revisión del grupo y se conservan las individuales (cumple solo si pasan todas).
+- **Reglas:** hay traslapo si los perímetros sin recortar se cruzan en X y en Y. Carga: la suma de las acciones de las
+  dos columnas menos la carga neta de Bellos dentro de la envolvente, con los momentos respecto a su centroide; β, el de
+  la caja de las dos columnas; αs, por los lados fuera de la base; esfuerzo en cada esquina como en D-083. Nota del
+  check: "Columnas C1 y C2 (perimetro comun)".
+- **Oráculo:** caso `columnas-juntas` (350 mm entre caras, menos que d), donde el grupo gobierna; las mutaciones que
+  omiten el grupo o una de las columnas en su carga se detectan.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

@@ -82,13 +82,48 @@ def _action(f: dict, beam: dict, index: int, case: str) -> tuple[float, float, f
             force * column["y"] - load["Mx_kNm"] * 1e6 + height * load["Vy_kN"] * 1e3)
 
 
-def _punching(folder: str, f: dict, beam: dict, index: int, case: str) -> list[dict]:
+def _depth(f: dict) -> float:
     rows = _bottom_rows(f)
-    depth = (rows["x"]["depth"] + rows["y"]["depth"]) / 2
-    hx, hy = f["lx"] / 2, f["ly"] / 2
+    return (rows["x"]["depth"] + rows["y"]["depth"]) / 2
+
+
+def _punching(folder: str, f: dict, beam: dict, index: int, case: str) -> list[dict]:
     c = f["columns"][index]
-    left, right = c["x"] - (c["cx"] + depth) / 2, c["x"] + (c["cx"] + depth) / 2
-    bottom, top = c["y"] - (c["cy"] + depth) / 2, c["y"] + (c["cy"] + depth) / 2
+    depth = _depth(f)
+    extents = (c["x"] - (c["cx"] + depth) / 2, c["x"] + (c["cx"] + depth) / 2, c["y"] - (c["cy"] + depth) / 2,
+               c["y"] + (c["cy"] + depth) / 2)
+    return _punch(folder, f, beam, {"extents": extents, "c": (c["cx"], c["cy"]), "centre": (c["x"], c["y"]),
+                                    "total": _action(f, beam, index, case), "where": f"Columna {c['id']}", "case": case})
+
+
+def _group(folder: str, f: dict, beam: dict, case: str) -> list[dict]:
+    """Perímetro común (D-086) si los perímetros individuales se traslapan: el menor rectángulo que contiene los dos
+    perímetros (calculado aquí desde sus bordes); el área cargada es ese rectángulo menos d/2 por lado."""
+    depth = _depth(f)
+    boxes = [(c["x"] - (c["cx"] + depth) / 2, c["x"] + (c["cx"] + depth) / 2, c["y"] - (c["cy"] + depth) / 2,
+              c["y"] + (c["cy"] + depth) / 2) for c in f["columns"]]
+    (l1, r1, b1, t1), (l2, r2, b2, t2) = boxes
+    if r1 <= l2 or r2 <= l1 or t1 <= b2 or t2 <= b1:
+        return []
+    extents = (min(l1, l2), max(r1, r2), min(b1, b2), max(t1, t2))
+    size = (extents[1] - extents[0] - depth, extents[3] - extents[2] - depth)
+    centre = ((extents[0] + extents[1]) / 2, (extents[2] + extents[3]) / 2)
+    actions = [_action(f, beam, index, case) for index in range(2)]
+    total = tuple(a + b for a, b in zip(*actions, strict=True))
+    names = " y ".join(c["id"] for c in f["columns"])
+    return _punch(folder, f, beam, {"extents": extents, "c": size, "centre": centre, "total": total,
+                                    "where": f"Columnas {names} (perimetro comun)", "case": case})
+
+
+def _punch(folder: str, f: dict, beam: dict, spec: dict) -> list[dict]:
+    """Punzonamiento de un área cargada: extents = bordes del perímetro sin recortar, c = dimensiones del área cargada,
+    centre, total = acción (F, ∫x·q, ∫y·q), where y case."""
+    rows = _bottom_rows(f)
+    depth = _depth(f)
+    hx, hy = f["lx"] / 2, f["ly"] / 2
+    left, right, bottom, top = spec["extents"]
+    case, where = spec["case"], spec["where"]
+    cx, cy = spec["c"]
     x0, x1, y0, y1 = max(left, -hx), min(right, hx), max(bottom, -hy), min(top, hy)
     sides, outside = [], 0
     for present, side in ((bottom > -hy, ((x0, bottom), (x1, bottom))), (right < hx, ((right, y0), (right, y1))),
@@ -101,7 +136,7 @@ def _punching(folder: str, f: dict, beam: dict, index: int, case: str) -> list[d
     b0 = sum(lengths)
     xc = sum(size * (s[0] + e[0]) / 2 for size, (s, e) in zip(lengths, sides, strict=True)) / b0
     yc = sum(size * (s[1] + e[1]) / 2 for size, (s, e) in zip(lengths, sides, strict=True)) / b0
-    total = _action(f, beam, index, case)
+    total = spec["total"]
     inside = _S._net(beam["plane"], beam["w"], (x0, y0, x1, y1))
     vu = total[0] - inside[0]
     msx, msy = (total[1] - inside[1]) - xc * vu, (total[2] - inside[2]) - yc * vu
@@ -113,18 +148,17 @@ def _punching(folder: str, f: dict, beam: dict, index: int, case: str) -> list[d
                      key=lambda corner: (corner[1], corner[0]))
     stress = max(corner[2] for corner in corners)
     alpha = {0: 40.0, 1: 30.0, 2: 20.0}[outside]
-    beta = max(c["cx"], c["cy"]) / min(c["cx"], c["cy"])
+    beta = max(cx, cy) / min(cx, cy)
     if folder == "aci_318_25":
         vc = min(0.33, 0.17 + 0.33 / beta, 0.17 + 0.083 * alpha * depth / b0) * math.sqrt(FC)
     else:
         vc = min(0.17 * (1 + 2 / beta), 0.083 * (alpha * depth / b0 + 2), 0.33) * math.sqrt(FC)
-    where = f"Columna {c['id']}"
     checks = [{"name": "Punzonamiento", "case": case, "where": where, "status": "PASS" if stress <= PHI * vc else "FAIL",
                "demand": stress, "capacity": PHI * vc, "corners": corners}]
     if folder == "aci_318_25" and vuv > PHI * 0.17 * math.sqrt(FC):
         for direction in ("x", "y"):
             row = rows[direction]
-            across, centre = (c["cy"], c["y"]) if direction == "x" else (c["cx"], c["x"])
+            across, centre = (cy, spec["centre"][1]) if direction == "x" else (cx, spec["centre"][0])
             bslab = across + 3 * f["h"]
             required = 5 * vuv * bslab * b0 / (PHI * alpha * FY)
             provided = sum(row["ab"] for p in row["positions"] if abs(p - centre) <= bslab / 2 + 1e-6)
@@ -408,6 +442,7 @@ def _expected(folder: str, f: dict, level: str) -> list[dict]:
     for case, beam in zip(cases, beams, strict=True):
         for index in range(len(f["columns"])):
             checks += _punching(folder, f, beam, index, case)
+        checks += _group(folder, f, beam, case)
     for index in range(len(f["columns"])):
         for case, beam in zip(cases, beams, strict=True):
             checks += _strip_checks(folder, f, beam, index, case)
@@ -467,6 +502,9 @@ CASES = [
     ("presion-nula-uniforme", "C1 en la zona sin presión y toda su franja sin contacto (carga uniforme F/B)",
      _footing([_column("C1", -2400.0, [_load("U1", 300.0, live=0.0)], dowels=None),
                _column("C2", 1800.0, [_load("U1", 2500.0, my=1500.0, live=0.0)], dowels=None)])),
+    ("columnas-juntas", "columnas a 350 mm de cara a cara (menos que d): perímetros traslapados y perímetro común",
+     _footing([_column("C1", -400.0, [_load("U1", 1500.0, my=60.0)]), _column("C2", 450.0, [_load("U1", 1800.0, mx=80.0)], cx=500.0)],
+              lx=3600.0, ly=2600.0)),
     ("delgada", "zapata delgada: punzonamiento, flexión y cortante de las franjas no cumplen; C2 grande, con A2/A1 < 4",
      _footing([_column("C1", -1800.0, [_load("U1", 2200.0)]), _column("C2", 1800.0, [_load("U1", 2200.0)], cx=1000.0, cy=1000.0)],
               h=450.0)),

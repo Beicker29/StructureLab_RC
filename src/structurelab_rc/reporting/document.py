@@ -84,8 +84,9 @@ _COMBINED_CONVENTIONS = (
 _COMBINED_LIMITATIONS = (
     "Torsión por Vy y por columnas desplazadas en Y: falta implementación; en las franjas solo entran por la forma de la "
     "presión (D-080).",
-    "Punzonamiento de dos columnas cuyos perímetros críticos se traslapan: falta implementación (D-082). Si la presión es "
-    "nula en la línea de una columna, su franja usa la presión integrada en su ancho o, sin ella, la carga uniforme (D-085).",
+    "Si los perímetros de punzonamiento de las dos columnas se traslapan, se revisa además el perímetro común (D-086). Si "
+    "la presión es nula en la línea de una columna, su franja usa la presión integrada en su ancho o, sin ella, la carga "
+    "uniforme (D-085).",
     "Vigas de gran altura (ACI 9.9, NSR-10 C.11.7), otras formas de zapata combinada y más de dos columnas: no cubiertas.",
 )
 _FOOTING_LIMITATIONS = (
