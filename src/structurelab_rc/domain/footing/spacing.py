@@ -6,7 +6,9 @@ agregado (materials.max_aggregate) la verificación queda INCOMPLETE: no se supo
 """
 
 from structurelab_rc.domain.basis import Basis
+from structurelab_rc.domain.beam.geometry import placed_bars
 from structurelab_rc.domain.check import Check
+from structurelab_rc.domain.footing.combined_beam import long_beam_member, spread_bottom_layer
 from structurelab_rc.domain.footing.declared import PRINCIPAL, SECONDARY
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete
@@ -15,6 +17,7 @@ from structurelab_rc.model.footing import Footing
 from structurelab_rc.model.reinforcement import BarPosition, BarSpacing
 
 MIN_SPACING = "Separacion minima"
+_TOLERANCE = 1e-3  # mm
 
 
 def min_spacing_check(basis: Basis, member: str, label: str, bars: tuple[str, float]) -> Check:
@@ -61,28 +64,43 @@ def combined_min_spacing_checks(basis: Basis, footing: CombinedFooting) -> list[
         for direction, bars in (("x", footing.bottom.x), ("y", footing.bottom.y))]
     declared += [(f"band, columna {column.id}", (column.band.designation, column.band.spacing))
                  for column in footing.columns if column.band is not None]
+    declared += [(f"band superior, columna {column.id}", (column.band_top.designation, column.band_top.spacing))
+                 for column in footing.columns if column.band_top is not None]
     if footing.top is not None:
         declared += [(f"barras superiores, {directions[direction]}", (bars.designation, bars.spacing))
                      for direction, bars in (("x", footing.top.x), ("y", footing.top.y)) if bars is not None]
     if footing.beam is not None:
-        declared += _beam_layers(footing)
+        declared += _beam_layers(basis, footing)
     return [min_spacing_check(basis, footing.id, label, bars) for label, bars in declared]
 
 
-def _beam_layers(footing: CombinedFooting) -> list[tuple[str, tuple[str, float]]]:
-    """Capas de flexión de la viga de la T invertida (D-106): la menor separación entre barras vecinas de cada capa con
-    posiciones o separación declaradas (las repartidas entre las esquinas del estribo quedan con la regla de vigas)."""
-    assert footing.beam is not None
+def _beam_layers(basis: Basis, footing: CombinedFooting) -> list[tuple[str, tuple[str, float]]]:
+    """Capas de flexión de la viga de la T invertida (D-106, D-114): la menor separación entre barras vecinas de cada
+    capa, con las posiciones que se colocan: las declaradas, las de su separación o, si se declararon solo las barras,
+    las repartidas (la capa inferior en el ancho cubierto; las demás entre las esquinas del estribo, como en las vigas)."""
+    beam = footing.beam
+    assert beam is not None
+    member = long_beam_member(footing, basis.bars, basis.profile)
+    placed = placed_bars(member.stations[0].layout, member.section, basis.bars)
     out = []
-    for layer in footing.beam.layers:
-        if layer.role != "flexure":
-            continue
+    flexure = [layer for layer in beam.layers if layer.role == "flexure"]
+    highest = min(flexure, key=lambda layer: layer.depth)
+    for layer in flexure:
+        position = "inferior" if layer is beam.bottom_layer else ("superior" if layer is highest else "intermedia")
+        label = f"capa {position} a {layer.depth:.0f} mm de la viga"
         if isinstance(layer.bars, BarSpacing):
-            out.append((f"capa a {layer.depth:.0f} mm de la viga", (layer.bars.designation, layer.bars.spacing)))
+            out.append((label, (layer.bars.designation, layer.bars.spacing)))
             continue
-        xs = sorted(bar.x for bar in layer.bars if isinstance(bar, BarPosition))
+        if layer is beam.bottom_layer:
+            source = spread_bottom_layer(basis.profile, footing, basis.bars)
+            pairs = [(bar.designation, bar.x) for bar in source.bars if isinstance(bar, BarPosition)]
+        elif all(isinstance(bar, BarPosition) for bar in layer.bars):
+            pairs = [(bar.designation, bar.x) for bar in layer.bars if isinstance(bar, BarPosition)]
+        else:  # solo las barras: las posiciones de la regla de vigas, en la profundidad de la capa (la viga va volteada)
+            depth = footing.total_height - layer.depth
+            pairs = [(bar.designation, bar.x) for bar in placed if abs(bar.depth - depth) <= _TOLERANCE]
+        xs = sorted(x for _, x in pairs)
         gaps = [b - a for a, b in zip(xs, xs[1:], strict=False)]
         if gaps:
-            designation = next(bar.designation for bar in layer.bars if isinstance(bar, BarPosition))
-            out.append((f"capa a {layer.depth:.0f} mm de la viga", (designation, min(gaps))))
+            out.append((label, (pairs[0][0], min(gaps))))
     return out

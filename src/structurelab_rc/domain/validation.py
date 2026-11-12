@@ -116,18 +116,13 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], prof
     for column in footing.columns:
         if column.band is not None:
             yield from _bar_set_errors(f"el refuerzo transversal bajo la columna '{column.id}'", column.band, specs, where)
+        if column.band_top is not None:
+            yield from _bar_set_errors(f"el band superior de la columna '{column.id}'", column.band_top, specs, where)
         yield from _dowel_errors(column.dowels, specs, {**where, "column": column.id})
     if footing.skin is not None and footing.skin.designation not in specs:
         yield invalid_input(f"La barra '{footing.skin.designation}' del refuerzo superficial no esta en el catalogo", **where)
     if footing.stirrups is not None and footing.stirrups.designation not in specs:
         yield invalid_input(f"La barra '{footing.stirrups.designation}' de los estribos no esta en el catalogo", **where)
-    missing = sorted({name for layer in footing.torsion_layers for name in layer.designations()} - set(specs))
-    for name in missing:
-        yield invalid_input(f"La barra '{name}' de las capas de torsion no esta en el catalogo", **where)
-    if footing.torsion_layers and not missing and _catalogued(footing, specs):
-        # Las barras de Aℓ dentro del estribo de la viga larga, con la regla de las vigas (D-088).
-        member = long_beam_member(footing, list(specs.values()), profile)
-        yield from _bar_errors(member, member.stations[0], list(specs.values()))
     if footing.beam is not None:
         yield from _t_beam_errors(footing, specs, profile)
 

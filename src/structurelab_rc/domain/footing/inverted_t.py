@@ -42,7 +42,7 @@ from structurelab_rc.domain.footing.combined_columns import (
 )
 from structurelab_rc.domain.footing.connection import Support, bearing_checks, dowel_checks
 from structurelab_rc.domain.footing.loads import FactoredCase
-from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
+from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows
 from structurelab_rc.domain.plain_strength import plain_rectangular_moment
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, invalid_input
@@ -52,6 +52,8 @@ from structurelab_rc.model.footing import Soil
 
 # Las aletas trabajan en la dirección secundaria (D-101).
 FLEXURE = "Aleta: flexion (direccion secundaria)"
+FLEXURE_TOP = "Aleta: flexion, barras superiores (direccion secundaria)"  # momento negativo con top.y (D-114)
+DEVELOPMENT_TOP = "Desarrollo barras superiores, direccion secundaria (aletas)"
 PLAIN = "Aleta: concreto simple (cara superior)"
 SHEAR = "Aleta: cortante en una direccion (direccion secundaria)"
 STRAIN = "Aleta: deformacion neta de traccion (direccion secundaria)"
@@ -118,14 +120,14 @@ class Flanges:
 
     def _function(self, kind: str, side: float) -> Callable[[float], float]:
         def value(x: float) -> float:
-            if kind == "shear":
-                return self.shear(x, side)[0]
+            if kind == "shear":  # el mayor |V|: un cortante negativo de mayor magnitud también gobierna
+                return abs(self.shear(x, side)[0])
             return self.moment(x, side) * (-1.0 if kind == "negative" else 1.0)
         return value
 
     def governing(self, kind: str) -> tuple[float, float, float]:
-        """(x, valor, lado) del mayor momento positivo ("moment"), negativo ("negative", con signo positivo) o cortante a
-        d ("shear") de las dos aletas a lo largo de X."""
+        """(x, valor, lado) del mayor momento positivo ("moment"), negativo ("negative", con signo positivo) o |cortante| a
+        d ("shear", el mayor valor absoluto) de las dos aletas a lo largo de X."""
         options = []
         for side in (1.0, -1.0):
             x, value = _maximize(self._function(kind, side), -self.half, self.half)
@@ -137,28 +139,47 @@ def _side(side: float) -> str:
     return "+Y" if side > 0 else "-Y"
 
 
-def _flexure(basis: Basis, footing: CombinedFooting, row: BarRow, per_metre: float, flanges: Flanges) -> list[Check]:
+def _flange_flexure(basis: Basis, footing: CombinedFooting, layer: tuple[str, BarRow, float],
+                    given: tuple[float, str, str]) -> Check:
+    """Flexión de la aleta por metro: layer = (nombre, fila de barras a tracción, As por metro); given = (Mu por metro,
+    caso, nota). La fila trae su d desde la cara comprimida (inferior con momento negativo, superior con positivo)."""
     profile, materials = basis.profile, basis.materials
+    name, row, per_metre = layer
+    demand, case, note = given
     clause = profile.footing.clauses()["strength"]
+    strength = rectangular_strength(profile, materials, RectangularSection(STRIP, footing.h), (SteelLayer(row.depth, per_metre),))
+    if not isinstance(strength, MomentStrength):
+        return replace(check_from_errors(name, [strength]), clause=clause, member=footing.id, case=case)
+    return Check(name, Status.PASS if strength.design >= demand else Status.FAIL, clause=clause, demand=demand,
+                 capacity=strength.design, unit="N*mm", member=footing.id, case=case, note=note,
+                 values=(("phi", strength.phi), ("Mn", strength.nominal), ("b", STRIP), ("h", footing.h), ("d", row.depth),
+                         ("As", per_metre), ("fc", materials.fc), ("fy", materials.fy), ("a", strength.state.a)))
+
+
+def _flexure(basis: Basis, footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], flanges: Flanges) -> list[Check]:
+    """Momento positivo de las aletas con las barras y inferiores y negativo con las superiores de la zarpa (top.y,
+    D-114) o, sin ellas, de concreto simple (D-072)."""
+    row, top = rows
     case = flanges.pressure.case
     x, moment, side = flanges.governing("moment")
     checks = []
     if moment > _NEGLIGIBLE:
-        strength = rectangular_strength(profile, materials, RectangularSection(STRIP, footing.h), (SteelLayer(row.depth, per_metre),))
         note = f"Aleta {_side(side)}, cara de la viga en x = {x:.0f} mm, por metro"
-        if isinstance(strength, MomentStrength):
-            checks.append(Check(FLEXURE, Status.PASS if strength.design >= moment * STRIP else Status.FAIL, clause=clause,
-                                demand=moment * STRIP, capacity=strength.design, unit="N*mm", member=footing.id, case=case,
-                                values=(("phi", strength.phi), ("Mn", strength.nominal), ("b", STRIP), ("h", footing.h),
-                                        ("d", row.depth), ("As", per_metre), ("fc", materials.fc), ("fy", materials.fy),
-                                        ("a", strength.state.a)),
-                                note=note))
-        else:
-            checks.append(replace(check_from_errors(FLEXURE, [strength]), clause=clause, member=footing.id, case=case))
+        checks.append(_flange_flexure(basis, footing, (FLEXURE, row, _per_metre(row, footing.bottom.y.spacing)),
+                                      (moment * STRIP, case, note)))
     x, negative, side = flanges.governing("negative")
     if negative > _NEGLIGIBLE:
-        checks.append(_plain(basis, footing, negative * STRIP, (case, f"Aleta {_side(side)}, cara de la viga en x = {x:.0f} mm")))
+        if top is None or footing.top is None or footing.top.y is None:
+            checks.append(_plain(basis, footing, negative * STRIP, (case, f"Aleta {_side(side)}, cara de la viga en x = {x:.0f} mm")))
+        else:
+            note = f"Aleta {_side(side)}, cara de la viga en x = {x:.0f} mm, por metro, momento negativo"
+            checks.append(_flange_flexure(basis, footing, (FLEXURE_TOP, top, _per_metre(top, footing.top.y.spacing)),
+                                          (negative * STRIP, case, note)))
     return checks
+
+
+def _per_metre(row: BarRow, spacing: float) -> float:
+    return row.bar_area * STRIP / spacing
 
 
 def _plain(basis: Basis, footing: CombinedFooting, demand: float, location: tuple[str, str]) -> Check:
@@ -188,7 +209,7 @@ def _shear(basis: Basis, footing: CombinedFooting, row: BarRow, per_metre: float
         return replace(lam, name=SHEAR, member=footing.id, case=case)
     x, shear, side = flanges.governing("shear")
     moment = flanges.shear(x, side)[1]
-    vu, mu = max(shear, 0.0) * STRIP, abs(moment) * STRIP
+    vu, mu = shear * STRIP, abs(moment) * STRIP  # shear ya es |V| (governing)
     vc = profile.footing.one_way_concrete_shear(fc=materials.fc, lam=lam, bw=STRIP, d=row.depth, h=footing.h,
                                                 rho_w=per_metre / (STRIP * row.depth), vu=vu, mu=mu)
     phi = profile.shear.strength_reduction()
@@ -226,14 +247,16 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
     profile = basis.profile
     bottom = mat_rows(footing, footing.bottom, basis.bars)
     row = bottom["y"]
-    per_metre = row.bar_area * STRIP / footing.bottom.y.spacing
+    top = top_rows(footing, basis.bars).get("y")  # barras superiores y de la zarpa (D-114)
+    per_metre = _per_metre(row, footing.bottom.y.spacing)
     checks: list[Check] = []
-    largest = 0.0
+    largest = negative = 0.0
     for pressure, _ in cases:
         flanges = Flanges(footing, pressure, row.depth)
-        checks += _flexure(basis, footing, row, per_metre, flanges)
+        checks += _flexure(basis, footing, (row, top), flanges)
         checks.append(_shear(basis, footing, row, per_metre, flanges))
         largest = max(largest, flanges.governing("moment")[1])
+        negative = max(negative, flanges.governing("negative")[1])
     strength = rectangular_strength(profile, basis.materials, RectangularSection(STRIP, footing.h), (SteelLayer(row.depth, per_metre),))
     if isinstance(strength, MomentStrength):
         checks.append(replace(net_tensile_strain_check(STRAIN, profile.footing.clauses()["net_tensile_strain"], profile,
@@ -243,6 +266,12 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
     excess = steel_excess(basis, (STRIP, footing.h, row.depth), per_metre, largest * STRIP) if largest > 0 else 1.0
     checks.append(bar_development_check(basis, footing, row, (footing.bottom.y.spacing, "bottom", excess, cantilever - footing.cover),
                                         (DEVELOPMENT, "Desde la cara de la viga hasta el borde de la zarpa")))
+    if top is not None and footing.top is not None and footing.top.y is not None and negative > _NEGLIGIBLE:
+        # Las barras superiores de la aleta, a tracción con el momento negativo, desde la cara de la viga (D-114).
+        top_metre = _per_metre(top, footing.top.y.spacing)
+        excess = steel_excess(basis, (STRIP, footing.h, top.depth), top_metre, negative * STRIP)
+        checks.append(bar_development_check(basis, footing, top, (footing.top.y.spacing, "top", excess, cantilever - footing.cover),
+                                            (DEVELOPMENT_TOP, "Desde la cara de la viga hasta el borde de la zarpa")))
     checks += _tension_flange(basis, footing, bottom["x"])
     checks += x_development(basis, footing, soil, t_beam_rows(profile, footing, basis.bars), cases)
     first = bottom[footing.bottom.first]

@@ -54,10 +54,24 @@ from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.checks import combined_footing_checks
 from structurelab_rc.domain.footing.combined_beam import SPACING as LONG_SPACING
 from structurelab_rc.domain.footing.combined_beam import beam_member, extreme_moments
-from structurelab_rc.domain.footing.combined_columns import band_row, strip_demands, strip_limits, transverse_bottom
+from structurelab_rc.domain.footing.combined_columns import (
+    PLATE_PLAIN,
+    PLATE_SHEAR,
+    band_row,
+    band_top_row,
+    outside_twist,
+    strip_demands,
+    strip_limits,
+    strip_moments,
+    strip_twist,
+    transverse_bottom,
+    transverse_top,
+)
 from structurelab_rc.domain.footing.inverted_t import DEPTH as T_DEPTH
 from structurelab_rc.domain.footing.inverted_t import DEVELOPMENT as T_DEVELOPMENT
+from structurelab_rc.domain.footing.inverted_t import DEVELOPMENT_TOP as T_DEVELOPMENT_TOP
 from structurelab_rc.domain.footing.inverted_t import FLEXURE as T_FLEXURE
+from structurelab_rc.domain.footing.inverted_t import FLEXURE_TOP as T_FLEXURE_TOP
 from structurelab_rc.domain.footing.inverted_t import MINIMUM as T_MINIMUM
 from structurelab_rc.domain.footing.inverted_t import PLAIN as T_PLAIN
 from structurelab_rc.domain.footing.inverted_t import SHEAR as T_SHEAR
@@ -86,7 +100,8 @@ _TOUCH = 1.0  # mm: una barra de piel a menos de esto de la capa superior se omi
 _MM3_PER_M3 = 1e9
 _SOIL = ("Presion admisible del suelo", "Contacto con el suelo", "Deslizamiento", "Volcamiento")
 _THICKNESS = ("Cortante", "Punzonamiento", "Torsion", "Flexion: deformacion neta")
-_SCALED = (TORSION_LONGITUDINAL,)  # demanda = área requerida y capacidad = área provista: la proporción que falta
+# demanda = área requerida y capacidad = área provista: la proporción que falta
+_SCALED = (TORSION_LONGITUDINAL, DEEP_TRANSVERSE, DEEP_LONGITUDINAL)
 _STIRRUP_CHECKS = (SHEAR_STRENGTH, SHEAR_MINIMUM, SHEAR_SPACING, TORSION_TRANSVERSE, TORSION_MIN_TRANSVERSE)
 Cases = list[tuple[FactoredCase, tuple[FootingLoad, ...]]]
 _COLUMN = re.compile(r"columna (\S+?)(?=[\s,):]|$)", re.IGNORECASE)
@@ -163,11 +178,15 @@ _Option = dict[str, Any]
 # Tipos de falla que una opción repite si no mejora el mismo dato de la que falló.
 _SAME_OR_WORSE: dict[str, Callable[[_Option, _Option], bool]] = {
     "legs": lambda option, failed: option["_legs"] <= failed["_legs"],
-    # At/s lo toma la rama exterior del estribo cerrado: no crece con más ramas.
-    "outer_leg": lambda option, failed: option["_leg"] <= failed["_leg"],
+    # At/s lo toma la rama exterior del estribo cerrado: no crece con más ramas. El At/s requerido baja con un estribo
+    # más delgado (Ao crece): solo se descartan las de igual o mayor diámetro.
+    "outer_leg": lambda option, failed: option["_leg"] <= failed["_leg"] and option["_diameter"] >= failed["_diameter"],
     "development": lambda option, failed: option["_diameter"] >= failed["_diameter"] and option["_spacing"] <= failed["_spacing"],
     "min_spacing": lambda option, failed: option["_clear"] <= failed["_clear"],
     "max_spacing": lambda option, failed: option["_spacing"] >= failed["_spacing"],
+    "diameter": lambda option, failed: option["_diameter"] <= failed["_diameter"],
+    # Torsión: barra en cada esquina (a no más de un diámetro); la fallida también, por si el estribo real difiere.
+    "corners": lambda option, failed: option["_corner"] > option["_diameter"] or option is failed,
 }
 
 
@@ -237,6 +256,8 @@ def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any
             item["dowels"] = reinforcement["dowels"][column.id]
         if column.id in reinforcement["bands"]:
             item["band"] = reinforcement["bands"][column.id]
+        if reinforcement.get("band_tops", {}).get(column.id) is not None:  # band superior (D-119)
+            item["band_top"] = reinforcement["band_tops"][column.id]
         item["loads"] = [load_input(load) for load in column.loads]
         columns.append(item)
     data: dict[str, Any] = {
@@ -247,6 +268,8 @@ def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any
     }
     if geometry.beam is not None:  # T invertida (D-106, D-113): el refuerzo de la viga va en beam
         data["bottom"] = _declared({"first": "y", "end": design.end, "x": reinforcement["mat_x"], "y": reinforcement["bottom_y"]}, swap)
+        if reinforcement.get("top_y") is not None:  # malla superior de la zarpa (D-114)
+            data["top"] = _declared({"end": design.end, "y": reinforcement["top_y"]}, swap)
         data["beam"] = _beam_data(ctx, geometry, reinforcement)
         data["deep_beam"] = _is_deep(ctx, geometry)
         return data
@@ -444,7 +467,8 @@ def width_for(ctx: Context, geometry: Geometry) -> Geometry | None:
 
 
 def _options(raw: list[tuple[float, dict[str, Any]]], ctx: Context, spread: Spread) -> list[dict[str, Any]]:
-    """Las opciones de bar_options con lo que las restricciones comparan: área total, diámetro, luz libre y separación."""
+    """Las opciones de bar_options con lo que las restricciones comparan: área total, diámetro, luz libre, separación y
+    la distancia de la barra extrema a la esquina (con el recubrimiento de spread; _cornered la corrige)."""
     options = []
     for _, bar_set in raw:
         spec = ctx.spec(bar_set["designation"])
@@ -452,6 +476,16 @@ def _options(raw: list[tuple[float, dict[str, Any]]], ctx: Context, spread: Spre
         options.append({**bar_set, "_area": count * spec.area_mm2, "_diameter": spec.diameter_mm,
                         "_clear": bar_set["spacing"] - spec.diameter_mm, "_spacing": bar_set["spacing"],
                         "_per_m": spec.area_mm2 / bar_set["spacing"]})
+    return _cornered(options, spread.width, spread.cover)
+
+
+def _cornered(options: list[dict[str, Any]], width: float, inset: float) -> list[dict[str, Any]]:
+    """_corner de cada opción: lo que queda entre la barra extrema y la posición de esquina con las barras centradas a su
+    separación en width − 2·inset − db, como las coloca domain/footing/mesh (inset: recubrimiento y estribo lateral)."""
+    for option in options:
+        span = width - 2 * inset - option["_diameter"]
+        count = math.floor(span / option["_spacing"] + 1e-6) if span > 0 else 0
+        option["_corner"] = max(span - count * option["_spacing"], 0.0) / 2
     return options
 
 
@@ -459,7 +493,7 @@ def _bar_group(given: tuple[Context, Materials], spread: Spread, depth_of: Calla
                moment: float, compression: float | None = None) -> list[dict[str, Any]]:
     """Opciones de un grupo de barras que ya cumplen los límites del perfil que la verificación revisa en él: el acero
     mínimo de losa en todo el grupo y, si hay momento (viga larga y franjas, revisadas como vigas, D-081 y D-082), el
-    As,min de vigas (o 4/3 del requerido, con el ancho del alma) y la separación de control de fisuración con el
+    As,min de vigas (sin la excepción de 4/3, D-115; con el ancho del alma) y la separación de control de fisuración con el
     recubrimiento. compression es el ancho a compresión de la T, si difiere del de reparto (D-113)."""
     ctx, materials = given
     profile = ctx.profile
@@ -467,11 +501,9 @@ def _bar_group(given: tuple[Context, Materials], spread: Spread, depth_of: Calla
     minimum = profile.footing.min_reinforcement_ratio(materials.fy) * spread.width * spread.h
     if moment > 0:
         depth = depth_of(specs[0].diameter_mm)
-        section = RectangularSection(compression or spread.width, spread.h)
-        needed = required_area(profile, materials, section, depth, moment) or 0.0
         web = min(spread.width, compression or spread.width)
         beam = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, web, depth)
-        minimum = max(minimum, profile.flexure.effective_min_reinforcement(beam, needed))
+        minimum = max(minimum, beam)
         crack = math.floor(profile.flexure.crack_control_spacing(materials.fy, ctx.design.cover) / spread.step) * spread.step
         spread = replace(spread, max_spacing=min(spread.max_spacing, crack))
     if compression is not None:  # el As requerido se calcula con el ancho de compresión, no con el de reparto
@@ -497,16 +529,27 @@ def _compressed_options(given: tuple[Context, Materials], spread: Spread, depth_
 
 
 def _strip_moments(ctx: Context, footing: CombinedFooting, cases: Cases, depth: float) -> list[list[float]]:
-    """Los momentos de la franja de cada columna en todos los casos (D-082, D-095), con la altura efectiva dada."""
+    """Los momentos de diseño de la franja de cada columna en todos los casos (D-082, D-095), con la altura efectiva dada:
+    los de Wood-Armer con la torsión de placa (D-118)."""
     soil = ctx.project.soil
     result = []
     for index, column in enumerate(footing.columns):
         moments = []
+        limits = strip_limits(footing, column, depth)
         for pressure, loads in cases:
             force = column_vertical(footing, soil, column, loads[index])
-            moments += [moment for _, moment, _, _ in strip_demands(footing, pressure, column, (force, depth))[0]]
+            twist = strip_twist(footing, soil, (pressure, loads), limits)
+            for _, moment, _, _ in strip_demands(footing, pressure, column, (force, depth))[0]:
+                moments += strip_moments(moment, limits[1] - limits[0], twist)
         result.append(moments)
     return result
+
+
+def _outside_twist(ctx: Context, footing: CombinedFooting, cases: Cases, depth: float) -> float:
+    """El mayor |mxy| fuera de las franjas en todos los casos (N·mm/mm, D-118): el momento por unidad de largo de las
+    barras y inferiores y superiores allí."""
+    zones = [strip_limits(footing, column, depth) for column in footing.columns]
+    return max((outside_twist(footing, ctx.project.soil, given, zones)[1] for given in cases), default=0.0)
 
 
 def _t_groups(ctx: Context, fc: float, geometry: Geometry) -> dict[str, Group] | None:
@@ -532,6 +575,7 @@ def _t_groups(ctx: Context, fc: float, geometry: Geometry) -> dict[str, Group] |
     stirrup = _stirrup_diameter(ctx)
     width = covered(ctx, geometry)
     flange = max(Flanges(footing, pressure, h - cover - first / 2).governing("moment")[1] for pressure, _ in cases)
+    hogging = max(Flanges(footing, pressure, h - cover - first / 2).governing("negative")[1] for pressure, _ in cases)
     top = Spread(web, height, cover + stirrup, step, long_spacing)
     bottom = Spread(width, height, cover if width >= geometry.width else 0.0, step, long_spacing)
     groups = {
@@ -542,6 +586,10 @@ def _t_groups(ctx: Context, fc: float, geometry: Geometry) -> dict[str, Group] |
                                   lambda db: h - cover - first - db / 2, 0.0)),
         "bottom_y": Group(_bar_group((ctx, materials), Spread(geometry.length, h, cover, step, slab_spacing),
                                      lambda db: h - cover - db / 2, max(flange, 0.0) * geometry.length)),
+        # Malla superior de la zarpa (D-114): las barras y que toman el momento negativo de las aletas, solo si el concreto
+        # simple no alcanza o no se permite (D-072); d desde la cara inferior.
+        "top_y": Group(_bar_group((ctx, materials), Spread(geometry.length, h, cover, step, slab_spacing),
+                                  lambda db: h - cover - db / 2, max(hogging, 0.0) * geometry.length), optional=True),
         "skin": Group(_skin_options(ctx, height), optional=height <= profile.flexure.skin_reinforcement_depth()),
     }
     for column in footing.columns:
@@ -561,6 +609,8 @@ def _placed(ctx: Context, geometry: Geometry, options: list[dict[str, Any]], ale
         spec = ctx.spec(option["designation"])
         count = len(bottom_layer(ctx, geometry, option, aleta_db)[1])
         placed.append({**option, "_area": count * spec.area_mm2, "_mass": count * spec.mass_kg_m})
+    assert geometry.beam is not None  # las esquinas de torsión son las del alma, por dentro del estribo
+    _cornered(placed, geometry.beam[0], ctx.design.cover + _stirrup_diameter(ctx))
     return sorted(placed, key=lambda option: option["_mass"])
 
 
@@ -592,17 +642,25 @@ def _groups(ctx: Context, fc: float, geometry: Geometry) -> dict[str, Group] | N
         return h - cover - first - db / 2
 
     plain = profile.plain.permitted_in_foundations(ctx.project.seismic.level)
-    groups = {"bottom_x": Group(_bar_group((ctx, materials), along, outer, positive[0])),
-              "bottom_y": Group(_bar_group((ctx, materials), across, inner, 0.0)),
-              "top_x": Group(_bar_group((ctx, materials), along, outer, negative[0]), optional=plain or negative[0] <= 0)}
+    lateral = cover + _stirrup_diameter(ctx)  # los estribos encierran las barras x por los lados (mesh)
+    twist = _outside_twist(ctx, footing, cases, inner(first))  # torsión de placa fuera de las franjas (D-118)
+    groups = {"bottom_x": Group(_cornered(_bar_group((ctx, materials), along, outer, positive[0]), geometry.width, lateral)),
+              "bottom_y": Group(_bar_group((ctx, materials), across, inner, twist * geometry.length)),
+              "top_x": Group(_cornered(_bar_group((ctx, materials), along, outer, negative[0]), geometry.width, lateral),
+                             optional=plain or negative[0] <= 0)}
     strips = _strip_moments(ctx, footing, cases, inner(first))
     for column, moments in zip(footing.columns, strips, strict=True):
         low, high = strip_limits(footing, column, inner(first))
         strip = Spread(high - low, h, 0.0, step, slab_spacing)
         groups[f"band:{column.id}"] = Group(_bar_group((ctx, materials), strip, inner, max(max(moments, default=0.0), 0.0)))
+        # Band superior (D-119): las barras superiores de la franja, para su momento negativo de Wood-Armer; solo si una
+        # falla de la franja lo pide (mientras tanto, top.y o concreto simple).
+        groups[f"band_top:{column.id}"] = Group(_bar_group((ctx, materials), strip, lambda db: h - cover - db / 2,
+                                                           max(-min(moments, default=0.0), 0.0)), optional=True)
         groups[f"dowels:{column.id}"] = Group(_dowel_options(ctx, column.cx * column.cy))
     negative_strip = max((-min(moments, default=0.0) for moments in strips), default=0.0)
-    groups["top_y"] = Group(_bar_group((ctx, materials), across, inner, max(negative_strip, 0.0)), optional=plain or negative_strip <= 0)
+    hogging = max(negative_strip, twist * geometry.length, 0.0)
+    groups["top_y"] = Group(_bar_group((ctx, materials), across, inner, hogging), optional=plain or hogging <= 0)
     groups["skin"] = Group(_skin_options(ctx, h), optional=h <= profile.flexure.skin_reinforcement_depth())
     if design.stirrup_bars:
         depth = outer(first)
@@ -656,8 +714,23 @@ def classify(check: Check) -> tuple[str, str]:
     fields = {"column": column, "axis": "x" if principal else "y",
               "transfer": "bottom_x" if principal else f"band:{column}",
               "bottom": "bottom_x" if principal else (f"band:{column}" if column and "band" in name else "bottom_y")}
+    if name == TORSION_DETAILING:
+        return _torsion_detailing(note)
     group = next((template for test, template in _RULES if test(name, note)), "h").format(**fields)
     return group, _stirrup_kind(check) or _kind(name)
+
+
+def _torsion_detailing(note: str) -> tuple[str, str]:
+    """La distribución del refuerzo longitudinal de torsión (domain/beam/torsion): capas separadas en altura, más niveles
+    de piel; barras delgadas, piel de mayor diámetro; una fila superior o inferior con barras muy separadas o sin
+    esquinas, menor separación en esa capa. Se corrige el primer problema de la nota; los demás, en las rondas siguientes."""
+    if "en altura" in note:
+        return "skin", "max_spacing"
+    if "diametro menor" in note:
+        return "skin", "diameter"
+    row = "top_x" if note.find("capa superior") >= 0 else "bottom_x"
+    first = note.find("capa superior" if row == "top_x" else "capa inferior")
+    return row, "corners" if note[first:].split(";")[0].endswith("esquinas") else "max_spacing"
 
 
 def _stirrup_kind(check: Check) -> str | None:
@@ -690,6 +763,11 @@ _BARS = ("Retraccion", "Separacion minima", "Desarrollo", "Direccion")
 # (prueba sobre el nombre y la nota, grupo): la primera que se cumple; sin ninguna, el espesor.
 _RULES: tuple[tuple[Callable[[str, str], bool], str], ...] = (
     (lambda name, note: name in _SOIL, "soil"),
+    # Torsión de placa fuera de las franjas sin barras superiores y (D-118): las pide; su cortante, espesor (D-119).
+    (lambda name, note: name == PLATE_PLAIN, "top_y"),
+    (lambda name, note: name == PLATE_SHEAR, "h"),
+    # El band superior de cada columna (D-119): su desarrollo, separación y retracción.
+    (lambda name, note: "band superior" in name, "band_top:{column}"),
     # D-110: el cortante y la torsión transversal de la viga larga los toman los estribos; Aℓ, la piel (D-090).
     (lambda name, note: name in _STIRRUP_CHECKS and not note.startswith("Franja transversal"), "stirrups"),
     (lambda name, note: name in (TORSION_LONGITUDINAL, TORSION_DETAILING), "skin"),
@@ -698,7 +776,8 @@ _RULES: tuple[tuple[Callable[[str, str], bool], str], ...] = (
     (lambda name, note: name.startswith(_THICKNESS), "h"),
     (lambda name, note: name.startswith("Transferencia de momento") and "parte negativa" in name, "top_{axis}"),
     (lambda name, note: name.startswith("Transferencia de momento"), "{transfer}"),
-    (lambda name, note: note.startswith("Franja transversal") and "momento negativo" in note, "top_y"),
+    # El momento negativo de la franja lo toma su band superior (D-119), no top.y en todo el largo.
+    (lambda name, note: note.startswith("Franja transversal") and "momento negativo" in note, "band_top:{column}"),
     (lambda name, note: note.startswith("Franja transversal"), "band:{column}"),
     (lambda name, note: name.startswith("Flexion") and "momento negativo" in note, "top_x"),
     (lambda name, note: name.startswith("Flexion"), "bottom_x"),
@@ -710,7 +789,9 @@ _RULES: tuple[tuple[Callable[[str, str], bool], str], ...] = (
 # T invertida (D-113): las aletas y la zarpa, el alma, la viga alta y las barras x de la zarpa.
 _T_GROUPS = {
     T_FLEXURE: "bottom_y", T_MINIMUM: "bottom_y", T_SPACING: "bottom_y", T_DEVELOPMENT: "bottom_y",
-    T_STRAIN: "zarpa", T_SHEAR: "zarpa", T_PLAIN: "zarpa", T_DEPTH: "zarpa", T_TENSION_FLANGE: "bottom_x",
+    T_STRAIN: "zarpa", T_SHEAR: "zarpa", T_DEPTH: "zarpa", T_TENSION_FLANGE: "bottom_x",
+    # El momento negativo de las aletas: barras superiores en la zarpa antes que más espesor (D-114, D-117).
+    T_PLAIN: "top_y", T_FLEXURE_TOP: "top_y", T_DEVELOPMENT_TOP: "top_y",
     f"{LONG_SPACING} (barras inferiores)": "mat_x",
     SHEAR_SECTION: "web", TORSION_SECTION: "web", DEEP_SECTION: "web",
     DEEP_TRANSVERSE: "stirrups", DEEP_LONGITUDINAL: "skin", DEEP_CURTAINS: "skin", DEEP_SPACING: "skin",
@@ -721,6 +802,11 @@ def classify_t(check: Check) -> tuple[str, str]:
     """(grupo, tipo) de una falla de la T invertida: lo propio de la T y, si no, lo mismo que la rectangular (la viga larga
     con bottom_x y top_x como sus capas inferior y superior)."""
     group = _T_GROUPS.get(check.name)
+    if check.name.startswith("Separacion minima (capa") and check.name.endswith("de la viga)"):  # domain/footing/spacing
+        return ("top_x" if "capa superior" in check.name else "bottom_x"), "min_spacing"
+    if check.name == TORSION_DETAILING:  # la viga de la T se revisa volteada: su capa "superior" es la inferior (D-093)
+        found, kind = _torsion_detailing(check.note)
+        return {"top_x": "bottom_x", "bottom_x": "top_x"}.get(found, found), kind
     if group is None:
         return classify(check)
     if check.name == DEEP_SPACING:  # la separación de los estribos o la vertical de la piel, la que exceda (D-089)
@@ -743,19 +829,21 @@ def _reinforcement(ctx: Context, groups: dict[str, Group]) -> dict[str, Any] | N
     ids = [column.id for column in ctx.project.columns]
     if "mat_x" in groups:  # T invertida
         return {"top_x": clean(chosen["top_x"]), "bottom_x": clean(chosen["bottom_x"]), "mat_x": clean(chosen["mat_x"]),
-                "bottom_y": clean(chosen["bottom_y"]), "skin": clean(chosen["skin"]), "stirrups": clean(chosen.get("stirrups")),
-                "bands": {}, "dowels": {column: clean(chosen[f"dowels:{column}"]) for column in ids}}
+                "bottom_y": clean(chosen["bottom_y"]), "top_y": clean(chosen.get("top_y")), "skin": clean(chosen["skin"]),
+                "stirrups": clean(chosen.get("stirrups")), "bands": {},
+                "dowels": {column: clean(chosen[f"dowels:{column}"]) for column in ids}}
     return {"bottom_x": clean(chosen["bottom_x"]), "bottom_y": clean(chosen["bottom_y"]), "top_x": clean(chosen["top_x"]),
             "top_y": clean(chosen["top_y"]), "skin": clean(chosen["skin"]), "stirrups": clean(chosen.get("stirrups")),
             "bands": {column: clean(chosen[f"band:{column}"]) for column in ids},
+            "band_tops": {column: clean(chosen[f"band_top:{column}"]) for column in ids},
             "dowels": {column: clean(chosen[f"dowels:{column}"]) for column in ids}}
 
 
 def reinforce(ctx: Context, fc: float, geometry: Geometry) -> CombinedSolution | str:
     """El refuerzo de menor peso que aprueba la verificación con esta geometría; "soil" si la planta no cumple el suelo,
     "width" si un grupo transversal agotó sus opciones por desarrollo (lo arregla un ancho mayor, D-110), en la T "zarpa"
-    o "web" si fallan las aletas o las dimensiones del alma (D-113), y "h" si falta espesor o alto de viga (o otro grupo
-    agotó sus opciones)."""
+    o "web" si fallan las aletas o las dimensiones del alma (D-113) o si las capas de la viga no caben en ella (D-117), y
+    "h" si falta espesor o alto de viga (o otro grupo agotó sus opciones)."""
     groups = _groups(ctx, fc, geometry)
     if groups is None:
         return "soil"
@@ -764,6 +852,8 @@ def reinforce(ctx: Context, fc: float, geometry: Geometry) -> CombinedSolution |
         reinforcement = _reinforcement(ctx, groups)
         footing = None if reinforcement is None else _footing(ctx, geometry, reinforcement)
         if reinforcement is None or footing is None:
+            if geometry.beam is not None and _exhausted(groups, ("top_x", "bottom_x")):
+                return "web"  # las capas de la viga no caben en el alma: un alma más ancha (D-117)
             return "width" if _needs_width(groups) else "h"
         failures = [check for check in combined_footing_checks(basis, footing, ctx.project.soil) if check.status is not Status.PASS]
         if not failures:
@@ -789,11 +879,16 @@ def _valid(ctx: Context, solution: CombinedSolution) -> bool:
     return validate_project(project, ctx.bars).status is Status.PASS
 
 
+def _exhausted(groups: dict[str, Group], names: tuple[str, ...]) -> bool:
+    """Si alguno de esos grupos obligatorios se quedó sin opciones (o no tuvo ninguna)."""
+    return any(name in groups and not groups[name].optional and groups[name].current() is None for name in names)
+
+
 def _needs_width(groups: dict[str, Group]) -> bool:
     """Si un grupo de barras transversales (band o barras y) se agotó con fallas de desarrollo: su largo disponible
     crece con el ancho de la base, no con el espesor."""
     return any(group.current() is None and not group.optional and any(kind == "development" for kind, _, _ in group.failures)
-               for name, group in groups.items() if name.startswith(("band:", "bottom_y", "top_y")))
+               for name, group in groups.items() if name.startswith(("band:", "band_top:", "bottom_y", "top_y")))
 
 
 def priced(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[str, Any]) -> CombinedSolution:
@@ -818,12 +913,16 @@ def priced(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[str,
         band = band_row(footing, column, rows["y"], basis)
         if band is not None:
             steel += mass(band.designation, len(band.positions), cross_bar)
+        band_top = band_top_row(footing, column, rows["y"].depth, ctx.bars)  # band superior (D-119)
+        if band_top is not None:
+            steel += mass(band_top.designation, len(band_top.positions), cross_bar)
         if column.dowels is not None:
             steel += mass(column.dowels.designation, column.dowels.count, (footing.h - design.cover) / 1000)
     if "x" in tops:
         steel += mass(tops["x"].designation, len(tops["x"].positions), long_bar)
-    if "y" in tops:
-        steel += mass(tops["y"].designation, len(tops["y"].positions), cross_bar)
+    across = transverse_top(footing, tops.get("y"), rows["y"].depth)  # top.y fuera de las zonas de band superior
+    if across is not None:
+        steel += mass(across.designation, len(across.positions), cross_bar)
     if footing.skin is not None:  # una barra en cada cara lateral por nivel (domain/footing/combined_beam)
         _, layout = beam_member(footing, (rows["x"], tops.get("x")), ctx.bars)
         levels = sum(1 for layer in layout.layers if layer.role == "skin")
@@ -855,6 +954,9 @@ def _priced_t(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[s
     half = covered(ctx, geometry) / 2
     steel = mass(rows["x"].designation, sum(1 for y in rows["x"].positions if abs(y) > half + 1e-6), long_bar)
     steel += mass(rows["y"].designation, len(rows["y"].positions), cross_bar)
+    top = top_rows(footing, ctx.bars).get("y")  # malla superior de la zarpa (D-114)
+    if top is not None:
+        steel += mass(top.designation, len(top.positions), cross_bar)
     for layer in _beam_data(ctx, geometry, reinforcement)["layers"]:
         steel += sum(mass(bar["designation"], 1, long_bar) for bar in layer["bars"])
     for column in footing.columns:

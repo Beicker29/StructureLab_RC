@@ -110,24 +110,26 @@
             "capacity": 1147103277.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -136,7 +138,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -145,14 +148,16 @@
             "capacity": 839468.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -161,24 +166,26 @@
             "capacity": 1147103277.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -187,7 +194,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -196,14 +204,16 @@
             "capacity": 812175.8612432249,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -212,24 +222,26 @@
             "capacity": 1147103277.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2999.9999799051634
+            "z_mm": 2999.9999799051634,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 2999.9999799051634
+            "z_mm": 2999.9999799051634,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 2999.9999799051634
+            "z_mm": 2999.9999799051634,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -238,7 +250,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2999.9999799051634
+            "z_mm": 2999.9999799051634,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -247,14 +260,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2999.9999799051634
+            "z_mm": 2999.9999799051634,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2999.9999799051634
+            "z_mm": 2999.9999799051634,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -263,24 +278,26 @@
             "capacity": 1147103277.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -289,7 +306,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -298,14 +316,16 @@
             "capacity": 812175.861243225,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -314,24 +334,26 @@
             "capacity": 1147103277.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -340,7 +362,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -349,14 +372,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -365,24 +390,26 @@
             "capacity": 1147103277.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -391,7 +418,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -400,14 +428,16 @@
             "capacity": 839468.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -453,7 +483,7 @@
           {
             "case": "U1",
             "x": 2225.0,
-            "at": 2838.9,
+            "at": 2225.0,
             "tu_Nmm": 0.0
           },
           {
@@ -549,24 +579,26 @@
             "capacity": 1992054846.3314555,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1237.3
+            "z_mm": 1237.3,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.024406100891915177,
             "case": "U1",
-            "z_mm": 1237.3
+            "z_mm": 1237.3,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 5698.399999999999,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 1237.3
+            "z_mm": 1237.3,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -575,7 +607,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1237.3
+            "z_mm": 1237.3,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -584,14 +617,16 @@
             "capacity": 1046924.964902696,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 1237.3
+            "z_mm": 1237.3,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 1237.3
+            "z_mm": 1237.3,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -600,24 +635,26 @@
             "capacity": 1992054846.3314555,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1748.0113898949357
+            "z_mm": 1748.0113898949357,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.024406100891915177,
             "case": "U1",
-            "z_mm": 1748.0113898949357
+            "z_mm": 1748.0113898949357,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 5698.399999999999,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 1748.0113898949357
+            "z_mm": 1748.0113898949357,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -626,7 +663,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1748.0113898949357
+            "z_mm": 1748.0113898949357,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -635,14 +673,16 @@
             "capacity": 1036287.873517779,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 1748.0113898949357
+            "z_mm": 1748.0113898949357,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 1748.0113898949357
+            "z_mm": 1748.0113898949357,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -651,24 +691,26 @@
             "capacity": 1992054846.3314555,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 3037.7
+            "z_mm": 3037.7,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.024406100891915177,
             "case": "U1",
-            "z_mm": 3037.7
+            "z_mm": 3037.7,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 5698.399999999999,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 3037.7
+            "z_mm": 3037.7,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -677,7 +719,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 3037.7
+            "z_mm": 3037.7,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -686,14 +729,16 @@
             "capacity": 1170404.7633108506,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 3037.7
+            "z_mm": 3037.7,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 3037.7
+            "z_mm": 3037.7,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -702,24 +747,26 @@
             "capacity": 1992054846.3314552,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 4250.0
+            "z_mm": 4250.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.024406100891915177,
             "case": "U1",
-            "z_mm": 4250.0
+            "z_mm": 4250.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 5698.399999999999,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 4250.0
+            "z_mm": 4250.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -728,7 +775,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 4250.0
+            "z_mm": 4250.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -737,14 +785,16 @@
             "capacity": 1059119.1421845236,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 4250.0
+            "z_mm": 4250.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 4250.0
+            "z_mm": 4250.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -753,24 +803,26 @@
             "capacity": 1992054846.3314552,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 4962.3
+            "z_mm": 4962.3,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.024406100891915177,
             "case": "U1",
-            "z_mm": 4962.3
+            "z_mm": 4962.3,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 5698.399999999999,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 4962.3
+            "z_mm": 4962.3,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -779,7 +831,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 4962.3
+            "z_mm": 4962.3,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -788,14 +841,16 @@
             "capacity": 1170404.7633108506,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 4962.3
+            "z_mm": 4962.3,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 4962.3
+            "z_mm": 4962.3,
+            "face": "bottom"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -835,7 +890,7 @@
           {
             "case": "U1",
             "x": 1250.0,
-            "at": 1962.3,
+            "at": 1250.0,
             "tu_Nmm": 0.0
           },
           {
@@ -951,28 +1006,30 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 457294326.58296394,
+            "demand": 651275876.858964,
             "capacity": 1147103277.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1638.9
+            "z_mm": 1638.9,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 1638.9
+            "z_mm": 1638.9,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 1638.9
+            "z_mm": 1638.9,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -981,202 +1038,54 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1638.9
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 193981550.276,
-              "phi Tth": 119558562.0233299
-            },
-            "case": "U1",
-            "z_mm": 1638.9
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
-            "case": "U1",
-            "z_mm": 1638.9
-          },
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 803540580.5029848,
-            "capacity": 1147103277.9330287,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 2951.984376125853
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.023410266142245038,
-            "case": "U1",
-            "z_mm": 2951.984376125853
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 4092.666666666666,
-            "case": "U1",
-            "z_mm": 2951.984376125853
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 2951.984376125853
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 189637219.37148345,
-              "phi Tth": 119558562.0233299
-            },
-            "case": "U1",
-            "z_mm": 2951.984376125853
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
-            "case": "U1",
-            "z_mm": 2951.984376125853
-          },
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 437734579.7607379,
-            "capacity": 1147103277.9330287,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.023410266142245038,
-            "case": "U1",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 4092.666666666666,
-            "case": "U1",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 185306019.05733335,
-              "phi Tth": 119558562.0233299
-            },
-            "case": "U1",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
-            "case": "U1",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 112968958.14562416,
-            "capacity": 1147103277.9330285,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 5325.0
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.023410266142245038,
-            "case": "U1",
-            "z_mm": 5325.0
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 4092.666666666666,
-            "case": "U1",
-            "z_mm": 5325.0
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 5325.0
+            "z_mm": 1638.9,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 30642.038099243306,
-            "capacity": 755626.5744400471,
+            "demand": 519072.1118682211,
+            "capacity": 768437.1461827474,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5325.0
+            "z_mm": 1638.9,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5325.0
+            "z_mm": 1638.9,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 936663.7062473297,
-            "capacity": 1147103277.9330285,
+            "demand": 993177799.8744682,
+            "capacity": 1147103277.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5938.9
+            "z_mm": 2951.984376125853,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 5938.9
+            "z_mm": 2951.984376125853,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5938.9
+            "z_mm": 2951.984376125853,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -1185,7 +1094,214 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5938.9
+            "z_mm": 2951.984376125853,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 0.0008655071724206209,
+            "capacity": 755626.5744400471,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1",
+            "z_mm": 2951.984376125853,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U1",
+            "z_mm": 2951.984376125853,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 623040598.8180712,
+            "capacity": 1147103277.9330287,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U1",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 567116.01014129,
+            "capacity": 776571.9798928665,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U1",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 180004517.109375,
+            "capacity": 1147103277.9330285,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 567116.01014129,
+            "capacity": 839468.452414162,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 186545352.890625,
+            "capacity": 1147103277.9330287,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 4875.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 1138812.6489139944,
+            "capacity": 1147103277.9330285,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "z_mm": 5938.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U1",
+            "z_mm": 5938.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 5938.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 5938.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -1194,40 +1310,44 @@
             "capacity": 839468.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5938.9
+            "z_mm": 5938.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5938.9
+            "z_mm": 5938.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 255444861.51881152,
+            "demand": 413422488.6542282,
             "capacity": 1147103277.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U2",
-            "z_mm": 1025.0
+            "z_mm": 1025.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U2",
-            "z_mm": 1025.0
+            "z_mm": 1025.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U2",
-            "z_mm": 1025.0
+            "z_mm": 1025.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -1236,202 +1356,54 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U2",
-            "z_mm": 1025.0
+            "z_mm": 1025.0,
+            "face": "bottom"
           },
           {
-            "name": "Torsion: umbral",
+            "name": "Cortante: resistencia",
             "status": "PASS",
-            "values": {
-              "Tu": 156962851.714375,
-              "phi Tth": 119558562.0233299
-            },
+            "demand": 535938.323072187,
+            "capacity": 804310.8769668329,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U2",
-            "z_mm": 1025.0
+            "z_mm": 1025.0,
+            "face": "bottom"
           },
           {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
             "case": "U2",
-            "z_mm": 1025.0
+            "z_mm": 1025.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 111143068.30715984,
-            "capacity": 1147103277.9330287,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U2",
-            "z_mm": 1638.9
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.023410266142245038,
-            "case": "U2",
-            "z_mm": 1638.9
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 4092.666666666666,
-            "case": "U2",
-            "z_mm": 1638.9
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U2",
-            "z_mm": 1638.9
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 156962851.714375,
-              "phi Tth": 119558562.0233299
-            },
-            "case": "U2",
-            "z_mm": 1638.9
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
-            "case": "U2",
-            "z_mm": 1638.9
-          },
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 673276073.6983631,
-            "capacity": 1147103277.9330287,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U2",
-            "z_mm": 3589.235139041089
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.023410266142245038,
-            "case": "U2",
-            "z_mm": 3589.235139041089
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 4092.666666666666,
-            "case": "U2",
-            "z_mm": 3589.235139041089
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U2",
-            "z_mm": 3589.235139041089
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 153738951.7927383,
-              "phi Tth": 119558562.0233299
-            },
-            "case": "U2",
-            "z_mm": 3589.235139041089
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
-            "case": "U2",
-            "z_mm": 3589.235139041089
-          },
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 593961406.0066347,
-            "capacity": 1147103277.9330287,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U2",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.023410266142245038,
-            "case": "U2",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 4092.666666666666,
-            "case": "U2",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U2",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 152628360.57729167,
-              "phi Tth": 119558562.0233299
-            },
-            "case": "U2",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
-            "case": "U2",
-            "z_mm": 4261.1
-          },
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 914348.7405996323,
+            "demand": 45819783.40721515,
             "capacity": 1147103277.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U2",
-            "z_mm": 5938.9
+            "z_mm": 1638.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U2",
-            "z_mm": 5938.9
+            "z_mm": 1638.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U2",
-            "z_mm": 5938.9
+            "z_mm": 1638.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -1440,7 +1412,214 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U2",
-            "z_mm": 5938.9
+            "z_mm": 1638.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 535938.323072187,
+            "capacity": 839468.452414162,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U2",
+            "z_mm": 1638.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U2",
+            "z_mm": 1638.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 268105920.02153483,
+            "capacity": 1147103277.9330287,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U2",
+            "z_mm": 1638.9,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U2",
+            "z_mm": 1638.9,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U2",
+            "z_mm": 1638.9,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U2",
+            "z_mm": 1638.9,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 827015025.4911014,
+            "capacity": 1147103277.9330287,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U2",
+            "z_mm": 3589.235139041089,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U2",
+            "z_mm": 3589.235139041089,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U2",
+            "z_mm": 3589.235139041089,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U2",
+            "z_mm": 3589.235139041089,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 0.001861247350461781,
+            "capacity": 755626.5744400471,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U2",
+            "z_mm": 3589.235139041089,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U2",
+            "z_mm": 3589.235139041089,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 746589766.5839264,
+            "capacity": 1147103277.9330287,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U2",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U2",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U2",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U2",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 240910.32211571583,
+            "capacity": 755626.5744400471,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U2",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U2",
+            "z_mm": 4261.1,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 1015346.9133079648,
+            "capacity": 1147103277.9330285,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U2",
+            "z_mm": 5938.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U2",
+            "z_mm": 5938.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U2",
+            "z_mm": 5938.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U2",
+            "z_mm": 5938.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -1449,14 +1628,16 @@
             "capacity": 839468.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U2",
-            "z_mm": 5938.9
+            "z_mm": 5938.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U2",
-            "z_mm": 5938.9
+            "z_mm": 5938.9,
+            "face": "bottom"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -1495,9 +1676,9 @@
           },
           {
             "case": "U1",
-            "x": 2325.0,
-            "at": 2938.9,
-            "tu_Nmm": -202148.94266666472
+            "x": 1875.0,
+            "at": 1875.0,
+            "tu_Nmm": -183274935.0
           },
           {
             "case": "U1",
@@ -1508,8 +1689,8 @@
           {
             "case": "U2",
             "x": -1975.0,
-            "at": -1361.1,
-            "tu_Nmm": -156962851.714375
+            "at": -1975.0,
+            "tu_Nmm": -157977627.13541666
           },
           {
             "case": "U2",
@@ -1615,24 +1796,26 @@
             "capacity": 1125254930.5323532,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0322647783740807,
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -1641,7 +1824,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -1650,14 +1834,16 @@
             "capacity": 843774.0803340252,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -1666,24 +1852,26 @@
             "capacity": 1125254930.5323532,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0322647783740807,
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -1692,7 +1880,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -1701,14 +1890,16 @@
             "capacity": 828355.6322299016,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
@@ -1717,7 +1908,8 @@
             "demand_Nmm": 135869904.6334666,
             "capacity_Nmm": 187795428.05936465,
             "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -1726,14 +1918,16 @@
             "capacity": 761676.9068286933,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
@@ -1742,7 +1936,8 @@
             "demand_Nmm": 246759999.99999988,
             "capacity_Nmm": 187795428.05936465,
             "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
-            "z_mm": 2999.9999798724484
+            "z_mm": 2999.9999798724484,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -1751,14 +1946,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2999.9999798724484
+            "z_mm": 2999.9999798724484,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2999.9999798724484
+            "z_mm": 2999.9999798724484,
+            "face": "top"
           },
           {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
@@ -1767,7 +1964,8 @@
             "demand_Nmm": 135869904.63346696,
             "capacity_Nmm": 187795428.05936465,
             "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -1776,14 +1974,16 @@
             "capacity": 761676.9068286931,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -1792,24 +1992,26 @@
             "capacity": 1125254930.5323532,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0322647783740807,
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -1818,7 +2020,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -1827,14 +2030,16 @@
             "capacity": 843774.0803340252,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -1855,7 +2060,7 @@
           {
             "case": "U1",
             "x": -2225.0,
-            "at": -2838.9,
+            "at": -2225.0,
             "tu_Nmm": 0.0
           },
           {
@@ -1969,24 +2174,26 @@
             "capacity": 671673777.9330283,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 411.0999999999999
+            "z_mm": 411.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 411.0999999999999
+            "z_mm": 411.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 2425.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 411.0999999999999
+            "z_mm": 411.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -1995,7 +2202,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 411.0999999999999
+            "z_mm": 411.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -2004,14 +2212,16 @@
             "capacity": 585476.3265519612,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 411.0999999999999
+            "z_mm": 411.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 411.0999999999999
+            "z_mm": 411.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -2020,24 +2230,26 @@
             "capacity": 671673777.9330286,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1588.9
+            "z_mm": 1588.9,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 1588.9
+            "z_mm": 1588.9,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 2425.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 1588.9
+            "z_mm": 1588.9,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2046,7 +2258,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1588.9
+            "z_mm": 1588.9,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -2055,14 +2268,16 @@
             "capacity": 585476.3265519612,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 1588.9
+            "z_mm": 1588.9,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 1588.9
+            "z_mm": 1588.9,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -2071,24 +2286,26 @@
             "capacity": 671673777.9330286,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 2425.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2097,7 +2314,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -2106,14 +2324,16 @@
             "capacity": 485759.94071145885,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -2122,24 +2342,26 @@
             "capacity": 671673777.9330286,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 4411.1
+            "z_mm": 4411.1,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 4411.1
+            "z_mm": 4411.1,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 2425.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 4411.1
+            "z_mm": 4411.1,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2148,7 +2370,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 4411.1
+            "z_mm": 4411.1,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -2157,14 +2380,16 @@
             "capacity": 585476.3265519612,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 4411.1
+            "z_mm": 4411.1,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 4411.1
+            "z_mm": 4411.1,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -2173,24 +2398,26 @@
             "capacity": 671673777.9330283,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 2425.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2199,7 +2426,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -2208,14 +2436,16 @@
             "capacity": 520408.2393319817,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -2224,24 +2454,26 @@
             "capacity": 671673777.9330283,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5588.9
+            "z_mm": 5588.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 5588.9
+            "z_mm": 5588.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 2425.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5588.9
+            "z_mm": 5588.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2250,7 +2482,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5588.9
+            "z_mm": 5588.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -2259,14 +2492,16 @@
             "capacity": 585476.3265519612,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5588.9
+            "z_mm": 5588.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5588.9
+            "z_mm": 5588.9,
+            "face": "bottom"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -2312,7 +2547,7 @@
           {
             "case": "U1",
             "x": 2225.0,
-            "at": 2588.9,
+            "at": 2225.0,
             "tu_Nmm": 0.0
           },
           {
@@ -2414,24 +2649,26 @@
             "capacity": 861042376.6864097,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 323.8000000000002
+            "z_mm": 323.8000000000002,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.013832397600704961,
             "case": "U1",
-            "z_mm": 323.8000000000002
+            "z_mm": 323.8000000000002,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 3007.999999999999,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 3007.999999999999,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 323.8000000000002
+            "z_mm": 323.8000000000002,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2440,7 +2677,8 @@
             "capacity": 160.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 323.8000000000002
+            "z_mm": 323.8000000000002,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -2449,14 +2687,16 @@
             "capacity": 1292606.2268968415,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 323.8000000000002
+            "z_mm": 323.8000000000002,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 323.8000000000002
+            "z_mm": 323.8000000000002,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -2465,24 +2705,26 @@
             "capacity": 1211413935.7796557,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1676.2
+            "z_mm": 1676.2,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.012276666028934931,
             "case": "U1",
-            "z_mm": 1676.2
+            "z_mm": 1676.2,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 2997.333333333333,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 2997.333333333333,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 1676.2
+            "z_mm": 1676.2,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2491,7 +2733,8 @@
             "capacity": 160.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1676.2
+            "z_mm": 1676.2,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -2500,14 +2743,16 @@
             "capacity": 1281900.0405932334,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 1676.2
+            "z_mm": 1676.2,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 1676.2
+            "z_mm": 1676.2,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -2516,24 +2761,26 @@
             "capacity": 1211413935.7796557,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.012276666028934931,
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 2997.333333333333,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 2997.333333333333,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2542,7 +2789,8 @@
             "capacity": 160.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -2551,14 +2799,16 @@
             "capacity": 1165847.3942028943,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2999.999991440158
+            "z_mm": 2999.999991440158,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -2567,24 +2817,26 @@
             "capacity": 1211413935.7796557,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 4323.8
+            "z_mm": 4323.8,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.012276666028934931,
             "case": "U1",
-            "z_mm": 4323.8
+            "z_mm": 4323.8,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 2997.333333333333,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 2997.333333333333,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 4323.8
+            "z_mm": 4323.8,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2593,7 +2845,8 @@
             "capacity": 160.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 4323.8
+            "z_mm": 4323.8,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -2602,14 +2855,16 @@
             "capacity": 1281900.0405932334,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 4323.8
+            "z_mm": 4323.8,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 4323.8
+            "z_mm": 4323.8,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -2618,24 +2873,26 @@
             "capacity": 861042376.6864097,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.013832397600704961,
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 3007.999999999999,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 3007.999999999999,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2644,7 +2901,8 @@
             "capacity": 160.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -2653,14 +2911,16 @@
             "capacity": 1207627.7924281629,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5225.0
+            "z_mm": 5225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -2669,24 +2929,26 @@
             "capacity": 861042376.6864097,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5676.2
+            "z_mm": 5676.2,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.013832397600704961,
             "case": "U1",
-            "z_mm": 5676.2
+            "z_mm": 5676.2,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 3007.999999999999,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 3007.999999999999,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5676.2
+            "z_mm": 5676.2,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2695,7 +2957,8 @@
             "capacity": 160.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5676.2
+            "z_mm": 5676.2,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -2704,14 +2967,16 @@
             "capacity": 1292606.2268968415,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5676.2
+            "z_mm": 5676.2,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5676.2
+            "z_mm": 5676.2,
+            "face": "bottom"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -2757,7 +3022,7 @@
           {
             "case": "U1",
             "x": 2225.0,
-            "at": 2676.2,
+            "at": 2225.0,
             "tu_Nmm": 0.0
           },
           {
@@ -2857,25 +3122,26 @@
             "capacity": 1717618677.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 250.8071526119857,
-            "analysis": 188.10536445898927,
+            "demand": 6092.666666666665,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: refuerzo superficial",
@@ -2884,7 +3150,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2893,7 +3160,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -2902,14 +3170,16 @@
             "capacity": 1144259.0034488027,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -2918,25 +3188,26 @@
             "capacity": 1717618677.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 2330.9771222237937,
-            "analysis": 1748.2328416678454,
+            "demand": 6092.666666666665,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: refuerzo superficial",
@@ -2945,7 +3216,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -2954,7 +3226,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -2963,14 +3236,16 @@
             "capacity": 1094229.7334183615,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -2979,25 +3254,26 @@
             "capacity": 1717618677.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 3261.2281026970104,
-            "analysis": 2445.9210770227583,
+            "demand": 6092.666666666665,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: refuerzo superficial",
@@ -3006,7 +3282,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3015,7 +3292,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -3024,14 +3302,16 @@
             "capacity": 1079466.534914353,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -3040,25 +3320,26 @@
             "capacity": 1717618677.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 2330.9771222237932,
-            "analysis": 1748.232841667845,
+            "demand": 6092.666666666665,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Flexion: refuerzo superficial",
@@ -3067,7 +3348,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3076,7 +3358,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -3085,14 +3368,16 @@
             "capacity": 1094229.7334183615,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -3222,32 +3507,34 @@
             "capacity": 1717618677.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 250.8071526119857,
-            "analysis": 188.10536445898927,
+            "demand": 6092.666666666665,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: refuerzo superficial",
             "status": "FAIL",
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3256,7 +3543,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -3265,14 +3553,16 @@
             "capacity": 1144259.0034488027,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 775.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -3281,32 +3571,34 @@
             "capacity": 1717618677.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 2330.9771222237937,
-            "analysis": 1748.2328416678454,
+            "demand": 6092.666666666665,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: refuerzo superficial",
             "status": "FAIL",
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3315,7 +3607,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -3324,14 +3617,16 @@
             "capacity": 1094229.7334183615,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2138.9
+            "z_mm": 2138.9,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -3340,32 +3635,34 @@
             "capacity": 1717618677.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 3261.2281026970104,
-            "analysis": 2445.9210770227583,
+            "demand": 6092.666666666665,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: refuerzo superficial",
             "status": "FAIL",
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3374,7 +3671,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -3383,14 +3681,16 @@
             "capacity": 1079466.534914353,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 3000.000036087915
+            "z_mm": 3000.000036087915,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -3399,32 +3699,34 @@
             "capacity": 1717618677.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 2330.9771222237932,
-            "analysis": 1748.232841667845,
+            "demand": 6092.666666666665,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Flexion: refuerzo superficial",
             "status": "FAIL",
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3433,7 +3735,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -3442,14 +3745,16 @@
             "capacity": 1094229.7334183615,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 3861.1
+            "z_mm": 3861.1,
+            "face": "top"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -3579,25 +3884,26 @@
             "capacity": 404336834.25882345,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 525.0
+            "z_mm": 525.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.05300736494974873,
             "case": "U1",
-            "z_mm": 525.0
+            "z_mm": 525.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1592.0,
             "as_min": 4113.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 1.320938709647325e-57,
-            "analysis": 9.907040322354938e-58,
+            "demand": 4113.666666666666,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 525.0
+            "z_mm": 525.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3606,7 +3912,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 525.0
+            "z_mm": 525.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -3615,14 +3922,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 525.0
+            "z_mm": 525.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 525.0
+            "z_mm": 525.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -3631,25 +3940,26 @@
             "capacity": 404336834.2588235,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1592.05
+            "z_mm": 1592.05,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.05300736494974873,
             "case": "U1",
-            "z_mm": 1592.05
+            "z_mm": 1592.05,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1592.0,
             "as_min": 4113.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 129.970271838424,
-            "analysis": 97.47770387881802,
+            "demand": 4113.666666666666,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 1592.05
+            "z_mm": 1592.05,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3658,7 +3968,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1592.05
+            "z_mm": 1592.05,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -3667,14 +3978,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 1592.05
+            "z_mm": 1592.05,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 1592.05
+            "z_mm": 1592.05,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -3683,25 +3996,26 @@
             "capacity": 404336834.2588235,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2249.999973954012
+            "z_mm": 2249.999973954012,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.05300736494974873,
             "case": "U1",
-            "z_mm": 2249.999973954012
+            "z_mm": 2249.999973954012,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1592.0,
             "as_min": 4113.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 267.30588921518785,
-            "analysis": 200.4794169113909,
+            "demand": 4113.666666666666,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 2249.999973954012
+            "z_mm": 2249.999973954012,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3710,7 +4024,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2249.999973954012
+            "z_mm": 2249.999973954012,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -3719,14 +4034,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2249.999973954012
+            "z_mm": 2249.999973954012,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2249.999973954012
+            "z_mm": 2249.999973954012,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -3735,25 +4052,26 @@
             "capacity": 404336834.2588235,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2907.95
+            "z_mm": 2907.95,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.05300736494974873,
             "case": "U1",
-            "z_mm": 2907.95
+            "z_mm": 2907.95,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1592.0,
             "as_min": 4113.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 129.97027183842314,
-            "analysis": 97.47770387881737,
+            "demand": 4113.666666666666,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 2907.95
+            "z_mm": 2907.95,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3762,7 +4080,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2907.95
+            "z_mm": 2907.95,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -3771,14 +4090,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2907.95
+            "z_mm": 2907.95,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2907.95
+            "z_mm": 2907.95,
+            "face": "top"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -3908,25 +4229,26 @@
             "capacity": 287907369.43424714,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 972.25
+            "z_mm": 972.25,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.026643370039019402,
             "case": "U1",
-            "z_mm": 972.25
+            "z_mm": 972.25,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 466.1225205362217,
-            "analysis": 349.5918904021663,
+            "demand": 4018.333333333333,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 972.25
+            "z_mm": 972.25,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3935,7 +4257,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 972.25
+            "z_mm": 972.25,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -3944,14 +4267,16 @@
             "capacity": 825086.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 972.25
+            "z_mm": 972.25,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 972.25
+            "z_mm": 972.25,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -3960,24 +4285,26 @@
             "capacity": 287907369.43424714,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2025.0
+            "z_mm": 2025.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.026643370039019402,
             "case": "U1",
-            "z_mm": 2025.0
+            "z_mm": 2025.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "FAIL",
             "demand": 4018.333333333333,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 2025.0
+            "z_mm": 2025.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -3986,7 +4313,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2025.0
+            "z_mm": 2025.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -3995,14 +4323,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2025.0
+            "z_mm": 2025.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2025.0
+            "z_mm": 2025.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -4011,24 +4341,26 @@
             "capacity": 287907369.43424714,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2627.75
+            "z_mm": 2627.75,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.026643370039019402,
             "case": "U1",
-            "z_mm": 2627.75
+            "z_mm": 2627.75,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "FAIL",
             "demand": 4018.333333333333,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 2627.75
+            "z_mm": 2627.75,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4037,7 +4369,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2627.75
+            "z_mm": 2627.75,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -4046,14 +4379,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2627.75
+            "z_mm": 2627.75,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2627.75
+            "z_mm": 2627.75,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -4062,24 +4397,26 @@
             "capacity": 287907369.43424714,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 3372.25
+            "z_mm": 3372.25,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.026643370039019402,
             "case": "U1",
-            "z_mm": 3372.25
+            "z_mm": 3372.25,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "FAIL",
             "demand": 4018.333333333333,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 3372.25
+            "z_mm": 3372.25,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4088,7 +4425,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 3372.25
+            "z_mm": 3372.25,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -4097,14 +4435,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 3372.25
+            "z_mm": 3372.25,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 3372.25
+            "z_mm": 3372.25,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -4113,25 +4453,26 @@
             "capacity": 287907369.43424714,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5027.75
+            "z_mm": 5027.75,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.026643370039019402,
             "case": "U1",
-            "z_mm": 5027.75
+            "z_mm": 5027.75,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 466.1225205362258,
-            "analysis": 349.5918904021694,
+            "demand": 4018.333333333333,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 5027.75
+            "z_mm": 5027.75,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4140,7 +4481,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5027.75
+            "z_mm": 5027.75,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -4149,14 +4491,16 @@
             "capacity": 825086.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5027.75
+            "z_mm": 5027.75,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5027.75
+            "z_mm": 5027.75,
+            "face": "bottom"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -4184,7 +4528,7 @@
           {
             "case": "U1",
             "x": -975.0,
-            "at": -372.25,
+            "at": -975.0,
             "tu_Nmm": 0.0
           },
           {
@@ -4209,8 +4553,8 @@
       }
     },
     {
-      "id": "torsion-con-estribos",
-      "description": "columna desplazada 400 mm en Y con Mx y Vy: Tu ≥ φTth, estribos cerrados y capas de Aℓ (D-088)",
+      "id": "torsion-placa",
+      "description": "columna desplazada 400 mm en Y con Mx y Vy: torsión de placa por Wood-Armer en las dos caras (D-118); los estribos solo para el cortante",
       "footing": {
         "id": "ZC",
         "lx": 6000.0,
@@ -4287,97 +4631,37 @@
           "legs": 8,
           "spacing": 100.0,
           "closed": true
-        },
-        "torsion_layers": [
-          {
-            "depth": 250.0,
-            "role": "torsion",
-            "bars": [
-              {
-                "designation": "#8",
-                "x": 150.0
-              },
-              {
-                "designation": "#8",
-                "x": 490.0
-              },
-              {
-                "designation": "#8",
-                "x": 830.0
-              },
-              {
-                "designation": "#8",
-                "x": 1170.0
-              },
-              {
-                "designation": "#8",
-                "x": 1510.0
-              },
-              {
-                "designation": "#8",
-                "x": 1850.0
-              }
-            ]
-          },
-          {
-            "depth": 350.0,
-            "role": "torsion",
-            "bars": [
-              {
-                "designation": "#8",
-                "x": 150.0
-              },
-              {
-                "designation": "#8",
-                "x": 490.0
-              },
-              {
-                "designation": "#8",
-                "x": 830.0
-              },
-              {
-                "designation": "#8",
-                "x": 1170.0
-              },
-              {
-                "designation": "#8",
-                "x": 1510.0
-              },
-              {
-                "designation": "#8",
-                "x": 1850.0
-              }
-            ]
-          }
-        ]
+        }
       },
       "expected": {
         "checks": [
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 19099382.67999971,
+            "demand": 50557718.67999971,
             "capacity": 885423347.6440698,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 277.0
+            "z_mm": 277.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 277.0
+            "z_mm": 277.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 3319.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 277.0
+            "z_mm": 277.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4386,7 +4670,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 277.0
+            "z_mm": 277.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -4395,40 +4680,44 @@
             "capacity": 3135107.102069282,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 277.0
+            "z_mm": 277.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 277.0
+            "z_mm": 277.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 149507575.00000012,
+            "demand": 12358953.320000295,
             "capacity": 885423347.6440698,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 277.0,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 277.0,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 3319.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 277.0,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4437,49 +4726,92 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 277.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 579780775.0000002,
+            "capacity": 885423347.6440698,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "z_mm": 1225.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.017157446266077847,
+            "case": "U1",
+            "z_mm": 1225.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 4644.0,
+            "as_min": 3319.9999999999995,
+            "demand": 3319.9999999999995,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 1225.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 152.75,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 137901.68000000002,
-            "capacity": 3069115.11786949,
+            "demand": 635741.6799999999,
+            "capacity": 3079014.151510255,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 340838937.31999993,
+            "demand": 504793624.99999976,
             "capacity": 885423347.6440698,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1723.0
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 1723.0
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 3319.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 1723.0
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4488,75 +4820,36 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1723.0
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 485730336.0,
-              "phi Tth": 91217364.43224227
-            },
-            "case": "U1",
-            "z_mm": 1723.0
-          },
-          {
-            "name": "Torsion: dimensiones de la seccion",
-            "status": "PASS",
-            "demand": 2.1492778322529436,
-            "capacity": 3.364716014906362,
-            "case": "U1",
-            "z_mm": 1723.0
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "PASS",
-            "demand": 2.2785205598206577,
-            "capacity": 15.92,
-            "case": "U1",
-            "z_mm": 1723.0
-          },
-          {
-            "name": "Torsion: refuerzo transversal minimo",
-            "status": "PASS",
-            "demand": 1.6666666666666667,
-            "capacity": 15.92,
-            "case": "U1",
-            "z_mm": 1723.0
-          },
-          {
-            "name": "Torsion: refuerzo longitudinal",
-            "status": "PASS",
-            "demand": 5168.140333785215,
-            "capacity": 6120.0,
-            "case": "U1",
-            "z_mm": 1723.0
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 746759999.9999995,
+            "demand": 144891398.68000007,
             "capacity": 885423347.6440698,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2999.9999739558343
+            "z_mm": 1723.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 2999.9999739558343
+            "z_mm": 1723.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 3319.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 2999.9999739558343
+            "z_mm": 1723.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4565,75 +4858,54 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2999.9999739558343
+            "z_mm": 1723.0,
+            "face": "bottom"
           },
           {
-            "name": "Torsion: umbral",
+            "name": "Cortante: resistencia",
             "status": "PASS",
-            "values": {
-              "Tu": 340704002.9577839,
-              "phi Tth": 91217364.43224227
-            },
+            "demand": 635741.6799999999,
+            "capacity": 3135107.102069282,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2999.9999739558343
+            "z_mm": 1723.0,
+            "face": "bottom"
           },
           {
-            "name": "Torsion: dimensiones de la seccion",
+            "name": "Cortante: refuerzo minimo",
             "status": "PASS",
-            "demand": 1.4342143487629746,
-            "capacity": 3.293960382275415,
+            "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2999.9999739558343
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "PASS",
-            "demand": 1.5982141077400378,
-            "capacity": 15.92,
-            "case": "U1",
-            "z_mm": 2999.9999739558343
-          },
-          {
-            "name": "Torsion: refuerzo transversal minimo",
-            "status": "PASS",
-            "demand": 1.6666666666666667,
-            "capacity": 15.92,
-            "case": "U1",
-            "z_mm": 2999.9999739558343
-          },
-          {
-            "name": "Torsion: refuerzo longitudinal",
-            "status": "PASS",
-            "demand": 3625.0692391759535,
-            "capacity": 6120.0,
-            "case": "U1",
-            "z_mm": 2999.9999739558343
+            "z_mm": 1723.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 340838937.3199997,
+            "demand": 826569273.3199999,
             "capacity": 885423347.6440698,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 4277.0
+            "z_mm": 1723.0,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 4277.0
+            "z_mm": 1723.0,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 3319.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 4277.0
+            "z_mm": 1723.0,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4642,75 +4914,36 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 4277.0
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 195677664.00000006,
-              "phi Tth": 91217364.43224227
-            },
-            "case": "U1",
-            "z_mm": 4277.0
-          },
-          {
-            "name": "Torsion: dimensiones de la seccion",
-            "status": "PASS",
-            "demand": 1.056910426018402,
-            "capacity": 3.364716014906362,
-            "case": "U1",
-            "z_mm": 4277.0
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "PASS",
-            "demand": 0.9179076279099824,
-            "capacity": 15.92,
-            "case": "U1",
-            "z_mm": 4277.0
-          },
-          {
-            "name": "Torsion: refuerzo transversal minimo",
-            "status": "PASS",
-            "demand": 1.6666666666666667,
-            "capacity": 15.92,
-            "case": "U1",
-            "z_mm": 4277.0
-          },
-          {
-            "name": "Torsion: refuerzo longitudinal",
-            "status": "PASS",
-            "demand": 2569.4698132216836,
-            "capacity": 6120.0,
-            "case": "U1",
-            "z_mm": 4277.0
+            "z_mm": 1723.0,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 19099382.680000305,
+            "status": "FAIL",
+            "demand": 1087464002.9577835,
             "capacity": 885423347.6440698,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5723.0
+            "z_mm": 2999.9999739558343,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 5723.0
+            "z_mm": 2999.9999739558343,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 3319.9999999999995,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5723.0
+            "z_mm": 2999.9999739558343,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4719,7 +4952,120 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5723.0
+            "z_mm": 2999.9999739558343,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 0.01296582748182118,
+            "capacity": 3054783.920948612,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1",
+            "z_mm": 2999.9999739558343,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U1",
+            "z_mm": 2999.9999739558343,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 536516601.31999975,
+            "capacity": 885423347.6440698,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "z_mm": 4277.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.017157446266077847,
+            "case": "U1",
+            "z_mm": 4277.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 4644.0,
+            "as_min": 3319.9999999999995,
+            "demand": 3319.9999999999995,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 4277.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 152.75,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 4277.0,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 635741.6800000002,
+            "capacity": 3084040.30506019,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1",
+            "z_mm": 4277.0,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U1",
+            "z_mm": 4277.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 50557718.680000424,
+            "capacity": 885423347.6440698,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "z_mm": 5723.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.017157446266077847,
+            "case": "U1",
+            "z_mm": 5723.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 4644.0,
+            "as_min": 3319.9999999999995,
+            "demand": 3319.9999999999995,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 5723.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 152.75,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 5723.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -4728,14 +5074,54 @@
             "capacity": 3135107.102069282,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5723.0
+            "z_mm": 5723.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5723.0
+            "z_mm": 5723.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 12358953.319999814,
+            "capacity": 885423347.6440698,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "z_mm": 5723.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.017157446266077847,
+            "case": "U1",
+            "z_mm": 5723.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 4644.0,
+            "as_min": 3319.9999999999995,
+            "demand": 3319.9999999999995,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 5723.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 152.75,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 5723.0,
+            "face": "top"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -4762,9 +5148,9 @@
           },
           {
             "case": "U1",
-            "x": -2225.0,
-            "at": -2723.0,
-            "tu_Nmm": 31458336.000000004
+            "x": -1775.0,
+            "at": -1775.0,
+            "tu_Nmm": -542287200.0
           },
           {
             "case": "U1",
@@ -4794,8 +5180,8 @@
       }
     },
     {
-      "id": "piel-como-torsion",
-      "description": "h = 1000 mm, columna desplazada en Y y estribos cerrados: la piel #5 c/200 aporta Aℓ (D-090)",
+      "id": "torsion-placa-alta",
+      "description": "h = 1000 mm, columna desplazada en Y: Wood-Armer y el refuerzo superficial de cada cara (D-118)",
       "footing": {
         "id": "ZC",
         "lx": 6000.0,
@@ -4883,29 +5269,30 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 183682025.23148167,
+            "demand": 760096854.3981482,
             "capacity": 1587596147.64407,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03334816615850986,
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 5986.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 167.18329044541758,
-            "analysis": 125.38746783406319,
+            "demand": 5986.666666666666,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: refuerzo superficial",
@@ -4914,7 +5301,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4923,50 +5311,54 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 472905.8611111111,
-            "capacity": 4477590.503448803,
+            "demand": 513961.95222222223,
+            "capacity": 4423228.131591064,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 647012245.1848149,
+            "demand": 651845178.9351851,
             "capacity": 1587596147.64407,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2123.0
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03334816615850986,
             "case": "U1",
-            "z_mm": 2123.0
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 5986.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 2113.420400906747,
-            "analysis": 1585.0653006800603,
+            "demand": 5986.666666666666,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 2123.0
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
             "name": "Flexion: refuerzo superficial",
@@ -4975,7 +5367,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 2123.0
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -4984,76 +5377,36 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2123.0
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 573204111.3333333,
-              "phi Tth": 219597358.81836104
-            },
-            "case": "U1",
-            "z_mm": 2123.0
-          },
-          {
-            "name": "Torsion: dimensiones de la seccion",
-            "status": "PASS",
-            "demand": 0.8332319096984832,
-            "capacity": 3.301309082008422,
-            "case": "U1",
-            "z_mm": 2123.0
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "PASS",
-            "demand": 1.3993897391173276,
-            "capacity": 13.266666666666667,
-            "case": "U1",
-            "z_mm": 2123.0
-          },
-          {
-            "name": "Torsion: refuerzo transversal minimo",
-            "status": "PASS",
-            "demand": 1.6666666666666667,
-            "capacity": 13.266666666666667,
-            "case": "U1",
-            "z_mm": 2123.0
-          },
-          {
-            "name": "Torsion: refuerzo longitudinal",
-            "status": "FAIL",
-            "demand": 6136.005244258362,
-            "capacity": 1194.0,
-            "case": "U1",
-            "z_mm": 2123.0
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 871759999.9999995,
+            "demand": 1220216356.5181482,
             "capacity": 1587596147.64407,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 2999.9999792810927
+            "z_mm": 2123.0,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03334816615850986,
             "case": "U1",
-            "z_mm": 2999.9999792810927
+            "z_mm": 2123.0,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 5986.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 3087.944309839039,
-            "analysis": 2315.9582323792793,
+            "demand": 5986.666666666666,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 2999.9999792810927
+            "z_mm": 2123.0,
+            "face": "top"
           },
           {
             "name": "Flexion: refuerzo superficial",
@@ -5062,7 +5415,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 2999.9999792810927
+            "z_mm": 2123.0,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -5071,76 +5425,54 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 2999.9999792810927
+            "z_mm": 2123.0,
+            "face": "top"
           },
           {
-            "name": "Torsion: umbral",
+            "name": "Cortante: resistencia",
             "status": "PASS",
-            "values": {
-              "Tu": 443542003.0632351,
-              "phi Tth": 219597358.81836104
-            },
+            "demand": 513961.95222222223,
+            "capacity": 4422666.534914354,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 2999.9999792810927
+            "z_mm": 2123.0,
+            "face": "top"
           },
           {
-            "name": "Torsion: dimensiones de la seccion",
+            "name": "Cortante: refuerzo minimo",
             "status": "PASS",
-            "demand": 0.59491092365297,
-            "capacity": 3.293960382275415,
+            "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 2999.9999792810927
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "PASS",
-            "demand": 1.0828396302155812,
-            "capacity": 13.266666666666667,
-            "case": "U1",
-            "z_mm": 2999.9999792810927
-          },
-          {
-            "name": "Torsion: refuerzo transversal minimo",
-            "status": "PASS",
-            "demand": 1.6666666666666667,
-            "capacity": 13.266666666666667,
-            "case": "U1",
-            "z_mm": 2999.9999792810927
-          },
-          {
-            "name": "Torsion: refuerzo longitudinal",
-            "status": "FAIL",
-            "demand": 6136.005244258362,
-            "capacity": 1194.0,
-            "case": "U1",
-            "z_mm": 2999.9999792810927
+            "z_mm": 2123.0,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 649510490.1218519,
+            "demand": 1315302003.0632346,
             "capacity": 1587596147.64407,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 2999.9999792810927,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.03334816615850986,
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 2999.9999792810927,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 5986.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 2124.2539701791698,
-            "analysis": 1593.1904776343777,
+            "demand": 5986.666666666666,
+            "status": "FAIL",
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 2999.9999792810927,
+            "face": "top"
           },
           {
             "name": "Flexion: refuerzo superficial",
@@ -5149,7 +5481,8 @@
             "capacity": 152.75,
             "clause": "C.10.6.7",
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 2999.9999792810927,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -5158,49 +5491,92 @@
             "capacity": 152.75,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 2999.9999792810927,
+            "face": "top"
           },
           {
-            "name": "Torsion: umbral",
+            "name": "Cortante: resistencia",
             "status": "PASS",
-            "values": {
-              "Tu": 313879888.6666666,
-              "phi Tth": 219597358.81836104
-            },
+            "demand": 0.012041276087984443,
+            "capacity": 4422666.534914354,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 2999.9999792810927,
+            "face": "top"
           },
           {
-            "name": "Torsion: dimensiones de la seccion",
+            "name": "Cortante: refuerzo minimo",
             "status": "PASS",
-            "demand": 0.5263299410925338,
-            "capacity": 3.3003491054526197,
+            "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 2999.9999792810927,
+            "face": "top"
           },
           {
-            "name": "Torsion: refuerzo transversal",
+            "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 0.7662895063569993,
-            "capacity": 13.266666666666667,
+            "demand": 963390378.7885185,
+            "capacity": 1587596147.64407,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 3877.0,
+            "face": "top"
           },
           {
-            "name": "Torsion: refuerzo transversal minimo",
+            "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "demand": 1.6666666666666667,
-            "capacity": 13.266666666666667,
+            "capacity": 0.03334816615850986,
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 3877.0,
+            "face": "top"
           },
           {
-            "name": "Torsion: refuerzo longitudinal",
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 4644.0,
+            "as_min": 5986.666666666666,
+            "demand": 5986.666666666666,
             "status": "FAIL",
-            "demand": 6136.005244258362,
-            "capacity": 1194.0,
             "case": "U1",
-            "z_mm": 3877.0
+            "z_mm": 3877.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: refuerzo superficial",
+            "status": "FAIL",
+            "demand": 200.0,
+            "capacity": 152.75,
+            "clause": "C.10.6.7",
+            "case": "U1",
+            "z_mm": 3877.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 152.75,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 3877.0,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 505416.0744444444,
+            "capacity": 4422666.534914354,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1",
+            "z_mm": 3877.0,
+            "face": "top"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U1",
+            "z_mm": 3877.0,
+            "face": "top"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -5221,9 +5597,9 @@
         "torques": [
           {
             "case": "U1",
-            "x": -2225.0,
-            "at": -2225.0,
-            "tu_Nmm": 114581683.33333334
+            "x": -1775.0,
+            "at": -1775.0,
+            "tu_Nmm": -705971016.6666666
           },
           {
             "case": "U1",
@@ -5247,417 +5623,8 @@
       }
     },
     {
-      "id": "torsion-como-piel",
-      "description": "h = 1000 mm sin skin: las capas de torsión cerca de las caras cumplen el refuerzo superficial (D-090)",
-      "footing": {
-        "id": "ZC",
-        "lx": 6000.0,
-        "ly": 2000.0,
-        "h": 1000.0,
-        "cover": 75.0,
-        "fill_height": 1000.0,
-        "pedestal_height": 0.0,
-        "surcharge_dead_kNm2": 2.0,
-        "surcharge_live_kNm2": 5.0,
-        "columns": [
-          {
-            "id": "C1",
-            "cx": 450.0,
-            "cy": 450.0,
-            "x": -2000.0,
-            "y": 0.0,
-            "loads": [
-              {
-                "case": "U1",
-                "kind": "factored",
-                "dead_factor": 1.2,
-                "live_factor": 1.6,
-                "P_kN": 1800.0,
-                "Vx_kN": 0.0,
-                "Vy_kN": 0.0,
-                "Mx_kNm": 0.0,
-                "My_kNm": 0.0
-              }
-            ]
-          },
-          {
-            "id": "C2",
-            "cx": 450.0,
-            "cy": 450.0,
-            "x": 2000.0,
-            "y": 0.0,
-            "loads": [
-              {
-                "case": "U1",
-                "kind": "factored",
-                "dead_factor": 1.2,
-                "live_factor": 1.6,
-                "P_kN": 1800.0,
-                "Vx_kN": 0.0,
-                "Vy_kN": 0.0,
-                "Mx_kNm": 0.0,
-                "My_kNm": 0.0
-              }
-            ]
-          }
-        ],
-        "bottom": {
-          "first": "x",
-          "end": "straight",
-          "x": {
-            "designation": "#7",
-            "spacing": 150.0
-          },
-          "y": {
-            "designation": "#5",
-            "spacing": 200.0
-          }
-        },
-        "top": {
-          "end": "straight",
-          "x": {
-            "designation": "#7",
-            "spacing": 150.0
-          }
-        },
-        "torsion_layers": [
-          {
-            "depth": 500.0,
-            "role": "torsion",
-            "bars": [
-              {
-                "designation": "#5",
-                "x": 90.0
-              },
-              {
-                "designation": "#5",
-                "x": 1910.0
-              }
-            ]
-          },
-          {
-            "depth": 650.0,
-            "role": "torsion",
-            "bars": [
-              {
-                "designation": "#5",
-                "x": 90.0
-              },
-              {
-                "designation": "#5",
-                "x": 1910.0
-              }
-            ]
-          },
-          {
-            "depth": 800.0,
-            "role": "torsion",
-            "bars": [
-              {
-                "designation": "#5",
-                "x": 90.0
-              },
-              {
-                "designation": "#5",
-                "x": 1910.0
-              }
-            ]
-          }
-        ]
-      },
-      "expected": {
-        "checks": [
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 179538825.0,
-            "capacity": 1717618677.9330285,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 775.0
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.03631640695129132,
-            "case": "U1",
-            "z_mm": 775.0
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 250.8071526119857,
-            "analysis": 188.10536445898927,
-            "case": "U1",
-            "z_mm": 775.0
-          },
-          {
-            "name": "Flexion: refuerzo superficial",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 174.875,
-            "clause": "C.10.6.7",
-            "case": "U1",
-            "z_mm": 775.0
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 775.0
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 463326.0,
-            "capacity": 1144259.0034488027,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 775.0
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 775.0
-          },
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 675112849.6668007,
-            "capacity": 1717618677.9330287,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 2138.9
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.03631640695129132,
-            "case": "U1",
-            "z_mm": 2138.9
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 2330.9771222237937,
-            "analysis": 1748.2328416678454,
-            "case": "U1",
-            "z_mm": 2138.9
-          },
-          {
-            "name": "Flexion: refuerzo superficial",
-            "status": "FAIL",
-            "demand": 413.9,
-            "capacity": 174.875,
-            "clause": "C.10.6.7",
-            "case": "U1",
-            "z_mm": 2138.9
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 2138.9
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 514800.024,
-            "capacity": 1094229.7334183615,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2138.9
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 2138.9
-          },
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 896760000.0,
-            "capacity": 1717618677.9330287,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 3000.000036087915
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.03631640695129132,
-            "case": "U1",
-            "z_mm": 3000.000036087915
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 3261.2281026970104,
-            "analysis": 2445.9210770227583,
-            "case": "U1",
-            "z_mm": 3000.000036087915
-          },
-          {
-            "name": "Flexion: refuerzo superficial",
-            "status": "FAIL",
-            "demand": 413.9,
-            "capacity": 174.875,
-            "clause": "C.10.6.7",
-            "case": "U1",
-            "z_mm": 3000.000036087915
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 3000.000036087915
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.021574798971414566,
-            "capacity": 1079466.534914353,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 3000.000036087915
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 3000.000036087915
-          },
-          {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 675112849.6668005,
-            "capacity": 1717618677.9330287,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 3861.1
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.03631640695129132,
-            "case": "U1",
-            "z_mm": 3861.1
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 6092.666666666665,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
-            "demand": 2330.9771222237932,
-            "analysis": 1748.232841667845,
-            "case": "U1",
-            "z_mm": 3861.1
-          },
-          {
-            "name": "Flexion: refuerzo superficial",
-            "status": "FAIL",
-            "demand": 413.9,
-            "capacity": 174.875,
-            "clause": "C.10.6.7",
-            "case": "U1",
-            "z_mm": 3861.1
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 3861.1
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 514800.02399999974,
-            "capacity": 1094229.7334183615,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 3861.1
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 3861.1
-          },
-          {
-            "name": "Direccion principal: separacion maxima (barras inferiores)",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 450.0,
-            "clause": "C.10.5.4"
-          },
-          {
-            "name": "Direccion principal: separacion maxima (barras superiores)",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 450.0,
-            "clause": "C.10.5.4"
-          }
-        ],
-        "equilibrium_failures": [],
-        "torques": [
-          {
-            "case": "U1",
-            "x": -2225.0,
-            "at": -2225.0,
-            "tu_Nmm": 0.0
-          },
-          {
-            "case": "U1",
-            "x": -861.1,
-            "at": -861.1,
-            "tu_Nmm": 0.0
-          },
-          {
-            "case": "U1",
-            "x": 3.6087914736526714e-05,
-            "at": 3.6087914736526714e-05,
-            "tu_Nmm": 0.0
-          },
-          {
-            "case": "U1",
-            "x": 861.1,
-            "at": 861.1,
-            "tu_Nmm": 0.0
-          }
-        ]
-      }
-    },
-    {
       "id": "torsion-sin-superior",
-      "description": "sin barras superiores y columna desplazada: concreto simple y torsión sin estribos (D-088)",
+      "description": "sin barras superiores y columnas desplazadas: el momento superior de Wood-Armer en concreto simple (D-072, D-118)",
       "footing": {
         "id": "ZC",
         "lx": 6000.0,
@@ -5732,24 +5699,26 @@
             "capacity": 1125254930.5323532,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0322647783740807,
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -5758,7 +5727,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -5767,40 +5737,44 @@
             "capacity": 843774.0803340252,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 89445075.00000012,
+            "demand": 424515075.0,
             "capacity": 1125254930.5323532,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0322647783740807,
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -5809,98 +5783,196 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 47982.02400000001,
+            "demand": 345822.024,
             "capacity": 828355.6322299016,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 775.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "FAIL",
-            "demand_Nmm": 245993023.9668001,
+            "demand_Nmm": 379652925.0,
             "capacity_Nmm": 187795428.05936465,
             "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
-            "z_mm": 1838.9
+            "z_mm": 1225.0,
+            "face": "top"
           },
           {
-            "name": "Torsion: umbral",
+            "name": "Flexion: resistencia",
             "status": "PASS",
-            "values": {
-              "Tu": 402084000.0,
-              "phi Tth": 119558562.0233299
-            },
+            "demand": 156090976.0331999,
+            "capacity": 1125254930.5323532,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "bottom"
           },
           {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.0322647783740807,
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 1838.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 1838.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 345822.024,
+            "capacity": 843774.0803340252,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1",
+            "z_mm": 1838.9,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U1",
+            "z_mm": 1838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "FAIL",
-            "demand_Nmm": 446759999.99999976,
+            "demand_Nmm": 648077023.9668001,
             "capacity_Nmm": 187795428.05936465,
             "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
-            "z_mm": 2999.9999830281417
-          },
-          {
-            "name": "Torsion: umbral",
-            "status": "PASS",
-            "values": {
-              "Tu": 402084000.0,
-              "phi Tth": 119558562.0233299
-            },
-            "case": "U1",
-            "z_mm": 2999.9999830281417
-          },
-          {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
-            "case": "U1",
-            "z_mm": 2999.9999830281417
+            "z_mm": 1838.9,
+            "face": "top"
           },
           {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "FAIL",
-            "demand_Nmm": 245993023.9668002,
+            "demand_Nmm": 848843999.9999998,
             "capacity_Nmm": 187795428.05936465,
             "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
-            "z_mm": 4161.1
+            "z_mm": 2999.9999830281417,
+            "face": "top"
           },
           {
-            "name": "Torsion: umbral",
+            "name": "Cortante: resistencia",
             "status": "PASS",
-            "values": {
-              "Tu": 402084000.0,
-              "phi Tth": 119558562.0233299
-            },
+            "demand": 0.005054898094385862,
+            "capacity": 755626.5744400471,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 2999.9999830281417,
+            "face": "top"
           },
           {
-            "name": "Torsion: refuerzo transversal",
-            "status": "FAIL",
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 2999.9999830281417,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 156090976.0331998,
+            "capacity": 1125254930.5323532,
+            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "case": "U1",
+            "z_mm": 4161.1,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.0322647783740807,
+            "case": "U1",
+            "z_mm": 4161.1,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "demand": 4092.666666666666,
+            "status": "PASS",
+            "case": "U1",
+            "z_mm": 4161.1,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "C.10.6.4",
+            "case": "U1",
+            "z_mm": 4161.1,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 345822.024,
+            "capacity": 843774.0803340252,
+            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
+            "case": "U1",
+            "z_mm": 4161.1,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "C.11.4.6.1(a)",
+            "case": "U1",
+            "z_mm": 4161.1,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
+            "case": "U1",
+            "status": "FAIL",
+            "demand_Nmm": 648077023.9668002,
+            "capacity_Nmm": 187795428.05936465,
+            "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -5909,24 +5981,26 @@
             "capacity": 1125254930.5323532,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0322647783740807,
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -5935,7 +6009,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -5944,14 +6019,16 @@
             "capacity": 843774.0803340252,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -5971,9 +6048,9 @@
           },
           {
             "case": "U1",
-            "x": -2225.0,
-            "at": -2838.9,
-            "tu_Nmm": 0.0
+            "x": -1775.0,
+            "at": -1775.0,
+            "tu_Nmm": -402084000.0
           },
           {
             "case": "U1",
@@ -6086,24 +6163,26 @@
             "capacity": 1147103277.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -6112,7 +6191,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -6121,14 +6201,16 @@
             "capacity": 839468.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 161.0999999999999
+            "z_mm": 161.0999999999999,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -6137,24 +6219,26 @@
             "capacity": 1147103277.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1225.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 1225.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 1225.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -6163,7 +6247,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1225.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -6172,14 +6257,16 @@
             "capacity": 773380.9608612515,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 1225.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 1225.0
+            "z_mm": 1225.0,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -6188,24 +6275,26 @@
             "capacity": 1147103277.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -6214,7 +6303,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -6223,14 +6313,16 @@
             "capacity": 839468.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 1838.9
+            "z_mm": 1838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
@@ -6239,24 +6331,26 @@
             "capacity": 1147103277.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -6265,7 +6359,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -6274,14 +6369,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 4161.1
+            "z_mm": 4161.1,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -6290,24 +6387,26 @@
             "capacity": 1147103277.9330287,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 4769.139899421869
+            "z_mm": 4769.139899421869,
+            "face": "top"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 4769.139899421869
+            "z_mm": 4769.139899421869,
+            "face": "top"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 4769.139899421869
+            "z_mm": 4769.139899421869,
+            "face": "top"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -6316,7 +6415,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 4769.139899421869
+            "z_mm": 4769.139899421869,
+            "face": "top"
           },
           {
             "name": "Cortante: resistencia",
@@ -6325,14 +6425,16 @@
             "capacity": 755626.5744400471,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 4769.139899421869
+            "z_mm": 4769.139899421869,
+            "face": "top"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 4769.139899421869
+            "z_mm": 4769.139899421869,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -6341,24 +6443,26 @@
             "capacity": 1147103277.9330285,
             "clause": "C.9.3.2.1 y C.9.3.2.2",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "clause": "C.10.5.1 y C.10.5.2 y C.10.5.3",
-            "status": "PASS",
             "demand": 4092.666666666666,
+            "status": "PASS",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Flexion: separacion por fisuracion",
@@ -6367,7 +6471,8 @@
             "capacity": 192.5,
             "clause": "C.10.6.4",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
@@ -6376,14 +6481,16 @@
             "capacity": 839468.452414162,
             "clause": "C.15.5.1, C.15.5.2 y C.11.2",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Cortante: refuerzo minimo",
             "status": "PASS",
             "clause": "C.11.4.6.1(a)",
             "case": "U1",
-            "z_mm": 5838.9
+            "z_mm": 5838.9,
+            "face": "bottom"
           },
           {
             "name": "Direccion principal: separacion maxima (barras inferiores)",
@@ -6411,7 +6518,7 @@
           {
             "case": "U1",
             "x": -1775.0,
-            "at": -1161.1,
+            "at": -1775.0,
             "tu_Nmm": 0.0
           },
           {

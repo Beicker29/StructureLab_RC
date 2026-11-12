@@ -13,10 +13,14 @@ vigas), del cortante de zapatas (Jc, carga neta) y de las conexiones (ld, ldh, l
    x de la columna (integral exacta de la recta recortada); momentos en las caras ±Y y a d; en la cara, el cortante de
    la sección a d. Reglas de vigas del oráculo de la viga larga, con el ancho de la franja; capa inferior: el band si lo
    hay (único refuerzo inferior de su zona, D-097) o la malla y; capa superior: las barras superiores transversales que
-   caen en la franja (D-097). Momento negativo sin barras superiores: concreto simple.
-4. Malla y fuera de las franjas: s ≤ min(3h, 450). Retracción y temperatura por zona (D-097): por metro, inferior más
-   superior de cada dirección ≥ ρ·h (ACI 0.0018; NSR-10 por grado, 0.0018 con fy = 420) y cada capa con
-   s ≤ min(5h, 450); zonas: X en todo el ancho, Y fuera de las zonas de band y cada zona de band.
+   caen en la franja (D-097). Momento negativo sin barras superiores: concreto simple. Torsión de placa (D-118): con
+   mxy = el mayor |T|/B en los bordes de la franja y mx = 0, Wood-Armer pide abajo M + b·|mxy| y arriba M − b·|mxy|
+   (0 si quedan del lado contrario): una estación por cara con momento, el cortante con la primera.
+4. Malla y fuera de las franjas: s ≤ min(3h, 450). Torsión de placa (D-118): con my = 0, ±|mxy| por metro en la malla
+   y y en las superiores y (o concreto simple sin ellas), con el mayor |mxy| fuera de las franjas. Retracción y
+   temperatura por zona (D-097): por metro, inferior más superior de cada dirección ≥ ρ·h (ACI 0.0018; NSR-10 por
+   grado, 0.0018 con fy = 420) y cada capa con s ≤ min(5h, 450); zonas: X en todo el ancho, Y fuera de las zonas de
+   band y cada zona de band.
 5. Desarrollo (con nivel sísmico bajo, para que aplique As requerido/As suministrado en barras rectas): barras x desde
    la sección de mayor momento de su signo; barras inferiores de cada franja (band o malla y) desde la cara de la
    columna con el mayor momento positivo de las caras; superiores transversales con el mayor momento negativo.
@@ -65,6 +69,7 @@ def _min_spacing(folder: str, f: dict) -> list[dict]:
     declared = [("barras inferiores, direccion principal", f["bottom"]["x"]),
                 ("barras inferiores, direccion secundaria", f["bottom"]["y"])]
     declared += [(f"band, columna {c['id']}", c["band"]) for c in f["columns"] if c.get("band")]
+    declared += [(f"band superior, columna {c['id']}", c["band_top"]) for c in f["columns"] if c.get("band_top")]
     top = f.get("top") or {}
     declared += [(f"barras superiores, {DIRECTIONS[d]}", top[d]) for d in ("x", "y") if top.get(d)]
     out = []
@@ -118,6 +123,37 @@ def _top_y(f: dict) -> dict | None:
     half = f["lx"] / 2 - f["cover"] - db / 2
     return {"from_top": f["cover"] + above + db / 2, "db": db, "ab": ab, "spacing": top["spacing"],
             "positions": _uniform(-half, half, top["spacing"]), "cc": f["cover"] + above}
+
+
+def _band_top(f: dict, c: dict) -> dict | None:
+    """El band superior de la columna (D-119): barras y arriba en el ancho de su franja (con la d de la malla y inferior),
+    debajo de top.x si esa dirección va más cerca de la cara, como top.y; profundidad desde la cara superior."""
+    band = c.get("band_top")
+    if not band:
+        return None
+    db, ab = BARS[band["designation"]]
+    mat = f.get("top") or {}
+    nearest = mat.get("first") or ("x" if mat.get("x") else "y")
+    above = BARS[mat["x"]["designation"]][0] if mat.get("x") and nearest == "x" else 0.0
+    x0, x1 = _limits(f, c, _bottom_rows(f)["y"]["depth"])
+    edge = f["lx"] / 2 - f["cover"] - db / 2
+    positions = _uniform(max(x0 + db / 2, -edge), min(x1 - db / 2, edge), band["spacing"])
+    return {"from_top": f["cover"] + above + db / 2, "db": db, "ab": ab, "spacing": band["spacing"], "positions": positions,
+            "cc": f["cover"] + above}
+
+
+def _top_y_outside(f: dict) -> dict | None:
+    """top.y fuera de las zonas de band superior (D-119), como la malla y inferior frente al band."""
+    top = _top_y(f)
+    if top is None:
+        return None
+    zones = [_limits(f, c, _bottom_rows(f)["y"]["depth"]) for c in f["columns"] if c.get("band_top")]
+    return {**top, "positions": [p for p in top["positions"] if not any(x0 - 1e-6 <= p <= x1 + 1e-6 for x0, x1 in zones)]}
+
+
+def _strip_top(f: dict, c: dict) -> dict | None:
+    """Las barras superiores de la franja: el band superior si lo hay (D-119); si no, top.y (D-097)."""
+    return _band_top(f, c) or _top_y(f)
 
 
 def _uniform(low: float, high: float, spacing: float) -> list[float]:
@@ -277,10 +313,14 @@ def _transfer(folder: str, f: dict, spec: dict, moments: dict[str, tuple[float, 
             top_area = sum(ab for i in range(n) if low - 1e-6 <= start + i * top["spacing"] <= high + 1e-6)
             nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - f["cover"] - top["above"] - db / 2, profile)
             capacity = phi * nominal
-        elif direction == "y" and (top := _top_y(f)) is not None:
-            top_area = sum(top["ab"] for p in top["positions"] if low - 1e-6 <= p <= high + 1e-6)
-            nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - top["from_top"], profile)
-            capacity = phi * nominal
+        elif direction == "y" and (tops := [t for t in (_top_y_outside(f), *(_band_top(f, c) for c in f["columns"])) if t]):
+            # top.y fuera de las zonas de band superior y el band superior de cada columna (D-119), con la d de la primera.
+            top_area = sum(t["ab"] for t in tops for p in t["positions"] if low - 1e-6 <= p <= high + 1e-6)
+            if top_area > 0:
+                nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - tops[0]["from_top"], profile)
+                capacity = phi * nominal
+            elif LEVEL[folder] in profile["plain_levels"]:
+                capacity = 0.60 * 0.42 * math.sqrt(FC) * bslab * (f["h"] - 50.0) ** 2 / 6
         elif LEVEL[folder] in profile["plain_levels"]:
             capacity = 0.60 * 0.42 * math.sqrt(FC) * bslab * (f["h"] - 50.0) ** 2 / 6
         negative = {**common, "name": f"Transferencia de momento: parte negativa ({DIRECTIONS[direction]})", "status": "PASS",
@@ -315,7 +355,7 @@ def _strip(f: dict, index: int) -> dict:
     points = [(p - x0, f["h"] - d, area) for p, _, area in bars]
     layers = [{"face": "bottom", "depth": d, "area": sum(area for _, _, area in bars), "spacing": gap([p for p, _, _ in bars]),
                "cc": f["h"] - d - db / 2}]
-    top = _top_y(f)
+    top = _strip_top(f, c)  # el band superior o top.y (D-119)
     inside = [] if top is None else [p for p in top["positions"] if x0 - 1e-6 <= p <= x1 + 1e-6]
     if inside and top is not None:
         points += [(p - x0, f["h"] - top["from_top"], top["ab"]) for p in inside]
@@ -323,7 +363,7 @@ def _strip(f: dict, index: int) -> dict:
                        "cc": top["cc"]})
     return {"x0": x0, "x1": x1, "width": x1 - x0, "depth": d, "bars": points, "layers": layers, "top": bool(inside),
             "bottom_area": layers[0]["area"], "top_area": len(inside) * (top["ab"] if top else 0.0),
-            "spacing": band["spacing"] if band else row["spacing"], "band": band, "db": db}
+            "spacing": band["spacing"] if band else row["spacing"], "band": band, "db": db, "top_bars": top}
 
 
 def _along_y(plane: list[float], x: float, y0: float, y1: float) -> tuple[float, float]:
@@ -395,7 +435,7 @@ def _strip_sections(f: dict, beam: dict, index: int, case: str, depth: float) ->
         y = min(points, key=lambda point: beyond(point, side)[0])
         moment, shear = beyond(y, side)
         if moment < -1e3 and moment < face_moment:
-            out.append((y, moment, shear, f"mayor momento negativo hacia el borde {name}"))
+            out.append((y, moment, shear, f"mayor M negativo hacia el borde {name}"))
     return out
 
 
@@ -446,19 +486,45 @@ def _biaxial(bars: list[tuple[float, float, float]], b: float, h: float) -> tupl
     return m3, strain
 
 
+def strip_twist(f: dict, beam: dict, strip: dict) -> float:
+    """|mxy| de la franja (D-118): el mayor |T|/B en sus dos bordes x0 y x1, a cada lado del par de la columna."""
+    return max(abs(_B._torque(beam, strip["x0"])), abs(_B._torque(beam, strip["x1"]))) / f["ly"]
+
+
+def strip_moments(moment: float, width: float, twist: float) -> list[float]:
+    """Wood-Armer de la franja con mx = 0 (D-118), escrito aparte: my = M/b; la cara inferior pide my + |mxy| (0 si queda
+    negativo) y la superior my − |mxy| (0 si queda positivo). Por b: los que no son nulos; sin ninguno, [M]."""
+    bottom, top = max(moment + twist * width, 0.0), min(moment - twist * width, 0.0)
+    return [value for value in (bottom, top) if value != 0] or [moment]
+
+
 def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> list[dict]:
     strip = _strip(f, index)
     where = f"Franja transversal de la columna {f['columns'][index]['id']}"
     out = []
+    twist = strip_twist(f, beam, strip)
+    for y, physical, shear, _ in _strip_sections(f, beam, index, case, strip["depth"]):
+        for order, moment in enumerate(strip_moments(physical, strip["width"], twist)):
+            # Una estación por cara con momento de Wood-Armer; el cortante con la primera (D-118).
+            out += [{**item, "face": "top" if moment < 0 else "bottom"}
+                    for item in _strip_station(folder, f, (beam, index, case), (y, moment, shear, order), where)]
+    return out
+
+
+def _strip_station(folder: str, f: dict, given: tuple[dict, int, str], section: tuple[float, float, float, int],
+                   where: str) -> list[dict]:
+    """Una estación de la franja: la flexión con el momento de diseño y, en la primera (order 0), el cortante."""
+    _, index, case = given
+    y, moment, shear, order = section
+    strip = _strip(f, index)
     layers = strip["layers"]
-    for y, moment, shear, _ in _strip_sections(f, beam, index, case, strip["depth"]):
-        if moment < 0 and not strip["top"]:
-            # Sin barras superiores transversales: concreto simple en el ancho de la franja (D-072, D-095) y el cortante.
-            plain = {**_F._plain({**f, "lx": strip["width"]}, "y", -moment, case, _F.PROFILES[folder], LEVEL[folder]),
-                     "name": "Flexion concreto simple (cara superior, direccion secundaria)"}
-            items = [plain, *_beam_shear(_B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None)))]
-            out += [{**item, "case": case, "z_mm": y + f["ly"] / 2, "where": where} for item in items]
-            continue
+    shear_items = _beam_shear(_B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None))) if order == 0 else []
+    if moment < 0 and not strip["top"]:
+        # Sin barras superiores transversales: concreto simple en el ancho de la franja (D-072, D-095) y el cortante.
+        plain = {**_F._plain({**f, "lx": strip["width"]}, "y", -moment, case, _F.PROFILES[folder], LEVEL[folder]),
+                 "name": "Flexion concreto simple (cara superior, direccion secundaria)"}
+        items = [plain, *shear_items]
+    else:
         items = _B._flexure_checks(folder, f, layers, moment, strip["width"])
         # Resistencia biaxial (D-046): con las barras asimétricas en la franja, el eje neutro se inclina.
         if moment == 0:
@@ -470,18 +536,65 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
             nominal, strain = _biaxial(bars, strip["width"], f["h"])
             capacity = _F._phi(strain, _F.PROFILES[folder]) * nominal
             items[0] = {**items[0], "capacity": capacity, "status": "PASS" if capacity >= abs(moment) else "FAIL"}
-        items += _beam_shear(_B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None)))
-        out += [{**item, "case": case, "z_mm": y + f["ly"] / 2, "where": where} for item in items]
-    return out
+        if moment < 0:
+            # D-116: el momento negativo de la franja lo toma la viga de cimentación; no se exige el As,min por flexión.
+            items = [{"name": item["name"], "status": "PASS", "capacity": item["capacity"]}
+                     if item["name"] == "Flexion: acero minimo (M3)" else item for item in items]
+        items += shear_items
+    return [{**item, "case": case, "z_mm": y + f["ly"] / 2, "where": where} for item in items]
+
+
+def _plate_outside(folder: str, f: dict, beam: dict, case: str) -> list[dict]:
+    """Barras y fuera de las franjas con la torsión de placa (D-118): my = 0, así que Wood-Armer pide +|mxy| abajo y
+    −|mxy| arriba, por metro, con el mayor |mxy| = |T|/B fuera de las franjas (64 tramos del largo y los bordes de cada
+    franja). Abajo, la malla y; arriba, las barras superiores y o, sin ellas, concreto simple por metro (D-072)."""
+    rows = _bottom_rows(f)
+    zones = [_limits(f, c, rows["y"]["depth"]) for c in f["columns"]]
+    half = f["lx"] / 2
+    points = [-half + f["lx"] * k / 64 for k in range(65)] + [edge for zone in zones for edge in zone]
+    outside = [x for x in points if not any(x0 + 1e-6 < x < x1 - 1e-6 for x0, x1 in zones)]
+    twist = max((abs(_B._torque(beam, x)) / f["ly"] for x in outside), default=0.0)
+    if twist <= 1.0:
+        return []
+    demand = twist * 1000.0
+    profile = _F.PROFILES[folder]
+
+    def strength(name: str, depth: float, area: float, spacing: float) -> dict:
+        per_metre = area * 1000.0 / spacing
+        state = _B._state([(depth, per_metre)], 1000.0, f["h"])
+        assert state is not None
+        capacity = _F._phi(state["et"], profile) * state["Mn"]
+        return {"name": name, "status": "PASS" if capacity >= demand else "FAIL", "demand": demand, "capacity": capacity}
+
+    name = "Direccion secundaria: torsion de placa"
+    out = [strength(f"{name} (barras inferiores)", rows["y"]["depth"], rows["y"]["ab"], rows["y"]["spacing"])]
+    top = _top_y_outside(f)
+    # Cortante de placa (D-119): qy = (dT/dx)/B = |∫y·p dy|/B en la línea x (la carga uniforme es simétrica), el mayor
+    # fuera de las franjas, frente a φVc por metro con la malla y inferior y Mu = |mxy| en esa sección.
+    xs, qy = max(((x, abs(_along_y(beam["plane"], x, -f["ly"] / 2, f["ly"] / 2)[1]) / f["ly"]) for x in outside),
+                 key=lambda item: item[1])
+    vu = qy * 1000.0
+    if vu > 1.0:
+        d = rows["y"]["depth"]
+        rho = rows["y"]["ab"] * 1000.0 / rows["y"]["spacing"] / (1000.0 * d)
+        vc = _S._one_way_vc(folder, 1000.0, d, rho, vu, abs(_B._torque(beam, xs)) / f["ly"] * 1000.0)
+        out.append({"name": f"{name}, cortante", "status": "PASS" if vu <= PHI * vc else "FAIL", "demand": vu,
+                    "capacity": PHI * vc})
+    if top is not None:
+        out.append(strength(f"{name} (barras superiores)", f["h"] - top["from_top"], top["ab"], top["spacing"]))
+    else:
+        out.append({**_F._plain({**f, "lx": 1000.0}, "y", demand, case, profile, LEVEL[folder]),
+                    "name": "Direccion secundaria: torsion de placa, concreto simple (cara superior)"})
+    return [{**item, "case": case, "where": ""} for item in out]
 
 
 def _beam_shear(items: list[dict]) -> list[dict]:
-    """Franja sin estribos con Vu > φVc (D-103): cumple con DCR = 1 (demanda = φVc) y el excedente Vu − φVc lo toma el
-    refuerzo transversal de la viga de cimentación; el Av,min que exigiría la franja también."""
+    """Franja sin estribos con Vu > φVc (D-103): cumple con DCR = 0.99 (demanda = 0.99·φVc, D-114) y el excedente
+    Vu − φVc lo toma el refuerzo transversal de la viga de cimentación; el Av,min que exigiría la franja también."""
     out = []
     for item in items:
         if item["status"] == "FAIL" and item["name"] == "Cortante: resistencia":
-            item = {**item, "status": "PASS", "demand": item["capacity"], "excess": item["demand"] - item["capacity"]}
+            item = {**item, "status": "PASS", "demand": 0.99 * item["capacity"], "excess": item["demand"] - item["capacity"]}
         elif item["status"] == "FAIL" and item["name"] == "Cortante: refuerzo minimo":
             item = {**item, "status": "PASS"}
         out.append(item)
@@ -496,7 +609,7 @@ def _whitney(moment: float, width: float, depth: float) -> float:
 def _ratio(width: float, depth: float, area: float, moment: float) -> float:
     analysis = _whitney(moment, width, depth)
     as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * width * depth
-    return min(max(analysis, min(as_min, 4 / 3 * analysis)) / area, 1.0)
+    return min(max(analysis, as_min) / area, 1.0)  # As requerido sin la excepción de 4/3 (D-115)
 
 
 def _develop(folder: str, f: dict, bar: tuple[float, float, float, str], given: tuple[float, float, str, str], level: str) -> dict:
@@ -505,7 +618,7 @@ def _develop(folder: str, f: dict, bar: tuple[float, float, float, str], given: 
     db, spacing, depth, layer = bar
     bottom = layer == "bottom"
     ratio, available, name, _ = given
-    hook = f[layer]["end"] == "hook"
+    hook = (f.get(layer) or f["bottom"])["end"] == "hook"  # el band superior sin top termina como la malla inferior
     permitted = level == LEVELS[folder]["bajo"] and (not hook or folder == "nsr_10")
     excess = ratio if permitted else 1.0
     if hook:
@@ -528,11 +641,12 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
         candidates = [(x, _B._shear_moment(beam, x)[1]) for x, _ in _B._faces(beam)]
         for low, high in _B._regions(beam):
             candidates += _B._extreme(beam, low, high, 1.0) + _B._extreme(beam, low, high, -1.0)
-        for x, moment in candidates:
-            if moment > positive[0]:
-                positive = (moment, x)
-            if -moment > negative[0]:
-                negative = (-moment, x)
+        for x, _ in candidates:
+            bottom, top = _B.plate_moments(beam, x)  # Wood-Armer de las barras x (D-118)
+            if bottom > positive[0]:
+                positive = (bottom, x)
+            if -top > negative[0]:
+                negative = (-top, x)
     rows = _bottom_rows(f)
     half = f["lx"] / 2
     x_rows = [(positive, rows["x"], "inferiores", "bottom")]
@@ -552,14 +666,16 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
         out.append(_develop(folder, f, (row["db"], row["spacing"], row["depth"], bottom),
                             (ratio, available, f"Desarrollo barras {label}, direccion principal", ""), level))
     hy = f["ly"] / 2
-    top = _top_y(f)
     for index, c in enumerate(f["columns"]):
         strip = _strip(f, index)
+        top = strip["top_bars"]  # el band superior o top.y (D-119)
         positive_y = negative_y = 0.0
         for beam, case in zip(beams, cases, strict=True):
             sections = _strip_sections(f, beam, index, case, strip["depth"])
-            positive_y = max([positive_y, *(m for _, m, _, label in sections if label.startswith("cara"))])
-            negative_y = max([negative_y, *(-m for _, m, _, _ in sections)])
+            twist = strip_twist(f, beam, strip)
+            design = [(strip_moments(m, strip["width"], twist), label) for _, m, _, label in sections]
+            positive_y = max([positive_y, *(v for values, label in design if label.startswith("cara") for v in values)])
+            negative_y = max([negative_y, *(-v for values, _ in design for v in values)])
         available = min(hy - (c["y"] + c["cy"] / 2), c["y"] - c["cy"] / 2 + hy) - f["cover"]
         if positive_y > 0 and strip["bottom_area"] > 0:
             ratio = _ratio(strip["width"], strip["depth"], strip["bottom_area"], positive_y)
@@ -569,7 +685,8 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
         if top is not None and negative_y > 1e3 and strip["top_area"] > 0:
             depth = f["h"] - top["from_top"]
             ratio = _ratio(strip["width"], depth, strip["top_area"], negative_y)
-            name = f"Desarrollo barras superiores, direccion secundaria (franja de la columna {c['id']})"
+            name = (f"Desarrollo band superior (columna {c['id']})" if c.get("band_top")
+                    else f"Desarrollo barras superiores, direccion secundaria (franja de la columna {c['id']})")
             out.append(_develop(folder, f, (top["db"], top["spacing"], depth, "top"), (ratio, available, name, ""), level))
     return out
 
@@ -583,10 +700,13 @@ def _shrinkage(folder: str, f: dict) -> list[dict]:
     mat = f.get("top") or {}
     top_x = [("superiores", mat["x"])] if mat.get("x") else []
     top_y = [("superiores", mat["y"])] if mat.get("y") else []
-    banded = [c for c in f["columns"] if c.get("band")]
+    banded = [c for c in f["columns"] if c.get("band") or c.get("band_top")]
     zones = [("x", "en todo el ancho", [("inferiores", f["bottom"]["x"]), *top_x]),
              ("y", "fuera de las zonas de band" if banded else "en todo el largo", [("inferiores", f["bottom"]["y"]), *top_y])]
-    zones += [("y", f"zona de band de la columna {c['id']}", [("band", c["band"]), *top_y]) for c in banded]
+    # Cada zona de band: abajo el band o la malla y; arriba el band superior o top.y (D-119).
+    zones += [("y", f"zona de band de la columna {c['id']}",
+               [("band", c["band"]) if c.get("band") else ("inferiores", f["bottom"]["y"]),
+                *([("band superior", c["band_top"])] if c.get("band_top") else top_y)]) for c in banded]
     out = []
     for direction, zone, layers in zones:
         provided = sum(BARS[bars["designation"]][1] * 1000.0 / bars["spacing"] for _, bars in layers)
@@ -659,6 +779,8 @@ def _expected(folder: str, f: dict, level: str) -> list[dict]:
     checks.append({"name": "Direccion secundaria: separacion maxima (malla inferior)",
                    "status": "PASS" if rows["y"]["spacing"] <= maximum else "FAIL", "demand": rows["y"]["spacing"],
                    "capacity": maximum, "clause": CLAUSES[folder]["spacing"], "where": ""})
+    for case, beam in zip(cases, beams, strict=True):
+        checks += _plate_outside(folder, f, beam, case)
     checks += _development(folder, f, beams, cases, level)
     checks += _connection(folder, f, cases)
     return checks
@@ -732,6 +854,19 @@ CASES = [
      _footing([_column("C1", -1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)], band=BAND),
                _column("C2", 1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)])], ly=3000.0,
               top=_B.top_mat("#7", 150.0, "straight", y=("#5", 200.0), first="y"))),
+    ("band-superior", "D-119: band superior #6 c/150 en C1 (sus barras superiores de franja); top.y #5 c/200 solo fuera de "
+                      "su zona; C1 corrida en Y con Mx: torsión de placa, su cortante fuera de las franjas y la retracción "
+                      "de la zona con el band superior",
+     _footing([_column("C1", -1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)], y=300.0, band=BAND,
+                       band_top={"designation": "#6", "spacing": 150.0}),
+               _column("C2", 1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)])], ly=3000.0,
+              top=_B.top_mat("#7", 150.0, "straight", y=("#5", 200.0), first="x"))),
+    ("band-superior-sin-top", "D-119: band superior en las dos columnas y sin barras superiores: fuera de las franjas, la "
+                              "torsión de placa superior en concreto simple y el band superior termina como la malla",
+     _footing([_column("C1", -1800.0, [_load("U1", 1000.0, mx=-600.0, live=0.0)], y=300.0,
+                       band_top={"designation": "#5", "spacing": 150.0}),
+               _column("C2", 1800.0, [_load("U1", 1000.0, mx=-600.0, live=0.0)], band_top={"designation": "#5", "spacing": 200.0})],
+              ly=3000.0, top=None)),
 ]
 
 

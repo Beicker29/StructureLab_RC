@@ -58,15 +58,15 @@ def _longitudinal_detailing(profile: Profile, member: Member, station: Station, 
     depths = sorted({bar.depth for bar in placed})
     limit = torsion.max_longitudinal_spacing()
     problems = []
-    for depth in (depths[0], depths[-1]):
+    for side, depth in (("superior", depths[0]), ("inferior", depths[-1])):
         row = sorted((bar for bar in placed if bar.depth == depth), key=lambda bar: bar.x)
         left_corner = interior_limits(section, layout, specs, row[0].diameter)[0]
         right_corner = interior_limits(section, layout, specs, row[-1].diameter)[1]
         # Una barra ocupa la esquina si su centro está a no más de un diámetro de la posición de esquina.
         if len(row) < _CORNER_BARS or row[0].x - left_corner > row[0].diameter or right_corner - row[-1].x > row[-1].diameter:
-            problems.append(f"la capa a {depth:.0f} mm no tiene barras en ambas esquinas")
+            problems.append(f"la capa {side} a {depth:.0f} mm no tiene barras en ambas esquinas")
         if any(second.x - first.x > limit for first, second in zip(row, row[1:], strict=False)):
-            problems.append(f"la capa a {depth:.0f} mm separa sus barras mas de {limit:.0f} mm")
+            problems.append(f"la capa {side} a {depth:.0f} mm separa sus barras mas de {limit:.0f} mm")
     gaps = [lower - upper for upper, lower in zip(depths, depths[1:], strict=False)]
     if gaps and max(gaps) > limit:
         problems.append(f"hay capas separadas {max(gaps):.0f} mm en altura")

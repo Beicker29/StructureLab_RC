@@ -10,22 +10,20 @@ No importa el paquete. Unidades de trabajo: N y mm. Para cada caso mayorado:
    derive_footing_shear.py; cada columna a la izquierda baja F = P + fd·(γc·A·hp − (γf·hf + qD)·A) − fl·qL·A en su eje
    y aplica el par My + (h + hp)·Vx. V = suma de fuerzas hacia arriba; M = suma de momentos respecto a la sección
    (positivo tracciona abajo).
-3. Estaciones de cada caso: el mayor y el menor momento entre las cuatro caras y los extremos interiores de cada tramo
-   (barrido fino de M y sección áurea, no por las raíces de V, como el paquete), y las secciones a d (de las barras
-   inferiores x) de cada cara hacia su tramo.
+3. Estaciones de cada caso: entre las cuatro caras y los extremos interiores de M de cada tramo (barrido fino de M y
+   sección áurea, no por las raíces de V, como el paquete), la del mayor momento de Wood-Armer de las barras inferiores
+   y la del mayor de las superiores, y las secciones a d (de las barras inferiores x) de cada cara hacia su tramo.
 4. En cada estación, las reglas de vigas (D-081) escritas aparte: resistencia por compatibilidad de deformaciones con
    las dos capas (bloque de Whitney, acero elastoplástico, concreto desplazado), εt, As,min de vigas con d ≥ 0.8h y el
    acero a tracción más allá de h/2, excepción de 4/3 por bisección del acero escalado, separación por fisuración (fs = 2/3·fy) y
    cortante con Vc de cimentación, estribos y Av,min de cimentación. Sin barras superiores y M < 0, la flexión es de
    concreto simple (D-072); el cortante sigue la regla de vigas (las barras inferiores quedan a tracción cerca de la cara
    comprimida y d = 0.8h, D-043). Separación 3h y 450 mm por capa.
-5. Torsión (D-088): T(x) = ∫y·q dA de la carga neta a la izquierda − Σ (F·y − Mx + (h + hp)·Vy) de las columnas a la
-   izquierda, tomada donde el cortante (a d de la cara). Umbral φTth = 0.75·0.083·√f'c·Acp²/pcp con Acp = B·h; si
-   Tu ≥ φTth, la verificación combinada reemplaza al cortante: sin estribos no cumple; con estribos, sección
-   (√((Vu/bd)² + (Tu·ph/1.7Aoh²)²) ≤ φ(Vc/bd + 0.66√f'c)), Av/s + 2At/s con At/s = Tu/(φ·2·0.85Aoh·fyt), mínimo
-   transversal y Aℓ = máx(Tu·ph/(φ·2·0.85Aoh·fy), Aℓ,min) frente a las capas de torsión más las barras de piel.
-6. Piel y torsión se sirven mutuamente (decisión del usuario, D-090): las barras de piel cuentan como Aℓ y las capas de
-   torsión, con barras cerca de las dos caras laterales, cuentan como piel (con su recubrimiento lateral).
+5. Torsión de placa (decisión del usuario, D-118): T(x) = ∫y·q dA de la carga neta a la izquierda − Σ (F·y − Mx +
+   (h + hp)·Vy) de las columnas a la izquierda, en la sección. mxy = T/B y, con my = 0, Wood-Armer pide en la cara
+   inferior mx + |mxy| y en la superior mx − |mxy| (0 si quedan del lado contrario): por B, máx(M + |T|, 0) y
+   mín(M − |T|, 0). Cada cara con momento es una estación de flexión; el cortante se revisa una vez, con el momento de
+   la primera. No hay torsión de vigas.
 
 Uso: python tests/oracles/derive_combined_beam.py
 """
@@ -148,14 +146,24 @@ def _extreme(beam: dict, low: float, high: float, sign: float) -> list[tuple[flo
     return found
 
 
-def _stations(beam: dict, depth: float) -> list[float]:
-    """Las x de las estaciones: el mayor momento positivo y el mayor negativo, si los hay (caras y extremos interiores),
-    y las secciones a d."""
+def plate_moments(beam: dict, x: float) -> tuple[float, float]:
+    """Wood-Armer en todo el ancho B con my = 0 (D-118), escrito aparte: mx = M/B y mxy = T/B en x. Con my = 0, la cara
+    inferior pide mx* = mx + |mxy| (si queda negativo, 0: esa cara no necesita barras x) y la superior mx − |mxy| (si
+    queda positivo, 0). Por B: (máx(M + |T|, 0), mín(M − |T|, 0))."""
+    moment, torque = _shear_moment(beam, x)[1], abs(_torque(beam, x))
+    return max(moment + torque, 0.0), min(moment - torque, 0.0)
+
+
+def _stations(beam: dict, depth: float, plate: bool = False) -> list[float]:
+    """Las x de las estaciones: el mayor momento de las barras inferiores y el mayor de las superiores, si los hay (caras
+    y extremos interiores de M; con plate, los de Wood-Armer en esas secciones, D-118), y las secciones a d."""
     candidates = [(x, _shear_moment(beam, x)[1]) for x, _ in _faces(beam)]
     for low, high in _regions(beam):
         candidates += _extreme(beam, low, high, 1.0) + _extreme(beam, low, high, -1.0)
-    largest, smallest = max(candidates, key=lambda item: item[1]), min(candidates, key=lambda item: item[1])
-    xs = ([largest[0]] if largest[1] > 0 else []) + ([smallest[0]] if smallest[1] < 0 else [])
+    design = [(x, plate_moments(beam, x) if plate else (max(moment, 0.0), min(moment, 0.0))) for x, moment in candidates]
+    largest = max(design, key=lambda item: item[1][0])
+    smallest = min(design, key=lambda item: item[1][1])
+    xs = ([largest[0]] if largest[1][0] > 0 else []) + ([smallest[0]] if smallest[1][1] < 0 else [])
     for face, side in _faces(beam):
         x = face + side * depth
         if any(low < x < high and low <= face <= high for low, high in _regions(beam)):
@@ -242,14 +250,10 @@ def _oriented(rows: list[dict], h: float, moment: float) -> list[tuple[float, fl
     return [(row["depth"] if moment >= 0 else h - row["depth"], row["area"]) for row in rows]
 
 
-def _design(profile: dict, layers: list[tuple[float, float]], b: float, h: float) -> float:
-    state = _state(layers, b, h)
-    return 0.0 if state is None else _F._phi(state["et"], profile) * abs(state["Mn"])
-
 
 def _side_bars(f: dict, rows: list[dict]) -> list[tuple[float, float, float]]:
     """(profundidad, recubrimiento lateral, área de la capa) de las barras en las caras laterales: la piel, a la
-    separación declarada desde la capa inferior hacia arriba y por dentro del estribo, y las capas de torsión (D-090)."""
+    separación declarada desde la capa inferior hacia arriba y por dentro del estribo."""
     out = []
     stirrup = BARS[f["stirrups"]["designation"]][0] if f.get("stirrups") else 0.0
     skin = f.get("skin")
@@ -262,9 +266,6 @@ def _side_bars(f: dict, rows: list[dict]) -> list[tuple[float, float, float]]:
         while depth > limit + 1.0:
             out.append((depth, f["cover"] + stirrup, 2 * ab))
             depth -= skin["spacing"]
-    for layer in f.get("torsion_layers", []):
-        cc = min(min(bar["x"], f["ly"] - bar["x"]) - BARS[bar["designation"]][0] / 2 for bar in layer["bars"])
-        out.append((layer["depth"], cc, sum(BARS[bar["designation"]][1] for bar in layer["bars"])))
     return out
 
 
@@ -318,23 +319,10 @@ def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float, width
     centroid = sum(depth * area for (depth, area), pulled in tension if pulled) / provided
     d = max(centroid, 0.8 * h)
     as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * b * d
-    minimum = {"name": "Flexion: acero minimo (M3)", "capacity": provided, "as_min": as_min, "clause": CLAUSES[folder]["min"]}
-    if provided >= as_min:
-        minimum.update(status="PASS", demand=as_min)
-    else:
-        def design(k: float) -> float:
-            return _design(profile, [(depth, area * k if pulled else area) for (depth, area), pulled in tension], b, h)
-
-        if design(1.0) < abs(moment):
-            minimum.update(status="FAIL", demand=as_min)
-        else:
-            lo, hi = 0.0, 1.0
-            for _ in range(200):
-                mid = (lo + hi) / 2
-                lo, hi = (mid, hi) if design(mid) < abs(moment) else (lo, mid)
-            effective = min(as_min, 4 / 3 * hi * provided)
-            minimum.update(status="PASS" if provided >= effective else "FAIL", demand=effective, analysis=hi * provided)
-    checks.append(minimum)
+    # Sin la excepción de 4/3 del As requerido (ACI 9.6.1.3, NSR-10 C.10.5.3): en las zapatas combinadas y en T, As ≥ As,min
+    # siempre (decisión del usuario, D-115).
+    checks.append({"name": "Flexion: acero minimo (M3)", "capacity": provided, "as_min": as_min, "demand": as_min,
+                   "status": "PASS" if provided >= as_min else "FAIL"})
     # El refuerzo superficial solo en la viga larga (width None): las franjas no tienen caras laterales libres (D-083).
     skin = _skin_check(folder, f, rows, moment) if width is None else None
     if skin is not None:
@@ -388,48 +376,6 @@ def _vc_d(folder: str, f: dict, rows: list[dict], given: tuple[float, float], b:
     return _S._one_way_vc(folder, b, d, area / (b * d), abs(shear), abs(moment)), d
 
 
-def _torsion_checks(folder: str, f: dict, rows: list[dict], given: tuple[float, float, float]) -> list[dict] | None:
-    """Torsión de la viga larga (D-088); None si Tu < φTth (el cortante se revisa solo)."""
-    shear, moment, torque = given
-    b, h, cover, phi, fy = f["ly"], f["h"], f["cover"], 0.75, 420.0
-    acp, pcp = b * h, 2 * (b + h)
-    limit = phi * 0.083 * math.sqrt(FC) * acp**2 / pcp
-    tu, vu = abs(torque), abs(shear)
-    if tu == 0 or tu < limit:
-        return None
-    threshold = {"name": "Torsion: umbral", "status": "PASS", "values": {"Tu": tu, "phi Tth": limit}}
-    stirrups = f.get("stirrups")
-    if stirrups is None:
-        return [threshold, {"name": "Torsion: refuerzo transversal", "status": "FAIL"}]
-    terms = _vc_d(folder, f, rows, (shear, moment), b)
-    assert terms is not None
-    vc, d = terms
-    ds, ab = BARS[stirrups["designation"]]
-    transverse = stirrups["legs"] * ab / stirrups["spacing"]
-    x1, y1 = b - 2 * cover - ds, h - 2 * cover - ds
-    aoh, ph = x1 * y1, 2 * (x1 + y1)
-    a0 = 0.85 * aoh
-    at_s = tu / (phi * 2 * a0 * fy)
-    av_s = max(vu / phi - vc, 0.0) / (fy * d)
-    ok = stirrups["closed"] and av_s + 2 * at_s <= transverse and at_s <= ab / stirrups["spacing"]
-    stress = math.hypot(vu / (b * d), tu * ph / (1.7 * aoh**2))
-    stress_limit = phi * (vc / (b * d) + 0.66 * math.sqrt(FC))
-    base = 0.42 * math.sqrt(FC) * acp / fy
-    al_min = max(min(base - at_s * ph, base - 0.175 * b / fy * ph), 0.0)
-    al_required = max(tu * ph / (phi * 2 * a0 * fy), al_min)
-    al_provided = sum(area for _, _, area in _side_bars(f, rows))  # capas de torsión y piel (D-090)
-    minimum = max(0.062 * math.sqrt(FC), 0.35) * b / fy
-    return [threshold,
-            {"name": "Torsion: dimensiones de la seccion", "status": "PASS" if stress <= stress_limit else "FAIL",
-             "demand": stress, "capacity": stress_limit},
-            {"name": "Torsion: refuerzo transversal", "status": "PASS" if ok else "FAIL", "demand": av_s + 2 * at_s,
-             "capacity": transverse},
-            {"name": "Torsion: refuerzo transversal minimo", "status": "PASS" if transverse >= minimum else "FAIL",
-             "demand": minimum, "capacity": transverse},
-            {"name": "Torsion: refuerzo longitudinal", "status": "PASS" if al_provided >= al_required else "FAIL",
-             "demand": al_required, "capacity": al_provided}]
-
-
 def _expected(folder: str, f: dict, level: str) -> dict:
     rows = _rows(f)
     profile = _F.PROFILES[folder]
@@ -443,8 +389,7 @@ def _expected(folder: str, f: dict, level: str) -> dict:
             failures.append(case)
             continue
         depth = rows[0]["depth"]
-        for x in _stations(beam, depth):
-            moment = _shear_moment(beam, x)[1]
+        for x in _stations(beam, depth, plate=True):
             # En una cara de columna, el cortante es el de la sección a d hacia el tramo (ACI 9.4.3.2, 13.2.7.2).
             shear_at = x
             for face, side in _faces(beam):
@@ -452,17 +397,20 @@ def _expected(folder: str, f: dict, level: str) -> dict:
                 if abs(face - x) <= 1e-6 * f["lx"] and any(low < at_d < high and low <= face <= high for low, high in _regions(beam)):
                     shear_at = at_d
             shear = _shear_moment(beam, shear_at)[0]
-            torque = _torque(beam, shear_at)
             z = x + f["lx"] / 2
-            torques.append({"case": case, "x": x, "at": shear_at, "tu_Nmm": torque})
-            torsion = _torsion_checks(folder, f, rows, (shear, moment, torque))
-            shear_part = _shear_checks(folder, f, rows, (shear, moment)) if torsion is None else torsion
-            if moment < 0 and not top_x(f):
-                station = [{**_F._plain(f, "x", -moment, case, profile, level),
-                            "name": "Flexion concreto simple (cara superior, direccion principal)"}, *shear_part]
-            else:
-                station = _flexure_checks(folder, f, rows, moment) + shear_part
-            checks += [{**item, "case": case, "z_mm": z} for item in station]
+            torques.append({"case": case, "x": x, "at": x, "tu_Nmm": _torque(beam, x)})
+            # Torsión de placa (D-118): una estación por cara con momento de Wood-Armer; el cortante, con la primera.
+            moments = [moment for moment in plate_moments(beam, x) if moment != 0] or [_shear_moment(beam, x)[1]]
+            for index, moment in enumerate(moments):
+                shear_part = _shear_checks(folder, f, rows, (shear, moment)) if index == 0 else []
+                if moment < 0 and not top_x(f):
+                    station = [{**_F._plain(f, "x", -moment, case, profile, level),
+                                "name": "Flexion concreto simple (cara superior, direccion principal)"}, *shear_part]
+                else:
+                    flexure = _flexure_checks(folder, f, rows, moment)
+                    station = flexure + shear_part
+                tension = "top" if moment < 0 else "bottom"
+                checks += [{**item, "case": case, "z_mm": z, "face": tension} for item in station]
     maximum = min(3 * f["h"], 450.0)
     for row in rows:
         bars = "barras inferiores" if row["face"] == "bottom" else "barras superiores"
@@ -531,23 +479,17 @@ CASES = [
               bottom={"first": "y", "end": "straight", "x": {"designation": "#4", "spacing": 350.0},
                   "y": {"designation": "#5", "spacing": 200.0}},
               top=top_mat("#8", 120.0, "straight"))),
-    ("torsion-con-estribos", "columna desplazada 400 mm en Y con Mx y Vy: Tu ≥ φTth, estribos cerrados y capas de Aℓ (D-088)",
+    ("torsion-placa", "columna desplazada 400 mm en Y con Mx y Vy: torsión de placa por Wood-Armer en las dos caras (D-118); "
+     "los estribos solo para el cortante",
      _footing([_column("C1", -2000.0, [_load("U1", 1500.0, mx=-60.0, vy=40.0)], y=400.0),
                _column("C2", 2000.0, [_load("U1", 1500.0)])], h=600.0,
-              stirrups={"designation": "#5", "legs": 8, "spacing": 100.0, "closed": True},
-              torsion_layers=[{"depth": depth, "role": "torsion",
-                               "bars": [{"designation": "#8", "x": x} for x in (150.0, 490.0, 830.0, 1170.0, 1510.0, 1850.0)]}
-                              for depth in (250.0, 350.0)])),
-    ("piel-como-torsion", "h = 1000 mm, columna desplazada en Y y estribos cerrados: la piel #5 c/200 aporta Aℓ (D-090)",
+              stirrups={"designation": "#5", "legs": 8, "spacing": 100.0, "closed": True})),
+    ("torsion-placa-alta", "h = 1000 mm, columna desplazada en Y: Wood-Armer y el refuerzo superficial de cada cara (D-118)",
      _footing([_column("C1", -2000.0, [_load("U1", 1800.0, mx=-80.0)], y=450.0), _column("C2", 2000.0, [_load("U1", 1700.0)])],
               h=1000.0, skin={"designation": "#5", "spacing": 200.0},
               stirrups={"designation": "#5", "legs": 8, "spacing": 120.0, "closed": True})),
-    ("torsion-como-piel", "h = 1000 mm sin skin: las capas de torsión cerca de las caras cumplen el refuerzo superficial (D-090)",
-     _footing([_column("C1", -2000.0, [_load("U1", 1800.0)]), _column("C2", 2000.0, [_load("U1", 1800.0)])], h=1000.0,
-              torsion_layers=[{"depth": depth, "role": "torsion",
-                               "bars": [{"designation": "#5", "x": 90.0}, {"designation": "#5", "x": 1910.0}]}
-                              for depth in (500.0, 650.0, 800.0)])),
-    ("torsion-sin-superior", "sin barras superiores y columna desplazada: concreto simple y torsión sin estribos (D-088)",
+    ("torsion-sin-superior", "sin barras superiores y columnas desplazadas: el momento superior de Wood-Armer en concreto "
+     "simple (D-072, D-118)",
      _footing([_column("C1", -2000.0, [_load("U1", 900.0)], y=450.0), _column("C2", 2000.0, [_load("U1", 900.0)], y=-450.0)],
               top=None)),
     ("contacto-parcial", "momento grande: contacto parcial, la carga uniforme supera la presión en un voladizo",

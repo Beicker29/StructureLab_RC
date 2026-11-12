@@ -125,9 +125,10 @@ def mat_rows(footing: Footing | CombinedFooting, mat: Mat, bars: Sequence[RebarS
 
 def top_rows(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> dict[str, BarRow]:
     """Las barras superiores de una zapata combinada (D-099), con la estructura de la malla inferior: x (paralelas a X,
-    encerradas lateralmente por los estribos; en la T invertida, en la viga, D-093) e y (transversales, uniformes en todo
-    el largo, D-097), cada una si se declara; la de top.first va más cerca de la cara superior, por dentro del estribo.
-    depth es la altura efectiva desde la cara inferior."""
+    encerradas lateralmente por los estribos) e y (transversales, uniformes en todo el largo, D-097), cada una si se
+    declara; la de top.first va más cerca de la cara superior, por dentro del estribo. En la T invertida es la malla
+    superior de la zarpa (D-114; el refuerzo de la viga va en beam.layers). depth es la altura efectiva desde la cara
+    inferior."""
     top = footing.top
     if top is None:
         return {}
@@ -146,6 +147,5 @@ def top_rows(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> dict[str, B
         spec = specs[bar_set.designation]
         above = 0.0 if direction == nearest else near_diameter
         from_face = footing.cover + stirrup + above + spec.diameter_mm / 2
-        section = None if direction == "y" or footing.beam is None else (footing.beam.width, footing.total_height)
-        rows[direction] = _row(footing, direction, (bar_set, spec), (from_face, stirrup if direction == "x" else 0.0), section)
+        rows[direction] = _row(footing, direction, (bar_set, spec), (from_face, stirrup if direction == "x" else 0.0))
     return rows

@@ -185,25 +185,9 @@ def _beam_checks(folder: str, f: dict, rows: dict, given: tuple[float, float]) -
         if moment > 0 and flange:  # ala a tracción en una viga isostática
             width = min(flange, 2 * bw)
         as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * width * d
-        item = {"name": "Flexion: acero minimo (M3)", "capacity": provided}
-        if provided >= as_min:
-            item.update(status="PASS", demand=as_min)
-        else:
-            def design(k: float) -> float:
-                scaled = [(depth, area * k if (depth, area) in tension else area) for depth, area in layers]
-                own = _state(scaled, section, big)
-                return 0.0 if own is None else _F._phi(own["et"], profile) * abs(own["Mn"])
-
-            if design(1.0) < abs(moment):
-                item.update(status="FAIL", demand=as_min)
-            else:
-                lo, hi = 0.0, 1.0
-                for _ in range(200):
-                    mid = (lo + hi) / 2
-                    lo, hi = (mid, hi) if design(mid) < abs(moment) else (lo, mid)
-                effective = min(as_min, 4 / 3 * hi * provided)
-                item.update(status="PASS" if provided >= effective else "FAIL", demand=effective)
-        checks.append(item)
+        # Sin la excepción de 4/3 del As requerido (decisión del usuario, D-115): As ≥ As,min siempre.
+        checks.append({"name": "Flexion: acero minimo (M3)", "capacity": provided, "demand": as_min,
+                       "status": "PASS" if provided >= as_min else "FAIL"})
     if pulled:
         area = sum(a for _, a in pulled)
         d = max(sum(depth * a for depth, a in pulled) / area, 0.8 * big)
@@ -269,19 +253,34 @@ def _flange_checks(folder: str, f: dict, beam: dict) -> list[dict]:
     per_metre = ab * 1000.0 / f["bottom"]["y"]["spacing"]
     half = f["lx"] / 2
     moment = max(_maximum(lambda x, s=s: _flange_load(beam, f, x, s, 0.0)[1], -half, half)[1] for s in (1.0, -1.0))
-    best = max(((_maximum(lambda x, s=s: _flange_load(beam, f, x, s, depth)[0], -half, half), s) for s in (1.0, -1.0)),
+    # El cortante que gobierna es el de mayor valor absoluto, positivo o negativo.
+    best = max(((_maximum(lambda x, s=s: abs(_flange_load(beam, f, x, s, depth)[0]), -half, half), s) for s in (1.0, -1.0)),
                key=lambda item: item[0][1])
     (x, shear), side = best
     mu_d = _flange_load(beam, f, x, side, depth)[1]
     profile = _F.PROFILES[folder]
     state = _B._state([(depth, per_metre)], 1000.0, f["h"])
     capacity = _F._phi(state["et"], profile) * state["Mn"]
-    vu = max(shear, 0.0) * 1000.0
+    vu = shear * 1000.0
     vc = _S._one_way_vc(folder, 1000.0, depth, per_metre / (1000.0 * depth), vu, abs(mu_d) * 1000.0)
-    return [{"name": "Aleta: flexion (direccion secundaria)", "status": "PASS" if capacity >= moment * 1000.0 else "FAIL",
-             "demand": moment * 1000.0, "capacity": capacity},
-            {"name": "Aleta: cortante en una direccion (direccion secundaria)", "status": "PASS" if vu <= PHI_SHEAR * vc else "FAIL",
-             "demand": vu, "capacity": PHI_SHEAR * vc}]
+    out = [{"name": "Aleta: flexion (direccion secundaria)", "status": "PASS" if capacity >= moment * 1000.0 else "FAIL",
+            "demand": moment * 1000.0, "capacity": capacity},
+           {"name": "Aleta: cortante en una direccion (direccion secundaria)", "status": "PASS" if vu <= PHI_SHEAR * vc else "FAIL",
+            "demand": vu, "capacity": PHI_SHEAR * vc}]
+    top = f.get("top") or {}
+    negative = max(_maximum(lambda x, s=s: -_flange_load(beam, f, x, s, 0.0)[1], -half, half)[1] for s in (1.0, -1.0))
+    if top.get("y") and negative > 1.0:
+        # D-114: momento negativo de la aleta con las barras superiores y de la zarpa (sin estribo en la zarpa de la T);
+        # la cara comprimida es la inferior y las barras quedan a h − (recubrimiento + barras x si van primero + db/2).
+        dt, at = BARS[top["y"]["designation"]]
+        above = BARS[top["x"]["designation"]][0] if top.get("x") and (top.get("first") or "y") == "x" else 0.0
+        top_depth = f["h"] - f["cover"] - above - dt / 2
+        top_metre = at * 1000.0 / top["y"]["spacing"]
+        state = _B._state([(top_depth, top_metre)], 1000.0, f["h"])
+        capacity = _F._phi(state["et"], profile) * state["Mn"]
+        out.append({"name": "Aleta: flexion, barras superiores (direccion secundaria)",
+                    "status": "PASS" if capacity >= negative * 1000.0 else "FAIL", "demand": negative * 1000.0, "capacity": capacity})
+    return out
 
 
 def _expected(folder: str, f: dict) -> dict:
@@ -383,14 +382,30 @@ CASES = [
                       "y": {"designation": "#5", "spacing": 150.0}},
               beam_changes={"bottom_width": 1200.0,
                             "layers": [TOP, _layer(900 - 75 - 19.1 / 2, "#6", [y + 300 for y in _spread(-450, 450, 7)])]})),
+    ("aleta-superior", "Mx grande: la presión baja hacia un borde y aparece el momento negativo en esa aleta, que toman las "
+                       "barras superiores y de la zarpa, #5 c/200 (top, D-114)",
+     _footing(columns=[{"id": "C1", "cx": 500.0, "cy": 500.0, "x": -2500.0, "y": 0.0, "loads": [_load("U1", 350.0, mx=350.0)]},
+                       {"id": "C2", "cx": 500.0, "cy": 500.0, "x": 2500.0, "y": 0.0, "loads": [_load("U1", 400.0, mx=350.0)]}],
+              top={"first": "y", "end": "straight", "y": {"designation": "#5", "spacing": 200.0}})),
 ]
+
+
+# Casos en los que solo se comparan las aletas: el Mx que produce su momento negativo tuerce la viga por encima del
+# umbral y la torsión de la viga de la T no está en este oráculo (D-114).
+FLANGE_ONLY = {"aleta-superior"}
+
+
+def _case(folder: str, case_id: str, text: str, footing: dict) -> dict:
+    expected = _expected(folder, footing)
+    if case_id in FLANGE_ONLY:
+        expected["checks"] = [item for item in expected["checks"] if item["name"].startswith("Aleta")]
+    return {"id": case_id, "description": text, "footing": footing, "expected": expected, "flange_only": case_id in FLANGE_ONLY}
 
 
 def main() -> None:
     for folder in ("aci_318_25", "nsr_10"):
         level = _F.PROFILES[folder]["levels"]["bajo"]
-        cases = [{"id": case_id, "description": text, "footing": footing, "expected": _expected(folder, footing)}
-                 for case_id, text, footing in CASES]
+        cases = [_case(folder, case_id, text, footing) for case_id, text, footing in CASES]
         data = {"description": "Zapata combinada en T invertida (D-093): viga larga en T volteada con el ala de viga aislada, "
                                "aletas por metro, ala a tracción y aplastamiento sobre la viga.",
                 "soil": _C.SOIL, "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight", "coating": "uncoated"},

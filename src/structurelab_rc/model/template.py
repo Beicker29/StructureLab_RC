@@ -122,6 +122,7 @@ class TemplateCombinedColumn(_Input):
     y: float
     dowels: Dowels | None = None
     band: dict[str, Any] | None = None
+    band_top: dict[str, Any] | None = None
     loads: tuple[dict[str, Any], ...] = ()
 
 
@@ -144,7 +145,6 @@ class TemplateCombinedFooting(_Input):
     top: dict[str, Any] | None = None
     stirrups: dict[str, Any] | None = None
     skin: dict[str, Any] | None = None
-    torsion_layers: list[dict[str, Any]] | None = None
     deep_beam: bool = False
     beam: dict[str, Any] | None = None
     principal_direction: Literal["x", "y"] = "x"  # eje global de la viga (D-094); las fuerzas de ETABS no se tocan
@@ -272,8 +272,9 @@ class EtabsCombinedDesignTemplate(_Input):
 
     @model_validator(mode="after")
     def _check(self) -> Self:
-        if any(column.dowels is not None or column.band is not None for column in self.columns):
-            raise ValueError("el diseño de la zapata combinada propone los pasadores y el band: no se declaran en columns")
+        if any(column.dowels is not None or column.band is not None or column.band_top is not None for column in self.columns):
+            raise ValueError("el diseño de la zapata combinada propone los pasadores, el band y el band superior: no se declaran "
+                             "en columns")
         _check_loads_source("del diseño de la zapata combinada", self.columns, self.loads_source)
         return self
 

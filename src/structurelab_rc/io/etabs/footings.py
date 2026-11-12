@@ -194,7 +194,7 @@ def build_combined_design_project(
     group: Group = ("diseno", tuple(column.etabs_unique_name for column in template.columns), template.etabs_kinds())
     joints, skipped = _joint_loads(template.load_factors, {"service": service, "factored": factored}, [group])
     loads = {joint.unique_name: joint.loads for joint in joints}
-    columns = [{**column.model_dump(mode="json", exclude={"etabs_unique_name", "loads", "dowels", "band"}, exclude_none=True),
+    columns = [{**column.model_dump(mode="json", exclude={"etabs_unique_name", "loads", "dowels", "band", "band_top"}, exclude_none=True),
                 "loads": [*loads.get(column.etabs_unique_name, []), *column.loads]} for column in template.columns]
     project = template.model_dump(mode="json", exclude={"load_factors", "loads_source", "columns", "etabs_files"})
     project["columns"] = columns

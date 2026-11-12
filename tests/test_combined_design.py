@@ -216,9 +216,9 @@ def test_stirrups_win_when_they_are_cheaper(designed: tuple[dict[str, Any], desi
     assert best.cost < plain.cost
 
 
-def test_torsion_is_taken_by_closed_stirrups_and_skin() -> None:
-    """D-110: con C2 corrida en Y y Mx, la torsión supera el umbral; con h = 800 mm la toman estribos cerrados (At/s en
-    la rama exterior) y la piel como Aℓ (D-090), y el ancho crece si el band no se desarrolla."""
+def test_plate_torsion_is_taken_by_the_x_and_y_bars() -> None:
+    """D-118: con C2 corrida en Y y Mx, la torsión es de placa: la toman las barras x (Wood-Armer en las dos caras) y las
+    barras y fuera de las franjas; no hay torsión de vigas, así que no hacen falta estribos cerrados ni piel por ella."""
     data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
     for load in data["columns"][1]["loads"]:
         load["Mx_kNm"] = -300.0 * (1.6 if load["kind"] == "factored" else 1.0)
@@ -226,14 +226,13 @@ def test_torsion_is_taken_by_closed_stirrups_and_skin() -> None:
     solution = design._at_height(ctx, 28.0, 0, 800.0)
     assert isinstance(solution, design.CombinedSolution)
     reinforcement = solution.reinforcement
-    assert reinforcement["stirrups"] is not None and reinforcement["stirrups"]["closed"]
-    assert reinforcement["skin"] is not None
+    assert reinforcement["top_x"] is not None and reinforcement["top_y"] is not None
     footing = design._footing(ctx, solution.geometry, reinforcement)
     assert footing is not None
     checks = combined_footing_checks(ctx.basis(28.0), footing, ctx.project.soil)
     assert all(check.status is Status.PASS for check in checks)
-    assert any(check.name == "Torsion: refuerzo longitudinal" for check in checks)
-
+    assert not any(check.name.startswith("Torsion") for check in checks)
+    assert any(check.name == "Direccion secundaria: torsion de placa (barras superiores)" for check in checks)
 
 def test_etabs_template_builds_the_combined_design_project() -> None:
     """D-112: las cargas de servicio salen del Excel de ETABS y las mayoradas de la plantilla (loads_source); el

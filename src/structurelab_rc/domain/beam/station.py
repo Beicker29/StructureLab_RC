@@ -64,17 +64,28 @@ def shear_and_torsion_checks(given: StationInput) -> tuple[Check, ...]:
 
 def checks_for(given: StationInput) -> tuple[Check, ...]:
     """Verificaciones de una estación; given.foundation marca la dirección larga de una zapata combinada (D-081)."""
-    profile, materials, member, station, bars = given.profile, given.materials, given.member, given.station, given.bars
+    profile, materials, member, station = given.profile, given.materials, given.member, given.station
     blocking = _out_of_scope(profile, materials, member, station)
     if blocking is not None:
         checks: tuple[Check, ...] = (blocking,)
     else:
         skin = skin_check(given)
-        flexure = flexure_checks(profile, materials, member, station, bars)
+        # En las zapatas combinadas y en T no aplica la excepción de 4/3 del As,min (decisión del usuario, D-115).
+        flexure = flexure_checks(given)
         if given.foundation:  # la zapata no tiene M2: las verificaciones del eje débil no aplican (D-083)
             flexure = tuple(check for check in flexure if check.name not in _WEAK_AXIS)
         deep = deep_beam_checks(given) if member.deep_beam else ()
         checks = (*flexure, *(() if skin is None else (skin,)), *shear_and_torsion_checks(given), *deep)
+    return tuple(replace(check, member=member.id, z=station.z, case=station.case) for check in checks)
+
+
+def flexure_station_checks(given: StationInput) -> tuple[Check, ...]:
+    """Solo la flexión de una estación en modo cimentación (con el refuerzo superficial, que depende de la cara en
+    tracción), sin el eje débil: la segunda cara de una sección de la combinada rectangular con momentos de Wood-Armer en
+    las dos (D-118), cuyo cortante ya se revisó con la primera."""
+    member, station = given.member, given.station
+    skin = skin_check(given)
+    checks = (*(check for check in flexure_checks(given) if check.name not in _WEAK_AXIS), *(() if skin is None else (skin,)))
     return tuple(replace(check, member=member.id, z=station.z, case=station.case) for check in checks)
 
 

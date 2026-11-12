@@ -280,7 +280,7 @@ def write_pdf(documents: list[list[dict[str, Any]]], path: Path) -> bool:
             self.cell(0, 4, renderer.clean(f"StructureLab_RC · página {self.page_no()}"), align="R")
             self.set_text_color(0, 0, 0)
 
-    document = _Document(orientation="L", format="A4")
+    document = _Document(orientation="P", format="A4")  # vertical (pedido del usuario, D-114)
     document.set_margins(15, 12, 15)
     document.set_auto_page_break(auto=True, margin=14)
     renderer = _Renderer(document)

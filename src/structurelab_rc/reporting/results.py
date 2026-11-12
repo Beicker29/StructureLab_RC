@@ -148,7 +148,7 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
     envolventes de momento y cortante (D-095)."""
     rotated = footing.principal_direction == "y"
     columns = [_declared_column(column, rotated) for column in footing.columns]
-    reinforcement = footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin", "torsion_layers"})
+    reinforcement = footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin"})
     geometry = _geometry(footing, {"beam", "principal_direction"})
     properties = _base_properties(footing, soil)
     if rotated:

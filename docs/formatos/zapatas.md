@@ -111,7 +111,7 @@ geotécnica con la resultante de las dos columnas (V3J.1) y, con los casos mayor
 - por columna (V3J.3, D-082): el punzonamiento (y el del perímetro común si los de las dos columnas se traslapan,
   D-086), la franja transversal de la dirección secundaria (también con las verificaciones de vigas, con `z` desde el
   borde negativo de la dirección secundaria y `note` "Franja transversal de la columna …, cara ±Y", "a d de la cara ±Y"
-  o "mayor momento negativo hacia el borde ±Y", con el eje de la dirección secundaria; en una cara de columna, Vu es el
+  o "mayor M negativo hacia el borde ±Y", con el eje de la dirección secundaria; en una cara de columna, Vu es el
   de la sección a d; su carga es la neta: la fuerza de la columna con la forma de la presión menos los pesos y las
   sobrecargas, D-095; abajo lleva el band si lo hay o, si no, la malla de la dirección secundaria, y arriba las barras de
   `top` de esa dirección que caen en ella; el momento negativo, sin esas barras, es de concreto simple, D-072, D-097), el
@@ -146,14 +146,32 @@ los dos perfiles.
 | `columns[].x`, `columns[].y` | mm | Posición del eje de la columna respecto al centroide de la base. |
 | `columns[].dowels` | | Pasadores, como en la zapata aislada (opcional; sin ellos sus verificaciones quedan INCOMPLETE). |
 | `columns[].band` | | Refuerzo transversal inferior bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation` y `spacing` (opcional). Es el único refuerzo inferior transversal de esa zona: la malla inferior y va solo fuera de las zonas de band (D-097). |
+| `columns[].band_top` | | Band superior (D-119): barras transversales arriba en el ancho de la franja, `designation` y `spacing` (opcional, sin `band_spacing`); toman el momento negativo de la franja y el de la torsión de placa. Van como `top.y` (debajo de `top.x` si esa dirección va más cerca de la cara) y son la capa superior de la franja; donde lo hay, `top.y` va solo fuera de esa zona. Sin `top`, terminan como la malla inferior. No aplica en la T invertida. |
 | `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; las dos columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
 | `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
-| `top` | | Barras superiores con la estructura de `bottom` (D-099), opcional: `end` (`straight` o `hook`, para las dos direcciones), `x` (paralelas a X, a lo largo de la viga) e `y` (paralelas a Y, uniformes en todo el largo, D-097), cada una `{designation, spacing}` y opcional, con al menos una; `first`, la dirección más cercana a la cara superior, obligatoria si se declaran las dos. Sin barras superiores en la dirección principal, el momento negativo de la viga se revisa como concreto simple (D-072); sin ellas en la secundaria, el de las franjas transversales. Con `principal_direction: "y"`, `x`, `y` y `first` están en ejes globales y se intercambian como en `bottom`. En la T invertida, `top.x` es obligatorio y va en la viga; `top.y` aún no se admite. |
-| `stirrups` | | Estribos de la viga de la dirección principal, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
+| `top` | | Barras superiores con la estructura de `bottom` (D-099), opcional: `end` (`straight` o `hook`, para las dos direcciones), `x` (paralelas a X, a lo largo de la viga) e `y` (paralelas a Y, uniformes en todo el largo, D-097), cada una `{designation, spacing}` y opcional, con al menos una; `first`, la dirección más cercana a la cara superior, obligatoria si se declaran las dos. Sin barras superiores en la dirección principal, el momento negativo de la viga se revisa como concreto simple (D-072); sin ellas en la secundaria, el de las franjas transversales. Con `principal_direction: "y"`, `x`, `y` y `first` están en ejes globales y se intercambian como en `bottom`. En la T invertida, `top` es la malla superior de la zarpa (D-114; el refuerzo de la viga va en `beam.layers`): con `top.y`, el momento negativo de las aletas se revisa con esas barras por metro y se revisa su desarrollo desde la cara de la viga; sin ellas, de concreto simple. |
+| `stirrups` | | Estribos de la viga de la dirección principal, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081); solo para el cortante: la torsión de la combinada rectangular es de placa (D-118). |
 | `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
 | `deep_beam` | sí/no | La viga de la dirección principal es de gran altura (declarado por el usuario): se verifican los criterios de vigas altas como en las vigas (D-089). |
-| `beam` | mm | T invertida (D-093, D-106): `width` (bw) y `height` (H, altura total desde la base) de la viga centrada en Y sobre la zarpa de espesor `h`; `layers`, las capas de la viga como en las vigas (`depth` desde la cara superior de la viga, `role` flexure/skin/torsion, `bars` con x desde la cara −Y del alma); `stirrups`, sus estribos; `end` (`straight` o `hook`), cómo terminan sus barras; `bottom_width` (opcional), el ancho centrado en el alma que cubre la capa de flexión más profunda, que puede salir del alma sobre la zarpa (por defecto, el ala efectiva). Las columnas deben caber en bw; `top`, `stirrups`, `skin` y `torsion_layers` de la zapata no se usan (van en `beam`); `band` no aplica. La malla `bottom` es la de la zarpa: sus barras x van solo fuera del ancho cubierto y las y son las de las aletas. |
-| `torsion_layers` | | Capas de Aℓ de la viga de la dirección principal con el formato de las capas de vigas (`depth` desde la cara superior, `role: "torsion"`, `bars` con x desde la cara −Y); opcional; sin ellas, Aℓ = 0 (D-088). |
+| `beam` | mm | T invertida (D-093, D-106): `width` (bw) y `height` (H, altura total desde la base) de la viga centrada en Y sobre la zarpa de espesor `h`; `layers`, las capas de la viga como en las vigas (`depth` desde la cara superior de la viga, `role` flexure/skin/torsion, `bars` con x desde la cara −Y del alma, o solo la lista de barras, por ejemplo `["#6", "#6", "#6", "#6"]`, D-114); `stirrups`, sus estribos; `end` (`straight` o `hook`), cómo terminan sus barras; `bottom_width` (opcional), el ancho centrado en el alma que cubre la capa de flexión más profunda, que puede salir del alma sobre la zarpa (por defecto, el ala efectiva). Con solo la lista de barras, la capa inferior se reparte a igual separación en ese ancho (al recubrimiento si llega al borde de la base; por dentro del estribo si el ala no cuenta) y las demás capas entre las esquinas del estribo, como en las vigas. Las columnas deben caber en bw; `stirrups` y `skin` de la zapata no se usan (van en `beam`); `top` es la malla superior de la zarpa; `band` no aplica. La malla `bottom` es la de la zarpa: sus barras x van solo fuera del ancho cubierto y las y son las de las aletas. |
+
+**Torsión de placa (D-118).** Mx, Vy y la posición en Y de las columnas producen la torsión T(x) de la combinada
+rectangular. Se diseña como de placa, por Wood-Armer, con mxy = T/B uniforme en el ancho:
+
+- **Barras x:** con mx = M/B y my = 0, la cara inferior pide máx(M + |T|, 0) y la superior mín(M − |T|, 0), por B. Son
+  los momentos de las estaciones de la viga larga; la nota de su flexión trae M, T y mxy.
+- **Franjas:** con my = M/b y mx = 0, abajo M + b·|mxy| y arriba M − b·|mxy|, con |mxy| el mayor en los bordes de la
+  franja. Una estación por cara con momento; el cortante se revisa una vez.
+- **Barras y fuera de las franjas:** my = 0 y, por metro, +|mxy| abajo ("Direccion secundaria: torsion de placa (barras
+  inferiores)") y −|mxy| arriba (barras superiores y o, sin ellas, concreto simple, D-072).
+- **Cortante fuera de las franjas (D-119):** qy = ∂mxy/∂x = (dT/dx)/B, con dT/dx = ∫y·p dy de la presión en la sección,
+  por metro, frente a φVc de cimentación con la malla y inferior ("Direccion secundaria: torsion de placa, cortante").
+
+La memoria de la combinada rectangular trae, además de los capítulos de las franjas, tres de la dirección secundaria
+fuera de las franjas band: momento positivo, momento negativo y fuerza cortante (D-119). Su índice DCR tiene una fila
+por verificación, dirección y signo de momento.
+
+No hay torsión de vigas: `torsion_layers` se rechaza. La T invertida conserva la torsión de vigas en su alma.
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 
@@ -258,7 +276,7 @@ mayorados.
 | `combined_design.bars`, `combined_design.spacing_step`, `combined_design.end` | -, mm, texto | Barras permitidas para todo el refuerzo, paso de separación y extremo de las barras. |
 | `combined_design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `combined_design.max_cantilever_start`, `combined_design.max_cantilever_end` | mm | Opcionales: voladizo máximo más allá de la cara exterior de la columna de cada extremo, a lo largo de la dirección principal (`start`: la columna con la menor coordenada). Por ejemplo, 0 en una columna de lindero. |
-| `combined_design.stirrup_bars` | - | Opcional (D-110): barras permitidas para estribos cerrados de la viga larga, por ejemplo `["#3", "#4"]`. Con ellas, el cortante y la torsión pueden tomarlos estribos (y Aℓ la piel) en lugar de un espesor mayor; gana lo más barato. Sin ellas no se proponen estribos. |
+| `combined_design.stirrup_bars` | - | Opcional (D-110): barras permitidas para estribos cerrados de la viga larga, por ejemplo `["#3", "#4"]`. Con ellas, el cortante (y en la T, la torsión del alma, con Aℓ en la piel) pueden tomarlos estribos en lugar de un espesor mayor; gana lo más barato. Sin ellas no se proponen estribos. En la combinada rectangular la torsión es de placa (D-118): la toman las barras x e y. |
 | `combined_design.shape` | texto | `rectangular` (por defecto) o `inverted_t` (D-113): con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa. |
 | `combined_design.web_margin`, `combined_design.web_step` | mm | Solo con `inverted_t`: el alma parte de la columna más ancha (respecto a la resultante transversal) más `web_margin` a cada lado y crece de a `web_step`. |
 | `combined_design.beam_h_min`, `combined_design.beam_h_step`, `combined_design.beam_h_max` | mm | Solo con `inverted_t`: alto total de la viga; `beam_h_min` debe superar `h_min`. |
@@ -275,13 +293,15 @@ Búsqueda (cada solución la aprueba `combined_footing_checks`; el diseño no ti
 3. **Espesor:** el menor con solución, por bisección, y los mayores mientras el costo del concreto solo no alcance el
    mejor.
 4. **Refuerzo** (barras rectas de borde a borde, sin cortes): barras inferiores x y superiores x de la viga larga
-   (continuas), `band` de cada columna, malla inferior y fuera de las franjas, barras superiores y (si hacen falta),
+   (continuas), `band` de cada columna, `band_top` si el momento negativo de su franja lo pide (D-119), malla inferior
+   y fuera de las franjas, barras superiores y (si hacen falta),
    refuerzo superficial si h pasa el límite del perfil y pasadores de cada columna. Cada grupo empieza en la opción más
    liviana que ya cumple los límites del perfil (acero mínimo, As,min de vigas, separación máxima y de fisuración) y,
-   si una verificación suya falla, pasa a la más liviana que no repetiría la falla. Con `stirrup_bars`, las fallas de
-   cortante, Av,min, separación de estribos y refuerzo transversal por torsión de la viga larga las toman estribos
-   cerrados (más ramas si falla la separación entre ramas a lo ancho; barra mayor o menor separación si falla At/s en
-   la rama exterior) y las de Aℓ, la piel; el espesor menor con estribos compite por costo con el mayor sin ellos. Las
+   si una verificación suya falla, pasa a la más liviana que no repetiría la falla. Los momentos de las barras x, de
+   los band y de las barras y fuera de las franjas son los de Wood-Armer (D-118). Con `stirrup_bars`, las fallas de
+   cortante, Av,min y separación de estribos de la viga larga las toman estribos (más ramas si falla la separación
+   entre ramas a lo ancho); en la T, también la torsión del alma (barra mayor o menor separación si falla At/s en la
+   rama exterior) y Aℓ, la piel. El espesor menor con estribos compite por costo con el mayor sin ellos. Las
    fallas de dimensiones de la sección, punzonamiento y deformación unitaria (y el cortante sin `stirrup_bars`) piden
    más espesor. Si un band o las barras y no se desarrollan, se prueba el ancho siguiente. Las barras superiores faltan solo si
    el perfil permite concreto simple con el nivel sísmico (D-072) o no hay momento negativo.
@@ -306,7 +326,7 @@ columnas respecto al centroide de la base; lo verifica `run`, `verify` o `report
 | `web [mm]`, `beam height [mm]`, `deep_beam` | mm, -, - | Solo en la T: ancho del alma, alto total de la viga y si se declaró de gran altura. |
 | `base_center [mm]` | mm | Centroide de la base en los ejes globales de las columnas de entrada. |
 | `placement_case` | texto | El caso que ubicó la base; la descripción de `proyecto.json` (y la memoria) dice además si se declaró o se eligió por la regla. |
-| `reinforcement` | objeto | Refuerzo en ejes de la viga: `bottom_x`, `bottom_y`, `top_x`, `top_y`, `skin`, `stirrups` (null si no hay), `bands` y `dowels` por columna. En la T: `top_x` y `bottom_x` son las capas superior e inferior de la viga (separación), `mat_x` las barras x de la zarpa y `bottom_y` las de las aletas. |
+| `reinforcement` | objeto | Refuerzo en ejes de la viga: `bottom_x`, `bottom_y`, `top_x`, `top_y`, `skin`, `stirrups` (null si no hay), `bands`, `band_tops` (band superior, null si no hace falta, D-119) y `dowels` por columna. En la T: `top_x` y `bottom_x` son las capas superior e inferior de la viga (separación), `mat_x` las barras x de la zarpa y `bottom_y` las de las aletas. |
 | `concrete [m3]`, `steel [kg]`, `cost` | m³, kg, moneda | Cantidades y costo, con barras rectas de borde a borde menos el recubrimiento y pasadores hasta la malla inferior. |
 | `by_fc` | lista | Cada f'c: `cost`, dimensiones, o `cost` null y `failure`. |
 
@@ -343,14 +363,14 @@ propiedades calculadas, el número de casos y las verificaciones, y `foundation_
 de la viga y `M [kN-m]`): los momentos transferidos que debe tomar la viga de cimentación (D-087). Las zapatas
 combinadas van en `combined_footings`: la
 geometría, las columnas (`columns[]`, cada una con sus cargas), las propiedades calculadas de la base, el armado
-(`bottom`, `top`, `stirrups`, `skin`, `torsion_layers`), `deep_beam`, `two_way_warning` (B, ℓn y B/ℓn si B ≥ ℓn, la luz
+(`bottom`, `top`, `stirrups`, `skin`), `deep_beam`, `two_way_warning` (B, ℓn y B/ℓn si B ≥ ℓn, la luz
 libre entre las caras de las columnas: puede trabajar en dos direcciones, D-091; null si no), `foundation_beam_shears`
 (caso, columna, sección de la franja y `V [kN]`: el cortante de las franjas que excede φVc y debe tomar el refuerzo
 transversal de la viga de cimentación, D-103) y las verificaciones, cada
 una con su `case`, su `z [mm]` (posición a lo largo de la viga desde su borde negativo, o en la franja desde el borde
 negativo de la dirección secundaria, en ejes declarados; nula en las demás) y en `note` la sección, la franja o la
-columna. Su memoria separa la dirección principal (flexión, cortante y torsión, D-088) de la secundaria (franjas o
-aletas) y trae la planta de presiones con las dos columnas y la tabla de esfuerzos de punzonamiento en cada esquina.
+columna. Su memoria separa la dirección principal (flexión con los momentos de Wood-Armer y cortante, D-118; en la T, también
+la torsión de vigas del alma, D-088) de la secundaria (franjas o aletas) y trae la planta de presiones con las dos columnas y la tabla de esfuerzos de punzonamiento en cada esquina.
 
 ## Verificaciones de zapatas
 

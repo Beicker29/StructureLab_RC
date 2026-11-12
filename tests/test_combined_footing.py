@@ -99,8 +99,10 @@ def _noise(check: Check) -> float:
     return {"N": 0.1, "N*mm": 0.1, "mm2": 1e-6, "MPa": 1e-6}.get(check.unit, 0.0)
 
 
-def _station_key(check: Check) -> tuple[str, str, float | None]:
-    return check.name, check.case or "", None if check.z is None else round(check.z, 3)
+def _station_key(check: Check) -> tuple[str, str, float | None, str]:
+    """Nombre, caso, z y cara: con la torsión de placa una sección puede tener una estación por cara (D-118)."""
+    face = "top" if "momento negativo" in check.note else "bottom"
+    return check.name, check.case or "", None if check.z is None else round(check.z, 3), face if check.z is not None else ""
 
 
 @pytest.mark.parametrize(("profile", "case"), BEAM_CASES)
@@ -113,7 +115,8 @@ def test_long_beam_checks_match_oracle(profile: str, case: dict[str, Any]) -> No
     expected = case["expected"]["checks"]
     names = {item["name"] for item in expected}
     got = {_station_key(check): check for check in checks if check.name in names}
-    wanted = {(item["name"], item.get("case", ""), None if "z_mm" not in item else round(item["z_mm"], 3)): item for item in expected}
+    wanted = {(item["name"], item.get("case", ""), None if "z_mm" not in item else round(item["z_mm"], 3), item.get("face", "")): item
+              for item in expected}
     assert set(got) == set(wanted)
     for key, item in wanted.items():
         check = got[key]
@@ -171,9 +174,9 @@ def test_column_checks_match_oracle(profile: str, case: dict[str, Any]) -> None:
     expected = case["expected"]
     names = {item["name"] for item in expected}
     checks = [check for check in column_checks(basis, footing, soil, cases) if check.name in names]
-    got = {(check.name, check.case or "", None if check.z is None else round(check.z, 3), _where(check)): check for check in checks}
-    wanted = {(item["name"], item.get("case", ""), None if "z_mm" not in item else round(item["z_mm"], 3), item.get("where", "")): item
-              for item in expected}
+    got = {(*_station_key(check)[:3], _where(check), _station_key(check)[3]): check for check in checks}
+    wanted = {(item["name"], item.get("case", ""), None if "z_mm" not in item else round(item["z_mm"], 3), item.get("where", ""),
+               item.get("face", "")): item for item in expected}
     assert len(got) == len(checks)
     assert set(got) == set(wanted)
     for key, item in wanted.items():
@@ -438,7 +441,7 @@ def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_pat
         layers = [{"depth": depth, "role": "flexure", "bars": [{"designation": "#6", "x": x} for x in (120.0, 340.0, 560.0, 780.0)]}
                   for depth in (100.0, height - 100.0)]
         along_x["beam"] = {"width": 900.0, "height": height, "end": "straight", "layers": layers}
-        for key in ("top", "stirrups", "skin", "torsion_layers"):
+        for key in ("top", "stirrups", "skin"):
             along_x.pop(key, None)
         for column in along_x["columns"]:
             column.pop("band", None)
@@ -515,40 +518,39 @@ def test_diagrams_close_at_the_free_edges_and_match_the_strip_faces() -> None:
         assert envelope.moment_max[last] == pytest.approx(max(faces), rel=1e-9)
 
 
-def _with_torsion_layers(layers: list[dict[str, Any]]) -> dict[str, Any]:
+def test_torsion_layers_are_rejected_because_torsion_is_plate_torsion() -> None:
+    """D-118: la torsión de la combinada se diseña como de placa (Wood-Armer); torsion_layers se rechaza con el motivo."""
     data: dict[str, Any] = json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    data["combined_footings"][0]["torsion_layers"] = layers
-    return data
+    data["combined_footings"][0]["torsion_layers"] = [{"depth": 400.0, "role": "torsion", "bars": ["#5", "#5"]}]
+    with pytest.raises(ValidationError, match="no usa torsion_layers: la torsión se diseña como de placa"):
+        Project.model_validate(data)
 
 
-@pytest.mark.parametrize(("layers", "message"), [
-    ([{"depth": 400.0, "role": "torsion", "bars": ["#99", "#99"]}], "'#99' de las capas de torsion no esta en el catalogo"),
-    ([{"depth": 400.0, "role": "torsion", "bars": [{"designation": "#5", "x": 20.0}, {"designation": "#5", "x": 2500.0}]}],
-     "queda fuera del estribo"),
-])
-def test_torsion_layers_are_validated_like_beam_layers(layers: list[dict[str, Any]], message: str) -> None:
-    """D-088: las capas de Aℓ de la viga larga usan el catálogo y la regla de las vigas (barras dentro del estribo)."""
-    check = validate_project(Project.model_validate(_with_torsion_layers(layers)), BARS)
-    assert check.status is not Status.PASS
-    assert any(message in error.message for error in check.errors)
-
-
-@pytest.mark.parametrize("layer", [{"depth": 400.0, "role": "flexure", "bars": ["#5", "#5"]},
-                                   {"depth": 900.0, "role": "torsion", "bars": ["#5", "#5"]}])
-def test_torsion_layers_need_the_torsion_role_and_fit_in_the_thickness(layer: dict[str, Any]) -> None:
-    with pytest.raises(ValidationError, match="role 'torsion'"):
-        Project.model_validate(_with_torsion_layers([layer]))
-
-
-def test_valid_torsion_layers_pass_and_reach_the_report(tmp_path: Path) -> None:
-    layers = [{"depth": 400.0, "role": "torsion", "bars": [{"designation": "#5", "x": 100.0}, {"designation": "#5", "x": 2500.0}]}]
-    project = Project.model_validate(_with_torsion_layers(layers))
-    assert validate_project(project, BARS).status is Status.PASS
-    path = tmp_path / "zc.json"
-    path.write_text(json.dumps(_with_torsion_layers(layers)), encoding="utf-8")
-    report_file(path, tmp_path / "salida")
-    text = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
-    assert "2 #5 a 400 mm" in text and "Dirección principal (X global): torsión" in text
+def test_plate_torsion_drives_the_flexure_of_both_faces_and_the_y_bars_outside_the_strips() -> None:
+    """D-118: con una columna desplazada en Y, la viga larga no lleva torsión de vigas; su flexión usa los momentos de
+    Wood-Armer (máx(M + |T|, 0) abajo y mín(M − |T|, 0) arriba, por B) y la nota lo dice; fuera de las franjas, las barras
+    y se revisan por metro con ±|mxy|."""
+    data: dict[str, Any] = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    footing = data["combined_footings"][0]
+    footing["columns"][0]["y"] = 400.0
+    project = Project.model_validate(data)
+    combined, soil = project.combined_footings[0], project.soil
+    assert soil is not None
+    basis = Basis(PROFILES[project.profile], project.materials, BARS, project.seismic.level)
+    cases, _ = combined_factored_cases(combined, soil)
+    checks = long_beam_checks(basis, combined, soil, cases)
+    assert not any(check.name.startswith("Torsion") for check in checks)
+    strengths = [check for check in checks if check.name == "Flexion: resistencia" and "Wood-Armer (D-118)" in check.note]
+    assert strengths
+    beams = {pressure.case: beam_case(combined, soil, pressure, loads) for pressure, loads in cases}
+    for check in strengths:
+        beam = beams[check.case or ""]
+        x = (check.z or 0.0) - combined.lx / 2
+        moment, torque = beam.moment(x), abs(beam.torque(x))
+        expected = -min(moment - torque, 0.0) if "momento negativo" in check.note else max(moment + torque, 0.0)
+        assert check.demand == pytest.approx(expected, rel=1e-9)
+    names = {check.name for check in column_checks(basis, combined, soil, cases)}
+    assert "Direccion secundaria: torsion de placa (barras inferiores)" in names
 
 
 def test_wide_footing_warns_about_two_way_behaviour(tmp_path: Path) -> None:

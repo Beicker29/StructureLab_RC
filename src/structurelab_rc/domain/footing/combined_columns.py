@@ -19,27 +19,31 @@ F = `column_vertical` y momentos estáticos ∫x·q = F·x + My + H·Vx y ∫y·
   franja desde la cara de la columna hasta el borde. Aplastamiento y pasadores por columna, como en la zapata aislada.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import replace
 
 from structurelab_rc.domain.basis import Basis
-from structurelab_rc.domain.beam.shear import MIN_REINFORCEMENT, STRENGTH
-from structurelab_rc.domain.beam.station import checks_for, shear_and_torsion_checks
+from structurelab_rc.domain.beam.flexure import MIN_REINFORCEMENT as FLEXURE_MINIMUM
+from structurelab_rc.domain.beam.shear import MIN_REINFORCEMENT, STRENGTH, concrete_lambda
+from structurelab_rc.domain.beam.station import checks_for, flexure_station_checks, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
-from structurelab_rc.domain.check import Check
+from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.development import development_check, required_length
-from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
+from structurelab_rc.domain.flexure_strength import MomentStrength, RectangularSection, rectangular_strength, required_area
 from structurelab_rc.domain.footing.base import column_vertical
-from structurelab_rc.domain.footing.combined_beam import extreme_moments, moment_sign
+from structurelab_rc.domain.footing.combined_beam import BeamCase, beam_case, extreme_moments, moment_sign
 from structurelab_rc.domain.footing.connection import Support, bar_anchorage, bearing_checks, dowel_checks
 from structurelab_rc.domain.footing.declared import DIRECTIONS, PRINCIPAL, SECONDARY
 from structurelab_rc.domain.footing.flexure import plain_strip_check
 from structurelab_rc.domain.footing.loads import FactoredCase
-from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows, uniform_positions
+from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows, uniform_positions
 from structurelab_rc.domain.footing.shear import PunchedColumn, punching_checks, transferred_load
 from structurelab_rc.domain.shear_strength import two_way_shear
 from structurelab_rc.domain.status import Status
+from structurelab_rc.mechanics.flexure import SteelLayer
 from structurelab_rc.mechanics.perimeter import critical_perimeter
+from structurelab_rc.mechanics.plate import wood_armer
+from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting
 from structurelab_rc.model.footing import BarSet, FootingLoad, Soil
 from structurelab_rc.model.project import Demands, Member, Section, Station
@@ -54,6 +58,7 @@ Cases = list[tuple[FactoredCase, tuple[FootingLoad, ...]]]
 _TOLERANCE = 1e-6  # mm
 _SWEEP = 64  # puntos por voladizo para buscar el mayor momento negativo de la franja (D-095)
 _NEGLIGIBLE_MOMENT = 1e3  # N·mm: por debajo, no hay momento negativo que revisar
+_NEGLIGIBLE_TWIST = 1.0  # N·mm/mm: por debajo, no hay torsión de placa (D-118)
 
 
 def column_action(footing: CombinedFooting, soil: Soil, column: CombinedColumn, load: FootingLoad) -> tuple[float, float, float]:
@@ -92,8 +97,16 @@ def _punching_rows(basis: Basis, footing: CombinedFooting, bottom: dict[str, Bar
 
 
 def _top_rows(basis: Basis, footing: CombinedFooting) -> dict[str, tuple[BarRow, ...]]:
-    """Barras superiores alrededor de las columnas: top.x y top.y (D-097, D-099), si las hay."""
-    return {direction: (row,) for direction, row in top_rows(footing, basis.bars).items()}
+    """Barras superiores alrededor de las columnas: top.x y, en Y, top.y fuera de las zonas de band superior y el band
+    superior de cada columna (D-097, D-099, D-119), si los hay."""
+    rows = top_rows(footing, basis.bars)
+    depth = mat_rows(footing, footing.bottom, basis.bars)["y"].depth
+    result: dict[str, tuple[BarRow, ...]] = {"x": (rows["x"],)} if "x" in rows else {}
+    across = transverse_top(footing, rows.get("y"), depth)
+    bands = tuple(band for column in footing.columns if (band := band_top_row(footing, column, depth, basis.bars)) is not None)
+    if across is not None or bands:
+        result["y"] = (*(() if across is None else (across,)), *bands)
+    return result
 
 
 def _overlap(footing: CombinedFooting, depth: float) -> bool:
@@ -148,6 +161,46 @@ def band_row(footing: CombinedFooting, column: CombinedColumn, row: BarRow, basi
     edge = footing.lx / 2 - footing.cover - spec.diameter_mm / 2
     positions = uniform_positions(max(x0 + spec.diameter_mm / 2, -edge), min(x1 - spec.diameter_mm / 2, edge), column.band.spacing)
     return BarRow("y", spec.designation, spec.diameter_mm, spec.area_mm2, row.depth, x1 - x0, tuple(positions), None, ())
+
+
+def band_top_row(footing: CombinedFooting, column: CombinedColumn, depth: float, bars: Sequence[RebarSpec]) -> BarRow | None:
+    """El band superior de la columna (D-119) como fila de barras y en el ancho de su franja (con la d de la malla y
+    inferior, como band_row): arriba, debajo de top.x si esa dirección va más cerca de la cara, como top.y. depth de la
+    fila: la altura efectiva desde la cara inferior."""
+    if column.band_top is None:
+        return None
+    specs = {bar.designation: bar for bar in bars}
+    spec = specs[column.band_top.designation]
+    top = footing.top
+    above = specs[top.x.designation].diameter_mm if top is not None and top.x is not None and top.nearest == "x" else 0.0
+    from_face = footing.cover + stirrup_diameter(footing, bars) + above + spec.diameter_mm / 2
+    x0, x1 = strip_limits(footing, column, depth)
+    edge = footing.lx / 2 - footing.cover - spec.diameter_mm / 2
+    positions = uniform_positions(max(x0 + spec.diameter_mm / 2, -edge), min(x1 - spec.diameter_mm / 2, edge), column.band_top.spacing)
+    return BarRow("y", spec.designation, spec.diameter_mm, spec.area_mm2, footing.h - from_face, x1 - x0, tuple(positions), None, ())
+
+
+def transverse_top(footing: CombinedFooting, row: BarRow | None, depth: float) -> BarRow | None:
+    """Las barras superiores y (top.y) fuera de las zonas de band superior (D-119), como la malla inferior frente al band;
+    sin band superior, en todo el largo. depth: la d de la malla y inferior, que fija el ancho de las franjas."""
+    if row is None:
+        return None
+    zones = [strip_limits(footing, column, depth) for column in footing.columns if column.band_top is not None]
+    kept = tuple(p for p in row.positions if not any(x0 - _TOLERANCE <= p <= x1 + _TOLERANCE for x0, x1 in zones))
+    return replace(row, positions=kept)
+
+
+def strip_top(footing: CombinedFooting, column: CombinedColumn, depth: float,
+              bars: Sequence[RebarSpec]) -> tuple[BarRow | None, float | None]:
+    """(fila, separación) de las barras superiores transversales de la franja: el band superior si lo hay (D-119); si no,
+    top.y (D-097); None si no hay ninguno."""
+    band = band_top_row(footing, column, depth, bars)
+    if band is not None and column.band_top is not None:
+        return band, column.band_top.spacing
+    top = top_rows(footing, bars).get("y")
+    if top is None or footing.top is None or footing.top.y is None:
+        return None, None
+    return top, footing.top.y.spacing
 
 
 def transverse_bottom(footing: CombinedFooting, row: BarRow) -> BarRow:
@@ -257,15 +310,30 @@ def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: Comb
         y, moment = min(((point, strip_cantilever(footing, load, point, side)[0]) for point in points), key=lambda item: item[1])
         if moment < -_NEGLIGIBLE_MOMENT and moment < strip_cantilever(footing, load, face, side)[0]:
             shear = strip_cantilever(footing, load, y, side)[1]
-            result.append((y, moment, abs(shear), f"mayor momento negativo hacia el borde {name}"))
+            result.append((y, moment, abs(shear), f"mayor M negativo hacia el borde {name}"))
     return result, note
+
+
+def strip_twist(footing: CombinedFooting, soil: Soil, given: tuple[FactoredCase, tuple[FootingLoad, ...]],
+                limits: tuple[float, float]) -> float:
+    """|mxy| de la franja (D-118): el mayor |T|/B en sus dos bordes, a cada lado del par de la columna."""
+    beam = beam_case(footing, soil, *given)
+    return max(abs(beam.twist(limits[0])), abs(beam.twist(limits[1])))
+
+
+def strip_moments(moment: float, width: float, twist: float) -> list[float]:
+    """Los momentos de diseño de la franja de ancho width por Wood-Armer (D-118), con my = M/b, |mxy| = twist y mx = 0:
+    el de las barras inferiores (> 0) y el de las superiores (< 0) que no sean nulos; sin ninguno, [M]. Con mx = 0 el my*
+    de Wood-Armer es el mayor posible, como mx* con my = 0 en la viga larga: juntos cumplen el criterio de Wood-Armer."""
+    design = wood_armer(0.0, moment / width, twist)
+    return [value for value in (design.bottom.y * width, design.top.y * width) if value != 0] or [moment]
 
 
 def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tuple[BarRow, int], cases: Cases) -> list[Check]:
     row, index = rows
     column = footing.columns[index]
     x0, x1 = strip_limits(footing, column, row.depth)
-    top = top_rows(footing, basis.bars).get("y")
+    top, _ = strip_top(footing, column, row.depth, basis.bars)  # el band superior o top.y (D-119)
     has_top = top is not None and bool(_inside(top, (x0, x1)))
     member = strip_member(footing, column, (row, band_row(footing, column, row, basis), top))
     title = f"Franja transversal de la columna {column.id}"
@@ -273,36 +341,170 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     for pressure, loads in cases:
         force = column_vertical(footing, soil, column, loads[index])
         demands, shape = strip_demands(footing, pressure, column, (force, row.depth))
-        for y, moment, shear, label in demands:
+        twist = strip_twist(footing, soil, (pressure, loads), (x0, x1))
+        plate = (f"Wood-Armer (D-118): M de la franja y mxy = {twist / 1e3:.2f} kN*m/m" if twist > _NEGLIGIBLE_TWIST else "")
+        for y, physical, shear, label in demands:
             z = y + footing.ly / 2
-            section = f"{title}, {label}, {moment_sign(moment)}"
-            station = Station.model_construct(z=z, layout=member.stations[0].layout, case=pressure.case,
-                                              demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))
-            # Las caras laterales de la franja quedan dentro del concreto: sin refuerzo superficial (D-083).
-            given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
-            if moment < 0 and not has_top:
-                # Momento negativo sin barras superiores transversales: concreto simple en el ancho de la franja (D-072,
-                # D-095) y el cortante de vigas. Con top.y lo revisa la flexión de vigas con esas barras (D-097).
-                note = section + (f": {shape}" if shape else "")
-                checks.append(replace(plain_strip_check(basis, footing, -moment, (label, pressure.case, note), x1 - x0), z=z))
-                selected = list(shear_and_torsion_checks(given))
-            else:
-                selected = list(checks_for(given))
-            for check in selected:
-                note = section + "".join(f": {text}" for text in (check.note, shape) if text)
-                checks.append(_beam_shear(replace(check, note=note, member=footing.id, case=pressure.case, z=z)))
+            for order, moment in enumerate(strip_moments(physical, x1 - x0, twist)):
+                section = f"{title}, {label}, {moment_sign(moment)}"
+                station = Station.model_construct(z=z, layout=member.stations[0].layout, case=pressure.case,
+                                                  demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))
+                # Las caras laterales de la franja quedan dentro del concreto: sin refuerzo superficial (D-083).
+                given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
+                if moment < 0 and not has_top:
+                    # Momento negativo sin barras superiores transversales: concreto simple en el ancho de la franja (D-072,
+                    # D-095) y el cortante de vigas. Con top.y lo revisa la flexión de vigas con esas barras (D-097).
+                    note = section + "".join(f": {text}" for text in (shape, plate) if text)
+                    checks.append(replace(plain_strip_check(basis, footing, -moment, (label, pressure.case, note), x1 - x0), z=z))
+                    selected = list(shear_and_torsion_checks(given)) if order == 0 else []
+                else:
+                    selected = list(checks_for(given) if order == 0 else flexure_station_checks(given))
+                for check in selected:
+                    extra = plate if check.name.startswith("Flexion") else ""
+                    note = section + "".join(f": {text}" for text in (check.note, shape, extra) if text)
+                    check = replace(check, note=note, member=footing.id, case=pressure.case, z=z)
+                    checks.append(_beam_shear(_negative_minimum(check, moment)))
     return checks
+
+
+PLATE_BOTTOM = "Direccion secundaria: torsion de placa (barras inferiores)"
+PLATE_TOP = "Direccion secundaria: torsion de placa (barras superiores)"
+PLATE_PLAIN = "Direccion secundaria: torsion de placa, concreto simple (cara superior)"
+PLATE_SHEAR = "Direccion secundaria: torsion de placa, cortante"  # qy = ∂mxy/∂x fuera de las franjas (D-119)
+_NEGLIGIBLE_SHEAR = 1.0  # N por metro
+_PLATE_STRIP = 1000.0  # mm: fuera de las franjas, por metro de largo
+_PLATE_SAMPLES = 64
+
+
+def outside_twist(footing: CombinedFooting, soil: Soil, given: tuple[FactoredCase, tuple[FootingLoad, ...]],
+                   zones: list[tuple[float, float]]) -> tuple[float, float]:
+    """(x, |mxy|) del mayor momento torsor de placa fuera de las franjas, por muestreo del largo y en los bordes de cada
+    franja (allí salta T por el par de la columna)."""
+    beam = beam_case(footing, soil, *given)
+    return max(((x, abs(beam.twist(x))) for x in _outside_points(footing, zones)), key=lambda item: item[1], default=(0.0, 0.0))
+
+
+def _outside_points(footing: CombinedFooting, zones: list[tuple[float, float]]) -> list[float]:
+    """Las secciones x fuera de las franjas: 64 tramos del largo y los bordes de cada franja."""
+    half = footing.lx / 2
+    points = [-half + footing.lx * index / _PLATE_SAMPLES for index in range(_PLATE_SAMPLES + 1)]
+    points += [edge for zone in zones for edge in zone]
+    return [x for x in points if not any(x0 + _TOLERANCE < x < x1 - _TOLERANCE for x0, x1 in zones)]
+
+
+def plate_shear(footing: CombinedFooting, pressure: FactoredCase, x: float) -> float:
+    """Cortante de placa por unidad de ancho en la dirección y fuera de las franjas (decisión del usuario, D-119): con
+    my = 0, el equilibrio de la placa da qy = ∂mxy/∂x = (dT/dx)/B, y dT/dx en x es ∫y·q dy de la carga neta en esa
+    línea; la carga uniforme w es simétrica en el ancho, así que solo cuenta la presión del suelo (N/mm)."""
+    half = footing.ly / 2
+    return abs(pressure.pressure.along_y(x, -half, half)[1]) / footing.ly
+
+
+def _plate_shear_check(basis: Basis, footing: CombinedFooting, row: BarRow, beam: BeamCase,
+                       zones: list[tuple[float, float]]) -> Check | None:
+    """Cortante de placa fuera de las franjas por metro (D-119), en la sección de mayor qy, frente a φVc de cimentación
+    por metro con la malla y inferior (Mu, el |mxy| de esa sección); None si es despreciable."""
+    profile, materials = basis.profile, basis.materials
+    x, shear = max(((x, plate_shear(footing, beam.pressure, x)) for x in _outside_points(footing, zones)),
+                   key=lambda item: item[1], default=(0.0, 0.0))
+    vu = shear * _PLATE_STRIP
+    if vu <= _NEGLIGIBLE_SHEAR:
+        return None
+    clause = profile.footing.clauses()["one_way_shear"]
+    lam = concrete_lambda(profile, materials)
+    if isinstance(lam, Check):
+        return replace(lam, name=PLATE_SHEAR, member=footing.id, case=beam.case)
+    per_metre = row.bar_area * _PLATE_STRIP / footing.bottom.y.spacing
+    rho = per_metre / (_PLATE_STRIP * row.depth)
+    mu = abs(beam.twist(x)) * _PLATE_STRIP
+    vc = profile.footing.one_way_concrete_shear(fc=materials.fc, lam=lam, bw=_PLATE_STRIP, d=row.depth, h=footing.h, rho_w=rho,
+                                                vu=vu, mu=mu)
+    phi = profile.shear.strength_reduction()
+    where = f"a {x + footing.lx / 2:.0f} mm del borde negativo a lo largo de la viga"
+    note = (f"Fuera de las franjas, {where}: dT/dx = {shear * footing.ly / 1e3:.1f} kN (presion del suelo en la linea), "
+            f"qy = (dT/dx)/B = {shear:.2f} kN/m, por metro (cortante de placa, D-119)")
+    return Check(PLATE_SHEAR, Status.PASS if vu <= phi * vc else Status.FAIL, clause=clause, demand=vu, capacity=phi * vc, unit="N",
+                 member=footing.id, case=beam.case, note=note,
+                 values=(("phi", phi), ("Vc", vc), ("bw", _PLATE_STRIP), ("d", row.depth), ("rho w", rho), ("lambda", lam),
+                         ("fc", materials.fc)))
+
+
+def _plate_flexure(basis: Basis, footing: CombinedFooting, layer: tuple[str, BarRow, float], given: tuple[float, str, str]) -> Check:
+    """Flexión por metro de las barras y fuera de las franjas: layer = (nombre, fila, separación); given = (Mu, caso,
+    nota). La fila trae su d desde la cara comprimida."""
+    name, row, spacing = layer
+    demand, case, note = given
+    per_metre = row.bar_area * _PLATE_STRIP / spacing
+    clause = basis.profile.footing.clauses()["strength"]
+    strength = rectangular_strength(basis.profile, basis.materials, RectangularSection(_PLATE_STRIP, footing.h),
+                                    (SteelLayer(row.depth, per_metre),))
+    if not isinstance(strength, MomentStrength):
+        return replace(check_from_errors(name, [strength]), clause=clause, member=footing.id, case=case)
+    return Check(name, Status.PASS if strength.design >= demand else Status.FAIL, clause=clause, demand=demand,
+                 capacity=strength.design, unit="N*mm", member=footing.id, case=case, note=note,
+                 values=(("phi", strength.phi), ("Mn", strength.nominal), ("b", _PLATE_STRIP), ("h", footing.h), ("d", row.depth),
+                         ("As", per_metre), ("fc", basis.materials.fc), ("fy", basis.materials.fy)))
+
+
+def plate_secondary_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases: Cases) -> list[Check]:
+    """Barras y fuera de las franjas con la torsión de placa (decisión del usuario, D-118): allí my = 0 y Wood-Armer da
+    my* = +|mxy| (barras inferiores) y −|mxy| (superiores, o concreto simple sin ellas, D-072), por metro, en la sección
+    de mayor |mxy| de cada caso. Sin torsión no hay nada que revisar (D-116: solo retracción y temperatura)."""
+    if footing.beam is not None:
+        return []
+    bottom = transverse_bottom(footing, mat_rows(footing, footing.bottom, basis.bars)["y"])
+    top = transverse_top(footing, top_rows(footing, basis.bars).get("y"), bottom.depth)  # fuera del band superior (D-119)
+    zones = [strip_limits(footing, column, bottom.depth) for column in footing.columns]
+    checks = []
+    for pressure, loads in cases:
+        x, twist = outside_twist(footing, soil, (pressure, loads), zones)
+        if twist <= _NEGLIGIBLE_TWIST:
+            continue
+        demand = twist * _PLATE_STRIP
+        beam = beam_case(footing, soil, pressure, loads)
+        shear = _plate_shear_check(basis, footing, bottom, beam, zones)
+        if shear is not None:
+            checks.append(shear)
+        data = (f"T = {beam.torque(x) / 1e6:.1f} kN*m, B = {footing.ly:.0f} mm, mxy = T/B = {twist / 1e3:.2f} kN*m/m; my = 0, "
+                "asi que Wood-Armer pide my* = +|mxy| abajo y -|mxy| arriba, por metro (D-118)")
+        # El signo en la nota: la memoria separa con él la revisión de cada cara (D-095).
+        where = f"a {x + footing.lx / 2:.0f} mm del borde negativo a lo largo de la viga"
+        note = {sign: f"Fuera de las franjas, {where}, momento {sign}: {data}" for sign in ("positivo", "negativo")}
+        checks.append(_plate_flexure(basis, footing, (PLATE_BOTTOM, bottom, footing.bottom.y.spacing),
+                                     (demand, pressure.case, note["positivo"])))
+        if top is not None and footing.top is not None and footing.top.y is not None:
+            checks.append(_plate_flexure(basis, footing, (PLATE_TOP, top, footing.top.y.spacing),
+                                         (demand, pressure.case, note["negativo"])))
+        else:
+            plain = plain_strip_check(basis, footing, demand, ("fuera de las franjas", pressure.case, note["negativo"]), _PLATE_STRIP)
+            checks.append(replace(plain, name=PLATE_PLAIN))
+    return checks
+
+
+NEGATIVE_MINIMUM_NOTE = ("momento negativo de la franja: lo toma la viga de cimentacion; no se exige el acero minimo por "
+                         "flexion y las barras superiores cumplen el minimo de retraccion y temperatura (decision del usuario, "
+                         "D-116)")
+
+
+def _negative_minimum(check: Check, moment: float) -> Check:
+    """El acero mínimo por flexión de una sección de franja con momento negativo (decisión del usuario, D-116): no se
+    exige, porque ese momento lo toma la viga de cimentación; las barras superiores de la dirección secundaria cumplen
+    el mínimo de retracción y temperatura (D-097). Queda CUMPLE, sin demanda, con la nota."""
+    if moment >= 0 or check.name != FLEXURE_MINIMUM:
+        return check
+    return replace(check, status=Status.PASS, demand=None, errors=(), note=f"{check.note}; {NEGATIVE_MINIMUM_NOTE}")
 
 
 BEAM_SHEAR = "excedente para la viga"
 BEAM_SHEAR_NOTE = ("el cortante que excede phi Vc lo debe tomar el refuerzo transversal de la viga de cimentacion "
                    "(decision del usuario, D-103)")
+BEAM_SHEAR_RATIO = 0.99  # DCR que se reporta en la franja cuyo excedente toma la viga (decisión del usuario, D-114)
 
 
 def _beam_shear(check: Check) -> Check:
-    """Cortante de la franja sin estribos que excede φVc (decisión del usuario, D-103): CUMPLE con DCR = 1 y el
-    excedente Vu − φVc queda para el refuerzo transversal de la viga de cimentación, que no se verifica aquí; el Av,min
-    que esa franja exigiría también queda a cargo de la viga."""
+    """Cortante de la franja sin estribos que excede φVc (decisión del usuario, D-103): CUMPLE con DCR = 0.99 (D-114) y
+    el excedente Vu − φVc queda para el refuerzo transversal de la viga de cimentación, que no se verifica aquí; el
+    Av,min que esa franja exigiría también queda a cargo de la viga."""
     if check.status is not Status.FAIL or check.name not in (STRENGTH, MIN_REINFORCEMENT):
         return check
     note = f"{check.note}; {BEAM_SHEAR_NOTE}"
@@ -310,7 +512,7 @@ def _beam_shear(check: Check) -> Check:
         return replace(check, status=Status.PASS, note=note)
     assert check.demand is not None and check.capacity is not None
     values = (*check.values, ("Vu", check.demand), (BEAM_SHEAR, check.demand - check.capacity))
-    return replace(check, status=Status.PASS, demand=check.capacity, values=values, note=note)
+    return replace(check, status=Status.PASS, demand=BEAM_SHEAR_RATIO * check.capacity, values=values, note=note)
 
 
 def outside_checks(basis: Basis, footing: CombinedFooting, row: BarRow,
@@ -338,8 +540,8 @@ def _per_metre(basis: Basis, bar_set: BarSet) -> float:
 def shrinkage_checks(basis: Basis, footing: CombinedFooting) -> list[Check]:
     """Retracción y temperatura de la zapata combinada (ACI 24.4.3.2 y 24.4.3.3, NSR-10 C.7.12.2.1 y C.7.12.2.2; D-097):
     por zona y por metro, el refuerzo inferior más el superior de cada dirección suma al menos ρ·h, y la separación de
-    cada capa no excede la del perfil. Zonas en Y: cada zona de band (band + superior transversal) y el resto (malla y +
-    superior transversal); en X, todo el ancho (malla x + superior x)."""
+    cada capa no excede la del perfil. Zonas en Y: cada zona de band (band o malla y, más band superior o superior
+    transversal, D-119) y el resto (malla y + superior transversal); en X, todo el ancho (malla x + superior x)."""
     profile, h = basis.profile, footing.h
     ratio = profile.footing.shrinkage_temperature_ratio(basis.materials.fy)
     required = ratio * h * 1000.0
@@ -347,12 +549,14 @@ def shrinkage_checks(basis: Basis, footing: CombinedFooting) -> list[Check]:
     clause = profile.footing.clauses()["shrinkage_temperature"]
     top_x = [("superiores", footing.top.x)] if footing.top is not None and footing.top.x is not None else []
     top_y = [("superiores", footing.top.y)] if footing.top is not None and footing.top.y is not None else []
-    banded = [column for column in footing.columns if column.band is not None]
+    banded = [column for column in footing.columns if column.band is not None or column.band_top is not None]
     zones: list[tuple[str, str, list[tuple[str, BarSet]]]] = [
         ("x", "en todo el ancho", [("inferiores", footing.bottom.x), *top_x]),
         ("y", "fuera de las zonas de band" if banded else "en todo el largo", [("inferiores", footing.bottom.y), *top_y])]
-    zones += [("y", f"zona de band de la columna {column.id}", [("band", column.band), *top_y])
-              for column in banded if column.band is not None]
+    for column in banded:
+        lower = [("band", column.band)] if column.band is not None else [("inferiores", footing.bottom.y)]
+        upper = [("band superior", column.band_top)] if column.band_top is not None else top_y
+        zones.append(("y", f"zona de band de la columna {column.id}", [*lower, *upper]))
     checks = []
     for direction, zone, layers in zones:
         provided = sum(_per_metre(basis, bar_set) for _, bar_set in layers)
@@ -366,15 +570,15 @@ def shrinkage_checks(basis: Basis, footing: CombinedFooting) -> list[Check]:
 
 
 def steel_excess(basis: Basis, section: tuple[float, float, float], provided: float, moment: float) -> float:
-    """As requerido / As suministrado (≤ 1): el mayor entre el de análisis y el mínimo de vigas efectivo. section = (ancho,
-    h, d)."""
+    """As requerido / As suministrado (≤ 1): el mayor entre el de análisis y el mínimo de vigas, sin la excepción de 4/3
+    (decisión del usuario, D-115). section = (ancho, h, d)."""
     width, h, depth = section
     profile, materials = basis.profile, basis.materials
     analysis = required_area(profile, materials, RectangularSection(width, h), depth, moment)
     if analysis is None or provided <= 0:
         return 1.0
     as_min = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, width, depth)
-    return min(max(analysis, profile.flexure.effective_min_reinforcement(as_min, analysis)) / provided, 1.0)
+    return min(max(analysis, as_min) / provided, 1.0)
 
 
 def bar_development_check(basis: Basis, footing: CombinedFooting, row: BarRow, anchorage: tuple[float, str, float, float],
@@ -432,7 +636,6 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
     si lo hay, que es el único refuerzo inferior de la franja, D-097; si no, la malla y) con el mayor momento positivo de
     las caras, y las superiores y (D-097, D-099) con el mayor momento negativo de la franja."""
     half = footing.ly / 2
-    top = top_rows(footing, basis.bars).get("y")
     checks = []
     for index, column in enumerate(footing.columns):
         band = band_row(footing, column, row, basis)
@@ -441,8 +644,11 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
         positive = negative = 0.0
         for pressure, loads in cases:
             demands, _ = strip_demands(footing, pressure, column, (column_vertical(footing, soil, column, loads[index]), row.depth))
-            positive = max([positive, *(moment for _, moment, _, label in demands if label.startswith("cara"))])
-            negative = max([negative, *(-moment for _, moment, _, _ in demands)])
+            # Con los momentos de Wood-Armer de la franja en la combinada rectangular (D-118).
+            twist = strip_twist(footing, soil, (pressure, loads), limits) if footing.beam is None else 0.0
+            design = [(strip_moments(moment, width, twist), label) for _, moment, _, label in demands]
+            positive = max([positive, *(value for values, label in design if label.startswith("cara") for value in values)])
+            negative = max([negative, *(-value for values, _ in design for value in values)])
         available = min(half - (column.y + column.cy / 2), column.y - column.cy / 2 + half) - footing.cover
         note = f"Franja transversal de la columna {column.id}, desde la cara de la columna"
         bottom = band if band is not None else row
@@ -453,13 +659,15 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
             name = (f"{DEVELOPMENT} refuerzo band (columna {column.id})" if band is not None
                     else f"{DEVELOPMENT} barras inferiores, {SECONDARY} (franja de la columna {column.id})")
             checks.append(bar_development_check(basis, footing, bottom, (spacing, "bottom", excess, available), (name, note)))
-        if top is None or footing.top is None or footing.top.y is None or negative <= _NEGLIGIBLE_MOMENT:
+        top, top_spacing = strip_top(footing, column, row.depth, basis.bars)  # el band superior o top.y (D-119)
+        if top is None or top_spacing is None or negative <= _NEGLIGIBLE_MOMENT:
             continue
         top_area = len(_inside(top, limits)) * top.bar_area
         if top_area > 0:
             excess = steel_excess(basis, (width, footing.h, top.depth), top_area, negative)
-            checks.append(bar_development_check(basis, footing, top, (footing.top.y.spacing, "top", excess, available),
-                                                (f"{DEVELOPMENT} barras superiores, {SECONDARY} (franja de la columna {column.id})", note)))
+            name = (f"{DEVELOPMENT} band superior (columna {column.id})" if column.band_top is not None
+                    else f"{DEVELOPMENT} barras superiores, {SECONDARY} (franja de la columna {column.id})")
+            checks.append(bar_development_check(basis, footing, top, (top_spacing, "top", excess, available), (name, note)))
     return checks
 
 
@@ -475,6 +683,7 @@ def column_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases: Cas
     # 450 mm de la malla y sigue (flexión en una dirección).
     checks += shrinkage_checks(basis, footing)
     checks += [check for check in outside_checks(basis, footing, mesh["y"]) if check.name == OUTSIDE_SPACING]
+    checks += plate_secondary_checks(basis, footing, soil, cases)
     checks += x_development(basis, footing, soil, (bottom["x"], top_rows(footing, basis.bars).get("x")), cases)
     checks += _y_development(basis, footing, soil, mesh["y"], cases)
     first = footing.bottom.first

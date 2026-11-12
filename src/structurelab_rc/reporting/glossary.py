@@ -55,6 +55,8 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Zapata: verificacion estructural", "flexure", "", ""),
     ("Zapata combinada: verificacion estructural", "flexure", "", ""),
     ("Direccion principal: separacion", "requirements", "s", "s,máx"),
+    ("Direccion secundaria: torsion de placa, cortante", "shear", "Vu = qy·1 m", "φVc por metro"),  # ∂mxy/∂x (D-119)
+    ("Direccion secundaria: torsion de placa", "flexure", "Mu = |mxy|·1 m", "φMn por metro"),  # Wood-Armer (D-118)
     ("Direccion secundaria: acero minimo", "requirements", "As,min", "As"),
     ("Direccion secundaria: separacion", "requirements", "s", "s,máx"),
     ("Retraccion y temperatura: cuantia", "requirements", "ρ·h", "As inferior + superior"),
@@ -77,6 +79,7 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Desarrollo malla", "development", "ℓ requerida", "ℓ disponible"),
     ("Desarrollo barras", "development", "ℓ requerida", "ℓ disponible"),
     ("Desarrollo refuerzo band", "development", "ℓ requerida", "ℓ disponible"),
+    ("Desarrollo band superior", "development", "ℓ requerida", "ℓ disponible"),
     ("Pasadores: anclaje", "development", "ℓdc", "espacio disponible"),
     ("Aplastamiento", "bearing", "Pu", "φBn"),
     ("Pasadores: compresion", "bearing", "As requerida", "As de pasadores"),
@@ -201,7 +204,7 @@ _ACCENTS = {"Presion": "Presión", "Flexion": "Flexión", "Deformacion": "Deform
             "Torsion": "Torsión", "seccion": "sección", "interaccion": "interacción", "verificacion": "verificación",
             "Validacion": "Validación", "distribucion": "distribución", "Area": "Área", "Retraccion": "Retracción",
             "cuantia": "cuantía", "fisuracion": "fisuración", "deformacion": "deformación",
-            "Direccion": "Dirección", "flexion": "flexión"}
+            "Direccion": "Dirección", "flexion": "flexión", "torsion": "torsión"}
 
 
 def display(name: str) -> str:

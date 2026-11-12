@@ -191,6 +191,24 @@ def test_requirements_are_grouped_and_spacings_show_the_maximum_as_required(tmp_
     assert "Separación" not in dcr and "acero mínimo" not in dcr and "Retracción" not in dcr
 
 
+def test_strip_shear_over_phi_vc_is_reported_with_dcr_099_and_a_danger_alert(tmp_path: Path) -> None:
+    """D-103 y D-114: el cortante de franja que excede φVc se reporta con DCR = 0.99 y, en la propia revisión, un aviso
+    en rojo y negrilla de que el excedente lo asume el refuerzo transversal de la viga de cimentación."""
+    oracle = json.loads((Path(__file__).parent / "oracles" / "nsr_10" / "derived_combined_columns.json").read_text(encoding="utf-8"))
+    footing = next(case["footing"] for case in oracle["cases"] if case["id"] == "delgada")
+    project = {"description": "prueba", "profile": "nsr-10", "seismic": {"level": oracle["seismic_level"], "justification": "prueba"},
+               "materials": oracle["materials"], "soil": oracle["soil"], "combined_footings": [footing]}
+    path = tmp_path / "delgada.json"
+    path.write_text(json.dumps(project), encoding="utf-8")
+    report_file(path, tmp_path / "salida")
+    results = json.loads((tmp_path / "salida" / "resultado.json").read_text(encoding="utf-8"))
+    shears = [check for check in results["combined_footings"][0]["checks"]
+              if check["name"] == "Cortante: resistencia" and "excedente para la viga [kN]" in check["values"]]
+    assert shears and all(check["ratio"] == pytest.approx(0.99) and check["status"] == "PASS" for check in shears)
+    text = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
+    assert "debe ser asumido por el refuerzo transversal de la viga de cimentación; esta revisión se reporta con DCR = 0.99" in text
+
+
 def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> None:
     """V3J.4 (D-080 a D-083): la memoria de la zapata combinada separa la viga larga de las franjas, dibuja la planta con
     las dos columnas y trae los esfuerzos de punzonamiento en cada esquina; el resultado trae combined_footings."""
@@ -241,7 +259,11 @@ def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> 
     positions, values = longitudinal["positions [mm]"], longitudinal["M max [kN-m]"]
     k = next(index for index in range(len(positions) - 1) if positions[index] <= x <= positions[index + 1])
     at = values[k] + (values[k + 1] - values[k]) * (x - positions[k]) / (positions[k + 1] - positions[k])
-    assert at == pytest.approx(governing["demand"], rel=0.02)
-    assert max(values) >= governing["demand"]
+    # Con torsión de placa (D-118) la demanda es M + |T| y la nota trae M y T: el diagrama vale M en esa sección.
+    found = re.search(r"M = (-?[\d.]+) kN\*m, T = (-?[\d.]+) kN\*m", governing["note"])
+    moment, torque = (float(found.group(1)), float(found.group(2))) if found else (governing["demand"], 0.0)
+    assert governing["demand"] == pytest.approx(moment + abs(torque), abs=0.2)
+    assert at == pytest.approx(moment, rel=0.02)
+    assert max(values) >= moment
     assert "Esfuerzos de punzonamiento en las esquinas del perímetro crítico" in text and "gobierna" in text
     assert "Cortante V3" not in text  # el eje débil no aplica a la zapata

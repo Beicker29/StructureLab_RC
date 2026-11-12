@@ -1919,6 +1919,197 @@
   ancho, distinta de la colocada; corregido); con columnas alineadas y alto 1300 mm la viga se declara `deep_beam`, la
   revisan los criterios de D-089 y la verificación entera cumple; clasificación de las fallas propias de la T.
 
+### D-114: DCR de 0.99 en el cortante de franja que toma la viga, memoria vertical y plantilla de ETABS de la T
+
+- **Fecha:** 2026-11-12
+- **Decisiones del usuario:**
+  1. El cortante de franja de la dirección secundaria con Vu > φVc (D-103) se reporta con DCR = 0.99 (antes 1), con la
+     demanda en 0.99·φVc. En la propia revisión, además del aviso al comienzo y de la tabla de D-103, la memoria dice
+     en rojo y negrilla que el cortante excedente (Vu − φVc, en el valor `excedente para la viga`) lo debe asumir el
+     refuerzo transversal de la viga de cimentación.
+  2. Las hojas de la memoria en PDF van en orientación vertical (antes horizontal).
+  3. Plantilla de ETABS para el diseño de la T invertida: un ejemplo propio con su huella.
+  4. T invertida: `top` se declara como `bottom` (`first`, `end`, `x`, `y`) y es la malla superior de la zarpa. El
+     refuerzo de la viga sigue en `beam.layers`. D-106 rechazaba `top` en la T; D-097 dejaba pendientes las barras
+     superiores de las aletas.
+  5. Las capas de la viga de la T se pueden declarar solo con sus barras, sin x (`"bars": ["#6", "#6"]`), como en las
+     vigas.
+- **Reglas:**
+  - Con `top.y`, el momento negativo de cada aleta se revisa por metro con esas barras ("Aleta: flexion, barras
+    superiores"), con d medida desde la cara inferior, y se revisa su desarrollo desde la cara de la viga. Sin `top.y`,
+    sigue el concreto simple (D-072).
+  - La capa inferior declarada solo con barras se reparte a igual separación en el ancho cubierto (`bottom_width` o el
+    ala efectiva): al recubrimiento si llega al borde de la base, y por dentro del estribo si el ala no cuenta. Las
+    demás capas siguen la regla de las vigas, entre las esquinas del estribo. La separación mínima de cada capa usa
+    esas posiciones.
+- **Control:**
+  - El oráculo `derive_combined_columns.py` reporta la demanda en 0.99·φVc, y una prueba revisa el DCR y el aviso en la
+    memoria del caso `delgada`.
+  - Oráculo `derive_inverted_t.py`, caso `aleta-superior` (Mx grande y `top.y` #5 c/200): momento negativo de
+    14.9 kN·m/m frente a φMn = 115.9 kN·m/m. Como ese Mx tuerce la viga por encima del umbral, en este caso solo se
+    comparan las aletas.
+  - La T de `pruebas/zapata_t_invertida_etabs.json`, con las capas declaradas solo con sus barras, importa, valida y
+    verifica en CUMPLE.
+
+### D-115: sin la excepción de 4/3 del As,min en las zapatas combinadas y en T
+
+- **Fecha:** 2026-11-12
+- **Decisión del usuario:** en las zapatas combinadas (la viga de la dirección principal y las franjas) y en la T
+  invertida no se aplica la excepción del acero mínimo de flexión: ACI 318-25 9.6.1.3 y NSR-10 C.10.5.3 dicen que, si
+  el As provisto en cada sección es al menos un tercio mayor que el requerido por análisis, no hace falta cumplir 9.6.1.1
+  y 9.6.1.2. Allí se exige siempre As ≥ As,min. Reemplaza lo que D-081 adoptaba para la viga larga. En las vigas sigue
+  la excepción (D-022, D-081). La zapata aislada usa el mínimo de losa, que no tiene esta excepción.
+- **Implementación:**
+  - `beam/flexure.flexure_checks` recibe el `StationInput`; con `foundation`, el As,min no busca el As de análisis y
+    queda "Sin la excepción de 9.6.1.3" en la nota.
+  - El As requerido de la reducción de la longitud de desarrollo (`steel_excess`) es el mayor entre el de análisis y el
+    As,min completo.
+  - El diseño de la combinada parte del As,min completo (sin 4/3) al proponer barras.
+- **Control:** los oráculos de la viga (`derive_combined_beam.py`, que también usan las franjas) y de la T exigen
+  As ≥ As,min. En los casos del oráculo NSR-10 pasan de CUMPLE a NO CUMPLE 22 secciones de la viga, 47 de las franjas
+  y 3 de la T, que antes cumplían por la excepción.
+
+### D-116: sin acero mínimo por flexión en las secciones de franja con momento negativo
+
+- **Fecha:** 2026-11-12
+- **Decisión del usuario:** en las franjas de la dirección secundaria, el momento negativo no exige acero mínimo por
+  flexión, porque lo toma la viga de cimentación. Las barras superiores de esa dirección cumplen el mínimo de retracción
+  y temperatura (D-097), y la memoria lo dice en la nota de la sección. Con D-115, un momento negativo diminuto exigía
+  el As,min completo y bloqueaba el diseño.
+- **Implementación:** `combined_columns._negative_minimum`: en una sección de franja con Mu < 0, "Flexion: acero minimo
+  (M3)" queda CUMPLE, sin demanda, con la nota. La resistencia a flexión negativa sigue revisándose: con las barras
+  superiores si las hay, o si no de concreto simple.
+- **Control:** el oráculo `derive_combined_columns.py` aplica la misma regla.
+
+### D-117: la búsqueda del diseño de la combinada y la T corrige cada falla de detallado en su grupo
+
+- **Fecha:** 2026-11-12
+- **Problema:** con D-115, el As,min completo lleva la búsqueda a barras más densas. Tres fallas de detallado iban a un
+  grupo que no las corrige, lo agotaban y terminaban en "h":
+  - "Torsion: distribucion del refuerzo longitudinal" se trataba como falta de área de la piel.
+  - La separación mínima de las capas de la viga de la T se trataba como falla de las barras y de las aletas.
+  - La barra de esquina de torsión no depende de la separación, sino de dónde queda la barra extrema.
+- **Reglas:** no cambia ninguna verificación. Cambian dos textos y la clasificación de las fallas.
+  - La nota de la distribución del refuerzo de torsión (ACI 9.7.5.1, NSR-10 C.11.5.6.2) nombra la capa: "la capa
+    superior/inferior a … mm". La etiqueta de la separación mínima de las capas de la viga de la T nombra su posición:
+    "capa inferior/superior/intermedia a … mm de la viga".
+  - Cada problema de la nota de torsión va a su grupo:
+    - capas separadas en altura → menor separación de la piel;
+    - barras de torsión delgadas → piel de mayor diámetro;
+    - una fila sin barras de esquina → en esa capa, una separación que deje la barra extrema a no más de un diámetro
+      de la esquina (`_corner` de cada opción, con las barras centradas como en `mesh`);
+    - una fila con barras separadas más de 300 mm → menor separación en esa capa.
+  - La viga de la T se revisa volteada (D-093), así que su capa "superior" es la inferior de la entrada.
+  - La separación mínima de una capa de la viga de la T va a esa capa, `bottom_x` o `top_x`.
+  - Una falla de la rama exterior a torsión (At/s > Ab/s) descarta solo los estribos de igual o mayor diámetro con
+    Ab/s menor o igual. Con un estribo más delgado, Ao crece y el At/s requerido baja, así que esa opción puede cumplir.
+  - T invertida, con las cargas del ejemplo de ETABS (M⁻ ≈ 3420 kN·m):
+    - Si la capa superior o inferior de la viga se queda sin opciones, o no tiene ninguna, la señal es "web": un alma
+      más ancha, con el mismo alto. Antes subía el alto hasta el límite y no había solución.
+    - El diseño propone la malla superior de la zarpa (`top.y`, D-114) como grupo opcional. Se activa si el momento
+      negativo de las aletas no lo toma el concreto simple, o si este no se permite (D-072). Sus fallas (flexión,
+      desarrollo, separación) van a ese grupo; antes "Aleta: concreto simple" engrosaba la zarpa.
+    - El refuerzo distribuido de la viga alta (transversal y longitudinal) descarta, como Aℓ de torsión, las opciones
+      que no llegan a la proporción que falta. Antes subía una opción por ronda y se agotaban las rondas.
+- **Control:** `test_torsion_is_taken_by_closed_stirrups_and_skin` y `test_tall_t_beam_is_declared_deep_and_checked`
+  vuelven a encontrar solución con D-115.
+
+### D-118: torsión de placa (Wood-Armer) en la zapata combinada rectangular
+
+- **Fecha:** 2026-11-12
+- **Estado:** implementada.
+- **Problema:** la torsión T(x) de la zapata combinada rígida se revisaba como torsión de vigas (ACI 318-25 22.7,
+  NSR-10 C.11.5; D-088, D-090, D-110), con estribos cerrados y Aℓ. Una zapata es una placa: la torsión de placa no se
+  diseña como la de una viga.
+- **Referencia:** Wood (1968) y Armer (1968). Ninguna de las dos normas trae el método. Se apoya en la libertad de
+  análisis que cumpla equilibrio y compatibilidad (ACI 318-25 4.4 y 6.2; NSR-10 C.8.3).
+- **Decisiones del usuario:**
+  1. mxy = T(x)/B, uniforme en el ancho B. Es conservador: no cuenta con el cortante de borde de Kirchhoff.
+  2. Se aplica solo a la combinada rectangular. El alma de la T invertida es una viga y conserva la torsión de vigas.
+  3. Wood-Armer completo en las dos direcciones. Las barras y, inferiores y superiores, se revisan en todo el largo con
+     my\* por metro. Donde |mxy| > 0, esto reemplaza "momento cero → solo retracción y temperatura".
+  4. Las revisiones de torsión de vigas se eliminan en la combinada rectangular. Los estribos quedan solo para el
+     cortante (D-103, D-110) y `torsion_layers` se rechaza en la entrada.
+- **Reglas (Wood-Armer completo):**
+  - Inferior: mx\* = mx + |mxy| y my\* = my + |mxy|. Si mx\* < 0: mx\* = 0 y my\* = my + |mxy²/mx|. Si my\* < 0:
+    my\* = 0 y mx\* = mx + |mxy²/my|.
+  - Superior: lo mismo con los signos opuestos.
+  - mx = M(x)/B. my es el de las franjas dentro de cada band y 0 fuera de ellas.
+- **Implementación:**
+  - Desacople conservador. Las barras x usan Wood-Armer con my = 0 y las barras y con mx = 0. Con my = 0, mx\* es el
+    mayor posible: my solo reduce mx\*, en la rama my\* < 0. Lo mismo vale para my\* con mx = 0. Los dos pares juntos
+    cumplen el criterio de Wood-Armer, (mx\* − mx)(my\* − my) ≥ mxy², así que la dirección x no depende de las franjas.
+    Quedan formas cerradas: abajo máx(m + |mxy|, 0) y arriba mín(m − |mxy|, 0).
+  - **Viga larga** (`combined_beam`):
+    - las secciones candidatas siguen siendo las caras y los puntos con V = 0;
+    - se eligen la del mayor Mu inferior y la del mayor Mu superior;
+    - cada cara con momento es una estación de flexión. El cortante se revisa una vez, sin torsión de vigas.
+    - La nota de la flexión trae M, T y mxy.
+  - **Franjas:** |mxy| es el mayor |T|/B en los dos bordes de la franja, a cada lado del par de la columna. Las reglas
+    son las mismas, con D-116 en la cara superior.
+  - **Fuera de las franjas:** la sección de mayor |mxy| de cada caso (64 tramos y los bordes de las franjas), por metro:
+    - "Direccion secundaria: torsion de placa (barras inferiores)", con la malla y;
+    - "(barras superiores)", con `top.y`;
+    - sin `top.y`, el concreto simple de D-072.
+    - No se exige As,min de flexión, porque el mínimo de la zapata es el de losa.
+  - **Desarrollo:** el de las barras x y el de las franjas usan los momentos de Wood-Armer.
+  - **Entrada:** `torsion_layers` se rechaza, y la memoria y el resultado ya no lo muestran.
+  - **Diseño:** las barras x, los band y las barras y fuera de las franjas parten de los momentos de Wood-Armer. Los
+    estribos quedan solo para el cortante.
+- **Control:**
+  - `tests/test_plate.py` revisa cada rama de `mechanics/plate.py` con valores calculados a mano.
+  - Oráculo `derive_combined_beam.py`. Los casos de torsión de vigas pasan a ser de placa: `torsion-placa`,
+    `torsion-placa-alta` y `torsion-sin-superior`. `torsion-como-piel` se retira, porque D-090 ya no aplica.
+  - Oráculo `derive_combined_columns.py`: las franjas y las barras y fuera de ellas.
+  - En las pruebas, la clave de cada estación lleva la cara.
+- **Pendiente:** una tabla de mx, my, mxy, mx\* y my\* por sección en la memoria. Por ahora, los datos van en la nota
+  de cada flexión.
+
+### D-119: band superior, cortante de placa fuera de las franjas, memoria por zona y Vu en valor absoluto
+
+- **Fecha:** 2026-11-12
+- **Decisiones del usuario:**
+  1. Cada columna de la combinada puede declarar un band superior (`band_top`): las barras superiores transversales de
+     su franja, para el momento negativo de la franja y el de la torsión de placa. Donde lo hay, `top.y` va solo fuera
+     de esa zona, como la malla inferior frente al `band` (D-097). El diseño también lo propone.
+  2. La memoria trae capítulos propios para la dirección secundaria fuera de las franjas band: momento positivo,
+     momento negativo y fuerza cortante.
+  3. El cortante fuera de las franjas es el de placa. Con my = 0, el equilibrio da qy = ∂mxy/∂x = (dT/dx)/B.
+  4. Vu de cortante en una y dos direcciones: gobierna el mayor valor absoluto en las secciones críticas.
+  5. El índice DCR reporta cada verificación por dirección y por signo de momento, por ejemplo "Cortante: resistencia
+     dirección principal momento negativo".
+- **Reglas:**
+  - **Band superior:**
+    - Se coloca en el ancho de la franja (columna + d/2 a cada lado), como `top.y`: debajo de `top.x` si esa dirección
+      va más cerca de la cara.
+    - Es la capa superior de la franja (si no lo hay, `top.y`), y se usa en su desarrollo y en su separación mínima.
+    - En la retracción por zona es la capa superior de la zona de band. Sin `band`, abajo cuenta la malla y.
+    - En el punzonamiento, la parte negativa en bslab suma `top.y` fuera de las zonas y el band superior de cada
+      columna.
+    - Sin `top`, termina como la malla inferior. La T no lo usa, y la plantilla de diseño no lo acepta declarado.
+  - **Cortante de placa:**
+    - dT/dx en una sección es ∫y·p dy de la presión del suelo en esa línea. La carga uniforme es simétrica en el
+      ancho y no aporta.
+    - Se revisa por metro, en la sección de mayor qy fuera de las franjas (64 tramos y los bordes de las franjas),
+      frente a φVc de cimentación con la malla y inferior y Mu = |mxy| en esa sección. Solo se revisa si hay torsión de
+      placa.
+    - Si falla, el diseño pide espesor.
+  - **Vu en valor absoluto.** Se revisó cada cortante:
+    - la viga de la combinada, sus franjas, la viga alta y la zapata aislada ya usaban |Vu|, la última en las dos
+      caras;
+    - en el punzonamiento gobierna el mayor esfuerzo de las esquinas;
+    - las aletas de la T tomaban solo el mayor cortante positivo. Ahora `Flanges.governing("shear")` busca el mayor
+      |V| a lo largo de X en las dos aletas. En los casos actuales del oráculo no cambia ningún valor.
+  - **Etiqueta de franja.** La sección "mayor momento negativo hacia el borde" pasa a llamarse "mayor M negativo hacia
+    el borde". Con Wood-Armer esa sección puede tener también un momento de diseño positivo, y la frase se confundía con
+    el signo de la estación.
+- **Control:**
+  - Oráculo `derive_combined_columns.py`, con dos casos nuevos:
+    - `band-superior`: band superior en C1, `top.y` solo fuera de su zona, torsión de placa y cortante fuera de las
+      franjas;
+    - `band-superior-sin-top`: band superior sin `top`, la cara superior fuera de las franjas en concreto simple.
+  - Oráculo `derive_inverted_t.py`: el cortante de las aletas con el mayor |V|.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

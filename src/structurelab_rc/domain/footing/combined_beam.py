@@ -15,13 +15,17 @@ libre a su izquierda:
 
 M positivo tracciona la cara inferior, como Mu de las vigas. La viga larga se revisa con el código de vigas (D-081):
 una sección rectangular B × h con las barras inferiores y superiores x como capas y los estribos opcionales, y una
-estación por sección crítica de cada caso (el mayor momento positivo y el mayor negativo entre las caras y los puntos
-con V = 0, y el cortante a d de cada cara hacia su tramo), con las verificaciones de vigas en modo cimentación (Vc y Av,min de
-cimentación). Lo propio de la zapata: sin barras superiores, el momento negativo lo resiste el concreto simple
-(D-072), y la separación de 3h y 450 mm (ACI 7.7.2.3, NSR-10 C.10.5.4). Mx, Vy y la posición en Y de las columnas no
-cambian V ni M: producen la torsión T(x), que cierra en cero en los dos extremos por el equilibrio global; Tu se toma
-donde se toma el cortante (a d de la cara, ACI 9.4.4.3, NSR-10 C.11.5.2.4) y la revisa la torsión de vigas, con las
-capas de Aℓ declaradas en torsion_layers (D-088).
+estación por sección crítica de cada caso (el mayor momento de las barras inferiores y el mayor de las superiores entre
+las caras y los puntos con V = 0, y el cortante a d de cada cara hacia su tramo), con las verificaciones de vigas en modo
+cimentación (Vc y Av,min de cimentación). Lo propio de la zapata: sin barras superiores, el momento negativo lo resiste
+el concreto simple (D-072), y la separación de 3h y 450 mm (ACI 7.7.2.3, NSR-10 C.10.5.4). Mx, Vy y la posición en Y de
+las columnas no cambian V ni M: producen la torsión T(x) (D-088), que cierra en cero en los dos extremos por el
+equilibrio global.
+
+En la combinada rectangular la torsión es de placa (decisión del usuario, D-118): mxy = T/B y los momentos de diseño
+de las barras x son los de Wood-Armer (mechanics/plate) con mx = M/B y my = 0, por cara (Mu inferior = B·mx*,
+Mu superior = B·mx*); no se revisa la torsión de vigas. En la T invertida el alma es una viga y conserva la torsión de
+vigas, con Tu donde se toma el cortante (a d de la cara, ACI 9.4.4.3, NSR-10 C.11.5.2.4).
 
 En la T invertida (D-093) la viga larga es una T con el ala abajo (la zarpa): se revisa con el código de vigas volteando
 la sección (profundidades desde la cara inferior y el momento con el signo cambiado, así el ala queda arriba), con el
@@ -37,7 +41,7 @@ from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.deep import deep_beam_checks
 from structurelab_rc.domain.beam.geometry import placed_bars
-from structurelab_rc.domain.beam.station import checks_for, shear_and_torsion_checks
+from structurelab_rc.domain.beam.station import checks_for, flexure_station_checks, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import column_vertical, stem_line_load
@@ -45,6 +49,7 @@ from structurelab_rc.domain.footing.flexure import plain_principal_check
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows
 from structurelab_rc.domain.status import Status
+from structurelab_rc.mechanics.plate import wood_armer
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import FootingLoad, Soil
@@ -57,6 +62,7 @@ _SUBDIVISIONS = 64
 _BISECTION_STEPS = 200
 _EDGE = 1e-6
 _TOUCH = 1.0  # mm: una barra de piel a menos de esto de la capa superior se omite
+_NEGLIGIBLE_TWIST = 1.0  # N·mm/mm: por debajo, la sección no lleva los datos de Wood-Armer en la nota
 
 
 @dataclass(frozen=True)
@@ -118,6 +124,17 @@ class BeamCase:
         """T(x) del cuerpo libre a la izquierda, respecto al eje X (D-088)."""
         _, _, sy = self._left(x)
         return sy - sum(column.torque for column in self.columns if column.x < x)
+
+    def twist(self, x: float) -> float:
+        """Momento torsor de placa por unidad de ancho, mxy = T(x)/B, uniforme en el ancho (decisión del usuario, D-118)."""
+        return self.torque(x) / self.ly
+
+    def plate_moments(self, x: float) -> tuple[float, float]:
+        """(Mu de las barras inferiores ≥ 0, Mu de las superiores ≤ 0) en todo el ancho B por Wood-Armer (D-118), con
+        mx = M/B, mxy = T/B y my = 0. Con my = 0 el mx* de Wood-Armer es el mayor posible (my solo reduce mx* en la rama
+        my* < 0), así que es conservador y desacopla la dirección x de las franjas. Sin torsión: (máx(M, 0), mín(M, 0))."""
+        design = wood_armer(self.moment(x) / self.ly, 0.0, self.twist(x))
+        return design.bottom.x * self.ly, design.top.x * self.ly
 
 
 def beam_case(footing: CombinedFooting, soil: Soil, pressure: FactoredCase, loads: tuple[FootingLoad, ...]) -> BeamCase:
@@ -232,7 +249,6 @@ def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None],
         layers.insert(0, BarLayer(depth=footing.h - top.depth, role="flexure",
                                   bars=tuple(BarPosition(designation=top.designation, x=x + half) for x in top.positions)))
     layers += _skin_layers(footing, rows, bars)
-    layers += footing.torsion_layers
     return Section(bw=footing.ly, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
 
 
@@ -275,11 +291,31 @@ def covered_width(profile: Profile, footing: CombinedFooting) -> float:
     return flange_width(profile, footing) or footing.beam.width
 
 
-def _bars_within(layer: BarLayer, low: float, high: float) -> BarLayer | None:
-    """La capa con solo las barras entre low y high (x desde la cara −Y del alma); las repartidas en el alma (solo
-    designaciones) quedan como están. None si no queda ninguna."""
-    if isinstance(layer.bars, tuple) and all(isinstance(bar, str) for bar in layer.bars):
+def spread_bottom_layer(profile: Profile, footing: CombinedFooting, bars: Sequence[RebarSpec]) -> BarLayer:
+    """La capa inferior de la viga de la T con sus posiciones (D-114): si se declaró solo con sus barras (sin x), se
+    reparten a igual separación en el ancho cubierto, centrado en el alma (bottom_width o el ala efectiva); en los
+    extremos, al recubrimiento si ese ancho llega al borde de la base, y por dentro del estribo si el ala no cuenta.
+    Con posiciones o separación declaradas, la capa no cambia."""
+    beam = footing.beam
+    assert beam is not None
+    layer = beam.bottom_layer
+    if not (isinstance(layer.bars, tuple) and layer.bars and all(isinstance(bar, str) for bar in layer.bars)):
         return layer
+    names = [bar for bar in layer.bars if isinstance(bar, str)]
+    db = max(next(spec.diameter_mm for spec in bars if spec.designation == name) for name in names)
+    half = covered_width(profile, footing) / 2
+    if half <= beam.width / 2 + _EDGE:  # solo el alma: por dentro del estribo, como en las vigas
+        reach = half - footing.cover - stirrup_diameter(footing, bars) - db / 2
+    else:
+        reach = half - (footing.cover if half >= footing.ly / 2 - _EDGE else 0.0) - db / 2
+    count = len(names)
+    xs = [beam.width / 2] if count == 1 else [beam.width / 2 - reach + 2 * reach * index / (count - 1) for index in range(count)]
+    return layer.model_copy(update={"bars": tuple(BarPosition(designation=name, x=x) for name, x in zip(names, xs, strict=True))})
+
+
+def _bars_within(layer: BarLayer, low: float, high: float) -> BarLayer | None:
+    """La capa (ya con posiciones, spread_bottom_layer) con solo las barras entre low y high (x desde la cara −Y del
+    alma); None si no queda ninguna."""
     positions = ([BarPosition(designation=layer.bars.designation, x=x) for x in layer.bars.positions()]
                  if isinstance(layer.bars, BarSpacing) else [bar for bar in layer.bars if isinstance(bar, BarPosition)])
     kept = tuple(bar for bar in positions if low - _EDGE <= bar.x <= high + _EDGE)
@@ -298,8 +334,9 @@ def _t_beam_member(profile: Profile, footing: CombinedFooting, bars: Sequence[Re
     reach = (width if width is not None else web) / 2
     low, high = web / 2 - reach, web / 2 + reach
     layers = []
+    bottom = spread_bottom_layer(profile, footing, bars)
     for layer in beam.layers:
-        own = _bars_within(layer, low, high) if layer is beam.bottom_layer else layer
+        own = _bars_within(bottom, low, high) if layer is beam.bottom_layer else layer
         if own is not None:
             layers.append(own.model_copy(update={"depth": total - layer.depth}))
     zarpa = mat_rows(footing, footing.bottom, bars)["x"]
@@ -358,12 +395,21 @@ def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec], profil
                                   deep_beam=footing.deep_beam, length=footing.lx, section=section, stations=(placeholder,))
 
 
-def critical_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
-    """Las secciones de un caso: el mayor momento positivo y el mayor negativo (caras y V = 0), si los hay, y las de
-    cortante."""
-    moments = [(beam.moment(section.x), section) for section in moment_sections(beam)]
-    largest, smallest = max(moments, key=lambda item: item[0]), min(moments, key=lambda item: item[0])
-    chosen = ([largest[1]] if largest[0] > 0 else []) + ([smallest[1]] if smallest[0] < 0 else [])
+def _design_moments(beam: BeamCase, x: float, plate: bool) -> tuple[float, float]:
+    """(Mu inferior ≥ 0, Mu superior ≤ 0) en x: los de Wood-Armer en la combinada rectangular (D-118); en la T, M."""
+    if plate:
+        return beam.plate_moments(x)
+    moment = beam.moment(x)
+    return max(moment, 0.0), min(moment, 0.0)
+
+
+def critical_sections(beam: BeamCase, depth: float, plate: bool = False) -> list[CriticalSection]:
+    """Las secciones de un caso: la del mayor momento de las barras inferiores y la del mayor de las superiores (caras y
+    V = 0; con plate, los de Wood-Armer, D-118), si los hay, y las de cortante."""
+    moments = [(_design_moments(beam, section.x, plate), section) for section in moment_sections(beam)]
+    largest = max(moments, key=lambda item: item[0][0])
+    smallest = min(moments, key=lambda item: item[0][1])
+    chosen = ([largest[1]] if largest[0][0] > 0 else []) + ([smallest[1]] if smallest[0][1] < 0 else [])
     chosen = [_at_face_shear(beam, section, depth) for section in chosen]
     unique = {section.x: section for section in [*shear_sections(beam, depth), *chosen]}
     return sorted(unique.values(), key=lambda section: section.x)
@@ -371,17 +417,18 @@ def critical_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
 
 def extreme_moments(footing: CombinedFooting, soil: Soil,
                     cases: list[tuple[FactoredCase, tuple[FootingLoad, ...]]]) -> tuple[tuple[float, float], tuple[float, float]]:
-    """El mayor momento positivo y el mayor negativo (este con signo positivo) de la viga larga en todos los casos, con su
-    x; (0, 0) si no hay momento de ese signo. Las secciones de desarrollo de las barras x (D-082)."""
+    """El mayor momento de las barras inferiores y el mayor de las superiores (este con signo positivo) de la viga larga
+    en todos los casos, con su x; (0, 0) si no hay momento de ese signo. En la combinada rectangular, los de Wood-Armer
+    (D-118). Las secciones de desarrollo de las barras x (D-082)."""
     positive, negative = (0.0, 0.0), (0.0, 0.0)
     for pressure, loads in cases:
         beam = beam_case(footing, soil, pressure, loads)
         for section in moment_sections(beam):
-            moment = beam.moment(section.x)
-            if moment > positive[0]:
-                positive = (moment, section.x)
-            if -moment > negative[0]:
-                negative = (-moment, section.x)
+            bottom, top = _design_moments(beam, section.x, footing.beam is None)
+            if bottom > positive[0]:
+                positive = (bottom, section.x)
+            if -top > negative[0]:
+                negative = (-top, section.x)
     return positive, negative
 
 
@@ -402,7 +449,45 @@ def _with_section(check: Check, label: str) -> Check:
     return replace(check, note=note)
 
 
+def _plate_note(beam: BeamCase, x: float) -> str:
+    """Los datos de Wood-Armer de la sección (D-118), en la nota de la flexión: M, T y mxy = T/B."""
+    return (f"Wood-Armer (D-118): M = {beam.moment(x) / 1e6:.1f} kN*m, T = {beam.torque(x) / 1e6:.1f} kN*m, "
+            f"mxy = T/B = {beam.twist(x) / 1e3:.2f} kN*m/m")
+
+
+def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member,
+                          given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
+    """Combinada rectangular (D-118): la flexión con los momentos de Wood-Armer de cada cara (una estación por cara con
+    momento) y el cortante de vigas una sola vez, sin torsión de vigas (la toman los momentos de placa)."""
+    beam, section, has_top = given
+    at = section.x if section.shear_x is None else section.shear_x
+    z = section.x + footing.lx / 2
+    twisted = abs(beam.twist(section.x)) > _NEGLIGIBLE_TWIST
+    moments = [moment for moment in beam.plate_moments(section.x) if moment != 0] or [beam.moment(section.x)]
+    checks: list[Check] = []
+    for index, moment in enumerate(moments):
+        label = f"{section.label}, {moment_sign(moment)}"
+        station = Station.model_construct(z=z, layout=member.stations[0].layout, case=beam.case,
+                                          demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(at), v3=0.0, tu=0.0))
+        given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
+        plate = f"; {_plate_note(beam, section.x)}" if twisted else ""
+        if moment < 0 and not has_top:  # sin barras superiores: concreto simple (D-072), con la sección ya en la nota
+            plain = plain_principal_check(basis, footing, -moment, (label, beam.case, _sentence(label) + plate))
+            rest = (*shear_and_torsion_checks(given_station), *(deep_beam_checks(given_station) if footing.deep_beam else ()))
+            others = [replace(check, member=footing.id, z=z, case=beam.case) for check in rest] if index == 0 else []
+            checks += [replace(plain, z=z), *(_with_section(check, label) for check in others)]
+            continue
+        every = checks_for(given_station) if index == 0 else flexure_station_checks(given_station)
+        for check in every:
+            if plate and check.name.startswith("Flexion"):
+                check = replace(check, note=f"{check.note}{plate}" if check.note else plate[2:])
+            checks.append(_with_section(replace(check, member=footing.id), label))
+    return checks
+
+
 def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
+    if footing.beam is None:
+        return _plate_station_checks(basis, footing, member, given)
     beam, section, has_top = given
     # La nota lleva el signo del momento físico (D-095); la T invertida va volteada: su momento cambia de signo (D-093).
     section = replace(section, label=f"{section.label}, {moment_sign(beam.moment(section.x))}")
@@ -442,7 +527,7 @@ def long_beam_checks(
     checks = []
     for pressure, loads in cases:
         beam = beam_case(footing, soil, pressure, loads)
-        for critical in critical_sections(beam, depth):
+        for critical in critical_sections(beam, depth, plate=footing.beam is None):
             checks += _station_checks(basis, footing, member, (beam, critical, has_top))
     checks.append(_spacing_check(basis, footing, footing.bottom.x.spacing, BARS["bottom"]))
     # En la T invertida las barras superiores son de la viga: su separación la controla la fisuración de vigas (D-093).

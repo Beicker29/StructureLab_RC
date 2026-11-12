@@ -94,7 +94,7 @@ Cada verificación de `resultado.json` tiene:
 | --- | --- |
 | Flexión: resistencia | φMn biaxial con Pn = Pu frente a Mu y M2; valores `phi`, `Mn3`, `Mn2`, `theta` (orientación del eje neutro), `c`, `et`. |
 | Flexión: deformación neta de tracción (M3, M2, biaxial) | εt mínima del perfil frente a la εt de cada estado. |
-| Flexión: acero mínimo (M3, M2) | As,min frente al acero a tracción del lado en tracción (más allá de la mitad de la altura), con d ≥ 0.8h; si As < As,min, basta 4/3 del As requerido por el momento de la estación (ACI 9.6.1.3, NSR-10 C.10.5.3; valores `As,min` y `As analisis`). |
+| Flexión: acero mínimo (M3, M2) | As,min frente al acero a tracción del lado en tracción (más allá de la mitad de la altura), con d ≥ 0.8h; si As < As,min, basta 4/3 del As requerido por el momento de la estación (ACI 9.6.1.3, NSR-10 C.10.5.3; valores `As,min` y `As analisis`). En la viga y las franjas de las zapatas combinadas y en T esa excepción no aplica: As ≥ As,min siempre (D-115). |
 | Flexión: refuerzo superficial | Solo con h > 900 mm (ACI 9.7.2.3, NSR-10 C.10.6.7): en cada cara lateral, la mayor separación entre la capa en tracción, las barras `skin` o `torsion` (D-090) y el límite h/2 frente al control de agrietamiento con cc a la cara lateral; sin barras de piel en una cara, FAIL. |
 | Flexión: separación por fisuración | Separación entre barras vecinas de la capa más cercana a la cara en tracción frente a 380·(280/fs) − 2.5·cc ≤ 300·(280/fs), fs = 2/3·fy (ACI 24.3.2, NSR-10 C.10.6.4); con una sola barra, el ancho de esa cara. Valores `cc` y `barras`. |
 | Cortante: resistencia, dimensiones de la sección, refuerzo mínimo, separación máxima | Vc + Vs, límite de la sección, Av,min y separaciones en la dirección V2. |

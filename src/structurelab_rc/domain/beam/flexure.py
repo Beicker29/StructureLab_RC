@@ -14,7 +14,7 @@ from structurelab_rc.mechanics.flexure import FlexureState, SteelLayer, compress
 from structurelab_rc.mechanics.materials import NoEquilibrium
 from structurelab_rc.mechanics.section import SectionState, SteelPoint, biaxial_state, section_state
 from structurelab_rc.model.catalog import RebarSpec
-from structurelab_rc.model.project import Demands, Materials, Member, Section, Station
+from structurelab_rc.model.project import Demands, Materials, Member, Section
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 
 STRENGTH = "Flexion: resistencia"
@@ -108,10 +108,17 @@ def _analysis_area(provided: float, demand: float, design: Callable[[float], flo
     return high * provided
 
 
-def _min_check(profile: Profile, name: str, demand: tuple[float, float], provided: float, design: Callable[[float], float]) -> Check:
-    """As ≥ As,min, o As ≥ 4/3 del requerido por análisis si es menor (D-022 resuelta por D-081)."""
+def _min_check(profile: Profile, name: str, demand: tuple[float, float], provided: float,
+               design: Callable[[float], float] | None) -> Check:
+    """As ≥ As,min, o As ≥ 4/3 del requerido por análisis si es menor (D-022 resuelta por D-081). Sin design, la excepción
+    no aplica (zapatas combinadas y en T, decisión del usuario, D-115): As ≥ As,min siempre."""
     required, moment = demand
     clauses = profile.flexure.clauses()
+    if design is None:
+        return Check(name, Status.PASS if provided >= required else Status.FAIL, clause=clauses["min_reinforcement"],
+                     demand=required, capacity=provided, unit="mm2", values=(("As,min", required),),
+                     note=f"Sin la excepcion de {clauses['min_reinforcement_exception']} (4/3 del As requerido): decision del "
+                          "usuario para zapatas combinadas y en T (D-115)")
     clause = f"{clauses['min_reinforcement']} y {clauses['min_reinforcement_exception']}"
     if provided >= required:
         return Check(name, Status.PASS, clause=clause, demand=required, capacity=provided, unit="mm2", values=(("As,min", required),))
@@ -145,8 +152,9 @@ def _strong_design(profile: Profile, materials: Materials, member: Member, layer
 
 
 def _min_reinforcement(
-    profile: Profile, materials: Materials, member: Member, state: FlexureState, given: tuple[float, Callable[[float], float]]
+    profile: Profile, materials: Materials, member: Member, state: FlexureState, given: tuple[float, Callable[[float], float] | None]
 ) -> Check:
+    """As,min del eje fuerte; given = (Mu, φMn con el acero a tracción escalado, o None sin la excepción de 4/3)."""
     mu, design = given
     clause = profile.flexure.clauses()["min_reinforcement"]
     if mu == 0:
@@ -325,10 +333,11 @@ def _biaxial_checks(given: StationInput) -> tuple[Check, ...]:
     )
 
 
-def flexure_checks(
-    profile: Profile, materials: Materials, member: Member, station: Station, bars: Sequence[RebarSpec]
-) -> tuple[Check, ...]:
-    """Verificaciones a flexión de una estación dentro del alcance de viga, en los dos ejes (D-046)."""
+def flexure_checks(given: StationInput) -> tuple[Check, ...]:
+    """Verificaciones a flexión de una estación dentro del alcance de viga, en los dos ejes (D-046). El As,min del eje
+    fuerte admite la excepción de 4/3 del As requerido por análisis (ACI 9.6.1.3, NSR-10 C.10.5.3), salvo en las zapatas
+    combinadas y en T (given.foundation; decisión del usuario, D-115)."""
+    profile, materials, member, station, bars = given.profile, given.materials, given.member, given.station, given.bars
     demands = station.demands
     if demands.mu is None or demands.pu is None:
         return (check_from_errors(STRENGTH, [incomplete("La flexion requiere Mu y Pu")]),)
@@ -345,6 +354,5 @@ def flexure_checks(
     if demands.mu == 0:
         strong_strain = _strain_check(NET_TENSILE_STRAIN, profile, materials, None)
     design = _strong_design(profile, materials, member, layers, (state, demands))
-    strong_minimum = _min_reinforcement(profile, materials, member, state, (demands.mu, design))
-    given = StationInput(profile, materials, member, station, bars)
+    strong_minimum = _min_reinforcement(profile, materials, member, state, (demands.mu, None if given.foundation else design))
     return (*_biaxial_checks(given), strong_strain, strong_minimum, _crack_check(given, demands.mu))

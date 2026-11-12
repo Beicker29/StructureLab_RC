@@ -223,8 +223,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 1865.45
           },
@@ -254,8 +254,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 3331.52689025597
           },
@@ -285,8 +285,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 4734.55
           },
@@ -316,8 +316,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4260.0,
-            "status": "PASS",
             "demand": 3261.7999999999997,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -371,7 +371,8 @@
           }
         ],
         "flange_width": 2400.0
-      }
+      },
+      "flange_only": false
     },
     {
       "id": "ala-delgada",
@@ -526,8 +527,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 1865.45
           },
@@ -557,8 +558,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 3331.5078660723984
           },
@@ -588,8 +589,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 4734.55
           },
@@ -619,8 +620,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1136.0,
-            "status": "PASS",
-            "demand": 14.011349968542397,
+            "demand": 1630.8999999999999,
+            "status": "FAIL",
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -670,7 +671,8 @@
           }
         ],
         "flange_width": null
-      }
+      },
+      "flange_only": false
     },
     {
       "id": "aleta-escasa",
@@ -869,8 +871,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 1865.45
           },
@@ -900,8 +902,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 3331.52689025597
           },
@@ -931,8 +933,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 4734.55
           },
@@ -962,8 +964,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4260.0,
-            "status": "PASS",
             "demand": 3261.7999999999997,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -1017,7 +1019,8 @@
           }
         ],
         "flange_width": 2400.0
-      }
+      },
+      "flange_only": false
     },
     {
       "id": "momento-positivo",
@@ -1188,8 +1191,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 1868.65
           },
@@ -1219,8 +1222,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 3363.705489012852
           },
@@ -1250,8 +1253,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 4731.35
           },
@@ -1281,8 +1284,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1032.0,
-            "status": "PASS",
-            "demand": 181.96406547538407,
+            "demand": 3274.5999999999995,
+            "status": "FAIL",
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -1336,7 +1339,8 @@
           }
         ],
         "flange_width": 2400.0
-      }
+      },
+      "flange_only": false
     },
     {
       "id": "capa-angosta",
@@ -1504,8 +1508,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 1865.45
           },
@@ -1535,8 +1539,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 3331.52689025597
           },
@@ -1566,8 +1570,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3060.0,
-            "status": "PASS",
             "demand": 1599.1999999999998,
+            "status": "PASS",
             "case": "U1",
             "z_mm": 4734.55
           },
@@ -1597,8 +1601,8 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 3182.0,
-            "status": "PASS",
-            "demand": 13.85538039633194,
+            "demand": 3264.2015084852287,
+            "status": "FAIL",
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -1652,7 +1656,227 @@
           }
         ],
         "flange_width": 2400.0
-      }
+      },
+      "flange_only": false
+    },
+    {
+      "id": "aleta-superior",
+      "description": "Mx grande: la presión baja hacia un borde y aparece el momento negativo en esa aleta, que toman las barras superiores y de la zarpa, #5 c/200 (top, D-114)",
+      "footing": {
+        "id": "ZT",
+        "lx": 6600.0,
+        "ly": 2400.0,
+        "h": 400.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 500.0,
+            "cy": 500.0,
+            "x": -2500.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 350.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 350.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 500.0,
+            "cy": 500.0,
+            "x": 2500.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 400.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 350.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "beam": {
+          "width": 600.0,
+          "height": 900.0,
+          "end": "straight",
+          "layers": [
+            {
+              "depth": 100.4,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#8",
+                  "x": 100.4
+                },
+                {
+                  "designation": "#8",
+                  "x": 180.24
+                },
+                {
+                  "designation": "#8",
+                  "x": 260.08
+                },
+                {
+                  "designation": "#8",
+                  "x": 339.91999999999996
+                },
+                {
+                  "designation": "#8",
+                  "x": 419.76
+                },
+                {
+                  "designation": "#8",
+                  "x": 499.5999999999999
+                }
+              ]
+            },
+            {
+              "depth": 815.45,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#6",
+                  "x": -750.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -600.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -450.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -300.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -150.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 0.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 150.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 300.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 450.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 600.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 750.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 900.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 1050.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 1200.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 1350.0
+                }
+              ]
+            }
+          ],
+          "stirrups": {
+            "designation": "#4",
+            "legs": 4,
+            "spacing": 120.0,
+            "closed": true
+          }
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#6",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        },
+        "top": {
+          "first": "y",
+          "end": "straight",
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0
+          }
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Aleta: flexion (direccion secundaria)",
+            "status": "PASS",
+            "demand": 56677298.98621963,
+            "capacity": 143545700.11764708,
+            "case": "U1"
+          },
+          {
+            "name": "Aleta: cortante en una direccion (direccion secundaria)",
+            "status": "PASS",
+            "demand": 84194.49852397587,
+            "capacity": 204863.97739302332,
+            "case": "U1"
+          },
+          {
+            "name": "Aleta: flexion, barras superiores (direccion secundaria)",
+            "status": "PASS",
+            "demand": 14867194.789835727,
+            "capacity": 115943650.94117647,
+            "case": "U1"
+          },
+          {
+            "name": "Aleta: acero minimo (direccion secundaria)",
+            "status": "PASS",
+            "demand": 720.0,
+            "capacity": 1326.6666666666667
+          }
+        ],
+        "flange_width": 2400.0
+      },
+      "flange_only": true
     }
   ]
 }
