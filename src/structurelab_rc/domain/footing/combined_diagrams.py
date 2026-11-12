@@ -20,7 +20,7 @@ from dataclasses import dataclass
 
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.footing.base import column_vertical
-from structurelab_rc.domain.footing.combined_beam import beam_case, moment_sections, shear_sections
+from structurelab_rc.domain.footing.combined_beam import beam_case, beam_depth, moment_sections, shear_sections
 from structurelab_rc.domain.footing.combined_columns import Cases, strip_cantilever, strip_load
 from structurelab_rc.domain.footing.declared import declared_envelope
 from structurelab_rc.domain.footing.inverted_t import STRIP, Flanges
@@ -104,7 +104,7 @@ def long_beam_envelope(basis: Basis, footing: CombinedFooting, soil: Soil, cases
     """M(x) y V(x) de la viga larga en toda su longitud, con el salto de V en el eje de cada columna; secciones críticas:
     las caras de las columnas, las secciones a d hacia cada tramo y los extremos de momento (D-104)."""
     half = footing.lx / 2
-    depth = footing.stem_height + mat_rows(footing, footing.bottom, basis.bars)["x"].depth
+    depth = beam_depth(footing, basis.bars)
     first = beam_case(footing, soil, *cases[0])
     sections = [(section.x, section.label) for section in moment_sections(first) if section.label.startswith("cara")]
     sections += [(section.x, section.label) for section in shear_sections(first, depth)]

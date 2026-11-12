@@ -83,7 +83,112 @@
         ],
         "beam": {
           "width": 600.0,
-          "height": 900.0
+          "height": 900.0,
+          "end": "straight",
+          "layers": [
+            {
+              "depth": 100.4,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#8",
+                  "x": 100.4
+                },
+                {
+                  "designation": "#8",
+                  "x": 180.24
+                },
+                {
+                  "designation": "#8",
+                  "x": 260.08
+                },
+                {
+                  "designation": "#8",
+                  "x": 339.91999999999996
+                },
+                {
+                  "designation": "#8",
+                  "x": 419.76
+                },
+                {
+                  "designation": "#8",
+                  "x": 499.5999999999999
+                }
+              ]
+            },
+            {
+              "depth": 815.45,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#6",
+                  "x": -750.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -600.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -450.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -300.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -150.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 0.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 150.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 300.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 450.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 600.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 750.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 900.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 1050.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 1200.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 1350.0
+                }
+              ]
+            }
+          ],
+          "stirrups": {
+            "designation": "#4",
+            "legs": 4,
+            "spacing": 120.0,
+            "closed": true
+          }
         },
         "bottom": {
           "first": "x",
@@ -96,19 +201,6 @@
             "designation": "#5",
             "spacing": 150.0
           }
-        },
-        "top": {
-          "end": "straight",
-          "x": {
-            "designation": "#8",
-            "spacing": 75.0
-          }
-        },
-        "stirrups": {
-          "designation": "#4",
-          "legs": 4,
-          "spacing": 120.0,
-          "closed": true
         }
       },
       "expected": {
@@ -116,17 +208,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 562878508.8236372,
-            "capacity": 999803283.7209607,
+            "demand": 568733823.4297254,
+            "capacity": 973943691.723105,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.037213266352837955,
+            "capacity": 0.04069318541220283,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -134,28 +226,28 @@
             "status": "PASS",
             "demand": 1599.1999999999998,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 462963.33099721395,
-            "capacity": 1304821.0154515353,
+            "demand": 459133.0366007702,
+            "capacity": 1303799.4355986794,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 909406257.9997551,
-            "capacity": 999803283.7209607,
+            "capacity": 973943691.723105,
             "case": "U1",
             "z_mm": 3331.52689025597
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.037213266352837955,
+            "capacity": 0.04069318541220283,
             "case": "U1",
             "z_mm": 3331.52689025597
           },
@@ -178,17 +270,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 576665587.5078034,
-            "capacity": 999803283.7209607,
+            "demand": 582673848.8235326,
+            "capacity": 973943691.723105,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.037213266352837955,
+            "capacity": 0.04069318541220283,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -196,28 +288,28 @@
             "status": "PASS",
             "demand": 1599.1999999999998,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 475293.22960884636,
-            "capacity": 1304936.393205858,
+            "demand": 470890.07552044187,
+            "capacity": 1303857.4906187395,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 56406388.88888931,
-            "capacity": 1195577204.4812138,
+            "capacity": 1216027760.4812138,
             "case": "U1",
             "z_mm": 6050.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.016372849191969793,
+            "capacity": 0.01667933961207321,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -225,7 +317,7 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4260.0,
             "status": "PASS",
-            "demand": 3210.9999999999995,
+            "demand": 3261.7999999999997,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -233,7 +325,7 @@
             "name": "Cortante: resistencia",
             "status": "PASS",
             "demand": 204325.0,
-            "capacity": 1447478.1435538225,
+            "capacity": 1469518.8435514974,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -241,14 +333,14 @@
             "name": "Aleta: flexion (direccion secundaria)",
             "status": "PASS",
             "demand": 63781493.80165286,
-            "capacity": 137176904.11764708,
+            "capacity": 143545700.11764708,
             "case": "U1"
           },
           {
             "name": "Aleta: cortante en una direccion (direccion secundaria)",
             "status": "PASS",
-            "demand": 96814.00818411385,
-            "capacity": 196825.58493848308,
+            "demand": 94813.94652662991,
+            "capacity": 205934.59636193814,
             "case": "U1"
           },
           {
@@ -338,7 +430,68 @@
         ],
         "beam": {
           "width": 600.0,
-          "height": 900.0
+          "height": 900.0,
+          "end": "straight",
+          "layers": [
+            {
+              "depth": 100.4,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#8",
+                  "x": 100.4
+                },
+                {
+                  "designation": "#8",
+                  "x": 180.24
+                },
+                {
+                  "designation": "#8",
+                  "x": 260.08
+                },
+                {
+                  "designation": "#8",
+                  "x": 339.91999999999996
+                },
+                {
+                  "designation": "#8",
+                  "x": 419.76
+                },
+                {
+                  "designation": "#8",
+                  "x": 499.5999999999999
+                }
+              ]
+            },
+            {
+              "depth": 815.45,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#6",
+                  "x": 100.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 233.33333333333334
+                },
+                {
+                  "designation": "#6",
+                  "x": 366.6666666666667
+                },
+                {
+                  "designation": "#6",
+                  "x": 500.0
+                }
+              ]
+            }
+          ],
+          "stirrups": {
+            "designation": "#4",
+            "legs": 4,
+            "spacing": 120.0,
+            "closed": true
+          }
         },
         "bottom": {
           "first": "x",
@@ -351,19 +504,6 @@
             "designation": "#5",
             "spacing": 150.0
           }
-        },
-        "top": {
-          "end": "straight",
-          "x": {
-            "designation": "#8",
-            "spacing": 75.0
-          }
-        },
-        "stirrups": {
-          "designation": "#4",
-          "legs": 4,
-          "spacing": 120.0,
-          "closed": true
         }
       },
       "expected": {
@@ -371,17 +511,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 563223663.8084096,
-            "capacity": 872495385.8825204,
+            "demand": 569082571.7571161,
+            "capacity": 873013095.645806,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.020432412685151023,
+            "capacity": 0.021448245749225194,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -389,28 +529,28 @@
             "status": "PASS",
             "demand": 1599.1999999999998,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 463247.5182699411,
-            "capacity": 1413355.1713027605,
+            "demand": 459414.73005531554,
+            "capacity": 1412880.8959989646,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Flexion: resistencia",
             "status": "FAIL",
             "demand": 909956960.4713471,
-            "capacity": 872495385.8825204,
+            "capacity": 873013095.645806,
             "case": "U1",
             "z_mm": 3331.5078660723984
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.020432412685151023,
+            "capacity": 0.021448245749225194,
             "case": "U1",
             "z_mm": 3331.5078660723984
           },
@@ -433,17 +573,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 577010742.4925747,
-            "capacity": 872495385.8825204,
+            "demand": 583022597.1509228,
+            "capacity": 873013095.645806,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.020432412685151023,
+            "capacity": 0.021448245749225194,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -451,36 +591,36 @@
             "status": "PASS",
             "demand": 1599.1999999999998,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 475577.4168815741,
-            "capacity": 1413408.7028299076,
+            "demand": 471171.76897498756,
+            "capacity": 1412907.8316409336,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 56436088.88888931,
-            "capacity": 435822630.2961813,
+            "capacity": 364854420.03955644,
             "case": "U1",
             "z_mm": 6050.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.026250746536822432,
+            "capacity": 0.02782025691071522,
             "case": "U1",
             "z_mm": 6050.0
           },
           {
             "name": "Flexion: acero minimo (M3)",
-            "capacity": 1420.0,
+            "capacity": 1136.0,
             "status": "PASS",
-            "demand": 14.261160815192206,
+            "demand": 14.011349968542397,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -488,7 +628,7 @@
             "name": "Cortante: resistencia",
             "status": "PASS",
             "demand": 204433.0,
-            "capacity": 1306671.495931177,
+            "capacity": 1303050.495931177,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -496,14 +636,14 @@
             "name": "Aleta: flexion (direccion secundaria)",
             "status": "PASS",
             "demand": 63902110.16528924,
-            "capacity": 76999304.11764705,
+            "capacity": 83368100.11764705,
             "case": "U1"
           },
           {
             "name": "Aleta: cortante en una direccion (direccion secundaria)",
-            "status": "FAIL",
-            "demand": 115931.05047887971,
-            "capacity": 112539.08154939058,
+            "status": "PASS",
+            "demand": 113927.20653048667,
+            "capacity": 121332.18692092937,
             "case": "U1"
           },
           {
@@ -589,7 +729,112 @@
         ],
         "beam": {
           "width": 600.0,
-          "height": 900.0
+          "height": 900.0,
+          "end": "straight",
+          "layers": [
+            {
+              "depth": 100.4,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#8",
+                  "x": 100.4
+                },
+                {
+                  "designation": "#8",
+                  "x": 180.24
+                },
+                {
+                  "designation": "#8",
+                  "x": 260.08
+                },
+                {
+                  "designation": "#8",
+                  "x": 339.91999999999996
+                },
+                {
+                  "designation": "#8",
+                  "x": 419.76
+                },
+                {
+                  "designation": "#8",
+                  "x": 499.5999999999999
+                }
+              ]
+            },
+            {
+              "depth": 815.45,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#6",
+                  "x": -750.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -600.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -450.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -300.0
+                },
+                {
+                  "designation": "#6",
+                  "x": -150.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 0.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 150.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 300.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 450.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 600.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 750.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 900.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 1050.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 1200.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 1350.0
+                }
+              ]
+            }
+          ],
+          "stirrups": {
+            "designation": "#4",
+            "legs": 4,
+            "spacing": 120.0,
+            "closed": true
+          }
         },
         "bottom": {
           "first": "x",
@@ -602,19 +847,6 @@
             "designation": "#4",
             "spacing": 300.0
           }
-        },
-        "top": {
-          "end": "straight",
-          "x": {
-            "designation": "#8",
-            "spacing": 75.0
-          }
-        },
-        "stirrups": {
-          "designation": "#4",
-          "legs": 4,
-          "spacing": 120.0,
-          "closed": true
         }
       },
       "expected": {
@@ -622,17 +854,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 562878508.8236372,
-            "capacity": 999803283.7209607,
+            "demand": 568733823.4297254,
+            "capacity": 973943691.723105,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.037213266352837955,
+            "capacity": 0.04069318541220283,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -640,28 +872,28 @@
             "status": "PASS",
             "demand": 1599.1999999999998,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 462963.33099721395,
-            "capacity": 1304821.0154515353,
+            "demand": 459133.0366007702,
+            "capacity": 1303799.4355986794,
             "case": "U1",
-            "z_mm": 1852.75
+            "z_mm": 1865.45
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 909406257.9997551,
-            "capacity": 999803283.7209607,
+            "capacity": 973943691.723105,
             "case": "U1",
             "z_mm": 3331.52689025597
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.037213266352837955,
+            "capacity": 0.04069318541220283,
             "case": "U1",
             "z_mm": 3331.52689025597
           },
@@ -684,17 +916,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 576665587.5078034,
-            "capacity": 999803283.7209607,
+            "demand": 582673848.8235326,
+            "capacity": 973943691.723105,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.037213266352837955,
+            "capacity": 0.04069318541220283,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -702,28 +934,28 @@
             "status": "PASS",
             "demand": 1599.1999999999998,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 475293.22960884636,
-            "capacity": 1304936.393205858,
+            "demand": 470890.07552044187,
+            "capacity": 1303857.4906187395,
             "case": "U1",
-            "z_mm": 4747.25
+            "z_mm": 4734.55
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 56406388.88888931,
-            "capacity": 1195577204.4812138,
+            "capacity": 1216027760.4812138,
             "case": "U1",
             "z_mm": 6050.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.016372849191969793,
+            "capacity": 0.01667933961207321,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -731,7 +963,7 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4260.0,
             "status": "PASS",
-            "demand": 3210.9999999999995,
+            "demand": 3261.7999999999997,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -739,7 +971,7 @@
             "name": "Cortante: resistencia",
             "status": "PASS",
             "demand": 204325.0,
-            "capacity": 1447478.1435538225,
+            "capacity": 1469518.8435514974,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -747,14 +979,14 @@
             "name": "Aleta: flexion (direccion secundaria)",
             "status": "FAIL",
             "demand": 63781493.80165286,
-            "capacity": 46007903.11764707,
+            "capacity": 48072161.11764706,
             "case": "U1"
           },
           {
             "name": "Aleta: cortante en una direccion (direccion secundaria)",
             "status": "PASS",
-            "demand": 96562.03191230482,
-            "capacity": 193528.10971261386,
+            "demand": 94561.97025482092,
+            "capacity": 202096.37533349654,
             "case": "U1"
           },
           {
@@ -844,7 +1076,84 @@
         ],
         "beam": {
           "width": 600.0,
-          "height": 900.0
+          "height": 900.0,
+          "end": "straight",
+          "layers": [
+            {
+              "depth": 100.4,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#8",
+                  "x": 100.4
+                },
+                {
+                  "designation": "#8",
+                  "x": 180.24
+                },
+                {
+                  "designation": "#8",
+                  "x": 260.08
+                },
+                {
+                  "designation": "#8",
+                  "x": 339.91999999999996
+                },
+                {
+                  "designation": "#8",
+                  "x": 419.76
+                },
+                {
+                  "designation": "#8",
+                  "x": 499.5999999999999
+                }
+              ]
+            },
+            {
+              "depth": 818.65,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#4",
+                  "x": -750.0
+                },
+                {
+                  "designation": "#4",
+                  "x": -450.0
+                },
+                {
+                  "designation": "#4",
+                  "x": -150.0
+                },
+                {
+                  "designation": "#4",
+                  "x": 150.0
+                },
+                {
+                  "designation": "#4",
+                  "x": 450.0
+                },
+                {
+                  "designation": "#4",
+                  "x": 750.0
+                },
+                {
+                  "designation": "#4",
+                  "x": 1050.0
+                },
+                {
+                  "designation": "#4",
+                  "x": 1350.0
+                }
+              ]
+            }
+          ],
+          "stirrups": {
+            "designation": "#4",
+            "legs": 4,
+            "spacing": 120.0,
+            "closed": true
+          }
         },
         "bottom": {
           "first": "x",
@@ -857,19 +1166,6 @@
             "designation": "#5",
             "spacing": 150.0
           }
-        },
-        "top": {
-          "end": "straight",
-          "x": {
-            "designation": "#8",
-            "spacing": 75.0
-          }
-        },
-        "stirrups": {
-          "designation": "#4",
-          "legs": 4,
-          "spacing": 120.0,
-          "closed": true
         }
       },
       "expected": {
@@ -877,17 +1173,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "FAIL",
-            "demand": 1474160886.6594582,
-            "capacity": 938299976.682353,
+            "demand": 1483226766.9689891,
+            "capacity": 933345757.482353,
             "case": "U1",
-            "z_mm": 1855.95
+            "z_mm": 1868.65
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0647666862170088,
             "case": "U1",
-            "z_mm": 1855.95
+            "z_mm": 1868.65
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -895,21 +1191,21 @@
             "status": "PASS",
             "demand": 1599.1999999999998,
             "case": "U1",
-            "z_mm": 1855.95
+            "z_mm": 1868.65
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 716708.3493238166,
-            "capacity": 1267814.6543383193,
+            "demand": 710988.4395901159,
+            "capacity": 1267558.1611917205,
             "case": "U1",
-            "z_mm": 1855.95
+            "z_mm": 1868.65
           },
           {
             "name": "Flexion: resistencia",
             "status": "FAIL",
             "demand": 2024009215.6485925,
-            "capacity": 938299976.682353,
+            "capacity": 933345757.482353,
             "case": "U1",
             "z_mm": 3363.705489012852
           },
@@ -939,17 +1235,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "FAIL",
-            "demand": 1532537998.7975874,
-            "capacity": 938299976.682353,
+            "demand": 1541672259.0413904,
+            "capacity": 933345757.482353,
             "case": "U1",
-            "z_mm": 4744.05
+            "z_mm": 4731.35
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0647666862170088,
             "case": "U1",
-            "z_mm": 4744.05
+            "z_mm": 4731.35
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -957,28 +1253,28 @@
             "status": "PASS",
             "demand": 1599.1999999999998,
             "case": "U1",
-            "z_mm": 4744.05
+            "z_mm": 4731.35
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 722703.1870398195,
-            "capacity": 1267265.9194906894,
+            "demand": 715763.890712914,
+            "capacity": 1266991.879554112,
             "case": "U1",
-            "z_mm": 4744.05
+            "z_mm": 4731.35
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 91122824.07407475,
-            "capacity": 332657335.5503054,
+            "capacity": 337611554.7503055,
             "case": "U1",
             "z_mm": 6050.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.027867710674108186,
+            "capacity": 0.028354117927115414,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -986,7 +1282,7 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1032.0,
             "status": "PASS",
-            "demand": 185.1937686769869,
+            "demand": 181.96406547538407,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -1002,14 +1298,14 @@
             "name": "Aleta: flexion (direccion secundaria)",
             "status": "PASS",
             "demand": 103063518.59504133,
-            "capacity": 140386376.1176471,
+            "capacity": 146755172.11764708,
             "case": "U1"
           },
           {
             "name": "Aleta: cortante en una direccion (direccion secundaria)",
             "status": "PASS",
-            "demand": 154811.58404269972,
-            "capacity": 201410.500591419,
+            "demand": 151579.7156818182,
+            "capacity": 210171.258765402,
             "case": "U1"
           },
           {
@@ -1024,6 +1320,322 @@
             "name": "Aplastamiento en la zapata",
             "status": "PASS",
             "demand": 1800000.0,
+            "capacity": 4640999.999999999,
+            "case": "U1",
+            "note_prefix": "Columna C2"
+          },
+          {
+            "name": "Viga T: refuerzo del ala en traccion",
+            "status": "PASS"
+          },
+          {
+            "name": "Aleta: acero minimo (direccion secundaria)",
+            "status": "PASS",
+            "demand": 720.0,
+            "capacity": 1326.6666666666667
+          }
+        ],
+        "flange_width": 2400.0
+      }
+    },
+    {
+      "id": "capa-angosta",
+      "description": "capa inferior de la viga en 1200 mm (bottom_width): fuera de ella, las barras #5 c/200 de la malla de la zarpa cuentan dentro del ala (D-106)",
+      "footing": {
+        "id": "ZT",
+        "lx": 6600.0,
+        "ly": 2400.0,
+        "h": 400.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 500.0,
+            "cy": 500.0,
+            "x": -2500.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1000.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 500.0,
+            "cy": 500.0,
+            "x": 2500.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1150.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ]
+          }
+        ],
+        "beam": {
+          "width": 600.0,
+          "height": 900.0,
+          "end": "straight",
+          "layers": [
+            {
+              "depth": 100.4,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#8",
+                  "x": 100.4
+                },
+                {
+                  "designation": "#8",
+                  "x": 180.24
+                },
+                {
+                  "designation": "#8",
+                  "x": 260.08
+                },
+                {
+                  "designation": "#8",
+                  "x": 339.91999999999996
+                },
+                {
+                  "designation": "#8",
+                  "x": 419.76
+                },
+                {
+                  "designation": "#8",
+                  "x": 499.5999999999999
+                }
+              ]
+            },
+            {
+              "depth": 815.45,
+              "role": "flexure",
+              "bars": [
+                {
+                  "designation": "#6",
+                  "x": -150.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 0.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 150.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 300.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 450.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 600.0
+                },
+                {
+                  "designation": "#6",
+                  "x": 750.0
+                }
+              ]
+            }
+          ],
+          "stirrups": {
+            "designation": "#4",
+            "legs": 4,
+            "spacing": 120.0,
+            "closed": true
+          },
+          "bottom_width": 1200.0
+        },
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#5",
+            "spacing": 200.0
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0
+          }
+        }
+      },
+      "expected": {
+        "checks": [
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 568733823.4297254,
+            "capacity": 967264737.718458,
+            "case": "U1",
+            "z_mm": 1865.45
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.04368049004268508,
+            "case": "U1",
+            "z_mm": 1865.45
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 3060.0,
+            "status": "PASS",
+            "demand": 1599.1999999999998,
+            "case": "U1",
+            "z_mm": 1865.45
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 459133.0366007702,
+            "capacity": 1295810.4630629462,
+            "case": "U1",
+            "z_mm": 1865.45
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 909406257.9997551,
+            "capacity": 967264737.718458,
+            "case": "U1",
+            "z_mm": 3331.52689025597
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.04368049004268508,
+            "case": "U1",
+            "z_mm": 3331.52689025597
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 3060.0,
+            "status": "PASS",
+            "demand": 1599.1999999999998,
+            "case": "U1",
+            "z_mm": 3331.52689025597
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 0.004676051205024123,
+            "capacity": 1266695.9644268753,
+            "case": "U1",
+            "z_mm": 3331.52689025597
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 582673848.8235326,
+            "capacity": 967264737.718458,
+            "case": "U1",
+            "z_mm": 4734.55
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.04368049004268508,
+            "case": "U1",
+            "z_mm": 4734.55
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 3060.0,
+            "status": "PASS",
+            "demand": 1599.1999999999998,
+            "case": "U1",
+            "z_mm": 4734.55
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 470890.07552044187,
+            "capacity": 1295859.9684502706,
+            "case": "U1",
+            "z_mm": 4734.55
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 56406388.88888931,
+            "capacity": 924677986.8513471,
+            "case": "U1",
+            "z_mm": 6050.0
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.020487058189058775,
+            "case": "U1",
+            "z_mm": 6050.0
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 3182.0,
+            "status": "PASS",
+            "demand": 13.85538039633194,
+            "case": "U1",
+            "z_mm": 6050.0
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 204325.0,
+            "capacity": 1456816.2909543477,
+            "case": "U1",
+            "z_mm": 6050.0
+          },
+          {
+            "name": "Aleta: flexion (direccion secundaria)",
+            "status": "PASS",
+            "demand": 63781493.80165286,
+            "capacity": 145150436.11764708,
+            "case": "U1"
+          },
+          {
+            "name": "Aleta: cortante en una direccion (direccion secundaria)",
+            "status": "PASS",
+            "demand": 94309.99398301193,
+            "capacity": 208139.32175850437,
+            "case": "U1"
+          },
+          {
+            "name": "Aplastamiento en la zapata",
+            "status": "PASS",
+            "demand": 1000000.0,
+            "capacity": 4640999.999999999,
+            "case": "U1",
+            "note_prefix": "Columna C1"
+          },
+          {
+            "name": "Aplastamiento en la zapata",
+            "status": "PASS",
+            "demand": 1150000.0,
             "capacity": 4640999.999999999,
             "case": "U1",
             "note_prefix": "Columna C2"

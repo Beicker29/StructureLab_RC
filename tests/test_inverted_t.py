@@ -14,9 +14,11 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.combined_beam import long_beam_checks
 from structurelab_rc.domain.footing.inverted_t import inverted_t_checks
 from structurelab_rc.domain.footing.loads import combined_factored_cases
+from structurelab_rc.domain.status import Status
+from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Soil
-from structurelab_rc.model.project import Materials
+from structurelab_rc.model.project import Materials, Project
 from structurelab_rc.setup import load_engine
 
 ORACLES = Path(__file__).parent / "oracles"
@@ -80,11 +82,27 @@ def test_isolated_flange_needs_half_the_web_width() -> None:
 
 def test_inverted_t_input_is_validated() -> None:
     footing = _oracle("nsr_10")["cases"][0]["footing"]
-    for change, message in (({"beam": {"width": 600.0, "height": 300.0}}, "más alta que la zarpa"),
-                            ({"top": None}, "requiere barras superiores"),
-                            ({"beam": {"width": 400.0, "height": 850.0}}, "se sale del ancho de la viga"),
-                            # D-097: las barras superiores transversales aún no aplican a las aletas.
-                            ({"top": {"first": "x", "end": "straight", "x": {"designation": "#8", "spacing": 75.0},
-                                      "y": {"designation": "#5", "spacing": 200.0}}}, "aun no admite barras superiores y")):
+    beam = footing["beam"]
+    for change, message in (({"h": 950.0}, "más alta que la zarpa"),
+                            ({"beam": {**beam, "width": 400.0}}, "se sale del ancho de la viga"),
+                            # D-106: el refuerzo de la viga va en beam (capas y estribos), no en la zapata.
+                            ({"top": {"first": "x", "end": "straight", "x": {"designation": "#8", "spacing": 75.0}}},
+                             "declara el refuerzo de la viga en beam"),
+                            ({"stirrups": {"designation": "#4", "legs": 2, "spacing": 150.0, "closed": True}},
+                             "declara el refuerzo de la viga en beam"),
+                            ({"beam": {key: value for key, value in beam.items() if key != "end"}}, "end"),
+                            ({"beam": {**beam, "bottom_width": 500.0}}, "no puede ser menor que el ancho del alma")):
         with pytest.raises(ValidationError, match=message):
             CombinedFooting.model_validate({**footing, **change})
+
+
+def test_bottom_layer_must_stay_within_its_covered_width() -> None:
+    """D-106: la capa inferior de la viga solo puede salir del alma hasta bottom_width (o el ala efectiva)."""
+    data = json.loads((Path(__file__).parent.parent / "examples" / "nsr_10" / "zapatas" / "pruebas" / "zapata_combinada.json")
+                      .read_text(encoding="utf-8"))
+    footing = _oracle("nsr_10")["cases"][0]["footing"]
+    narrow = {**footing, "beam": {**footing["beam"], "bottom_width": 1200.0}}
+    data["combined_footings"] = [{**narrow, "principal_direction": "x"}]
+    check = validate_project(Project.model_validate(data), BARS)
+    assert check.status is not Status.PASS
+    assert any("fuera del ancho cubierto" in error.message for error in check.errors)

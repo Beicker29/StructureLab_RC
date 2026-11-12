@@ -5,12 +5,13 @@ from collections.abc import Iterator, Sequence
 from structurelab_rc.codes.registry import PROFILES, Profile
 from structurelab_rc.domain.beam.geometry import flange_limits, interior_limits, placed_bars
 from structurelab_rc.domain.check import Check, check_from_errors
-from structurelab_rc.domain.footing.combined_beam import long_beam_member
+from structurelab_rc.domain.footing.combined_beam import covered_width, long_beam_member
 from structurelab_rc.errors import StructuredError, incomplete, invalid_input
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import BarSet, Dowels, Footing
 from structurelab_rc.model.project import Member, Project, Station
+from structurelab_rc.model.reinforcement import BarPosition, BarSpacing
 
 CHECK_NAME = "Validacion de entrada"
 
@@ -127,6 +128,34 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], prof
         # Las barras de Aℓ dentro del estribo de la viga larga, con la regla de las vigas (D-088).
         member = long_beam_member(footing, list(specs.values()), profile)
         yield from _bar_errors(member, member.stations[0], list(specs.values()))
+    if footing.beam is not None:
+        yield from _t_beam_errors(footing, specs, profile)
+
+
+def _t_beam_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], profile: Profile) -> Iterator[StructuredError]:
+    """Refuerzo de la viga de la T invertida (D-106): barras y estribos del catálogo, la capa inferior dentro del ancho
+    que cubre y las demás barras dentro del estribo o del ala, con la regla de las vigas."""
+    beam = footing.beam
+    assert beam is not None
+    where = {"member": footing.id}
+    names = {name for layer in beam.layers for name in layer.designations()}
+    names |= set() if beam.stirrups is None else {beam.stirrups.designation}
+    missing = sorted(names - set(specs))
+    for name in missing:
+        yield invalid_input(f"La barra '{name}' de la viga de la T invertida no esta en el catalogo", **where)
+    if missing or not _catalogued(footing, specs):
+        return
+    half = covered_width(profile, footing) / 2
+    bottom = beam.bottom_layer
+    if not isinstance(bottom.bars, tuple) or not all(isinstance(bar, str) for bar in bottom.bars):
+        xs = bottom.bars.positions() if isinstance(bottom.bars, BarSpacing) else [bar.x for bar in bottom.bars
+                                                                                    if isinstance(bar, BarPosition)]
+        outside = [x for x in xs if abs(x - beam.width / 2) > half + 1e-6]
+        if outside:
+            yield invalid_input(f"La capa inferior de la viga tiene barras fuera del ancho cubierto ({2 * half:.0f} mm, centrado "
+                                "en el alma; bottom_width o el ala efectiva)", **where)
+    member = long_beam_member(footing, list(specs.values()), profile)
+    yield from _bar_errors(member, member.stations[0], list(specs.values()))
 
 
 def _catalogued(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> bool:

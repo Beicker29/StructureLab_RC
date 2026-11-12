@@ -433,9 +433,13 @@ def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_pat
     project = json.loads(EXAMPLE.read_text(encoding="utf-8"))
     along_x = project["combined_footings"][0]
     if variant == "t invertida":
-        along_x["beam"] = {"width": 900.0, "height": along_x["h"] + 800.0}
-        # La T invertida aún no admite barras superiores y (D-097, D-099).
-        along_x["top"] = {key: value for key, value in along_x["top"].items() if key not in ("y", "first")}
+        height = along_x["h"] + 800.0
+        # D-106: el refuerzo de la viga va en sus capas; la zapata no declara top, estribos ni piel.
+        layers = [{"depth": depth, "role": "flexure", "bars": [{"designation": "#6", "x": x} for x in (120.0, 340.0, 560.0, 780.0)]}
+                  for depth in (100.0, height - 100.0)]
+        along_x["beam"] = {"width": 900.0, "height": height, "end": "straight", "layers": layers}
+        for key in ("top", "stirrups", "skin", "torsion_layers"):
+            along_x.pop(key, None)
         for column in along_x["columns"]:
             column.pop("band", None)
     along_y = {**_footing_along_global_y(along_x), "id": "ZCY"}

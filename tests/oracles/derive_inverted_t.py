@@ -94,19 +94,29 @@ def _positions(width: float, cover: float, db: float, spacing: float) -> list[fl
 
 
 def _rows(f: dict) -> dict:
-    """Barras de la viga: inferiores x dentro del ala efectiva (centro a from_bottom de la cara inferior) y superiores
-    en el alma (a from_top de la cara superior)."""
-    ds = BARS[f["stirrups"]["designation"]][0] if f.get("stirrups") else 0.0
+    """Capas de flexión de la viga (D-106): (profundidad desde la cara superior, área). La capa inferior declarada cuenta
+    dentro del ala efectiva (o del alma si el ala no cuenta); las barras x de la malla de la zarpa van solo fuera del
+    ancho que cubre la capa inferior (bottom_width o el ala efectiva) y cuentan dentro del ala."""
+    beam = f["beam"]
+    bw, big = beam["width"], beam["height"]
+    flange = _flange(f)
+    reach = (flange or bw) / 2
+    flexure = [layer for layer in beam["layers"] if layer["role"] == "flexure"]
+    bottom = max(flexure, key=lambda layer: layer["depth"])
+    layers = []
+    for layer in flexure:
+        bars = [bar for bar in layer["bars"] if layer is not bottom or abs(bar["x"] - bw / 2) <= reach + 1e-6]
+        if bars:
+            layers.append((layer["depth"], sum(BARS[bar["designation"]][1] for bar in bars)))
     mat = f["bottom"]
     db, ab = BARS[mat["x"]["designation"]]
-    from_bottom = f["cover"] + ds + (db / 2 if mat["first"] == "x" else BARS[mat["y"]["designation"]][0] + db / 2)
-    reach = (_flange(f) or f["beam"]["width"]) / 2
-    bottom = [y for y in _positions(f["ly"], f["cover"], db, mat["x"]["spacing"]) if abs(y) <= reach + 1e-6]
-    dt, at = BARS[f["top"]["x"]["designation"]]
-    top = _positions(f["beam"]["width"], f["cover"] + ds, dt, f["top"]["x"]["spacing"])
-    all_bottom = _positions(f["ly"], f["cover"], db, mat["x"]["spacing"])
-    return {"bottom_area": len(bottom) * ab, "from_bottom": from_bottom, "top_area": len(top) * at, "from_top": f["cover"] + ds + dt / 2,
-            "bottom_all": all_bottom, "spacing": mat["x"]["spacing"]}
+    from_bottom = f["cover"] + (db / 2 if mat["first"] == "x" else BARS[mat["y"]["designation"]][0] + db / 2)
+    covered = (beam.get("bottom_width") or flange or bw) / 2
+    every = _positions(f["ly"], f["cover"], db, mat["x"]["spacing"])
+    extra = [y for y in every if covered + 1e-6 < abs(y) <= reach + 1e-6]
+    if extra:
+        layers.append((big - from_bottom, len(extra) * ab))
+    return {"layers": layers, "bottom_depth": bottom["depth"], "bottom_all": every}
 
 
 def _state(layers: list[tuple[float, float]], section: tuple[float, float, float], h: float) -> dict | None:
@@ -146,11 +156,11 @@ def _state(layers: list[tuple[float, float]], section: tuple[float, float, float
 
 def _section(f: dict, rows: dict, moment: float) -> tuple[list[tuple[float, float]], tuple[float, float, float]]:
     big, bw = f["beam"]["height"], f["beam"]["width"]
-    if moment < 0:  # cara superior a tracción: la zarpa comprimida
+    if moment < 0:  # cara superior a tracción: la zarpa comprimida, profundidades desde la cara inferior
         width = _flange(f)
-        layers = [(rows["from_bottom"], rows["bottom_area"]), (big - rows["from_top"], rows["top_area"])]
+        layers = [(big - depth, area) for depth, area in rows["layers"]]
         return layers, ((bw, width, f["h"]) if width else (bw, bw, f["h"]))
-    return [(rows["from_top"], rows["top_area"]), (big - rows["from_bottom"], rows["bottom_area"])], (bw, bw, f["h"])
+    return list(rows["layers"]), (bw, bw, f["h"])
 
 
 def _beam_checks(folder: str, f: dict, rows: dict, given: tuple[float, float]) -> list[dict]:
@@ -198,7 +208,7 @@ def _beam_checks(folder: str, f: dict, rows: dict, given: tuple[float, float]) -
         area = sum(a for _, a in pulled)
         d = max(sum(depth * a for depth, a in pulled) / area, 0.8 * big)
         vc = _S._one_way_vc(folder, bw, d, area / (bw * d), abs(shear), abs(moment))
-        stirrups = f.get("stirrups")
+        stirrups = f["beam"].get("stirrups")
         transverse = 0.0 if stirrups is None else stirrups["legs"] * BARS[stirrups["designation"]][1] / stirrups["spacing"]
         vs = transverse * FY * d
         capacity = PHI_SHEAR * (vc + min(vs, 0.66 * math.sqrt(FC) * bw * d))
@@ -284,7 +294,7 @@ def _expected(folder: str, f: dict) -> dict:
         case = load["case"]
         beam = _beam(f, case)
         assert beam is not None
-        depth = big - rows["from_bottom"]
+        depth = rows["bottom_depth"]
         for x in _B._stations(beam, depth):
             moment = _B._shear_moment(beam, x)[1]
             shear_at = x
@@ -326,24 +336,38 @@ def _load(case: str, p: float, dead: float = 1.2, live: float = 1.6, mx: float =
             "Mx_kNm": mx, "My_kNm": my}
 
 
+def _layer(depth: float, designation: str, xs: list[float]) -> dict:
+    return {"depth": depth, "role": "flexure", "bars": [{"designation": designation, "x": x} for x in xs]}
+
+
+def _spread(low: float, high: float, count: int) -> list[float]:
+    return [low + (high - low) * i / (count - 1) for i in range(count)]
+
+
+# Viga 600 × 900: 6 #8 arriba por dentro del estribo #4 y, abajo, #6 c/150 en todo el ancho de la zarpa (2400 mm).
+TOP = _layer(75 + 12.7 + 25.4 / 2, "#8", _spread(75 + 12.7 + 12.7, 600 - 75 - 12.7 - 12.7, 6))
+BOTTOM = _layer(900 - 75 - 19.1 / 2, "#6", [y + 300 for y in _spread(-1050, 1050, 15)])
+
+
 def _footing(**changes: object) -> dict:
     columns = [{"id": "C1", "cx": 500.0, "cy": 500.0, "x": -2500.0, "y": 0.0, "loads": [_load("U1", 1000.0)]},
                {"id": "C2", "cx": 500.0, "cy": 500.0, "x": 2500.0, "y": 0.0, "loads": [_load("U1", 1150.0)]}]
-    data = {"id": "ZT", "lx": 6600.0, "ly": 2400.0, "h": 400.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
-            "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
-            "beam": {"width": 600.0, "height": 900.0},
-            "bottom": {"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0},
-                       "y": {"designation": "#5", "spacing": 150.0}},
-            "top": _B.top_mat("#8", 75.0, "straight"),
+    beam = {"width": 600.0, "height": 900.0, "end": "straight", "layers": [TOP, BOTTOM],
             "stirrups": {"designation": "#4", "legs": 4, "spacing": 120.0, "closed": True}}
+    data = {"id": "ZT", "lx": 6600.0, "ly": 2400.0, "h": 400.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
+            "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns, "beam": beam,
+            "bottom": {"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0},
+                       "y": {"designation": "#5", "spacing": 150.0}}}
+    beam_changes = changes.pop("beam_changes", {})
     data.update(changes)
+    data["beam"] = {**beam, **beam_changes}  # type: ignore[dict-item]
     return data
 
 
 CASES = [
     ("cumple", "T invertida de 6.6 × 2.4 m, viga 600 × 900 sobre zarpa de 400 mm: ala bf = 4bw = 2400 mm", _footing()),
     ("ala-delgada", "zarpa de 280 mm < 0.5bw: el ala no cuenta (solo el alma) y las barras inferiores solo en el alma",
-     _footing(h=280.0)),
+     _footing(h=280.0, beam_changes={"layers": [TOP, _layer(900 - 75 - 19.1 / 2, "#6", _spread(100.0, 500.0, 4))]})),
     ("aleta-escasa", "malla y #4 c/300: la aleta no cumple flexión ni el mínimo de losa",
      _footing(bottom={"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0},
                       "y": {"designation": "#4", "spacing": 300.0}})),
@@ -351,7 +375,14 @@ CASES = [
      _footing(columns=[{"id": "C1", "cx": 500.0, "cy": 500.0, "x": -2500.0, "y": 0.0, "loads": [_load("U1", 1500.0, my=-600.0)]},
                        {"id": "C2", "cx": 500.0, "cy": 500.0, "x": 2500.0, "y": 0.0, "loads": [_load("U1", 1800.0, my=650.0)]}],
               bottom={"first": "x", "end": "straight", "x": {"designation": "#4", "spacing": 300.0},
-                      "y": {"designation": "#5", "spacing": 150.0}})),
+                      "y": {"designation": "#5", "spacing": 150.0}},
+              beam_changes={"layers": [TOP, _layer(900 - 75 - 12.7 / 2, "#4", [y + 300 for y in _spread(-1050, 1050, 8)])]})),
+    ("capa-angosta", "capa inferior de la viga en 1200 mm (bottom_width): fuera de ella, las barras #5 c/200 de la malla de la "
+                     "zarpa cuentan dentro del ala (D-106)",
+     _footing(bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 200.0},
+                      "y": {"designation": "#5", "spacing": 150.0}},
+              beam_changes={"bottom_width": 1200.0,
+                            "layers": [TOP, _layer(900 - 75 - 19.1 / 2, "#6", [y + 300 for y in _spread(-450, 450, 7)])]})),
 ]
 
 

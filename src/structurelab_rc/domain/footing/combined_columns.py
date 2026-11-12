@@ -384,12 +384,21 @@ def bar_development_check(basis: Basis, footing: CombinedFooting, row: BarRow, a
     spacing, layer, excess, available = anchorage
     name, note = text
     bottom = layer == "bottom"
-    end = footing.bottom.end if bottom or footing.top is None else footing.top.end
+    if footing.beam is not None and row.direction == "x":
+        end = footing.beam.end  # barras de la viga de la T invertida (D-106)
+    else:
+        end = footing.bottom.end if bottom or footing.top is None else footing.top.end
     # La altura bajo las barras superiores es la total (en la T invertida, la de la viga, D-093).
     bar = bar_anchorage(row, (end, spacing, bottom), (footing.total_height, footing.cover), excess)
     required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
     kind = "Barras con gancho estandar" if end == "hook" else "Barras rectas"
     return replace(development_check(name, required, available, f"{note}; {kind}"), member=footing.id)
+
+
+def _row_spacing(row: BarRow) -> float:
+    """Menor separación entre barras vecinas de una fila; con una sola barra, el ancho de la fila."""
+    gaps = [b - a for a, b in zip(row.positions, row.positions[1:], strict=False)]
+    return min(gaps) if gaps else row.width
 
 
 def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tuple[BarRow, BarRow | None], cases: Cases) -> list[Check]:
@@ -399,8 +408,12 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     half = footing.lx / 2
     checks = []
     top_spacing = footing.top.x.spacing if footing.top is not None and footing.top.x is not None else 0.0
-    for moment_at, row, spacing, label in ((positive, bottom, footing.bottom.x.spacing, "inferiores"),
-                                           (negative, top, top_spacing, "superiores")):
+    spacings = (footing.bottom.x.spacing, top_spacing)
+    if footing.beam is not None:
+        # Barras de las capas de la viga de la T invertida (D-106): la menor separación entre las de cada capa.
+        spacings = (_row_spacing(bottom), _row_spacing(top) if top is not None else 0.0)
+    for moment_at, row, spacing, label in ((positive, bottom, spacings[0], "inferiores"),
+                                           (negative, top, spacings[1], "superiores")):
         moment, x = moment_at
         if row is None or moment <= 0:
             continue

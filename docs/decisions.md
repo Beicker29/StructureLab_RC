@@ -1716,6 +1716,36 @@
     zapatas alargadas.
 - **Diferencias:** ninguna de cálculo. En las huellas cambia `memoria.txt` (rótulos numerados de las figuras).
 
+### D-106: refuerzo principal de la viga de la T invertida declarado como en las vigas
+
+- **Fecha:** 2026-11-11
+- **Decisiones del usuario:**
+  1. El refuerzo principal superior e inferior de la viga de la T invertida se declara como en las vigas: `beam.layers`
+     (depth, role, bars) y `beam.stirrups`; además `beam.end` (tipo de extremo de sus barras, obligatorio: el desarrollo
+     lo necesita y no se supone). `top`, `stirrups`, `skin` y `torsion_layers` de la zapata se rechazan en la T.
+  2. El refuerzo de la aleta sigue como en la zapata combinada (`bottom: {first, end, x, y}`), sin band.
+  3. La capa inferior de la viga (la de flexión más profunda) puede salir del alma, sobre la zarpa, hasta el ancho
+     efectivo o hasta un ancho declarado (`beam.bottom_width`); donde no cubre van las barras x de la malla de la zarpa.
+- **Reglas:** la viga cuenta sus capas y las barras x de la malla que caen dentro del ala efectiva bf (D-093); las barras
+  de la capa inferior fuera de bf existen pero no cuentan. Los estribos de la viga no encierran la malla de la zarpa. El d
+  de la viga es la profundidad de su capa inferior. El desarrollo de las barras de la viga usa sus capas (separación
+  mínima entre barras de la capa y `beam.end`). Se revisa la separación libre mínima de cada capa de flexión de la viga
+  con posiciones o separación declaradas (D-102).
+- **Error corregido de D-093:** la fila de barras inferiores de la T medía su profundidad desde la zarpa, pero el
+  desarrollo usaba la altura total de la viga, así que veía más de 300 mm de concreto debajo y aplicaba ψt = 1.3 (barras
+  superiores) a las barras inferiores. Ahora la fila sale de la capa de la viga y ψt = 1.0.
+- **Ejemplos:** `pruebas/zapata_t_invertida_etabs.json` (los dos perfiles), convertidos con el mismo refuerzo: barras
+  superiores en sus posiciones, la capa inferior con las barras #8 c/100 dentro del ala, la piel como capas `skin` y los
+  estribos en la viga; la malla de la zarpa pasa a `first: "y"` (las barras de las aletas, las más bajas, debajo de la
+  capa inferior de la viga). Siguen en PASS. Diferencias: desarrollo de las barras inferiores 0.598 → 0.460 (el error
+  corregido); aletas 0.596 → 0.546 en flexión y 0.597 → 0.522 en cortante (ACI; d de la malla y mayor); fisuración de la
+  viga 0.655 → 0.691 (recubrimiento de la capa inferior). La copia de iterar del usuario también se convirtió.
+- **Presentación:** las capas se describen con cantidad y designación ("9 #8") y las de piel como "piel" (antes
+  "flexión"); por eso cambia también `memoria.txt` de las vigas, sin otra diferencia.
+- **Oráculo:** `derive_inverted_t.py` con la entrada por capas y el caso `capa-angosta` (bottom_width = 1200 mm: las
+  barras de la malla fuera de la capa cuentan dentro del ala); se detectan las mutaciones que cuentan la malla bajo la
+  capa y que omiten las barras de la capa fuera del alma.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

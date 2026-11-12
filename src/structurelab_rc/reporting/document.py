@@ -443,8 +443,10 @@ def _layers(layout: dict[str, Any]) -> str:
         if isinstance(bars, dict):
             text = f"{bars['designation']} c/{bars['spacing']:.0f} mm"
         else:
-            text = " ".join(bar if isinstance(bar, str) else bar["designation"] for bar in bars)
-        role = "torsión" if layer["role"] == "torsion" else "flexión"
+            names = [bar if isinstance(bar, str) else bar["designation"] for bar in bars]
+            # Cantidad y designación de cada tipo de barra, en el orden de la capa ("9 #8", "2 #6 + 2 #5").
+            text = " + ".join(f"{names.count(name)} {name}" for name in dict.fromkeys(names))
+        role = {"torsion": "torsión", "skin": "piel"}.get(layer["role"], "flexión")
         parts.append(f"{layer['depth']:.0f} mm: {text} ({role})")
     return "; ".join(parts)
 
@@ -828,6 +830,16 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any], number_
              f"{stirrups['legs']} ramas {stirrups['designation']} c/{stirrups['spacing']:.0f} mm"],
             ["Refuerzo superficial (caras largas)", _bar_text(skin, " en vertical" if skin else "")],
             ["Capas de torsión (Aℓ)", _torsion_layers_text(reinforcement.get("torsion_layers") or [])]]
+    if g.get("beam"):
+        # T invertida (D-106): el refuerzo de la viga va en sus capas; la malla es la de la zarpa.
+        beam = g["beam"]
+        covered = "el ala efectiva" if beam.get("bottom_width") is None else f"{beam['bottom_width']:.0f} mm"
+        bars = [["Viga: capas (profundidad desde la cara superior)", _layers(beam)],
+                ["Viga: estribos", _stirrups(beam)],
+                ["Viga: extremos de las barras", _ENDS[beam["end"]]],
+                ["Ancho que cubre la capa inferior de la viga", covered],
+                ["Malla inferior de la zarpa (barras x fuera de ese ancho; barras y de las aletas)",
+                 _mat_text(reinforcement["bottom"])]]
     return [{"kind": "h2", "text": f"{number_text}.1 Zapata combinada"},
             {"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": rows},
             _axes_note(principal, secondary),

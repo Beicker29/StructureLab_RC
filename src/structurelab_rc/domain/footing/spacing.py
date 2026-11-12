@@ -12,6 +12,7 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing
+from structurelab_rc.model.reinforcement import BarPosition, BarSpacing
 
 MIN_SPACING = "Separacion minima"
 
@@ -63,4 +64,25 @@ def combined_min_spacing_checks(basis: Basis, footing: CombinedFooting) -> list[
     if footing.top is not None:
         declared += [(f"barras superiores, {directions[direction]}", (bars.designation, bars.spacing))
                      for direction, bars in (("x", footing.top.x), ("y", footing.top.y)) if bars is not None]
+    if footing.beam is not None:
+        declared += _beam_layers(footing)
     return [min_spacing_check(basis, footing.id, label, bars) for label, bars in declared]
+
+
+def _beam_layers(footing: CombinedFooting) -> list[tuple[str, tuple[str, float]]]:
+    """Capas de flexión de la viga de la T invertida (D-106): la menor separación entre barras vecinas de cada capa con
+    posiciones o separación declaradas (las repartidas entre las esquinas del estribo quedan con la regla de vigas)."""
+    assert footing.beam is not None
+    out = []
+    for layer in footing.beam.layers:
+        if layer.role != "flexure":
+            continue
+        if isinstance(layer.bars, BarSpacing):
+            out.append((f"capa a {layer.depth:.0f} mm de la viga", (layer.bars.designation, layer.bars.spacing)))
+            continue
+        xs = sorted(bar.x for bar in layer.bars if isinstance(bar, BarPosition))
+        gaps = [b - a for a, b in zip(xs, xs[1:], strict=False)]
+        if gaps:
+            designation = next(bar.designation for bar in layer.bars if isinstance(bar, BarPosition))
+            out.append((f"capa a {layer.depth:.0f} mm de la viga", (designation, min(gaps))))
+    return out

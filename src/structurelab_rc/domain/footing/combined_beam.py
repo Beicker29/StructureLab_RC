@@ -36,6 +36,7 @@ from dataclasses import dataclass, replace
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.deep import deep_beam_checks
+from structurelab_rc.domain.beam.geometry import placed_bars
 from structurelab_rc.domain.beam.station import checks_for, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
@@ -48,7 +49,7 @@ from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import FootingLoad, Soil
 from structurelab_rc.model.project import Demands, Member, Section, Station
-from structurelab_rc.model.reinforcement import BarLayer, BarPosition, ReinforcementLayout
+from structurelab_rc.model.reinforcement import BarLayer, BarPosition, BarSpacing, ReinforcementLayout
 
 SPACING = "Direccion principal: separacion maxima"
 BARS = {"bottom": "barras inferiores", "top": "barras superiores"}
@@ -264,37 +265,84 @@ def flange_width(profile: Profile, footing: CombinedFooting) -> float | None:
     return None if width is None else min(width, footing.ly)
 
 
+def covered_width(profile: Profile, footing: CombinedFooting) -> float:
+    """Ancho, centrado en el alma, que cubre la capa inferior de la viga de la T invertida (D-106): el declarado
+    (bottom_width) o, si no, el ala efectiva del perfil (o el alma si el ala no cuenta). Fuera de él van las barras x de
+    la malla de la zarpa."""
+    assert footing.beam is not None
+    if footing.beam.bottom_width is not None:
+        return footing.beam.bottom_width
+    return flange_width(profile, footing) or footing.beam.width
+
+
+def _bars_within(layer: BarLayer, low: float, high: float) -> BarLayer | None:
+    """La capa con solo las barras entre low y high (x desde la cara −Y del alma); las repartidas en el alma (solo
+    designaciones) quedan como están. None si no queda ninguna."""
+    if isinstance(layer.bars, tuple) and all(isinstance(bar, str) for bar in layer.bars):
+        return layer
+    positions = ([BarPosition(designation=layer.bars.designation, x=x) for x in layer.bars.positions()]
+                 if isinstance(layer.bars, BarSpacing) else [bar for bar in layer.bars if isinstance(bar, BarPosition)])
+    kept = tuple(bar for bar in positions if low - _EDGE <= bar.x <= high + _EDGE)
+    return layer.model_copy(update={"bars": kept}) if kept else None
+
+
 def _t_beam_member(profile: Profile, footing: CombinedFooting, bars: Sequence[RebarSpec]) -> tuple[Section, ReinforcementLayout]:
-    """La viga de la T invertida volteada (D-093): alma bw × H con el ala (la zarpa) arriba; x desde la cara −Y del alma,
-    profundidades desde la cara inferior de la zapata. Barras x inferiores dentro del ala efectiva (o del alma si el ala
-    no cuenta), barras superiores, piel y capas de torsión (declaradas desde la cara superior, aquí volteadas)."""
-    assert footing.beam is not None and footing.top is not None
-    total, web = footing.total_height, footing.beam.width
-    bottom = mat_rows(footing, footing.bottom, bars)["x"]
-    top = top_rows(footing, bars).get("x")
-    assert top is not None
+    """La viga de la T invertida volteada (D-093, D-106): alma bw × H con el ala (la zarpa) arriba; x desde la cara −Y
+    del alma, profundidades desde la cara inferior de la zapata. Las capas declaradas en beam (desde la cara superior,
+    aquí volteadas) y las barras x de la malla de la zarpa fuera del ancho cubierto por la capa inferior; de unas y otras
+    solo cuentan las que caen dentro del ala efectiva (o del alma si el ala no cuenta)."""
+    beam = footing.beam
+    assert beam is not None
+    total, web = footing.total_height, beam.width
     width = flange_width(profile, footing)
     reach = (width if width is not None else web) / 2
-    from_bottom = footing.h - bottom.depth  # centro de las barras inferiores sobre la cara inferior
-    layers = [BarLayer(depth=from_bottom, role="flexure",
-                       bars=tuple(BarPosition(designation=bottom.designation, x=y + web / 2) for y in bottom.positions
-                                  if abs(y) <= reach + _EDGE)),
-              BarLayer(depth=top.depth, role="flexure",
-                       bars=tuple(BarPosition(designation=top.designation, x=y + web / 2) for y in top.positions))]
-    if footing.skin is not None:
-        spec = next(bar for bar in bars if bar.designation == footing.skin.designation)
-        inset = footing.cover + stirrup_diameter(footing, bars) + spec.diameter_mm / 2
-        depth = from_bottom + footing.skin.spacing
-        while depth < top.depth - _TOUCH:
-            layers.append(BarLayer(depth=depth, role="skin", bars=(BarPosition(designation=spec.designation, x=inset),
-                                                                   BarPosition(designation=spec.designation, x=web - inset))))
-            depth += footing.skin.spacing
-    layers += [layer.model_copy(update={"depth": total - layer.depth}) for layer in footing.torsion_layers]
+    low, high = web / 2 - reach, web / 2 + reach
+    layers = []
+    for layer in beam.layers:
+        own = _bars_within(layer, low, high) if layer is beam.bottom_layer else layer
+        if own is not None:
+            layers.append(own.model_copy(update={"depth": total - layer.depth}))
+    zarpa = mat_rows(footing, footing.bottom, bars)["x"]
+    outside = covered_width(profile, footing) / 2
+    extra = tuple(BarPosition(designation=zarpa.designation, x=y + web / 2) for y in zarpa.positions
+                  if outside + _EDGE < abs(y) <= reach + _EDGE)
+    if extra:
+        layers.append(BarLayer(depth=footing.h - zarpa.depth, role="flexure", bars=extra))
     layers.sort(key=lambda layer: layer.depth)
     overhang = None if width is None else (width - web) / 2
     section = Section(bw=web, h=total, cover=footing.cover, hf=None if overhang is None else footing.h,
                       overhang_x_neg=overhang, overhang_x_pos=overhang)
-    return section, ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
+    return section, ReinforcementLayout(layers=tuple(layers), stirrups=beam.stirrups)
+
+
+def beam_depth(footing: CombinedFooting, bars: Sequence[RebarSpec]) -> float:
+    """d de las barras inferiores de la viga larga desde su cara superior: en la T invertida, la profundidad de su capa
+    inferior (D-106); si no, la de las barras inferiores x de la malla."""
+    if footing.beam is not None:
+        return footing.beam.bottom_layer.depth
+    return footing.stem_height + mat_rows(footing, footing.bottom, bars)["x"].depth
+
+
+def t_beam_rows(profile: Profile, footing: CombinedFooting, bars: Sequence[RebarSpec]) -> tuple[BarRow, BarRow | None]:
+    """Las barras inferiores y superiores de la viga de la T invertida como filas (D-106), para su desarrollo: la capa
+    inferior y la de flexión más alta, con las posiciones respecto al eje de la viga."""
+    beam = footing.beam
+    assert beam is not None
+    section, layout = _t_beam_member(profile, footing, bars)
+    placed = placed_bars(layout, section, bars)
+    total = footing.total_height
+
+    def row(depth_from_top: float) -> BarRow:
+        own = [bar for bar in placed if abs(bar.depth - (total - depth_from_top)) <= _EDGE]
+        designation = own[0].designation if own else beam.bottom_layer.designations()[0]
+        spec = next(bar for bar in bars if bar.designation == designation)
+        positions = tuple(sorted(bar.x - beam.width / 2 for bar in own))
+        depth = depth_from_top if depth_from_top > total / 2 else total - depth_from_top
+        return BarRow("x", designation, spec.diameter_mm, spec.area_mm2, depth, beam.width, positions, None, ())
+
+    flexure = [layer for layer in beam.layers if layer.role == "flexure"]
+    top = min(flexure, key=lambda layer: layer.depth)
+    return row(beam.bottom_layer.depth), (row(top.depth) if top is not beam.bottom_layer else None)
 
 
 def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec], profile: Profile | None = None) -> Member:
@@ -387,15 +435,15 @@ def long_beam_checks(
     basis: Basis, footing: CombinedFooting, soil: Soil, cases: list[tuple[FactoredCase, tuple[FootingLoad, ...]]]
 ) -> list[Check]:
     """Las verificaciones de vigas en las secciones críticas de cada caso mayorado y la separación de las barras x."""
-    bottom = mat_rows(footing, footing.bottom, basis.bars)["x"]
-    top = top_rows(footing, basis.bars).get("x")
+    # En la T invertida las barras superiores van en las capas de la viga (D-106): nunca es concreto simple.
+    has_top = footing.beam is not None or top_rows(footing, basis.bars).get("x") is not None
     member = long_beam_member(footing, basis.bars, basis.profile)
-    depth = footing.stem_height + bottom.depth  # d de las barras inferiores desde la cara superior de la viga
+    depth = beam_depth(footing, basis.bars)  # d de las barras inferiores desde la cara superior de la viga
     checks = []
     for pressure, loads in cases:
         beam = beam_case(footing, soil, pressure, loads)
         for critical in critical_sections(beam, depth):
-            checks += _station_checks(basis, footing, member, (beam, critical, top is not None))
+            checks += _station_checks(basis, footing, member, (beam, critical, has_top))
     checks.append(_spacing_check(basis, footing, footing.bottom.x.spacing, BARS["bottom"]))
     # En la T invertida las barras superiores son de la viga: su separación la controla la fisuración de vigas (D-093).
     if footing.top is not None and footing.top.x is not None and footing.beam is None:

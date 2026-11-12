@@ -32,7 +32,7 @@ from structurelab_rc.domain.flexure_strength import (
     net_tensile_strain_check,
     rectangular_strength,
 )
-from structurelab_rc.domain.footing.combined_beam import flange_width
+from structurelab_rc.domain.footing.combined_beam import flange_width, t_beam_rows
 from structurelab_rc.domain.footing.combined_columns import (
     Cases,
     bar_development_check,
@@ -42,7 +42,7 @@ from structurelab_rc.domain.footing.combined_columns import (
 )
 from structurelab_rc.domain.footing.connection import Support, bearing_checks, dowel_checks
 from structurelab_rc.domain.footing.loads import FactoredCase
-from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows
+from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.plain_strength import plain_rectangular_moment
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, invalid_input
@@ -244,7 +244,7 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
     checks.append(bar_development_check(basis, footing, row, (footing.bottom.y.spacing, "bottom", excess, cantilever - footing.cover),
                                         (DEVELOPMENT, "Desde la cara de la viga hasta el borde de la zarpa")))
     checks += _tension_flange(basis, footing, bottom["x"])
-    checks += x_development(basis, footing, soil, (bottom["x"], top_rows(footing, basis.bars).get("x")), cases)
+    checks += x_development(basis, footing, soil, t_beam_rows(profile, footing, basis.bars), cases)
     first = bottom[footing.bottom.first]
     second = bottom["y" if footing.bottom.first == "x" else "x"]
     measured = profile.footing.footing_depth(footing.h, footing.cover, first.diameter, second.diameter)

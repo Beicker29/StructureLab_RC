@@ -25,10 +25,36 @@ class SkinBars(_Input):
 
 class FoundationBeam(_Input):
     """Viga de la zapata combinada en T invertida (D-093): alma de ancho width centrada en Y sobre la zarpa, con altura
-    total height medida desde la base (la zarpa tiene el espesor h de la zapata)."""
+    total height medida desde la base (la zarpa tiene el espesor h de la zapata).
+
+    El refuerzo de la viga se declara como en las vigas (D-106): layers con depth desde la cara superior de la viga, role
+    (flexure, skin o torsion) y bars con x desde la cara −Y del alma; stirrups, los estribos; end, cómo terminan las barras
+    longitudinales (rectas o con gancho estándar). La capa de flexión más profunda es la inferior: puede salir del alma,
+    sobre la zarpa, hasta bottom_width (centrado en el alma; por defecto, el ala efectiva del perfil); fuera de ese ancho
+    van las barras x de la malla de la zarpa.
+    """
 
     width: PositiveFloat
     height: PositiveFloat
+    layers: tuple[BarLayer, ...] = Field(min_length=1)
+    stirrups: Stirrups | None = None
+    end: Literal["straight", "hook"]
+    bottom_width: PositiveFloat | None = None
+
+    @model_validator(mode="after")
+    def _check_layers(self) -> Self:
+        if not any(layer.role == "flexure" for layer in self.layers):
+            raise ValueError("la viga de la T invertida necesita al menos una capa de flexion")
+        if any(layer.depth >= self.height for layer in self.layers):
+            raise ValueError("las capas de la viga de la T invertida deben quedar dentro de su altura")
+        if self.bottom_width is not None and self.bottom_width < self.width:
+            raise ValueError("bottom_width de la viga de la T invertida no puede ser menor que el ancho del alma")
+        return self
+
+    @property
+    def bottom_layer(self) -> BarLayer:
+        """La capa de flexión más profunda: la inferior de la viga."""
+        return max((layer for layer in self.layers if layer.role == "flexure"), key=lambda layer: layer.depth)
 
 
 class TopMat(_Input):
@@ -169,23 +195,26 @@ class CombinedFooting(RectangularBase, _Input):
         return self
 
     def _check_beam(self) -> None:
-        """T invertida (D-093): viga más alta que la zarpa y más angosta que la base, columnas dentro de su ancho, barras
-        superiores obligatorias (con momento negativo la cara superior de la viga queda a tracción) y sin band."""
+        """T invertida (D-093, D-106): viga más alta que la zarpa y más angosta que la base, columnas dentro de su ancho y
+        sin band; el refuerzo de la viga (barras superiores e inferiores, estribos, piel y torsión) va en beam, no en la
+        zapata."""
         beam = self.beam
         if beam is None:
             return
         if beam.height <= self.h or beam.width >= self.ly:
             raise ValueError(f"la viga de la zapata combinada '{self.id}' debe ser más alta que la zarpa y más angosta que la base")
+        if beam.bottom_width is not None and beam.bottom_width > self.ly:
+            raise ValueError(f"bottom_width de la zapata combinada '{self.id}' no puede superar el ancho de la base")
+        misplaced = [name for name, value in (("top", self.top), ("stirrups", self.stirrups), ("skin", self.skin),
+                                              ("torsion_layers", self.torsion_layers)) if value]
+        if misplaced:
+            raise ValueError(f"la zapata combinada en T invertida '{self.id}' declara el refuerzo de la viga en beam (layers y "
+                             f"stirrups), no en {', '.join(misplaced)} (D-106)")
         for column in self.columns:
             if abs(column.y) + column.cy / 2 > beam.width / 2:
                 raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' se sale del ancho de la viga")
             if column.band is not None:
                 raise ValueError(f"la zapata combinada en T invertida '{self.id}' no usa band (columna '{column.id}')")
-        if self.top is None or self.top.x is None:
-            raise ValueError(f"la zapata combinada en T invertida '{self.id}' requiere barras superiores (top.x) en la viga")
-        if self.top.y is not None:
-            raise ValueError(f"la zapata combinada en T invertida '{self.id}' aun no admite barras superiores y (top.y; D-097: "
-                             "pendiente para las aletas)")
 
     @property
     def total_height(self) -> float:
