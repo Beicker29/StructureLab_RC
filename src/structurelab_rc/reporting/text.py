@@ -28,6 +28,7 @@ _RENDER: dict[str, Callable[[dict[str, Any]], list[str]]] = {
     "summary": lambda block: list(block["items"]),
     "h1": lambda block: ["", f"## {block['text']}"],
     "h2": lambda block: ["", f"### {block['text']}"],
+    "h3": lambda block: ["", f"#### {block['text']}"],
     "table": lambda block: _table(block["headers"], block["rows"]),
     "kv": lambda block: [f"{key}: {value}" for key, value in block["items"]],
     "p": lambda block: [block["text"]],

@@ -89,7 +89,7 @@ class Context:
 
     def materials(self, fc: float) -> Materials:
         m = self.project.materials
-        return Materials(fc=fc, fy=m.fy, fyt=m.fyt, concrete=m.concrete, coating=m.coating)
+        return Materials(fc=fc, fy=m.fy, fyt=m.fyt, concrete=m.concrete, coating=m.coating, max_aggregate=m.max_aggregate)
 
     def spec(self, designation: str) -> RebarSpec:
         return next(bar for bar in self.bars if bar.designation == designation)

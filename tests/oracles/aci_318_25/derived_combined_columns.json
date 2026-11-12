@@ -21,7 +21,8 @@
     "fy": 420.0,
     "fyt": 420.0,
     "concrete": "normalweight",
-    "coating": "uncoated"
+    "coating": "uncoated",
+    "max_aggregate": 19.0
   },
   "seismic_level": "ordinary",
   "tolerance_rel": 1e-07,
@@ -152,33 +153,33 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 2.8610229492187504e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 2.8610229492187504e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1488040500.264706
+          "capacity": 1485135355.250865
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 277692766.1067173
         },
         {
           "name": "Punzonamiento",
@@ -214,33 +215,33 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 2.8610229492187504e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 2.8610229492187504e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1488040500.264706
+          "capacity": 1485135355.250865
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 277692766.1067173
         },
         {
           "name": "Flexion: resistencia",
@@ -699,7 +700,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 5160.0,
@@ -707,7 +708,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -715,7 +716,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -723,7 +724,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 1893.3333333333333,
@@ -731,7 +732,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -739,7 +740,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 3225.0,
@@ -747,7 +748,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y band, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, band, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 120.0,
           "capacity": 450.0,
@@ -755,7 +756,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, zona de band de la columna C2)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, zona de band de la columna C2)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 3225.0,
@@ -763,7 +764,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y band, zona de band de la columna C2)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, band, zona de band de la columna C2)",
           "status": "PASS",
           "demand": 120.0,
           "capacity": 450.0,
@@ -771,7 +772,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -779,7 +780,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 900.0,
@@ -787,7 +788,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 293.6783955281695,
           "capacity": 2924.999988371764,
@@ -855,6 +856,912 @@
           "demand": 1300000.0,
           "capacity": 6265350.0,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (band, columna C1)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 97.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (band, columna C2)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 97.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        }
+      ]
+    },
+    {
+      "id": "band-apretado",
+      "description": "el caso anterior con el band de C1 a 50 mm: separación libre 24.6 mm, menor que la mínima (D-102)",
+      "footing": {
+        "id": "ZC",
+        "lx": 6000.0,
+        "ly": 2400.0,
+        "h": 750.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -1800.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1300.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ],
+            "dowels": {
+              "designation": "#6",
+              "count": 4
+            },
+            "band": {
+              "designation": "#8",
+              "spacing": 50.0
+            }
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 1800.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "U1",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "P_kN": 1300.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 0.0
+              }
+            ],
+            "dowels": {
+              "designation": "#6",
+              "count": 4
+            },
+            "band": {
+              "designation": "#7",
+              "spacing": 120.0
+            }
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "end": "straight",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          },
+          "y": {
+            "designation": "#6",
+            "spacing": 150.0
+          }
+        },
+        "top": {
+          "end": "hook",
+          "x": {
+            "designation": "#7",
+            "spacing": 150.0
+          }
+        }
+      },
+      "expected": [
+        {
+          "name": "Punzonamiento",
+          "case": "U1",
+          "where": "Columna C1",
+          "status": "PASS",
+          "demand": 0.37251061846914907,
+          "capacity": 1.3096468989769725,
+          "corners": [
+            [
+              -2351.7875,
+              -551.7875,
+              0.37251061846914874
+            ],
+            [
+              -1248.2125,
+              -551.7875,
+              0.37251061846914907
+            ],
+            [
+              -2351.7875,
+              551.7875,
+              0.37251061846914874
+            ],
+            [
+              -1248.2125,
+              551.7875,
+              0.37251061846914907
+            ]
+          ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento por flexion (direccion principal)",
+          "status": "PASS",
+          "capacity": 1409958787.4338236
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
+          "status": "PASS",
+          "capacity": 1409958787.4338236
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
+          "status": "PASS",
+          "capacity": 3160105969.5155716
+        },
+        {
+          "case": "U1",
+          "where": "Columna C1",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
+          "status": "PASS",
+          "capacity": 277692766.1067173
+        },
+        {
+          "name": "Punzonamiento",
+          "case": "U1",
+          "where": "Columna C2",
+          "status": "PASS",
+          "demand": 0.37251061846914907,
+          "capacity": 1.3096468989769725,
+          "corners": [
+            [
+              1248.2125,
+              -551.7875,
+              0.37251061846914907
+            ],
+            [
+              2351.7875,
+              -551.7875,
+              0.37251061846914874
+            ],
+            [
+              1248.2125,
+              551.7875,
+              0.37251061846914907
+            ],
+            [
+              2351.7875,
+              551.7875,
+              0.37251061846914874
+            ]
+          ]
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento por flexion (direccion principal)",
+          "status": "PASS",
+          "capacity": 1409958787.4338236
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 2.8610229492187504e-07,
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
+          "status": "PASS",
+          "capacity": 1409958787.4338236
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
+          "status": "PASS",
+          "capacity": 1485135355.250865
+        },
+        {
+          "case": "U1",
+          "where": "Columna C2",
+          "demand": 0.0,
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
+          "status": "PASS",
+          "capacity": 277692766.1067173
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 256177593.75000006,
+          "capacity": 2344065031.1936884,
+          "clause": "9.5.1.1(a) y Tabla 21.2.2",
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.00605678944128788,
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 11220.0,
+          "as_min": 2344.110208333333,
+          "clause": "9.6.1.2 y 9.6.1.3",
+          "status": "PASS",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "PASS",
+          "demand": 50.0,
+          "capacity": 144.875,
+          "clause": "24.3.2 y 24.3.2.1",
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 178802.19166666668,
+          "capacity": 474447.84825880226,
+          "clause": "13.2.6.2(a) y 13.2.7.2",
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "13.3.2.1 y 7.6.3.1",
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 29658813.542708308,
+          "capacity": 2344065031.1936884,
+          "clause": "9.5.1.1(a) y Tabla 21.2.2",
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.00605678944128788,
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 11220.0,
+          "as_min": 2344.110208333333,
+          "clause": "9.6.1.2 y 9.6.1.3",
+          "status": "PASS",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "PASS",
+          "demand": 50.0,
+          "capacity": 144.875,
+          "clause": "24.3.2 y 24.3.2.1",
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 178802.19166666668,
+          "capacity": 474447.84825880226,
+          "clause": "13.2.6.2(a) y 13.2.7.2",
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "13.3.2.1 y 7.6.3.1",
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 256177593.75000006,
+          "capacity": 2344065031.1936884,
+          "clause": "9.5.1.1(a) y Tabla 21.2.2",
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.00605678944128788,
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 11220.0,
+          "as_min": 2344.110208333333,
+          "clause": "9.6.1.2 y 9.6.1.3",
+          "status": "PASS",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "PASS",
+          "demand": 50.0,
+          "capacity": 144.875,
+          "clause": "24.3.2 y 24.3.2.1",
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 178802.19166666668,
+          "capacity": 474447.84825880226,
+          "clause": "13.2.6.2(a) y 13.2.7.2",
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "13.3.2.1 y 7.6.3.1",
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 29658813.542708308,
+          "capacity": 2344065031.1936884,
+          "clause": "9.5.1.1(a) y Tabla 21.2.2",
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.00605678944128788,
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 11220.0,
+          "as_min": 2344.110208333333,
+          "clause": "9.6.1.2 y 9.6.1.3",
+          "status": "PASS",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "PASS",
+          "demand": 50.0,
+          "capacity": 144.875,
+          "clause": "24.3.2 y 24.3.2.1",
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 178802.19166666668,
+          "capacity": 474447.84825880226,
+          "clause": "13.2.6.2(a) y 13.2.7.2",
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "13.3.2.1 y 7.6.3.1",
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C1"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 256177593.75000006,
+          "capacity": 809876011.1472198,
+          "clause": "9.5.1.1(a) y Tabla 21.2.2",
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.02617518734747344,
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 3483.0,
+          "as_min": 2344.110208333333,
+          "clause": "9.6.1.2 y 9.6.1.3",
+          "status": "PASS",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "PASS",
+          "demand": 120.0,
+          "capacity": 140.875,
+          "clause": "24.3.2 y 24.3.2.1",
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 178802.19166666668,
+          "capacity": 474447.84825880226,
+          "clause": "13.2.6.2(a) y 13.2.7.2",
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "13.3.2.1 y 7.6.3.1",
+          "case": "U1",
+          "z_mm": 1425.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 29658813.542708308,
+          "capacity": 809876011.1472198,
+          "clause": "9.5.1.1(a) y Tabla 21.2.2",
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.02617518734747344,
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 3483.0,
+          "as_min": 2344.110208333333,
+          "clause": "9.6.1.2 y 9.6.1.3",
+          "status": "PASS",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "PASS",
+          "demand": 120.0,
+          "capacity": 140.875,
+          "clause": "24.3.2 y 24.3.2.1",
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 178802.19166666668,
+          "capacity": 474447.84825880226,
+          "clause": "13.2.6.2(a) y 13.2.7.2",
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "13.3.2.1 y 7.6.3.1",
+          "case": "U1",
+          "z_mm": 2068.25,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 256177593.75000006,
+          "capacity": 809876011.1472198,
+          "clause": "9.5.1.1(a) y Tabla 21.2.2",
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.02617518734747344,
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 3483.0,
+          "as_min": 2344.110208333333,
+          "clause": "9.6.1.2 y 9.6.1.3",
+          "status": "PASS",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "PASS",
+          "demand": 120.0,
+          "capacity": 140.875,
+          "clause": "24.3.2 y 24.3.2.1",
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 178802.19166666668,
+          "capacity": 474447.84825880226,
+          "clause": "13.2.6.2(a) y 13.2.7.2",
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "13.3.2.1 y 7.6.3.1",
+          "case": "U1",
+          "z_mm": 975.0,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: resistencia",
+          "status": "PASS",
+          "demand": 29658813.542708308,
+          "capacity": 809876011.1472198,
+          "clause": "9.5.1.1(a) y Tabla 21.2.2",
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: deformacion neta de traccion (M3)",
+          "status": "PASS",
+          "capacity": 0.02617518734747344,
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: acero minimo (M3)",
+          "capacity": 3483.0,
+          "as_min": 2344.110208333333,
+          "clause": "9.6.1.2 y 9.6.1.3",
+          "status": "PASS",
+          "demand": 2344.110208333333,
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Flexion: separacion por fisuracion",
+          "status": "PASS",
+          "demand": 120.0,
+          "capacity": 140.875,
+          "clause": "24.3.2 y 24.3.2.1",
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: resistencia",
+          "status": "PASS",
+          "demand": 178802.19166666668,
+          "capacity": 474447.84825880226,
+          "clause": "13.2.6.2(a) y 13.2.7.2",
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Cortante: refuerzo minimo",
+          "status": "PASS",
+          "clause": "13.3.2.1 y 7.6.3.1",
+          "case": "U1",
+          "z_mm": 331.75,
+          "where": "Franja transversal de la columna C2"
+        },
+        {
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
+          "status": "PASS",
+          "demand": 1349.9999999999998,
+          "capacity": 5160.0,
+          "clause": "24.4.3.2 y 24.4.3.3",
+          "where": ""
+        },
+        {
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
+          "status": "PASS",
+          "demand": 150.0,
+          "capacity": 450.0,
+          "clause": "24.4.3.2 y 24.4.3.3",
+          "where": ""
+        },
+        {
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
+          "status": "PASS",
+          "demand": 150.0,
+          "capacity": 450.0,
+          "clause": "24.4.3.2 y 24.4.3.3",
+          "where": ""
+        },
+        {
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, fuera de las zonas de band)",
+          "status": "PASS",
+          "demand": 1349.9999999999998,
+          "capacity": 1893.3333333333333,
+          "clause": "24.4.3.2 y 24.4.3.3",
+          "where": ""
+        },
+        {
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, fuera de las zonas de band)",
+          "status": "PASS",
+          "demand": 150.0,
+          "capacity": 450.0,
+          "clause": "24.4.3.2 y 24.4.3.3",
+          "where": ""
+        },
+        {
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, zona de band de la columna C1)",
+          "status": "PASS",
+          "demand": 1349.9999999999998,
+          "capacity": 10200.0,
+          "clause": "24.4.3.2 y 24.4.3.3",
+          "where": ""
+        },
+        {
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, band, zona de band de la columna C1)",
+          "status": "PASS",
+          "demand": 50.0,
+          "capacity": 450.0,
+          "clause": "24.4.3.2 y 24.4.3.3",
+          "where": ""
+        },
+        {
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, zona de band de la columna C2)",
+          "status": "PASS",
+          "demand": 1349.9999999999998,
+          "capacity": 3225.0,
+          "clause": "24.4.3.2 y 24.4.3.3",
+          "where": ""
+        },
+        {
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, band, zona de band de la columna C2)",
+          "status": "PASS",
+          "demand": 120.0,
+          "capacity": 450.0,
+          "clause": "24.4.3.2 y 24.4.3.3",
+          "where": ""
+        },
+        {
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
+          "status": "PASS",
+          "demand": 150.0,
+          "capacity": 450.0,
+          "clause": "13.3.2.1 y 7.7.2.3",
+          "where": ""
+        },
+        {
+          "name": "Desarrollo barras inferiores, direccion principal",
+          "status": "PASS",
+          "demand": 300.0,
+          "capacity": 900.0,
+          "clause": "25.4.2.1, 25.4.2.4 y 25.4.2.5; 25.4.10",
+          "where": ""
+        },
+        {
+          "name": "Desarrollo barras superiores, direccion principal",
+          "status": "PASS",
+          "demand": 293.6783955281695,
+          "capacity": 2924.999988371764,
+          "clause": "25.4.3.1 y 25.4.3.2",
+          "where": ""
+        },
+        {
+          "name": "Desarrollo refuerzo band (columna C1)",
+          "status": "PASS",
+          "demand": 300.0,
+          "capacity": 900.0,
+          "clause": "25.4.2.1, 25.4.2.4 y 25.4.2.5; 25.4.10",
+          "where": ""
+        },
+        {
+          "name": "Desarrollo refuerzo band (columna C2)",
+          "status": "PASS",
+          "demand": 300.0,
+          "capacity": 900.0,
+          "clause": "25.4.2.1, 25.4.2.4 y 25.4.2.5; 25.4.10",
+          "where": ""
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "PASS",
+          "demand": 1012.5,
+          "capacity": 1136.0,
+          "where": "Columna C1"
+        },
+        {
+          "name": "Pasadores: anclaje a compresion",
+          "status": "PASS",
+          "demand": 360.95607172381193,
+          "capacity": 633.6999999999999,
+          "where": "Columna C1"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "U1",
+          "where": "Columna C1",
+          "status": "PASS",
+          "demand": 1300000.0,
+          "capacity": 6265350.0,
+          "clause": "22.8.3.2 y Tabla 21.2.1"
+        },
+        {
+          "name": "Pasadores: area minima",
+          "status": "PASS",
+          "demand": 1012.5,
+          "capacity": 1136.0,
+          "where": "Columna C2"
+        },
+        {
+          "name": "Pasadores: anclaje a compresion",
+          "status": "PASS",
+          "demand": 360.95607172381193,
+          "capacity": 633.6999999999999,
+          "where": "Columna C2"
+        },
+        {
+          "name": "Aplastamiento en la zapata",
+          "case": "U1",
+          "where": "Columna C2",
+          "status": "PASS",
+          "demand": 1300000.0,
+          "capacity": 6265350.0,
+          "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (band, columna C1)",
+          "status": "FAIL",
+          "demand": 25.4,
+          "capacity": 24.6,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (band, columna C2)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 97.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -976,33 +1883,33 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 167547525.7672335,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 167547525.7672335,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 680578351.7647059
+          "capacity": 673461645.882353
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 171516120.24238423
         },
         {
           "name": "Punzonamiento",
@@ -1038,23 +1945,23 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 674561.0097330094,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415919012.9786096
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 674561.0097330094,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415919012.9786096
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
           "capacity": 1276715435.0438504
         },
@@ -1062,7 +1969,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
           "capacity": 299472590.899401
         },
@@ -1531,7 +2438,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 5160.0,
@@ -1539,7 +2446,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -1547,7 +2454,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -1555,7 +2462,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, en todo el largo)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, en todo el largo)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 1893.3333333333333,
@@ -1563,7 +2470,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, en todo el largo)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, en todo el largo)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -1571,7 +2478,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -1579,7 +2486,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 1475.0,
@@ -1587,7 +2494,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 472.6577403733859,
           "capacity": 1764.9631995571458,
@@ -1595,7 +2502,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C1)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C1)",
           "status": "PASS",
           "demand": 305.381736908787,
           "capacity": 900.0,
@@ -1603,7 +2510,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 416.9302361848941,
           "capacity": 875.0,
@@ -1655,6 +2562,29 @@
           "demand": 1800000.0,
           "capacity": 7734999.999999999,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -1804,33 +2734,33 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1030018.2559305669,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1408962397.1451817
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 1030018.2559305669,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1408962397.1451817
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 23998400.89665767,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1358406645.4411764
+          "capacity": 1352313224.0707135
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 23998400.89665767,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 255912941.3140336
         },
         {
           "name": "Punzonamiento",
@@ -1866,33 +2796,33 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 1030018.25593071,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 1030018.25593071,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 18001599.103342332,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1013394986.4705884
+          "capacity": 1010056191.476846
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 18001599.103342332,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 255912941.3140336
         },
         {
           "name": "Punzonamiento",
@@ -1928,33 +2858,33 @@
           "case": "U2",
           "where": "Columna C1",
           "demand": 220805629.5462745,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1408962397.1451817
         },
         {
           "case": "U2",
           "where": "Columna C1",
           "demand": 220805629.5462745,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1408962397.1451817
         },
         {
           "case": "U2",
           "where": "Columna C1",
           "demand": 23759047.421330404,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1358406645.4411764
+          "capacity": 1352313224.0707135
         },
         {
           "case": "U2",
           "where": "Columna C1",
           "demand": 23759047.421330404,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 255912941.3140336
         },
         {
           "name": "Punzonamiento",
@@ -1990,33 +2920,33 @@
           "case": "U2",
           "where": "Columna C2",
           "demand": 267005629.5462745,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U2",
           "where": "Columna C2",
           "demand": 267005629.5462745,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U2",
           "where": "Columna C2",
           "demand": 540952.5786696017,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1013394986.4705884
+          "capacity": 1010056191.476846
         },
         {
           "case": "U2",
           "where": "Columna C2",
           "demand": 540952.5786696017,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 255912941.3140336
         },
         {
           "name": "Flexion: resistencia",
@@ -2939,7 +3869,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 5160.0,
@@ -2947,7 +3877,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -2955,7 +3885,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -2963,7 +3893,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 1893.3333333333333,
@@ -2971,7 +3901,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -2979,7 +3909,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 3225.0,
@@ -2987,7 +3917,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y band, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, band, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 120.0,
           "capacity": 450.0,
@@ -2995,7 +3925,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -3003,7 +3933,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 1150.0,
@@ -3011,7 +3941,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 482.08281565243715,
           "capacity": 2924.999963600797,
@@ -3027,7 +3957,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 441.02269126982117,
           "capacity": 750.0,
@@ -3097,6 +4027,36 @@
           "demand": 1000000.0,
           "capacity": 6265350.0,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (band, columna C1)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 97.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -3211,52 +4171,52 @@
           ]
         },
         {
-          "name": "Acero minimo por punzonamiento (barras x)",
+          "name": "Acero minimo por punzonamiento (direccion principal)",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
-          "demand": 3493.000049347271,
+          "demand": 3287.5294582091965,
           "capacity": 9690.0
         },
         {
-          "name": "Acero minimo por punzonamiento (barras y)",
+          "name": "Acero minimo por punzonamiento (direccion secundaria)",
           "case": "U1",
           "where": "Columna C1",
           "status": "FAIL",
-          "demand": 3493.000049347271,
+          "demand": 3390.264753778234,
           "capacity": 1592.0
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 2.8610229492187504e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 2244834648.0
+          "capacity": 2237158885.5
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 2.8610229492187504e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1412713513.5259516
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 398099707.1252595
+          "capacity": 397999253.3775401
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 277692766.1067173
+          "capacity": 269525331.80946094
         },
         {
           "name": "Punzonamiento",
@@ -3289,52 +4249,52 @@
           ]
         },
         {
-          "name": "Acero minimo por punzonamiento (barras x)",
+          "name": "Acero minimo por punzonamiento (direccion principal)",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
-          "demand": 3493.000049347271,
+          "demand": 3287.5294582091965,
           "capacity": 9690.0
         },
         {
-          "name": "Acero minimo por punzonamiento (barras y)",
+          "name": "Acero minimo por punzonamiento (direccion secundaria)",
           "case": "U1",
           "where": "Columna C2",
           "status": "FAIL",
-          "demand": 3493.000049347271,
+          "demand": 3390.264753778234,
           "capacity": 1592.0
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 2.8610229492187504e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 2244834648.0
+          "capacity": 2237158885.5
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 2.8610229492187504e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1412713513.5259516
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 398099707.1252595
+          "capacity": 397999253.3775401
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 277692766.1067173
+          "capacity": 269525331.80946094
         },
         {
           "name": "Flexion: resistencia",
@@ -3797,7 +4757,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 6830.0,
@@ -3805,7 +4765,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 120.0,
           "capacity": 450.0,
@@ -3813,7 +4773,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -3821,7 +4781,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, en todo el largo)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, en todo el largo)",
           "status": "FAIL",
           "demand": 1349.9999999999998,
           "capacity": 663.3333333333334,
@@ -3829,7 +4789,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, en todo el largo)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, en todo el largo)",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 450.0,
@@ -3837,7 +4797,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 450.0,
@@ -3845,7 +4805,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 336.01041650520295,
           "capacity": 975.0,
@@ -3853,7 +4813,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 293.6783955281695,
           "capacity": 2924.999963422523,
@@ -3861,7 +4821,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C1)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C1)",
           "status": "PASS",
           "demand": 210.33722922963491,
           "capacity": 975.0,
@@ -3869,7 +4829,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 210.33722922963491,
           "capacity": 975.0,
@@ -3912,6 +4872,29 @@
           "demand": 2600000.0,
           "capacity": 2784600.0,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.4,
+          "capacity": 94.6,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 284.1,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -4025,33 +5008,33 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 880866135.8823531
+          "capacity": 875527217.8450503
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 223243204.12500802
         },
         {
           "name": "Punzonamiento",
@@ -4084,55 +5067,54 @@
           ]
         },
         {
-          "name": "Acero minimo por punzonamiento (barras x)",
+          "name": "Acero minimo por punzonamiento (direccion principal)",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
-          "demand": 3228.0591132416353,
+          "demand": 2869.385878437009,
           "capacity": 5805.0
         },
         {
-          "name": "Acero minimo por punzonamiento (barras y)",
+          "name": "Acero minimo por punzonamiento (direccion secundaria)",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
-          "demand": 3228.0591132416353,
+          "demand": 3048.722495839322,
           "capacity": 4828.0
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 888507854.68961,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 888507854.68961,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 292482011.49435014,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1145126766.0
+          "capacity": 1143432990.0
         },
         {
           "case": "U1",
           "where": "Columna C2",
-          "demand": 292482011.49435014,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 277692766.1067173
         },
         {
-          "name": "Flexion concreto simple (cara superior, barras y)",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
           "case": "U1",
           "status": "PASS",
           "demand_Nmm": 23695373.812500007,
@@ -4160,7 +5142,7 @@
           "where": "Franja transversal de la columna C1"
         },
         {
-          "name": "Flexion concreto simple (cara superior, barras y)",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
           "case": "U1",
           "status": "PASS",
           "demand_Nmm": 2743318.271681253,
@@ -4535,7 +5517,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 5160.0,
@@ -4543,7 +5525,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -4551,7 +5533,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -4559,7 +5541,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, en todo el largo)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, en todo el largo)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 1893.3333333333333,
@@ -4567,7 +5549,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, en todo el largo)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, en todo el largo)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -4575,7 +5557,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -4583,7 +5565,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 385.2397000071707,
           "capacity": 900.0,
@@ -4591,7 +5573,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 762.1217205085187,
           "capacity": 2337.4841739396325,
@@ -4599,7 +5581,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C1)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C1)",
           "status": "PASS",
           "demand": 409.89364465607224,
           "capacity": 900.0,
@@ -4607,7 +5589,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 441.02269126982117,
           "capacity": 900.0,
@@ -4641,6 +5623,29 @@
           "demand": 2500000.0,
           "capacity": 6265350.0,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -4754,33 +5759,33 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 880866135.8823531
+          "capacity": 874389933.5294118
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 212353291.7286662
         },
         {
           "name": "Punzonamiento",
@@ -4813,52 +5818,52 @@
           ]
         },
         {
-          "name": "Acero minimo por punzonamiento (barras x)",
+          "name": "Acero minimo por punzonamiento (direccion principal)",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
-          "demand": 3233.7808494682386,
+          "demand": 2874.4718661939896,
           "capacity": 5805.0
         },
         {
-          "name": "Acero minimo por punzonamiento (barras y)",
+          "name": "Acero minimo por punzonamiento (direccion secundaria)",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
-          "demand": 3233.7808494682386,
+          "demand": 3054.1263578311136,
           "capacity": 4828.0
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 889006995.2781892,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 889006995.2781892,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1415162158.9411764
+          "capacity": 1409958787.4338236
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 2.0429655111732617e-08,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1145126766.0
+          "capacity": 1143432990.0
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 2.0429655111732617e-08,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 277692766.1067173
         },
         {
           "name": "Flexion: resistencia",
@@ -5323,7 +6328,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 5160.0,
@@ -5331,7 +6336,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -5339,7 +6344,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -5347,7 +6352,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, en todo el largo)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, en todo el largo)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 1893.3333333333333,
@@ -5355,7 +6360,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, en todo el largo)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, en todo el largo)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -5363,7 +6368,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -5371,7 +6376,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 379.2091625133692,
           "capacity": 900.0,
@@ -5379,7 +6384,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 762.1217205085187,
           "capacity": 2365.0346084541493,
@@ -5387,7 +6392,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C1)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C1)",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 900.0,
@@ -5395,7 +6400,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 441.02269126982117,
           "capacity": 900.0,
@@ -5429,6 +6434,29 @@
           "demand": 2500000.0,
           "capacity": 6265350.0,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -5550,23 +6578,23 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 34023949.592083886,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1597560148.8
+          "capacity": 1595503705.2230768
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 34023949.592083886,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1597560148.8
+          "capacity": 1595503705.2230768
         },
         {
           "case": "U1",
           "where": "Columna C1",
           "demand": 1125190.630056195,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
           "capacity": 1210693754.117647
         },
@@ -5574,7 +6602,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1125190.630056195,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
           "capacity": 294027634.7012301
         },
@@ -5612,33 +6640,33 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 2236946.254246616,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1597560148.8
+          "capacity": 1595503705.2230768
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 2236946.254246616,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1597560148.8
+          "capacity": 1595503705.2230768
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 47237857.05941066,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1211280688.2609627
+          "capacity": 1210989913.5477602
         },
         {
           "case": "U1",
           "where": "Columna C2",
           "demand": 47237857.05941066,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 299472590.899401
+          "capacity": 296750112.80031556
         },
         {
           "name": "Punzonamiento",
@@ -5674,33 +6702,33 @@
           "case": "U1",
           "where": "Columnas C1 y C2 (perimetro comun)",
           "demand": 67172743.57331829,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
-          "capacity": 1597560148.8
+          "capacity": 1595503705.2230768
         },
         {
           "case": "U1",
           "where": "Columnas C1 y C2 (perimetro comun)",
           "demand": 67172743.57331829,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
-          "capacity": 1597560148.8
+          "capacity": 1595503705.2230768
         },
         {
           "case": "U1",
           "where": "Columnas C1 y C2 (perimetro comun)",
           "demand": 51163826.703724526,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1548439827.408474
+          "capacity": 1548159502.235294
         },
         {
           "case": "U1",
           "where": "Columnas C1 y C2 (perimetro comun)",
           "demand": 51163826.703724526,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 389314368.16922134
+          "capacity": 386591890.07013583
         },
         {
           "name": "Flexion: resistencia",
@@ -6167,7 +7195,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 5160.0,
@@ -6175,7 +7203,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -6183,7 +7211,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -6191,7 +7219,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, en todo el largo)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, en todo el largo)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 1893.3333333333333,
@@ -6199,7 +7227,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, en todo el largo)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, en todo el largo)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -6207,7 +7235,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -6215,7 +7243,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 438.39645472146685,
           "capacity": 1525.0,
@@ -6223,7 +7251,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C1)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C1)",
           "status": "PASS",
           "demand": 427.6636674934658,
           "capacity": 1000.0,
@@ -6231,7 +7259,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 441.02269126982117,
           "capacity": 1000.0,
@@ -6283,6 +7311,29 @@
           "demand": 1800000.0,
           "capacity": 6961499.999999999,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -6401,7 +7452,7 @@
           ]
         },
         {
-          "name": "Acero minimo por punzonamiento (barras x)",
+          "name": "Acero minimo por punzonamiento (direccion principal)",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -6409,7 +7460,7 @@
           "capacity": 5031.0
         },
         {
-          "name": "Acero minimo por punzonamiento (barras y)",
+          "name": "Acero minimo por punzonamiento (direccion secundaria)",
           "case": "U1",
           "where": "Columna C1",
           "status": "FAIL",
@@ -6420,7 +7471,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 22168.948808383946,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
           "capacity": 645135458.3470588
         },
@@ -6428,7 +7479,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 22168.948808383946,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
           "capacity": 645135458.3470588
         },
@@ -6436,7 +7487,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
           "capacity": 453774272.8235294
         },
@@ -6444,7 +7495,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
           "capacity": 64006015.71727458
         },
@@ -6479,7 +7530,7 @@
           ]
         },
         {
-          "name": "Acero minimo por punzonamiento (barras x)",
+          "name": "Acero minimo por punzonamiento (direccion principal)",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -6487,7 +7538,7 @@
           "capacity": 5805.0
         },
         {
-          "name": "Acero minimo por punzonamiento (barras y)",
+          "name": "Acero minimo por punzonamiento (direccion secundaria)",
           "case": "U1",
           "where": "Columna C2",
           "status": "FAIL",
@@ -6498,7 +7549,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 178471.44122543337,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
           "capacity": 750675397.1451814
         },
@@ -6506,7 +7557,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 178471.44122543337,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
           "capacity": 750675397.1451814
         },
@@ -6514,7 +7565,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 0.0,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
           "capacity": 526972191.4768461
         },
@@ -6522,7 +7573,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 0.0,
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
           "capacity": 83563409.40866403
         },
@@ -6991,7 +8042,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 809.9999999999999,
           "capacity": 5160.0,
@@ -6999,7 +8050,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -7007,7 +8058,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -7015,7 +8066,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, en todo el largo)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, en todo el largo)",
           "status": "PASS",
           "demand": 809.9999999999999,
           "capacity": 1893.3333333333333,
@@ -7023,7 +8074,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, en todo el largo)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, en todo el largo)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -7031,7 +8082,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -7039,7 +8090,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 321.33673293365536,
           "capacity": 900.0,
@@ -7047,7 +8098,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 718.8601367322107,
           "capacity": 2923.2446674924804,
@@ -7055,7 +8106,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C1)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C1)",
           "status": "PASS",
           "demand": 441.02269126982117,
           "capacity": 900.0,
@@ -7063,7 +8114,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 304.6054623912796,
           "capacity": 625.0,
@@ -7115,6 +8166,29 @@
           "demand": 2200000.0,
           "capacity": 30939999.999999996,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -7236,7 +8310,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -7244,7 +8318,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -7252,16 +8326,16 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 644996757.453529,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1145126766.0
+          "capacity": 1143432990.0
         },
         {
           "case": "U1",
           "where": "Columna C1",
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 277692766.1067173
         },
         {
           "name": "Punzonamiento",
@@ -7297,7 +8371,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -7305,7 +8379,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -7313,16 +8387,16 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 644996757.453529,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1145126766.0
+          "capacity": 1143432990.0
         },
         {
           "case": "U1",
           "where": "Columna C2",
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 294027634.7012301
+          "capacity": 277692766.1067173
         },
         {
           "name": "Flexion: resistencia",
@@ -7444,7 +8518,7 @@
           "where": "Franja transversal de la columna C1"
         },
         {
-          "name": "Flexion concreto simple (cara superior, barras y)",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
           "case": "U1",
           "status": "PASS",
           "demand_Nmm": 34100124.899788156,
@@ -7472,7 +8546,7 @@
           "where": "Franja transversal de la columna C1"
         },
         {
-          "name": "Flexion concreto simple (cara superior, barras y)",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
           "case": "U1",
           "status": "PASS",
           "demand_Nmm": 9948207.476681255,
@@ -7619,7 +8693,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Flexion concreto simple (cara superior, barras y)",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
           "case": "U1",
           "status": "PASS",
           "demand_Nmm": 34100124.899788156,
@@ -7647,7 +8721,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Flexion concreto simple (cara superior, barras y)",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
           "case": "U1",
           "status": "PASS",
           "demand_Nmm": 9948207.476681255,
@@ -7675,7 +8749,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 5160.0,
@@ -7683,7 +8757,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -7691,7 +8765,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -7699,7 +8773,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, en todo el largo)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, en todo el largo)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 1893.3333333333333,
@@ -7707,7 +8781,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, en todo el largo)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, en todo el largo)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -7715,7 +8789,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -7723,7 +8797,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 900.0,
@@ -7731,7 +8805,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 2924.999994097741,
@@ -7739,7 +8813,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C1)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C1)",
           "status": "PASS",
           "demand": 441.02269126982117,
           "capacity": 1200.0,
@@ -7747,7 +8821,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 441.02269126982117,
           "capacity": 1200.0,
@@ -7799,6 +8873,29 @@
           "demand": 1000000.0,
           "capacity": 6265350.0,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -7929,7 +9026,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -7937,7 +9034,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -7945,16 +9042,16 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 644996757.453529,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1488040500.264706
+          "capacity": 1485135355.250865
         },
         {
           "case": "U1",
           "where": "Columna C1",
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 622322495.982353
+          "capacity": 621836184.7401384
         },
         {
           "name": "Punzonamiento",
@@ -7990,7 +9087,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -7998,7 +9095,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -8006,16 +9103,16 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 644996757.453529,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1145126766.0
+          "capacity": 1143432990.0
         },
         {
           "case": "U1",
           "where": "Columna C2",
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 622322495.982353
+          "capacity": 621836184.7401384
         },
         {
           "name": "Flexion: resistencia",
@@ -8487,7 +9584,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 5160.0,
@@ -8495,7 +9592,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -8503,7 +9600,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -8511,7 +9608,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 2888.333333333333,
@@ -8519,7 +9616,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -8527,7 +9624,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y superiores, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, superiores, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 200.0,
           "capacity": 450.0,
@@ -8535,7 +9632,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 4220.0,
@@ -8543,7 +9640,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y band, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, band, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 120.0,
           "capacity": 450.0,
@@ -8551,7 +9648,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y superiores, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, superiores, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 200.0,
           "capacity": 450.0,
@@ -8559,7 +9656,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -8567,7 +9664,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 900.0,
@@ -8575,7 +9672,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 2924.999994097741,
@@ -8591,7 +9688,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores y (franja de la columna C1)",
+          "name": "Desarrollo barras superiores, direccion secundaria (franja de la columna C1)",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 1200.0,
@@ -8599,7 +9696,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 441.02269126982117,
           "capacity": 1200.0,
@@ -8607,7 +9704,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores y (franja de la columna C2)",
+          "name": "Desarrollo barras superiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 1200.0,
@@ -8659,6 +9756,43 @@
           "demand": 1000000.0,
           "capacity": 6265350.0,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (band, columna C1)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 97.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 184.1,
+          "clause": "25.2.1"
         }
       ]
     },
@@ -8789,7 +9923,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -8797,7 +9931,7 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
           "capacity": 1734285067.9411767
         },
@@ -8805,16 +9939,16 @@
           "case": "U1",
           "where": "Columna C1",
           "demand": 644996757.453529,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1488040500.264706
+          "capacity": 1485135355.250865
         },
         {
           "case": "U1",
           "where": "Columna C1",
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 644031565.1823529
+          "capacity": 643545253.9401383
         },
         {
           "name": "Punzonamiento",
@@ -8850,7 +9984,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento por flexion (barras x)",
+          "name": "Transferencia de momento por flexion (direccion principal)",
           "status": "PASS",
           "capacity": 1778478068.5411766
         },
@@ -8858,7 +9992,7 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 1.4305114746093752e-07,
-          "name": "Transferencia de momento: parte negativa (barras x)",
+          "name": "Transferencia de momento: parte negativa (direccion principal)",
           "status": "PASS",
           "capacity": 1734285067.9411767
         },
@@ -8866,16 +10000,16 @@
           "case": "U1",
           "where": "Columna C2",
           "demand": 644996757.453529,
-          "name": "Transferencia de momento por flexion (barras y)",
+          "name": "Transferencia de momento por flexion (direccion secundaria)",
           "status": "PASS",
-          "capacity": 1145126766.0
+          "capacity": 1143432990.0
         },
         {
           "case": "U1",
           "where": "Columna C2",
-          "name": "Transferencia de momento: parte negativa (barras y)",
+          "name": "Transferencia de momento: parte negativa (direccion secundaria)",
           "status": "PASS",
-          "capacity": 644031565.1823529
+          "capacity": 643545253.9401383
         },
         {
           "name": "Flexion: resistencia",
@@ -9347,7 +10481,7 @@
           "where": "Franja transversal de la columna C2"
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras x, en todo el ancho)",
+          "name": "Retraccion y temperatura: cuantia (direccion principal, en todo el ancho)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 5160.0,
@@ -9355,7 +10489,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x inferiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, inferiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -9363,7 +10497,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras x superiores, en todo el ancho)",
+          "name": "Retraccion y temperatura: separacion (direccion principal, superiores, en todo el ancho)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -9371,7 +10505,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 2888.333333333333,
@@ -9379,7 +10513,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y inferiores, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, inferiores, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -9387,7 +10521,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y superiores, fuera de las zonas de band)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, superiores, fuera de las zonas de band)",
           "status": "PASS",
           "demand": 200.0,
           "capacity": 450.0,
@@ -9395,7 +10529,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: cuantia (barras y, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: cuantia (direccion secundaria, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 1349.9999999999998,
           "capacity": 4220.0,
@@ -9403,7 +10537,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y band, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, band, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 120.0,
           "capacity": 450.0,
@@ -9411,7 +10545,7 @@
           "where": ""
         },
         {
-          "name": "Retraccion y temperatura: separacion (barras y superiores, zona de band de la columna C1)",
+          "name": "Retraccion y temperatura: separacion (direccion secundaria, superiores, zona de band de la columna C1)",
           "status": "PASS",
           "demand": 200.0,
           "capacity": 450.0,
@@ -9419,7 +10553,7 @@
           "where": ""
         },
         {
-          "name": "Malla inferior y: separacion maxima",
+          "name": "Direccion secundaria: separacion maxima (malla inferior)",
           "status": "PASS",
           "demand": 150.0,
           "capacity": 450.0,
@@ -9427,7 +10561,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras inferiores x",
+          "name": "Desarrollo barras inferiores, direccion principal",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 900.0,
@@ -9435,7 +10569,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores x",
+          "name": "Desarrollo barras superiores, direccion principal",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 2924.999994097741,
@@ -9451,7 +10585,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores y (franja de la columna C1)",
+          "name": "Desarrollo barras superiores, direccion secundaria (franja de la columna C1)",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 1200.0,
@@ -9459,7 +10593,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras y (franja de la columna C2)",
+          "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 441.02269126982117,
           "capacity": 1200.0,
@@ -9467,7 +10601,7 @@
           "where": ""
         },
         {
-          "name": "Desarrollo barras superiores y (franja de la columna C2)",
+          "name": "Desarrollo barras superiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 300.0,
           "capacity": 1200.0,
@@ -9519,6 +10653,43 @@
           "demand": 1000000.0,
           "capacity": 6265350.0,
           "clause": "22.8.3.2 y Tabla 21.2.1"
+        }
+      ],
+      "min_spacing": [
+        {
+          "name": "Separacion minima (barras inferiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras inferiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 130.9,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (band, columna C1)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 97.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion principal)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 127.8,
+          "clause": "25.2.1"
+        },
+        {
+          "name": "Separacion minima (barras superiores, direccion secundaria)",
+          "status": "PASS",
+          "demand": 25.333333333333332,
+          "capacity": 184.1,
+          "clause": "25.2.1"
         }
       ]
     }

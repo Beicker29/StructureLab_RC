@@ -11,7 +11,8 @@
     "fy": 420.0,
     "fyt": 420.0,
     "concrete": "normalweight",
-    "coating": "uncoated"
+    "coating": "uncoated",
+    "max_aggregate": 19.0
   },
   "soil": {
     "allowable_pressure_kPa": 250.0,

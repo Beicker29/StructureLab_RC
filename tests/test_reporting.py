@@ -161,6 +161,34 @@ def test_footing_report_draws_the_soil_pressure_in_plan(tmp_path: Path) -> None:
 
 
 
+def test_requirements_are_grouped_and_spacings_show_the_maximum_as_required(tmp_path: Path) -> None:
+    """D-100 y D-102: el capítulo de requisitos va en subcapítulos, con la separación máxima y la mínima por separado; en
+    las separaciones máximas lo exigido es "≤ máximo" y lo suministrado la separación dispuesta; cada requisito de flexión
+    va por cara en tracción y dirección; solo las columnas requisito, exigido, suministrado, referencia y resultado; el
+    capítulo DCR no repite los requisitos."""
+    example = EXAMPLE.parents[2] / "zapatas" / "pruebas" / "zapata_combinada.json"
+    report_file(example, tmp_path)
+    text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
+    chapter = text.split("## 6. Revisión de requerimientos técnicos")[1].split("\n## 7.")[0]
+    assert re.findall(r"^### (6\.\d+ .+)$", chapter, flags=re.M) == [
+        "6.1 Refuerzo mínimo", "6.2 Separación del refuerzo", "6.3 Deformación neta de tracción"]
+    assert re.findall(r"^#### (6\.2\.\d .+)$", chapter, flags=re.M) == [
+        "6.2.1 Revisión de separación máxima del refuerzo", "6.2.2 Revisión de separación mínima del refuerzo"]
+    lines = chapter.splitlines()
+    headers = next(line for line in lines if line.startswith("Requisito"))
+    assert headers.split() == ["Requisito", "Exigido", "Suministrado", "Referencia", "normativa", "Resultado"]
+    spacing = next(line for line in lines if line.startswith("Dirección principal (X): separación máxima (barras inferiores)"))
+    assert re.search("≤ 450 mm +150 mm", spacing)
+    for label in ("Flexión: acero mínimo (M3) (barras inferiores, dirección principal (X))",
+                  "Flexión: acero mínimo (M3) (barras inferiores, dirección secundaria (Y))",
+                  "Flexión: separación por fisuración (barras inferiores, dirección secundaria (Y))",
+                  "Retracción y temperatura: cuantía (dirección secundaria (Y), zona de band de la columna C1)",
+                  "Separación mínima (band, columna C1)", "Separación mínima (barras superiores, dirección principal (X))"):
+        assert any(line.startswith(label) for line in lines), label
+    dcr = text.split("Índices DCR")[1].split("\n## ")[0]
+    assert "Separación" not in dcr and "acero mínimo" not in dcr and "Retracción" not in dcr
+
+
 def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> None:
     """V3J.4 (D-080 a D-083): la memoria de la zapata combinada separa la viga larga de las franjas, dibuja la planta con
     las dos columnas y trae los esfuerzos de punzonamiento en cada esquina; el resultado trae combined_footings."""
@@ -176,21 +204,23 @@ def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> 
     assert svg.count("<circle") == 4 and svg.count('fill="#9aa4b2"') == 2  # las cuatro esquinas y las dos columnas
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     assert text.count("# Memoria de cálculo — Zapata combinada ZC1") == 1
-    for chapter in ("Diagramas de momento y cortante", "Viga en la dirección larga: momento positivo",
-                    "Viga en la dirección larga: momento negativo", "Viga en la dirección larga: fuerza cortante",
-                    "Franjas transversales: momento positivo", "Franjas transversales: momento negativo",
-                    "Franjas transversales: fuerza cortante", "Revisión de cortante en dos direcciones (punzonamiento)",
+    for chapter in ("Diagramas de momento y cortante", "Dirección principal (X global): momento positivo",
+                    "Dirección principal (X global): momento negativo", "Dirección principal (X global): fuerza cortante",
+                    "Dirección secundaria (Y global), franjas transversales: momento positivo",
+                    "Dirección secundaria (Y global), franjas transversales: momento negativo",
+                    "Dirección secundaria (Y global), franjas transversales: fuerza cortante",
+                    "Revisión de cortante en dos direcciones (punzonamiento)",
                     "Revisión de aplastamiento y pasadores"):
         assert chapter in text
     # D-095: diagramas envolventes en la salida, en la memoria y como figuras. En la sección que gobierna la flexión positiva
     # de la viga larga (una cara de columna), la envolvente vale lo mismo que esa revisión: la sección está entre las
     # candidatas de todos los casos. El pico del diagrama cae en el eje de la columna (carga puntual), no en la cara.
-    for name in ("diagrama_ZC1_longitudinal.svg", "diagrama_ZC1_transversal.svg"):
+    for name in ("diagrama_ZC1_principal.svg", "diagrama_ZC1_secundaria.svg"):
         assert tmp_path / name in report.files and "<polyline" in (tmp_path / name).read_text(encoding="utf-8")
     diagrams = footing["diagrams"]
-    assert [envelope["title"] for envelope in diagrams["transverse"]] == ["Franja transversal de la columna C1",
-                                                                          "Franja transversal de la columna C2"]
-    longitudinal = diagrams["longitudinal"]
+    assert [envelope["title"] for envelope in diagrams["secondary"]] == ["Franja transversal de la columna C1",
+                                                                         "Franja transversal de la columna C2"]
+    longitudinal = diagrams["principal"]
     assert longitudinal["positions [mm]"][0] == -3500 and longitudinal["positions [mm]"][-1] == 3500
     flexure = [check for check in footing["checks"] if check["name"] == "Flexion: resistencia"
                and "momento positivo" in check["note"] and not check["note"].startswith("Franja")]

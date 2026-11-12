@@ -1509,6 +1509,138 @@
   valor por valor, a las del formato anterior. Sus huellas cambian solo porque cambia cómo se escribe `top` en
   `resultado.json` y en la memoria.
 
+### D-100: capítulo de requisitos técnicos en subcapítulos y separaciones con el máximo como lo exigido
+
+- **Fecha:** 2026-11-11
+- **Problema:** en la tabla de requisitos, la columna "Exigido" mostraba la demanda y "Suministrado" la capacidad. En las
+  separaciones eso queda al revés de lo que se lee: la demanda es la separación dispuesta y la capacidad el máximo.
+  Una separación de 150 mm frente a un máximo de 145 mm aparecía como "Exigido 150 mm, Suministrado 145 mm, NO CUMPLE".
+- **Decisiones del usuario:**
+  1. Corregir la presentación.
+  2. Organizar el capítulo en subcapítulos, con una tabla del refuerzo mínimo superior e inferior en las direcciones
+     principal y secundaria.
+- **Implementación (solo presentación; el cálculo y `resultado.json` no cambian):**
+  - En las verificaciones cuyo límite es un máximo (símbolo de capacidad "…máx"), lo exigido es "≤ máximo" y lo
+    suministrado la separación. En las demás, lo exigido es "≥ mínimo". El signo, el número y la unidad van unidos por
+    espacios de no separación.
+  - Subcapítulos, en este orden: refuerzo mínimo, separación del refuerzo, deformación neta de tracción y otros
+    requisitos. Un subcapítulo sin verificaciones no se muestra.
+  - Zapata combinada:
+    - El refuerzo mínimo abre con una tabla por dirección (principal X: viga larga; secundaria Y: franjas o aletas) y
+      capa: inferior (acero mínimo de flexión con momento positivo), superior (con momento negativo) y retracción y
+      temperatura (inferior + superior por metro, por zona). Cada fila va en su ubicación gobernante.
+    - Una nota dice qué combinación de dirección y capa no tiene acero mínimo de flexión.
+    - Los demás mínimos (cortante, punzonamiento, pasadores) van en una tabla aparte.
+  - PDF: cada columna conserva al menos el ancho de su palabra más larga y el resto del ancho se reparte entre las
+    columnas largas, para que no se partan palabras como "CUMPLE".
+- **Diferencias:** en las 18 huellas cambia solo `memoria.txt`; `resultado.json` es igual.
+
+### D-101: dirección principal y secundaria en la zapata combinada y salida en los ejes declarados
+
+- **Fecha:** 2026-11-11
+- **Problema:** con `principal_direction: "y"`, el JSON se escribe en ejes globales (D-094), pero la memoria y
+  `resultado.json` salían en ejes de la viga (X a lo largo de ella). Lo mostrado no coincidía con lo declarado.
+  Además, la nomenclatura mezclaba "viga larga", "dirección larga", "franjas transversales" y barras "x"/"y".
+- **Verificación pedida por el usuario:** en las franjas transversales, Vu en la cara de la columna es el de la sección
+  a d de esa cara (ACI 9.4.3.2 y 13.2.7.2; NSR-10 C.11.1.3; `strip_demands`). Lo comprueban el oráculo independiente y
+  el ejemplo: con d = 794.85 mm, la sección a d queda 795 mm más allá de la cara y Vu es igual en las dos.
+- **Decisiones del usuario:**
+  1. Salida en los ejes declarados. El cálculo sigue en ejes de la viga; la memoria, `resultado.json` y las figuras
+     vuelven a los ejes globales que se escribieron. El formato del JSON de entrada no cambia.
+  2. Nomenclatura: dirección principal y secundaria, con el eje global entre paréntesis en títulos y tablas (por
+     ejemplo, "Dirección principal (Y global)"). También cambian los nombres de las verificaciones en `resultado.json`.
+- **Implementación:**
+  - **Nombres** (al crear las verificaciones): las barras se nombran por su dirección, no por un eje.
+    - "Direccion principal: separacion maxima (barras inferiores)" (antes "Viga larga: … (barras inferiores x)").
+    - "Desarrollo barras inferiores, direccion principal".
+    - "Desarrollo barras superiores, direccion secundaria (franja de la columna …)".
+    - "Retraccion y temperatura: cuantia (direccion secundaria, …)".
+    - "Transferencia de momento por flexion (direccion principal)" y "Acero minimo por punzonamiento (…)", con
+      `PunchedColumn.labels`.
+    - "Flexion concreto simple (cara superior, direccion principal)".
+    - "Direccion secundaria: separacion maxima (malla inferior)".
+    - Las aletas de la T: "(direccion secundaria)".
+    - La zapata aislada conserva "barras x/y", porque ya está en ejes globales.
+  - **Ejes:** `domain/footing/declared.py` convierte, con el giro inverso del de la carga (x = −y', y = x'):
+    - las verificaciones (`declared_checks`): los rótulos de caras, bordes y ejes de las notas; la z de las franjas,
+      desde el borde −X global; y los valores con eje (ex/ey, Mx/My en la base, pasiva, centroide, Msc, Jc y γv del
+      punzonamiento, esquinas del perímetro y presiones en las esquinas);
+    - los diagramas de la dirección secundaria (`declared_envelope`): posiciones reflejadas, V con el signo cambiado.
+    - `results.combined_footing_data` devuelve la geometría (lx, ly), las columnas (x, y, cx, cy), las cargas, las
+      mallas (`bottom`, `top`) y las propiedades con eje (Ix/Iy, Sx/Sy, núcleo) como se declararon.
+    - `geometry [mm]` trae siempre `principal_direction`.
+  - **Memoria:**
+    - Capítulos "Dirección principal (X|Y global): …" y "Dirección secundaria (Y|X global), franjas transversales: …".
+    - Ubicaciones "dirección principal en z = … mm desde −Y" y franjas "(z = … mm desde −X)".
+    - Geometría con la dirección principal como dato y una nota de los ejes.
+    - La tabla de mínimos (D-100) va con el eje de cada dirección.
+  - **Diagramas:** `diagrams.principal` y `diagrams.secondary` (antes `longitudinal` y `transverse`); figuras
+    `diagrama_<zapata>_principal.svg` y `diagrama_<zapata>_secundaria.svg`.
+  - **Tildes:** el glosario las pone también a palabras precedidas de paréntesis ("(dirección").
+- **Control:**
+  - Los oráculos de la viga, las columnas y la T invertida cambian solo en los nombres; los valores esperados son
+    iguales.
+  - La prueba de D-094 compara la zapata en X con la misma girada en Y. Exige iguales nombres, estados, demandas y
+    capacidades; y notas, z, valores con eje, diagramas, geometría, columnas, cargas y mallas convertidos con una
+    conversión escrita aparte en la prueba.
+- **Diferencias:** ninguna de cálculo. Las huellas de las zapatas combinadas y en T cambian por los nombres, las notas,
+  la geometría y la memoria. Las de vigas y zapatas aisladas no cambian.
+
+### D-102: bslab limitado por la geometría, separación mínima y capítulo de requisitos por tipo de refuerzo
+
+- **Fecha:** 2026-11-11
+- **Decisiones del usuario:**
+  1. bslab (ACI 8.4.2.2.3: el ancho de la columna más 1.5h a cada lado; NSR-10 C.13.5.3.2, igual) es el menor entre
+     el de la norma y el que permite la geometría. A cada lado se toma el menor entre 1.5h y la distancia de la cara
+     al borde de la zapata. La norma no habla del borde; el recorte es criterio del usuario. El ancho de las franjas
+     transversales (columna + d/2 a cada lado) ya se recortaba con la base (D-080); se verificó.
+  2. El capítulo de índices DCR solo reporta las revisiones de resistencia. Los requisitos (cuantías, separaciones,
+     deformación neta y otros) se revisan en su capítulo.
+  3. El capítulo de requisitos técnicos se organiza así:
+     - refuerzo mínimo;
+     - separación del refuerzo, con dos apartados: separación máxima y separación mínima;
+     - deformación neta de tracción;
+     - otros requisitos.
+     Cada requisito va por tipo de refuerzo: las revisiones de flexión, por cara en tracción y, en la zapata
+     combinada, por dirección.
+  4. Las tablas de ese capítulo tienen solo las columnas requisito, exigido, suministrado, referencia normativa y
+     resultado.
+  5. Separación mínima: el tamaño del agregado es obligatorio. Sin `materials.max_aggregate`, la verificación queda
+     INCOMPLETE.
+- **Norma (PDF en `references/`):**
+  - ACI 318-25 25.2.1: separación libre entre barras paralelas de una capa ≥ el mayor de 25 mm, db y (4/3)dagg.
+  - NSR-10 C.7.6.1: separación libre ≥ db, pero no menor de 25 mm. C.3.3.2(c): el agregado no supera 3/4 de la
+    separación libre mínima, es decir, separación libre ≥ (4/3)·agregado. NSR-10 permite omitir ese límite a juicio
+    del profesional; no se omite, por la decisión 5.
+- **Implementación:**
+  - `shear.slab_limits`: bslab recortado. Se usa en el acero mínimo por punzonamiento (también su As requerido), en la
+    transferencia por flexión y en su parte negativa. Si el borde lo recorta, el valor `bslab sin recortar` da c + 3h.
+  - `codes/<perfil>/development.min_clear_spacing` y el numeral `min_spacing`.
+  - `domain/footing/spacing`: revisa cada refuerzo declarado con su separación. En la aislada, cada malla y dirección
+    y la franja central; en la combinada, las barras inferiores y superiores de cada dirección y el band de cada
+    columna.
+  - `materials.max_aggregate` (mm) en el proyecto y en el diseño por tipologías, que lo pasa al proyecto diseñado. Los
+    ejemplos de zapatas declaran 19 mm (dato ilustrativo).
+  - Memoria:
+    - Capítulo de requisitos en subcapítulos, con un nivel de título nuevo (`h3`).
+    - Cada fila es un requisito por tipo de refuerzo; la tabla de mínimos por dirección y capa de D-100 queda dentro
+      de la tabla general.
+    - El capítulo DCR omite los requisitos.
+- **Pendiente:** la separación mínima en vigas (posiciones de cada capa y separación vertical entre capas, ACI 25.2.2,
+  NSR-10 C.7.6.2).
+- **Control:**
+  - Oráculos independientes de punzonamiento (aislada y combinada) con el recorte de bslab: cambian los casos de borde
+    y esquina de la aislada y los de la combinada (c + 3h = 2700 mm > 2400 mm de ancho).
+  - Separación mínima en el oráculo de combinadas, con el caso `band-apretado`: separación libre de 24.6 mm frente a
+    25.4 mm, FAIL.
+  - Prueba del INCOMPLETE sin agregado.
+- **Diferencias en los ejemplos:**
+  - Ningún estado cambia; todos siguen en PASS.
+  - En `zapata_combinada.json`, bslab baja de 2900 a 2600 mm en las transferencias; en `zapata_combinada_etabs.json`,
+    de 3900 a 3800 mm.
+  - Las zapatas que elige el diseño por tipologías son las mismas.
+  - Las memorias de vigas cambian solo por el capítulo DCR.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

@@ -11,7 +11,8 @@
     "fy": 420.0,
     "fyt": 420.0,
     "concrete": "normalweight",
-    "coating": "uncoated"
+    "coating": "uncoated",
+    "max_aggregate": 19.0
   },
   "soil": {
     "allowable_pressure_kPa": 300.0,
@@ -101,7 +102,7 @@
       },
       "columns": [
         {
-          "id": "C15",
+          "id": "C_Ext",
           "etabs_unique_name": "253",
           "cx": 1100.0,
           "cy": 500.0,
@@ -109,15 +110,15 @@
           "y": -2330,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 12
           },
           "band": {
-            "designation": "#5",
-            "spacing": 200.0
+            "designation": "#8",
+            "spacing": 120
           }
         },
         {
-          "id": "C1659",
+          "id": "C_Int",
           "etabs_unique_name": "202",
           "cx": 450.0,
           "cy": 800.0,
@@ -125,11 +126,11 @@
           "y": 1750.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 12
           },
           "band": {
-            "designation": "#5",
-            "spacing": 200.0
+            "designation": "#8",
+            "spacing": 90
           }
         }
       ],
@@ -138,28 +139,28 @@
         "end": "straight",
         "x": {
           "designation": "#5",
-          "spacing": 200.0
+          "spacing": 150
         },
         "y": {
-          "designation": "#8",
-          "spacing": 180
+          "designation": "#7",
+          "spacing": 150
         }
       },
       "top": {
         "first": "x",
         "end": "straight",
         "x": {
-          "designation": "#8",
-          "spacing": 180.0
+          "designation": "#5",
+          "spacing": 150.0
         },
         "y": {
-          "designation": "#5",
-          "spacing": 300.0
+          "designation": "#7",
+          "spacing": 150.0
         }
       },
       "skin": {
-        "designation": "#5",
-        "spacing": 180.0
+        "designation": "#3",
+        "spacing": 150.0
       }
     }
   ]

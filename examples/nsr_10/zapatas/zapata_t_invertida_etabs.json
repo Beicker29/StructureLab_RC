@@ -7,14 +7,15 @@
     "justification": "Capacidad especial de disipación de energía (DES) declarada por el ingeniero para este ejemplo."
   },
   "materials": {
-    "fc": 28.0,
+    "fc": 24.5,
     "fy": 420.0,
     "fyt": 420.0,
     "concrete": "normalweight",
-    "coating": "uncoated"
+    "coating": "uncoated",
+    "max_aggregate": 19.1
   },
   "soil": {
-    "allowable_pressure_kPa": 250.0,
+    "allowable_pressure_kPa": 300.0,
     "min_contact_fraction": 0.5,
     "unit_weight_concrete_kNm3": 24.0,
     "unit_weight_fill_kNm3": 18.0,
@@ -86,12 +87,12 @@
   "combined_footings": [
     {
       "id": "ZT-1",
-      "principal_direction": "x",
-      "lx": 9000.0,
-      "ly": 3600,
+      "principal_direction": "y",
+      "lx": 4100,
+      "ly": 6000,
       "h": 600,
       "cover": 75.0,
-      "fill_height": 1500.0,
+      "fill_height": 300.0,
       "pedestal_height": 0.0,
       "surcharge_dead_kNm2": 2.0,
       "surcharge_live_kNm2": 5.0,
@@ -100,8 +101,8 @@
         "factored": "etabs"
       },
       "beam": {
-        "width": 1000,
-        "height": 1700
+        "width": 600,
+        "height": 800
       },
       "bottom": {
         "first": "x",

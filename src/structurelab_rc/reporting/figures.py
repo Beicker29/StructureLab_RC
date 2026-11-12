@@ -95,18 +95,18 @@ def diagram_aspect(panels: int) -> float:
 
 
 def diagram_figures(results: dict[str, Any], folder: Path) -> dict[str, tuple[Path, Path]]:
-    """Escribe diagrama_<zapata>_longitudinal.svg y diagrama_<zapata>_transversal.svg por cada zapata combinada con
-    diagramas (D-095) y devuelve sus rutas."""
+    """Escribe diagrama_<zapata>_principal.svg y diagrama_<zapata>_secundaria.svg por cada zapata combinada con
+    diagramas (D-095, D-101) y devuelve sus rutas."""
     figures = {}
     for footing in results.get("combined_footings", []):
         diagrams = footing.get("diagrams")
         if not diagrams:
             continue
-        longitudinal = folder / f"diagrama_{footing['id']}_longitudinal.svg"
-        transverse = folder / f"diagrama_{footing['id']}_transversal.svg"
-        longitudinal.write_text(diagrams_svg([diagrams["longitudinal"]]), encoding="utf-8", newline="\n")
-        transverse.write_text(diagrams_svg(diagrams["transverse"]), encoding="utf-8", newline="\n")
-        figures[footing["id"]] = (longitudinal, transverse)
+        principal = folder / f"diagrama_{footing['id']}_principal.svg"
+        secondary = folder / f"diagrama_{footing['id']}_secundaria.svg"
+        principal.write_text(diagrams_svg([diagrams["principal"]]), encoding="utf-8", newline="\n")
+        secondary.write_text(diagrams_svg(diagrams["secondary"]), encoding="utf-8", newline="\n")
+        figures[footing["id"]] = (principal, secondary)
     return figures
 
 

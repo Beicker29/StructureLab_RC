@@ -18,6 +18,7 @@ from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.combined_beam import beam_case
 from structurelab_rc.domain.footing.combined_columns import Cases, strip_cantilever, strip_load
+from structurelab_rc.domain.footing.declared import declared_envelope
 from structurelab_rc.domain.footing.inverted_t import STRIP, Flanges
 from structurelab_rc.domain.footing.mesh import mat_rows
 from structurelab_rc.model.combined import CombinedFooting
@@ -79,7 +80,7 @@ def long_beam_envelope(footing: CombinedFooting, soil: Soil, cases: Cases) -> En
         samples.append([(x, beam.moment(x), beam.shear(x)) for x in points])
         names.append(pressure.case)
     marks = [(column.x, column.id) for column in footing.columns]
-    return _envelope("Viga en la dirección larga", samples, names, (marks, [(0, len(points) - 1)], False))
+    return _envelope("Dirección principal", samples, names, (marks, [(0, len(points) - 1)], False))
 
 
 def _cantilever_points(start: float, end: float) -> list[float]:
@@ -138,7 +139,9 @@ def flange_envelope(basis: Basis, footing: CombinedFooting, cases: Cases) -> Env
 
 
 def combined_diagrams(basis: Basis, footing: CombinedFooting, soil: Soil, cases: Cases) -> tuple[Envelope, list[Envelope]]:
-    """La envolvente longitudinal y las transversales (franjas o aletas) de la zapata."""
+    """La envolvente de la dirección principal y las de la secundaria (franjas o aletas) de la zapata, en los ejes
+    declarados (D-101): la posición a lo largo de la viga ya es la coordenada global de la dirección principal; la
+    transversal se convierte."""
     longitudinal = long_beam_envelope(footing, soil, cases)
     transverse = [flange_envelope(basis, footing, cases)] if footing.beam is not None else strip_envelopes(basis, footing, soil, cases)
-    return longitudinal, transverse
+    return longitudinal, [declared_envelope(footing, envelope) for envelope in transverse]

@@ -82,7 +82,7 @@ def _project(method: str = "milp") -> dict[str, Any]:
     loads = [(400, 300.0, 20.0), (400, 480.0, 40.0), (500, 750.0, 60.0), (450, 600.0, 30.0)]
     return {
         "description": "prueba", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "prueba"},
-        "materials": {"fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"},
+        "materials": {"fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated", "max_aggregate": 19.0},
         "soil": {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.5, "unit_weight_concrete_kNm3": 24.0,
                  "unit_weight_fill_kNm3": 18.0, "friction_coefficient": 0.45, "adhesion_kPa": 0.0, "passive_coefficient": 3.0,
                  "cohesion_kPa": 0.0, "passive_factor": 0.5, "sliding_safety_factor": 1.5,

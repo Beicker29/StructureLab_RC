@@ -238,14 +238,14 @@
             "z_mm": 6050.0
           },
           {
-            "name": "Aleta: flexion (barras y)",
+            "name": "Aleta: flexion (direccion secundaria)",
             "status": "PASS",
             "demand": 63781493.80165286,
             "capacity": 137176904.11764708,
             "case": "U1"
           },
           {
-            "name": "Aleta: cortante en una direccion (barras y)",
+            "name": "Aleta: cortante en una direccion (direccion secundaria)",
             "status": "PASS",
             "demand": 96814.00818411385,
             "capacity": 192448.6431776995,
@@ -272,7 +272,7 @@
             "status": "PASS"
           },
           {
-            "name": "Aleta: acero minimo (barras y)",
+            "name": "Aleta: acero minimo (direccion secundaria)",
             "status": "PASS",
             "demand": 720.0,
             "capacity": 1326.6666666666667
@@ -493,14 +493,14 @@
             "z_mm": 6050.0
           },
           {
-            "name": "Aleta: flexion (barras y)",
+            "name": "Aleta: flexion (direccion secundaria)",
             "status": "PASS",
             "demand": 63902110.16528924,
             "capacity": 76999304.11764705,
             "case": "U1"
           },
           {
-            "name": "Aleta: cortante en una direccion (barras y)",
+            "name": "Aleta: cortante en una direccion (direccion secundaria)",
             "status": "FAIL",
             "demand": 115931.05047887971,
             "capacity": 111488.65305912303,
@@ -523,7 +523,7 @@
             "note_prefix": "Columna C2"
           },
           {
-            "name": "Aleta: acero minimo (barras y)",
+            "name": "Aleta: acero minimo (direccion secundaria)",
             "status": "PASS",
             "demand": 504.0,
             "capacity": 1326.6666666666667
@@ -744,14 +744,14 @@
             "z_mm": 6050.0
           },
           {
-            "name": "Aleta: flexion (barras y)",
+            "name": "Aleta: flexion (direccion secundaria)",
             "status": "FAIL",
             "demand": 63781493.80165286,
             "capacity": 46007903.11764707,
             "case": "U1"
           },
           {
-            "name": "Aleta: cortante en una direccion (barras y)",
+            "name": "Aleta: cortante en una direccion (direccion secundaria)",
             "status": "PASS",
             "demand": 96562.03191230482,
             "capacity": 193528.10971261386,
@@ -778,7 +778,7 @@
             "status": "PASS"
           },
           {
-            "name": "Aleta: acero minimo (barras y)",
+            "name": "Aleta: acero minimo (direccion secundaria)",
             "status": "FAIL",
             "demand": 720.0,
             "capacity": 430.0
@@ -999,14 +999,14 @@
             "z_mm": 6050.0
           },
           {
-            "name": "Aleta: flexion (barras y)",
+            "name": "Aleta: flexion (direccion secundaria)",
             "status": "PASS",
             "demand": 103063518.59504133,
             "capacity": 140386376.1176471,
             "case": "U1"
           },
           {
-            "name": "Aleta: cortante en una direccion (barras y)",
+            "name": "Aleta: cortante en una direccion (direccion secundaria)",
             "status": "PASS",
             "demand": 154811.58404269972,
             "capacity": 196766.50931735695,
@@ -1033,7 +1033,7 @@
             "status": "PASS"
           },
           {
-            "name": "Aleta: acero minimo (barras y)",
+            "name": "Aleta: acero minimo (direccion secundaria)",
             "status": "PASS",
             "demand": 720.0,
             "capacity": 1326.6666666666667

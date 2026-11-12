@@ -17,7 +17,7 @@ _FONTS = (("C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/segoeuib.ttf"),
           ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
           ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
           ("/Library/Fonts/Arial.ttf", "/Library/Fonts/Arial Bold.ttf"))
-_SIZES = {"title": 13.0, "h1": 10.5, "h2": 8.5, "body": 7.0}
+_SIZES = {"title": 13.0, "h1": 10.5, "h2": 8.5, "h3": 7.5, "body": 7.0}
 _LINE = 3.6
 _IMAGE_FRACTION = 0.75  # ancho de una gráfica respecto al ancho útil de la página
 
@@ -60,13 +60,7 @@ class _Renderer:
     def table(self, headers: list[str], rows: list[list[str]]) -> None:
         pdf = self.pdf
         width = pdf.w - pdf.l_margin - pdf.r_margin
-        pdf.set_font(self.font, "B", _SIZES["body"])
-        heads = [pdf.get_string_width(self.clean(str(header))) for header in headers]
-        pdf.set_font(self.font, "", _SIZES["body"])
-        natural = [max(heads[index], *(pdf.get_string_width(self.clean(str(row[index]))) for row in rows)) + 2 * pdf.c_margin + 1
-                   for index in range(len(headers))]
-        scale = min(1.0, width / sum(natural))
-        widths = [w * scale for w in natural]
+        widths = self.widths(headers, rows, width)
         for row, bold in ((headers, True), *((row, False) for row in rows)):
             pdf.set_font(self.font, "B" if bold else "", _SIZES["body"])
             texts = [self.clean(str(cell)) for cell in row]
@@ -86,6 +80,33 @@ class _Renderer:
             pdf.set_xy(pdf.l_margin, y + height)
         pdf.ln(1)
 
+    def widths(self, headers: list[str], rows: list[list[str]], width: float) -> list[float]:
+        """Ancho de cada columna: el natural (su texto más largo en un renglón) si todo cabe; si no, cada columna conserva
+        al menos su palabra más larga (no se parten palabras como CUMPLE o los números) y el ancho que sobra se reparte
+        entre las columnas en proporción a lo que les falta para su ancho natural."""
+        pdf = self.pdf
+        pad = 2 * pdf.c_margin + 1
+        natural, minimum = [], []
+        for index, header in enumerate(headers):
+            pdf.set_font(self.font, "B", _SIZES["body"])
+            head = self.clean(str(header))
+            # Solo el espacio común separa palabras: el de no separación las une (signo, número y unidad).
+            longest, word = pdf.get_string_width(head), max((pdf.get_string_width(part) for part in head.split(" ")), default=0.0)
+            pdf.set_font(self.font, "", _SIZES["body"])
+            for row in rows:
+                text = self.clean(str(row[index]))
+                longest = max(longest, pdf.get_string_width(text))
+                word = max(word, *(pdf.get_string_width(part) for part in text.split(" ")), 0.0)
+            natural.append(longest + pad)
+            minimum.append(min(word, longest) + pad)
+        if sum(natural) <= width:
+            return natural
+        spare = width - sum(minimum)
+        if spare <= 0:
+            return [w * width / sum(minimum) for w in minimum]
+        wanting = [n - m for n, m in zip(natural, minimum, strict=True)]
+        return [m + spare * want / sum(wanting) for m, want in zip(minimum, wanting, strict=True)]
+
     def lines(self, width: float, text: str) -> int:
         """Renglones de una celda; solo se simula el ajuste de línea si el texto no cabe en uno (lo poco común)."""
         if self.pdf.get_string_width(text) <= width - 2 * self.pdf.c_margin:
@@ -103,7 +124,7 @@ class _Renderer:
         elif kind == "summary":
             for item in block["items"]:
                 self.text(item, _SIZES["body"])
-        elif kind in ("h1", "h2"):
+        elif kind in ("h1", "h2", "h3"):
             self.text(block["text"], _SIZES[kind], bold=True, gap=2.0)
         elif kind == "table":
             self.table(block["headers"], block["rows"])

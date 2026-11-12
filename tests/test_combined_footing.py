@@ -2,6 +2,7 @@
 oráculos independientes (D-080)."""
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,7 @@ from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
 from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.footing.mesh import mat_rows
 from structurelab_rc.domain.footing.service import BEARING, CONTACT, combined_service_checks
+from structurelab_rc.domain.footing.spacing import combined_min_spacing_checks
 from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
@@ -237,6 +239,30 @@ def test_combined_footing_input_is_validated(change: dict[str, Any], message: st
         CombinedFooting.model_validate(footing)
 
 
+@pytest.mark.parametrize(("profile", "case"), COLUMN_CASES)
+def test_min_spacing_matches_oracle(profile: str, case: dict[str, Any]) -> None:
+    """D-102: separación libre mínima de cada refuerzo declarado (ACI 25.2.1; NSR-10 C.7.6.1 y C.3.3.2(c))."""
+    oracle = _oracle(FOLDERS[profile], "derived_combined_columns")
+    footing = CombinedFooting.model_validate(case["footing"])
+    basis = Basis(PROFILES[profile], Materials.model_validate(oracle["materials"]), BARS, oracle["seismic_level"])
+    got = {check.name: check for check in combined_min_spacing_checks(basis, footing)}
+    assert set(got) == {item["name"] for item in case["min_spacing"]}
+    for item in case["min_spacing"]:
+        check = got[item["name"]]
+        assert (str(check.status), check.clause) == (item["status"], item["clause"]), item["name"]
+        assert (check.demand, check.capacity) == pytest.approx((item["demand"], item["capacity"]), rel=oracle["tolerance_rel"])
+
+
+def test_min_spacing_without_aggregate_is_incomplete() -> None:
+    """D-102: sin materials.max_aggregate no se supone el agregado: la separación mínima queda INCOMPLETE."""
+    oracle = _oracle("nsr_10", "derived_combined_columns")
+    footing = CombinedFooting.model_validate(oracle["cases"][0]["footing"])
+    materials = Materials.model_validate({**oracle["materials"], "max_aggregate": None})
+    checks = combined_min_spacing_checks(Basis(PROFILES["nsr-10"], materials, BARS, oracle["seismic_level"]), footing)
+    assert checks and all(check.status is Status.INCOMPLETE for check in checks)
+    assert "max_aggregate" in checks[0].errors[0].message
+
+
 def test_band_is_the_only_bottom_transverse_steel_in_its_zone() -> None:
     """D-097: la malla inferior y va solo fuera de las zonas de band (la franja de cada columna con band)."""
     case = next(case for case in _oracle("nsr_10", "derived_combined_columns")["cases"] if case["id"] == "interiores")
@@ -294,8 +320,8 @@ def test_project_with_a_combined_footing_runs_every_structural_check(tmp_path: P
     checks = _project(tmp_path, footing)
     by_name = {check.name: check for check in checks}
     assert by_name["Validacion de entrada"].status is Status.PASS
-    assert {"Flexion: resistencia", "Punzonamiento", "Aplastamiento en la zapata", "Desarrollo barras inferiores x",
-            "Retraccion y temperatura: cuantia (barras y, en todo el largo)"} <= set(by_name)
+    assert {"Flexion: resistencia", "Punzonamiento", "Aplastamiento en la zapata", "Desarrollo barras inferiores, direccion principal",
+            "Retraccion y temperatura: cuantia (direccion secundaria, en todo el largo)"} <= set(by_name)
     assert not any(check.status is Status.BLOCKED for check in checks)
     assert by_name["Pasadores: area minima"].status is Status.INCOMPLETE
     assert COMBINED_STRUCTURAL not in by_name
@@ -352,11 +378,55 @@ def _footing_along_global_y(footing: dict[str, Any]) -> dict[str, Any]:
     return rotated
 
 
+_FACES = {"+X": "+Y", "-X": "-Y", "+Y": "-X", "-Y": "+X"}  # girada +90°: X → +Y global, Y → −X global
+
+
+def _rotated_note(note: str) -> str:
+    """La nota de la zapata a lo largo de X, como la escribe la misma zapata girada a lo largo de Y (D-101)."""
+    note = re.sub(r"\b([Cc]ara|[Bb]orde|[Vv]oladizo|Aleta) ([+-][XY])\b", lambda m: f"{m.group(1)} {_FACES[m.group(2)]}", note)
+    note = re.sub(r"\beje ([XY])\b", lambda m: f"eje {'Y' if m.group(1) == 'X' else 'X'}", note)
+    return note.replace("en x = ", "en y = ")
+
+
+def _rotated_values(values: tuple[tuple[str, float], ...]) -> dict[str, Any]:
+    """Los valores con eje de la zapata a lo largo de X, en los ejes de la girada: x = −y, y = x (D-101)."""
+    old = dict(values)
+    new: dict[str, Any] = dict(old)
+    for x_key, y_key in (("ex", "ey"), ("Mx base", "My base"), ("xc", "yc"), ("Msc x", "Msc y")):
+        if x_key in old:
+            new[x_key], new[y_key] = -old[y_key], old[x_key]
+    for x_key, y_key in (("Jc x", "Jc y"), ("gamma v x", "gamma v y"), ("Pp x", "Pp y")):
+        if x_key in old:
+            new[x_key], new[y_key] = old[y_key], old[x_key]
+    for sx in "+-":
+        for sy in "+-":
+            if f"p esquina {sx}x{sy}y" in old:
+                new[f"p esquina {sx}x{sy}y"] = old[f"p esquina {sy}x{'+' if sx == '-' else '-'}y"]
+    corners = [key for key in old if key.startswith("esquina ")]
+    for key in corners:
+        new.pop(key)
+    rotated = sorted((-old[f"esquina {i} y"], old[f"esquina {i} x"], old[f"esquina {i} v"]) for i in range(1, len(corners) // 3 + 1))
+    new["corners"] = [value for corner in rotated for value in corner]
+    return new
+
+
+def _corner_set(values: tuple[tuple[str, float], ...]) -> dict[str, Any]:
+    own: dict[str, Any] = dict(values)
+    keys = [key for key in own if key.startswith("esquina ")]
+    corners = sorted((own[f"esquina {i} x"], own[f"esquina {i} y"], own[f"esquina {i} v"]) for i in range(1, len(keys) // 3 + 1))
+    own["corners"] = [value for corner in corners for value in corner]
+    for key in keys:
+        own.pop(key)
+    return own
+
+
 @pytest.mark.parametrize("variant", ["combinada", "t invertida"])
 def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_path: Path) -> None:
-    """D-094: la misma zapata con la viga en la X global y girada en planta con la viga en la Y global (escrita en ejes
-    globales: ly a lo largo de la viga y cargas de ETABS) da las mismas verificaciones, valor por valor; la memoria
-    advierte la dirección principal solo en la Y."""
+    """D-094 y D-101: la misma zapata con la viga en la X global y girada en planta con la viga en la Y global (escrita
+    en ejes globales: ly a lo largo de la viga y cargas de ETABS) da las mismas verificaciones (nombres, estados,
+    demandas y capacidades) y las muestra en sus ejes declarados: notas con las caras giradas, la z de las franjas desde
+    el borde −X y los valores con eje girados; la salida devuelve la geometría, las columnas, las cargas y las mallas
+    como se declararon."""
     project = json.loads(EXAMPLE.read_text(encoding="utf-8"))
     along_x = project["combined_footings"][0]
     if variant == "t invertida":
@@ -372,19 +442,48 @@ def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_pat
     path.write_text(json.dumps(project), encoding="utf-8")
     _, checks = run_project(path)
 
-    def own(member: str) -> list[tuple[Any, ...]]:
-        return [(c.name, c.status, c.case, c.demand, c.capacity, c.values, c.z, c.note) for c in checks if c.member == member]
-
-    assert own(along_x["id"]) and own(along_x["id"]) == own("ZCY")
+    first = [check for check in checks if check.member == along_x["id"]]
+    second = [check for check in checks if check.member == "ZCY"]
+    assert first and len(first) == len(second)
+    width = along_x["ly"]  # el ancho, a lo largo de la dirección secundaria
+    for a, b in zip(first, second, strict=True):
+        assert (a.name, a.status, a.case, a.demand, a.capacity) == (b.name, b.status, b.case, b.demand, b.capacity)
+        assert b.note == _rotated_note(a.note), a.note
+        z = None if a.z is None else (width - a.z if a.note.startswith("Franja") else a.z)
+        assert b.z == (None if z is None else pytest.approx(z)), a.note
+        got, want = _corner_set(b.values), _rotated_values(a.values)
+        assert got.pop("corners") == pytest.approx(want.pop("corners")), (a.name, a.note)
+        assert got == pytest.approx(want), (a.name, a.note)
+    # En la girada, las caras de columna de la viga (dirección principal) son ±Y; las de las franjas, ±X.
+    beam_notes = [check.note for check in second if check.z is not None and not check.note.startswith(("Franja", "Aleta"))]
+    assert any(re.search(r"[Cc]ara [+-]Y de la columna", note) for note in beam_notes)
+    assert not any(re.search(r"[Cc]ara [+-]X de la columna", note) for note in beam_notes)
     overlapping = json.loads(json.dumps(along_y))
     overlapping["columns"][1]["y"] = overlapping["columns"][0]["y"] + 200.0
     with pytest.raises(ValueError, match=r"se traslapan a lo largo de la viga \(dirección principal Y global\)"):
         CombinedFooting.model_validate(overlapping)
     report_file(path, tmp_path / "salida")
     results = json.loads((tmp_path / "salida" / "resultado.json").read_text(encoding="utf-8"))
-    geometries = {footing["id"]: footing["geometry [mm]"] for footing in results["combined_footings"]}
-    assert "principal_direction" not in geometries[along_x["id"]] and geometries["ZCY"]["principal_direction"] == "y"
-    assert (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8").count("Dirección principal (viga) en la Y global") == 1
+    out = {footing["id"]: footing for footing in results["combined_footings"]}["ZCY"]
+    assert out["geometry [mm]"]["principal_direction"] == "y"
+    assert (out["geometry [mm]"]["lx"], out["geometry [mm]"]["ly"]) == (along_y["lx"], along_y["ly"])
+    for column, declared in zip(out["columns"], along_y["columns"], strict=True):
+        assert [column[key] for key in ("x", "y", "cx", "cy")] == pytest.approx([declared[key] for key in ("x", "y", "cx", "cy")])
+        for load, written in zip(column["loads"], declared["loads"], strict=True):
+            got = [load[key] for key in ("Vx [kN]", "Vy [kN]", "Mx [kN-m]", "My [kN-m]")]
+            assert got == pytest.approx([written[key] for key in ("Vx_kN", "Vy_kN", "Mx_kNm", "My_kNm")], abs=1e-9)
+    assert out["reinforcement"]["bottom"] == {**along_y["bottom"], "x": {**along_y["bottom"]["x"], "band_spacing": None},
+                                              "y": {**along_y["bottom"]["y"], "band_spacing": None}}
+    # Diagramas de la dirección secundaria en el eje X declarado: x = −y, así que las posiciones se reflejan y se invierten
+    # de orden, M no cambia y V (cuerpo libre a la izquierda) cambia de signo.
+    base = {footing["id"]: footing for footing in results["combined_footings"]}[along_x["id"]]["diagrams"]
+    for a_env, b_env in zip(base["secondary"], out["diagrams"]["secondary"], strict=True):
+        assert b_env["positions [mm]"] == pytest.approx([-p for p in reversed(a_env["positions [mm]"])], abs=1e-6)
+        assert b_env["M max [kN-m]"] == pytest.approx(list(reversed(a_env["M max [kN-m]"])), abs=1e-6)
+        assert b_env["V max [kN]"] == pytest.approx([-v for v in reversed(a_env["V min [kN]"])], abs=1e-6)
+    assert out["diagrams"]["principal"]["positions [mm]"] == pytest.approx(base["principal"]["positions [mm]"])
+    memoir = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
+    assert "Dirección principal (Y global): momento positivo" in memoir and "Dirección principal (X global): momento positivo" in memoir
 
 
 def test_diagrams_close_at_the_free_edges_and_match_the_strip_faces() -> None:
@@ -442,7 +541,7 @@ def test_valid_torsion_layers_pass_and_reach_the_report(tmp_path: Path) -> None:
     path.write_text(json.dumps(_with_torsion_layers(layers)), encoding="utf-8")
     report_file(path, tmp_path / "salida")
     text = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
-    assert "2 #5 a 400 mm" in text and "Viga en la dirección larga: torsión" in text
+    assert "2 #5 a 400 mm" in text and "Dirección principal (X global): torsión" in text
 
 
 def test_wide_footing_warns_about_two_way_behaviour(tmp_path: Path) -> None:

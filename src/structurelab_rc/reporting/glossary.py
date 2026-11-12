@@ -54,11 +54,12 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Zapata: equilibrio", "geotechnical", "", ""),
     ("Zapata: verificacion estructural", "flexure", "", ""),
     ("Zapata combinada: verificacion estructural", "flexure", "", ""),
-    ("Viga larga: separacion", "requirements", "s", "s,máx"),
-    ("Malla inferior y: acero minimo", "requirements", "As,min", "As"),
-    ("Malla inferior y: separacion", "requirements", "s", "s,máx"),
+    ("Direccion principal: separacion", "requirements", "s", "s,máx"),
+    ("Direccion secundaria: acero minimo", "requirements", "As,min", "As"),
+    ("Direccion secundaria: separacion", "requirements", "s", "s,máx"),
     ("Retraccion y temperatura: cuantia", "requirements", "ρ·h", "As inferior + superior"),
     ("Retraccion y temperatura: separacion", "requirements", "s", "s,máx"),
+    ("Separacion minima", "requirements", "s libre,mín", "s libre"),
     ("Flexion malla", "flexure", "Mu", "φMn"),
     ("Flexion concreto simple", "flexure", "Mu", "φMn"),
     ("Deformacion neta de traccion malla", "requirements", "εt,min", "εt"),
@@ -156,7 +157,8 @@ VALUES = {
     "gamma v x": ("Fracción del momento transferida por cortante, a lo largo de x", "γv,x"),
     "gamma v y": ("Fracción del momento transferida por cortante, a lo largo de y", "γv,y"),
     "vuv": ("Esfuerzo de cortante sin transferencia de momento", "vuv"),
-    "bslab": ("Ancho efectivo para el acero mínimo", "bslab"),
+    "bslab": ("Ancho efectivo bslab (c + 1.5h a cada lado, sin pasar del borde)", "bslab"),
+    "bslab sin recortar": ("Ancho c + 3h, antes de recortarlo con los bordes de la zapata", "c + 3h"),
     "A1": ("Área cargada", "A1"),
     "A2": ("Base del tronco de pirámide de apoyo", "A2"),
     "beta1": ("Factor del bloque de esfuerzos", "β1"),
@@ -166,6 +168,9 @@ VALUES = {
     "a": ("Profundidad del bloque de compresión", "a"),
     "fc": ("Resistencia especificada del concreto", "f'c"),
     "fy": ("Fluencia especificada del acero", "fy"),
+    "s": ("Separación centro a centro de las barras", "s"),
+    "db": ("Diámetro de la barra", "db"),
+    "dagg": ("Tamaño máximo nominal del agregado grueso", "dagg"),
     "rho w": ("Cuantía del acero a tracción (As/(bw·d))", "ρw"),
     "ecu": ("Deformación máxima del concreto", "εcu"),
     "alpha1": ("Factor de esfuerzo del bloque equivalente", "0.85"),
@@ -192,15 +197,19 @@ _ACCENTS = {"Presion": "Presión", "Flexion": "Flexión", "Deformacion": "Deform
             "maxima": "máxima", "direccion": "dirección", "area": "área", "compresion": "compresión",
             "Torsion": "Torsión", "seccion": "sección", "interaccion": "interacción", "verificacion": "verificación",
             "Validacion": "Validación", "distribucion": "distribución", "Area": "Área", "Retraccion": "Retracción",
-            "cuantia": "cuantía"}
+            "cuantia": "cuantía", "fisuracion": "fisuración", "deformacion": "deformación",
+            "Direccion": "Dirección", "flexion": "flexión"}
 
 
 def display(name: str) -> str:
     """Nombre de una verificación para la memoria, con tildes."""
     words = []
     for word in name.split(" "):
-        core = word.rstrip(":")
-        words.append(_ACCENTS.get(core, core) + word[len(core):])
+        # La palabra sin la puntuación que la rodea: "(direccion" o "maxima)," también llevan tilde.
+        start = len(word) - len(word.lstrip("("))
+        end = len(word.rstrip(":,)"))
+        core = word[start:end]
+        words.append(word[:start] + _ACCENTS.get(core, core) + word[end:])
     return " ".join(words)
 
 

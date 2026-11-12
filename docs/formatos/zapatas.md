@@ -28,6 +28,7 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 | `materials.fyt` | MPa | Fluencia del refuerzo transversal (estribos). Se declara aunque el ejemplo no lo use. |
 | `materials.concrete` | texto | `normalweight` (peso normal) o `lightweight` (liviano); define λ. |
 | `materials.coating` | texto | Recubrimiento de las barras: `uncoated` (sin recubrimiento), `galvanized`, `epoxy` o `zinc_epoxy` (dual de zinc y epóxico); cambia la longitud de desarrollo (ψe, D-071). |
+| `materials.max_aggregate` | mm | Tamaño máximo nominal del agregado grueso (dagg). Sin él, la separación mínima de las barras queda INCOMPLETE: no se supone (D-102). También en el diseño por tipologías. |
 | `soil` | objeto | Datos del suelo y de los pesos propios (abajo). Obligatorio con zapatas. |
 | `footings` | lista | Zapatas del proyecto. |
 
@@ -98,37 +99,47 @@ y del relleno, y fuerzas de las sobrecargas. Salen en `resultado.json`, en `foot
 
 ## Zapata combinada (`combined_footings[]`, D-080)
 
-Zapata rectangular de dos columnas, solo verificación. X es la dirección larga: las dos columnas van a distintas x. Usa
-el mismo `soil` que las zapatas aisladas. Se verifican la parte geotécnica con la resultante de las dos columnas
-(V3J.1) y, con los casos mayorados:
+Zapata rectangular de dos columnas, solo verificación. La **dirección principal** es la de la viga que une las columnas
+(`principal_direction`, X o Y global) y la **dirección secundaria** la transversal (D-101). Las verificaciones nombran
+las barras por su dirección ("dirección principal", "dirección secundaria"), no por un eje; la memoria agrega el eje
+global, por ejemplo "Dirección principal (Y global)". Usa el mismo `soil` que las zapatas aisladas. Se verifican la parte
+geotécnica con la resultante de las dos columnas (V3J.1) y, con los casos mayorados:
 
-- la viga en la dirección larga con las verificaciones de vigas en sus secciones críticas (V3J.2, D-081): cada check
-  lleva `z`, la posición desde el borde −X, y en `note` la sección; Vc y Av,min de cimentación; separación de 3h y
-  450 mm;
+- la viga de la dirección principal con las verificaciones de vigas en sus secciones críticas (V3J.2, D-081): cada
+  check lleva `z`, la posición a lo largo de la viga desde su borde negativo (−X o −Y global), y en `note` la sección
+  ("cara +X de la columna …"); Vc y Av,min de cimentación; separación de 3h y 450 mm;
 - por columna (V3J.3, D-082): el punzonamiento (y el del perímetro común si los de las dos columnas se traslapan,
-  D-086), la franja transversal (también con las verificaciones de vigas, con
-  `z` desde el borde −Y y `note` "Franja transversal de la columna …, cara ±Y", "a d de la cara ±Y" o "mayor momento
-  negativo hacia el borde ±Y"; su carga es la neta: la fuerza de la columna con la forma de la presión menos los pesos y
-  las sobrecargas, D-095; abajo lleva el band si lo hay o, si no, la malla y, y arriba las barras de `top.y`
-  que caen en ella; el momento negativo, sin esas barras, es de concreto simple, D-072, D-097), el aplastamiento y los
-  pasadores (`note` "Columna …"); la separación de la malla y (3h y 450 mm); retracción y temperatura por zona (D-097):
-  por metro, inferior más superior de cada dirección ≥ ρ·h y cada capa a s ≤ min(5h, 450 mm), en X en todo el ancho y
-  en Y fuera de las zonas de band y en cada zona de band (ACI 24.4.3.2 y 24.4.3.3; NSR-10 C.7.12.2.1 y C.7.12.2.2); el
-  desarrollo de las barras x desde la sección de mayor momento de su signo y, en cada franja, de las barras inferiores
-  (band o malla y) y de las superiores transversales (con momento negativo) desde la cara de la columna.
+  D-086), la franja transversal de la dirección secundaria (también con las verificaciones de vigas, con `z` desde el
+  borde negativo de la dirección secundaria y `note` "Franja transversal de la columna …, cara ±Y", "a d de la cara ±Y"
+  o "mayor momento negativo hacia el borde ±Y", con el eje de la dirección secundaria; en una cara de columna, Vu es el
+  de la sección a d; su carga es la neta: la fuerza de la columna con la forma de la presión menos los pesos y las
+  sobrecargas, D-095; abajo lleva el band si lo hay o, si no, la malla de la dirección secundaria, y arriba las barras de
+  `top` de esa dirección que caen en ella; el momento negativo, sin esas barras, es de concreto simple, D-072, D-097), el
+  aplastamiento y los pasadores (`note` "Columna …"); la separación de la malla de la dirección secundaria (3h y
+  450 mm); retracción y temperatura por zona (D-097): por metro, inferior más superior de cada dirección ≥ ρ·h y cada
+  capa a s ≤ min(5h, 450 mm), en la principal en todo el ancho y en la secundaria fuera de las zonas de band y en cada
+  zona de band (ACI 24.4.3.2 y 24.4.3.3; NSR-10 C.7.12.2.1 y C.7.12.2.2); el desarrollo de las barras de la dirección
+  principal desde la sección de mayor momento de su signo y, en cada franja, de las barras inferiores (band o malla) y de
+  las superiores de la dirección secundaria (con momento negativo) desde la cara de la columna.
+
+Toda la salida (`resultado.json`, memoria y figuras) va en los ejes globales declarados (D-101): dimensiones, columnas,
+cargas, mallas, caras y bordes de las notas, posiciones `z`, excentricidades, presiones en las esquinas, punzonamiento
+y diagramas. El cálculo trabaja en ejes de la viga y sus resultados se convierten; con `principal_direction: "x"`
+coinciden.
 
 Las verificaciones de resistencia traen en `values` los datos con que se calculan (D-097): flexión, b, h, d, As, f'c, fy,
 β1 y a (en zapatas, además c y εt); cortante, bw, d, ρw, λ y f'c; concreto simple, b, h de cálculo, Sm y f'c.
 
-Las notas de las secciones de la viga larga y de las franjas terminan con el signo del momento ("momento positivo" o
+Las notas de las secciones de la viga y de las franjas terminan con el signo del momento ("momento positivo" o
 "momento negativo"); la memoria revisa por separado el momento positivo y el negativo en las dos direcciones y trae los
-diagramas envolventes de momento y cortante (D-095). La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en
+diagramas envolventes de momento y cortante (D-095): `diagrams.principal` y `diagrams.secondary` en `resultado.json` y
+`diagrama_<zapata>_principal.svg` y `diagrama_<zapata>_secundaria.svg`. La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en
 los dos perfiles.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `id`, `lx`, `ly`, `h`, `cover`, `fill_height`, `pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2` | | Como en la zapata aislada. |
-| `principal_direction` | texto | Dirección principal (la de la viga que une las columnas) en ejes globales de ETABS: `x` (por defecto) o `y` (D-094). Todo se escribe en ejes globales, como está la zapata en planta: con `y`, `ly` es la dimensión paralela a la viga, las columnas van a distintas `y` y `bottom.y` y `top.y` son las barras paralelas a la viga (D-099). Estribos, refuerzo superficial, capas de torsión, `band` y la viga de la T no tienen dirección propia: van paralelos o transversales a la viga. El cálculo trabaja en ejes de la viga (X = +Y global, Y = −X global): con `y`, al cargar se intercambian lx y ly, las columnas pasan a x = y, y = −x, con cx = cy y cy = cx, las barras x e y (y `first`) de `bottom` y de `top` se intercambian y las cargas pasan a Vx = Vy, Vy = −Vx, Mx = My y My = −Mx. Los resultados y la memoria quedan en ejes de la viga; con `y`, `resultado.json` trae `principal_direction` en `geometry [mm]` y la memoria lo advierte. |
+| `principal_direction` | texto | Dirección principal (la de la viga que une las columnas) en ejes globales de ETABS: `x` (por defecto) o `y` (D-094). Todo se escribe en ejes globales, como está la zapata en planta: con `y`, `ly` es la dimensión paralela a la viga, las columnas van a distintas `y` y `bottom.y` y `top.y` son las barras paralelas a la viga (D-099). Estribos, refuerzo superficial, capas de torsión, `band` y la viga de la T no tienen dirección propia: van paralelos o transversales a la viga. El cálculo trabaja en ejes de la viga (X = +Y global, Y = −X global): con `y`, al cargar se intercambian lx y ly, las columnas pasan a x = y, y = −x, con cx = cy y cy = cx, las barras x e y (y `first`) de `bottom` y de `top` se intercambian y las cargas pasan a Vx = Vy, Vy = −Vx, Mx = My y My = −Mx. La salida vuelve a los ejes declarados con el giro inverso (D-101); `resultado.json` trae `principal_direction` en `geometry [mm]`. |
 | `columns[]` | lista | Exactamente dos columnas. |
 | `columns[].id` | texto | Identificador de la columna. |
 | `columns[].cx`, `columns[].cy` | mm | Sección (cx a lo largo de X). |
@@ -137,12 +148,12 @@ los dos perfiles.
 | `columns[].band` | | Refuerzo transversal inferior bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation` y `spacing` (opcional). Es el único refuerzo inferior transversal de esa zona: la malla inferior y va solo fuera de las zonas de band (D-097). |
 | `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; las dos columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
 | `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
-| `top` | | Barras superiores con la estructura de `bottom` (D-099), opcional: `end` (`straight` o `hook`, para las dos direcciones), `x` (paralelas a X, a lo largo de la viga) e `y` (paralelas a Y, uniformes en todo el largo, D-097), cada una `{designation, spacing}` y opcional, con al menos una; `first`, la dirección más cercana a la cara superior, obligatoria si se declaran las dos. Sin `top.x`, el momento negativo de la viga larga se revisa como concreto simple (D-072); sin `top.y`, el de las franjas transversales. Con `principal_direction: "y"`, `x`, `y` y `first` están en ejes globales y se intercambian como en `bottom`. En la T invertida, `top.x` es obligatorio y va en la viga; `top.y` aún no se admite. |
-| `stirrups` | | Estribos de la dirección larga, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
+| `top` | | Barras superiores con la estructura de `bottom` (D-099), opcional: `end` (`straight` o `hook`, para las dos direcciones), `x` (paralelas a X, a lo largo de la viga) e `y` (paralelas a Y, uniformes en todo el largo, D-097), cada una `{designation, spacing}` y opcional, con al menos una; `first`, la dirección más cercana a la cara superior, obligatoria si se declaran las dos. Sin barras superiores en la dirección principal, el momento negativo de la viga se revisa como concreto simple (D-072); sin ellas en la secundaria, el de las franjas transversales. Con `principal_direction: "y"`, `x`, `y` y `first` están en ejes globales y se intercambian como en `bottom`. En la T invertida, `top.x` es obligatorio y va en la viga; `top.y` aún no se admite. |
+| `stirrups` | | Estribos de la viga de la dirección principal, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081). |
 | `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
-| `deep_beam` | sí/no | La viga larga es de gran altura (declarado por el usuario): se verifican los criterios de vigas altas como en las vigas (D-089). |
+| `deep_beam` | sí/no | La viga de la dirección principal es de gran altura (declarado por el usuario): se verifican los criterios de vigas altas como en las vigas (D-089). |
 | `beam` | mm | T invertida (D-093): `width` (bw) y `height` (H, altura total desde la base) de la viga centrada en Y sobre la zarpa de espesor `h`. Las columnas deben caber en bw; `top.x` es obligatorio y va en la viga; `band` no aplica; `torsion_layers` miden x desde la cara −Y del alma. |
-| `torsion_layers` | | Capas de Aℓ de la viga larga con el formato de las capas de vigas (`depth` desde la cara superior, `role: "torsion"`, `bars` con x desde la cara −Y); opcional; sin ellas, Aℓ = 0 (D-088). |
+| `torsion_layers` | | Capas de Aℓ de la viga de la dirección principal con el formato de las capas de vigas (`depth` desde la cara superior, `role: "torsion"`, `bars` con x desde la cara −Y); opcional; sin ellas, Aℓ = 0 (D-088). |
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 
@@ -259,10 +270,10 @@ combinadas van en `combined_footings`: la
 geometría, las columnas (`columns[]`, cada una con sus cargas), las propiedades calculadas de la base, el armado
 (`bottom`, `top`, `stirrups`, `skin`, `torsion_layers`), `deep_beam`, `two_way_warning` (B, ℓn y B/ℓn si B ≥ ℓn, la luz
 libre entre las caras de las columnas: puede trabajar en dos direcciones, D-091; null si no) y las verificaciones, cada
-una con su `case`, su `z [mm]` (posición en la viga
-larga desde −X o en la franja desde −Y; nula en las demás) y en `note` la sección, la franja o la columna. Su memoria
-separa la viga larga (flexión, cortante y torsión, D-088) de las franjas transversales y trae la planta de presiones con las dos columnas y la tabla de
-esfuerzos de punzonamiento en cada esquina.
+una con su `case`, su `z [mm]` (posición a lo largo de la viga desde su borde negativo, o en la franja desde el borde
+negativo de la dirección secundaria, en ejes declarados; nula en las demás) y en `note` la sección, la franja o la
+columna. Su memoria separa la dirección principal (flexión, cortante y torsión, D-088) de la secundaria (franjas o
+aletas) y trae la planta de presiones con las dos columnas y la tabla de esfuerzos de punzonamiento en cada esquina.
 
 ## Verificaciones de zapatas
 
@@ -282,14 +293,15 @@ H = h + altura del pedestal. Las excentricidades son ex = My base/N y ey = −Mx
 | Deformación neta de tracción malla … | εt de la malla frente a la mínima del perfil. | ACI 8.3.3.1; NSR-10 C.10.3.5 |
 | Acero mínimo malla … | As frente a la cuantía mínima por el área bruta del ancho total. | ACI 8.6.1.1; NSR-10 C.10.5.4 y C.7.12.2.1 |
 | Separación máxima malla … | Separación (y la de la franja) frente al máximo del perfil. | ACI 8.7.2.2; NSR-10 C.10.5.4 |
+| Separación mínima (…) | Cada refuerzo declarado (cada malla y dirección, la franja central; en la combinada, las barras inferiores y superiores de cada dirección y el band de cada columna): separación libre s − db frente al mínimo (25 mm, db y 4/3·dagg). Sin `materials.max_aggregate`, INCOMPLETE (D-102). | ACI 25.2.1; NSR-10 C.7.6.1 y C.3.3.2(c) |
 | Franja central malla … | Zapata rectangular: As en la franja frente a γs·As. | ACI 13.3.3.3; NSR-10 C.15.4.4.2 |
 | Altura mínima de la zapata | 150 mm, medidos como pide cada perfil. | ACI 13.3.1.2; NSR-10 C.15.7 |
 | Cortante en una dirección (barras x o y) | Por caso mayorado: Vu de la carga neta más allá de la sección a d de cada cara frente a φVc, con la d de esa dirección. | ACI 13.2.6.2(a) y 13.2.7.2; NSR-10 C.15.5 y C.11.2 |
 | Punzonamiento | Por caso mayorado: esfuerzo máximo vu = Vu/(b0·d) + γv·Msc·c/Jc en los dos ejes, en el perímetro a d/2 (recortado con la base: αs = 40, 30 o 20), frente a φvc. Valores: Vu, b0, d, αs, γv, vuv, Msc y Jc en cada eje, el centroide del perímetro (xc, yc) y el esfuerzo en cada esquina (`esquina i x`, `esquina i y`, `esquina i v`, D-083). | ACI 22.6.5.2, 22.6.5.3 y 8.4.4.2; NSR-10 C.11.11.2.1 y C.11.11.7 |
-| Transferencia de momento por flexión (barras x o y) | Por caso mayorado: γf·|Msc| frente a φMn de la malla inferior dentro de bslab = c + 1.5h a cada lado (en la combinada, más el band). No se suma al momento de la zapata. | ACI 8.4.2.2 (13.3.3.1); NSR-10 C.11.11.7.1 y C.13.5.3.2 (D-087) |
+| Transferencia de momento por flexión (barras x o y) | Por caso mayorado: γf·|Msc| frente a φMn de la malla inferior dentro de bslab = c + 1.5h a cada lado, sin pasar de los bordes de la zapata: a cada lado, el menor entre 1.5h y la distancia de la cara al borde (D-102; si recorta, el valor `bslab sin recortar` da c + 3h); en la combinada, más el band. No se suma al momento de la zapata. | ACI 8.4.2.2 (13.3.3.1); NSR-10 C.11.11.7.1 y C.13.5.3.2 (D-087) |
 | Transferencia de momento: parte negativa (barras x o y) | La misma γf·|Msc| frente a la malla superior en bslab o, sin ella, al concreto simple si el nivel lo permite. Siempre CUMPLE: lo que la zapata no resiste lo debe tomar la viga de cimentación (valor `para la viga`, sin razón demanda/capacidad) y queda en `foundation_beam_moments` y en la memoria. | Ídem (D-087) |
 | Fuera de la franja central malla … | Zapata rectangular: As fuera de la franja frente a (1 − γs)·As. | ACI 13.3.3.3(b); NSR-10 C.15.4.4.2 (D-087) |
-| Acero mínimo por punzonamiento (barras x o y) | Solo ACI, cuando vuv > φ0.17√f'c: As,min de 8.6.1.2 frente a las barras de la malla inferior dentro de bslab. | ACI 8.6.1.2 |
+| Acero mínimo por punzonamiento (barras x o y) | Solo ACI, cuando vuv > φ0.17√f'c: As,min de 8.6.1.2 (con el bslab recortado por los bordes, D-102) frente a las barras de la malla inferior dentro de bslab. | ACI 8.6.1.2 |
 | Desarrollo malla … (barras x o y) | Longitud de desarrollo (recta o con gancho) frente a la disponible desde la cara de la columna hasta el extremo de la barra. La superior, solo con momento negativo. | ACI 25.4.2 y 25.4.3; NSR-10 C.12.2 y C.12.5 |
 | Pasadores: área mínima | Área de los pasadores frente a 0.005 por el área de la columna. | ACI 16.3.4.1; NSR-10 C.15.8.2.1 |
 | Pasadores: anclaje a compresión | ldc frente al espacio hasta la malla inferior. | ACI 25.4.9; NSR-10 C.12.3 |

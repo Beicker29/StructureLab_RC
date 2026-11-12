@@ -223,6 +223,12 @@ class CombinedFooting(RectangularBase, _Input):
 _GLOBAL_KEYS = ("Vx_kN", "Vy_kN", "Mx_kNm", "My_kNm")
 
 
+def beam_to_global(x: float, y: float) -> tuple[float, float]:
+    """Un punto (o vector) en ejes de una viga en la Y global, en los ejes globales declarados: el giro inverso del de la
+    carga (D-094, D-101): x = −y', y = x' (0 − y: sin −0.0 en la salida)."""
+    return 0.0 - y, x
+
+
 def _column_to_beam_axes(column: Any) -> Any:
     """Una columna de entrada (ejes globales) en los ejes de una viga en la Y global (D-094)."""
     if not isinstance(column, dict):

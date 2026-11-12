@@ -410,14 +410,14 @@
             "z_mm": 5838.9
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -798,14 +798,14 @@
             "z_mm": 4962.3
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -1459,14 +1459,14 @@
             "z_mm": 5938.9
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -1711,7 +1711,7 @@
             "z_mm": 775.0
           },
           {
-            "name": "Flexion concreto simple (cara superior, barras x)",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
             "demand_Nmm": 135869904.6334666,
@@ -1736,7 +1736,7 @@
             "z_mm": 1838.9
           },
           {
-            "name": "Flexion concreto simple (cara superior, barras x)",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "FAIL",
             "demand_Nmm": 246759999.99999988,
@@ -1761,7 +1761,7 @@
             "z_mm": 2999.9999798724484
           },
           {
-            "name": "Flexion concreto simple (cara superior, barras x)",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
             "demand_Nmm": 135869904.63346696,
@@ -1837,7 +1837,7 @@
             "z_mm": 5838.9
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -2273,14 +2273,14 @@
             "z_mm": 5588.9
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -2722,14 +2722,14 @@
             "z_mm": 5676.2
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 120.0,
             "capacity": 450.0,
@@ -3103,14 +3103,14 @@
             "z_mm": 3861.1
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -3460,14 +3460,14 @@
             "z_mm": 3861.1
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -3789,14 +3789,14 @@
             "z_mm": 2907.95
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 250.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 250.0,
             "capacity": 450.0,
@@ -4167,14 +4167,14 @@
             "z_mm": 5027.75
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 350.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 120.0,
             "capacity": 450.0,
@@ -4746,14 +4746,14 @@
             "z_mm": 5723.0
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -5211,14 +5211,14 @@
             "z_mm": 3877.0
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -5620,14 +5620,14 @@
             "z_mm": 3861.1
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -5836,7 +5836,7 @@
             "z_mm": 775.0
           },
           {
-            "name": "Flexion concreto simple (cara superior, barras x)",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "FAIL",
             "demand_Nmm": 245993023.9668001,
@@ -5861,7 +5861,7 @@
             "z_mm": 1838.9
           },
           {
-            "name": "Flexion concreto simple (cara superior, barras x)",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "FAIL",
             "demand_Nmm": 446759999.99999976,
@@ -5886,7 +5886,7 @@
             "z_mm": 2999.9999830281417
           },
           {
-            "name": "Flexion concreto simple (cara superior, barras x)",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "FAIL",
             "demand_Nmm": 245993023.9668002,
@@ -5962,7 +5962,7 @@
             "z_mm": 5838.9
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
@@ -6394,14 +6394,14 @@
             "z_mm": 5838.9
           },
           {
-            "name": "Viga larga: separacion maxima (barras inferiores x)",
+            "name": "Direccion principal: separacion maxima (barras inferiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,
             "clause": "13.3.2.1 y 7.7.2.3"
           },
           {
-            "name": "Viga larga: separacion maxima (barras superiores x)",
+            "name": "Direccion principal: separacion maxima (barras superiores)",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 450.0,

@@ -29,7 +29,18 @@ def clauses() -> dict[str, str]:
         "hook": "C.12.5.1 y C.12.5.2",
         "compression": "C.12.3.1 y C.12.3.2",
         "excess": "C.12.2.5 y C.12.5.3(d)",
+        "min_spacing": "C.7.6.1 y C.3.3.2(c)",
     }
+
+
+_MIN_CLEAR_SPACING = 25.0  # mm
+_AGGREGATE_FACTOR = 4.0 / 3.0  # C.3.3.2(c): agregado ≤ 3/4 de la separación libre mínima
+
+
+def min_clear_spacing(db: float, aggregate: float) -> float:
+    """C.7.6.1: separación libre mínima entre barras paralelas de una capa, db pero no menor de 25 mm; C.3.3.2(c): el
+    tamaño máximo nominal del agregado no supera 3/4 de la separación libre, así que esta es al menos (4/3)·agregado."""
+    return max(db, _MIN_CLEAR_SPACING, _AGGREGATE_FACTOR * aggregate)
 
 
 def _sqrt_fc(fc: float) -> float:

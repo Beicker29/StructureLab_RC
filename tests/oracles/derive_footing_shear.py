@@ -166,18 +166,28 @@ def _punching(folder: str, f: dict, plane: list[float], w: float, depth: float) 
         for direction in ("x", "y"):
             db, ab = BARS[f["bottom"][direction]["designation"]]
             across, centre = (c["cy"], c["offset_y"]) if direction == "x" else (c["cx"], c["offset_x"])
-            bslab = across + 3 * f["h"]
+            low, high, bslab = _slab(f, direction, across, centre)
             required = 5 * vuv * bslab * b0 / (PHI * alpha * FY)
             width = f["ly"] if direction == "x" else f["lx"]
             spacing = f["bottom"][direction]["spacing"]
             n = math.floor((width - 2 * f["cover"] - db) / spacing + 1e-6) + 1
             half = width / 2 - f["cover"] - db / 2
             start = -half + (2 * half - (n - 1) * spacing) / 2
-            provided = sum(ab for i in range(n) if abs(start + i * spacing - centre) <= bslab / 2 + 1e-6)
+            provided = sum(ab for i in range(n) if low - 1e-6 <= start + i * spacing <= high + 1e-6)
             checks.append({"name": f"Acero minimo por punzonamiento (barras {direction})",
                            "status": "PASS" if provided >= required else "FAIL", "demand": required, "capacity": provided})
     checks += _transfer(folder, f, {"x": (msx, 1 - gx), "y": (msy, 1 - gy)})
     return checks
+
+
+def _slab(f: dict, direction: str, across: float, centre: float) -> tuple[float, float, float]:
+    """bslab de las barras de una dirección: c + 1.5h a cada lado (ACI 8.4.2.2.3, NSR-10 C.13.5.3.2), sin pasar de los
+    bordes de la zapata (D-102). Las barras x se cuentan a lo ancho de Y (ly); las y, a lo largo de X (lx).
+    Devuelve (desde, hasta, ancho)."""
+    edge = (f["ly"] if direction == "x" else f["lx"]) / 2
+    half = (across + 3 * f["h"]) / 2
+    low, high = max(centre - half, -edge), min(centre + half, edge)
+    return low, high, high - low
 
 
 def _positions(f: dict, mat: dict, direction: str) -> tuple[list[float], float]:
@@ -201,9 +211,9 @@ def _transfer(folder: str, f: dict, moments: dict[str, tuple[float, float]], lev
     out = []
     for direction, (msc, gamma_f) in moments.items():
         across, centre = (c["cy"], c["offset_y"]) if direction == "x" else (c["cx"], c["offset_x"])
-        bslab = across + 3 * f["h"]
+        low, high, bslab = _slab(f, direction, across, centre)
         positions, ab = _positions(f, f["bottom"], direction)
-        area = sum(ab for p in positions if abs(p - centre) <= bslab / 2 + 1e-6)
+        area = sum(ab for p in positions if low - 1e-6 <= p <= high + 1e-6)
         demand = gamma_f * abs(msc)
         nominal, phi, _ = _F._strength(area, bslab, depths[direction], profile)
         out.append({"name": f"Transferencia de momento por flexion (barras {direction})",
@@ -211,7 +221,7 @@ def _transfer(folder: str, f: dict, moments: dict[str, tuple[float, float]], lev
         capacity = 0.0
         if f.get("top"):
             top_positions, top_ab = _positions(f, f["top"], direction)
-            top_area = sum(top_ab for p in top_positions if abs(p - centre) <= bslab / 2 + 1e-6)
+            top_area = sum(top_ab for p in top_positions if low - 1e-6 <= p <= high + 1e-6)
             top_db = BARS[f["top"][direction]["designation"]][0]
             first = BARS[f["top"][f["top"]["first"]]["designation"]][0]
             offset = f["cover"] + top_db / 2 if direction == f["top"]["first"] else f["cover"] + first + top_db / 2

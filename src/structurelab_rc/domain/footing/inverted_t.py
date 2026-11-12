@@ -50,13 +50,14 @@ from structurelab_rc.mechanics.flexure import SteelLayer
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Soil
 
-FLEXURE = "Aleta: flexion (barras y)"
+# Las aletas trabajan en la dirección secundaria (D-101).
+FLEXURE = "Aleta: flexion (direccion secundaria)"
 PLAIN = "Aleta: concreto simple (cara superior)"
-SHEAR = "Aleta: cortante en una direccion (barras y)"
-STRAIN = "Aleta: deformacion neta de traccion (barras y)"
-MINIMUM = "Aleta: acero minimo (barras y)"
-SPACING = "Aleta: separacion maxima (barras y)"
-DEVELOPMENT = "Desarrollo barras y (aletas)"
+SHEAR = "Aleta: cortante en una direccion (direccion secundaria)"
+STRAIN = "Aleta: deformacion neta de traccion (direccion secundaria)"
+MINIMUM = "Aleta: acero minimo (direccion secundaria)"
+SPACING = "Aleta: separacion maxima (direccion secundaria)"
+DEVELOPMENT = "Desarrollo barras inferiores, direccion secundaria (aletas)"
 TENSION_FLANGE = "Viga T: refuerzo del ala en traccion"
 DEPTH = "Altura minima de la zarpa"
 STRIP = 1000.0  # mm: las aletas se revisan por metro de longitud
@@ -215,7 +216,8 @@ def _tension_flange(basis: Basis, footing: CombinedFooting, bottom: BarRow) -> l
                       note="El ala efectiva cabe en el ancho de reparto")]
     outer = [y for y in bottom.positions if abs(y) > spread / 2]
     return [Check(TENSION_FLANGE, Status.PASS if outer else Status.FAIL, clause=clause, member=footing.id, values=values,
-                  note=f"{len(outer)} barras x en las zonas exteriores del ala, fuera de {spread:.0f} mm")]
+                  note=f"{len(outer)} barras inferiores de la direccion principal en las zonas exteriores del ala, fuera de "
+                       f"{spread:.0f} mm")]
 
 
 def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases: Cases) -> list[Check]:

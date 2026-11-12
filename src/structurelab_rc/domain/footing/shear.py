@@ -90,7 +90,8 @@ def _punching(
 class PunchedColumn:
     """Columna (o grupo) que punzona: área cargada cx × cy centrada en (x, y), las filas de barras inferiores de cada
     dirección (la malla y, en la combinada, el refuerzo band), la nota de sus checks y una nota extra para el acero mínimo
-    por punzonamiento."""
+    por punzonamiento. labels nombra las barras de cada dirección en las verificaciones (por omisión "barras x" y
+    "barras y"; la zapata combinada, por su dirección principal y secundaria, D-101)."""
 
     cx: float
     cy: float
@@ -100,6 +101,10 @@ class PunchedColumn:
     note: str
     minimum_note: str = ""
     top: dict[str, tuple[BarRow, ...]] = field(default_factory=dict)
+    labels: dict[str, str] = field(default_factory=dict)
+
+    def bars(self, direction: str) -> str:
+        return self.labels.get(direction, f"barras {direction}")
 
 
 def punching_checks(basis: Basis, footing: FootingBase, column: PunchedColumn, given: tuple[TwoWayShear | StructuredError,
@@ -140,10 +145,10 @@ def _negative_transfer_checks(basis: Basis, given: tuple[FootingBase, PunchedCol
     for axis, direction in enumerate(column.bottom):
         msc = load.moment_along_x if direction == "x" else load.moment_along_y
         demand = (1 - result.gamma_v[axis]) * abs(msc)
-        across, centre = (column.cy, column.y) if direction == "x" else (column.cx, column.x)
-        bslab = profile.shear.effective_slab_width(across, footing.h)
+        slab = slab_limits(profile, footing, column, direction)
+        bslab = slab[2]
         top = column.top.get(direction, ())
-        area = _in_slab(top, centre, bslab)
+        area = _in_slab(top, slab)
         capacity, source = 0.0, ""
         if area > 0:
             strength = rectangular_strength(profile, materials, RectangularSection(bslab, footing.h), (SteelLayer(top[0].depth, area),))
@@ -157,16 +162,37 @@ def _negative_transfer_checks(basis: Basis, given: tuple[FootingBase, PunchedCol
             f"debe tomarla la viga de cimentacion: gamma f Msc = {demand / 1e6:.1f} kN-m (no se verifica aqui)")
         note = (f"{column.note}: " if column.note else "") + who
         # Si la toma la viga, la verificación no tiene razón demanda/capacidad en la zapata (cumple con aviso).
-        checks.append(Check(f"Transferencia de momento: parte negativa (barras {direction})", Status.PASS,
+        checks.append(Check(f"Transferencia de momento: parte negativa ({column.bars(direction)})", Status.PASS,
                             clause=profile.footing.clauses()["moment_transfer"], member=footing.id,
                             demand=demand if resisted else None, capacity=capacity, unit="N*mm",
-                            values=(("gamma f Msc", demand), ("bslab", bslab), ("para la viga", beam)), note=note))
+                            values=(("gamma f Msc", demand), *_slab_values(slab), ("para la viga", beam)), note=note))
     return checks
 
 
-def _in_slab(rows: tuple[BarRow, ...], centre: float, bslab: float) -> float:
-    """Área de las barras de las filas que caen dentro del ancho bslab centrado en la columna, en mm²."""
-    return sum(row.bar_area for row in rows for position in row.positions if abs(position - centre) <= bslab / 2 + 1e-6)
+Slab = tuple[float, float, float, float]  # (desde, hasta, ancho bslab, ancho sin recortar)
+
+
+def slab_limits(profile: Profile, footing: FootingBase, column: PunchedColumn, direction: str) -> Slab:
+    """bslab de las barras de una dirección: la columna (o el grupo) más 1.5h a cada lado (ACI 8.4.2.2.3, NSR-10
+    C.13.5.3.2), sin pasar de los bordes de la zapata (D-102): a cada lado se toma el menor entre 1.5h y la distancia de
+    la cara al borde. Las barras x se cuentan a lo ancho de Y; las y, a lo largo de X."""
+    across, centre = (column.cy, column.y) if direction == "x" else (column.cx, column.x)
+    edge = (footing.ly if direction == "x" else footing.lx) / 2
+    nominal = profile.shear.effective_slab_width(across, footing.h)
+    low, high = max(centre - nominal / 2, -edge), min(centre + nominal / 2, edge)
+    return low, high, high - low, nominal
+
+
+def _slab_values(slab: Slab) -> tuple[tuple[str, float], ...]:
+    """bslab y, si el borde lo recorta, el ancho sin recortar."""
+    _, _, width, nominal = slab
+    return (("bslab", width),) + ((("bslab sin recortar", nominal),) if width < nominal - 1e-6 else ())
+
+
+def _in_slab(rows: tuple[BarRow, ...], slab: Slab) -> float:
+    """Área de las barras de las filas que caen dentro de bslab, en mm²."""
+    low, high = slab[0], slab[1]
+    return sum(row.bar_area for row in rows for position in row.positions if low - 1e-6 <= position <= high + 1e-6)
 
 
 def _transfer_checks(profile: Profile, materials: Materials, given: tuple[FootingBase, PunchedColumn],
@@ -181,13 +207,13 @@ def _transfer_checks(profile: Profile, materials: Materials, given: tuple[Footin
     for axis, (direction, rows) in enumerate(column.bottom.items()):
         msc = load.moment_along_x if direction == "x" else load.moment_along_y
         gamma_f = 1 - result.gamma_v[axis]
-        across, centre = (column.cy, column.y) if direction == "x" else (column.cx, column.x)
-        bslab = profile.shear.effective_slab_width(across, footing.h)
-        area = _in_slab(rows, centre, bslab)
+        slab = slab_limits(profile, footing, column, direction)
+        bslab = slab[2]
+        area = _in_slab(rows, slab)
         demand = gamma_f * abs(msc)
-        name = f"Transferencia de momento por flexion (barras {direction})"
+        name = f"Transferencia de momento por flexion ({column.bars(direction)})"
         values: tuple[tuple[str, float], ...] = (("gamma f", gamma_f), ("Msc", msc), ("gamma f Msc", gamma_f * msc),
-                                                 ("bslab", bslab), ("As bslab", area), ("d", rows[0].depth))
+                                                 *_slab_values(slab), ("As bslab", area), ("d", rows[0].depth))
         capacity = 0.0
         if area > 0:
             strength = rectangular_strength(profile, materials, RectangularSection(bslab, footing.h), (SteelLayer(rows[0].depth, area),))
@@ -226,19 +252,19 @@ def _punching_minimum(
     footing, column = given
     checks = []
     for direction, rows in column.bottom.items():
-        across = column.cy if direction == "x" else column.cx
-        centre = column.y if direction == "x" else column.x
-        bslab = profile.shear.effective_slab_width(across, footing.h)
+        slab = slab_limits(profile, footing, column, direction)
+        bslab = slab[2]
         required = profile.shear.punching_min_reinforcement(
             vuv=result.vuv, fc=materials.fc, lam=lam, lam_s=profile.footing.punching_size_factor(), alpha_s=result.alpha_s,
             fy=materials.fy, b0=result.perimeter.length, bslab=bslab)
         if not required:
             continue
-        provided = _in_slab(rows, centre, bslab)
+        provided = _in_slab(rows, slab)
         note = "; ".join(text for text in (column.note, column.minimum_note) if text)
-        checks.append(Check(f"Acero minimo por punzonamiento (barras {direction})", Status.PASS if provided >= required else Status.FAIL,
+        checks.append(Check(f"Acero minimo por punzonamiento ({column.bars(direction)})",
+                            Status.PASS if provided >= required else Status.FAIL,
                             clause=profile.footing.clauses()["punching_min_reinforcement"], member=footing.id,
-                            demand=required, capacity=provided, unit="mm2", values=(("bslab", bslab),), note=note))
+                            demand=required, capacity=provided, unit="mm2", values=_slab_values(slab), note=note))
     return checks
 
 

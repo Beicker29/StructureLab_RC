@@ -24,6 +24,7 @@ Referencia de la entrada y la salida de la verificación de vigas, común a los 
 | `materials.fyt` | MPa | Fluencia del refuerzo transversal (estribos). Se declara aunque el ejemplo no lo use. |
 | `materials.concrete` | texto | `normalweight` (peso normal) o `lightweight` (liviano); define λ. |
 | `materials.coating` | texto | Recubrimiento de las barras: `uncoated` (sin recubrimiento), `galvanized`, `epoxy` o `zinc_epoxy` (dual de zinc y epóxico); cambia la longitud de desarrollo (ψe, D-071). |
+| `materials.max_aggregate` | mm | Tamaño máximo nominal del agregado grueso, opcional. En vigas aún no se usa: la separación mínima de las barras se revisa por ahora en zapatas (D-102). |
 | `members` | lista | Vigas del proyecto. |
 
 ### Miembro (`members[]`)
@@ -86,6 +87,7 @@ Cada verificación de `resultado.json` tiene:
 | `values` | Valores intermedios con su unidad entre corchetes, por ejemplo `phi`, `Vc [kN]` o `ex [mm]`. Los factores φ se leen de aquí. |
 | `note` | Aclaración, por ejemplo la región de contacto de la zapata. |
 | `errors` | Errores estructurados (`code`, `message`, `details`) cuando el estado no es PASS. |
+
 ## Verificaciones de vigas
 
 | Verificación | Qué compara |

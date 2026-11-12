@@ -12,7 +12,7 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.combined_beam import two_way_warning
 from structurelab_rc.domain.footing.combined_diagrams import Envelope
 from structurelab_rc.domain.status import Status, aggregate
-from structurelab_rc.model.combined import CombinedFooting
+from structurelab_rc.model.combined import CombinedColumn, CombinedFooting, beam_to_global
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingLoad, RectangularBase, Soil
 from structurelab_rc.model.project import Demands, Project
 from structurelab_rc.reporting.units import kN, kNm, kPa
@@ -21,7 +21,8 @@ _DIGITS = 6
 # Unidad interna → (unidad de presentación, conversión).
 _UNITS = {"N*mm": ("kN-m", kNm), "N": ("kN", kN), "N/mm2": ("kPa", kPa)}
 # Valores de una verificación con unidad: nombre → unidad interna.
-_VALUE_UNITS = {"Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi Tth": "N*mm", "Vc": "N", "Vs": "N",
+_VALUE_UNITS = {"s": "mm", "db": "mm", "dagg": "mm", "bslab sin recortar": "mm",
+                "Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi Tth": "N*mm", "Vc": "N", "Vs": "N",
                 "c": "mm", "d": "mm", "theta": "deg", "Aoh": "mm2", "ph": "mm", "across": "mm", "across_max": "mm",
                 "N": "N", "Mx base": "N*mm", "My base": "N*mm", "ex": "mm", "ey": "mm", "As": "mm2", "Vu": "N",
                 "b0": "mm", "vuv": "MPa", "bslab": "mm", "A1": "mm2", "A2": "mm2", "Av/s": "mm2/mm", "At/s": "mm2/mm",
@@ -143,25 +144,65 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
     """Zapata combinada (D-080): geometría, columnas con sus cargas, propiedades derivadas, armado, verificaciones con su
     caso, su posición z (viga larga o franja) y su nota (la sección o la columna) y, si se calcularon, los diagramas
     envolventes de momento y cortante (D-095)."""
-    columns = [{**column.model_dump(mode="json", exclude={"loads"}), "loads": [_load_data(load) for load in column.loads]}
-               for column in footing.columns]
+    rotated = footing.principal_direction == "y"
+    columns = [_declared_column(column, rotated) for column in footing.columns]
+    reinforcement = footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin", "torsion_layers"})
+    geometry = _geometry(footing, {"beam", "principal_direction"})
+    properties = _base_properties(footing, soil)
+    if rotated:
+        # El cálculo va en ejes de la viga; la salida, en los ejes declarados (D-101).
+        geometry["lx"], geometry["ly"] = geometry["ly"], geometry["lx"]
+        reinforcement.update({name: _swapped_mat(reinforcement[name]) for name in ("bottom", "top") if reinforcement.get(name)})
+        properties = _swapped_properties(properties)
     return {
         "id": footing.id,
-        # La dirección principal solo se escribe si es la Y global (D-094): con X, la salida no cambia.
-        "geometry [mm]": _geometry(footing, {"beam", *(["principal_direction"] if footing.principal_direction == "y" else [])}),
+        "geometry [mm]": geometry,
         "columns": columns,
-        "properties": _base_properties(footing, soil),
-        "reinforcement": footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin",
-                                                                  "torsion_layers"}),
+        "properties": properties,
+        "reinforcement": reinforcement,
         "deep_beam": footing.deep_beam,
         "two_way_warning": _two_way(footing),
         "status": _status(checks),
         "checks": [{**check_data(check), "case": check.case, "z [mm]": None if check.z is None else significant(check.z)}
                    for check in checks],
         "foundation_beam_moments": beam_moments(checks),
-        **({"diagrams": {"longitudinal": envelope_data(diagrams[0]), "transverse": [envelope_data(item) for item in diagrams[1]]}}
+        **({"diagrams": {"principal": envelope_data(diagrams[0]), "secondary": [envelope_data(item) for item in diagrams[1]]}}
            if diagrams is not None else {}),
     }
+
+
+def _declared_column(column: CombinedColumn, rotated: bool) -> dict[str, Any]:
+    """Una columna de la zapata combinada con sus cargas, en los ejes declarados (D-101): con la dirección principal en
+    la Y global, x = −y', y = x', cx = cy', cy = cx' y las fuerzas y momentos con el mismo giro."""
+    data = column.model_dump(mode="json", exclude={"loads"})
+    loads = [_load_data(load) for load in column.loads]
+    if not rotated:
+        return {**data, "loads": loads}
+    x, y = beam_to_global(column.x, column.y)
+    data.update({"x": significant(x), "y": significant(y), "cx": column.cy, "cy": column.cx})
+    for load, source in zip(loads, column.loads, strict=True):
+        vx, vy = beam_to_global(source.vx, source.vy)
+        mx, my = beam_to_global(source.mx, source.my)
+        load.update({"Vx [kN]": significant(kN(vx)), "Vy [kN]": significant(kN(vy)), "Mx [kN-m]": significant(kNm(mx)),
+                     "My [kN-m]": significant(kNm(my))})
+    return {**data, "loads": loads}
+
+
+def _swapped_mat(mat: dict[str, Any]) -> dict[str, Any]:
+    """Una malla (bottom o top) de ejes de la viga a los declarados: x e y, y first, se intercambian (D-101)."""
+    swapped = {**mat, "x": mat.get("y"), "y": mat.get("x")}
+    if mat.get("first") is not None:
+        swapped["first"] = "y" if mat["first"] == "x" else "x"
+    return swapped
+
+
+def _swapped_properties(properties: dict[str, float]) -> dict[str, float]:
+    """Las propiedades con eje (inercias, módulos y núcleo) de ejes de la viga a los declarados (D-101)."""
+    pairs = (("Ix [m4]", "Iy [m4]"), ("Sx [m3]", "Sy [m3]"), ("nucleo lx/6 [mm]", "nucleo ly/6 [mm]"))
+    out = dict(properties)
+    for first, second in pairs:
+        out[first], out[second] = properties[second], properties[first]
+    return out
 
 
 def _two_way(footing: CombinedFooting) -> dict[str, float] | None:
@@ -185,7 +226,9 @@ def beam_moments(checks: list[Check]) -> list[dict[str, Any]]:
         moment = dict(check.values).get("para la viga", 0.0)
         if moment > 0:
             column = check.note.split(":")[0] if check.note.startswith("Columna") else ""
-            direction = check.name.rsplit(" ", 1)[-1].rstrip(")").upper()
+            # "(barras x)" en la zapata aislada; "(direccion principal)" o "(direccion secundaria)" en la combinada (D-101).
+            label = check.name.rsplit("(", 1)[-1].rstrip(")")
+            direction = label.removeprefix("barras ").upper() if label.startswith("barras ") else label.removeprefix("direccion ")
             out.append({"case": check.case, "column": column, "beam_direction": direction,
                         "M [kN-m]": significant(kNm(moment))})
     return out
@@ -220,7 +263,7 @@ def _status(checks: list[Check]) -> str:
     return str(aggregate(check.status for check in checks)) if checks else str(Status.PASS)
 
 
-Diagrams = dict[str, tuple[Envelope, list[Envelope]]]  # id de la zapata combinada → longitudinal y transversales
+Diagrams = dict[str, tuple[Envelope, list[Envelope]]]  # id de la zapata combinada → dirección principal y secundarias
 
 
 def envelope_data(envelope: Envelope) -> dict[str, Any]:
@@ -255,7 +298,8 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
         "profile": project.profile,
         "seismic": {"level": project.seismic.level, "justification": project.seismic.justification},
         "materials": {"fc [MPa]": project.materials.fc, "fy [MPa]": project.materials.fy, "fyt [MPa]": project.materials.fyt,
-                      "concrete": project.materials.concrete, "coating": project.materials.coating},
+                      "concrete": project.materials.concrete, "coating": project.materials.coating,
+                      **({} if project.materials.max_aggregate is None else {"max_aggregate [mm]": project.materials.max_aggregate})},
         "materials_used": _materials_used(project),
     }
     members = []

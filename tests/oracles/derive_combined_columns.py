@@ -52,8 +52,28 @@ BARS = _B.BARS
 PHI = _S.PHI
 LEVELS = _K.LEVELS
 LEVEL = {folder: LEVELS[folder]["bajo"] for folder in LEVELS}
-CLAUSES = {"aci_318_25": {"spacing": "13.3.2.1 y 7.7.2.3", "shrinkage": "24.4.3.2 y 24.4.3.3"},
-           "nsr_10": {"spacing": "C.10.5.4", "shrinkage": "C.7.12.2.1 y C.7.12.2.2"}}
+# Las barras de la zapata combinada se nombran por su dirección (D-101): x es la principal (a lo largo de la viga).
+DIRECTIONS = {"x": "direccion principal", "y": "direccion secundaria"}
+CLAUSES = {"aci_318_25": {"spacing": "13.3.2.1 y 7.7.2.3", "shrinkage": "24.4.3.2 y 24.4.3.3", "min_spacing": "25.2.1"},
+           "nsr_10": {"spacing": "C.10.5.4", "shrinkage": "C.7.12.2.1 y C.7.12.2.2", "min_spacing": "C.7.6.1 y C.3.3.2(c)"}}
+AGGREGATE = 19.0  # mm, tamaño máximo nominal del agregado de los casos (D-102)
+
+
+def _min_spacing(folder: str, f: dict) -> list[dict]:
+    """Separación libre mínima (D-102) de cada refuerzo declarado: s − db frente a máx(25 mm, db, 4/3·agregado), igual en
+    los dos perfiles (ACI 25.2.1; NSR-10 C.7.6.1 y C.3.3.2(c))."""
+    declared = [("barras inferiores, direccion principal", f["bottom"]["x"]),
+                ("barras inferiores, direccion secundaria", f["bottom"]["y"])]
+    declared += [(f"band, columna {c['id']}", c["band"]) for c in f["columns"] if c.get("band")]
+    top = f.get("top") or {}
+    declared += [(f"barras superiores, {DIRECTIONS[d]}", top[d]) for d in ("x", "y") if top.get(d)]
+    out = []
+    for label, bars in declared:
+        db = BARS[bars["designation"]][0]
+        clear, required = bars["spacing"] - db, max(25.0, db, 4.0 / 3.0 * AGGREGATE)
+        out.append({"name": f"Separacion minima ({label})", "status": "PASS" if clear >= required else "FAIL",
+                    "demand": required, "capacity": clear, "clause": CLAUSES[folder]["min_spacing"]})
+    return out
 
 
 def _shrinkage_ratio(folder: str) -> float:
@@ -207,10 +227,10 @@ def _punch(folder: str, f: dict, beam: dict, spec: dict) -> list[dict]:
     if folder == "aci_318_25" and vuv > PHI * 0.17 * math.sqrt(FC):
         for direction in ("x", "y"):
             across, centre = (cy, spec["centre"][1]) if direction == "x" else (cx, spec["centre"][0])
-            bslab = across + 3 * f["h"]
+            low, high, bslab = _S._slab(f, direction, across, centre)
             required = 5 * vuv * bslab * b0 / (PHI * alpha * FY)
-            provided = sum(ab for p, ab in _bars(f, direction, spec["indices"]) if abs(p - centre) <= bslab / 2 + 1e-6)
-            checks.append({"name": f"Acero minimo por punzonamiento (barras {direction})", "case": case, "where": where,
+            provided = sum(ab for p, ab in _bars(f, direction, spec["indices"]) if low - 1e-6 <= p <= high + 1e-6)
+            checks.append({"name": f"Acero minimo por punzonamiento ({DIRECTIONS[direction]})", "case": case, "where": where,
                            "status": "PASS" if provided >= required else "FAIL", "demand": required, "capacity": provided})
     checks += _transfer(folder, f, spec, {"x": (msx, 1 - gx), "y": (msy, 1 - gy)})
     return checks
@@ -240,12 +260,12 @@ def _transfer(folder: str, f: dict, spec: dict, moments: dict[str, tuple[float, 
     out = []
     for direction, (msc, gamma_f) in moments.items():
         across, centre = (cy, spec["centre"][1]) if direction == "x" else (cx, spec["centre"][0])
-        bslab = across + 3 * f["h"]
-        area = sum(ab for p, ab in _bars(f, direction, spec["indices"]) if abs(p - centre) <= bslab / 2 + 1e-6)
+        low, high, bslab = _S._slab(f, direction, across, centre)
+        area = sum(ab for p, ab in _bars(f, direction, spec["indices"]) if low - 1e-6 <= p <= high + 1e-6)
         demand = gamma_f * abs(msc)
         nominal, phi, _ = _F._strength(area, bslab, rows[direction]["depth"], profile)
         common = {"case": spec["case"], "where": spec["where"], "demand": demand}
-        out.append({**common, "name": f"Transferencia de momento por flexion (barras {direction})",
+        out.append({**common, "name": f"Transferencia de momento por flexion ({DIRECTIONS[direction]})",
                     "status": "PASS" if demand <= phi * nominal else "FAIL", "capacity": phi * nominal})
         capacity = 0.0
         if direction == "x" and _B.top_x(f):
@@ -254,17 +274,17 @@ def _transfer(folder: str, f: dict, spec: dict, moments: dict[str, tuple[float, 
             n = _F._count(f["ly"], f["cover"], db, top["spacing"])
             half = f["ly"] / 2 - f["cover"] - db / 2
             start = -half + (2 * half - (n - 1) * top["spacing"]) / 2
-            top_area = sum(ab for i in range(n) if abs(start + i * top["spacing"] - centre) <= bslab / 2 + 1e-6)
+            top_area = sum(ab for i in range(n) if low - 1e-6 <= start + i * top["spacing"] <= high + 1e-6)
             nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - f["cover"] - top["above"] - db / 2, profile)
             capacity = phi * nominal
         elif direction == "y" and _top_y(f):
             top = _top_y(f)
-            top_area = sum(top["ab"] for p in top["positions"] if abs(p - centre) <= bslab / 2 + 1e-6)
+            top_area = sum(top["ab"] for p in top["positions"] if low - 1e-6 <= p <= high + 1e-6)
             nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - top["from_top"], profile)
             capacity = phi * nominal
         elif LEVEL[folder] in profile["plain_levels"]:
             capacity = 0.60 * 0.42 * math.sqrt(FC) * bslab * (f["h"] - 50.0) ** 2 / 6
-        negative = {**common, "name": f"Transferencia de momento: parte negativa (barras {direction})", "status": "PASS",
+        negative = {**common, "name": f"Transferencia de momento: parte negativa ({DIRECTIONS[direction]})", "status": "PASS",
                     "capacity": capacity}
         if demand > capacity:  # la toma la viga: sin demanda (sin razón) en la zapata
             negative.pop("demand")
@@ -435,7 +455,8 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
     for y, moment, shear, _ in _strip_sections(f, beam, index, case, strip["depth"]):
         if moment < 0 and not strip["top"]:
             # Sin barras superiores transversales: concreto simple en el ancho de la franja (D-072, D-095) y el cortante.
-            plain = _F._plain({**f, "lx": strip["width"]}, "y", -moment, case, _F.PROFILES[folder], LEVEL[folder])
+            plain = {**_F._plain({**f, "lx": strip["width"]}, "y", -moment, case, _F.PROFILES[folder], LEVEL[folder]),
+                     "name": "Flexion concreto simple (cara superior, direccion secundaria)"}
             items = [plain, *_B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None))]
             out += [{**item, "case": case, "z_mm": y + f["ly"] / 2, "where": where} for item in items]
             continue
@@ -517,7 +538,7 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
         ratio = _ratio(f["ly"], row["depth"], area, moment)
         available = min(x + half, half - x) - f["cover"]
         out.append(_develop(folder, f, (row["db"], row["spacing"], row["depth"], bottom),
-                            (ratio, available, f"Desarrollo barras {label} x", ""), level))
+                            (ratio, available, f"Desarrollo barras {label}, direccion principal", ""), level))
     hy = f["ly"] / 2
     top = _top_y(f)
     for index, c in enumerate(f["columns"]):
@@ -531,13 +552,13 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
         if positive_y > 0 and strip["bottom_area"] > 0:
             ratio = _ratio(strip["width"], strip["depth"], strip["bottom_area"], positive_y)
             name = (f"Desarrollo refuerzo band (columna {c['id']})" if strip["band"]
-                    else f"Desarrollo barras y (franja de la columna {c['id']})")
+                    else f"Desarrollo barras inferiores, direccion secundaria (franja de la columna {c['id']})")
             out.append(_develop(folder, f, (strip["db"], strip["spacing"], strip["depth"], "bottom"), (ratio, available, name, ""), level))
         if top is not None and negative_y > 1e3 and strip["top_area"] > 0:
             depth = f["h"] - top["from_top"]
             ratio = _ratio(strip["width"], depth, strip["top_area"], negative_y)
-            out.append(_develop(folder, f, (top["db"], top["spacing"], depth, "top"),
-                                (ratio, available, f"Desarrollo barras superiores y (franja de la columna {c['id']})", ""), level))
+            name = f"Desarrollo barras superiores, direccion secundaria (franja de la columna {c['id']})"
+            out.append(_develop(folder, f, (top["db"], top["spacing"], depth, "top"), (ratio, available, name, ""), level))
     return out
 
 
@@ -557,10 +578,10 @@ def _shrinkage(folder: str, f: dict) -> list[dict]:
     out = []
     for direction, zone, layers in zones:
         provided = sum(BARS[bars["designation"]][1] * 1000.0 / bars["spacing"] for _, bars in layers)
-        out.append({"name": f"Retraccion y temperatura: cuantia (barras {direction}, {zone})",
+        out.append({"name": f"Retraccion y temperatura: cuantia ({DIRECTIONS[direction]}, {zone})",
                     "status": "PASS" if provided >= required else "FAIL", "demand": required, "capacity": provided,
                     "clause": clause, "where": ""})
-        out += [{"name": f"Retraccion y temperatura: separacion (barras {direction} {label}, {zone})",
+        out += [{"name": f"Retraccion y temperatura: separacion ({DIRECTIONS[direction]}, {label}, {zone})",
                  "status": "PASS" if bars["spacing"] <= maximum else "FAIL", "demand": bars["spacing"], "capacity": maximum,
                  "clause": clause, "where": ""} for label, bars in layers]
     return out
@@ -623,8 +644,9 @@ def _expected(folder: str, f: dict, level: str) -> list[dict]:
     rows = _bottom_rows(f)
     maximum = min(3 * f["h"], 450.0)
     checks += _shrinkage(folder, f)
-    checks.append({"name": "Malla inferior y: separacion maxima", "status": "PASS" if rows["y"]["spacing"] <= maximum else "FAIL",
-                   "demand": rows["y"]["spacing"], "capacity": maximum, "clause": CLAUSES[folder]["spacing"], "where": ""})
+    checks.append({"name": "Direccion secundaria: separacion maxima (malla inferior)",
+                   "status": "PASS" if rows["y"]["spacing"] <= maximum else "FAIL", "demand": rows["y"]["spacing"],
+                   "capacity": maximum, "clause": CLAUSES[folder]["spacing"], "where": ""})
     checks += _development(folder, f, beams, cases, level)
     checks += _connection(folder, f, cases)
     return checks
@@ -656,6 +678,9 @@ CASES = [
     ("interiores", "dos columnas interiores simétricas, con band bajo cada una; barras superiores con gancho y malla recta",
      _footing([_column("C1", -1800.0, [_load("U1", 1300.0)], band=BAND), _column("C2", 1800.0, [_load("U1", 1300.0)], band=BAND)],
               top=_B.top_mat("#7", 150.0, "hook"))),
+    ("band-apretado", "el caso anterior con el band de C1 a 50 mm: separación libre 24.6 mm, menor que la mínima (D-102)",
+     _footing([_column("C1", -1800.0, [_load("U1", 1300.0)], band={"designation": "#8", "spacing": 50.0}),
+               _column("C2", 1800.0, [_load("U1", 1300.0)], band=BAND)], top=_B.top_mat("#7", 150.0, "hook"))),
     ("borde", "columna de borde (perímetro de 3 lados, αs = 30), cargas desiguales, sin band",
      _footing([_column("C1", -2775.0, [_load("U1", 900.0)]), _column("C2", 1200.0, [_load("U1", 1800.0)], cx=500.0, cy=500.0)])),
     ("momentos", "dos casos con My, Mx, Vx y columnas desplazadas en Y; pedestal",
@@ -701,11 +726,12 @@ CASES = [
 def main() -> None:
     for folder in ("aci_318_25", "nsr_10"):
         level = LEVELS[folder]["bajo"]
-        cases = [{"id": case_id, "description": text, "footing": footing, "expected": _expected(folder, footing, level)}
-                 for case_id, text, footing in CASES]
+        cases = [{"id": case_id, "description": text, "footing": footing, "expected": _expected(folder, footing, level),
+                  "min_spacing": _min_spacing(folder, footing)} for case_id, text, footing in CASES]
         data = {"description": "Zapatas combinadas V3J.3 (D-082): punzonamiento por columna, franjas transversales con las reglas "
                                "de vigas, malla y fuera de las franjas, desarrollo, aplastamiento y pasadores.",
-                "soil": _B._C.SOIL, "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight", "coating": "uncoated"},
+                "soil": _B._C.SOIL, "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight", "coating": "uncoated",
+                                                  "max_aggregate": AGGREGATE},
                 "seismic_level": level, "tolerance_rel": 1e-7, "cases": cases}
         (HERE / folder / "derived_combined_columns.json").write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
                                                                      encoding="utf-8")

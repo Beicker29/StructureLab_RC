@@ -268,9 +268,9 @@ def _flange_checks(folder: str, f: dict, beam: dict) -> list[dict]:
     capacity = _F._phi(state["et"], profile) * state["Mn"]
     vu = max(shear, 0.0) * 1000.0
     vc = _S._one_way_vc(folder, 1000.0, depth, per_metre / (1000.0 * depth), vu, abs(mu_d) * 1000.0)
-    return [{"name": "Aleta: flexion (barras y)", "status": "PASS" if capacity >= moment * 1000.0 else "FAIL",
+    return [{"name": "Aleta: flexion (direccion secundaria)", "status": "PASS" if capacity >= moment * 1000.0 else "FAIL",
              "demand": moment * 1000.0, "capacity": capacity},
-            {"name": "Aleta: cortante en una direccion (barras y)", "status": "PASS" if vu <= PHI_SHEAR * vc else "FAIL",
+            {"name": "Aleta: cortante en una direccion (direccion secundaria)", "status": "PASS" if vu <= PHI_SHEAR * vc else "FAIL",
              "demand": vu, "capacity": PHI_SHEAR * vc}]
 
 
@@ -316,7 +316,7 @@ def _expected(folder: str, f: dict) -> dict:
         checks.append({"name": "Viga T: refuerzo del ala en traccion", "status": "PASS" if spread >= flange or outer else "FAIL"})
     minimum = 0.0018 * f["h"] * 1000.0
     provided = BARS[f["bottom"]["y"]["designation"]][1] / f["bottom"]["y"]["spacing"] * 1000.0
-    checks.append({"name": "Aleta: acero minimo (barras y)", "status": "PASS" if provided >= minimum else "FAIL",
+    checks.append({"name": "Aleta: acero minimo (direccion secundaria)", "status": "PASS" if provided >= minimum else "FAIL",
                    "demand": minimum, "capacity": provided})
     return {"checks": checks, "flange_width": flange}
 

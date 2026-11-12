@@ -63,21 +63,27 @@ def _name(kind: str, mat: str, direction: str) -> str:
 def plain_check(basis: Basis, footing: FootingBase, direction: str, demand: float, location: tuple[str, str, str]) -> Check:
     """Momento negativo sin malla superior: concreto simple en todo el ancho, espesor h − 50 mm (D-072). location es la
     cara (o sección), el caso y la nota que describe la sección."""
-    return _plain_concrete(basis, footing, (direction, None), demand, location)
+    return _plain_concrete(basis, footing, (direction, None, None), demand, location)
+
+
+def plain_principal_check(basis: Basis, footing: FootingBase, demand: float, location: tuple[str, str, str]) -> Check:
+    """El momento negativo de la viga de una zapata combinada (dirección principal, D-101) sin barras superiores en esa
+    dirección: concreto simple en todo el ancho (D-072)."""
+    return _plain_concrete(basis, footing, ("x", None, "direccion principal"), demand, location)
 
 
 def plain_strip_check(basis: Basis, footing: FootingBase, demand: float, location: tuple[str, str, str], width: float) -> Check:
-    """El momento negativo de la franja transversal de una zapata combinada (barras y), sin barras superiores
-    transversales: concreto simple en el ancho de la franja (D-072, D-095)."""
-    return _plain_concrete(basis, footing, ("y", width), demand, location)
+    """El momento negativo de la franja transversal de una zapata combinada (dirección secundaria), sin barras
+    superiores en esa dirección: concreto simple en el ancho de la franja (D-072, D-095)."""
+    return _plain_concrete(basis, footing, ("y", width, "direccion secundaria"), demand, location)
 
 
-def _plain_concrete(basis: Basis, footing: FootingBase, section: tuple[str, float | None], demand: float,
+def _plain_concrete(basis: Basis, footing: FootingBase, section: tuple[str, float | None, str | None], demand: float,
                     location: tuple[str, str, str]) -> Check:
-    direction, width = section
+    direction, width, bars = section
     face, load_case, note = location
     plain = basis.profile.plain
-    name = f"{PLAIN} (cara superior, barras {direction})"
+    name = f"{PLAIN} (cara superior, {bars or f'barras {direction}'})"
     clause = plain.clauses()["flexure"]
     member = footing.id
     if not plain.permitted_in_foundations(basis.seismic_level):

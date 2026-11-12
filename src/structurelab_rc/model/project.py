@@ -26,13 +26,15 @@ Coating = Literal["uncoated", "galvanized", "epoxy", "zinc_epoxy"]
 
 class Materials(_Input):
     """fy del refuerzo longitudinal y fyt de los estribos; concrete declara el tipo de concreto (D-028) y coating el
-    recubrimiento de las barras, que cambia su longitud de desarrollo (D-071)."""
+    recubrimiento de las barras, que cambia su longitud de desarrollo (D-071). max_aggregate es el tamaño máximo nominal
+    del agregado grueso, en mm (D-102): sin él, la separación mínima de las barras queda INCOMPLETE."""
 
     fc: PositiveFloat
     fy: PositiveFloat
     fyt: PositiveFloat
     concrete: Literal["normalweight", "lightweight"]
     coating: Coating
+    max_aggregate: PositiveFloat | None = None
 
 
 class Section(_Input):

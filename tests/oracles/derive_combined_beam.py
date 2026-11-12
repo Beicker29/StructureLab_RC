@@ -458,15 +458,17 @@ def _expected(folder: str, f: dict, level: str) -> dict:
             torsion = _torsion_checks(folder, f, rows, (shear, moment, torque))
             shear_part = _shear_checks(folder, f, rows, (shear, moment)) if torsion is None else torsion
             if moment < 0 and not top_x(f):
-                station = [_F._plain(f, "x", -moment, case, profile, level), *shear_part]
+                station = [{**_F._plain(f, "x", -moment, case, profile, level),
+                            "name": "Flexion concreto simple (cara superior, direccion principal)"}, *shear_part]
             else:
                 station = _flexure_checks(folder, f, rows, moment) + shear_part
             checks += [{**item, "case": case, "z_mm": z} for item in station]
     maximum = min(3 * f["h"], 450.0)
     for row in rows:
-        bars = "barras inferiores x" if row["face"] == "bottom" else "barras superiores x"
-        checks.append({"name": f"Viga larga: separacion maxima ({bars})", "status": "PASS" if row["spacing"] <= maximum else "FAIL",
-                       "demand": row["spacing"], "capacity": maximum, "clause": CLAUSES[folder]["spacing"]})
+        bars = "barras inferiores" if row["face"] == "bottom" else "barras superiores"
+        checks.append({"name": f"Direccion principal: separacion maxima ({bars})",
+                       "status": "PASS" if row["spacing"] <= maximum else "FAIL", "demand": row["spacing"],
+                       "capacity": maximum, "clause": CLAUSES[folder]["spacing"]})
     return {"checks": checks, "equilibrium_failures": failures, "torques": torques}
 
 

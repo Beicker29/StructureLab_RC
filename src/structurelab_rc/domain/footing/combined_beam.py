@@ -1,4 +1,7 @@
-"""Viga en la dirección larga de una zapata combinada con los casos mayorados (D-080, V3J.2; D-081).
+"""Viga de la dirección principal ("viga larga") de una zapata combinada con los casos mayorados (D-080, V3J.2; D-081).
+
+Como todo el cálculo de la combinada, en ejes de la viga: X a lo largo de ella (dirección principal), Y transversal
+(dirección secundaria). Las verificaciones se devuelven en los ejes declarados en domain/footing/declared.py (D-101).
 
 La zapata es rígida: la carga neta hacia arriba es la presión de Bellos y Bakas de la resultante de las dos columnas
 menos las cargas uniformes (domain/footing/loads.py), integrada en todo el ancho. Cada columna baja en su eje la fuerza
@@ -37,7 +40,7 @@ from structurelab_rc.domain.beam.station import checks_for, shear_and_torsion_ch
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import column_vertical, stem_line_load
-from structurelab_rc.domain.footing.flexure import plain_check
+from structurelab_rc.domain.footing.flexure import plain_principal_check
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows
 from structurelab_rc.domain.status import Status
@@ -47,8 +50,8 @@ from structurelab_rc.model.footing import FootingLoad, Soil
 from structurelab_rc.model.project import Demands, Member, Section, Station
 from structurelab_rc.model.reinforcement import BarLayer, BarPosition, ReinforcementLayout
 
-SPACING = "Viga larga: separacion maxima"
-BARS = {"bottom": "barras inferiores x", "top": "barras superiores x"}
+SPACING = "Direccion principal: separacion maxima"
+BARS = {"bottom": "barras inferiores", "top": "barras superiores"}
 _SUBDIVISIONS = 64
 _BISECTION_STEPS = 200
 _EDGE = 1e-6
@@ -364,7 +367,7 @@ def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, give
                                                                       tu=beam.torque(at)))
     if moment < 0 and not has_top:
         # Sin barras superiores: flexión de concreto simple (D-072) y el cortante (y la torsión) de vigas.
-        flexure = plain_check(basis, footing, "x", -moment, (section.label, beam.case, _sentence(section.label)))
+        flexure = plain_principal_check(basis, footing, -moment, (section.label, beam.case, _sentence(section.label)))
         given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
         deep = deep_beam_checks(given_station) if footing.deep_beam else ()
         shear_only = [replace(check, member=footing.id, z=z, case=beam.case) for check in (*shear_and_torsion_checks(given_station), *deep)]

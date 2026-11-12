@@ -80,21 +80,24 @@ _FOOTING_CONVENTIONS = (
 )
 _COMBINED_CONVENTIONS = (
     "Zapata combinada rectangular de dos columnas, rígida, con la presión lineal y sin tracción de Bellos y Bakas (2017) "
-    "de la resultante de las dos columnas; X es la dirección larga y el origen es el centroide de la base (D-080).",
+    "de la resultante de las dos columnas (D-080). Dirección principal: la de la viga que une las columnas; secundaria: "
+    "la transversal. Ejes globales declarados, con el origen en el centroide de la base (D-094, D-101).",
     "Las fuerzas de cada columna actúan en su eje a la altura h + pedestal: el cortante horizontal produce un momento en "
-    "la base, que entra en la presión, en la viga larga y en el punzonamiento.",
-    "Viga en la dirección larga revisada con el código de vigas en sus secciones críticas (mayores momentos y a d de las "
-    "caras), con Vc y Av,min de cimentación; en una cara de columna el cortante es el de la sección a d (D-081, D-082).",
-    "Torsión de la viga larga por equilibrio: el momento estático de cada columna respecto al eje X (F·y − Mx + H·Vy) "
+    "la base, que entra en la presión, en la viga de la dirección principal y en el punzonamiento.",
+    "Viga de la dirección principal revisada con el código de vigas en sus secciones críticas (mayores momentos y a d de "
+    "las caras), con Vc y Av,min de cimentación; en una cara de columna el cortante es el de la sección a d (D-081, D-082).",
+    "Torsión de la viga por equilibrio: el momento estático de cada columna respecto al eje de la viga (F·y − Mx + H·Vy) "
     "menos el de la carga neta del suelo; Tu se toma a d de la cara, como el cortante, y se desprecia si Tu < φTth; si "
     "no, se verifica combinada con el cortante con el código de vigas y las capas de Aℓ declaradas (D-088).",
-    "T invertida (beam): la viga larga es una T volteada con el ala de viga aislada (≤ 4bw y solo si h ≥ 0.5bw, ACI "
-    "6.3.2.2, NSR-10 C.8.12.4), las barras x inferiores dentro del ala y As,min con el ala a tracción por ser isostática; "
+    "T invertida (beam): la viga es una T volteada con el ala de viga aislada (≤ 4bw y solo si h ≥ 0.5bw, ACI "
+    "6.3.2.2, NSR-10 C.8.12.4), las barras inferiores de la dirección principal dentro del ala y As,min con el ala a "
+    "tracción por ser isostática; "
     "las aletas son voladizos por metro desde la cara de la viga; sin punzonamiento, franjas ni transferencia γf·Msc: la "
     "carga de la columna la toma la viga (D-093).",
-    "Franja transversal bajo cada columna de ancho columna + d/2 a cada lado, con la carga de la columna repartida en el "
-    "ancho con la forma de la presión, revisada también con el código de vigas (D-080, D-082); el par de la columna que "
-    "la franja no equilibra lo lleva la viga larga como torsión y Vy como fuerza axial de la franja se desprecia (D-088).",
+    "Franja transversal (dirección secundaria) bajo cada columna de ancho columna + d/2 a cada lado, con la carga neta de "
+    "la columna repartida en el ancho con la forma de la presión, revisada también con el código de vigas (D-080, D-082, "
+    "D-095); el par de la columna que la franja no equilibra lo lleva la viga como torsión y la fuerza horizontal "
+    "transversal como fuerza axial de la franja se desprecia (D-088).",
     "Punzonamiento por columna con la carga neta de Bellos dentro del perímetro crítico; el esfuerzo se evalúa en cada "
     "esquina con el cortante directo y el del momento transferido en los dos ejes, y gobierna la mayor (D-083).",
     "Acero mínimo por punzonamiento (ACI 8.6.1.2) aplicado a la zapata combinada por criterio del usuario, aunque 13.3.2.1 "
@@ -115,8 +118,8 @@ _COMBINED_LIMITATIONS = (
     "uniforme (D-085).",
     "Revisión en una dirección (ACI 13.3.2); el comportamiento en dos direcciones (13.3.4) no está implementado y se avisa "
     "cuando B ≥ ℓn, la luz libre entre las caras de las columnas (D-091).",
-    "Viga larga de gran altura (deep_beam): la resistencia por análisis no lineal o puntal-tensor no se verifica (D-089). "
-    "Otras formas de zapata combinada y más de dos columnas: no cubiertas.",
+    "Viga de la dirección principal de gran altura (deep_beam): la resistencia por análisis no lineal o puntal-tensor no "
+    "se verifica (D-089). Otras formas de zapata combinada y más de dos columnas: no cubiertas.",
 )
 _FOOTING_LIMITATIONS = (
     "El pedestal no aporta empuje pasivo: el pasivo solo actúa sobre el espesor de la zapata (decisión del usuario, "
@@ -193,6 +196,9 @@ def _materials(results: dict[str, Any]) -> list[Block]:
             ["Esfuerzo de fluencia del refuerzo transversal (fyt)", number(materials["fyt [MPa]"], "MPa"), "MPa", "Dato del usuario"],
             ["Tipo de concreto", _CONCRETE.get(materials["concrete"], materials["concrete"]), "–", "Dato del usuario"],
             ["Recubrimiento de las barras", _COATING.get(materials["coating"], materials["coating"]), "–", "Dato del usuario"]]
+    if "max_aggregate [mm]" in materials:
+        rows.append(["Tamaño máximo nominal del agregado grueso (dagg)", number(materials["max_aggregate [mm]"], "mm"), "mm",
+                     "Dato del usuario"])
     for key, value in used.items():
         name, unit = unit_of(key)
         description, symbol = describe(name)
@@ -241,21 +247,111 @@ def _check_detail(number_text: str, where: str, check: dict[str, Any], locations
     return blocks
 
 
-def _requirements(items: list[Located]) -> list[Block]:
-    rows = []
-    for name, (where, check) in governing(items).items():
-        if classify(name)[0] != "requirements":
+# Subcapítulos de los requisitos técnicos (D-100, D-102): por palabras del nombre de la verificación (sin tilde), en
+# orden; la separación mínima va antes que las demás separaciones. El resto va en "Otros requisitos".
+_MINIMUM_WORDS = ("acero minimo", "refuerzo minimo", "refuerzo transversal minimo", "area minima", "cuantia",
+                  "refuerzo distribuido")
+_SPACING_WORDS = ("separacion", "cortinas", "refuerzo superficial")
+_REQUIREMENT_SECTIONS = (
+    ("Refuerzo mínimo", ()),
+    ("Separación del refuerzo", ("Separación máxima del refuerzo", "Separación mínima del refuerzo")),
+    ("Deformación neta de tracción", ()),
+    ("Otros requisitos", ()),
+)
+_NBSP = " "
+_REQUIREMENT_HEADERS = ["Requisito", "Exigido", "Suministrado", "Referencia normativa", "Resultado"]
+# La cara en tracción de una revisión de flexión, de su nota: nombra el refuerzo que se revisa (D-102).
+_TENSION_FACES = (("Cara inferior en traccion", "barras inferiores"), ("Cara superior en traccion", "barras superiores"))
+
+
+def _requirement_group(name: str) -> tuple[str, str]:
+    """(subcapítulo, apartado) de un requisito: el apartado solo en la separación (máxima o mínima)."""
+    lowered = name.lower()
+    if "separacion minima" in lowered:
+        return "Separación del refuerzo", "Separación mínima del refuerzo"
+    if any(word in lowered for word in _SPACING_WORDS):
+        return "Separación del refuerzo", "Separación máxima del refuerzo"
+    if any(word in lowered for word in _MINIMUM_WORDS):
+        return "Refuerzo mínimo", ""
+    if "deformacion neta" in lowered:
+        return "Deformación neta de tracción", ""
+    return "Otros requisitos", ""
+
+
+def _requirement_label(check: dict[str, Any], axes: tuple[str, str] | None) -> str:
+    """El requisito y el refuerzo que revisa (D-102): en las revisiones de flexión, la cara en tracción y, en la zapata
+    combinada, la dirección; en la combinada, cada dirección con su eje global (D-101)."""
+    name, note = check["name"], check["note"] or ""
+    parts = []
+    if name.startswith("Flexion:"):
+        faces = [text for key, text in _TENSION_FACES if key in note]
+        if not faces:  # sin la cara en la nota, el signo del momento de la sección (D-095) dice cuál tracciona
+            faces = [text for key, text in (("momento positivo", "barras inferiores"), ("momento negativo", "barras superiores"))
+                     if key in note]
+        parts += faces
+        if axes is not None:
+            parts.append("direccion secundaria" if note.startswith(("Franja", "Aleta")) else "direccion principal")
+    label = display(name if not parts else f"{name} ({', '.join(parts)})")
+    if axes is not None:
+        for word in ("dirección", "Dirección"):
+            label = label.replace(f"{word} principal", f"{word} principal ({axes[0]})")
+            label = label.replace(f"{word} secundaria", f"{word} secundaria ({axes[1]})")
+    return label
+
+
+def _limits(name: str, check: dict[str, Any]) -> tuple[str, str]:
+    """(Exigido, Suministrado). En las separaciones máximas la demanda es la separación dispuesta y la capacidad el
+    máximo: lo exigido es "≤ máximo"; en los demás requisitos lo exigido es la demanda ("≥ mínimo") y lo suministrado la
+    capacidad."""
+    unit = check["unit"]
+
+    def text(value: float | None, sign: str = "") -> str:
+        # Espacios de no separación: el signo, el número y la unidad no se parten en dos renglones.
+        return "–" if value is None else f"{sign}{_quantity(value, unit)}".replace(" ", _NBSP)
+
+    if classify(name)[2].endswith("máx"):
+        return text(check["capacity"], "≤ "), text(check["demand"])
+    return text(check["demand"], "≥ "), text(check["capacity"])
+
+
+def _requirements(items: list[Located], number_text: str, axes: tuple[str, str] | None = None) -> list[Block]:
+    """Requisitos técnicos en subcapítulos (D-100, D-102): refuerzo mínimo; separación del refuerzo, con la máxima y la
+    mínima por separado; deformación neta de tracción y otros. Cada fila es un requisito para un tipo de refuerzo (las
+    revisiones de flexión, por cara en tracción y, en la zapata combinada, por dirección), en su ubicación más exigida;
+    columnas: requisito, exigido, suministrado, referencia normativa y resultado. axes: los ejes globales de la
+    dirección principal y la secundaria de la zapata combinada."""
+    rows: dict[str, Located] = {}
+    for where, check in items:
+        if classify(check["name"])[0] != "requirements":
             continue
-        rows.append([display(name), where, _quantity(check["demand"], check["unit"]), _quantity(check["capacity"], check["unit"]),
-                     check["clause"] or "–", _status_text(check["status"])])
+        label = _requirement_label(check, axes)
+        current = rows.get(label)
+        if current is None or _severity(check) > _severity(current[1]):
+            rows[label] = (where, check)
     if not rows:
         return [{"kind": "p", "text": "No aplica: ningún requisito para este elemento."}]
-    blocks: list[Block] = [{"kind": "table", "headers": ["Requisito", "Ubicación gobernante", "Exigido", "Suministrado",
-                                                          "Referencia literal", "Resultado"], "rows": rows}]
-    for name, (_, check) in governing(items).items():
-        if classify(name)[0] == "requirements":
-            blocks.extend({"kind": "alert", "text": f"{display(name)}: [{error['code']}] {error['message']}"}
-                          for error in check["errors"])
+    blocks: list[Block] = []
+    index = 0
+    for title, parts in _REQUIREMENT_SECTIONS:
+        own = {label: located for label, located in rows.items() if _requirement_group(located[1]["name"])[0] == title}
+        if not own:
+            continue
+        index += 1
+        blocks.append({"kind": "h2", "text": f"{number_text}.{index} {title}"})
+        for position, part in enumerate(parts or ("",), start=1):
+            selected = {label: located for label, located in own.items() if _requirement_group(located[1]["name"])[1] == part}
+            if part:
+                blocks.append({"kind": "h3", "text": f"{number_text}.{index}.{position} Revisión de {part[0].lower()}{part[1:]}"})
+            if not selected:
+                blocks.append({"kind": "p", "text": "No aplica: ninguna revisión de este tipo en el elemento."})
+                continue
+            table = []
+            for label, (_, check) in sorted(selected.items()):
+                required, provided = _limits(check["name"], check)
+                table.append([label, required, provided, check["clause"] or "–", _status_text(check["status"])])
+            blocks.append({"kind": "table", "headers": _REQUIREMENT_HEADERS, "rows": table})
+    for label, (_, check) in rows.items():
+        blocks.extend({"kind": "alert", "text": f"{label}: [{error['code']}] {error['message']}"} for error in check["errors"])
     return blocks
 
 
@@ -271,10 +367,14 @@ def _chapter(chapter: str, number_text: str, items: list[Located], full: bool) -
 
 
 def _dcr(items: list[Located]) -> list[Block]:
+    """Índices demanda/capacidad de las revisiones de resistencia (D-102): los requisitos técnicos (cuantías,
+    separaciones, deformación neta…) se revisan en su capítulo y no van aquí."""
     rows = [[display(name), _CHAPTER_TITLES[classify(name)[0]].replace("Revisión de ", "").capitalize(), where,
              _quantity(check["demand"], check["unit"]), _quantity(check["capacity"], check["unit"]),
              "–" if check["ratio"] is None else f"{check['ratio']:.3f}", _status_text(check["status"])]
-            for name, (where, check) in governing(items).items()]
+            for name, (where, check) in governing(items).items() if classify(name)[0] != "requirements"]
+    if not rows:
+        return [{"kind": "p", "text": "No aplica: ninguna revisión de resistencia en el elemento."}]
     return [{"kind": "table", "headers": ["Revisión", "Capítulo", "Ubicación gobernante", "Demanda", "Capacidad", "DCR",
                                           "Resultado"], "rows": rows}]
 
@@ -346,7 +446,7 @@ def beam_document(results: dict[str, Any], member: dict[str, Any], full: bool) -
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
         ("Propiedades geométricas y armado", lambda _: _beam_geometry(member)),
         ("Solicitaciones", lambda _: _beam_demands(member)),
-        (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
+        (_CHAPTER_TITLES["requirements"], lambda n: _requirements(items, n)),
         ("Revisión de condiciones de servicio",
          lambda _: [{"kind": "p", "text": "Falta implementación: fisuración, espesor mínimo y deflexiones (subfase 2D)."}]),
         (_CHAPTER_TITLES["flexure"], lambda n: _chapter("flexure", n, items, full)),
@@ -547,7 +647,7 @@ def footing_document(results: dict[str, Any], footing: dict[str, Any], full: boo
         ("Propiedades geométricas, suelo y armado", lambda _: _footing_geometry(results, footing)),
         ("Solicitaciones", lambda _: _footing_demands(footing, figure)),
         (_CHAPTER_TITLES["geotechnical"], lambda n: _chapter("geotechnical", n, items, full)),
-        (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
+        (_CHAPTER_TITLES["requirements"], lambda n: _requirements(items, n)),
         (_CHAPTER_TITLES["flexure"], lambda n: _chapter("flexure", n, items, full)),
         (_CHAPTER_TITLES["one_way"], lambda n: _chapter("one_way", n, items, full)),
         (_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, items, full), *_punching_corners(items),
@@ -560,19 +660,27 @@ def footing_document(results: dict[str, Any], footing: dict[str, Any], full: boo
     return _assemble(head, chapters)
 
 
-def _combined_where(check: dict[str, Any]) -> str:
-    """Ubicación de una verificación de la zapata combinada: el caso y la viga larga (z y sección), la franja o la columna."""
+def _combined_axes(footing: dict[str, Any]) -> tuple[str, str]:
+    """Ejes globales de la dirección principal y de la secundaria de la zapata combinada (D-094, D-101)."""
+    principal = (footing["geometry [mm]"].get("principal_direction") or "x").upper()
+    return principal, "Y" if principal == "X" else "X"
+
+
+def _combined_where(check: dict[str, Any], axes: tuple[str, str]) -> str:
+    """Ubicación de una verificación de la zapata combinada, en los ejes declarados (D-101): el caso y la dirección
+    principal (z a lo largo de la viga y sección), la franja (z desde el borde −secundario) o la columna."""
+    principal, secondary = axes
     case = f"caso {check['case']}" if check.get("case") else "toda la zapata"
     note = check["note"].split(":")[0].split(";")[0]
     z = check.get("z [mm]")
     if note.startswith("Franja"):
-        return f"{case}, {note}" + (f" (z = {z:.0f} mm desde −Y)" if z is not None else "")
+        return f"{case}, {note}" + (f" (z = {z:.0f} mm desde −{secondary})" if z is not None else "")
     if note.startswith("Aleta"):
         return f"{case}, {note}"
     if note.startswith("Columna"):
         return f"{case}, {note}"
     if z is not None:
-        return f"{case}, viga larga en z = {z:.0f} mm desde −X ({note[:1].lower() + note[1:]})"
+        return f"{case}, dirección principal en z = {z:.0f} mm desde −{principal} ({note[:1].lower() + note[1:]})"
     return case
 
 
@@ -595,9 +703,10 @@ def _top_text(top: dict[str, Any] | None) -> str:
 
 def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[Block]:
     g = footing["geometry [mm]"]
-    along_y = g.get("principal_direction") == "y"  # D-094: la memoria va en ejes de la viga
-    rows = [["Largo de la viga (ly declarado)" if along_y else "Largo a lo largo de X (lx)", number(g["lx"], "mm"), "mm"],
-            ["Ancho (lx declarado)" if along_y else "Ancho a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
+    principal, secondary = _combined_axes(footing)
+    rows = [["Dirección principal (la de la viga que une las columnas)", f"{principal} global", "–"],
+            ["Dimensión a lo largo de X (lx)", number(g["lx"], "mm"), "mm"],
+            ["Dimensión a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
             ["Espesor (h)" if not g.get("beam") else "Espesor de la zarpa (h)", number(g["h"], "mm"), "mm"],
             *([["Ancho de la viga (bw, T invertida)", number(g["beam"]["width"], "mm"), "mm"],
                ["Altura total de la viga (H)", number(g["beam"]["height"], "mm"), "mm"]] if g.get("beam") else []),
@@ -614,7 +723,7 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list
     skin = reinforcement.get("skin")
     bars = [["Malla inferior", _mat_text(reinforcement["bottom"])],
             ["Barras superiores", _top_text(reinforcement.get("top"))],
-            ["Estribos de la viga larga", "no hay" if stirrups is None else
+            ["Estribos de la viga (dirección principal)", "no hay" if stirrups is None else
              f"{stirrups['legs']} ramas {stirrups['designation']} c/{stirrups['spacing']:.0f} mm"],
             ["Refuerzo superficial (caras largas)", _bar_text(skin, " en vertical" if skin else "")],
             ["Capas de torsión (Aℓ)", _torsion_layers_text(reinforcement.get("torsion_layers") or [])]]
@@ -623,22 +732,19 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list
              "headers": ["Columna", "cx (mm)", "cy (mm)", "x (mm)", "y (mm)", "Pasadores", "Refuerzo bajo la columna (band)"],
              "rows": columns},
             {"kind": "note", "text": "x e y ubican el eje de cada columna respecto al centroide de la base."},
-            *_principal_direction_note(g),
+            _axes_note(principal, secondary),
             {"kind": "table", "headers": ["Suelo y pesos (dato del usuario)", "Valor", "Unidad"], "rows": _soil_rows(results)},
             {"kind": "p", "text": "Propiedades calculadas a partir de las dimensiones (nunca declaradas):"},
             {"kind": "table", "headers": ["Propiedad", "Valor", "Unidad"], "rows": _properties_rows(footing)},
             {"kind": "table", "headers": ["Refuerzo", "Descripción"], "rows": bars}]
 
 
-def _principal_direction_note(geometry: dict[str, Any]) -> list[Block]:
-    """Dirección principal en la Y global (D-094): la memoria está en ejes de la viga y lo advierte."""
-    if geometry.get("principal_direction") != "y":
-        return []
-    return [{"kind": "note", "text": "Dirección principal (viga) en la Y global de ETABS: X e Y de esta memoria son los ejes de "
-                                     "la viga (X = +Y global, Y = −X global). Los datos declarados en ejes globales se rotaron "
-                                     "a estos ejes: lx = ly declarado y ly = lx declarado; columnas x = y declarado, y = −x "
-                                     "declarado, cx = cy y cy = cx; las mallas x e y intercambiadas; cargas Vx = Vy, Vy = −Vx, "
-                                     "Mx = My y My = −Mx globales (D-094)."}]
+def _axes_note(principal: str, secondary: str) -> Block:
+    """Los ejes de la memoria (D-101): los globales declarados; la dirección principal y la secundaria."""
+    return {"kind": "note", "text": f"Ejes globales declarados en toda la memoria. Dirección principal: {principal} global, la de "
+                                    f"la viga que une las columnas; dirección secundaria: {secondary} global, la de las franjas "
+                                    "transversales o las aletas. El cálculo trabaja en ejes de la viga y sus resultados se "
+                                    "devuelven a los ejes declarados (D-094, D-101)."}
 
 
 def _combined_demands(footing: dict[str, Any], figure: Path | None) -> list[Block]:
@@ -691,17 +797,19 @@ _EXTREMES = {"M+": ("Momento positivo máximo", "kN·m"), "M-": ("Momento negati
 
 
 def _diagrams(footing: dict[str, Any], files: tuple[Path, Path] | None) -> list[Block]:
-    """Diagramas envolventes de momento y cortante (D-095) y la tabla de sus extremos con el caso y la posición."""
+    """Diagramas envolventes de momento y cortante (D-095) y la tabla de sus extremos con el caso y la posición, en los
+    ejes declarados (D-101)."""
     diagrams = footing.get("diagrams")
     if not diagrams:
         return [{"kind": "p", "text": "No aplica: la zapata no tiene casos mayorados en equilibrio."}]
+    principal, secondary = _combined_axes(footing)
     blocks: list[Block] = [{"kind": "p", "text": "Envolvente de los casos mayorados: en cada posición, el mayor y el menor valor "
                                                  "entre todos los casos. M > 0 tracciona la cara inferior; V es el del cuerpo "
-                                                 "libre a la izquierda (desde −X en la dirección larga y desde −Y en la "
-                                                 "transversal). Posiciones desde el centroide de la base."}]
+                                                 f"libre a la izquierda (desde −{principal} en la dirección principal y desde "
+                                                 f"−{secondary} en la secundaria). Posiciones desde el centroide de la base."}]
     figures = (None, None) if files is None else files
-    for title, envelopes, figure in (("Dirección larga (principal)", [diagrams["longitudinal"]], figures[0]),
-                                     ("Dirección transversal", diagrams["transverse"], figures[1])):
+    for title, envelopes, figure in ((f"Dirección principal ({principal} global)", [diagrams["principal"]], figures[0]),
+                                     (f"Dirección secundaria ({secondary} global)", diagrams["secondary"], figures[1])):
         blocks.append({"kind": "h2", "text": title})
         if figure is not None:
             blocks.append({"kind": "image", "path": str(figure), "aspect": diagram_aspect(2 * len(envelopes)),
@@ -720,17 +828,20 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
     """Memoria de una zapata combinada (D-080 a D-083): la viga larga y las franjas transversales con las verificaciones de
     vigas, el momento positivo y el negativo por separado y sus diagramas envolventes (D-095), el punzonamiento con los
     esfuerzos de cada esquina, el desarrollo, el aplastamiento y los pasadores."""
-    items: list[Located] = [(_combined_where(check), check) for check in footing["checks"]]
+    axes = _combined_axes(footing)
+    principal, secondary = axes
+    items: list[Located] = [(_combined_where(check, axes), check) for check in footing["checks"]]
     strips = [item for item in items if item[1]["note"].startswith(("Franja", "Aleta"))]
     inverted = bool(footing["geometry [mm]"].get("beam"))
-    across = "Aletas de la zarpa" if inverted else "Franjas transversales"
+    along = f"Dirección principal ({principal} global)"
+    across = f"Dirección secundaria ({secondary} global), {'aletas de la zarpa' if inverted else 'franjas transversales'}"
     beam = [item for item in items if item[1].get("z [mm]") is not None and not item[1]["note"].startswith("Franja")]
     others = [item for item in items if item not in strips and item not in beam]
     counts = {kind: sum(1 for load in footing["columns"][0]["loads"] if load["kind"] == kind) for kind in ("service", "factored")}
     meta = [("Columnas", " y ".join(column["id"] for column in footing["columns"])),
             ("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
     head = [_title(f"Zapata combinada {footing['id']}", results, meta, items, footing["status"]), _summary(items),
-            *_beam_alert(footing), *_deep_alert(footing.get("deep_beam", False), "La viga en la dirección larga"),
+            *_beam_alert(footing), *_deep_alert(footing.get("deep_beam", False), "La viga de la dirección principal"),
             *_two_way_alert(footing)]
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
@@ -738,11 +849,11 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         ("Solicitaciones", lambda _: _combined_demands(footing, figure)),
         ("Diagramas de momento y cortante", lambda _: _diagrams(footing, diagrams)),
         (_CHAPTER_TITLES["geotechnical"], lambda n: _chapter("geotechnical", n, others, full)),
-        (_CHAPTER_TITLES["requirements"], lambda _: _requirements(items)),
-        ("Viga en la dirección larga: momento positivo", lambda n: _flexure_by_sign(n, beam, False, full)),
-        ("Viga en la dirección larga: momento negativo", lambda n: _flexure_by_sign(n, beam, True, full)),
-        ("Viga en la dirección larga: fuerza cortante", lambda n: _chapter("shear", n, beam, full)),
-        ("Viga en la dirección larga: torsión", lambda n: _chapter("torsion", n, beam, full)),
+        (_CHAPTER_TITLES["requirements"], lambda n: _requirements(items, n, axes)),
+        (f"{along}: momento positivo", lambda n: _flexure_by_sign(n, beam, False, full)),
+        (f"{along}: momento negativo", lambda n: _flexure_by_sign(n, beam, True, full)),
+        (f"{along}: fuerza cortante", lambda n: _chapter("shear", n, beam, full)),
+        (f"{along}: torsión", lambda n: _chapter("torsion", n, beam, full)),
         (f"{across}: momento positivo", lambda n: _flexure_by_sign(n, strips, False, full)),
         (f"{across}: momento negativo", lambda n: _flexure_by_sign(n, strips, True, full)),
         (f"{across}: fuerza cortante", lambda n: _chapter("shear", n, strips, full)),

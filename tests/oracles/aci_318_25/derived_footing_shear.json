@@ -327,7 +327,7 @@
           "name": "Transferencia de momento por flexion (barras y)",
           "status": "PASS",
           "demand": 3.0996642622088976e-08,
-          "capacity": 300208838.15337163,
+          "capacity": 297919886.59783286,
           "case": "1.2D+1.6L"
         },
         {
@@ -412,7 +412,7 @@
           "name": "Transferencia de momento por flexion (barras x)",
           "status": "PASS",
           "demand": 39743051.30908129,
-          "capacity": 310973106.3533716,
+          "capacity": 308411145.30320853,
           "case": "1.2D+1.6L"
         },
         {
@@ -425,7 +425,7 @@
           "name": "Transferencia de momento por flexion (barras y)",
           "status": "PASS",
           "demand": 39743051.30908136,
-          "capacity": 300208838.15337163,
+          "capacity": 297646877.1032086,
           "case": "1.2D+1.6L"
         },
         {

@@ -669,7 +669,8 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
         "profile": project.profile,
         "seismic": project.seismic.model_dump(),
         "materials": {"fc": result.fc, "fy": materials.fy, "fyt": materials.fyt, "concrete": materials.concrete,
-                      "coating": materials.coating},
+                      "coating": materials.coating,
+                      **({} if materials.max_aggregate is None else {"max_aggregate": materials.max_aggregate})},
         "soil": _soil_input(ctx),
         "footings": footings,
     }

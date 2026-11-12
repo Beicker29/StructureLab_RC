@@ -26,6 +26,7 @@ class DesignMaterials(_Input):
     fyt: PositiveFloat
     concrete: Literal["normalweight", "lightweight"]
     coating: Coating
+    max_aggregate: PositiveFloat | None = None  # mm (D-102)
 
 
 class Prices(_Input):
