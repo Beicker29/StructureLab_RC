@@ -1,6 +1,9 @@
 {
   "description": "Plantilla de importación de una zapata combinada en T invertida (D-093) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx': ZT-1 toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos (Unique Name 15 y 1659). Viga de 1000 × 1700 mm sobre una zarpa de 3600 × 600 mm. DATOS DE EJEMPLO: dimensiones, posiciones, columnas, armado, suelo, relleno y sobrecargas son supuestos.",
-  "etabs_files": {"service": "../../etabs/zapatas/Joint Reactions - Servicio.xlsx", "factored": "../../etabs/zapatas/Joint Reactions - Ultimas.xlsx"},
+  "etabs_files": {
+    "service": "../../etabs/zapatas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../etabs/zapatas/Joint Reactions - Ultimas.xlsx"
+  },
   "profile": "aci-318-25",
   "seismic": {
     "level": "special",
@@ -102,10 +105,333 @@
       },
       "beam": {
         "width": 1000,
-        "height": 1700
+        "height": 1700,
+        "end": "straight",
+        "layers": [
+          {
+            "depth": 103.6,
+            "role": "flexure",
+            "bars": [
+              {
+                "designation": "#8",
+                "x": 104.0
+              },
+              {
+                "designation": "#8",
+                "x": 203.0
+              },
+              {
+                "designation": "#8",
+                "x": 302.0
+              },
+              {
+                "designation": "#8",
+                "x": 401.0
+              },
+              {
+                "designation": "#8",
+                "x": 500.0
+              },
+              {
+                "designation": "#8",
+                "x": 599.0
+              },
+              {
+                "designation": "#8",
+                "x": 698.0
+              },
+              {
+                "designation": "#8",
+                "x": 797.0
+              },
+              {
+                "designation": "#8",
+                "x": 896.0
+              }
+            ]
+          },
+          {
+            "depth": 243.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ]
+          },
+          {
+            "depth": 393.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ]
+          },
+          {
+            "depth": 543.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ]
+          },
+          {
+            "depth": 693.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ]
+          },
+          {
+            "depth": 843.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ]
+          },
+          {
+            "depth": 993.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ]
+          },
+          {
+            "depth": 1143.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ]
+          },
+          {
+            "depth": 1293.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ]
+          },
+          {
+            "depth": 1443.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ]
+          },
+          {
+            "depth": 1593.2,
+            "role": "flexure",
+            "bars": [
+              {
+                "designation": "#8",
+                "x": -1200.0
+              },
+              {
+                "designation": "#8",
+                "x": -1100.0
+              },
+              {
+                "designation": "#8",
+                "x": -1000.0
+              },
+              {
+                "designation": "#8",
+                "x": -900.0
+              },
+              {
+                "designation": "#8",
+                "x": -800.0
+              },
+              {
+                "designation": "#8",
+                "x": -700.0
+              },
+              {
+                "designation": "#8",
+                "x": -600.0
+              },
+              {
+                "designation": "#8",
+                "x": -500.0
+              },
+              {
+                "designation": "#8",
+                "x": -400.0
+              },
+              {
+                "designation": "#8",
+                "x": -300.0
+              },
+              {
+                "designation": "#8",
+                "x": -200.0
+              },
+              {
+                "designation": "#8",
+                "x": -100.0
+              },
+              {
+                "designation": "#8",
+                "x": 0.0
+              },
+              {
+                "designation": "#8",
+                "x": 100.0
+              },
+              {
+                "designation": "#8",
+                "x": 200.0
+              },
+              {
+                "designation": "#8",
+                "x": 300.0
+              },
+              {
+                "designation": "#8",
+                "x": 400.0
+              },
+              {
+                "designation": "#8",
+                "x": 500.0
+              },
+              {
+                "designation": "#8",
+                "x": 600.0
+              },
+              {
+                "designation": "#8",
+                "x": 700.0
+              },
+              {
+                "designation": "#8",
+                "x": 800.0
+              },
+              {
+                "designation": "#8",
+                "x": 900.0
+              },
+              {
+                "designation": "#8",
+                "x": 1000.0
+              },
+              {
+                "designation": "#8",
+                "x": 1100.0
+              },
+              {
+                "designation": "#8",
+                "x": 1200.0
+              },
+              {
+                "designation": "#8",
+                "x": 1300.0
+              },
+              {
+                "designation": "#8",
+                "x": 1400.0
+              },
+              {
+                "designation": "#8",
+                "x": 1500.0
+              },
+              {
+                "designation": "#8",
+                "x": 1600.0
+              },
+              {
+                "designation": "#8",
+                "x": 1700.0
+              },
+              {
+                "designation": "#8",
+                "x": 1800.0
+              },
+              {
+                "designation": "#8",
+                "x": 1900.0
+              },
+              {
+                "designation": "#8",
+                "x": 2000.0
+              },
+              {
+                "designation": "#8",
+                "x": 2100.0
+              },
+              {
+                "designation": "#8",
+                "x": 2200.0
+              }
+            ]
+          }
+        ],
+        "stirrups": {
+          "designation": "#5",
+          "legs": 4,
+          "spacing": 150.0,
+          "closed": true
+        }
       },
       "bottom": {
-        "first": "x",
+        "first": "y",
         "end": "straight",
         "x": {
           "designation": "#8",
@@ -115,23 +441,6 @@
           "designation": "#6",
           "spacing": 150.0
         }
-      },
-      "top": {
-        "end": "straight",
-        "x": {
-          "designation": "#8",
-          "spacing": 99.0
-        }
-      },
-      "stirrups": {
-        "designation": "#5",
-        "legs": 4,
-        "spacing": 150.0,
-        "closed": true
-      },
-      "skin": {
-        "designation": "#6",
-        "spacing": 150.0
       },
       "columns": [
         {

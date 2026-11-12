@@ -1,6 +1,9 @@
 {
   "description": "Plantilla de importación de una zapata combinada en T invertida (D-093) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx': ZT-1 toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos (Unique Name 15 y 1659). Viga de 1000 × 1700 mm sobre una zarpa de 3600 × 600 mm. DATOS DE EJEMPLO: dimensiones, posiciones, columnas, armado, suelo, relleno y sobrecargas son supuestos.",
-  "etabs_files": {"service": "../../etabs/zapatas/Joint Reactions - Servicio.xlsx", "factored": "../../etabs/zapatas/Joint Reactions - Ultimas.xlsx"},
+  "etabs_files": {
+    "service": "../../etabs/zapatas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../etabs/zapatas/Joint Reactions - Ultimas.xlsx"
+  },
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",
@@ -102,10 +105,185 @@
       },
       "beam": {
         "width": 600,
-        "height": 800
+        "height": 800,
+        "end": "straight",
+        "layers": [
+          {
+            "depth": 103.6,
+            "role": "flexure",
+            "bars": [
+              {
+                "designation": "#8",
+                "x": 151.5
+              },
+              {
+                "designation": "#8",
+                "x": 250.5
+              },
+              {
+                "designation": "#8",
+                "x": 349.5
+              },
+              {
+                "designation": "#8",
+                "x": 448.5
+              }
+            ]
+          },
+          {
+            "depth": 243.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 499.55
+              }
+            ]
+          },
+          {
+            "depth": 393.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 499.55
+              }
+            ]
+          },
+          {
+            "depth": 543.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 499.55
+              }
+            ]
+          },
+          {
+            "depth": 693.2,
+            "role": "flexure",
+            "bars": [
+              {
+                "designation": "#8",
+                "x": -850.0
+              },
+              {
+                "designation": "#8",
+                "x": -750.0
+              },
+              {
+                "designation": "#8",
+                "x": -650.0
+              },
+              {
+                "designation": "#8",
+                "x": -550.0
+              },
+              {
+                "designation": "#8",
+                "x": -450.0
+              },
+              {
+                "designation": "#8",
+                "x": -350.0
+              },
+              {
+                "designation": "#8",
+                "x": -250.0
+              },
+              {
+                "designation": "#8",
+                "x": -150.0
+              },
+              {
+                "designation": "#8",
+                "x": -50.0
+              },
+              {
+                "designation": "#8",
+                "x": 50.0
+              },
+              {
+                "designation": "#8",
+                "x": 150.0
+              },
+              {
+                "designation": "#8",
+                "x": 250.0
+              },
+              {
+                "designation": "#8",
+                "x": 350.0
+              },
+              {
+                "designation": "#8",
+                "x": 450.0
+              },
+              {
+                "designation": "#8",
+                "x": 550.0
+              },
+              {
+                "designation": "#8",
+                "x": 650.0
+              },
+              {
+                "designation": "#8",
+                "x": 750.0
+              },
+              {
+                "designation": "#8",
+                "x": 850.0
+              },
+              {
+                "designation": "#8",
+                "x": 950.0
+              },
+              {
+                "designation": "#8",
+                "x": 1050.0
+              },
+              {
+                "designation": "#8",
+                "x": 1150.0
+              },
+              {
+                "designation": "#8",
+                "x": 1250.0
+              },
+              {
+                "designation": "#8",
+                "x": 1350.0
+              },
+              {
+                "designation": "#8",
+                "x": 1450.0
+              }
+            ]
+          }
+        ],
+        "stirrups": {
+          "designation": "#5",
+          "legs": 4,
+          "spacing": 150.0,
+          "closed": true
+        }
       },
       "bottom": {
-        "first": "x",
+        "first": "y",
         "end": "straight",
         "x": {
           "designation": "#8",
@@ -115,23 +293,6 @@
           "designation": "#6",
           "spacing": 150.0
         }
-      },
-      "top": {
-        "end": "straight",
-        "x": {
-          "designation": "#8",
-          "spacing": 99.0
-        }
-      },
-      "stirrups": {
-        "designation": "#5",
-        "legs": 4,
-        "spacing": 150.0,
-        "closed": true
-      },
-      "skin": {
-        "designation": "#6",
-        "spacing": 150.0
       },
       "columns": [
         {
