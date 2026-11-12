@@ -167,9 +167,17 @@ rectangular. Se diseña como de placa, por Wood-Armer, con mxy = T/B uniforme en
 - **Cortante fuera de las franjas (D-119):** qy = ∂mxy/∂x = (dT/dx)/B, con dT/dx = ∫y·p dy de la presión en la sección,
   por metro, frente a φVc de cimentación con la malla y inferior ("Direccion secundaria: torsion de placa, cortante").
 
-La memoria de la combinada rectangular trae, además de los capítulos de las franjas, tres de la dirección secundaria
-fuera de las franjas band: momento positivo, momento negativo y fuerza cortante (D-119). Su índice DCR tiene una fila
-por verificación, dirección y signo de momento.
+- **Cortante en las franjas (D-119):** Vu = V por flexión + |T(x1) − T(x0)|/B, el salto de T entre los bordes de la
+  franja.
+
+La memoria de la combinada rectangular (D-119) trae:
+
+- los capítulos de las franjas con un subcapítulo por columna;
+- tres capítulos de la dirección secundaria fuera de las franjas band: momento positivo, momento negativo y fuerza
+  cortante. Cada revisión muestra "Composición de Mu: M flexión + M torsión" o "Composición de Vu: V flexión +
+  V torsión", con los valores `M flexion`, `M torsion`, `V flexion` y `V torsion`;
+- la tabla de Wood-Armer en 3.6, con `mx`, `my`, `mxy`, `mx* inf`, `mx* sup`, `my* inf` y `my* sup` en kN·m/m;
+- un índice DCR con una fila por verificación, dirección y signo de momento.
 
 No hay torsión de vigas: `torsion_layers` se rechaza. La T invertida conserva la torsión de vigas en su alma.
 

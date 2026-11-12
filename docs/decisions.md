@@ -2062,8 +2062,7 @@
     `torsion-placa-alta` y `torsion-sin-superior`. `torsion-como-piel` se retira, porque D-090 ya no aplica.
   - Oráculo `derive_combined_columns.py`: las franjas y las barras y fuera de ellas.
   - En las pruebas, la clave de cada estación lleva la cara.
-- **Pendiente:** una tabla de mx, my, mxy, mx\* y my\* por sección en la memoria. Por ahora, los datos van en la nota
-  de cada flexión.
+- **Memoria:** la tabla de mx, my, mxy, mx\* y my\* está en el capítulo de solicitaciones (3.6, D-119).
 
 ### D-119: band superior, cortante de placa fuera de las franjas, memoria por zona y Vu en valor absoluto
 
@@ -2078,6 +2077,15 @@
   4. Vu de cortante en una y dos direcciones: gobierna el mayor valor absoluto en las secciones críticas.
   5. El índice DCR reporta cada verificación por dirección y por signo de momento, por ejemplo "Cortante: resistencia
      dirección principal momento negativo".
+  6. En cada franja, Vu = V por flexión + V por torsión. El V por torsión es el salto de T entre los bordes de la franja
+     repartido en su ancho, |T(x1) − T(x0)|/B. El par de la columna no está en el my de la franja, que se carga solo con
+     F repartida con la forma de la presión, así que no se cuenta dos veces.
+  7. **Memoria:**
+     - las franjas se reportan por columna, un subcapítulo por franja, con Mu = M flexión + M torsión y
+       Vu = V flexión + V torsión;
+     - fuera de las franjas, M flexión = 0 y V flexión = 0, con la misma composición;
+     - una tabla de Wood-Armer (3.6) con mx, my, mxy y mx\*, my\* de cada cara en la sección gobernante de cada
+       revisión de flexión.
 - **Reglas:**
   - **Band superior:**
     - Se coloca en el ancho de la franja (columna + d/2 a cada lado), como `top.y`: debajo de `top.x` si esa dirección

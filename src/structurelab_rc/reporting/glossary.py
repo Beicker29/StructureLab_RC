@@ -6,9 +6,9 @@ VALUES: nombre de un valor intermedio → (descripción, símbolo).
 
 STATUS_TEXT = {"PASS": "CUMPLE", "FAIL": "NO CUMPLE", "INCOMPLETE": "INCOMPLETO", "BLOCKED": "BLOQUEADO"}
 PROFILE_NAMES = {"aci-318-25": "ACI CODE-318-25", "nsr-10": "NSR-10 Título C"}
-UNITS = {"kN-m": "kN·m", "mm4": "mm⁴", "mm3": "mm³", "mm2": "mm²", "mm2/mm": "mm²/mm", "mm2/m": "mm²/m",
+UNITS = {"kN-m": "kN·m", "kN-m/m": "kN·m/m","mm4": "mm⁴", "mm3": "mm³", "mm2": "mm²", "mm2/mm": "mm²/mm", "mm2/m": "mm²/m",
          "kN/m2": "kN/m²", "kN/m3": "kN/m³", "m2": "m²", "m3": "m³", "m4": "m⁴", "deg": "°", "-": "–", "": "–"}
-DECIMALS = {"kN·m": 1, "kN": 1, "kPa": 1, "mm": 0, "mm⁴": 0, "mm³": 0, "mm²": 0, "mm²/m": 0, "mm²/mm": 3, "MPa": 2,
+DECIMALS = {"kN·m": 1, "kN·m/m": 1, "kN": 1, "kPa": 1, "mm": 0, "mm⁴": 0, "mm³": 0, "mm²": 0, "mm²/m": 0, "mm²/mm": 3, "MPa": 2,
             "°": 2, "–": 4, "m²": 3, "m³": 3, "m⁴": 3, "kN/m²": 1, "kN/m³": 1}
 
 # Orden de los prefijos: el primero que coincide gobierna (los más específicos van antes).
@@ -147,6 +147,17 @@ VALUES = {
     "contacto": ("Fracción de la base en contacto", "Ac/A"),
     "A contacto": ("Área de la base en contacto con el suelo", "Ac"),
     "A minima": ("Área mínima en contacto (fracción mínima × A)", "Ac,mín"),
+    "M flexion": ("Momento por flexión de la sección (sin la torsión de placa)", "M flexión"),
+    "M torsion": ("Momento por la torsión de placa (Wood-Armer, D-118)", "M torsión"),
+    "V flexion": ("Cortante por flexión de la sección", "V flexión"),
+    "V torsion": ("Cortante por la torsión de placa, (dT/dx)/B por el ancho (D-119)", "V torsión"),
+    "mx": ("Momento flector por unidad de ancho de las barras x", "mx"),
+    "my": ("Momento flector por unidad de ancho de las barras y", "my"),
+    "mxy": ("Momento torsor de placa por unidad de ancho (T/B)", "mxy"),
+    "mx* inf": ("Momento de diseño de Wood-Armer, barras x inferiores", "mx* inf"),
+    "mx* sup": ("Momento de diseño de Wood-Armer, barras x superiores", "mx* sup"),
+    "my* inf": ("Momento de diseño de Wood-Armer, barras y inferiores", "my* inf"),
+    "my* sup": ("Momento de diseño de Wood-Armer, barras y superiores", "my* sup"),
     "excedente para la viga": ("Cortante que excede φVc, para el refuerzo transversal de la viga de cimentación", "Vu − φVc"),
     "As": ("Área de acero", "As"),
     "cuantia minima": ("Cuantía mínima", "ρmin"),

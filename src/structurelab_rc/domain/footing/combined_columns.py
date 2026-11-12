@@ -24,6 +24,7 @@ from dataclasses import replace
 
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.flexure import MIN_REINFORCEMENT as FLEXURE_MINIMUM
+from structurelab_rc.domain.beam.flexure import STRENGTH as FLEXURE_STRENGTH
 from structurelab_rc.domain.beam.shear import MIN_REINFORCEMENT, STRENGTH, concrete_lambda
 from structurelab_rc.domain.beam.station import checks_for, flexure_station_checks, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
@@ -342,29 +343,55 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
         force = column_vertical(footing, soil, column, loads[index])
         demands, shape = strip_demands(footing, pressure, column, (force, row.depth))
         twist = strip_twist(footing, soil, (pressure, loads), (x0, x1))
-        plate = (f"Wood-Armer (D-118): M de la franja y mxy = {twist / 1e3:.2f} kN*m/m" if twist > _NEGLIGIBLE_TWIST else "")
+        torsion_shear = strip_torsion_shear(footing, soil, (pressure, loads), (x0, x1))
+        plate = (f"Wood-Armer (D-118): M de la franja y mxy = {twist / 1e3:.2f} kN*m/m; V de torsion = |T(x1) - T(x0)|/B = "
+                 f"{torsion_shear / 1e3:.1f} kN (D-119)" if twist > _NEGLIGIBLE_TWIST else "")
         for y, physical, shear, label in demands:
             z = y + footing.ly / 2
             for order, moment in enumerate(strip_moments(physical, x1 - x0, twist)):
                 section = f"{title}, {label}, {moment_sign(moment)}"
+                # Vu = V por flexión + V por la torsión de placa (decisión del usuario, D-119).
                 station = Station.model_construct(z=z, layout=member.stations[0].layout, case=pressure.case,
-                                                  demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear, v3=0.0, tu=0.0))
+                                                  demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear + torsion_shear,
+                                                                                  v3=0.0, tu=0.0))
                 # Las caras laterales de la franja quedan dentro del concreto: sin refuerzo superficial (D-083).
                 given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
+                flexure_values = _strip_values(physical, moment, (x1 - x0, twist))
+                shear_values = (("V flexion", shear), ("V torsion", torsion_shear))
                 if moment < 0 and not has_top:
                     # Momento negativo sin barras superiores transversales: concreto simple en el ancho de la franja (D-072,
                     # D-095) y el cortante de vigas. Con top.y lo revisa la flexión de vigas con esas barras (D-097).
                     note = section + "".join(f": {text}" for text in (shape, plate) if text)
-                    checks.append(replace(plain_strip_check(basis, footing, -moment, (label, pressure.case, note), x1 - x0), z=z))
+                    plain = plain_strip_check(basis, footing, -moment, (label, pressure.case, note), x1 - x0)
+                    checks.append(replace(plain, z=z, values=(*plain.values, *flexure_values)))
                     selected = list(shear_and_torsion_checks(given)) if order == 0 else []
                 else:
                     selected = list(checks_for(given) if order == 0 else flexure_station_checks(given))
                 for check in selected:
-                    extra = plate if check.name.startswith("Flexion") else ""
+                    extra = plate if check.name.startswith(("Flexion", "Cortante")) else ""
                     note = section + "".join(f": {text}" for text in (check.note, shape, extra) if text)
-                    check = replace(check, note=note, member=footing.id, case=pressure.case, z=z)
+                    added = flexure_values if check.name == FLEXURE_STRENGTH else (shear_values if check.name == STRENGTH else ())
+                    check = replace(check, note=note, member=footing.id, case=pressure.case, z=z, values=(*check.values, *added))
                     checks.append(_beam_shear(_negative_minimum(check, moment)))
     return checks
+
+
+def strip_torsion_shear(footing: CombinedFooting, soil: Soil, given: tuple[FactoredCase, tuple[FootingLoad, ...]],
+                        limits: tuple[float, float]) -> float:
+    """Cortante de la franja por la torsión de placa (decisión del usuario, D-119): qy = ∂mxy/∂x con el salto de T entre
+    los bordes de la franja repartido en su ancho b, (T(x1) − T(x0))/(b·B), por b: |T(x1) − T(x0)|/B (N). El salto
+    incluye el par de la columna, que la flexión de la franja no toma (D-088)."""
+    beam = beam_case(footing, soil, *given)
+    return abs(beam.torque(limits[1]) - beam.torque(limits[0])) / footing.ly
+
+
+def _strip_values(physical: float, moment: float, plate: tuple[float, float]) -> tuple[tuple[str, float], ...]:
+    """Mu = M flexión + M torsión de la estación de franja y los momentos por unidad de ancho de Wood-Armer de las barras
+    y (my = M/b, mx = 0, |mxy|), para la memoria y su tabla (D-118, D-119). plate = (b, |mxy|)."""
+    width, twist = plate
+    design = wood_armer(0.0, physical / width, twist)
+    return (("M flexion", physical), ("M torsion", moment - physical), ("mx", 0.0), ("my", physical / width), ("mxy", twist),
+            ("my* inf", design.bottom.y), ("my* sup", design.top.y))
 
 
 PLATE_BOTTOM = "Direccion secundaria: torsion de placa (barras inferiores)"
@@ -426,7 +453,7 @@ def _plate_shear_check(basis: Basis, footing: CombinedFooting, row: BarRow, beam
     return Check(PLATE_SHEAR, Status.PASS if vu <= phi * vc else Status.FAIL, clause=clause, demand=vu, capacity=phi * vc, unit="N",
                  member=footing.id, case=beam.case, note=note,
                  values=(("phi", phi), ("Vc", vc), ("bw", _PLATE_STRIP), ("d", row.depth), ("rho w", rho), ("lambda", lam),
-                         ("fc", materials.fc)))
+                         ("fc", materials.fc), ("V flexion", 0.0), ("V torsion", vu)))  # fuera de las franjas, sin V de flexión
 
 
 def _plate_flexure(basis: Basis, footing: CombinedFooting, layer: tuple[str, BarRow, float], given: tuple[float, str, str]) -> Check:
@@ -470,14 +497,17 @@ def plate_secondary_checks(basis: Basis, footing: CombinedFooting, soil: Soil, c
         # El signo en la nota: la memoria separa con él la revisión de cada cara (D-095).
         where = f"a {x + footing.lx / 2:.0f} mm del borde negativo a lo largo de la viga"
         note = {sign: f"Fuera de las franjas, {where}, momento {sign}: {data}" for sign in ("positivo", "negativo")}
-        checks.append(_plate_flexure(basis, footing, (PLATE_BOTTOM, bottom, footing.bottom.y.spacing),
-                                     (demand, pressure.case, note["positivo"])))
+        # Mu = M flexión (0: fuera de las franjas la carga va en X) + M torsión (Wood-Armer con my = 0), por metro (D-119).
+        design = wood_armer(0.0, 0.0, twist)
+        plate = (("mx", 0.0), ("my", 0.0), ("mxy", twist), ("my* inf", design.bottom.y), ("my* sup", design.top.y))
+        lower = _plate_flexure(basis, footing, (PLATE_BOTTOM, bottom, footing.bottom.y.spacing), (demand, pressure.case, note["positivo"]))
+        checks.append(replace(lower, values=(*lower.values, ("M flexion", 0.0), ("M torsion", demand), *plate)))
         if top is not None and footing.top is not None and footing.top.y is not None:
-            checks.append(_plate_flexure(basis, footing, (PLATE_TOP, top, footing.top.y.spacing),
-                                         (demand, pressure.case, note["negativo"])))
+            upper = _plate_flexure(basis, footing, (PLATE_TOP, top, footing.top.y.spacing), (demand, pressure.case, note["negativo"]))
         else:
             plain = plain_strip_check(basis, footing, demand, ("fuera de las franjas", pressure.case, note["negativo"]), _PLATE_STRIP)
-            checks.append(replace(plain, name=PLATE_PLAIN))
+            upper = replace(plain, name=PLATE_PLAIN)
+        checks.append(replace(upper, values=(*upper.values, ("M flexion", 0.0), ("M torsion", -demand), *plate)))
     return checks
 
 

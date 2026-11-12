@@ -20,7 +20,8 @@ from structurelab_rc.reporting.units import kN, kNm, kPa
 
 _DIGITS = 6
 # Unidad interna → (unidad de presentación, conversión).
-_UNITS = {"N*mm": ("kN-m", kNm), "N": ("kN", kN), "N/mm2": ("kPa", kPa), "area": ("m2", lambda area: area / 1e6)}
+_UNITS = {"N*mm": ("kN-m", kNm), "N": ("kN", kN), "N/mm2": ("kPa", kPa), "area": ("m2", lambda area: area / 1e6),
+          "N*mm/mm": ("kN-m/m", kN)}  # momento por unidad de ancho: 1 N·mm/mm = 1e-3 kN·m/m
 # Valores de una verificación con unidad: nombre → unidad interna.
 _VALUE_UNITS = {"s": "mm", "db": "mm", "dagg": "mm", "bslab sin recortar": "mm",
                 "Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi Tth": "N*mm", "Vc": "N", "Vs": "N",
@@ -33,7 +34,11 @@ _VALUE_UNITS = {"s": "mm", "db": "mm", "dagg": "mm", "bslab sin recortar": "mm",
                 "Msc y": "N*mm", "Jc x": "mm4", "Jc y": "mm4", "xc": "mm", "yc": "mm", "cc": "mm", "As,min": "mm2",
                 "As analisis": "mm2", "x": "mm", "Msc": "N*mm", "gamma f Msc": "N*mm", "As bslab": "mm2",
                 "para la viga": "N*mm", "excedente para la viga": "N", "A contacto": "area", "A minima": "area",
-                "b": "mm", "h": "mm", "bw": "mm", "a": "mm", "fc": "MPa", "fy": "MPa"}
+                "b": "mm", "h": "mm", "bw": "mm", "a": "mm", "fc": "MPa", "fy": "MPa",
+                # Torsión de placa (Wood-Armer, D-118, D-119): composición de Mu y Vu y los momentos por unidad de ancho.
+                "M flexion": "N*mm", "M torsion": "N*mm", "V flexion": "N", "V torsion": "N",
+                "mx": "N*mm/mm", "my": "N*mm/mm", "mxy": "N*mm/mm", "mx* inf": "N*mm/mm", "mx* sup": "N*mm/mm",
+                "my* inf": "N*mm/mm", "my* sup": "N*mm/mm"}
 # Valores con número: "esquina 3 v" (esfuerzo de punzonamiento en la esquina 3) y sus coordenadas (D-083).
 _CORNER_UNITS = {"x": "mm", "y": "mm", "v": "MPa"}
 

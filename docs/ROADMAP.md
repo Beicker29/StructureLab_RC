@@ -55,9 +55,7 @@ existente. Sin fórmulas propias; si nada cumple, `FAIL` con el motivo y los lí
   la búsqueda ya encuentra solución (D-117), pero recorre H 1000–2000 y h 300–800 en más de 40 minutos: hay que acotar
   los rangos del ejemplo para que su huella sea rápida. El borrador está fuera del repositorio. Después, evaluar un
   algoritmo genético solo para la geometría (H, alma, zarpa, planta), con el refuerzo determinista actual por geometría
-  y la cota de costo del concreto para descartar (propuesta del usuario).
-- **3B′ Memoria de Wood-Armer:** una tabla de mx, my, mxy, mx\* y my\* por sección (D-118); hoy van en las notas.
-- **3C Integración con las tipologías (enfoque 2, pendiente por decisión del usuario, D-109):** todos los nudos de
+  y la cota de costo del concreto para descartar (propuesta del usuario).- **3C Integración con las tipologías (enfoque 2, pendiente por decisión del usuario, D-109):** todos los nudos de
   ETABS y la configuración por tipologías más económica, con pares de columnas con zapata combinada declarados en la
   plantilla, y la planta de cada tipo; el caso que ubica la base se declara en
   `placement_case` con el nombre de la combinación de `load_factors` (D-108).

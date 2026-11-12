@@ -503,11 +503,13 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
     where = f"Franja transversal de la columna {f['columns'][index]['id']}"
     out = []
     twist = strip_twist(f, beam, strip)
+    # Cortante por la torsión de placa en la franja (D-119): el salto de T entre sus bordes repartido en su ancho b, por b.
+    torsion_shear = abs(_B._torque(beam, strip["x1"]) - _B._torque(beam, strip["x0"])) / f["ly"]
     for y, physical, shear, _ in _strip_sections(f, beam, index, case, strip["depth"]):
         for order, moment in enumerate(strip_moments(physical, strip["width"], twist)):
-            # Una estación por cara con momento de Wood-Armer; el cortante con la primera (D-118).
+            # Una estación por cara con momento de Wood-Armer; el cortante (flexión + torsión) con la primera (D-118).
             out += [{**item, "face": "top" if moment < 0 else "bottom"}
-                    for item in _strip_station(folder, f, (beam, index, case), (y, moment, shear, order), where)]
+                    for item in _strip_station(folder, f, (beam, index, case), (y, moment, shear + torsion_shear, order), where)]
     return out
 
 

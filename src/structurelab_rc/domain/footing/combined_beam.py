@@ -40,6 +40,7 @@ from dataclasses import dataclass, replace
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.deep import deep_beam_checks
+from structurelab_rc.domain.beam.flexure import STRENGTH as FLEXURE_STRENGTH
 from structurelab_rc.domain.beam.geometry import placed_bars
 from structurelab_rc.domain.beam.station import checks_for, flexure_station_checks, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
@@ -471,18 +472,29 @@ def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member
                                           demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(at), v3=0.0, tu=0.0))
         given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
         plate = f"; {_plate_note(beam, section.x)}" if twisted else ""
+        values = _plate_values(beam, section.x, moment)
         if moment < 0 and not has_top:  # sin barras superiores: concreto simple (D-072), con la sección ya en la nota
             plain = plain_principal_check(basis, footing, -moment, (label, beam.case, _sentence(label) + plate))
             rest = (*shear_and_torsion_checks(given_station), *(deep_beam_checks(given_station) if footing.deep_beam else ()))
             others = [replace(check, member=footing.id, z=z, case=beam.case) for check in rest] if index == 0 else []
-            checks += [replace(plain, z=z), *(_with_section(check, label) for check in others)]
+            checks += [replace(plain, z=z, values=(*plain.values, *values)), *(_with_section(check, label) for check in others)]
             continue
         every = checks_for(given_station) if index == 0 else flexure_station_checks(given_station)
         for check in every:
             if plate and check.name.startswith("Flexion"):
                 check = replace(check, note=f"{check.note}{plate}" if check.note else plate[2:])
+            if check.name == FLEXURE_STRENGTH:  # la composición de Mu y los momentos de Wood-Armer (D-118)
+                check = replace(check, values=(*check.values, *values))
             checks.append(_with_section(replace(check, member=footing.id), label))
     return checks
+
+
+def _plate_values(beam: BeamCase, x: float, moment: float) -> tuple[tuple[str, float], ...]:
+    """Mu = M flexión + M torsión de la sección y los momentos por unidad de ancho de Wood-Armer de las barras x
+    (mx = M/B, my = 0, mxy = T/B), para la memoria y su tabla (D-118, D-119)."""
+    design = wood_armer(beam.moment(x) / beam.ly, 0.0, beam.twist(x))
+    return (("M flexion", beam.moment(x)), ("M torsion", moment - beam.moment(x)), ("mx", beam.moment(x) / beam.ly),
+            ("my", 0.0), ("mxy", beam.twist(x)), ("mx* inf", design.bottom.x), ("mx* sup", design.top.x))
 
 
 def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:

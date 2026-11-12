@@ -276,6 +276,22 @@ def _values_table(check: dict[str, Any]) -> Block | None:
     return {"kind": "table", "headers": ["Parámetro", "Símbolo", "Valor", "Unidad"], "rows": rows}
 
 
+def _composition_lines(check: dict[str, Any]) -> list[tuple[str, str]]:
+    """La demanda como suma de la flexión y la torsión de placa (D-118, D-119), con los valores que trae la verificación:
+    Mu = |M flexión + M torsión| o Vu = V flexión + V torsión."""
+    values = check["values"]
+    lines = []
+    for kind, unit, symbol in (("M", "kN-m", "Mu"), ("V", "kN", "Vu")):
+        bending, torsion = values.get(f"{kind} flexion [{unit}]"), values.get(f"{kind} torsion [{unit}]")
+        if bending is None or torsion is None:
+            continue
+        shown = unit_of(f"x [{unit}]")[1]
+        total = _quantity(check["demand"], check["unit"])
+        lines.append((f"Composición de {symbol}", f"{kind} flexión + {kind} torsión = {number(bending, shown)} + "
+                      f"{number(torsion, shown)} → {symbol} = {total}"))
+    return lines
+
+
 def _check_detail(number_text: str, where: str, check: dict[str, Any], locations: list[Located] | None) -> list[Block]:
     """Detalle de una verificación en su ubicación gobernante; con locations, la tabla de todas las ubicaciones."""
     _, demand_symbol, capacity_symbol = classify(check["name"])
@@ -293,6 +309,7 @@ def _check_detail(number_text: str, where: str, check: dict[str, Any], locations
         lines.append(("Verificación", f"{demand_symbol or 'Demanda'} / {capacity_symbol or 'capacidad'} = "
                       f"{number(check['demand'], shown)} / {number(check['capacity'], shown)} = {check['ratio']:.3f}"))
     lines += _contact_lines(check)
+    lines += _composition_lines(check)
     lines.append(("Resultado", _status_text(check["status"])))
     blocks.append({"kind": "kv", "items": lines})
     if check["note"]:
@@ -932,7 +949,10 @@ def _combined_actions(footing: dict[str, Any], figure: Path | None, diagrams: li
         blocks += [{"kind": "p", "text": "Fuerzas de cada columna sobre la zapata, en la base de la columna; P > 0 en compresión."},
                    {**tables[0], "rows": rows}]
     blocks += _soil_pressures(footing, figure, f"{number_text}.4 Presión sobre el suelo")
-    return blocks + _internal_forces(footing, diagrams, f"{number_text}.5")
+    blocks += _internal_forces(footing, diagrams, f"{number_text}.5")
+    # 3.6 Momentos de diseño por Wood-Armer de las secciones gobernantes (D-118), si hay torsión de placa.
+    items = [(_combined_where(check, _combined_axes(footing)), check) for check in footing["checks"]]
+    return blocks + _wood_armer_table(items, f"{number_text}.6")
 
 
 _SECTION_HEADERS = {"V": ("V máx (kN)", "V mín (kN)"), "M": ("M máx (kN·m)", "M mín (kN·m)")}
@@ -992,6 +1012,47 @@ def _flexure_by_sign(number_text: str, items: list[Located], negative: bool, ful
     return _chapter("flexure", number_text, own, full)
 
 
+def _t_secondary(across: str, strips: list[Located], footing: dict[str, Any],
+                 full: bool) -> list[tuple[str, Callable[[str], list[Block]]]]:
+    """Los capítulos de la dirección secundaria de la T invertida: las aletas, sin franjas ni torsión de placa (D-093)."""
+    return [(f"{across}: momento positivo", lambda n: _flexure_by_sign(n, strips, False, full)),
+            (f"{across}: momento negativo", lambda n: _flexure_by_sign(n, strips, True, full)),
+            (f"{across}: fuerza cortante", lambda n: [*_chapter("shear", n, strips, full), *_beam_shears(footing)])]
+
+
+def _per_strip(number_text: str, items: list[Located], build: Callable[[str, list[Located]], list[Block]]) -> list[Block]:
+    """Un subcapítulo por franja de columna (D-119): las revisiones de cada franja con su ubicación gobernante, un nivel
+    más abajo."""
+    strips: dict[str, list[Located]] = {}
+    for item in items:
+        strips.setdefault(item[1]["note"].split(",")[0].split(":")[0], []).append(item)
+    blocks: list[Block] = []
+    for index, (title, own) in enumerate(strips.items(), start=1):
+        blocks.append({"kind": "h2", "text": f"{number_text}.{index} {title}"})
+        blocks += [{**block, "kind": "h3"} if block["kind"] == "h2" else block for block in build(f"{number_text}.{index}", own)]
+    return blocks or build(number_text, items)
+
+
+def _wood_armer_table(items: list[Located], number_text: str) -> list[Block]:
+    """Momentos de diseño por Wood-Armer (D-118) en las secciones que gobiernan la flexión de cada zona y cara: mx, my y
+    mxy por unidad de ancho y los mx*, my* de cada cara que trae cada verificación; sin torsión de placa, nada."""
+    flexure = [item for item in items if "mxy [kN-m/m]" in item[1]["values"] and classify(item[1]["name"])[0] == "flexure"]
+    if not any(abs(check["values"]["mxy [kN-m/m]"]) > 0 for _, check in flexure):
+        return []
+    keys = ("mx", "my", "mxy", "mx* inf", "mx* sup", "my* inf", "my* sup")
+    rows = []
+    for title, (where, check) in _governing_by(flexure, _combined_label).items():
+        values = check["values"]
+        rows.append([title, where, *(number(values.get(f"{key} [kN-m/m]"), "kN·m/m") for key in keys)])
+    return [{"kind": "h2", "text": f"{number_text} Momentos de diseño por Wood-Armer (D-118)"},
+            {"kind": "p", "text": "Por unidad de ancho (kN·m/m). mx* y my* inf son los momentos de diseño de las barras inferiores "
+                                  "(≥ 0) y sup los de las superiores (≤ 0). Las barras x se diseñan con my = 0 y las y con mx = 0 "
+                                  "(desacople conservador, D-118); mxy = T/B. Una fila por revisión de flexión en su sección "
+                                  "gobernante."},
+            {"kind": "table", "headers": ["Revisión", "Ubicación gobernante", "mx", "my", "mxy", "mx* inf", "mx* sup", "my* inf",
+                                          "my* sup"], "rows": rows}]
+
+
 def _outside_chapter(kind: str, number_text: str, items: list[Located], negative: bool | None, full: bool) -> list[Block]:
     """Un capítulo de la dirección secundaria fuera de las franjas band (D-119): la flexión de un signo o el cortante de
     la torsión de placa; sin torsión, no hay nada que revisar allí (solo retracción y temperatura, D-116)."""
@@ -1037,13 +1098,18 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         (f"{along}: fuerza cortante", lambda n: _chapter("shear", n, beam, full)),
         # La torsión de vigas solo en el alma de la T; en la rectangular es de placa y va en la flexión (D-118).
         *([(f"{along}: torsión", lambda n: _chapter("torsion", n, beam, full))] if inverted else []),
-        (f"{across}: momento positivo", lambda n: _flexure_by_sign(n, strips, False, full)),
-        (f"{across}: momento negativo", lambda n: _flexure_by_sign(n, strips, True, full)),
-        (f"{across}: fuerza cortante", lambda n: [*_chapter("shear", n, strips, full), *_beam_shears(footing)]),
-        # Fuera de las franjas band: la torsión de placa (Wood-Armer, D-118) y su cortante ∂mxy/∂x (D-119).
-        *([] if inverted else [(f"{beyond}: momento positivo", lambda n: _outside_chapter("flexure", n, outside, False, full)),
-                               (f"{beyond}: momento negativo", lambda n: _outside_chapter("flexure", n, outside, True, full)),
-                               (f"{beyond}: fuerza cortante", lambda n: _outside_chapter("shear", n, outside, None, full))]),
+        *(_t_secondary(across, strips, footing, full) if inverted else [
+            # Franjas (D-119): un subcapítulo por columna; Mu y Vu, la suma de la flexión y la torsión de placa (D-118).
+            (f"{across}: momento positivo (flexión + torsión)",
+             lambda n: _per_strip(n, strips, lambda m, own: _flexure_by_sign(m, own, False, full))),
+            (f"{across}: momento negativo (flexión + torsión)",
+             lambda n: _per_strip(n, strips, lambda m, own: _flexure_by_sign(m, own, True, full))),
+            (f"{across}: fuerza cortante (flexión + torsión)",
+             lambda n: [*_per_strip(n, strips, lambda m, own: _chapter("shear", m, own, full)), *_beam_shears(footing)]),
+            # Fuera de las franjas band: M flexión = 0 y la torsión de placa (Wood-Armer) y su cortante ∂mxy/∂x (D-119).
+            (f"{beyond}: momento positivo (flexión + torsión)", lambda n: _outside_chapter("flexure", n, outside, False, full)),
+            (f"{beyond}: momento negativo (flexión + torsión)", lambda n: _outside_chapter("flexure", n, outside, True, full)),
+            (f"{beyond}: fuerza cortante (flexión + torsión)", lambda n: _outside_chapter("shear", n, outside, None, full))]),
         *([] if inverted else [(_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full),
                                                                         *_punching_corners(others), *_beam_moments(footing)])]),
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, others, full)),

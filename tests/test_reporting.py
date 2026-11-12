@@ -229,7 +229,8 @@ def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> 
     assert re.findall(r"^### (\d\.\d .+)$", text.split("## 4.")[0], flags=re.M) == [
         "1.1 Concreto estructural", "1.2 Acero de refuerzo", "1.3 Suelo", "2.1 Zapata combinada", "2.2 Acero de refuerzo",
         "2.3 Suelo", "2.4 Columnas", "3.1 Sobrecargas", "3.2 Combinaciones de esfuerzos admisibles (ASD)",
-        "3.3 Combinaciones de resistencia última (LRFD)", "3.4 Presión sobre el suelo", "3.5 Solicitaciones internas"]
+        "3.3 Combinaciones de resistencia última (LRFD)", "3.4 Presión sobre el suelo", "3.5 Solicitaciones internas",
+        "3.6 Momentos de diseño por Wood-Armer (D-118)"]  # el ejemplo tiene torsión de placa (D-118, D-119)
     assert re.findall(r"^#### (3\.5\.\d) (Fuerza cortante|Momento flector)", text, flags=re.M) == [
         ("3.5.1", "Fuerza cortante"), ("3.5.2", "Momento flector"), ("3.5.3", "Fuerza cortante"), ("3.5.4", "Momento flector"),
         ("3.5.5", "Fuerza cortante"), ("3.5.6", "Momento flector")]
@@ -267,3 +268,7 @@ def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> 
     assert max(values) >= moment
     assert "Esfuerzos de punzonamiento en las esquinas del perímetro crítico" in text and "gobierna" in text
     assert "Cortante V3" not in text  # el eje débil no aplica a la zapata
+    # D-119: un subcapítulo por franja de columna y la demanda como suma de la flexión y la torsión de placa.
+    assert "Franja transversal de la columna C1" in text and "Franja transversal de la columna C2" in text
+    assert re.search(r"^### \d+\.1 Franja transversal de la columna C1$", text, flags=re.M)
+    assert "Composición de Mu: M flexión + M torsión" in text and "Composición de Vu: V flexión + V torsión" in text
