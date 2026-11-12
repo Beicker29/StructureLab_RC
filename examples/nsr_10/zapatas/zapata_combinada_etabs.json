@@ -88,14 +88,14 @@
     {
       "id": "ZC-A",
       "principal_direction": "y",
-      "lx": 4100,
-      "ly": 6000.0,
-      "h": 900.0,
+      "lx": 4300,
+      "ly": 5900.0,
+      "h": 950.0,
       "cover": 75.0,
       "fill_height": 300.0,
       "pedestal_height": 0.0,
-      "surcharge_dead_kNm2": 2.0,
-      "surcharge_live_kNm2": 5.0,
+      "surcharge_dead_kNm2": 1.0,
+      "surcharge_live_kNm2": 3.0,
       "loads_source": {
         "service": "etabs",
         "factored": "etabs"
@@ -103,34 +103,42 @@
       "columns": [
         {
           "id": "C_Ext",
-          "etabs_unique_name": "253",
+          "etabs_unique_name": "1643",
           "cx": 1100.0,
           "cy": 500.0,
           "x": 0.0,
-          "y": -2330,
+          "y": 2280,
           "dowels": {
             "designation": "#6",
             "count": 12
           },
           "band": {
             "designation": "#8",
+            "spacing": 80
+          },
+          "band_top": {
+            "designation": "#6",
             "spacing": 120
           }
         },
         {
           "id": "C_Int",
-          "etabs_unique_name": "202",
+          "etabs_unique_name": "1628",
           "cx": 450.0,
           "cy": 800.0,
           "x": 0.0,
-          "y": 1750.0,
+          "y": -1800,
           "dowels": {
             "designation": "#6",
             "count": 12
           },
           "band": {
             "designation": "#8",
-            "spacing": 90
+            "spacing": 80
+          },
+          "band_top": {
+            "designation": "#6",
+            "spacing": 150
           }
         }
       ],
@@ -138,24 +146,24 @@
         "first": "y",
         "end": "straight",
         "x": {
-          "designation": "#5",
-          "spacing": 150
+          "designation": "#6",
+          "spacing": 120
         },
         "y": {
           "designation": "#7",
-          "spacing": 150
+          "spacing": 140
         }
       },
       "top": {
         "first": "x",
         "end": "straight",
         "x": {
-          "designation": "#5",
-          "spacing": 150.0
+          "designation": "#6",
+          "spacing": 120.0
         },
         "y": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 120
         }
       },
       "skin": {

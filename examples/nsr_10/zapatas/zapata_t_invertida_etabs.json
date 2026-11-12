@@ -92,7 +92,7 @@
       "id": "ZT-1",
       "principal_direction": "y",
       "lx": 4100,
-      "ly": 6000,
+      "ly": 6100,
       "h": 600,
       "cover": 75.0,
       "fill_height": 300.0,
@@ -112,173 +112,71 @@
             "depth": 103.6,
             "role": "flexure",
             "bars": [
-              {
-                "designation": "#8",
-                "x": 151.5
-              },
-              {
-                "designation": "#8",
-                "x": 250.5
-              },
-              {
-                "designation": "#8",
-                "x": 349.5
-              },
-              {
-                "designation": "#8",
-                "x": 448.5
-              }
+              "#8",
+              "#8",
+              "#8",
+              "#8"
             ]
           },
           {
             "depth": 243.2,
             "role": "skin",
             "bars": [
-              {
-                "designation": "#6",
-                "x": 100.45
-              },
-              {
-                "designation": "#6",
-                "x": 499.55
-              }
+              "#6",
+              "#6"
             ]
           },
           {
             "depth": 393.2,
             "role": "skin",
             "bars": [
-              {
-                "designation": "#6",
-                "x": 100.45
-              },
-              {
-                "designation": "#6",
-                "x": 499.55
-              }
+              "#6",
+              "#6"
             ]
           },
           {
             "depth": 543.2,
             "role": "skin",
             "bars": [
-              {
-                "designation": "#6",
-                "x": 100.45
-              },
-              {
-                "designation": "#6",
-                "x": 499.55
-              }
+              "#6",
+              "#6"
             ]
           },
           {
             "depth": 693.2,
             "role": "flexure",
             "bars": [
-              {
-                "designation": "#8",
-                "x": -850.0
-              },
-              {
-                "designation": "#8",
-                "x": -750.0
-              },
-              {
-                "designation": "#8",
-                "x": -650.0
-              },
-              {
-                "designation": "#8",
-                "x": -550.0
-              },
-              {
-                "designation": "#8",
-                "x": -450.0
-              },
-              {
-                "designation": "#8",
-                "x": -350.0
-              },
-              {
-                "designation": "#8",
-                "x": -250.0
-              },
-              {
-                "designation": "#8",
-                "x": -150.0
-              },
-              {
-                "designation": "#8",
-                "x": -50.0
-              },
-              {
-                "designation": "#8",
-                "x": 50.0
-              },
-              {
-                "designation": "#8",
-                "x": 150.0
-              },
-              {
-                "designation": "#8",
-                "x": 250.0
-              },
-              {
-                "designation": "#8",
-                "x": 350.0
-              },
-              {
-                "designation": "#8",
-                "x": 450.0
-              },
-              {
-                "designation": "#8",
-                "x": 550.0
-              },
-              {
-                "designation": "#8",
-                "x": 650.0
-              },
-              {
-                "designation": "#8",
-                "x": 750.0
-              },
-              {
-                "designation": "#8",
-                "x": 850.0
-              },
-              {
-                "designation": "#8",
-                "x": 950.0
-              },
-              {
-                "designation": "#8",
-                "x": 1050.0
-              },
-              {
-                "designation": "#8",
-                "x": 1150.0
-              },
-              {
-                "designation": "#8",
-                "x": 1250.0
-              },
-              {
-                "designation": "#8",
-                "x": 1350.0
-              },
-              {
-                "designation": "#8",
-                "x": 1450.0
-              }
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8"
             ]
           }
         ],
         "stirrups": {
-          "designation": "#5",
-          "legs": 4,
-          "spacing": 150.0,
+          "designation": "#3",
+          "legs": 3,
+          "spacing": 170.0,
           "closed": true
         }
       },
@@ -286,7 +184,7 @@
         "first": "y",
         "end": "straight",
         "x": {
-          "designation": "#8",
+          "designation": "#7",
           "spacing": 100.0
         },
         "y": {
@@ -294,29 +192,41 @@
           "spacing": 150.0
         }
       },
+      "top": {
+        "first": "y",
+        "end": "straight",
+        "x": {
+          "designation": "#4",
+          "spacing": 300.0
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 200.0
+        }
+      },
       "columns": [
         {
-          "id": "C15",
-          "etabs_unique_name": "15",
-          "cx": 600.0,
-          "cy": 600.0,
-          "x": -2700.0,
-          "y": 0.0,
+          "id": "C_Ext",
+          "etabs_unique_name": "253",
+          "cx": 1100.0,
+          "cy": 500.0,
+          "x": 0.0,
+          "y": -2330.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 12
           }
         },
         {
-          "id": "C1659",
-          "etabs_unique_name": "1659",
-          "cx": 600.0,
-          "cy": 600.0,
-          "x": 2700.0,
-          "y": 0.0,
+          "id": "C_Int",
+          "etabs_unique_name": "202",
+          "cx": 450.0,
+          "cy": 800.0,
+          "x": 0.0,
+          "y": 1750.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 12
           }
         }
       ]
