@@ -71,7 +71,7 @@ Una fuente de verdad por concepto ([arquitectura](docs/architecture.md)).
   para los dos perfiles (solo cambian el perfil y el nivel sísmico equivalente); las plantillas de ETABS en la carpeta de
   su perfil y los Excel compartidos en `examples/etabs/<elemento>/`. Cada carpeta tiene un `LEEME.md` corto (ejemplos y lo propio del perfil) y
   los campos de entrada y salida se documentan una sola vez, en `docs/formatos/<elemento>.md`.
-  `results/` es salida generada e ignorada, con la misma estructura de carpetas (D-058).
+  `results/` es salida generada, con la misma estructura de carpetas (D-058), y se versiona en Git (D-121).
 - Nombres: `<tipo>.json` con cargas declaradas y `<tipo>_etabs.json` con cargas de los Excel de ETABS (D-098).
 - Los ejemplos de cada carpeta (y sus Excel) son del usuario para iterar: no se usan en pruebas y no se commitean sus
   cambios locales sin pedirlo. Pruebas, huellas y CI leen solo la copia congelada `pruebas/` de cada carpeta

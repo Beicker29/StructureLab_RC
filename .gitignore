@@ -181,12 +181,10 @@ cython_debug/
 .cursorindexingignore
 
 # StructureLab_RC
-# results/ es salida generada: solo se versiona el esqueleto de carpetas (.gitkeep).
-results/**
-!results/**/
-!results/**/.gitkeep
+# results/ se versiona completa, con sus memorias PDF (D-121); examples/ ya se versionaba.
 references/
 *.pdf
+!results/**/*.pdf
 .tmp*/
 *.whl
 ~$*
