@@ -774,7 +774,9 @@ _RULES: tuple[tuple[Callable[[str, str], bool], str], ...] = (
     (lambda name, note: name.startswith(("Pasadores", "Aplastamiento")), "dowels:{column}"),
     (lambda name, note: name == SKIN, "skin"),
     (lambda name, note: name.startswith(_THICKNESS), "h"),
-    (lambda name, note: name.startswith("Transferencia de momento") and "parte negativa" in name, "top_{axis}"),
+    # D-120: la parte negativa de γf·Msc la toman las barras superiores en bslab: en Y, el band superior de la columna.
+    (lambda name, note: name.startswith("Transferencia de momento") and "parte negativa" in name and "principal" in name, "top_x"),
+    (lambda name, note: name.startswith("Transferencia de momento") and "parte negativa" in name, "band_top:{column}"),
     (lambda name, note: name.startswith("Transferencia de momento"), "{transfer}"),
     # El momento negativo de la franja lo toma su band superior (D-119), no top.y en todo el largo.
     (lambda name, note: note.startswith("Franja transversal") and "momento negativo" in note, "band_top:{column}"),

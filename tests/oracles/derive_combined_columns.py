@@ -289,7 +289,7 @@ def _bars(f: dict, direction: str, indices: list[int]) -> list[tuple[float, floa
 
 def _transfer(folder: str, f: dict, spec: dict, moments: dict[str, tuple[float, float]]) -> list[dict]:
     """γf·|Msc| frente a la malla inferior en bslab (y el band) y su parte negativa frente a las barras superiores en bslab
-    (solo en X) o, sin ellas, al concreto simple si el nivel lo permite; la parte negativa siempre cumple (D-087)."""
+    (top y band superior) o, sin ellas, al concreto simple si el nivel lo permite; si no alcanzan, no cumple (D-120)."""
     profile = _F.PROFILES[folder]
     rows = _bottom_rows(f)
     cx, cy = spec["c"]
@@ -323,11 +323,9 @@ def _transfer(folder: str, f: dict, spec: dict, moments: dict[str, tuple[float, 
                 capacity = 0.60 * 0.42 * math.sqrt(FC) * bslab * (f["h"] - 50.0) ** 2 / 6
         elif LEVEL[folder] in profile["plain_levels"]:
             capacity = 0.60 * 0.42 * math.sqrt(FC) * bslab * (f["h"] - 50.0) ** 2 / 6
-        negative = {**common, "name": f"Transferencia de momento: parte negativa ({DIRECTIONS[direction]})", "status": "PASS",
-                    "capacity": capacity}
-        if demand > capacity:  # la toma la viga: sin demanda (sin razón) en la zapata
-            negative.pop("demand")
-        out.append(negative)
+        # D-120: en la combinada la parte negativa la resisten las barras superiores en bslab; si no alcanzan, no cumple.
+        out.append({**common, "name": f"Transferencia de momento: parte negativa ({DIRECTIONS[direction]})",
+                    "status": "PASS" if demand <= capacity else "FAIL", "capacity": capacity})
     return out
 
 

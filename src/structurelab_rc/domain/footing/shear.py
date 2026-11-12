@@ -20,6 +20,7 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError
 from structurelab_rc.mechanics.flexure import SteelLayer
 from structurelab_rc.mechanics.perimeter import Perimeter, critical_perimeter
+from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing, FootingBase
 from structurelab_rc.model.project import Materials
 
@@ -136,8 +137,10 @@ def punching_checks(basis: Basis, footing: FootingBase, column: PunchedColumn, g
 def _negative_transfer_checks(basis: Basis, given: tuple[FootingBase, PunchedColumn],
                               results: tuple[TwoWayShear, TransferredLoad]) -> list[Check]:
     """Parte negativa de γf·Msc (D-087): la resiste la malla superior dentro de bslab; si no la hay, el concreto simple en
-    bslab si el nivel sísmico lo permite (D-072); si no alcanza, la debe tomar la viga de cimentación, que el programa no
-    diseña: la verificación cumple con aviso y reporta el momento para la viga."""
+    bslab si el nivel sísmico lo permite (D-072). En la zapata aislada, si no alcanza, la debe tomar la viga de
+    cimentación, que el programa no diseña: la verificación cumple con aviso y reporta el momento para la viga (D-087).
+    En la combinada, con barras superiores en las franjas (band superior, D-119), no cumple (decisión del usuario,
+    D-120)."""
     profile, materials = basis.profile, basis.materials
     footing, column = given
     result, load = results
@@ -157,13 +160,22 @@ def _negative_transfer_checks(basis: Basis, given: tuple[FootingBase, PunchedCol
             plain = plain_rectangular_moment(profile, materials, bslab, footing.h, cast_against_soil=True)
             capacity, source = (0.0 if isinstance(plain, StructuredError) else plain.design), "concreto simple dentro de bslab"
         resisted = demand <= capacity
+        name = f"Transferencia de momento: parte negativa ({column.bars(direction)})"
+        clause = profile.footing.clauses()["moment_transfer"]
+        if isinstance(footing, CombinedFooting):
+            # Zapata combinada (decisión del usuario, D-120): con el band superior, la parte negativa la resisten las barras
+            # superiores dentro de bslab (o el concreto simple); si no alcanzan, no cumple: no se pasa a la viga.
+            source = source or "sin barras superiores dentro de bslab ni concreto simple permitido"
+            note = (f"{column.note}: " if column.note else "") + f"{source} (D-120)"
+            checks.append(Check(name, Status.PASS if resisted else Status.FAIL, clause=clause, member=footing.id, demand=demand,
+                                capacity=capacity, unit="N*mm", values=(("gamma f Msc", demand), *_slab_values(slab)), note=note))
+            continue
         beam = 0.0 if resisted else demand
         who = f"la resiste la {source}" if resisted else (
             f"debe tomarla la viga de cimentacion: gamma f Msc = {demand / 1e6:.1f} kN-m (no se verifica aqui)")
         note = (f"{column.note}: " if column.note else "") + who
         # Si la toma la viga, la verificación no tiene razón demanda/capacidad en la zapata (cumple con aviso).
-        checks.append(Check(f"Transferencia de momento: parte negativa ({column.bars(direction)})", Status.PASS,
-                            clause=profile.footing.clauses()["moment_transfer"], member=footing.id,
+        checks.append(Check(name, Status.PASS, clause=clause, member=footing.id,
                             demand=demand if resisted else None, capacity=capacity, unit="N*mm",
                             values=(("gamma f Msc", demand), *_slab_values(slab), ("para la viga", beam)), note=note))
     return checks

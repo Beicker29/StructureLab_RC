@@ -172,7 +172,7 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
         "status": _status(checks),
         "checks": [{**check_data(check), "case": check.case, "z [mm]": None if check.z is None else significant(check.z)}
                    for check in checks],
-        "foundation_beam_moments": beam_moments(checks),
+        # Sin momentos para la viga: la parte negativa de γf·Msc la revisan las barras superiores (D-120).
         "foundation_beam_shears": beam_shears(checks),
         **({"diagrams": {"principal": envelope_data(diagrams[0]), "secondary": [envelope_data(item) for item in diagrams[1]]}}
            if diagrams is not None else {}),

@@ -111,7 +111,13 @@ def test_design_input_is_validated() -> None:
     ("Flexion: acero minimo (M3)", "Entre columnas, V = 0, momento negativo", "top_x", "area"),
     ("Flexion concreto simple", "Entre columnas, V = 0, momento negativo", "top_x", "area"),
     ("Flexion: separacion por fisuracion", "Franja transversal de la columna C2, cara +Y, momento positivo", "band:C2", "max_spacing"),
-    ("Flexion: resistencia", "Franja transversal de la columna C1, cara -Y, momento negativo", "top_y", "area"),
+    # D-119: el momento negativo de la franja lo toma el band superior de su columna.
+    ("Flexion: resistencia", "Franja transversal de la columna C1, cara -Y, momento negativo", "band_top:C1", "area"),
+    # D-120: la parte negativa de γf·Msc, las barras superiores en bslab (en Y, el band superior de la columna).
+    ("Transferencia de momento: parte negativa (direccion secundaria)", "Columna C2: malla superior dentro de bslab",
+     "band_top:C2", "area"),
+    ("Transferencia de momento: parte negativa (direccion principal)", "Columna C1: malla superior dentro de bslab",
+     "top_x", "area"),
     ("Flexion: refuerzo superficial", "A d de la cara +X de la columna C1, momento negativo", "skin", "max_spacing"),
     ("Desarrollo barras inferiores, direccion principal", "", "bottom_x", "development"),
     ("Desarrollo barras superiores, direccion principal", "", "top_x", "development"),

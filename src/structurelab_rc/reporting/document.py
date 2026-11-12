@@ -114,7 +114,9 @@ _COMBINED_CONVENTIONS = (
     "Acero mínimo por punzonamiento (ACI 8.6.1.2) aplicado a la zapata combinada por criterio del usuario, aunque 13.3.2.1 "
     "la remite a los capítulos 7 y 9 (D-087).",
     "Transferencia de momento por flexión (ACI 8.4.2.2, NSR-10 C.11.11.7.1 y C.13.5.3): γf·Msc frente a la malla inferior "
-    "dentro de bslab; no se suma al momento de la zapata y su parte negativa la debe tomar la viga de cimentación (D-087).",
+    "dentro de bslab; no se suma al momento de la zapata. Su parte negativa la resisten las barras superiores dentro de "
+    "bslab (top y band superior) o, sin ellas, el concreto simple si se permite; si no alcanzan, no cumple: no se pasa a la "
+    "viga de cimentación (decisión del usuario, D-120).",
 )
 _COMBINED_LIMITATIONS = (
     "El pedestal no aporta empuje pasivo: el pasivo solo actúa sobre el espesor de la zapata (decisión del usuario, "
@@ -1084,7 +1086,7 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
     meta = [("Columnas", " y ".join(column["id"] for column in footing["columns"])),
             ("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
     head = [_title(f"Zapata combinada {footing['id']}", results, meta, items, footing["status"]), _summary(items),
-            *_beam_alert(footing), *_beam_shear_alert(footing),
+            *_beam_shear_alert(footing),
             *_deep_alert(footing.get("deep_beam", False), "La viga de la dirección principal"),
             *_two_way_alert(footing)]
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
@@ -1111,7 +1113,7 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
             (f"{beyond}: momento negativo (flexión + torsión)", lambda n: _outside_chapter("flexure", n, outside, True, full)),
             (f"{beyond}: fuerza cortante (flexión + torsión)", lambda n: _outside_chapter("shear", n, outside, None, full))]),
         *([] if inverted else [(_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full),
-                                                                        *_punching_corners(others), *_beam_moments(footing)])]),
+                                                                        *_punching_corners(others)])]),
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, others, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, others, full)),
         ("Índices DCR", lambda _: _dcr(items, _combined_label)),

@@ -2118,6 +2118,24 @@
     - `band-superior-sin-top`: band superior sin `top`, la cara superior fuera de las franjas en concreto simple.
   - Oráculo `derive_inverted_t.py`: el cortante de las aletas con el mayor |V|.
 
+### D-120: en la combinada, la parte negativa del momento transferido no pasa a la viga de cimentación
+
+- **Fecha:** 2026-11-12
+- **Decisión del usuario:** con el band superior (D-119), la zapata combinada tiene barras superiores en las franjas.
+  Por eso, la parte negativa de γf·Msc (ACI 8.4.2.2, NSR-10 C.11.11.7.1 y C.13.5.3) ya no la toma la viga de
+  cimentación, como en D-087:
+  - la resisten las barras superiores dentro de bslab (top fuera de las zonas de band superior más el band superior de
+    cada columna) o, sin ellas, el concreto simple si el nivel sísmico lo permite (D-072);
+  - si no alcanzan, la verificación NO CUMPLE.
+  - La zapata aislada conserva D-087.
+- **Implementación:**
+  - `domain/footing/shear._negative_transfer_checks`: en la combinada, CUMPLE o NO CUMPLE con demanda y capacidad, sin
+    el valor `para la viga`.
+  - El resultado de la combinada ya no trae `foundation_beam_moments`. La memoria ya no tiene la tabla "Momentos para
+    la viga de cimentación" ni su aviso.
+  - En el diseño, la falla pide `top_x` en la dirección principal y el band superior de la columna en la secundaria.
+- **Control:** el oráculo `derive_combined_columns.py` aplica la misma regla.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

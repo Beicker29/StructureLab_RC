@@ -5467,8 +5467,9 @@
         {
           "case": "U1",
           "where": "Columna C2",
+          "demand": 292482011.49435014,
           "name": "Transferencia de momento: parte negativa (direccion secundaria)",
-          "status": "PASS",
+          "status": "FAIL",
           "capacity": 277692766.1067173
         },
         {
@@ -8910,8 +8911,9 @@
         {
           "case": "U1",
           "where": "Columna C1",
+          "demand": 644996757.453529,
           "name": "Transferencia de momento: parte negativa (direccion secundaria)",
-          "status": "PASS",
+          "status": "FAIL",
           "capacity": 277692766.1067173
         },
         {
@@ -8971,8 +8973,9 @@
         {
           "case": "U1",
           "where": "Columna C2",
+          "demand": 644996757.453529,
           "name": "Transferencia de momento: parte negativa (direccion secundaria)",
-          "status": "PASS",
+          "status": "FAIL",
           "capacity": 277692766.1067173
         },
         {
@@ -9853,8 +9856,9 @@
         {
           "case": "U1",
           "where": "Columna C1",
+          "demand": 644996757.453529,
           "name": "Transferencia de momento: parte negativa (direccion secundaria)",
-          "status": "PASS",
+          "status": "FAIL",
           "capacity": 621836184.7401384
         },
         {
@@ -9914,8 +9918,9 @@
         {
           "case": "U1",
           "where": "Columna C2",
+          "demand": 644996757.453529,
           "name": "Transferencia de momento: parte negativa (direccion secundaria)",
-          "status": "PASS",
+          "status": "FAIL",
           "capacity": 621836184.7401384
         },
         {
@@ -10973,8 +10978,9 @@
         {
           "case": "U1",
           "where": "Columna C1",
+          "demand": 644996757.453529,
           "name": "Transferencia de momento: parte negativa (direccion secundaria)",
-          "status": "PASS",
+          "status": "FAIL",
           "capacity": 643545253.9401383
         },
         {
@@ -11034,8 +11040,9 @@
         {
           "case": "U1",
           "where": "Columna C2",
+          "demand": 644996757.453529,
           "name": "Transferencia de momento: parte negativa (direccion secundaria)",
-          "status": "PASS",
+          "status": "FAIL",
           "capacity": 643545253.9401383
         },
         {
@@ -12159,8 +12166,9 @@
         {
           "case": "U1",
           "where": "Columna C2",
+          "demand": 641435157.3641701,
           "name": "Transferencia de momento: parte negativa (direccion secundaria)",
-          "status": "PASS",
+          "status": "FAIL",
           "capacity": 621836184.7401384
         },
         {
@@ -13319,8 +13327,9 @@
         {
           "case": "U1",
           "where": "Columna C2",
+          "demand": 351741342.806456,
           "name": "Transferencia de momento: parte negativa (direccion secundaria)",
-          "status": "PASS",
+          "status": "FAIL",
           "capacity": 299196337.90795845
         },
         {

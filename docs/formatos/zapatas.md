@@ -369,7 +369,8 @@ Cada verificación de `resultado.json` tiene:
 En zapatas, `resultado.json` agrega `soil` (datos del suelo en kPa y kN/m³) y `footings`, con la geometría, las
 propiedades calculadas, el número de casos y las verificaciones, y `foundation_beam_moments` (caso, columna, dirección
 de la viga y `M [kN-m]`): los momentos transferidos que debe tomar la viga de cimentación (D-087). Las zapatas
-combinadas van en `combined_footings`: la
+combinadas van en `combined_footings`, sin `foundation_beam_moments`: allí la parte negativa de γf·Msc la revisan las
+barras superiores (D-120). Traen la
 geometría, las columnas (`columns[]`, cada una con sus cargas), las propiedades calculadas de la base, el armado
 (`bottom`, `top`, `stirrups`, `skin`), `deep_beam`, `two_way_warning` (B, ℓn y B/ℓn si B ≥ ℓn, la luz
 libre entre las caras de las columnas: puede trabajar en dos direcciones, D-091; null si no), `foundation_beam_shears`
@@ -404,7 +405,7 @@ H = h + altura del pedestal. Las excentricidades son ex = My base/N y ey = −Mx
 | Cortante en una dirección (barras x o y) | Por caso mayorado: Vu de la carga neta más allá de la sección a d de cada cara frente a φVc, con la d de esa dirección. | ACI 13.2.6.2(a) y 13.2.7.2; NSR-10 C.15.5 y C.11.2 |
 | Punzonamiento | Por caso mayorado: esfuerzo máximo vu = Vu/(b0·d) + γv·Msc·c/Jc en los dos ejes, en el perímetro a d/2 (recortado con la base: αs = 40, 30 o 20), frente a φvc. Valores: Vu, b0, d, αs, γv, vuv, Msc y Jc en cada eje, el centroide del perímetro (xc, yc) y el esfuerzo en cada esquina (`esquina i x`, `esquina i y`, `esquina i v`, D-083). | ACI 22.6.5.2, 22.6.5.3 y 8.4.4.2; NSR-10 C.11.11.2.1 y C.11.11.7 |
 | Transferencia de momento por flexión (barras x o y) | Por caso mayorado: γf·|Msc| frente a φMn de la malla inferior dentro de bslab = c + 1.5h a cada lado, sin pasar de los bordes de la zapata: a cada lado, el menor entre 1.5h y la distancia de la cara al borde (D-102; si recorta, el valor `bslab sin recortar` da c + 3h); en la combinada, más el band. No se suma al momento de la zapata. | ACI 8.4.2.2 (13.3.3.1); NSR-10 C.11.11.7.1 y C.13.5.3.2 (D-087) |
-| Transferencia de momento: parte negativa (barras x o y) | La misma γf·|Msc| frente a la malla superior en bslab o, sin ella, al concreto simple si el nivel lo permite. Siempre CUMPLE: lo que la zapata no resiste lo debe tomar la viga de cimentación (valor `para la viga`, sin razón demanda/capacidad) y queda en `foundation_beam_moments` y en la memoria. | Ídem (D-087) |
+| Transferencia de momento: parte negativa (barras x o y) | La misma γf·|Msc| frente a la malla superior en bslab o, sin ella, al concreto simple si el nivel lo permite. En la zapata aislada siempre CUMPLE: lo que la zapata no resiste lo debe tomar la viga de cimentación (valor `para la viga`, sin razón demanda/capacidad) y queda en `foundation_beam_moments` y en la memoria (D-087). En la combinada la resisten las barras superiores en bslab (top y band superior) o el concreto simple; si no alcanzan, NO CUMPLE (D-120). | Ídem (D-087, D-120) |
 | Fuera de la franja central malla … | Zapata rectangular: As fuera de la franja frente a (1 − γs)·As. | ACI 13.3.3.3(b); NSR-10 C.15.4.4.2 (D-087) |
 | Acero mínimo por punzonamiento (barras x o y) | Solo ACI, cuando vuv > φ0.17√f'c: As,min de 8.6.1.2 (con el bslab recortado por los bordes, D-102) frente a las barras de la malla inferior dentro de bslab. | ACI 8.6.1.2 |
 | Desarrollo malla … (barras x o y) | Longitud de desarrollo (recta o con gancho) frente a la disponible desde la cara de la columna hasta el extremo de la barra. La superior, solo con momento negativo. | ACI 25.4.2 y 25.4.3; NSR-10 C.12.2 y C.12.5 |
