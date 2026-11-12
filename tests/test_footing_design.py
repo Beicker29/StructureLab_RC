@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
@@ -295,6 +296,17 @@ def test_etabs_design_template_builds_a_design_project() -> None:
     assert [column.id for column in design.columns] == ["A1", "A2"]
     assert (design.columns[1].cy, design.columns[1].loads[1].p) == (450.0, 950e3)
     assert summary.footings == 2
+    assert summary.omitted == ()
+    # D-111: exclude_unique_names quita un nudo listado; los nudos de los Excel que no entran se avisan.
+    extra = Table(headers, units, (*service.rows, row("12", "A3", "S", 400.0)))
+    excluding = template.model_copy(update={"exclude_unique_names": ("11",)})
+    project, summary = build_footing_design_project(excluding, extra, factored)
+    assert [column["id"] for column in project["columns"]] == ["A1"]
+    assert summary.omitted == ("11", "12")
+    assert project["description"].endswith("(no listados o excluidos): 11, 12.")
+    for excluded, message in ((["99"], "no estan en columns"), (["10", "11"], "quita todos")):
+        with pytest.raises(ValidationError, match=message):
+            EtabsFootingDesignTemplate.model_validate({**template.model_dump(mode="json"), "exclude_unique_names": excluded})
 
 
 @pytest.mark.parametrize(("level", "top"), [("DMO", False), ("DES", True)])

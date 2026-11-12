@@ -13,7 +13,14 @@ from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.engine import validate_file
 from structurelab_rc.errors import ErrorCode, StructuredError, blocked, incomplete, invalid_input
 from structurelab_rc.mechanics.flexure import SteelLayer
-from structurelab_rc.model.loader import ProjectLoadError, load_design_project, load_footing_template, load_project, load_template
+from structurelab_rc.model.loader import (
+    ProjectLoadError,
+    load_combined_design,
+    load_design_project,
+    load_footing_template,
+    load_project,
+    load_template,
+)
 from structurelab_rc.model.project import Demands, Materials, Project, Section
 from structurelab_rc.setup import load_engine
 
@@ -36,7 +43,9 @@ def _id(path: Path) -> str:
 # proyectos de diseño por tipologías (D-069, D-096); el resto son proyectos de verificación.
 TEMPLATES = [path for path in _ALL if path.stem.endswith("_etabs")]
 EXAMPLES = [path for path in _ALL if path not in TEMPLATES and not path.name.startswith(("diseno_", "curva_"))]
-DESIGN_EXAMPLES = [path for path in _ALL if path not in TEMPLATES and path.name.startswith(("diseno_", "curva_"))]
+DESIGN_EXAMPLES = [path for path in _ALL if path not in TEMPLATES and path.name.startswith(("diseno_", "curva_"))
+                   and path.name not in ("diseno_combinada.json", "diseno_t_invertida.json")]
+COMBINED_DESIGNS = [path for path in _ALL if path.name in ("diseno_combinada.json", "diseno_t_invertida.json")]
 _LEVELS = {"ordinary": "DMI", "intermediate": "DMO", "special": "DES"}
 BARS = load_engine().bars
 BASE: dict[str, Any] = {
@@ -106,6 +115,12 @@ def test_examples_are_the_same_for_both_profiles(path: Path) -> None:
 def test_design_examples_load(path: Path) -> None:
     project = load_design_project(path)
     assert project.design.typologies <= len(project.columns)
+
+
+@pytest.mark.parametrize("path", COMBINED_DESIGNS, ids=lambda path: f"{_profile(path)}-{path.stem}")
+def test_combined_design_examples_load(path: Path) -> None:
+    project = load_combined_design(path)
+    assert len(project.columns) == 2
 
 
 def test_there_are_examples_for_both_profiles() -> None:

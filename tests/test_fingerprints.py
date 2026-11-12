@@ -14,22 +14,23 @@ from pathlib import Path
 
 import pytest
 
-from structurelab_rc.engine import design_footings, import_etabs, import_etabs_footings, report_file
+from structurelab_rc.engine import design_combined_file, design_footings, import_etabs, import_etabs_footings, report_file
 
 ROOT = Path(__file__).parent.parent
 FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
 # Las pruebas usan solo las copias congeladas de examples/<perfil>/<elemento>/pruebas/ (D-098): los ejemplos de afuera
 # son para que el usuario itere. Los mismos ejemplos para los dos perfiles (D-073). Las plantillas de ETABS
 # (<tipo>_etabs.json, D-098) leen los Excel de examples/etabs/<elemento>/pruebas/; entran en la huella la de vigas y
-# las de zapatas combinadas (D-084) y en T invertida (D-093), que importan pocas zapatas (las de zapatas aisladas
-# importan 57 a 73 apoyos y su diseño tarda minutos).
+# las de zapatas combinadas (D-084), en T invertida (D-093) y del diseño de la combinada (D-112), que importan pocas
+# zapatas (las de zapatas aisladas importan 57 a 73 apoyos y su diseño tarda minutos).
 # La curva costo-N (curva_*.json, D-096) repite el diseño para cada N: tarda minutos con un proceso y no entra en la huella.
 EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*/pruebas/*.json")
                   if path.parts[-4] != "etabs" and not path.stem.endswith("_etabs") and not path.name.startswith("curva_"))
 ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                      for path in (ROOT / "examples").glob("*/vigas/pruebas/viga_rectangular_etabs.json")))
 COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
-                              for name in ("zapata_combinada_etabs.json", "zapata_t_invertida_etabs.json")
+                              for name in ("zapata_combinada_etabs.json", "zapata_t_invertida_etabs.json",
+                                           "diseno_combinada_etabs.json")
                               for path in (ROOT / "examples").glob(f"*/zapatas/pruebas/{name}")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "pruebas" / "Element Forces - Beams.xlsx"
 REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx",
@@ -40,9 +41,12 @@ UPDATE = os.environ.get("STRUCTURELAB_UPDATE_FINGERPRINTS") == "1"
 def _fingerprint(name: str, work: Path) -> dict[str, str]:
     project = ROOT / name
     files = ("resultado.json", "memoria.txt")
-    if Path(name).name.startswith("diseno_"):
-        # Diseño por tipologías (D-069): huella del proyecto diseñado y de su verificación.
-        data, _, _ = design_footings(project)
+    if Path(name).name.startswith("diseno_") and name not in COMBINED_ETABS:
+        # Diseño por tipologías (D-069) o de la zapata combinada (D-107, un proceso por f'c, sin cambiar el resultado):
+        # huella del proyecto diseñado y de su verificación.
+        combined = "combined_design" in json.loads(project.read_text(encoding="utf-8"))  # D-107, D-113
+        data = design_combined_file(project, workers=2)[0] if combined else design_footings(project)[0]
+        assert data is not None, name
         project = work / "proyecto.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         report_file(project, work / "salida")
@@ -52,6 +56,11 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
         data = import_etabs(WORKBOOK, project)[0] if name in ETABS else import_etabs_footings(*REACTIONS, project)[0]
         project = work / "etabs.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+        if Path(name).name == "diseno_combinada_etabs.json":  # diseño de la combinada desde ETABS (D-112)
+            designed = design_combined_file(project, workers=2)[0]
+            assert designed is not None, name
+            project = work / "proyecto.json"
+            project.write_text(json.dumps(designed, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     report_file(project, work / "salida")
     return {file: hashlib.sha256((work / "salida" / file).read_bytes()).hexdigest() for file in ("resultado.json", "memoria.txt")}
 

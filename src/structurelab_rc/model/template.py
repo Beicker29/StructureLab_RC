@@ -151,23 +151,31 @@ class TemplateCombinedFooting(_Input):
 
     @model_validator(mode="after")
     def _check_sources(self) -> Self:
-        sources = {"service": self.loads_source.service, "factored": self.loads_source.factored}
-        for column in self.columns:
-            kinds = {load.get("kind") for load in column.loads}
-            for kind, source in sources.items():
-                if source == "json" and kind not in kinds:
-                    raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' no trae casos '{kind}' "
-                                     "y loads_source los pide de la plantilla")
-                if source == "etabs" and kind in kinds:
-                    raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' trae casos '{kind}' que "
-                                     "loads_source toma de ETABS")
-        if self.columns[0].etabs_unique_name == self.columns[1].etabs_unique_name:
-            raise ValueError(f"las dos columnas de la zapata combinada '{self.id}' tienen el mismo Unique Name")
+        _check_loads_source(f"de la zapata combinada '{self.id}'", self.columns, self.loads_source)
         return self
 
     def etabs_kinds(self) -> tuple[str, ...]:
         """Los tipos de carga que salen de los Excel de ETABS."""
-        return tuple(kind for kind in ("service", "factored") if getattr(self.loads_source, kind) == "etabs")
+        return _etabs_kinds(self.loads_source)
+
+
+def _check_loads_source(where: str, columns: tuple["TemplateCombinedColumn", ...], source: LoadsSource) -> None:
+    """Cada columna trae en loads justo los tipos que loads_source pide de la plantilla, y los dos nudos son distintos
+    (D-084, D-112)."""
+    sources = {"service": source.service, "factored": source.factored}
+    for column in columns:
+        kinds = {load.get("kind") for load in column.loads}
+        for kind, origin in sources.items():
+            if origin == "json" and kind not in kinds:
+                raise ValueError(f"la columna '{column.id}' {where} no trae casos '{kind}' y loads_source los pide de la plantilla")
+            if origin == "etabs" and kind in kinds:
+                raise ValueError(f"la columna '{column.id}' {where} trae casos '{kind}' que loads_source toma de ETABS")
+    if columns[0].etabs_unique_name == columns[1].etabs_unique_name:
+        raise ValueError(f"las dos columnas {where} tienen el mismo Unique Name")
+
+
+def _etabs_kinds(source: LoadsSource) -> tuple[str, ...]:
+    return tuple(kind for kind in ("service", "factored") if getattr(source, kind) == "etabs")
 
 
 class LoadFactors(_Input):
@@ -216,7 +224,8 @@ class TemplateColumns(_Input):
 
 class EtabsFootingDesignTemplate(_Input):
     """Plantilla de diseño de zapatas por tipologías: el bloque design y las columnas; la asignación a tipologías la
-    hace el diseño (D-069). soil y design se validan con el proyecto de diseño que se genera."""
+    hace el diseño (D-069). soil y design se validan con el proyecto de diseño que se genera. Solo entran los Unique Name
+    de columns; exclude_unique_names quita algunos de ellos sin borrarlos de su grupo (D-111)."""
 
     description: str
     profile: str
@@ -226,6 +235,7 @@ class EtabsFootingDesignTemplate(_Input):
     load_factors: dict[str, LoadFactors] = Field(min_length=1)
     design: dict[str, Any]
     columns: tuple[TemplateColumns, ...] = Field(min_length=1)
+    exclude_unique_names: tuple[str, ...] = ()
     etabs_files: FootingEtabsFiles | None = None
 
     @model_validator(mode="after")
@@ -233,5 +243,40 @@ class EtabsFootingDesignTemplate(_Input):
         names = [name for group in self.columns for name in group.etabs_unique_names]
         if len(set(names)) != len(names):
             raise ValueError("un Unique Name aparece en dos grupos de columnas")
+        unknown = sorted(set(self.exclude_unique_names) - set(names))
+        if unknown:
+            raise ValueError(f"exclude_unique_names nombra Unique Name que no estan en columns: {', '.join(unknown)}")
+        if set(names) <= set(self.exclude_unique_names):
+            raise ValueError("exclude_unique_names quita todos los Unique Name de columns")
         return self
 
+
+
+class EtabsCombinedDesignTemplate(_Input):
+    """Plantilla del diseño de una zapata combinada de dos columnas desde ETABS (D-112, enfoque 1): el proyecto de diseño
+    (D-107) con cada columna ligada al Unique Name de su nudo; las cargas de los tipos que loads_source toma de ETABS
+    salen de los Excel y las demás, de columns[].loads. combined_design, soil y materials se validan con el proyecto de
+    diseño que se genera; placement_case nombra la combinación de ETABS (como la escribe el importador)."""
+
+    description: str
+    profile: str
+    seismic: SeismicFacts
+    materials: dict[str, Any]
+    soil: dict[str, float]
+    load_factors: dict[str, LoadFactors] = Field(min_length=1)
+    principal_direction: Literal["x", "y"] = "x"
+    loads_source: LoadsSource = LoadsSource()
+    combined_design: dict[str, Any]
+    columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2, max_length=2)
+    etabs_files: FootingEtabsFiles | None = None
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if any(column.dowels is not None or column.band is not None for column in self.columns):
+            raise ValueError("el diseño de la zapata combinada propone los pasadores y el band: no se declaran en columns")
+        _check_loads_source("del diseño de la zapata combinada", self.columns, self.loads_source)
+        return self
+
+    def etabs_kinds(self) -> tuple[str, ...]:
+        """Los tipos de carga que salen de los Excel de ETABS."""
+        return _etabs_kinds(self.loads_source)

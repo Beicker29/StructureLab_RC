@@ -9,16 +9,24 @@ _SQRT_FC_MAX = 8.3
 _MIN_DISTRIBUTED_RATIO = 0.0025
 _SPACING_MAX = 300.0
 _DEPTH_DIVISOR = 5.0
+_SPAN_TO_DEPTH = 4.0
 
 
 def clauses() -> dict[str, str]:
     return {
+        "definition": "C.11.7.1",
         "section": "C.11.7.3",
         "transverse": "C.11.7.4.1",
         "longitudinal": "C.11.7.4.2",
         "spacing": "C.11.7.4.1 y C.11.7.4.2",
         "curtains": "C.11.7.4",
     }
+
+
+def max_span_to_depth() -> float:
+    """C.11.7.1: viga alta si la luz libre ln no excede 4h (con cargas sobre una cara y apoyos en la opuesta). El diseño
+    usa este límite para declarar la viga alta (D-109)."""
+    return _SPAN_TO_DEPTH
 
 
 def section_limit(fc: float, bw: float, d: float) -> float:

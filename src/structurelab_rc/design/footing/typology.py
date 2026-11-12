@@ -18,9 +18,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from structurelab_rc.codes.registry import Profile
+from structurelab_rc.design.bars import Spread, bar_options
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
 from structurelab_rc.domain.footing.checks import footing_checks
 from structurelab_rc.domain.footing.connection import bearing_area, footing_support
 from structurelab_rc.domain.footing.flexure import PLAIN, face_moments
@@ -154,24 +154,10 @@ def _bar_options(ctx: Context, fc: float, section: tuple[float, float], depth_of
     materials = ctx.materials(fc)
     width, h = section
     max_spacing = math.floor(profile.footing.max_bar_spacing(h) / design.spacing_step) * design.spacing_step
-    options = []
-    for designation in design.bars:
-        spec = ctx.spec(designation)
-        depth = depth_of(spec.diameter_mm)
-        needed = required_area(profile, materials, RectangularSection(width, h), depth, demand)
-        if needed is None:  # ninguna cuantía alcanza el momento con esta altura
-            continue
-        area = max(needed, profile.footing.min_reinforcement_ratio(materials.fy) * width * h)
-        count = max(math.ceil(area / spec.area_mm2), 2)
-        usable = width - 2 * design.cover - spec.diameter_mm
-        spacing = min(math.floor(usable / (count - 1) / design.spacing_step) * design.spacing_step, max_spacing)
-        while spacing > spec.diameter_mm + design.spacing_step / 2:
-            bars = math.floor(usable / spacing + 1e-6) + 1
-            options.append((bars * spec.mass_kg_m, {"designation": designation, "spacing": spacing}))
-            spacing -= design.spacing_step
-            if len(options) > _MAT_TRIES * len(design.bars):
-                break
-    return sorted(options, key=lambda option: option[0])
+    spread = Spread(width, h, design.cover, design.spacing_step, max_spacing)
+    specs = [ctx.spec(designation) for designation in design.bars]
+    minimum = profile.footing.min_reinforcement_ratio(materials.fy) * width * h
+    return bar_options((profile, materials, specs), spread, depth_of, (demand, minimum), _MAT_TRIES * len(design.bars))
 
 
 def _mat_candidates(ctx: Context, typology: Typology, demands: dict[str, float]) -> Iterator[dict[str, Any]]:

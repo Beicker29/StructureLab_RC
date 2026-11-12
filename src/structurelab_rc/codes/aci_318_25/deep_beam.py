@@ -8,18 +8,25 @@ _SECTION_FACTOR = 0.83
 _MIN_DISTRIBUTED_RATIO = 0.0025
 _SPACING_MAX = 300.0
 _DEPTH_DIVISOR = 5.0
+_SPAN_TO_DEPTH = 4.0
 _CURTAIN_WIDTH = 200.0
 _CURTAIN_SPACING_MAX = 600.0
 
 
 def clauses() -> dict[str, str]:
     return {
+        "definition": "9.9.1.1(a)",
         "section": "9.9.2.1",
         "transverse": "9.9.3.1(a)",
         "longitudinal": "9.9.3.1(b)",
         "spacing": "9.9.4.3",
         "curtains": "9.9.4.4",
     }
+
+
+def max_span_to_depth() -> float:
+    """9.9.1.1(a): viga de gran altura si la luz libre no excede 4h. El diseño usa este límite para declarar la viga alta (D-109)."""
+    return _SPAN_TO_DEPTH
 
 
 def section_limit(fc: float, bw: float, d: float) -> float:

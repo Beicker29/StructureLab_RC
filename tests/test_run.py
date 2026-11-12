@@ -17,8 +17,14 @@ ROOT = Path(__file__).parent.parent
 EXAMPLES = sorted(path for path in (ROOT / "examples").glob("*/*/pruebas/*.json"))
 
 
+_COMBINED_DESIGNS = {"diseno_combinada.json": "combined_design", "diseno_t_invertida.json": "combined_design",
+                     "diseno_combinada_etabs.json": "etabs_combined_design"}
+
+
 def _expected_kind(path: Path) -> str:
     name = path.name
+    if name in _COMBINED_DESIGNS:
+        return _COMBINED_DESIGNS[name]
     if path.stem.endswith("_etabs"):
         if name.startswith("diseno_"):
             return "etabs_design"

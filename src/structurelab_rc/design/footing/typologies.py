@@ -40,7 +40,7 @@ from structurelab_rc.design.footing.typology import (
 )
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.design import DesignColumn, FootingDesignProject
-from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, N_PER_KN, NMM_PER_KNM, FootingLoad
+from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, N_PER_KN, NMM_PER_KNM, FootingLoad, Soil
 
 # Tareas: ("single", fc, columna), ("covers", tipología, columna), ("design", fc, columnas, tipología de partida); las
 # columnas son índices de project.columns, para no copiar las columnas a cada proceso en cada tarea.
@@ -660,7 +660,7 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
                 "column": {"cx": column.cx, "cy": column.cy, "offset_x": 0.0, "offset_y": 0.0,
                            "dowels": typology.design.dowels[column_id]},
                 "bottom": t.bottom, "top": t.top,
-                "loads": [_load_input(load) for load in column.loads],
+                "loads": [load_input(load) for load in column.loads],
             })
     materials = project.materials
     return {
@@ -671,19 +671,18 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
         "materials": {"fc": result.fc, "fy": materials.fy, "fyt": materials.fyt, "concrete": materials.concrete,
                       "coating": materials.coating,
                       **({} if materials.max_aggregate is None else {"max_aggregate": materials.max_aggregate})},
-        "soil": _soil_input(ctx),
+        "soil": soil_input(ctx.soil),
         "footings": footings,
     }
 
 
-def _load_input(load: FootingLoad) -> dict[str, Any]:
+def load_input(load: FootingLoad) -> dict[str, Any]:
     return {"case": load.case, "kind": load.kind, "dead_factor": load.dead_factor, "live_factor": load.live_factor,
             "seismic": load.seismic, "P_kN": load.p / N_PER_KN, "Vx_kN": load.vx / N_PER_KN, "Vy_kN": load.vy / N_PER_KN,
             "Mx_kNm": load.mx / NMM_PER_KNM, "My_kNm": load.my / NMM_PER_KNM}
 
 
-def _soil_input(ctx: Context) -> dict[str, float]:
-    soil = ctx.soil
+def soil_input(soil: Soil) -> dict[str, float]:
     return {"allowable_pressure_kPa": soil.allowable_pressure / MPA_PER_KPA, "min_contact_fraction": soil.min_contact_fraction,
             "unit_weight_concrete_kNm3": soil.unit_weight_concrete / N_MM3_PER_KN_M3,
             "unit_weight_fill_kNm3": soil.unit_weight_fill / N_MM3_PER_KN_M3,

@@ -4,8 +4,8 @@ Herramienta de oficina para elementos de concreto reforzado con los perfiles `ac
 pendiente; lo hecho está en [decisions.md](decisions.md) y en el historial de Git. Cada fase se cierra con plan
 aprobado, oráculo, pruebas y huella antes de abrir la siguiente.
 
-**Orden vigente (2026-11-11, prioridad del usuario):** v3 Fase 5 (tipos de cimentación nuevos), luego v3 fases 1 a 4,
-luego v1 fases 2 a 5, luego v2. El diseño, el despiece y el dibujo se construyen en zapatas (v3 fases 3 y 4) con piezas
+**Orden vigente (2026-11-12, prioridad del usuario):** v3 Fase 3 (diseño, retomada), luego v3 Fase 5 (tipos de
+cimentación nuevos), luego v3 fases 1, 2 y 4, luego v1 fases 2 a 5, luego v2. El diseño, el despiece y el dibujo se construyen en zapatas (v3 fases 3 y 4) con piezas
 neutras que después reutilizan las vigas (v1 fases 4 y 5).
 
 **Pendiente sin fase:** correr de nuevo el diseño por tipologías desde ETABS con D-079 (N = 6 y curva costo–N); diferido
@@ -14,7 +14,7 @@ por el usuario.
 ## v3: zapatas (en curso)
 
 Hecho: zapata aislada (verificación, diseño por tipologías, estabilidad, concreto simple) y zapata combinada de dos
-columnas (verificación, entrada desde ETABS), D-052 a D-087.
+columnas (verificación, entrada desde ETABS, D-052 a D-087; diseño de la rectangular, D-107).
 
 ### Fase 1: zapatas combinadas completas
 
@@ -34,17 +34,18 @@ columnas (verificación, entrada desde ETABS), D-052 a D-087.
 Optimizador sobre el catálogo; entrega las mejores soluciones ordenadas por costo, cada una aprobada por la verificación
 existente. Sin fórmulas propias; si nada cumple, `FAIL` con el motivo y los límites no se amplían (como D-069).
 
-- **3A Piezas reutilizables** (neutras, en `design/`, para la viga larga ahora y para las vigas después):
-  - barras longitudinales a partir de la envolvente de As requerido por estación (`domain/flexure_strength`), con
-    separaciones y número de capas del perfil;
-  - puntos de corte con ld y las extensiones (d, 12db, punto de inflexión) que el perfil calcula;
-  - estribos por zona a partir del cortante (Vs requerido, Av,min y separación máxima del perfil);
-  - refuerzo superficial cuando h > 900 mm.
-- **3B Zapata combinada:** largo, ancho y posición respecto a las columnas (resultante de servicio centrada o
-  declarada), espesor, barras de la viga larga con 3A, franjas transversales (`band`), malla, pasadores y refuerzo
-  superficial.
-- **3C Integración con las tipologías:** pares de columnas con zapata combinada en el diseño desde ETABS (declarados en
-  la plantilla o por cercanía, a consultar) y la planta de cada tipo.
+- **3A Piezas reutilizables** (neutras, en `design/`, para la viga larga ahora y para las vigas después; ya están las
+  barras para un As requerido, `design/bars.py`, D-107, y los estribos cerrados, `design/stirrups.py`, D-110):
+  - barras en varias capas a partir de la envolvente de As requerido por estación;
+  - puntos de corte con ld y las extensiones (d, 12db, punto de inflexión) que el perfil calcula (para las vigas);
+  - estribos por zona (separaciones distintas a lo largo del miembro), para las vigas.
+- **3B Zapata combinada, enfoque 1: dos columnas declaradas:** hecho (rectangular y T invertida, con estribos,
+  torsión y cargas de ETABS; D-107, D-110, D-112 y D-113). Queda la plantilla de ETABS de la T (hoy la plantilla de
+  diseño admite `shape`, pero el ejemplo es el rectangular).
+- **3C Integración con las tipologías (enfoque 2, pendiente por decisión del usuario, D-109):** todos los nudos de
+  ETABS y la configuración por tipologías más económica, con pares de columnas con zapata combinada declarados en la
+  plantilla, y la planta de cada tipo; el caso que ubica la base se declara en
+  `placement_case` con el nombre de la combinación de `load_factors` (D-108).
 
 ### Fase 4: despiece y dibujo (alcance de la Fase 5 de vigas)
 

@@ -1746,6 +1746,179 @@
   barras de la malla fuera de la capa cuentan dentro del ala); se detectan las mutaciones que cuentan la malla bajo la
   capa y que omiten las barras de la capa fuera del alma.
 
+### D-107: diseño de la zapata combinada rectangular de dos columnas (v3 Fase 3B)
+
+- **Fecha:** 2026-11-12
+- **Decisiones del usuario:** retomar la v3 Fase 3 antes de la Fase 5; el diseño propone dimensiones (largo, ancho,
+  posición, espesor) y todo el refuerzo, al menor costo, cada solución aprobada por la verificación existente, como en
+  D-069; el centroide de la base va sobre la resultante de las cargas de servicio D+L (si una columna está en un lindero,
+  el voladizo de ese lado se limita a lo declarado); las barras de la viga larga van continuas, sin cortes (los puntos de
+  corte quedan para las vigas, v1); f'c variable entre los de la lista, con sus precios, como en D-069.
+- **Entrada:** `diseno_combinada.json` con `columns` (dos, con su eje en ejes globales y cualquier origen), `principal_direction`
+  y el bloque `combined_design`, que comparte con el diseño por tipologías los límites de búsqueda (`DesignLimits`) y añade
+  `max_cantilever_start` y `max_cantilever_end`. Formato en [formatos/zapatas.md](formatos/zapatas.md).
+- **Reglas** (`design/footing/combined.py`; sin fórmulas propias):
+  - D+L es el caso de servicio sin sismo de mayor carga total. La resultante usa la fuerza vertical de cada columna
+    (`column_vertical`) y sus momentos y cortantes llevados a la base, como `combined_resultant`: con el centroide en
+    ella, ese caso no tiene excentricidad.
+  - Largo mínimo que cubre las columnas, al paso; luego los mayores (el primero con solución y dos más, la heurística de
+    D-069). Ancho mínimo, al paso, que cumple la revisión geotécnica. Espesor mínimo con solución por bisección y los
+    mayores mientras el costo del concreto solo (cota inferior: el ancho mínimo no decrece con el espesor) no alcance el
+    mejor.
+  - Refuerzo por grupos (barras inferiores y superiores x, `band` de cada columna, malla y, barras superiores y, piel y
+    pasadores). Cada uno empieza en la opción más liviana que ya cumple los límites del perfil que la verificación revisa
+    en él y, ante una falla suya, pasa a la más liviana que no la repetiría: menos o igual área total y por metro
+    (resistencia y cuantías), diámetro mayor o igual con separación menor o igual (desarrollo: ld crece con db y decrece
+    con cb), menos luz libre (separación mínima) o mayor separación (separaciones máximas y fisuración). Las fallas de
+    cortante, punzonamiento, torsión y deformación unitaria piden más espesor.
+  - Costo: concreto por m³ según f'c y acero por kg, con las posiciones de barras de la verificación.
+- **Desviaciones del plan aprobado:** no se diseñan estribos (el cortante lo resuelve el espesor) ni refuerzo por torsión
+  (si la torsión supera el umbral se sube el espesor; si no alcanza, FAIL), y la pieza 3A de estribos queda pendiente.
+  Se exploran además dos largos mayores que el mínimo: con el mínimo una columna puede quedar al ras del borde y el
+  desarrollo de sus barras no tener dónde cumplir.
+- **Piezas 3A:** `design/bars.py` (`bar_options`, `Spread`, `bar_count`): las barras para un As requerido, que antes
+  estaban dentro del diseño por tipologías; este la usa ahora sin cambiar sus resultados (huellas iguales).
+- **Ejemplo:** `diseno_combinada.json` en los dos perfiles (las columnas y cargas de `zapata_combinada.json`, con origen
+  en C1). NSR-10 (DES): f'c = 28 MPa, base de 6700 × 1700 × 800 mm con el centroide en (2955.1, 91.4) mm, 9.11 m³ y
+  503 kg. ACI 318-25 (special): f'c = 21 MPa, 6700 × 1700 × 900 mm, 10.25 m³ y 537 kg. Las dos memorias de la zapata
+  diseñada salen CUMPLE. `run` lo diseña con un proceso por f'c (unos 70 s).
+- **Oráculo:** `derive_combined_design.py`: la resultante de D+L, el largo y el ancho mínimos, con el voladizo máximo 0
+  (lindero) y con la viga en la Y global. Las pruebas verifican entera la solución del ejemplo y que ninguna opción más
+  liviana de las barras de la viga larga ni de cada `band` también cumpla (con el resto igual); esta prueba encontró dos
+  errores de la búsqueda, corregidos antes de cerrar: dos fallas del mismo grupo en una ronda descartaban la opción
+  siguiente, y una falla de cuantía por metro descartaba opciones con el mismo número de barras y menor separación.
+
+### D-108: caso de carga que ubica la base de la zapata combinada
+
+- **Fecha:** 2026-11-12
+- **Problema:** D-107 ubica la base con el caso de servicio sin sismo de mayor carga total. Con varias combinaciones de
+  servicio sin sismo (D, D+L, D+0.75L+0.75Lr), o con una combinación con sismo sin marcar, la regla puede elegir una que
+  el ingeniero no considera la sostenida. Afecta también a las cargas que vendrán de ETABS (3C), cuyas combinaciones se
+  declaran en `load_factors` de la plantilla.
+- **Decisión del usuario (opción A):** el caso se declara en `combined_design.placement_case` (por ejemplo
+  `"SERVICIO 1 (D+L)"` con ETABS). Debe existir en las dos columnas, ser de servicio y no tener sismo; si no, la entrada
+  es inválida. Sin él se aplica la regla de D-107, y la descripción de `proyecto.json` (que la memoria muestra) y
+  `resumen.json` dicen qué caso ubicó la base y cómo se eligió.
+- **Ejemplos:** `diseno_combinada.json` declara `"placement_case": "D+L"` (el mismo caso que elegía la regla: la base no
+  cambia; cambian la descripción y, por ella, las huellas de proyecto.json, resultado.json y memoria.txt).
+- **Oráculo:** `derive_combined_design.py`, caso `caso-declarado` (placement_case = D: la base se corre hacia la resultante
+  de D, distinta de la de mayor carga).
+
+### D-109: alcance de lo pendiente de la v3 Fase 3 (estribos, torsión, T invertida y 3C)
+
+- **Fecha:** 2026-11-12
+- **Decisiones del usuario** (definiciones para planear; la implementación de cada punto lleva su plan y su decisión):
+  1. **Estribos de la viga larga:** decide el costo. Para cada espesor se prueba sin estribos y con estribos (Vs
+     requerido, Av,min y separación máxima del perfil, con la pieza 3A de estribos) y gana la solución más barata, aunque
+     resulte una zapata más delgada con estribos. Reemplaza la regla de D-107 de resolver el cortante solo con el espesor.
+  2. **Torsión de la viga larga:** refuerzo, decide el costo. Si Tu supera φTth se diseñan estribos cerrados (At/s) y Aℓ
+     en las caras laterales (la piel cuenta como Aℓ, D-090) y se compara con subir el espesor; gana la más barata.
+  3. **T invertida:** el diseño decide todo con alma mínima. El ancho del alma parte de la columna más ancha (más un
+     margen declarado) y crece al paso; se buscan el alto de la viga, el espesor de la zarpa, el ancho y el largo de la
+     base, las capas de la viga, la malla de la zarpa y los estribos, al menor costo. Si el alto propuesto vuelve la viga
+     de gran altura (luz libre / alto ≤ 4, ACI 9.9.1.1, NSR-10 C.10.7.1), la propuesta se declara `deep_beam` y se revisa
+     con los criterios de D-089 (límites de sección, refuerzo mínimo y detallamiento), con el aviso de que no hay
+     puntal-tensor (decisión del usuario, 2026-11-12).
+  4. **3C, pares de columnas desde ETABS:** declarados en la plantilla (Unique Name de los dos nudos, dirección principal,
+     `placement_case` y voladizos máximos); el resto va a las tipologías aisladas.
+- **Enfoques del diseño de combinadas** (aclaración del usuario, 2026-11-12): (1) a partir de dos columnas declaradas se
+  diseña su zapata combinada, rectangular o en T invertida; (2) como las tipologías de las zapatas aisladas, se toman
+  todos los nudos y se busca la configuración por tipologías más económica. Por ahora se trabaja solo el enfoque 1; el
+  2 (que incluye el punto 4, 3C) queda pendiente.
+
+### D-111: nudos de ETABS que entran al diseño por tipologías
+
+- **Fecha:** 2026-11-12
+- **Pedido del usuario:** declarar qué Unique Name entran al diseño por tipologías desde ETABS, porque algunos apoyos no
+  son zapatas céntricas.
+- **Estado previo:** ya entraban solo los Unique Name listados en `columns[].etabs_unique_names` de la plantilla; los demás
+  nudos de los Excel se ignoraban sin aviso.
+- **Decisión del usuario:** agregar `exclude_unique_names` (quita nudos listados sin borrarlos de su grupo; cada uno debe
+  estar en `columns[]` y no puede quitarlos todos) y avisar los Unique Name de los Excel que no entran (no listados o
+  excluidos): en la importación (`FootingImportSummary.omitted` y un aviso en la consola) y al final de la descripción del
+  proyecto de diseño, que llega a la memoria. Sin cambios de cálculo; el ejemplo lista los 73 nudos y no cambia.
+
+### D-110: estribos y torsión en el diseño de la zapata combinada (enfoque 1)
+
+- **Fecha:** 2026-11-12
+- **Decisiones del usuario (D-109, puntos 1 y 2; plan aprobado):** el costo decide entre estribos y espesor; la torsión
+  sobre el umbral la toman estribos cerrados y Aℓ (la piel cuenta, D-090), comparados por costo con subir el espesor.
+- **Entrada:** `combined_design.stirrup_bars` (opcional). Sin ella no se proponen estribos y todo sigue como en D-107.
+- **Pieza 3A:** `design/stirrups.py` (`stirrup_options`, `StirrupFrame`): estribos cerrados de menor a mayor peso por metro
+  (ramas en número par hasta 100 mm entre ramas, separaciones al paso entre la máxima del perfil con Vs = 0 y 75 mm). La
+  reutilizarán las vigas.
+- **Búsqueda:** los estribos son un grupo opcional: entran solo si falla el cortante o la torsión de la viga larga, así
+  que cada espesor da primero la solución sin estribos y el barrido de espesores (cota del concreto) compara costos.
+  Clasificación de fallas: resistencia a cortante, Av,min, separación de estribos, refuerzo transversal y mínimo de
+  torsión → estribos; refuerzo longitudinal y distribución de torsión → piel; dimensiones de la sección (cortante o
+  torsión), punzonamiento, deformación unitaria y el cortante de las franjas → espesor. Tipos nuevos: la separación
+  que falla por las ramas a lo ancho pide más ramas (ACI 9.7.6.2.2; NSR-10 no la limita); At/s mayor que el área de una
+  rama sobre la separación pide barra mayor o separación menor (más ramas no ayudan); Aℓ salta a la proporción
+  requerida/provista que falta.
+- **Ancho por desarrollo:** si un band o las barras y se agotan por desarrollo (su largo disponible crece con el ancho,
+  no con el espesor), se prueba el ancho siguiente hasta plan_max. Lo reveló el caso de torsión: con Mx en C2, el band de
+  C1 tenía 291 mm para desarrollarse y el mínimo es 300 mm.
+- **Costo:** estribos con dos ramas verticales por estribo más las intermedias y el cierre a lo ancho, en todo el largo.
+- **Ejemplos:** `diseno_combinada.json` declara `"stirrup_bars": ["#3", "#4"]`. NSR-10: antes f'c = 28 MPa, 6700 × 1700
+  × 800 mm, costo 8 360 336; ahora f'c = 28 MPa, 6600 × 1700 × 700 mm con estribos #3 de 4 ramas c/280, costo 8 114 759
+  (−2.9 %). ACI 318-25: antes f'c = 21 MPa, 6700 × 1700 × 900 mm, costo 8 657 562; ahora f'c = 28 MPa, 6600 × 1700 × 700
+  mm con #3 de 6 ramas c/280 (más ramas por la separación a lo ancho), costo 8 206 420 (−5.2 %). Las dos memorias salen
+  CUMPLE. Cambian sus huellas.
+- **Pruebas:** con estribos el ejemplo sale más delgado y más barato que el mejor sin estribos con el mismo f'c; ninguna
+  opción de estribos más liviana también cumple; caso de torsión (C2 con Mx = −300 kN·m de servicio): con h = 800 mm la
+  toman estribos cerrados #4 de 4 ramas c/220 y piel #7 c/100, con ancho 1800 mm, y la verificación entera cumple.
+- **Limitación:** Aℓ solo se toma con la piel; las barras de flexión no cuentan como Aℓ (D-027), así que una torsión que
+  la piel no alcance sube el espesor.
+
+### D-112: diseño de la zapata combinada con las cargas de ETABS (enfoque 1)
+
+- **Fecha:** 2026-11-12
+- **Decisión del usuario:** el enfoque 1 (dos columnas declaradas) toma también las cargas de los Excel de ETABS, con
+  `placement_case` igual al nombre de la combinación de `load_factors`.
+- **Entrada:** plantilla con `combined_design` (`EtabsCombinedDesignTemplate`): las dos columnas con su Unique Name, sección
+  y posición, `load_factors`, `loads_source` y `etabs_files`, como la plantilla de verificación de la combinada (D-084);
+  sin `dowels` ni `band`, que propone el diseño. La revisión de `loads_source` es una sola función para las dos plantillas.
+- **Flujo:** `import-etabs-footings` (o `run`) escribe el proyecto de diseño, que se valida como `CombinedDesignProject`
+  (con `placement_case` entre los casos importados), y `run` lo diseña y genera la memoria.
+- **Ejemplo:** `diseno_combinada_etabs.json` en los dos perfiles (columnas C15 y C1659 de ZC-A). NSR-10 y ACI 318-25:
+  f'c = 28 MPa, 6800 × 3100 × 1100 mm, centroide en (276.4, 7.2) mm de los ejes de las columnas, costo 21 393 042;
+  memoria CUMPLE. La copia de iterar de NSR-10 sale de la `zapata_combinada_etabs.json` de iterar del usuario
+  (columnas C_Ext y C_Int).
+- **Huellas:** entra en la huella con importación, diseño y verificación. Al registrarla apareció un error de la prueba:
+  el nombre empieza por `diseno_` y tomaba la rama del diseño por tipologías, que fallaba sin aviso y registraba un
+  proyecto vacío; se corrigió la rama y la prueba exige ahora que el diseño devuelva un proyecto.
+
+### D-113: diseño de la zapata combinada en T invertida (enfoque 1)
+
+- **Fecha:** 2026-11-12
+- **Decisiones del usuario (D-109, punto 3, y plan aprobado):** el diseño decide todo con alma mínima (la columna más
+  ancha más un margen declarado, creciendo al paso); si el alto la vuelve de gran altura, se declara `deep_beam` y se
+  revisa con D-089.
+- **Entrada:** `combined_design.shape = "inverted_t"` con `web_margin`, `web_step` y `beam_h_min/step/max`; `h_min/step/max`
+  pasan a ser los de la zarpa. Se rechazan sin la T o incompletos.
+- **Código normativo nuevo:** `deep_beam.max_span_to_depth()` en los dos perfiles (4; ACI 9.9.1.1(a), NSR-10 C.11.7.1),
+  con su numeral en `clauses()["definition"]`.
+- **Búsqueda** (`design/footing/combined.py`, con los grupos, la clasificación y el costo de la rectangular): el alto de
+  la viga recorre la bisección y el barrido; para cada alto la zarpa crece si fallan las aletas y el alma si fallan las
+  dimensiones de la sección (cortante, torsión o límite de viga alta). Grupos: capa superior de la viga (en el alma,
+  As requerido con el ala a compresión), capa inferior (en el alma por dentro del estribo y en el ala, As con el alma a
+  compresión; su área y su peso salen de las barras que se colocan), barras x de la zarpa fuera del ancho cubierto,
+  barras y de las aletas (con su mayor momento), piel, estribos y pasadores. La separación del refuerzo distribuido de
+  viga alta se asigna a los estribos o a la piel según cuál exceda. Las capas se colocan con el mayor diámetro de
+  `stirrup_bars`, así sus posiciones no cambian con el estribo elegido.
+- **Validación de entrada como condición:** la primera corrida del ejemplo salió NO CUMPLE en la memoria: con la zarpa
+  menor que 0.5bw el ala no cuenta y la capa inferior quedaba en las caras del alma, fuera del estribo; la verificación
+  estructural no lo revisa pero la validación de entrada sí. Se corrigió la colocación y el diseño exige ahora que la
+  solución pase `validate_project`, la misma validación que corre `run`.
+- **Ejemplo:** `diseno_t_invertida.json` en los dos perfiles (las columnas y cargas de `diseno_combinada.json`). NSR-10:
+  f'c = 21 MPa, base de 7300 × 1900 × 300 mm, viga de 800 × 700 mm, estribos #4 de 6 ramas c/230, costo 7 998 309 (la
+  rectangular con estribos: 8 114 759). ACI 318-25: f'c = 21 MPa, 7300 × 1900 × 250 mm, viga de 800 × 700 mm, #4 de 6
+  ramas c/210, costo 7 874 576. Las dos memorias salen CUMPLE; no son de gran altura.
+- **Pruebas:** la T del ejemplo pasa la validación y la verificación entera; ninguna opción más liviana de las capas de
+  la viga ni de los estribos también cumple (encontró que la capa inferior se comparaba con un área estimada en todo el
+  ancho, distinta de la colocada; corregido); con columnas alineadas y alto 1300 mm la viga se declara `deep_beam`, la
+  revisan los criterios de D-089 y la verificación entera cumple; clasificación de las fallas propias de la T.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

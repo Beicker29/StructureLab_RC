@@ -15,6 +15,20 @@
     "resultado.json": "0e4566bd45dd3e5c0522bee38dcb25779574810bc2ce6a771f9589bb35243bc1",
     "memoria.txt": "f5f40ab22efe8872e45abb45d24cf129af6a5e75c7a70b3d3257371bb051e8f2"
   },
+  "examples/aci_318_25/zapatas/pruebas/diseno_combinada.json": {
+    "proyecto.json": "271c0ee7c74e4dbfc3aef53758bf3ddfde1c049ad2d52e4518ec396874a0de1c",
+    "resultado.json": "c6fa4eeb60a07336b4e603fbfc499479e8313b28d1fc0dd07f23cd1b9aab95dc",
+    "memoria.txt": "a87d9e8b9de8fe1751252d54d128b28b1ef9ad16b7698037868ab454bfbcb59d"
+  },
+  "examples/aci_318_25/zapatas/pruebas/diseno_combinada_etabs.json": {
+    "resultado.json": "4c323d2cf2de8ccf5ca1bfe5924f5d2d3719b9c9f82ec9471704de7898530066",
+    "memoria.txt": "eaba3de95bb77ad5d3e0f60ed004eb3c8642edf15d6717cbc7d9f7cea7c9d25d"
+  },
+  "examples/aci_318_25/zapatas/pruebas/diseno_t_invertida.json": {
+    "proyecto.json": "38a048a15bf153d7d2bd605081082a21f00f108ef2b9c479ecc040f824c1d3f5",
+    "resultado.json": "de916b18371920377845a4820b053d5296c4a1274aeded2d6ec9977b1b17a37a",
+    "memoria.txt": "57d8622bcd7bb84fb022b05229d417ff4819d5a425134fa49fd9c61307b86038"
+  },
   "examples/aci_318_25/zapatas/pruebas/diseno_tipologias.json": {
     "proyecto.json": "9691c252cf1b764ff6f9560387e7426fcb0f5315a705f4a316c84b306d26c215",
     "resultado.json": "13be266d42a3943342c16d6ae1f08cc212603219a614340702a8631d73f2d0b2",
@@ -51,6 +65,20 @@
   "examples/nsr_10/vigas/pruebas/viga_t.json": {
     "resultado.json": "853548ff78e2a271bfef89140eeef5dc56582ed4868af487d8a518d9421df71b",
     "memoria.txt": "8f47196698cdef6aa8e0bfe2659070fe96b30a88b2582fb975d436e3da857d5e"
+  },
+  "examples/nsr_10/zapatas/pruebas/diseno_combinada.json": {
+    "proyecto.json": "e6f1526bc82c5903ab392632072dd572f30497ca124aa1651161d4a5d08e167c",
+    "resultado.json": "45b4d12fee4babfd0644b9498887b0adf81912d96b93b10a439809986087f10c",
+    "memoria.txt": "e72ccd01c863adbd13a8163239fdadf029c63c5df73fc210ad666fbcbd3e2e72"
+  },
+  "examples/nsr_10/zapatas/pruebas/diseno_combinada_etabs.json": {
+    "resultado.json": "f16f6577b90ac205af32974432ac74466de0b143f121527d417b3afe18bda877",
+    "memoria.txt": "ca544351fe89c21443aef1ebf1be1db52e16ed5c4025e6054a6a1975334aed38"
+  },
+  "examples/nsr_10/zapatas/pruebas/diseno_t_invertida.json": {
+    "proyecto.json": "f06f5565dc9933df8e7a464f493abdacd4e2b1f4250bb1b6940b7c45ee2f3311",
+    "resultado.json": "a1d64686ee115d28bf0c336779f29bbdfcb0f765b5f15bc3bd425e6f88c22f21",
+    "memoria.txt": "5d1006bcdff2915577813c5e415e0957a4fa97f7374c7df3232a134f89f0eeba"
   },
   "examples/nsr_10/zapatas/pruebas/diseno_tipologias.json": {
     "proyecto.json": "5cc4cc6521b8c897bd1c6f4fd2f0e4ed8383c6f6969203125c87607f97540c96",

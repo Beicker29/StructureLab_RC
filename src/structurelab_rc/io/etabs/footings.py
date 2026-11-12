@@ -10,13 +10,13 @@ se aplican después, al cargar el proyecto (model/).
 """
 
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.io.etabs.importer import EtabsImportError, case_label
 from structurelab_rc.io.etabs.xlsx import Table
-from structurelab_rc.model.template import EtabsFootingDesignTemplate, EtabsFootingTemplate, LoadFactors
+from structurelab_rc.model.template import EtabsCombinedDesignTemplate, EtabsFootingDesignTemplate, EtabsFootingTemplate, LoadFactors
 
 KINDS = {"service": "servicio", "factored": "cargas mayoradas"}
 BOTH = ("service", "factored")
@@ -34,6 +34,7 @@ class FootingImportSummary:
     service_cases: tuple[str, ...]
     factored_cases: tuple[str, ...]
     skipped_rows: int
+    omitted: tuple[str, ...] = ()  # Unique Name de los Excel que no entran (no listados o excluidos, D-111)
 
 
 def _check_table(table: Table, which: str) -> list[StructuredError]:
@@ -159,12 +160,42 @@ def build_footing_project(
 def build_footing_design_project(
     template: EtabsFootingDesignTemplate, service: Table | None, factored: Table | None
 ) -> tuple[dict[str, Any], FootingImportSummary]:
-    """Proyecto de diseño por tipologías (D-069): una columna por nudo, con su sección y sus casos de carga."""
-    groups: list[Group] = [(str(index), group.etabs_unique_names, BOTH) for index, group in enumerate(template.columns)]
+    """Proyecto de diseño por tipologías (D-069): una columna por nudo listado y no excluido, con su sección y sus casos
+    de carga. Los Unique Name de los Excel que no entran se avisan en el resumen y en la descripción (D-111)."""
+    excluded = set(template.exclude_unique_names)
+    groups: list[Group] = [(str(index), tuple(name for name in group.etabs_unique_names if name not in excluded), BOTH)
+                           for index, group in enumerate(template.columns)]
     joints, skipped = _joint_loads(template.load_factors, {"service": service, "factored": factored}, groups)
     sections = {str(index): group for index, group in enumerate(template.columns)}
     columns = [{"id": joint.label, "cx": sections[joint.group].cx, "cy": sections[joint.group].cy, "loads": joint.loads}
                for joint in joints]
-    project = template.model_dump(mode="json", exclude={"load_factors", "columns", "etabs_files"})
+    project = template.model_dump(mode="json", exclude={"load_factors", "columns", "etabs_files", "exclude_unique_names"})
     project["columns"] = columns
-    return project, _summary(columns, skipped)
+    used = {joint.unique_name for joint in joints}
+    present = {row["Unique Name"] for table in (service, factored) if table is not None for row in table.rows
+               if row.get("Case Type") == "Combination"}
+    omitted = tuple(sorted(present - used, key=_natural))
+    if omitted:
+        project["description"] = (f"{project['description']} Unique Name de ETABS que no entran al diseño (no listados o "
+                                  f"excluidos): {', '.join(omitted)}.")
+    return project, replace(_summary(columns, skipped), omitted=omitted)
+
+
+def _natural(name: str) -> tuple[int, str]:
+    """Orden de los Unique Name: los numéricos por su valor y luego los demás."""
+    return (int(name), "") if name.isdigit() else (2**63, name)
+
+
+def build_combined_design_project(
+    template: EtabsCombinedDesignTemplate, service: Table | None, factored: Table | None
+) -> tuple[dict[str, Any], FootingImportSummary]:
+    """Proyecto de diseño de la zapata combinada (D-112): cada columna con las cargas de su nudo de los tipos que vienen
+    de ETABS y las de la plantilla de los demás. Un Excel puede omitirse (None) si ningún tipo sale de él."""
+    group: Group = ("diseno", tuple(column.etabs_unique_name for column in template.columns), template.etabs_kinds())
+    joints, skipped = _joint_loads(template.load_factors, {"service": service, "factored": factored}, [group])
+    loads = {joint.unique_name: joint.loads for joint in joints}
+    columns = [{**column.model_dump(mode="json", exclude={"etabs_unique_name", "loads", "dowels", "band"}, exclude_none=True),
+                "loads": [*loads.get(column.etabs_unique_name, []), *column.loads]} for column in template.columns]
+    project = template.model_dump(mode="json", exclude={"load_factors", "loads_source", "columns", "etabs_files"})
+    project["columns"] = columns
+    return project, _summary([{"loads": [load for column in columns for load in column["loads"]]}], skipped)

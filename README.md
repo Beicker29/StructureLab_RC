@@ -47,6 +47,7 @@ structurelab-rc report results/nsr_10/vigas/etabs.json --output results/nsr_10/v
 structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/zapata_centrica_etabs.json --output results/nsr_10/zapatas/etabs.json
 structurelab-rc design-footings examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
 structurelab-rc typology-curve examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias_curva
+structurelab-rc design-combined examples/nsr_10/zapatas/diseno_combinada.json --output results/nsr_10/zapatas/diseno_combinada
 ```
 
 `report` verifica el proyecto y escribe en la carpeta de salida `resultado.json` (todo el detalle, en kN, kN·m, mm
@@ -121,6 +122,11 @@ las columnas. Escribe `proyecto.json`, un proyecto de verificación normal que `
 `tipologias.json` con el resumen. Con ETABS, `import-etabs-footings` y una plantilla que trae el bloque `design` generan
 el proyecto de diseño. Por defecto (`design.method = "milp"`) una asignación óptima sobre el catálogo de la DP completa
 el diseño (D-075); requiere el extra `opt` (`pip install structurelab-rc[opt]`). `--method dp` usa solo la DP.
+
+`design-combined` diseña una zapata combinada rectangular de dos columnas (D-107): ubica la base en la resultante de las
+cargas de servicio D+L (con un voladizo máximo opcional en cada extremo, para columnas de lindero) y elige largo, ancho,
+espesor, f'c y refuerzo (barras de la viga larga continuas, band de cada columna, mallas, piel y pasadores) de menor
+costo, aprobado por la verificación de la combinada. Escribe `proyecto.json` y `resumen.json`.
 
 ### Supuestos de las zapatas
 

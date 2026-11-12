@@ -238,6 +238,81 @@ cobertura, que siguen creciendo (un punto puede salir igual o más barato que el
 `dp`, la tabla de tramos (cada punto es igual al diseño suelto). El valor de `design.typologies` del proyecto se ignora.
 El diseño del N elegido se obtiene con `design-footings` y se reverifica con `report`.
 
+## Diseño de la zapata combinada (`diseno_combinada.json`, comando `design-combined`, D-107)
+
+Diseña una zapata combinada rectangular de dos columnas: ubica la base, propone largo, ancho, espesor, f'c y todo el
+refuerzo, y elige la solución de menor costo que aprueba la verificación de la combinada. `materials` declara solo `fy`,
+`fyt`, `concrete`, `coating` y, opcional, `max_aggregate`: f'c es una variable del diseño. `soil` es igual que en la
+verificación. Las dos columnas deben tener los mismos casos de carga, con al menos un caso de servicio sin sismo y casos
+mayorados.
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `principal_direction` | texto | `x` (por defecto) o `y`: eje global en que va la viga que une las columnas (D-094). |
+| `columns[]` | lista | Exactamente dos columnas: `id`, `cx` y `cy` (mm, sección en ejes globales), `x` e `y` (mm, eje de la columna en ejes globales con cualquier origen; el diseño ubica la base) y `loads` (casos de carga, iguales a los de una zapata). |
+| `combined_design.fc_options`, `combined_design.prices` | MPa, moneda | Como en el diseño por tipologías: f'c comerciales con su precio por m³ y precio del acero por kg. |
+| `combined_design.plan_step`, `combined_design.plan_max` | mm | Paso de las dimensiones en planta y máximo del largo y del ancho. |
+| `combined_design.h_min`, `combined_design.h_step`, `combined_design.h_max` | mm | Espesor mínimo, paso y máximo. |
+| `combined_design.cover`, `combined_design.fill_height`, `combined_design.pedestal_height` | mm | Recubrimiento, relleno y pedestal. |
+| `combined_design.surcharge_dead_kNm2`, `combined_design.surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas. |
+| `combined_design.bars`, `combined_design.spacing_step`, `combined_design.end` | -, mm, texto | Barras permitidas para todo el refuerzo, paso de separación y extremo de las barras. |
+| `combined_design.dowel_bars` | - | Barras permitidas para los pasadores. |
+| `combined_design.max_cantilever_start`, `combined_design.max_cantilever_end` | mm | Opcionales: voladizo máximo más allá de la cara exterior de la columna de cada extremo, a lo largo de la dirección principal (`start`: la columna con la menor coordenada). Por ejemplo, 0 en una columna de lindero. |
+| `combined_design.stirrup_bars` | - | Opcional (D-110): barras permitidas para estribos cerrados de la viga larga, por ejemplo `["#3", "#4"]`. Con ellas, el cortante y la torsión pueden tomarlos estribos (y Aℓ la piel) en lugar de un espesor mayor; gana lo más barato. Sin ellas no se proponen estribos. |
+| `combined_design.shape` | texto | `rectangular` (por defecto) o `inverted_t` (D-113): con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa. |
+| `combined_design.web_margin`, `combined_design.web_step` | mm | Solo con `inverted_t`: el alma parte de la columna más ancha (respecto a la resultante transversal) más `web_margin` a cada lado y crece de a `web_step`. |
+| `combined_design.beam_h_min`, `combined_design.beam_h_step`, `combined_design.beam_h_max` | mm | Solo con `inverted_t`: alto total de la viga; `beam_h_min` debe superar `h_min`. |
+| `combined_design.placement_case` | texto | Opcional (D-108): el caso de servicio sin sismo cuya resultante ubica la base, por ejemplo `"D+L"`. Debe existir en las dos columnas, ser de servicio y no tener sismo. Sin él, se usa el de servicio sin sismo de mayor carga total. |
+
+Búsqueda (cada solución la aprueba `combined_footing_checks`; el diseño no tiene fórmulas propias):
+
+1. **Ubicación:** el centroide de la base va sobre la resultante de las fuerzas de las columnas en el caso
+   `placement_case` (o, sin él, en el de servicio sin sismo de mayor carga), con los momentos y los cortantes llevados a
+   la base (h + pedestal): en ese caso la presión queda uniforme. Si un voladizo máximo
+   lo impide, la base se corre lo necesario y queda excéntrica.
+2. **Largo:** el menor que cubre las dos columnas, al paso de la planta; luego los mayores (el primero con solución y dos
+   más). **Ancho:** el menor, al paso, que cumple presión, contacto, deslizamiento y volcamiento.
+3. **Espesor:** el menor con solución, por bisección, y los mayores mientras el costo del concreto solo no alcance el
+   mejor.
+4. **Refuerzo** (barras rectas de borde a borde, sin cortes): barras inferiores x y superiores x de la viga larga
+   (continuas), `band` de cada columna, malla inferior y fuera de las franjas, barras superiores y (si hacen falta),
+   refuerzo superficial si h pasa el límite del perfil y pasadores de cada columna. Cada grupo empieza en la opción más
+   liviana que ya cumple los límites del perfil (acero mínimo, As,min de vigas, separación máxima y de fisuración) y,
+   si una verificación suya falla, pasa a la más liviana que no repetiría la falla. Con `stirrup_bars`, las fallas de
+   cortante, Av,min, separación de estribos y refuerzo transversal por torsión de la viga larga las toman estribos
+   cerrados (más ramas si falla la separación entre ramas a lo ancho; barra mayor o menor separación si falla At/s en
+   la rama exterior) y las de Aℓ, la piel; el espesor menor con estribos compite por costo con el mayor sin ellos. Las
+   fallas de dimensiones de la sección, punzonamiento y deformación unitaria (y el cortante sin `stirrup_bars`) piden
+   más espesor. Si un band o las barras y no se desarrollan, se prueba el ancho siguiente. Las barras superiores faltan solo si
+   el perfil permite concreto simple con el nivel sísmico (D-072) o no hay momento negativo.
+5. **T invertida** (`shape: inverted_t`, D-113): el alto de la viga es la variable de la bisección; para cada alto, la
+   zarpa parte de `h_min` y crece si fallan las aletas (cortante, deformación unitaria, concreto simple o altura
+   mínima) y el alma parte de la mínima y crece si fallan las dimensiones de la sección. El refuerzo de la viga va en
+   sus capas (D-106): la superior por dentro de los estribos y la inferior en el alma por dentro del estribo y, si el ala
+   cuenta, sobre la zarpa hasta el ancho cubierto; las barras x de la zarpa van fuera de ese ancho y las y son las de las
+   aletas. Si la luz libre entre columnas sobre el alto es ≤ 4 (ACI 9.9.1.1, NSR-10 C.11.7.1), la propuesta se declara
+   `deep_beam` y se revisa con los criterios de D-089, sin puntal-tensor (D-109). La solución pasa también la
+   validación de entrada del proyecto.
+6. **f'c:** se repite para cada f'c de la lista y gana el de menor costo. Si nada cumple, termina con FAIL y el motivo de
+   cada f'c, sin ampliar los límites.
+
+Salida: `proyecto.json` (un proyecto de verificación con la zapata `ZC1` en ejes globales, con las posiciones de las
+columnas respecto al centroide de la base; lo verifica `run`, `verify` o `report`) y `resumen.json`:
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `fc [MPa]` | MPa | f'c elegido. |
+| `length [mm]`, `width [mm]`, `h [mm]` | mm | Largo (dirección principal), ancho y espesor (el de la zarpa en la T). |
+| `web [mm]`, `beam height [mm]`, `deep_beam` | mm, -, - | Solo en la T: ancho del alma, alto total de la viga y si se declaró de gran altura. |
+| `base_center [mm]` | mm | Centroide de la base en los ejes globales de las columnas de entrada. |
+| `placement_case` | texto | El caso que ubicó la base; la descripción de `proyecto.json` (y la memoria) dice además si se declaró o se eligió por la regla. |
+| `reinforcement` | objeto | Refuerzo en ejes de la viga: `bottom_x`, `bottom_y`, `top_x`, `top_y`, `skin`, `stirrups` (null si no hay), `bands` y `dowels` por columna. En la T: `top_x` y `bottom_x` son las capas superior e inferior de la viga (separación), `mat_x` las barras x de la zarpa y `bottom_y` las de las aletas. |
+| `concrete [m3]`, `steel [kg]`, `cost` | m³, kg, moneda | Cantidades y costo, con barras rectas de borde a borde menos el recubrimiento y pasadores hasta la malla inferior. |
+| `by_fc` | lista | Cada f'c: `cost`, dimensiones, o `cost` null y `failure`. |
+
+`--workers N` reparte los f'c entre procesos (por defecto, los núcleos del equipo); no cambia el resultado. `run`
+reconoce el ejemplo por el bloque `combined_design`, diseña y genera la memoria de verificación de la zapata diseñada.
+
 ## Salida
 
 `report` escribe estos archivos en la carpeta de salida:

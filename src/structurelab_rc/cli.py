@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from structurelab_rc import __version__
+from structurelab_rc.design.footing.combined import CombinedDesignResult
 from structurelab_rc.design.footing.typologies import Iteration, MilpInfo
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
@@ -18,6 +19,7 @@ from structurelab_rc.engine import (
     RUN_KINDS,
     RunError,
     RunPlan,
+    design_combined_file,
     design_footings,
     import_etabs,
     import_etabs_footings,
@@ -100,6 +102,9 @@ def _import_etabs_footings(service: str, factored: str, template: Path, output: 
     print(f"Zapatas: {summary.footings}; casos de servicio: {len(summary.service_cases)}; "
           f"casos mayorados: {len(summary.factored_cases)}")
     print(f"Filas omitidas (no son combinaciones): {summary.skipped_rows}")
+    if summary.omitted:
+        print(f"ADVERTENCIA: {len(summary.omitted)} Unique Name de ETABS no entran (no listados o excluidos): "
+              f"{', '.join(summary.omitted)}")
     print(f"Proyecto escrito en {output}")
     return 0
 
@@ -162,6 +167,41 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
         limit = f" (en el limite {', '.join(group.at_limit)})" if group.at_limit else ""
         print(f"ADVERTENCIA: tipologias repetidas {' = '.join(group.typologies)}{limit}; "
               f"{result.distinct_count} distintas de {len(result.typologies)}")
+    print(f"Proyecto escrito en {output / 'proyecto.json'}; verifiquelo o genere su memoria con report")
+    return 0
+
+
+def _combined_summary(result: CombinedDesignResult, placement: str) -> dict[str, Any]:
+    """Resumen del diseño de la zapata combinada (D-107): la solución de menor costo y el resultado de cada f'c."""
+    assert result.best is not None
+    best = result.best
+    g = best.geometry
+    beam = {} if g.beam is None else {"web [mm]": g.beam[0], "beam height [mm]": g.beam[1],
+                                      "deep_beam": bool(best.data.get("deep_beam"))}
+    return {"fc [MPa]": best.fc, "length [mm]": g.length, "width [mm]": g.width, "h [mm]": g.h, **beam,
+            "base_center [mm]": [round(g.center[0], 1), round(g.center[1], 1)], "placement_case": placement,
+            "reinforcement": best.reinforcement,
+            "concrete [m3]": round(best.concrete, 3), "steel [kg]": round(best.steel, 1), "cost": round(best.cost, 2),
+            "by_fc": [{"fc [MPa]": option.fc,
+                       **({"cost": round(option.solution.cost, 2), "length [mm]": option.solution.geometry.length,
+                           "width [mm]": option.solution.geometry.width, "h [mm]": option.solution.geometry.h}
+                          if option.solution is not None else {"cost": None, "failure": option.failure})}
+                      for option in result.options]}
+
+
+def _design_combined(path: Path, output: Path, workers: int | None) -> int:
+    project, result, check = design_combined_file(path, workers or os.cpu_count() or 1)
+    print(f"{check.name}: {check.status}")
+    _print_errors(check)
+    if project is None or result is None or result.best is None:
+        return 1
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "proyecto.json").write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (output / "resumen.json").write_text(json.dumps(_combined_summary(result, result.placement), indent=2, ensure_ascii=False) + "\n",
+                                         encoding="utf-8")
+    g = result.best.geometry
+    print(f"f'c = {result.best.fc:g} MPa; {g.length:g} x {g.width:g} x {g.h:g} mm; centroide de la base en "
+          f"({g.center[0]:.1f}, {g.center[1]:.1f}) mm; costo {result.best.cost:.2f}")
     print(f"Proyecto escrito en {output / 'proyecto.json'}; verifiquelo o genere su memoria con report")
     return 0
 
@@ -254,13 +294,15 @@ def _run_one(path: Path, output: Path | None, workers: int | None, full: bool) -
         return _typology_curve(path, out, None, workers, None)
     if plan.kind == "design":
         return _design_footings(path, out, workers, False, None) or _report(out / "proyecto.json", out, full)
+    if plan.kind == "combined_design":
+        return _design_combined(path, out, workers) or _report(out / "proyecto.json", out, full)
     return _run_etabs(plan, workers, full)
 
 
 def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
     """Plantilla de ETABS: importa sus Excel (etabs_files) y verifica el proyecto, o lo diseña si es de diseño."""
     out = plan.output
-    imported = out / ("diseno.json" if plan.kind == "etabs_design" else "proyecto.json")
+    imported = out / ("diseno.json" if plan.kind in ("etabs_design", "etabs_combined_design") else "proyecto.json")
     if plan.kind == "etabs_beams":
         assert plan.workbook is not None
         code = _import_etabs(plan.workbook, plan.path, imported)
@@ -270,6 +312,8 @@ def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
         return code
     if plan.kind == "etabs_design":
         return _design_footings(imported, out, workers, False, None) or _report(out / "proyecto.json", out, full)
+    if plan.kind == "etabs_combined_design":
+        return _design_combined(imported, out, workers) or _report(out / "proyecto.json", out, full)
     return _report(imported, out, full)
 
 
@@ -328,6 +372,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     designer.add_argument("--method", choices=("dp", "milp", "milp_iter"),
                           help="dp (particion), milp (asignacion optima) o milp_iter (iterativo, sin tabla de tramos); los dos "
                                "ultimos requieren structurelab-rc[opt]; reemplaza design.method")
+    combined = commands.add_parser("design-combined", help="disena una zapata combinada de dos columnas (D-107)")
+    combined.add_argument("project", type=Path, help="proyecto de diseno en JSON (dos columnas y bloque combined_design)")
+    combined.add_argument("--output", type=Path, required=True, help="carpeta donde escribir proyecto.json y resumen.json")
+    combined.add_argument("--workers", type=int, help="procesos en paralelo, uno por f'c (por defecto, los nucleos del equipo)")
     curve = commands.add_parser("typology-curve", help="curva costo-N del diseno por tipologias (D-078)")
     curve.add_argument("project", type=Path, help="proyecto de diseno en JSON (columnas y bloque design)")
     curve.add_argument("--output", type=Path, required=True, help="carpeta de salida: resultado.json, curva.csv, curva.svg y la memoria")
@@ -349,6 +397,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "report": lambda: _report(args.project, args.output, args.full),
         "run": lambda: _run(args.target, args.output, args.workers, args.full),
         "design-footings": lambda: _design_footings(args.project, args.output, args.workers, args.profile, args.method),
+        "design-combined": lambda: _design_combined(args.project, args.output, args.workers),
         "typology-curve": lambda: _typology_curve(args.project, args.output, args.n, args.workers, args.method),
         "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output),
         "import-etabs": lambda: _import_etabs(args.workbook, args.template, args.output),

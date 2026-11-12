@@ -1,0 +1,768 @@
+{
+  "source": "derive_combined_design.py (D-107)",
+  "tolerance_mm": 1e-06,
+  "cases": [
+    {
+      "id": "centrada",
+      "description": "base centrada en la resultante de D+L, viga en X",
+      "h_mm": 800.0,
+      "project": {
+        "description": "base centrada en la resultante de D+L, viga en X",
+        "profile": "aci-318-25",
+        "seismic": {
+          "level": "special",
+          "justification": "Oráculo del diseño (D-107)."
+        },
+        "materials": {
+          "fy": 420.0,
+          "fyt": 420.0,
+          "concrete": "normalweight",
+          "coating": "uncoated"
+        },
+        "soil": {
+          "allowable_pressure_kPa": 250.0,
+          "min_contact_fraction": 0.5,
+          "unit_weight_concrete_kNm3": 24.0,
+          "unit_weight_fill_kNm3": 18.0,
+          "friction_coefficient": 0.45,
+          "adhesion_kPa": 0.0,
+          "passive_coefficient": 3.0,
+          "cohesion_kPa": 0.0,
+          "passive_factor": 0.5,
+          "sliding_safety_factor": 1.5,
+          "sliding_safety_factor_seismic": 1.1,
+          "overturning_safety_factor": 2.0,
+          "overturning_safety_factor_seismic": 1.5,
+          "seismic_bearing_factor": 1.33
+        },
+        "principal_direction": "x",
+        "combined_design": {
+          "fc_options": [
+            28.0
+          ],
+          "prices": {
+            "concrete_per_m3": {
+              "28": 575000.0
+            },
+            "steel_per_kg": 6200.0
+          },
+          "plan_step": 100.0,
+          "plan_max": 9000.0,
+          "h_min": 600.0,
+          "h_step": 100.0,
+          "h_max": 1200.0,
+          "cover": 75.0,
+          "fill_height": 1200.0,
+          "pedestal_height": 300.0,
+          "surcharge_dead_kNm2": 2.0,
+          "surcharge_live_kNm2": 5.0,
+          "bars": [
+            "#5",
+            "#6"
+          ],
+          "spacing_step": 10.0,
+          "end": "straight",
+          "dowel_bars": [
+            "#6"
+          ]
+        },
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 500.0,
+            "cy": 500.0,
+            "x": 0.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "seismic": false,
+                "P_kN": 900.0,
+                "Vx_kN": 6.0,
+                "Vy_kN": 4.0,
+                "Mx_kNm": -10.0,
+                "My_kNm": 15.0
+              },
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": false,
+                "P_kN": 650.0,
+                "Vx_kN": 4.0,
+                "Vy_kN": 3.0,
+                "Mx_kNm": -8.0,
+                "My_kNm": 10.0
+              },
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": true,
+                "P_kN": 1400.0,
+                "Vx_kN": 40.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 90.0
+              },
+              {
+                "case": "1.2D+1.6L",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "seismic": false,
+                "P_kN": 1250.0,
+                "Vx_kN": 8.0,
+                "Vy_kN": 6.0,
+                "Mx_kNm": -14.0,
+                "My_kNm": 21.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 550.0,
+            "cy": 600.0,
+            "x": 5000.0,
+            "y": 150.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "seismic": false,
+                "P_kN": 1300.0,
+                "Vx_kN": -5.0,
+                "Vy_kN": 8.0,
+                "Mx_kNm": 20.0,
+                "My_kNm": -12.0
+              },
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": false,
+                "P_kN": 950.0,
+                "Vx_kN": -3.0,
+                "Vy_kN": 6.0,
+                "Mx_kNm": 15.0,
+                "My_kNm": -9.0
+              },
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": true,
+                "P_kN": 300.0,
+                "Vx_kN": 40.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 95.0
+              },
+              {
+                "case": "1.2D+1.6L",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "seismic": false,
+                "P_kN": 1800.0,
+                "Vx_kN": -7.0,
+                "Vy_kN": 11.0,
+                "Mx_kNm": 28.0,
+                "My_kNm": -17.0
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "length_mm": 6500.0,
+        "cover_width_mm": 800.0,
+        "center_mm": [
+          2957.0421852743752,
+          90.11783754527819
+        ]
+      }
+    },
+    {
+      "id": "lindero",
+      "description": "voladizo máximo 0 en el inicio: la columna C1 queda al ras del borde",
+      "h_mm": 800.0,
+      "project": {
+        "description": "voladizo máximo 0 en el inicio: la columna C1 queda al ras del borde",
+        "profile": "aci-318-25",
+        "seismic": {
+          "level": "special",
+          "justification": "Oráculo del diseño (D-107)."
+        },
+        "materials": {
+          "fy": 420.0,
+          "fyt": 420.0,
+          "concrete": "normalweight",
+          "coating": "uncoated"
+        },
+        "soil": {
+          "allowable_pressure_kPa": 250.0,
+          "min_contact_fraction": 0.5,
+          "unit_weight_concrete_kNm3": 24.0,
+          "unit_weight_fill_kNm3": 18.0,
+          "friction_coefficient": 0.45,
+          "adhesion_kPa": 0.0,
+          "passive_coefficient": 3.0,
+          "cohesion_kPa": 0.0,
+          "passive_factor": 0.5,
+          "sliding_safety_factor": 1.5,
+          "sliding_safety_factor_seismic": 1.1,
+          "overturning_safety_factor": 2.0,
+          "overturning_safety_factor_seismic": 1.5,
+          "seismic_bearing_factor": 1.33
+        },
+        "principal_direction": "x",
+        "combined_design": {
+          "fc_options": [
+            28.0
+          ],
+          "prices": {
+            "concrete_per_m3": {
+              "28": 575000.0
+            },
+            "steel_per_kg": 6200.0
+          },
+          "plan_step": 100.0,
+          "plan_max": 9000.0,
+          "h_min": 600.0,
+          "h_step": 100.0,
+          "h_max": 1200.0,
+          "cover": 75.0,
+          "fill_height": 1200.0,
+          "pedestal_height": 300.0,
+          "surcharge_dead_kNm2": 2.0,
+          "surcharge_live_kNm2": 5.0,
+          "bars": [
+            "#5",
+            "#6"
+          ],
+          "spacing_step": 10.0,
+          "end": "straight",
+          "dowel_bars": [
+            "#6"
+          ],
+          "max_cantilever_start": 0.0
+        },
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 500.0,
+            "cy": 500.0,
+            "x": 0.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "seismic": false,
+                "P_kN": 900.0,
+                "Vx_kN": 6.0,
+                "Vy_kN": 4.0,
+                "Mx_kNm": -10.0,
+                "My_kNm": 15.0
+              },
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": false,
+                "P_kN": 650.0,
+                "Vx_kN": 4.0,
+                "Vy_kN": 3.0,
+                "Mx_kNm": -8.0,
+                "My_kNm": 10.0
+              },
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": true,
+                "P_kN": 1400.0,
+                "Vx_kN": 40.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 90.0
+              },
+              {
+                "case": "1.2D+1.6L",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "seismic": false,
+                "P_kN": 1250.0,
+                "Vx_kN": 8.0,
+                "Vy_kN": 6.0,
+                "Mx_kNm": -14.0,
+                "My_kNm": 21.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 550.0,
+            "cy": 600.0,
+            "x": 5000.0,
+            "y": 150.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "seismic": false,
+                "P_kN": 1300.0,
+                "Vx_kN": -5.0,
+                "Vy_kN": 8.0,
+                "Mx_kNm": 20.0,
+                "My_kNm": -12.0
+              },
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": false,
+                "P_kN": 950.0,
+                "Vx_kN": -3.0,
+                "Vy_kN": 6.0,
+                "Mx_kNm": 15.0,
+                "My_kNm": -9.0
+              },
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": true,
+                "P_kN": 300.0,
+                "Vx_kN": 40.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 95.0
+              },
+              {
+                "case": "1.2D+1.6L",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "seismic": false,
+                "P_kN": 1800.0,
+                "Vx_kN": -7.0,
+                "Vy_kN": 11.0,
+                "Mx_kNm": 28.0,
+                "My_kNm": -17.0
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "length_mm": 6500.0,
+        "cover_width_mm": 800.0,
+        "center_mm": [
+          3000.0,
+          90.11783754527819
+        ]
+      }
+    },
+    {
+      "id": "caso-declarado",
+      "description": "placement_case = D (D-108): la base se ubica con la resultante de D, no con la de mayor carga",
+      "h_mm": 800.0,
+      "project": {
+        "description": "placement_case = D (D-108): la base se ubica con la resultante de D, no con la de mayor carga",
+        "profile": "aci-318-25",
+        "seismic": {
+          "level": "special",
+          "justification": "Oráculo del diseño (D-107)."
+        },
+        "materials": {
+          "fy": 420.0,
+          "fyt": 420.0,
+          "concrete": "normalweight",
+          "coating": "uncoated"
+        },
+        "soil": {
+          "allowable_pressure_kPa": 250.0,
+          "min_contact_fraction": 0.5,
+          "unit_weight_concrete_kNm3": 24.0,
+          "unit_weight_fill_kNm3": 18.0,
+          "friction_coefficient": 0.45,
+          "adhesion_kPa": 0.0,
+          "passive_coefficient": 3.0,
+          "cohesion_kPa": 0.0,
+          "passive_factor": 0.5,
+          "sliding_safety_factor": 1.5,
+          "sliding_safety_factor_seismic": 1.1,
+          "overturning_safety_factor": 2.0,
+          "overturning_safety_factor_seismic": 1.5,
+          "seismic_bearing_factor": 1.33
+        },
+        "principal_direction": "x",
+        "combined_design": {
+          "fc_options": [
+            28.0
+          ],
+          "prices": {
+            "concrete_per_m3": {
+              "28": 575000.0
+            },
+            "steel_per_kg": 6200.0
+          },
+          "plan_step": 100.0,
+          "plan_max": 9000.0,
+          "h_min": 600.0,
+          "h_step": 100.0,
+          "h_max": 1200.0,
+          "cover": 75.0,
+          "fill_height": 1200.0,
+          "pedestal_height": 300.0,
+          "surcharge_dead_kNm2": 2.0,
+          "surcharge_live_kNm2": 5.0,
+          "bars": [
+            "#5",
+            "#6"
+          ],
+          "spacing_step": 10.0,
+          "end": "straight",
+          "dowel_bars": [
+            "#6"
+          ],
+          "placement_case": "D"
+        },
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 500.0,
+            "cy": 500.0,
+            "x": 0.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "seismic": false,
+                "P_kN": 900.0,
+                "Vx_kN": 6.0,
+                "Vy_kN": 4.0,
+                "Mx_kNm": -10.0,
+                "My_kNm": 15.0
+              },
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": false,
+                "P_kN": 650.0,
+                "Vx_kN": 4.0,
+                "Vy_kN": 3.0,
+                "Mx_kNm": -8.0,
+                "My_kNm": 10.0
+              },
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": true,
+                "P_kN": 1400.0,
+                "Vx_kN": 40.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 90.0
+              },
+              {
+                "case": "1.2D+1.6L",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "seismic": false,
+                "P_kN": 1250.0,
+                "Vx_kN": 8.0,
+                "Vy_kN": 6.0,
+                "Mx_kNm": -14.0,
+                "My_kNm": 21.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 550.0,
+            "cy": 600.0,
+            "x": 5000.0,
+            "y": 150.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "seismic": false,
+                "P_kN": 1300.0,
+                "Vx_kN": -5.0,
+                "Vy_kN": 8.0,
+                "Mx_kNm": 20.0,
+                "My_kNm": -12.0
+              },
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": false,
+                "P_kN": 950.0,
+                "Vx_kN": -3.0,
+                "Vy_kN": 6.0,
+                "Mx_kNm": 15.0,
+                "My_kNm": -9.0
+              },
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": true,
+                "P_kN": 300.0,
+                "Vx_kN": 40.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 95.0
+              },
+              {
+                "case": "1.2D+1.6L",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "seismic": false,
+                "P_kN": 1800.0,
+                "Vx_kN": -7.0,
+                "Vy_kN": 11.0,
+                "Mx_kNm": 28.0,
+                "My_kNm": -17.0
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "length_mm": 6500.0,
+        "cover_width_mm": 800.0,
+        "center_mm": [
+          2970.8114742142034,
+          90.90807349693931
+        ]
+      }
+    },
+    {
+      "id": "viga-en-y",
+      "description": "las mismas columnas giradas, con la viga en la Y global (D-094)",
+      "h_mm": 800.0,
+      "project": {
+        "description": "las mismas columnas giradas, con la viga en la Y global (D-094)",
+        "profile": "aci-318-25",
+        "seismic": {
+          "level": "special",
+          "justification": "Oráculo del diseño (D-107)."
+        },
+        "materials": {
+          "fy": 420.0,
+          "fyt": 420.0,
+          "concrete": "normalweight",
+          "coating": "uncoated"
+        },
+        "soil": {
+          "allowable_pressure_kPa": 250.0,
+          "min_contact_fraction": 0.5,
+          "unit_weight_concrete_kNm3": 24.0,
+          "unit_weight_fill_kNm3": 18.0,
+          "friction_coefficient": 0.45,
+          "adhesion_kPa": 0.0,
+          "passive_coefficient": 3.0,
+          "cohesion_kPa": 0.0,
+          "passive_factor": 0.5,
+          "sliding_safety_factor": 1.5,
+          "sliding_safety_factor_seismic": 1.1,
+          "overturning_safety_factor": 2.0,
+          "overturning_safety_factor_seismic": 1.5,
+          "seismic_bearing_factor": 1.33
+        },
+        "principal_direction": "y",
+        "combined_design": {
+          "fc_options": [
+            28.0
+          ],
+          "prices": {
+            "concrete_per_m3": {
+              "28": 575000.0
+            },
+            "steel_per_kg": 6200.0
+          },
+          "plan_step": 100.0,
+          "plan_max": 9000.0,
+          "h_min": 600.0,
+          "h_step": 100.0,
+          "h_max": 1200.0,
+          "cover": 75.0,
+          "fill_height": 1200.0,
+          "pedestal_height": 300.0,
+          "surcharge_dead_kNm2": 2.0,
+          "surcharge_live_kNm2": 5.0,
+          "bars": [
+            "#5",
+            "#6"
+          ],
+          "spacing_step": 10.0,
+          "end": "straight",
+          "dowel_bars": [
+            "#6"
+          ]
+        },
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 500.0,
+            "cy": 500.0,
+            "x": -0.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "seismic": false,
+                "P_kN": 900.0,
+                "Vx_kN": -4.0,
+                "Vy_kN": 6.0,
+                "Mx_kNm": -15.0,
+                "My_kNm": -10.0
+              },
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": false,
+                "P_kN": 650.0,
+                "Vx_kN": -3.0,
+                "Vy_kN": 4.0,
+                "Mx_kNm": -10.0,
+                "My_kNm": -8.0
+              },
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": true,
+                "P_kN": 1400.0,
+                "Vx_kN": -0.0,
+                "Vy_kN": 40.0,
+                "Mx_kNm": -90.0,
+                "My_kNm": 0.0
+              },
+              {
+                "case": "1.2D+1.6L",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "seismic": false,
+                "P_kN": 1250.0,
+                "Vx_kN": -6.0,
+                "Vy_kN": 8.0,
+                "Mx_kNm": -21.0,
+                "My_kNm": -14.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 600.0,
+            "cy": 550.0,
+            "x": -150.0,
+            "y": 5000.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "seismic": false,
+                "P_kN": 1300.0,
+                "Vx_kN": -8.0,
+                "Vy_kN": -5.0,
+                "Mx_kNm": 12.0,
+                "My_kNm": 20.0
+              },
+              {
+                "case": "D",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": false,
+                "P_kN": 950.0,
+                "Vx_kN": -6.0,
+                "Vy_kN": -3.0,
+                "Mx_kNm": 9.0,
+                "My_kNm": 15.0
+              },
+              {
+                "case": "D+0.7E",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 0.0,
+                "seismic": true,
+                "P_kN": 300.0,
+                "Vx_kN": -0.0,
+                "Vy_kN": 40.0,
+                "Mx_kNm": -95.0,
+                "My_kNm": 0.0
+              },
+              {
+                "case": "1.2D+1.6L",
+                "kind": "factored",
+                "dead_factor": 1.2,
+                "live_factor": 1.6,
+                "seismic": false,
+                "P_kN": 1800.0,
+                "Vx_kN": -11.0,
+                "Vy_kN": -7.0,
+                "Mx_kNm": 17.0,
+                "My_kNm": 28.0
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "length_mm": 6500.0,
+        "cover_width_mm": 800.0,
+        "center_mm": [
+          -90.11783754527819,
+          2957.0421852743752
+        ]
+      }
+    }
+  ]
+}

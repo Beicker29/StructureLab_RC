@@ -87,7 +87,7 @@ def _punching(basis: Basis, footing: CombinedFooting, soil: Soil, bottom: dict[s
 def _punching_rows(basis: Basis, footing: CombinedFooting, bottom: dict[str, BarRow],
                    columns: list[CombinedColumn]) -> dict[str, tuple[BarRow, ...]]:
     """Filas de barras inferiores alrededor de las columnas: la malla en las dos direcciones y, en Y, el band de cada una."""
-    bands = tuple(band for column in columns if (band := _band_row(footing, column, bottom["y"], basis)) is not None)
+    bands = tuple(band for column in columns if (band := band_row(footing, column, bottom["y"], basis)) is not None)
     return {"x": (bottom["x"],), "y": (bottom["y"], *bands)}
 
 
@@ -139,7 +139,7 @@ def strip_limits(footing: CombinedFooting, column: CombinedColumn, depth: float)
     return max(column.x - column.cx / 2 - depth / 2, -footing.lx / 2), min(column.x + column.cx / 2 + depth / 2, footing.lx / 2)
 
 
-def _band_row(footing: CombinedFooting, column: CombinedColumn, row: BarRow, basis: Basis) -> BarRow | None:
+def band_row(footing: CombinedFooting, column: CombinedColumn, row: BarRow, basis: Basis) -> BarRow | None:
     """El refuerzo band de la columna como fila de barras y en el ancho de su franja, a la profundidad de la fila y."""
     if column.band is None:
         return None
@@ -267,7 +267,7 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     x0, x1 = strip_limits(footing, column, row.depth)
     top = top_rows(footing, basis.bars).get("y")
     has_top = top is not None and bool(_inside(top, (x0, x1)))
-    member = strip_member(footing, column, (row, _band_row(footing, column, row, basis), top))
+    member = strip_member(footing, column, (row, band_row(footing, column, row, basis), top))
     title = f"Franja transversal de la columna {column.id}"
     checks = []
     for pressure, loads in cases:
@@ -435,7 +435,7 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
     top = top_rows(footing, basis.bars).get("y")
     checks = []
     for index, column in enumerate(footing.columns):
-        band = _band_row(footing, column, row, basis)
+        band = band_row(footing, column, row, basis)
         limits = strip_limits(footing, column, row.depth)
         width = limits[1] - limits[0]
         positive = negative = 0.0

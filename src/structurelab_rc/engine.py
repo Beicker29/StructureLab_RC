@@ -9,6 +9,7 @@ from typing import Any
 
 from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.design.footing import combined as combined_design
 from structurelab_rc.design.footing.assignment import available as solver_available
 from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project, typology_curve
@@ -23,12 +24,18 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.errors import invalid_input
 from structurelab_rc.io.etabs import footings as etabs_footings
-from structurelab_rc.io.etabs.footings import FootingImportSummary, build_footing_design_project, build_footing_project
+from structurelab_rc.io.etabs.footings import (
+    FootingImportSummary,
+    build_combined_design_project,
+    build_footing_design_project,
+    build_footing_project,
+)
 from structurelab_rc.io.etabs.importer import SHEET, EtabsImportError, ImportSummary, build_project
 from structurelab_rc.io.etabs.xlsx import XlsxError, read_table
-from structurelab_rc.model.design import FootingDesignProject
+from structurelab_rc.model.design import CombinedDesignProject, FootingDesignProject
 from structurelab_rc.model.loader import (
     ProjectLoadError,
+    load_combined_design,
     load_design_project,
     load_footing_template,
     load_project,
@@ -36,7 +43,7 @@ from structurelab_rc.model.loader import (
     validate_input,
 )
 from structurelab_rc.model.project import Project
-from structurelab_rc.model.template import EtabsFootingDesignTemplate
+from structurelab_rc.model.template import EtabsCombinedDesignTemplate, EtabsFootingDesignTemplate
 from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.reporting.document import report_documents
 from structurelab_rc.reporting.figures import diagram_figures, pressure_figures
@@ -51,8 +58,10 @@ class RunError(Exception):
 
 
 RUN_KINDS = {"project": "proyecto de verificación", "design": "diseño por tipologías", "curve": "curva costo-N",
+             "combined_design": "diseño de zapata combinada",
              "etabs_beams": "plantilla de vigas de ETABS", "etabs_footings": "plantilla de zapatas de ETABS",
-             "etabs_design": "plantilla de diseño de zapatas de ETABS"}
+             "etabs_design": "plantilla de diseño de zapatas de ETABS",
+             "etabs_combined_design": "plantilla de diseño de zapata combinada de ETABS"}
 
 
 @dataclass(frozen=True)
@@ -80,7 +89,7 @@ def default_output(path: Path) -> Path:
 def run_plan(path: Path, output: Path | None = None) -> RunPlan:
     """El tipo del ejemplo por su contenido (D-096): plantilla de ETABS (load_factors, o miembros con Unique Name) con sus
     Excel en etabs_files (rutas relativas a la plantilla); diseño por tipologías (design y columns), curva costo-N si
-    trae curve; si no, un proyecto de verificación."""
+    trae curve; diseño de zapata combinada (combined_design, D-107); si no, un proyecto de verificación."""
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -98,14 +107,16 @@ def run_plan(path: Path, output: Path | None = None) -> RunPlan:
     if "load_factors" in data:
         if not files:
             raise RunError(f"La plantilla {path.name} no declara sus Excel de ETABS en etabs_files (D-096)")
-        return RunPlan("etabs_design" if "design" in data else "etabs_footings", path, out,
-                       service=excel("service"), factored=excel("factored"))
+        kind = "etabs_design" if "design" in data else "etabs_combined_design" if "combined_design" in data else "etabs_footings"
+        return RunPlan(kind, path, out, service=excel("service"), factored=excel("factored"))
     if any(isinstance(member, dict) and "etabs_unique_name" in member for member in members):
         if "workbook" not in files:
             raise RunError(f"La plantilla {path.name} no declara su Excel de ETABS en etabs_files.workbook (D-096)")
         return RunPlan("etabs_beams", path, out, workbook=excel("workbook"))
     if "design" in data and "columns" in data:
         return RunPlan("curve" if "curve" in data else "design", path, out)
+    if "combined_design" in data:
+        return RunPlan("combined_design", path, out)
     return RunPlan("project", path, out)
 
 
@@ -212,6 +223,9 @@ def import_etabs_footings(
             project, summary = build_footing_design_project(template, *tables)
             design = validate_input(project, FootingDesignProject)
             validation = _validate_design(design)
+        elif isinstance(template, EtabsCombinedDesignTemplate):  # diseño de una zapata combinada (D-112)
+            project, summary = build_combined_design_project(template, *tables)
+            validation = _validate_design(validate_input(project, CombinedDesignProject))
         else:
             project, summary = build_footing_project(template, *tables)
             validation = validate_project(validate_input(project, Project), load_engine().bars)
@@ -222,8 +236,8 @@ def import_etabs_footings(
     return project, summary, validation
 
 
-def _validate_design(design: FootingDesignProject) -> Check:
-    """El perfil y el nivel sísmico, y que las barras del bloque design estén en el catálogo."""
+def _validate_design(design: FootingDesignProject | CombinedDesignProject) -> Check:
+    """El perfil y el nivel sísmico, y que las barras del bloque de diseño estén en el catálogo."""
     errors = []
     profile = PROFILES.get(design.profile)
     if profile is None:
@@ -231,8 +245,10 @@ def _validate_design(design: FootingDesignProject) -> Check:
     elif design.seismic.level not in profile.seismic.seismic_levels():
         errors.append(invalid_input(f"El nivel sismico '{design.seismic.level}' no existe en {profile.id}"))
     known = {bar.designation for bar in load_engine().bars}
-    for designation in sorted({*design.design.bars, *design.design.dowel_bars} - known):
-        errors.append(invalid_input(f"La barra '{designation}' del bloque design no esta en el catalogo"))
+    limits = design.design if isinstance(design, FootingDesignProject) else design.combined_design
+    stirrups = () if isinstance(design, FootingDesignProject) else design.combined_design.stirrup_bars
+    for designation in sorted({*limits.bars, *limits.dowel_bars, *stirrups} - known):
+        errors.append(invalid_input(f"La barra '{designation}' del bloque de diseno no esta en el catalogo"))
     return check_from_errors(CHECK_NAME, errors)
 
 
@@ -332,3 +348,24 @@ def _design_footings(
         return None, result, failure, measurement
     return designed_project(ctx, result), result, validation, measurement
 
+
+
+def design_combined_file(
+    path: Path, workers: int = 1,
+) -> tuple[dict[str, Any] | None, combined_design.CombinedDesignResult | None, Check]:
+    """Diseño de una zapata combinada de dos columnas (D-107): el proyecto de verificación con la zapata de menor costo,
+    el resultado de la búsqueda (con cada f'c) y la validación; sin solución, un Check con el motivo de cada f'c. workers
+    reparte los f'c entre procesos (no cambia el resultado)."""
+    try:
+        design = load_combined_design(path)
+    except ProjectLoadError as error:
+        return None, None, check_from_errors(CHECK_NAME, error.errors)
+    validation = _validate_design(design)
+    if validation.status is Status.FAIL:
+        return None, None, validation
+    ctx = combined_design.Context(design, PROFILES[design.profile], load_engine().bars)
+    result = combined_design.design_combined(ctx, workers)
+    if result.best is None:
+        reasons = "; ".join(f"f'c = {option.fc:g} MPa: {option.failure}" for option in result.options)
+        return None, result, check_from_errors(CHECK_NAME, [invalid_input(f"Sin solucion dentro de los limites: {reasons}")])
+    return combined_design.designed_project(ctx, result.best), result, validation

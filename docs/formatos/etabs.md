@@ -34,6 +34,19 @@ Con una plantilla que trae el bloque `design` (ver [zapatas](zapatas.md), diseñ
 proyecto de diseño en lugar del de verificación: cada Unique Name es una columna; `columns[]` agrupa los de igual sección
 (`etabs_unique_names`, `cx` a lo largo de X y `cy` a lo largo de Y, en mm) y cada nudo se vuelve una columna con id igual
 a su Label de ETABS. Las cargas de cada columna salen de los dos Excel; el diseño centra la zapata bajo la columna.
+Solo entran los Unique Name listados en `columns[]`: los demás nudos de los Excel (por ejemplo, apoyos que no son
+zapatas céntricas) se ignoran. `exclude_unique_names` (lista, opcional) quita nudos listados sin borrarlos de su grupo;
+cada uno debe estar en `columns[]` y no puede quitarlos todos. Los Unique Name de los Excel que no entran, por no estar
+listados o por estar excluidos, se avisan al importar y quedan al final de la descripción del proyecto, que la memoria
+muestra (D-111).
+
+Con una plantilla que trae el bloque `combined_design` (D-112), el importador genera el proyecto de diseño de una zapata
+combinada de dos columnas (ver [zapatas](zapatas.md), diseño de la zapata combinada): `columns[]` son exactamente dos, con
+`id`, `etabs_unique_name`, `cx`, `cy`, `x` e `y` (como en la plantilla de verificación de la combinada, sin `dowels` ni
+`band`, que propone el diseño) y `loads` solo con los tipos que `loads_source` toma de la plantilla. `load_factors`,
+`principal_direction`, `loads_source` y `etabs_files` son como en la verificación; `combined_design.placement_case` nombra
+la combinación de ETABS como la escribe el importador (por ejemplo `"SERVICIO 1 (D+L)"`). `run` importa, diseña y
+genera la memoria de la zapata diseñada (`diseno.json`, `proyecto.json`, `resumen.json` y la memoria).
 
 ### Tablas de ETABS
 
