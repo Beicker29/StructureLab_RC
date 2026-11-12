@@ -119,7 +119,12 @@ def declared_envelope(footing: CombinedFooting, envelope: "Envelope") -> "Envelo
             name, value = ("V-" if name == "V+" else "V+"), 0.0 - value
         extremes.append((name, value, 0.0 - position, case))
     order = {"M+": 0, "M-": 1, "V+": 2, "V-": 3}
-    return replace(envelope, positions=reverse(envelope.positions, -1.0), moment_max=reverse(envelope.moment_max),
+    # Secciones críticas (D-104): la posición se refleja y V cambia de signo (su máximo pasa a ser el mínimo).
+    sections = tuple(replace(section, label=declared_text(footing, section.label), position=0.0 - section.position,
+                             shear_max=(0.0 - section.shear_min[0], section.shear_min[1]),
+                             shear_min=(0.0 - section.shear_max[0], section.shear_max[1]))
+                     for section in reversed(envelope.sections))
+    return replace(envelope, sections=sections, positions=reverse(envelope.positions, -1.0), moment_max=reverse(envelope.moment_max),
                    moment_min=reverse(envelope.moment_min), shear_max=reverse(envelope.shear_min, -1.0),
                    shear_min=reverse(envelope.shear_max, -1.0),
                    segments=tuple((count - 1 - end, count - 1 - start) for start, end in reversed(envelope.segments)),

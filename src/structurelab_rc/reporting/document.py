@@ -14,7 +14,15 @@ from typing import Any
 
 from structurelab_rc.domain.footing.service import CONTACT
 from structurelab_rc.domain.status import Status
-from structurelab_rc.reporting.figures import CORNERS, FIGURE_ASPECT, PRESSURE, corner_key, diagram_aspect, governing_pressure
+from structurelab_rc.reporting.figures import (
+    CORNERS,
+    DIAGRAM_ASPECT,
+    FIGURE_ASPECT,
+    PRESSURE,
+    QUANTITIES,
+    corner_key,
+    governing_pressure,
+)
 from structurelab_rc.reporting.glossary import PROFILE_NAMES, STATUS_TEXT, classify, describe, display, number, unit_of
 
 Block = dict[str, Any]
@@ -188,24 +196,37 @@ def _summary(items: list[Located]) -> Block:
     return {"kind": "summary", "items": lines}
 
 
-def _materials(results: dict[str, Any]) -> list[Block]:
+_CONCRETE_KEYS = ("beta1", "ecu", "alpha1", "lambda")  # valores del perfil propios del concreto; el resto, del acero
+
+
+def _material_rows(results: dict[str, Any]) -> tuple[list[list[str]], list[list[str]]]:
+    """Filas del concreto y del acero de refuerzo: los datos del usuario y los valores del perfil que usa el cálculo."""
     project = results["project"]
     materials, used = project["materials"], project.get("materials_used", {})
     profile = PROFILE_NAMES.get(project["profile"], project["profile"])
-    rows = [["Resistencia especificada del concreto (f'c)", number(materials["fc [MPa]"], "MPa"), "MPa", "Dato del usuario"],
-            ["Esfuerzo de fluencia del refuerzo longitudinal (fy)", number(materials["fy [MPa]"], "MPa"), "MPa", "Dato del usuario"],
-            ["Esfuerzo de fluencia del refuerzo transversal (fyt)", number(materials["fyt [MPa]"], "MPa"), "MPa", "Dato del usuario"],
-            ["Tipo de concreto", _CONCRETE.get(materials["concrete"], materials["concrete"]), "–", "Dato del usuario"],
-            ["Recubrimiento de las barras", _COATING.get(materials["coating"], materials["coating"]), "–", "Dato del usuario"]]
+    concrete = [["Resistencia especificada del concreto (f'c)", number(materials["fc [MPa]"], "MPa"), "MPa", "Dato del usuario"],
+                ["Tipo de concreto", _CONCRETE.get(materials["concrete"], materials["concrete"]), "–", "Dato del usuario"]]
     if "max_aggregate [mm]" in materials:
-        rows.append(["Tamaño máximo nominal del agregado grueso (dagg)", number(materials["max_aggregate [mm]"], "mm"), "mm",
-                     "Dato del usuario"])
+        concrete.append(["Tamaño máximo nominal del agregado grueso (dagg)", number(materials["max_aggregate [mm]"], "mm"), "mm",
+                         "Dato del usuario"])
+    steel = [["Esfuerzo de fluencia del refuerzo longitudinal (fy)", number(materials["fy [MPa]"], "MPa"), "MPa", "Dato del usuario"],
+             ["Esfuerzo de fluencia del refuerzo transversal (fyt)", number(materials["fyt [MPa]"], "MPa"), "MPa", "Dato del usuario"],
+             ["Recubrimiento de las barras", _COATING.get(materials["coating"], materials["coating"]), "–", "Dato del usuario"]]
     for key, value in used.items():
         name, unit = unit_of(key)
         description, symbol = describe(name)
-        rows.append([f"{description} ({symbol})", "–" if value is None else number(value, unit if unit != "–" else "–"),
-                     unit, f"Perfil {profile}"])
-    return [{"kind": "table", "headers": ["Propiedad", "Valor", "Unidad", "Referencia literal"], "rows": rows}]
+        row = [f"{description} ({symbol})", "–" if value is None else number(value, unit if unit != "–" else "–"), unit,
+               f"Perfil {profile}"]
+        (concrete if name in _CONCRETE_KEYS else steel).append(row)
+    return concrete, steel
+
+
+_MATERIAL_HEADERS = ["Propiedad", "Valor", "Unidad", "Referencia literal"]
+
+
+def _materials(results: dict[str, Any]) -> list[Block]:
+    concrete, steel = _material_rows(results)
+    return [{"kind": "table", "headers": _MATERIAL_HEADERS, "rows": [*concrete, *steel]}]
 
 
 def _values_table(check: dict[str, Any]) -> Block | None:
@@ -534,13 +555,14 @@ def _footing_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[
             {"kind": "table", "headers": ["Refuerzo", "Descripción"], "rows": reinforcement}]
 
 
-def _soil_pressures(footing: dict[str, Any], figure: Path | None) -> list[Block]:
+def _soil_pressures(footing: dict[str, Any], figure: Path | None,
+                    heading: str = "Presión del suelo en las esquinas (casos de servicio)") -> list[Block]:
     """Presión del suelo en las esquinas (D-080): la planta del caso de servicio que gobierna la presión admisible y la
     tabla de las esquinas de todos los casos de servicio."""
     checks = [check for check in footing["checks"] if check["name"] == PRESSURE and corner_key("-x-y") in check["values"]]
     if not checks:
         return []
-    blocks: list[Block] = [{"kind": "h2", "text": "Presión del suelo en las esquinas (casos de servicio)"}]
+    blocks: list[Block] = [{"kind": "h2", "text": heading}]
     governing = governing_pressure(footing["checks"])
     if figure is not None and governing is not None:
         blocks.append({"kind": "image", "path": str(figure), "aspect": FIGURE_ASPECT,
@@ -761,7 +783,23 @@ def _top_text(top: dict[str, Any] | None) -> str:
     return f"{'; '.join(sets)}{first}; barras {_ENDS[top['end']]}"
 
 
-def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[Block]:
+def _combined_materials(results: dict[str, Any], number_text: str) -> list[Block]:
+    """1.1 Concreto estructural, 1.2 Acero de refuerzo y 1.3 Suelo (D-104)."""
+    concrete, steel = _material_rows(results)
+    soil = _soil_rows(results)
+    weight = [row for row in soil if row[0].startswith("Peso unitario del concreto")]
+    concrete += [[*row, "Dato del usuario"] for row in weight]
+    ground = [row for row in soil if not row[0].startswith("Peso unitario del concreto")]
+    return [{"kind": "h2", "text": f"{number_text}.1 Concreto estructural"},
+            {"kind": "table", "headers": _MATERIAL_HEADERS, "rows": concrete},
+            {"kind": "h2", "text": f"{number_text}.2 Acero de refuerzo"},
+            {"kind": "table", "headers": _MATERIAL_HEADERS, "rows": steel},
+            {"kind": "h2", "text": f"{number_text}.3 Suelo"},
+            {"kind": "table", "headers": ["Propiedad (dato del usuario)", "Valor", "Unidad"], "rows": ground}]
+
+
+def _combined_geometry(results: dict[str, Any], footing: dict[str, Any], number_text: str) -> list[Block]:
+    """2.1 Zapata combinada, 2.2 Acero de refuerzo, 2.3 Suelo y 2.4 Columnas (D-104)."""
     g = footing["geometry [mm]"]
     principal, secondary = _combined_axes(footing)
     rows = [["Dirección principal (la de la viga que une las columnas)", f"{principal} global", "–"],
@@ -770,11 +808,7 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list
             ["Espesor (h)" if not g.get("beam") else "Espesor de la zarpa (h)", number(g["h"], "mm"), "mm"],
             *([["Ancho de la viga (bw, T invertida)", number(g["beam"]["width"], "mm"), "mm"],
                ["Altura total de la viga (H)", number(g["beam"]["height"], "mm"), "mm"]] if g.get("beam") else []),
-            ["Recubrimiento libre", number(g["cover"], "mm"), "mm"],
-            ["Altura de los pedestales", number(g["pedestal_height"], "mm"), "mm"],
-            ["Altura del relleno", number(g["fill_height"], "mm"), "mm"],
-            ["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
-            ["Sobrecarga viva (qL)", number(g["surcharge_live [kN/m2]"], "kN/m²"), "kN/m²"]]
+            ["Recubrimiento libre", number(g["cover"], "mm"), "mm"]]
     columns = [[column["id"], number(column["cx"], "mm"), number(column["cy"], "mm"), number(column["x"], "mm"), number(column["y"], "mm"),
                 f"{column['dowels']['count']} {column['dowels']['designation']}" if column.get("dowels") else "no declarados",
                 _bar_text(column.get("band"))] for column in footing["columns"]]
@@ -787,16 +821,23 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list
              f"{stirrups['legs']} ramas {stirrups['designation']} c/{stirrups['spacing']:.0f} mm"],
             ["Refuerzo superficial (caras largas)", _bar_text(skin, " en vertical" if skin else "")],
             ["Capas de torsión (Aℓ)", _torsion_layers_text(reinforcement.get("torsion_layers") or [])]]
-    return [{"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": rows},
+    return [{"kind": "h2", "text": f"{number_text}.1 Zapata combinada"},
+            {"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": rows},
+            _axes_note(principal, secondary),
+            {"kind": "p", "text": "Propiedades calculadas a partir de las dimensiones (nunca declaradas):"},
+            {"kind": "table", "headers": ["Propiedad", "Valor", "Unidad"], "rows": _properties_rows(footing)},
+            {"kind": "h2", "text": f"{number_text}.2 Acero de refuerzo"},
+            {"kind": "table", "headers": ["Refuerzo", "Descripción"], "rows": bars},
+            {"kind": "h2", "text": f"{number_text}.3 Suelo"},
+            {"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"],
+             "rows": [["Altura del relleno sobre la zapata", number(g["fill_height"], "mm"), "mm"]]},
+            {"kind": "h2", "text": f"{number_text}.4 Columnas"},
             {"kind": "table",
              "headers": ["Columna", "cx (mm)", "cy (mm)", "x (mm)", "y (mm)", "Pasadores", "Refuerzo bajo la columna (band)"],
              "rows": columns},
-            {"kind": "note", "text": "x e y ubican el eje de cada columna respecto al centroide de la base."},
-            _axes_note(principal, secondary),
-            {"kind": "table", "headers": ["Suelo y pesos (dato del usuario)", "Valor", "Unidad"], "rows": _soil_rows(results)},
-            {"kind": "p", "text": "Propiedades calculadas a partir de las dimensiones (nunca declaradas):"},
-            {"kind": "table", "headers": ["Propiedad", "Valor", "Unidad"], "rows": _properties_rows(footing)},
-            {"kind": "table", "headers": ["Refuerzo", "Descripción"], "rows": bars}]
+            {"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"],
+             "rows": [["Altura de los pedestales", number(g["pedestal_height"], "mm"), "mm"]]},
+            {"kind": "note", "text": "x e y ubican el eje de cada columna respecto al centroide de la base."}]
 
 
 def _axes_note(principal: str, secondary: str) -> Block:
@@ -807,17 +848,70 @@ def _axes_note(principal: str, secondary: str) -> Block:
                                     "devuelven a los ejes declarados (D-094, D-101)."}
 
 
-def _combined_demands(footing: dict[str, Any], figure: Path | None) -> list[Block]:
-    blocks: list[Block] = [{"kind": "p", "text": "Fuerzas de cada columna sobre la zapata, en la base de la columna; P > 0 en compresión."}]
-    for kind, title in (("service", "Casos de servicio"), ("factored", "Casos mayorados")):
+def _combined_actions(footing: dict[str, Any], figure: Path | None, diagrams: list[Path] | None, number_text: str) -> list[Block]:
+    """3.1 Sobrecargas, 3.2 combinaciones de servicio (ASD), 3.3 combinaciones mayoradas (LRFD), 3.4 presión sobre el suelo
+    y 3.5 solicitaciones internas (D-104)."""
+    g = footing["geometry [mm]"]
+    blocks: list[Block] = [
+        {"kind": "h2", "text": f"{number_text}.1 Sobrecargas"},
+        {"kind": "table", "headers": ["Sobrecarga (dato del usuario)", "Valor", "Unidad"],
+         "rows": [["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
+                  ["Sobrecarga viva (qL)", number(g["surcharge_live [kN/m2]"], "kN/m²"), "kN/m²"]]}]
+    titles = (("service", f"{number_text}.2 Combinaciones de esfuerzos admisibles (ASD)"),
+              ("factored", f"{number_text}.3 Combinaciones de resistencia última (LRFD)"))
+    for kind, title in titles:
         blocks.append({"kind": "h2", "text": title})
         tables = [_loads_table([load for load in column["loads"] if load["kind"] == kind], column["id"]) for column in footing["columns"]]
         rows = [row for table in tables for row in table["rows"]]
         if not rows:
             blocks.append({"kind": "p", "text": "No aplica: ningún caso de este tipo."})
             continue
-        blocks.append({**tables[0], "rows": rows})
-    return blocks + _soil_pressures(footing, figure)
+        blocks += [{"kind": "p", "text": "Fuerzas de cada columna sobre la zapata, en la base de la columna; P > 0 en compresión."},
+                   {**tables[0], "rows": rows}]
+    blocks += _soil_pressures(footing, figure, f"{number_text}.4 Presión sobre el suelo")
+    return blocks + _internal_forces(footing, diagrams, f"{number_text}.5")
+
+
+_SECTION_HEADERS = {"V": ("V máx (kN)", "V mín (kN)"), "M": ("M máx (kN·m)", "M mín (kN·m)")}
+
+
+def _internal_forces(footing: dict[str, Any], files: list[Path] | None, number_text: str) -> list[Block]:
+    """Solicitaciones internas (D-095, D-104): por elemento (dirección principal, cada franja o las aletas), el diagrama
+    envolvente de cortante y el de momento, cada uno con la tabla de sus secciones críticas."""
+    blocks: list[Block] = [{"kind": "h2", "text": f"{number_text} Solicitaciones internas"}]
+    diagrams = footing.get("diagrams")
+    if not diagrams:
+        return [*blocks, {"kind": "p", "text": "No aplica: la zapata no tiene casos mayorados en equilibrio."}]
+    principal, secondary = _combined_axes(footing)
+    blocks.append({"kind": "p", "text": "Envolvente de los casos mayorados: en cada posición, el mayor y el menor valor entre todos "
+                                        "los casos. M > 0 tracciona la cara inferior; V es el del cuerpo libre a la izquierda "
+                                        f"(desde −{principal} en la dirección principal y desde −{secondary} en la secundaria). "
+                                        "Posiciones desde el centroide de la base. Las tablas dan, en cada sección crítica, el "
+                                        "máximo y el mínimo de la envolvente y su caso."})
+    paths = iter(files or [])
+    index = 1
+    for envelope in [diagrams["principal"], *diagrams["secondary"]]:
+        title = envelope["title"]
+        where = f"en la dirección principal ({principal} global)" if title == "Dirección principal" else \
+            f"en la dirección secundaria ({secondary} global), {title[:1].lower() + title[1:]}"
+        per_metre = " por metro" if envelope["per_metre"] else ""
+        for key, name, _, _ in QUANTITIES:
+            heading = f"{number_text}.{index} {name} {where}"
+            index += 1
+            blocks.append({"kind": "h3", "text": heading})
+            figure = next(paths, None)
+            if figure is not None:
+                blocks.append({"kind": "image", "path": str(figure), "aspect": DIAGRAM_ASPECT, "caption": f"{name} {where}"})
+            unit = "kN" if key == "V" else "kN·m"
+            high, low = _SECTION_HEADERS[key]
+            rows = [[section["label"], number(section["position [mm]"], "mm"),
+                     number(section[f"{key} max [{'kN' if key == 'V' else 'kN-m'}]"], unit), section[f"{key} max case"],
+                     number(section[f"{key} min [{'kN' if key == 'V' else 'kN-m'}]"], unit), section[f"{key} min case"]]
+                    for section in envelope.get("sections", [])]
+            if rows:
+                blocks.append({"kind": "table", "headers": ["Sección crítica", "Posición (mm)", f"{high}{per_metre}", "Caso",
+                                                            f"{low}{per_metre}", "Caso"], "rows": rows})
+    return blocks
 
 
 def _torsion_layers_text(layers: list[dict[str, Any]]) -> str:
@@ -852,39 +946,8 @@ def _flexure_by_sign(number_text: str, items: list[Located], negative: bool, ful
     return _chapter("flexure", number_text, own, full)
 
 
-_EXTREMES = {"M+": ("Momento positivo máximo", "kN·m"), "M-": ("Momento negativo máximo", "kN·m"),
-             "V+": ("Cortante máximo", "kN"), "V-": ("Cortante mínimo", "kN")}
-
-
-def _diagrams(footing: dict[str, Any], files: tuple[Path, Path] | None) -> list[Block]:
-    """Diagramas envolventes de momento y cortante (D-095) y la tabla de sus extremos con el caso y la posición, en los
-    ejes declarados (D-101)."""
-    diagrams = footing.get("diagrams")
-    if not diagrams:
-        return [{"kind": "p", "text": "No aplica: la zapata no tiene casos mayorados en equilibrio."}]
-    principal, secondary = _combined_axes(footing)
-    blocks: list[Block] = [{"kind": "p", "text": "Envolvente de los casos mayorados: en cada posición, el mayor y el menor valor "
-                                                 "entre todos los casos. M > 0 tracciona la cara inferior; V es el del cuerpo "
-                                                 f"libre a la izquierda (desde −{principal} en la dirección principal y desde "
-                                                 f"−{secondary} en la secundaria). Posiciones desde el centroide de la base."}]
-    figures = (None, None) if files is None else files
-    for title, envelopes, figure in ((f"Dirección principal ({principal} global)", [diagrams["principal"]], figures[0]),
-                                     (f"Dirección secundaria ({secondary} global)", diagrams["secondary"], figures[1])):
-        blocks.append({"kind": "h2", "text": title})
-        if figure is not None:
-            blocks.append({"kind": "image", "path": str(figure), "aspect": diagram_aspect(2 * len(envelopes)),
-                           "caption": f"Diagramas de momento y cortante, {title.lower()}"})
-        for envelope in envelopes:
-            per_metre = " por metro" if envelope["per_metre"] else ""
-            rows = [[_EXTREMES[item["quantity"]][0], f"{number(item['value'], _EXTREMES[item['quantity']][1])} "
-                     f"{_EXTREMES[item['quantity']][1]}{per_metre}", number(item["position [mm]"], "mm"), item["case"]]
-                    for item in envelope["extremes"]]
-            blocks.append({"kind": "table", "headers": [envelope["title"], "Valor", "Posición (mm)", "Caso"], "rows": rows})
-    return blocks
-
-
 def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None,
-                      diagrams: tuple[Path, Path] | None = None) -> list[Block]:
+                      diagrams: list[Path] | None = None) -> list[Block]:
     """Memoria de una zapata combinada (D-080 a D-083): la viga larga y las franjas transversales con las verificaciones de
     vigas, el momento positivo y el negativo por separado y sus diagramas envolventes (D-095), el punzonamiento con los
     esfuerzos de cada esquina, el desarrollo, el aplastamiento y los pasadores."""
@@ -905,10 +968,9 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
             *_deep_alert(footing.get("deep_beam", False), "La viga de la dirección principal"),
             *_two_way_alert(footing)]
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
-        ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
-        ("Propiedades geométricas, columnas, suelo y armado", lambda _: _combined_geometry(results, footing)),
-        ("Solicitaciones", lambda _: _combined_demands(footing, figure)),
-        ("Diagramas de momento y cortante", lambda _: _diagrams(footing, diagrams)),
+        ("Propiedades mecánicas de los materiales", lambda n: _combined_materials(results, n)),
+        ("Propiedades geométricas, armado, suelo y columnas", lambda n: _combined_geometry(results, footing, n)),
+        ("Solicitaciones", lambda n: _combined_actions(footing, figure, diagrams, n)),
         (_CHAPTER_TITLES["geotechnical"], lambda n: _chapter("geotechnical", n, others, full)),
         (_CHAPTER_TITLES["requirements"], lambda n: _requirements(items, n, axes)),
         (f"{along}: momento positivo", lambda n: _flexure_by_sign(n, beam, False, full)),
@@ -929,7 +991,7 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
 
 
 def report_documents(results: dict[str, Any], *, full: bool = False, figures: dict[str, Path] | None = None,
-                     diagrams: dict[str, tuple[Path, Path]] | None = None) -> list[list[Block]]:
+                     diagrams: dict[str, list[Path]] | None = None) -> list[list[Block]]:
     """Una memoria por elemento (vigas y luego zapatas); con la entrada inválida, una memoria corta de validación."""
     if "project" not in results:
         validation = results["validation"]

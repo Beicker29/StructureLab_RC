@@ -132,8 +132,8 @@ Las verificaciones de resistencia traen en `values` los datos con que se calcula
 
 Las notas de las secciones de la viga y de las franjas terminan con el signo del momento ("momento positivo" o
 "momento negativo"); la memoria revisa por separado el momento positivo y el negativo en las dos direcciones y trae los
-diagramas envolventes de momento y cortante (D-095): `diagrams.principal` y `diagrams.secondary` en `resultado.json` y
-`diagrama_<zapata>_principal.svg` y `diagrama_<zapata>_secundaria.svg`. La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en
+diagramas envolventes de momento y cortante (D-095, D-104): `diagrams.principal` y `diagrams.secondary` en
+`resultado.json` y un SVG por magnitud y elemento (`diagrama_<zapata>_<elemento>_cortante.svg` y `_momento.svg`). La memoria y el ejemplo `zapata_combinada.json` (V3J.4) están en
 los dos perfiles.
 
 | Campo | Unidad | Descripción |
@@ -248,7 +248,7 @@ El diseño del N elegido se obtiene con `design-footings` y se reverifica con `r
 | `memoria.txt` | Memoria de cálculo de cada elemento, una tras otra (D-068): resultado y DCR máximo, capítulos fijos con cada revisión en su ubicación gobernante, índices DCR y notas y limitaciones. |
 | `memoria.pdf` | Los mismos bloques en PDF, cada elemento desde una página nueva; requiere el extra `pdf` (`pip install structurelab-rc[pdf]`). |
 | `presion_<zapata>.svg` | Planta de cada zapata con la presión del suelo en cada esquina del caso de servicio que gobierna la presión admisible (D-080); el PDF la incrusta en el capítulo de solicitaciones, junto con la tabla de esquinas de todos los casos de servicio. Las presiones vienen en los valores de cada verificación de presión admisible (`p esquina -x-y`, `+x-y`, `+x+y` y `-x+y`, en kPa). |
-| `diagrama_<zapata>_longitudinal.svg`, `diagrama_<zapata>_transversal.svg` | Solo zapatas combinadas y en T invertida (D-095): diagramas de momento y cortante, envolvente de los casos mayorados (máximo en azul, mínimo en rojo), de la viga larga y de la dirección transversal (los voladizos de la franja de cada columna o, en la T, las aletas por metro). La memoria los muestra en el capítulo "Diagramas de momento y cortante" con la tabla de extremos; los datos vienen en `resultado.json`, en `combined_footings[].diagrams` (`longitudinal` y `transverse`: `positions [mm]`, `M max [kN-m]`, `M min [kN-m]`, `V max [kN]`, `V min [kN]`, `segments`, `marks` y `extremes` con el valor, la posición y el caso de cada extremo). M > 0 tracciona la cara inferior; V es el del cuerpo libre a la izquierda. |
+| `diagrama_<zapata>_<elemento>_cortante.svg`, `diagrama_<zapata>_<elemento>_momento.svg` | Solo zapatas combinadas y en T invertida (D-095, D-104): un diagrama por magnitud y elemento (`principal`, `franja_<columna>` o `aletas`), envolvente de los casos mayorados (máximo en azul, mínimo en rojo). La memoria los muestra en 3.5 "Solicitaciones internas", cada uno con la tabla de sus secciones críticas; los datos vienen en `resultado.json`, en `combined_footings[].diagrams` (`principal` y `secondary`: `positions [mm]`, `M max [kN-m]`, `M min [kN-m]`, `V max [kN]`, `V min [kN]`, `segments`, `marks`, `extremes` con el valor, la posición y el caso de cada extremo, y `sections`: por sección crítica, `label`, `position [mm]` y el máximo y el mínimo de M y de V con su caso). M > 0 tracciona la cara inferior; V es el del cuerpo libre a la izquierda. |
 
 Cada verificación de `resultado.json` tiene:
 

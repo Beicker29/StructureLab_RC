@@ -89,39 +89,47 @@ _PANEL = 220  # alto de cada panel de un diagrama
 _MAX_INK, _MIN_INK, _MARK = "#1f4e9c", "#c62828", "#8a94a3"
 
 
-def diagram_aspect(panels: int) -> float:
-    """Alto / ancho de una figura de diagramas con `panels` paneles (para la memoria)."""
-    return (_PANEL * panels + 40) / _WIDTH
+DIAGRAM_ASPECT = (_PANEL + 40) / _WIDTH  # alto / ancho de una figura de diagrama (un panel)
+QUANTITIES = (("V", "Fuerza cortante", "kN", "cortante"), ("M", "Momento flector", "kN·m", "momento"))
 
 
-def diagram_figures(results: dict[str, Any], folder: Path) -> dict[str, tuple[Path, Path]]:
-    """Escribe diagrama_<zapata>_principal.svg y diagrama_<zapata>_secundaria.svg por cada zapata combinada con
-    diagramas (D-095, D-101) y devuelve sus rutas."""
+def _slug(envelope: dict[str, Any], index: int) -> str:
+    """Nombre de archivo de un diagrama: principal, franja_<columna> o aletas."""
+    title = envelope["title"]
+    if index == 0:
+        return "principal"
+    if title.startswith("Franja transversal de la columna "):
+        return f"franja_{title.removeprefix('Franja transversal de la columna ')}"
+    return "aletas"
+
+
+def diagram_figures(results: dict[str, Any], folder: Path) -> dict[str, list[Path]]:
+    """Un SVG por magnitud y elemento de cada zapata combinada con diagramas (D-104): diagrama_<zapata>_<elemento>_cortante
+    y _momento, con el elemento principal, franja_<columna> o aletas; en el orden de la memoria (dirección principal,
+    luego cada franja o las aletas; en cada uno, cortante y momento)."""
     figures = {}
     for footing in results.get("combined_footings", []):
         diagrams = footing.get("diagrams")
         if not diagrams:
             continue
-        principal = folder / f"diagrama_{footing['id']}_principal.svg"
-        secondary = folder / f"diagrama_{footing['id']}_secundaria.svg"
-        principal.write_text(diagrams_svg([diagrams["principal"]]), encoding="utf-8", newline="\n")
-        secondary.write_text(diagrams_svg(diagrams["secondary"]), encoding="utf-8", newline="\n")
-        figures[footing["id"]] = (principal, secondary)
+        paths = []
+        for index, envelope in enumerate([diagrams["principal"], *diagrams["secondary"]]):
+            for key, name, unit, word in QUANTITIES:
+                path = folder / f"diagrama_{footing['id']}_{_slug(envelope, index)}_{word}.svg"
+                path.write_text(diagram_svg(envelope, key, f"{name} ({unit}{' por metro' if envelope['per_metre'] else ''})"),
+                                encoding="utf-8", newline="\n")
+                paths.append(path)
+        figures[footing["id"]] = paths
     return figures
 
 
-def diagrams_svg(envelopes: list[dict[str, Any]]) -> str:
-    """Un par de paneles (M arriba, V abajo) por envolvente: la curva del máximo (azul) y la del mínimo (rojo) de los casos
-    mayorados en cada posición, el eje cero, las marcas (columnas o caras) y los extremos con su caso."""
-    height = _PANEL * 2 * len(envelopes) + 40
+def diagram_svg(envelope: dict[str, Any], key: str, title: str) -> str:
+    """Un panel: la curva del máximo (azul) y la del mínimo (rojo) de los casos mayorados en cada posición, el eje cero y
+    las marcas (columnas o caras)."""
+    height = _PANEL + 40
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{_WIDTH}" height="{height}" viewBox="0 0 {_WIDTH} {height}">',
              f'<rect x="0" y="0" width="{_WIDTH}" height="{height}" fill="#ffffff"/>']
-    for index, envelope in enumerate(envelopes):
-        unit = " por metro" if envelope["per_metre"] else ""
-        for row, (key, name, unit_text) in enumerate((("M", "Momento flector", "kN·m"), ("V", "Fuerza cortante", "kN"))):
-            top = 20 + _PANEL * (2 * index + row)
-            title = f"{envelope['title']}: {name.lower()} ({unit_text}{unit}), envolvente de los casos mayorados"
-            parts += _panel(envelope, key, top, title)
+    parts += _panel(envelope, key, 20, f"{title}, envolvente de los casos mayorados")
     parts.append(f'<text x="{_WIDTH / 2}" y="{height - 10}" font-size="11" font-family="Helvetica" text-anchor="middle" '
                  f'fill="{_INK}">Azul: máximo; rojo: mínimo. M &gt; 0 tracciona la cara inferior; V del cuerpo libre a la '
                  f'izquierda.</text>')

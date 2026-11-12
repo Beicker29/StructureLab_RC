@@ -1669,6 +1669,33 @@
   `test_combined_footing.py` (tipos opcionales sin acotar y una variable reutilizada); `AGENTS.md` se unió en `CLAUDE.md`
   (pedido del usuario).
 
+### D-104: capítulos de la memoria de la zapata combinada en subcapítulos y solicitaciones internas por elemento
+
+- **Fecha:** 2026-11-11
+- **Pedido del usuario:**
+  - Capítulo 1: 1.1 concreto estructural, 1.2 acero de refuerzo y 1.3 suelo.
+  - Capítulo 2: 2.1 zapata combinada, 2.2 acero de refuerzo, 2.3 suelo y 2.4 columnas.
+  - Capítulo 3, que une los antiguos 3 (solicitaciones) y 4 (diagramas): 3.1 sobrecargas, 3.2 combinaciones de esfuerzos
+    admisibles (ASD), 3.3 combinaciones de resistencia última (LRFD), 3.4 presión sobre el suelo y 3.5 solicitaciones
+    internas: cortante y momento de la dirección principal y de la franja de cada columna, cada diagrama con la tabla de
+    sus secciones críticas.
+- **Decisión del usuario:** 3.5.1 cortante y 3.5.2 momento de la dirección principal; luego cortante y momento de la franja
+  de cada columna en el orden declarado (en la T invertida, de las aletas por metro). Las tablas dan, en cada sección
+  crítica, el máximo y el mínimo de la envolvente y su caso.
+- **Implementación (solo presentación; ninguna verificación cambia):**
+  - `combined_diagrams`: cada envolvente trae `sections` (`CriticalValues`): en la dirección principal, las caras de las
+    columnas, las secciones a d hacia cada tramo (`moment_sections`, `shear_sections`) y las posiciones del momento
+    positivo y del negativo máximos; en las franjas, las caras de la columna y a d; en las aletas, las caras de la viga y
+    a d. Son puntos de muestreo: el valor de la tabla es exacto. `declared_envelope` las lleva a los ejes declarados.
+  - `figures.diagram_figures`: un SVG de un panel por magnitud y elemento, `diagrama_<zapata>_<elemento>_cortante.svg` y
+    `_momento.svg`; desaparecen `diagrama_<zapata>_principal.svg` y `_secundaria.svg`.
+  - `document`: `_combined_materials`, `_combined_geometry` y `_combined_actions` arman los capítulos 1 a 3; el peso
+    unitario del concreto pasa a 1.1. Se quitan `_combined_demands`, `_diagrams` y la tabla de extremos. Los capítulos
+    siguientes se renumeran (geotecnia pasa al 4). La zapata aislada y las vigas no cambian.
+- **Diferencias:** en las huellas de las zapatas combinadas y en T cambian `resultado.json` (las `sections` de los
+  diagramas) y `memoria.txt`. En las vigas, la zapata aislada y el diseño por tipologías cambia solo `memoria.txt`: la
+  tabla de materiales lista primero las filas del concreto y luego las del acero (los mismos valores).
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

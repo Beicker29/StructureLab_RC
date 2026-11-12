@@ -169,11 +169,12 @@ def test_requirements_are_grouped_and_spacings_show_the_maximum_as_required(tmp_
     example = EXAMPLE.parents[2] / "zapatas" / "pruebas" / "zapata_combinada.json"
     report_file(example, tmp_path)
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
-    chapter = text.split("## 6. Revisión de requerimientos técnicos")[1].split("\n## 7.")[0]
-    assert re.findall(r"^### (6\.\d+ .+)$", chapter, flags=re.M) == [
-        "6.1 Refuerzo mínimo", "6.2 Separación del refuerzo", "6.3 Deformación neta de tracción"]
-    assert re.findall(r"^#### (6\.2\.\d .+)$", chapter, flags=re.M) == [
-        "6.2.1 Revisión de separación máxima del refuerzo", "6.2.2 Revisión de separación mínima del refuerzo"]
+    # D-104: los capítulos 3 (solicitaciones) y 4 (diagramas) se unieron; los requisitos quedan en el 5.
+    chapter = text.split("## 5. Revisión de requerimientos técnicos")[1].split("\n## 6.")[0]
+    assert re.findall(r"^### (5\.\d+ .+)$", chapter, flags=re.M) == [
+        "5.1 Refuerzo mínimo", "5.2 Separación del refuerzo", "5.3 Deformación neta de tracción"]
+    assert re.findall(r"^#### (5\.2\.\d .+)$", chapter, flags=re.M) == [
+        "5.2.1 Revisión de separación máxima del refuerzo", "5.2.2 Revisión de separación mínima del refuerzo"]
     lines = chapter.splitlines()
     headers = next(line for line in lines if line.startswith("Requisito"))
     assert headers.split() == ["Requisito", "Exigido", "Suministrado", "Referencia", "normativa", "Resultado"]
@@ -204,7 +205,15 @@ def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> 
     assert svg.count("<circle") == 4 and svg.count('fill="#9aa4b2"') == 2  # las cuatro esquinas y las dos columnas
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     assert text.count("# Memoria de cálculo — Zapata combinada ZC1") == 1
-    for chapter in ("Diagramas de momento y cortante", "Dirección principal (X global): momento positivo",
+    # D-104: capítulos 1 a 3 en subcapítulos; las solicitaciones internas, un diagrama por magnitud y elemento.
+    assert re.findall(r"^### (\d\.\d .+)$", text.split("## 4.")[0], flags=re.M) == [
+        "1.1 Concreto estructural", "1.2 Acero de refuerzo", "1.3 Suelo", "2.1 Zapata combinada", "2.2 Acero de refuerzo",
+        "2.3 Suelo", "2.4 Columnas", "3.1 Sobrecargas", "3.2 Combinaciones de esfuerzos admisibles (ASD)",
+        "3.3 Combinaciones de resistencia última (LRFD)", "3.4 Presión sobre el suelo", "3.5 Solicitaciones internas"]
+    assert re.findall(r"^#### (3\.5\.\d) (Fuerza cortante|Momento flector)", text, flags=re.M) == [
+        ("3.5.1", "Fuerza cortante"), ("3.5.2", "Momento flector"), ("3.5.3", "Fuerza cortante"), ("3.5.4", "Momento flector"),
+        ("3.5.5", "Fuerza cortante"), ("3.5.6", "Momento flector")]
+    for chapter in ("Dirección principal (X global): momento positivo",
                     "Dirección principal (X global): momento negativo", "Dirección principal (X global): fuerza cortante",
                     "Dirección secundaria (Y global), franjas transversales: momento positivo",
                     "Dirección secundaria (Y global), franjas transversales: momento negativo",
@@ -215,7 +224,8 @@ def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> 
     # D-095: diagramas envolventes en la salida, en la memoria y como figuras. En la sección que gobierna la flexión positiva
     # de la viga larga (una cara de columna), la envolvente vale lo mismo que esa revisión: la sección está entre las
     # candidatas de todos los casos. El pico del diagrama cae en el eje de la columna (carga puntual), no en la cara.
-    for name in ("diagrama_ZC1_principal.svg", "diagrama_ZC1_secundaria.svg"):
+    for name in ("diagrama_ZC1_principal_cortante.svg", "diagrama_ZC1_principal_momento.svg",
+                 "diagrama_ZC1_franja_C1_cortante.svg", "diagrama_ZC1_franja_C2_momento.svg"):
         assert tmp_path / name in report.files and "<polyline" in (tmp_path / name).read_text(encoding="utf-8")
     diagrams = footing["diagrams"]
     assert [envelope["title"] for envelope in diagrams["secondary"]] == ["Franja transversal de la columna C1",

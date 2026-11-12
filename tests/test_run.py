@@ -77,8 +77,8 @@ def test_run_writes_the_results_memoirs_and_figures(tmp_path: Path) -> None:
     out = tmp_path / "salida"
     assert main(["run", str(ROOT / "examples/nsr_10/zapatas/pruebas/zapata_combinada.json"), "--output", str(out)]) == 0
     names = {path.name for path in out.iterdir()}
-    assert {"resultado.json", "memoria.txt", "presion_ZC1.svg", "diagrama_ZC1_principal.svg",
-            "diagrama_ZC1_secundaria.svg"} <= names
+    assert {"resultado.json", "memoria.txt", "presion_ZC1.svg", "diagrama_ZC1_principal_cortante.svg",
+            "diagrama_ZC1_principal_momento.svg", "diagrama_ZC1_franja_C1_cortante.svg"} <= names
 
 
 def test_run_a_folder_runs_each_example_in_its_own_folder(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

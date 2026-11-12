@@ -296,7 +296,13 @@ def envelope_data(envelope: Envelope) -> dict[str, Any]:
             "marks": [{"position [mm]": significant(position), "label": label} for position, label in envelope.marks],
             "extremes": [{"quantity": quantity, "value": significant(kNm(value) if quantity.startswith("M") else kN(value)),
                           "position [mm]": significant(position), "case": case}
-                         for quantity, value, position, case in envelope.extremes]}
+                         for quantity, value, position, case in envelope.extremes],
+            "sections": [{"label": section.label, "position [mm]": significant(section.position),
+                          "M max [kN-m]": significant(kNm(section.moment_max[0])), "M max case": section.moment_max[1],
+                          "M min [kN-m]": significant(kNm(section.moment_min[0])), "M min case": section.moment_min[1],
+                          "V max [kN]": significant(kN(section.shear_max[0])), "V max case": section.shear_max[1],
+                          "V min [kN]": significant(kN(section.shear_min[0])), "V min case": section.shear_min[1]}
+                         for section in envelope.sections]}
 
 
 def build_results(project: Project | None, checks: tuple[Check, ...], version: str, diagrams: Diagrams | None = None) -> dict[str, Any]:
