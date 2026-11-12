@@ -277,8 +277,7 @@ def _transfer(folder: str, f: dict, spec: dict, moments: dict[str, tuple[float, 
             top_area = sum(ab for i in range(n) if low - 1e-6 <= start + i * top["spacing"] <= high + 1e-6)
             nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - f["cover"] - top["above"] - db / 2, profile)
             capacity = phi * nominal
-        elif direction == "y" and _top_y(f):
-            top = _top_y(f)
+        elif direction == "y" and (top := _top_y(f)) is not None:
             top_area = sum(top["ab"] for p in top["positions"] if low - 1e-6 <= p <= high + 1e-6)
             nominal, phi, _ = _F._strength(top_area, bslab, f["h"] - top["from_top"], profile)
             capacity = phi * nominal
@@ -318,7 +317,7 @@ def _strip(f: dict, index: int) -> dict:
                "cc": f["h"] - d - db / 2}]
     top = _top_y(f)
     inside = [] if top is None else [p for p in top["positions"] if x0 - 1e-6 <= p <= x1 + 1e-6]
-    if inside:
+    if inside and top is not None:
         points += [(p - x0, f["h"] - top["from_top"], top["ab"]) for p in inside]
         layers.append({"face": "top", "depth": top["from_top"], "area": len(inside) * top["ab"], "spacing": gap(inside),
                        "cc": top["cc"]})
@@ -457,7 +456,7 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
             # Sin barras superiores transversales: concreto simple en el ancho de la franja (D-072, D-095) y el cortante.
             plain = {**_F._plain({**f, "lx": strip["width"]}, "y", -moment, case, _F.PROFILES[folder], LEVEL[folder]),
                      "name": "Flexion concreto simple (cara superior, direccion secundaria)"}
-            items = [plain, *_B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None))]
+            items = [plain, *_beam_shear(_B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None)))]
             out += [{**item, "case": case, "z_mm": y + f["ly"] / 2, "where": where} for item in items]
             continue
         items = _B._flexure_checks(folder, f, layers, moment, strip["width"])
@@ -471,8 +470,21 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
             nominal, strain = _biaxial(bars, strip["width"], f["h"])
             capacity = _F._phi(strain, _F.PROFILES[folder]) * nominal
             items[0] = {**items[0], "capacity": capacity, "status": "PASS" if capacity >= abs(moment) else "FAIL"}
-        items += _B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None))
+        items += _beam_shear(_B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None)))
         out += [{**item, "case": case, "z_mm": y + f["ly"] / 2, "where": where} for item in items]
+    return out
+
+
+def _beam_shear(items: list[dict]) -> list[dict]:
+    """Franja sin estribos con Vu > φVc (D-103): cumple con DCR = 1 (demanda = φVc) y el excedente Vu − φVc lo toma el
+    refuerzo transversal de la viga de cimentación; el Av,min que exigiría la franja también."""
+    out = []
+    for item in items:
+        if item["status"] == "FAIL" and item["name"] == "Cortante: resistencia":
+            item = {**item, "status": "PASS", "demand": item["capacity"], "excess": item["demand"] - item["capacity"]}
+        elif item["status"] == "FAIL" and item["name"] == "Cortante: refuerzo minimo":
+            item = {**item, "status": "PASS"}
+        out.append(item)
     return out
 
 

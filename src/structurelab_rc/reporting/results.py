@@ -10,6 +10,7 @@ from typing import Any
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.combined_beam import two_way_warning
+from structurelab_rc.domain.footing.combined_columns import BEAM_SHEAR
 from structurelab_rc.domain.footing.combined_diagrams import Envelope
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting, beam_to_global
@@ -19,7 +20,7 @@ from structurelab_rc.reporting.units import kN, kNm, kPa
 
 _DIGITS = 6
 # Unidad interna → (unidad de presentación, conversión).
-_UNITS = {"N*mm": ("kN-m", kNm), "N": ("kN", kN), "N/mm2": ("kPa", kPa)}
+_UNITS = {"N*mm": ("kN-m", kNm), "N": ("kN", kN), "N/mm2": ("kPa", kPa), "area": ("m2", lambda area: area / 1e6)}
 # Valores de una verificación con unidad: nombre → unidad interna.
 _VALUE_UNITS = {"s": "mm", "db": "mm", "dagg": "mm", "bslab sin recortar": "mm",
                 "Mn3": "N*mm", "Mn2": "N*mm", "Mn": "N*mm", "Tu": "N*mm", "phi Tth": "N*mm", "Vc": "N", "Vs": "N",
@@ -31,7 +32,8 @@ _VALUE_UNITS = {"s": "mm", "db": "mm", "dagg": "mm", "bslab sin recortar": "mm",
                 "p esquina +x+y": "N/mm2", "p esquina -x+y": "N/mm2", "h calculo": "mm", "Sm": "mm3", "Msc x": "N*mm",
                 "Msc y": "N*mm", "Jc x": "mm4", "Jc y": "mm4", "xc": "mm", "yc": "mm", "cc": "mm", "As,min": "mm2",
                 "As analisis": "mm2", "x": "mm", "Msc": "N*mm", "gamma f Msc": "N*mm", "As bslab": "mm2",
-                "para la viga": "N*mm", "b": "mm", "h": "mm", "bw": "mm", "a": "mm", "fc": "MPa", "fy": "MPa"}
+                "para la viga": "N*mm", "excedente para la viga": "N", "A contacto": "area", "A minima": "area",
+                "b": "mm", "h": "mm", "bw": "mm", "a": "mm", "fc": "MPa", "fy": "MPa"}
 # Valores con número: "esquina 3 v" (esfuerzo de punzonamiento en la esquina 3) y sus coordenadas (D-083).
 _CORNER_UNITS = {"x": "mm", "y": "mm", "v": "MPa"}
 
@@ -166,6 +168,7 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
         "checks": [{**check_data(check), "case": check.case, "z [mm]": None if check.z is None else significant(check.z)}
                    for check in checks],
         "foundation_beam_moments": beam_moments(checks),
+        "foundation_beam_shears": beam_shears(checks),
         **({"diagrams": {"principal": envelope_data(diagrams[0]), "secondary": [envelope_data(item) for item in diagrams[1]]}}
            if diagrams is not None else {}),
     }
@@ -231,6 +234,20 @@ def beam_moments(checks: list[Check]) -> list[dict[str, Any]]:
             direction = label.removeprefix("barras ").upper() if label.startswith("barras ") else label.removeprefix("direccion ")
             out.append({"case": check.case, "column": column, "beam_direction": direction,
                         "M [kN-m]": significant(kNm(moment))})
+    return out
+
+
+def beam_shears(checks: list[Check]) -> list[dict[str, Any]]:
+    """Cortantes de las franjas que exceden φVc y debe tomar el refuerzo transversal de la viga de cimentación (D-103):
+    por caso, columna y sección de la franja."""
+    out = []
+    for check in checks:
+        excess = dict(check.values).get(BEAM_SHEAR, 0.0)
+        if excess > 0:
+            parts = check.note.split(":")[0].split(", ")
+            column = parts[0].removeprefix("Franja transversal de la columna ")
+            out.append({"case": check.case, "column": column, "section": parts[1] if len(parts) > 1 else "",
+                        "V [kN]": significant(kN(excess))})
     return out
 
 

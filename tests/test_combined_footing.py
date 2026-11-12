@@ -187,6 +187,9 @@ def test_column_checks_match_oracle(profile: str, case: dict[str, Any]) -> None:
             assert values["As,min"] == pytest.approx(item["as_min"], rel=tolerance), key
         if "analysis" in item:
             assert values["As analisis"] == pytest.approx(item["analysis"], rel=tolerance, abs=1e-6), key
+        if "excess" in item:
+            # Cortante de la franja que excede φVc: lo toma la viga de cimentación (D-103).
+            assert values["excedente para la viga"] == pytest.approx(item["excess"], rel=tolerance), key
         if "corners" in item:
             # Esfuerzo de punzonamiento en cada esquina del perímetro crítico, ordenadas por y y luego por x.
             for index, (x, y, stress) in enumerate(item["corners"], start=1):
@@ -470,8 +473,8 @@ def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_pat
     for column, declared in zip(out["columns"], along_y["columns"], strict=True):
         assert [column[key] for key in ("x", "y", "cx", "cy")] == pytest.approx([declared[key] for key in ("x", "y", "cx", "cy")])
         for load, written in zip(column["loads"], declared["loads"], strict=True):
-            got = [load[key] for key in ("Vx [kN]", "Vy [kN]", "Mx [kN-m]", "My [kN-m]")]
-            assert got == pytest.approx([written[key] for key in ("Vx_kN", "Vy_kN", "Mx_kNm", "My_kNm")], abs=1e-9)
+            forces = [load[key] for key in ("Vx [kN]", "Vy [kN]", "Mx [kN-m]", "My [kN-m]")]
+            assert forces == pytest.approx([written[key] for key in ("Vx_kN", "Vy_kN", "Mx_kNm", "My_kNm")], abs=1e-9)
     assert out["reinforcement"]["bottom"] == {**along_y["bottom"], "x": {**along_y["bottom"]["x"], "band_spacing": None},
                                               "y": {**along_y["bottom"]["y"], "band_spacing": None}}
     # Diagramas de la dirección secundaria en el eje X declarado: x = −y, así que las posiciones se reflejan y se invierten

@@ -269,7 +269,9 @@ de la viga y `M [kN-m]`): los momentos transferidos que debe tomar la viga de ci
 combinadas van en `combined_footings`: la
 geometría, las columnas (`columns[]`, cada una con sus cargas), las propiedades calculadas de la base, el armado
 (`bottom`, `top`, `stirrups`, `skin`, `torsion_layers`), `deep_beam`, `two_way_warning` (B, ℓn y B/ℓn si B ≥ ℓn, la luz
-libre entre las caras de las columnas: puede trabajar en dos direcciones, D-091; null si no) y las verificaciones, cada
+libre entre las caras de las columnas: puede trabajar en dos direcciones, D-091; null si no), `foundation_beam_shears`
+(caso, columna, sección de la franja y `V [kN]`: el cortante de las franjas que excede φVc y debe tomar el refuerzo
+transversal de la viga de cimentación, D-103) y las verificaciones, cada
 una con su `case`, su `z [mm]` (posición a lo largo de la viga desde su borde negativo, o en la franja desde el borde
 negativo de la dirección secundaria, en ejes declarados; nula en las demás) y en `note` la sección, la franja o la
 columna. Su memoria separa la dirección principal (flexión, cortante y torsión, D-088) de la secundaria (franjas o

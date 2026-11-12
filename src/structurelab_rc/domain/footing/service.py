@@ -59,8 +59,11 @@ def _case_checks(profile: Profile, footing: FootingBase, soil: Soil, load: Footi
         Check(BEARING, Status.PASS if bearing_ok else Status.FAIL, clause=bearing_clause, demand=pressure.pmax,
               capacity=capacity, unit="N/mm2", values=bearing_values, note=bearing_note, member=footing.id, case=load.case),
         # La razón es el mínimo exigido sobre la fracción en contacto: cumple con razón ≤ 1.
+        # Áreas en contacto y mínima (D-103): la comparación que la memoria muestra en la combinación de menor contacto.
         Check(CONTACT, Status.PASS if contact_ok else Status.FAIL, clause=CONTACT_CLAUSE, demand=soil.min_contact_fraction,
-              capacity=fraction, values=(*values, ("contacto", fraction)), note=region, member=footing.id, case=load.case),
+              capacity=fraction, values=(*values, ("contacto", fraction), ("A contacto", fraction * footing.area),
+                                         ("A minima", soil.min_contact_fraction * footing.area)),
+              note=region, member=footing.id, case=load.case),
         sliding_check(stability_clause, footing, soil, load, (resultant, fraction)),
         overturning_check(stability_clause, footing, soil, load, resultant),
     ]

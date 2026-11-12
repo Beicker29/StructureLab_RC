@@ -1641,6 +1641,34 @@
   - Las zapatas que elige el diseño por tipologías son las mismas.
   - Las memorias de vigas cambian solo por el capítulo DCR.
 
+### D-103: datos y avisos de la memoria; cortante de franja que excede φVc
+
+- **Fecha:** 2026-11-11
+- **Pedido del usuario** (revisión de la memoria de la zapata combinada):
+  1. En la tabla de presión por caso, las excentricidades ex/lx y ey/ly (fracción de su dimensión, ejes declarados) y la
+     región de Bellos y Bakas (2017). Se aplica también a la zapata aislada (la tabla es la misma).
+  2. En la revisión de contacto, la combinación con la menor área en contacto (la gobernante: mayor razón fracción
+     mínima / fracción) y la comparación de áreas Ac ≥ Ac,mín = fracción mínima × A. La verificación agrega los valores
+     `A contacto` y `A minima` (en m² en `resultado.json`).
+  3. Los esfuerzos de punzonamiento por esquina, como una matriz por columna o grupo: una fila por combinación, una
+     columna por esquina con sus coordenadas en el encabezado, vu,máx y la esquina crítica; el máximo de cada fila en
+     negrilla (entre asteriscos en el texto).
+  4. **Cortante de las franjas de la dirección secundaria con Vu > φVc** (sin estribos en la franja): **decisión del
+     usuario**: el excedente lo debe asumir el refuerzo transversal de la viga de cimentación. La verificación queda
+     CUMPLE con demanda = φVc (DCR = 1), con los valores `Vu` y `excedente para la viga` (Vu − φVc) y una nota; el Av,min
+     que la franja exigiría también queda a cargo de la viga. No se verifica aquí. `resultado.json` los reúne en
+     `foundation_beam_shears` (caso, columna, sección, V) y la memoria trae una tabla en el capítulo de cortante de la
+     dirección secundaria y un aviso al comienzo.
+  5. Los avisos de la viga de cimentación (momentos de D-087 y cortantes del punto 4) en rojo y negrilla en el PDF
+     (bloque `alert` con `tone: "danger"`); en el texto, con "‼ ATENCIÓN:".
+- **Control:** oráculo `derive_combined_columns.py` con la misma regla escrita aparte (`_beam_shear`); cambian a CUMPLE
+  con DCR = 1 las franjas que no cumplían cortante en los casos `delgada`, `negativo-transversal`,
+  `superior-transversal` y `superior-primero-y`, y el excedente se compara con el del paquete; la mutación que quita la
+  regla se detecta.
+- **Otros:** se corrigieron 6 errores de `mypy` que ya estaban en HEAD en `derive_combined_columns.py` y
+  `test_combined_footing.py` (tipos opcionales sin acotar y una variable reutilizada); `AGENTS.md` se unió en `CLAUDE.md`
+  (pedido del usuario).
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

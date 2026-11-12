@@ -12,6 +12,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
+from structurelab_rc.domain.footing.service import CONTACT
 from structurelab_rc.domain.status import Status
 from structurelab_rc.reporting.figures import CORNERS, FIGURE_ASPECT, PRESSURE, corner_key, diagram_aspect, governing_pressure
 from structurelab_rc.reporting.glossary import PROFILE_NAMES, STATUS_TEXT, classify, describe, display, number, unit_of
@@ -234,6 +235,7 @@ def _check_detail(number_text: str, where: str, check: dict[str, Any], locations
         shown = unit_of(f"x [{unit}]")[1]
         lines.append(("Verificación", f"{demand_symbol or 'Demanda'} / {capacity_symbol or 'capacidad'} = "
                       f"{number(check['demand'], shown)} / {number(check['capacity'], shown)} = {check['ratio']:.3f}"))
+    lines += _contact_lines(check)
     lines.append(("Resultado", _status_text(check["status"])))
     blocks.append({"kind": "kv", "items": lines})
     if check["note"]:
@@ -245,6 +247,18 @@ def _check_detail(number_text: str, where: str, check: dict[str, Any], locations
                 for place, item in locations]
         blocks.append({"kind": "table", "headers": ["Ubicación", "Resultado", "Demanda", "Capacidad", "DCR"], "rows": rows})
     return blocks
+
+
+def _contact_lines(check: dict[str, Any]) -> list[tuple[str, str]]:
+    """Contacto con el suelo (D-103): la ubicación gobernante es la combinación con la menor área en contacto, que se
+    compara con el área mínima (la fracción mínima declarada por el área de la base)."""
+    values = check["values"]
+    if check["name"] != CONTACT or "A contacto [m2]" not in values:
+        return []
+    area, minimum = values["A contacto [m2]"], values["A minima [m2]"]
+    sign = "≥" if area >= minimum else "<"
+    return [("Combinación con la menor área en contacto", check.get("case") or "–"),
+            ("Área en contacto frente al área mínima", f"Ac = {number(area, 'm²')} m² {sign} Ac,mín = {number(minimum, 'm²')} m²")]
 
 
 # Subcapítulos de los requisitos técnicos (D-100, D-102): por palabras del nombre de la verificación (sin tilde), en
@@ -531,12 +545,23 @@ def _soil_pressures(footing: dict[str, Any], figure: Path | None) -> list[Block]
     if figure is not None and governing is not None:
         blocks.append({"kind": "image", "path": str(figure), "aspect": FIGURE_ASPECT,
                        "caption": f"Presión del suelo en planta, caso que gobierna {governing['case']}"})
-    rows = [[check["case"], *(number(check["values"][corner_key(name)], "kPa") for name, _, _ in CORNERS)] for check in checks]
-    blocks.append({"kind": "table", "headers": ["Caso", "p (−x, −y) kPa", "p (+x, −y) kPa", "p (+x, +y) kPa", "p (−x, +y) kPa"],
-                   "rows": rows})
+    geometry = footing["geometry [mm]"]
+    rows = [[check["case"], *(number(check["values"][corner_key(name)], "kPa") for name, _, _ in CORNERS),
+             f"{check['values']['ex [mm]'] / geometry['lx']:.3f}", f"{check['values']['ey [mm]'] / geometry['ly']:.3f}",
+             _region(check)] for check in checks]
+    blocks.append({"kind": "table", "headers": ["Caso", "p (−x, −y) kPa", "p (+x, −y) kPa", "p (+x, +y) kPa", "p (−x, +y) kPa",
+                                                "ex/lx", "ey/ly", "Región"], "rows": rows})
     blocks.append({"kind": "note", "text": "Presión bruta de Bellos y Bakas (2017) con los factores del caso; 0 indica una esquina "
-                                           "sin contacto con el suelo."})
+                                           "sin contacto con el suelo. ex/lx y ey/ly son las excentricidades de la resultante "
+                                           "respecto al centroide de la base, como fracción de su dimensión; la región es la "
+                                           "de Bellos y Bakas (A: contacto total; B a E: contacto parcial)."})
     return blocks
+
+
+def _region(check: dict[str, Any]) -> str:
+    """Letra de la región de Bellos y Bakas (2017) de un caso de servicio, que la nota de la verificación trae."""
+    note = check.get("note") or ""
+    return note[len("Region "):].split(" ", 1)[0] if note.startswith("Region ") else "–"
 
 
 _LOAD_KEYS = ("P [kN]", "Vx [kN]", "Vy [kN]", "Mx [kN-m]", "My [kN-m]")
@@ -605,36 +630,71 @@ def _beam_alert(footing: dict[str, Any]) -> list[Block]:
     if not moments:
         return []
     largest = max(item["M [kN-m]"] for item in moments)
-    return [{"kind": "alert", "text": f"La viga de cimentación debe tomar momentos transferidos por la columna (hasta "
-                                      f"{number(largest, 'kN·m')} kN·m): ver la tabla \"Momentos para la viga de cimentación\" "
-                                      "en el capítulo de punzonamiento (D-087)."}]
+    return [{"kind": "alert", "tone": "danger",
+             "text": f"La viga de cimentación debe tomar momentos transferidos por la columna (hasta "
+                     f"{number(largest, 'kN·m')} kN·m): ver la tabla \"Momentos para la viga de cimentación\" "
+                     "en el capítulo de punzonamiento (D-087)."}]
+
+
+def _beam_shear_alert(footing: dict[str, Any]) -> list[Block]:
+    """Aviso al comienzo de la memoria si el refuerzo transversal de la viga de cimentación debe tomar cortante de las
+    franjas que excede φVc (D-103)."""
+    shears = footing.get("foundation_beam_shears", [])
+    if not shears:
+        return []
+    largest = max(item["V [kN]"] for item in shears)
+    return [{"kind": "alert", "tone": "danger",
+             "text": f"El cortante de las franjas de la dirección secundaria excede φVc (hasta {number(largest, 'kN')} kN): "
+                     "el excedente lo debe asumir el refuerzo transversal de la viga de cimentación; esas verificaciones se "
+                     "reportan con DCR = 1. Ver la tabla \"Cortante para el refuerzo transversal de la viga de cimentación\" "
+                     "(D-103)."}]
+
+
+def _beam_shears(footing: dict[str, Any]) -> list[Block]:
+    """Tabla de los cortantes de franja que debe tomar la viga de cimentación (D-103)."""
+    shears = footing.get("foundation_beam_shears", [])
+    if not shears:
+        return []
+    rows = [[item["case"], item["column"], item["section"], number(item["V [kN]"], "kN")] for item in shears]
+    return [{"kind": "h2", "text": "Cortante para el refuerzo transversal de la viga de cimentación"},
+            {"kind": "alert", "tone": "danger",
+             "text": "Vu > φVc en estas secciones de las franjas: el cortante excedente debe ser asumido por el refuerzo "
+                     "transversal de la viga de cimentación (no se verifica aquí; DCR = 1 en la revisión de la franja)."},
+            {"kind": "table", "headers": ["Caso", "Columna", "Sección de la franja", "Vu − φVc (kN)"], "rows": rows}]
 
 
 def _punching_corners(items: list[Located]) -> list[Block]:
-    """Esfuerzo de punzonamiento en cada esquina del perímetro crítico, por caso (y columna): cortante directo más el del
-    momento transferido en los dos ejes; gobierna la mayor (D-083)."""
-    rows = []
-    for where, check in items:
-        if check["name"] != "Punzonamiento":
-            continue
-        values = check["values"]
-        stresses = [values[key] for key in values if key.startswith("esquina ") and key.split(" ")[2] == "v"]
-        if not stresses:
-            continue
-        top = max(stresses)
-        index = 1
-        while f"esquina {index} v [MPa]" in values:
-            stress = values[f"esquina {index} v [MPa]"]
-            x, y = values[f"esquina {index} x [mm]"], values[f"esquina {index} y [mm]"]
-            rows.append([where, str(index), number(x, "mm"), number(y, "mm"),
-                         f"{stress:.3f}", "gobierna" if stress == top else ""])
-            index += 1
-    if not rows:
+    """Esfuerzo de punzonamiento en cada esquina del perímetro crítico (D-083), como una matriz por columna o grupo
+    (D-103): una fila por combinación, una columna por esquina con sus coordenadas en el encabezado, vu,máx y la esquina
+    crítica; el máximo de cada fila va resaltado."""
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for _, check in items:
+        if check["name"] == "Punzonamiento" and "esquina 1 v [MPa]" in check["values"]:
+            label = check["note"].split(":")[0] if (check["note"] or "").startswith("Columna") else ""
+            groups.setdefault(label, []).append(check)
+    if not groups:
         return []
-    return [{"kind": "h2", "text": "Esfuerzos de punzonamiento en las esquinas del perímetro crítico"},
-            {"kind": "table", "headers": ["Ubicación", "Esquina", "x (mm)", "y (mm)", "vu (MPa)", ""], "rows": rows},
-            {"kind": "note", "text": "Coordenadas respecto al centroide de la base. vu = Vu/(b0·d) + γv,x·Msc,x·(x − xc)/Jc,x + "
-                                     "γv,y·Msc,y·(y − yc)/Jc,y, con la carga neta de Bellos dentro del área crítica."}]
+    blocks: list[Block] = [{"kind": "h2", "text": "Esfuerzos de punzonamiento en las esquinas del perímetro crítico"}]
+    for label, checks in groups.items():
+        values = checks[0]["values"]
+        count = sum(1 for key in values if key.startswith("esquina ") and key.endswith(" v [MPa]"))
+        headers = ["Combinación", *(f"Esquina {i} ({number(values[f'esquina {i} x [mm]'], 'mm')}, "
+                                    f"{number(values[f'esquina {i} y [mm]'], 'mm')}) mm" for i in range(1, count + 1)),
+                   "vu,máx (MPa)", "Esquina crítica"]
+        rows, bold = [], []
+        for row_index, check in enumerate(checks):
+            stresses = [check["values"][f"esquina {i} v [MPa]"] for i in range(1, count + 1)]
+            critical = max(range(count), key=lambda i: stresses[i])
+            rows.append([check.get("case") or "–", *(f"{stress:.3f}" for stress in stresses), f"{stresses[critical]:.3f}",
+                         str(critical + 1)])
+            bold.append([row_index, critical + 1])
+        if label:
+            blocks.append({"kind": "p", "text": label})
+        blocks.append({"kind": "table", "headers": headers, "rows": rows, "bold": bold})
+    blocks.append({"kind": "note", "text": "Coordenadas respecto al centroide de la base. vu = Vu/(b0·d) + γv,x·Msc,x·(x − xc)/Jc,x + "
+                                           "γv,y·Msc,y·(y − yc)/Jc,y, con la carga neta de Bellos dentro del área crítica; "
+                                           "en negrilla, el máximo de cada combinación."})
+    return blocks
 
 
 def footing_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None) -> list[Block]:
@@ -841,7 +901,8 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
     meta = [("Columnas", " y ".join(column["id"] for column in footing["columns"])),
             ("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
     head = [_title(f"Zapata combinada {footing['id']}", results, meta, items, footing["status"]), _summary(items),
-            *_beam_alert(footing), *_deep_alert(footing.get("deep_beam", False), "La viga de la dirección principal"),
+            *_beam_alert(footing), *_beam_shear_alert(footing),
+            *_deep_alert(footing.get("deep_beam", False), "La viga de la dirección principal"),
             *_two_way_alert(footing)]
     chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
         ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
@@ -856,7 +917,7 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         (f"{along}: torsión", lambda n: _chapter("torsion", n, beam, full)),
         (f"{across}: momento positivo", lambda n: _flexure_by_sign(n, strips, False, full)),
         (f"{across}: momento negativo", lambda n: _flexure_by_sign(n, strips, True, full)),
-        (f"{across}: fuerza cortante", lambda n: _chapter("shear", n, strips, full)),
+        (f"{across}: fuerza cortante", lambda n: [*_chapter("shear", n, strips, full), *_beam_shears(footing)]),
         *([] if inverted else [(_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full),
                                                                         *_punching_corners(others), *_beam_moments(footing)])]),
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, others, full)),

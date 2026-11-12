@@ -19,6 +19,7 @@ _FONTS = (("C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/segoeuib.ttf"),
           ("/Library/Fonts/Arial.ttf", "/Library/Fonts/Arial Bold.ttf"))
 _SIZES = {"title": 13.0, "h1": 10.5, "h2": 8.5, "h3": 7.5, "body": 7.0}
 _LINE = 3.6
+_DANGER = (192, 0, 0)  # rojo de los avisos de la viga de cimentación
 _IMAGE_FRACTION = 0.75  # ancho de una gráfica respecto al ancho útil de la página
 
 
@@ -57,11 +58,11 @@ class _Renderer:
         else:
             pdf.multi_cell(0, height, content, new_x="LMARGIN", new_y="NEXT")
 
-    def table(self, headers: list[str], rows: list[list[str]]) -> None:
+    def table(self, headers: list[str], rows: list[list[str]], emphasis: frozenset[tuple[int, int]] = frozenset()) -> None:
         pdf = self.pdf
         width = pdf.w - pdf.l_margin - pdf.r_margin
         widths = self.widths(headers, rows, width)
-        for row, bold in ((headers, True), *((row, False) for row in rows)):
+        for index, (row, bold) in enumerate(((headers, True), *((row, False) for row in rows))):
             pdf.set_font(self.font, "B" if bold else "", _SIZES["body"])
             texts = [self.clean(str(cell)) for cell in row]
             counts = [self.lines(w, text) for w, text in zip(widths, texts, strict=True)]
@@ -70,8 +71,9 @@ class _Renderer:
                 pdf.add_page()
             y = pdf.get_y()
             x = pdf.l_margin
-            for w, text, count in zip(widths, texts, counts, strict=True):
+            for column, (w, text, count) in enumerate(zip(widths, texts, counts, strict=True)):
                 pdf.set_xy(x, y)
+                pdf.set_font(self.font, "B" if bold or (index - 1, column) in emphasis else "", _SIZES["body"])
                 if count == 1:
                     pdf.cell(w, height, text, border=1)
                 else:
@@ -127,10 +129,15 @@ class _Renderer:
         elif kind in ("h1", "h2", "h3"):
             self.text(block["text"], _SIZES[kind], bold=True, gap=2.0)
         elif kind == "table":
-            self.table(block["headers"], block["rows"])
+            self.table(block["headers"], block["rows"], frozenset((row, column) for row, column in block.get("bold", [])))
         elif kind == "kv":
             for key, value in block["items"]:
                 self.text(f"{key}: {value}", _SIZES["body"])
+        elif kind == "alert" and block.get("tone") == "danger":
+            # Avisos que el analista debe llevar al diseño de la viga de cimentación: rojo y negrilla (D-103).
+            self.pdf.set_text_color(*_DANGER)
+            self.text(block["text"], _SIZES["body"], bold=True)
+            self.pdf.set_text_color(0, 0, 0)
         elif kind in ("p", "note", "alert"):
             prefix = {"p": "", "note": "• ", "alert": "! "}[kind]
             self.text(prefix + block["text"], _SIZES["body"])

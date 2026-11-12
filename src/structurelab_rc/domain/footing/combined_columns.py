@@ -23,6 +23,7 @@ from collections.abc import Callable
 from dataclasses import replace
 
 from structurelab_rc.domain.basis import Basis
+from structurelab_rc.domain.beam.shear import MIN_REINFORCEMENT, STRENGTH
 from structurelab_rc.domain.beam.station import checks_for, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
@@ -289,8 +290,27 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
                 selected = list(checks_for(given))
             for check in selected:
                 note = section + "".join(f": {text}" for text in (check.note, shape) if text)
-                checks.append(replace(check, note=note, member=footing.id, case=pressure.case, z=z))
+                checks.append(_beam_shear(replace(check, note=note, member=footing.id, case=pressure.case, z=z)))
     return checks
+
+
+BEAM_SHEAR = "excedente para la viga"
+BEAM_SHEAR_NOTE = ("el cortante que excede phi Vc lo debe tomar el refuerzo transversal de la viga de cimentacion "
+                   "(decision del usuario, D-103)")
+
+
+def _beam_shear(check: Check) -> Check:
+    """Cortante de la franja sin estribos que excede φVc (decisión del usuario, D-103): CUMPLE con DCR = 1 y el
+    excedente Vu − φVc queda para el refuerzo transversal de la viga de cimentación, que no se verifica aquí; el Av,min
+    que esa franja exigiría también queda a cargo de la viga."""
+    if check.status is not Status.FAIL or check.name not in (STRENGTH, MIN_REINFORCEMENT):
+        return check
+    note = f"{check.note}; {BEAM_SHEAR_NOTE}"
+    if check.name == MIN_REINFORCEMENT:
+        return replace(check, status=Status.PASS, note=note)
+    assert check.demand is not None and check.capacity is not None
+    values = (*check.values, ("Vu", check.demand), (BEAM_SHEAR, check.demand - check.capacity))
+    return replace(check, status=Status.PASS, demand=check.capacity, values=values, note=note)
 
 
 def outside_checks(basis: Basis, footing: CombinedFooting, row: BarRow,

@@ -23,17 +23,25 @@ def _title(block: dict[str, Any]) -> list[str]:
     return [*lines, "", f"RESULTADO: {block['status']} ({block['status_text']}){ratio}"]
 
 
+def _bold(block: dict[str, Any]) -> list[list[str]]:
+    """Las celdas resaltadas de una tabla entre asteriscos (el texto no tiene negrilla)."""
+    rows = [list(row) for row in block["rows"]]
+    for row, column in block.get("bold", []):
+        rows[row][column] = f"*{rows[row][column]}*"
+    return rows
+
+
 _RENDER: dict[str, Callable[[dict[str, Any]], list[str]]] = {
     "title": _title,
     "summary": lambda block: list(block["items"]),
     "h1": lambda block: ["", f"## {block['text']}"],
     "h2": lambda block: ["", f"### {block['text']}"],
     "h3": lambda block: ["", f"#### {block['text']}"],
-    "table": lambda block: _table(block["headers"], block["rows"]),
+    "table": lambda block: _table(block["headers"], _bold(block)),
     "kv": lambda block: [f"{key}: {value}" for key, value in block["items"]],
     "p": lambda block: [block["text"]],
     "note": lambda block: [f"- {block['text']}"],
-    "alert": lambda block: [f"! {block['text']}"],
+    "alert": lambda block: [f"‼ ATENCIÓN: {block['text']}" if block.get("tone") == "danger" else f"! {block['text']}"],
     "image": lambda block: [f"[Gráfica: {block['caption']}; archivo {Path(block['path']).name}]"],
 }
 
