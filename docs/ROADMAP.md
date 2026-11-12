@@ -102,6 +102,10 @@ importación de ETABS y memorias (fases 0 a 2, D-001 a D-051).
    no trae.
 3. Vigas de gran altura (D-089): desarrollo en los apoyos simples (ACI 9.9.4.5 y 9.9.4.6, NSR-10 C.12.10.6) y pandeo
    lateral (NSR-10 C.10.7.2). El puntal-tensor queda fuera del alcance por decisión del usuario.
+4. Separación mínima del refuerzo (D-102): la separación libre entre las barras de cada capa (ACI 25.2.1, NSR-10
+   C.7.6.1 y C.3.3.2(c), con `materials.max_aggregate` obligatorio) y la separación vertical libre entre capas de al
+   menos 25 mm (ACI 25.2.2, NSR-10 C.7.6.2), con las posiciones de las barras de cada estación. En zapatas ya se
+   revisa; en vigas el subcapítulo 6.2.2 de la memoria queda vacío hasta entonces.
 
 ### Fase 3: requisitos sísmicos
 
