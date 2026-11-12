@@ -86,16 +86,16 @@
   },
   "combined_footings": [
     {
-      "id": "ZC-A",
+      "id": "ZC_B-K",
       "principal_direction": "y",
       "lx": 4300,
-      "ly": 5900.0,
-      "h": 950.0,
+      "ly": 5900,
+      "h": 900.0,
       "cover": 75.0,
       "fill_height": 300.0,
       "pedestal_height": 0.0,
-      "surcharge_dead_kNm2": 1.0,
-      "surcharge_live_kNm2": 3.0,
+      "surcharge_dead_kNm2": 0.0,
+      "surcharge_live_kNm2": 1.8,
       "loads_source": {
         "service": "etabs",
         "factored": "etabs"
@@ -107,7 +107,7 @@
           "cx": 1100.0,
           "cy": 500.0,
           "x": 0.0,
-          "y": 2280,
+          "y": 2250,
           "dowels": {
             "designation": "#6",
             "count": 12
@@ -127,7 +127,7 @@
           "cx": 450.0,
           "cy": 800.0,
           "x": 0.0,
-          "y": -1800,
+          "y": -1830,
           "dowels": {
             "designation": "#6",
             "count": 12

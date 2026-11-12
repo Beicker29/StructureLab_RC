@@ -1022,9 +1022,10 @@ def _t_secondary(across: str, strips: list[Located], footing: dict[str, Any],
             (f"{across}: fuerza cortante", lambda n: [*_chapter("shear", n, strips, full), *_beam_shears(footing)])]
 
 
-def _per_strip(number_text: str, items: list[Located], build: Callable[[str, list[Located]], list[Block]]) -> list[Block]:
-    """Un subcapítulo por franja de columna (D-119): las revisiones de cada franja con su ubicación gobernante, un nivel
-    más abajo."""
+def _per_group(number_text: str, items: list[Located], build: Callable[[str, list[Located]], list[Block]]) -> list[Block]:
+    """Un subcapítulo por franja o por columna (D-119): el grupo es el comienzo de la nota ("Franja transversal de la
+    columna C1", "Columna C1", "Columnas C1 y C2 (perimetro comun)"); las revisiones de cada grupo con su ubicación
+    gobernante, un nivel más abajo."""
     strips: dict[str, list[Located]] = {}
     for item in items:
         strips.setdefault(item[1]["note"].split(",")[0].split(":")[0], []).append(item)
@@ -1103,17 +1104,20 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         *(_t_secondary(across, strips, footing, full) if inverted else [
             # Franjas (D-119): un subcapítulo por columna; Mu y Vu, la suma de la flexión y la torsión de placa (D-118).
             (f"{across}: momento positivo (flexión + torsión)",
-             lambda n: _per_strip(n, strips, lambda m, own: _flexure_by_sign(m, own, False, full))),
+             lambda n: _per_group(n, strips, lambda m, own: _flexure_by_sign(m, own, False, full))),
             (f"{across}: momento negativo (flexión + torsión)",
-             lambda n: _per_strip(n, strips, lambda m, own: _flexure_by_sign(m, own, True, full))),
+             lambda n: _per_group(n, strips, lambda m, own: _flexure_by_sign(m, own, True, full))),
             (f"{across}: fuerza cortante (flexión + torsión)",
-             lambda n: [*_per_strip(n, strips, lambda m, own: _chapter("shear", m, own, full)), *_beam_shears(footing)]),
+             lambda n: [*_per_group(n, strips, lambda m, own: _chapter("shear", m, own, full)), *_beam_shears(footing)]),
             # Fuera de las franjas band: M flexión = 0 y la torsión de placa (Wood-Armer) y su cortante ∂mxy/∂x (D-119).
             (f"{beyond}: momento positivo (flexión + torsión)", lambda n: _outside_chapter("flexure", n, outside, False, full)),
             (f"{beyond}: momento negativo (flexión + torsión)", lambda n: _outside_chapter("flexure", n, outside, True, full)),
             (f"{beyond}: fuerza cortante (flexión + torsión)", lambda n: _outside_chapter("shear", n, outside, None, full))]),
-        *([] if inverted else [(_CHAPTER_TITLES["punching"], lambda n: [*_chapter("punching", n, others, full),
-                                                                        *_punching_corners(others)])]),
+        # Punzonamiento: un subcapítulo por columna (y el perímetro común si lo hay), con su cálculo completo.
+        *([] if inverted else [(_CHAPTER_TITLES["punching"], lambda n: [
+            *_per_group(n, [item for item in others if classify(item[1]["name"])[0] == "punching"],
+                        lambda m, own: _chapter("punching", m, own, full)),
+            *_punching_corners(others)])]),
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, others, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, others, full)),
         ("Índices DCR", lambda _: _dcr(items, _combined_label)),
