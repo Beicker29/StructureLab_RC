@@ -1,6 +1,6 @@
 # Arquitectura
 
-Una fuente de verdad por concepto. Las reglas completas están en [AGENTS.md](../AGENTS.md).
+Una fuente de verdad por concepto. Las reglas completas están en [CLAUDE.md](../CLAUDE.md).
 
 ## Capas
 

@@ -1,6 +1,6 @@
 # Cómo contribuir
 
-Las reglas de trabajo completas están en [AGENTS.md](AGENTS.md).
+Las reglas de trabajo completas están en [CLAUDE.md](CLAUDE.md).
 
 ## Verificación
 

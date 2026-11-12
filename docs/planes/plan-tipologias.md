@@ -2,7 +2,7 @@
 
 Plan de trabajo por etapas para mejorar el diseño de zapatas por tipologías (V3F, D-069). Cada etapa se ejecuta en
 una sesión aparte, se cierra con su criterio de aceptación y actualiza la tabla de estado. Este plan no reemplaza a
-`AGENTS.md`: todas sus reglas siguen vigentes.
+`CLAUDE.md`: todas sus reglas siguen vigentes.
 
 ## Estado
 
@@ -253,9 +253,9 @@ demanda, fija la tipología.
 
 ## Cómo usar este plan
 
-- Una etapa por sesión. Al empezar: leer `AGENTS.md` y este plan, registrar rama y SHA, presentar un plan corto de
+- Una etapa por sesión. Al empezar: leer `CLAUDE.md` y este plan, registrar rama y SHA, presentar un plan corto de
   la etapa y esperar aprobación.
 - Al cerrar: actualizar la tabla de estado, registrar la decisión o la evidencia, y cerrar con cambios, pruebas
-  reales, diferencias numéricas, riesgos y pendientes, como pide `AGENTS.md`.
+  reales, diferencias numéricas, riesgos y pendientes, como pide `CLAUDE.md`.
 - Si algo de este plan contradice el código o una decisión registrada, detenerse y consultar al usuario antes de
   seguir.
