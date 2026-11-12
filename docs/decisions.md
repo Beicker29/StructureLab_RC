@@ -2136,18 +2136,13 @@
   - En el diseño, la falla pide `top_x` en la dirección principal y el band superior de la columna en la secundaria.
 - **Control:** el oráculo `derive_combined_columns.py` aplica la misma regla.
 
-### D-121: examples/ y results/ dentro de la sincronización con GitHub
+### D-121: solo examples/ dentro de la sincronización con GitHub
 
 - **Fecha:** 2026-11-12
-- **Decisión del usuario:** versionar también `results/`, para que su contenido viaje por GitHub entre máquinas.
-  `examples/` ya estaba versionada completa. `results/` pasa de guardar solo el esqueleto (`.gitkeep`, D-058) a
-  versionarse completa, con las memorias PDF (`!results/**/*.pdf` en `.gitignore`; los demás PDF, como los de
-  `references/`, siguen ignorados).
-- **Estado al decidirlo:** en GitHub `results/` solo tenía el esqueleto y `examples/` coincidía con la copia local. El
-  commit de esta decisión cambia solo la regla: no sube los resultados locales de ninguna máquina (decisión del usuario).
-- **Consecuencias:** `results/` sigue siendo salida generada: se regenera con `structurelab-rc run` y no se edita a mano;
-  las huellas siguen calculándose en carpetas temporales de las pruebas. Antes de traer de GitHub resultados que ya
-  existen sin versionar en una máquina, hay que apartar esa copia local: Git no sobrescribe archivos sin versionar.
+- **Decisión del usuario:** se versiona `examples/` (como siempre) y se ignora `results/`, que guarda solo su esqueleto
+  (`.gitkeep`, D-058). Primero se pidió versionar también `results/` y se aplicó en `.gitignore`; el usuario lo revirtió
+  el mismo día: los resultados son salida generada y se regeneran en cada máquina con `structurelab-rc run`.
+- **Estado:** en GitHub `results/` nunca tuvo más que el esqueleto; ningún resultado local se subió.
 
 ## Consultas abiertas
 

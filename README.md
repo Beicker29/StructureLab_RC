@@ -144,7 +144,7 @@ costo, aprobado por la verificación de la combinada. Escribe `proyecto.json` y 
   las pruebas, las huellas y la CI leen solo la copia congelada de `pruebas/` (D-098). Cada carpeta tiene un `LEEME.md`
   con sus ejemplos y lo propio del perfil; los campos de entrada y de salida están en
   [docs/formatos/](docs/formatos/) y el índice en [examples/README.md](examples/README.md).
-- `results/`: salida generada, versionada en Git (D-121). Nunca se edita a mano; se regenera con `structurelab-rc run`.
+- `results/`: salida generada, ignorada por Git (D-121). Nunca se edita a mano; se regenera con `structurelab-rc run`.
 
 ## Más información
 
