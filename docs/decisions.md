@@ -1696,6 +1696,26 @@
   diagramas) y `memoria.txt`. En las vigas, la zapata aislada y el diseño por tipologías cambia solo `memoria.txt`: la
   tabla de materiales lista primero las filas del concreto y luego las del acero (los mismos valores).
 
+### D-105: estilo de la memoria y de las figuras
+
+- **Fecha:** 2026-11-11
+- **Pedido del usuario:** una presentación más moderna sin perder la formalidad, y figuras con rótulo y leyenda.
+  Aprobó la muestra (`zapata_combinada`, NSR-10) con el ajuste de la planta de presiones.
+- **PDF** (`reporting/pdf.py`):
+  - encabezado con el elemento y la norma desde la segunda página, y pie con el número de página; márgenes de 15 mm;
+  - título con "Memoria de cálculo" y el elemento en azul oscuro (31, 56, 100), regla, datos en dos columnas y un cuadro
+    de resultado a todo el ancho en el color del estado (verde, rojo, ámbar o gris) con el DCR máximo;
+  - capítulos en azul con regla, subcapítulos en azul, tercer nivel en gris; un título no queda solo al pie de página;
+  - tablas con encabezado azul y texto blanco, filas alternas sombreadas, bordes grises tenues y el encabezado repetido
+    al cambiar de página; notas en gris.
+- **Figuras:**
+  - numeradas por capítulo ("Figura 3.3", en `document._assemble`), con el rótulo debajo en el PDF y en el texto;
+  - leyenda en un recuadro debajo del dibujo, sin tapar las curvas: máximo y mínimo en los diagramas; zapata, columna,
+    presión en la esquina y esquina sin contacto en la planta; títulos internos en el azul de la memoria;
+  - la planta de presiones sigue la proporción de la zapata (`figures.pressure_aspect`): sin franjas en blanco en las
+    zapatas alargadas.
+- **Diferencias:** ninguna de cálculo. En las huellas cambia `memoria.txt` (rótulos numerados de las figuras).
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

@@ -42,7 +42,8 @@ _RENDER: dict[str, Callable[[dict[str, Any]], list[str]]] = {
     "p": lambda block: [block["text"]],
     "note": lambda block: [f"- {block['text']}"],
     "alert": lambda block: [f"‼ ATENCIÓN: {block['text']}" if block.get("tone") == "danger" else f"! {block['text']}"],
-    "image": lambda block: [f"[Gráfica: {block['caption']}; archivo {Path(block['path']).name}]"],
+    "image": lambda block: [f"[Figura {block['number']}. {block['caption']}; archivo {Path(block['path']).name}]"
+                            if block.get("number") else f"[Figura: {block['caption']}; archivo {Path(block['path']).name}]"],
 }
 
 

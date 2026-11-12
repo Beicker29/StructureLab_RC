@@ -9,9 +9,41 @@ from typing import Any
 
 PRESSURE = "Presion admisible del suelo"
 CORNERS = (("-x-y", -1, -1), ("+x-y", 1, -1), ("+x+y", 1, 1), ("-x+y", -1, 1))  # nombre y signos de la esquina
-_WIDTH, _HEIGHT, _MARGIN = 640, 480, 90
-FIGURE_ASPECT = _HEIGHT / _WIDTH
+_WIDTH, _PLAN, _MARGIN = 640, 480, 90  # ancho de las figuras; alto máximo de la planta y margen lateral
+_ABOVE, _BELOW, _LEGEND = 60, 70, 60  # sobre la zapata (título y rótulos), bajo ella (rótulos y ejes), leyenda y nota
+
+
+def _plan_scale(lx: float, ly: float) -> float:
+    """Escala de la planta: llena el ancho o el alto máximo, lo que limite primero."""
+    return min((_WIDTH - 2 * _MARGIN) / lx, (_PLAN - _ABOVE - _BELOW) / ly)
+
+
+def _plan_height(lx: float, ly: float) -> float:
+    """Alto de la figura de presiones: sigue la proporción de la zapata, sin franjas en blanco (D-105)."""
+    return _ABOVE + ly * _plan_scale(lx, ly) + _BELOW + _LEGEND
+
+
+def pressure_aspect(lx: float, ly: float) -> float:
+    """Alto / ancho de la figura de presiones de una zapata lx × ly (para la memoria)."""
+    return _plan_height(lx, ly) / _WIDTH
 _INK, _FILL, _COLUMN, _NONE = "#24292f", "#e8eef7", "#9aa4b2", "#c62828"
+_ACCENT, _FONT = "#1f3864", "Segoe UI, Helvetica, Arial, sans-serif"  # azul de los títulos de la memoria (D-105)
+
+
+def _legend(y: float, items: list[tuple[str, str]]) -> list[str]:
+    """Leyenda en una fila centrada a la altura y, fuera del área del dibujo, en un recuadro: cada elemento es (muestra
+    SVG de 24 × 12 con origen en su esquina, texto)."""
+    widths = [40 + 5.6 * len(text) for _, text in items]
+    total = sum(widths) + 16
+    x = (_WIDTH - total) / 2
+    parts = [f'<rect x="{x:.1f}" y="{y:.1f}" width="{total:.1f}" height="24" fill="#ffffff" stroke="#c8ced8" stroke-width="1" '
+             'rx="3"/>']
+    left = x + 8
+    for (sample, text), width in zip(items, widths, strict=True):
+        parts.append(f'<g transform="translate({left:.1f},{y + 6:.1f})">{sample}</g>')
+        parts.append(f'<text x="{left + 30:.1f}" y="{y + 16:.1f}" font-size="11" font-family="{_FONT}" fill="{_INK}">{text}</text>')
+        left += width
+    return parts
 
 
 def corner_key(name: str) -> str:
@@ -47,17 +79,18 @@ def pressure_figures(results: dict[str, Any], folder: Path) -> dict[str, Path]:
 def pressure_svg(lx: float, ly: float, columns: list[dict[str, float]], check: dict[str, Any]) -> str:
     """Planta de la zapata (mm) con sus columnas ({cx, cy, x, y}: sección y posición del eje respecto al centroide) y la
     presión en cada esquina (kPa) del caso; las esquinas sin contacto (presión 0) van en rojo."""
-    scale = min((_WIDTH - 2 * _MARGIN) / lx, (_HEIGHT - 2 * _MARGIN) / ly)
-    cx0, cy0 = _WIDTH / 2, _HEIGHT / 2
+    scale = _plan_scale(lx, ly)
+    height = _plan_height(lx, ly)
+    cx0, cy0 = _WIDTH / 2, _ABOVE + ly * scale / 2
 
     def point(x: float, y: float) -> tuple[float, float]:
         return cx0 + x * scale, cy0 - y * scale  # Y hacia arriba en la planta
 
     left, top = point(-lx / 2, ly / 2)
-    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{_WIDTH}" height="{_HEIGHT}" viewBox="0 0 {_WIDTH} {_HEIGHT}">',
-             f'<rect x="0" y="0" width="{_WIDTH}" height="{_HEIGHT}" fill="#ffffff"/>',
-             f'<text x="{_WIDTH / 2}" y="24" font-size="14" font-family="Helvetica" text-anchor="middle" fill="{_INK}">'
-             f'Presión del suelo en planta, caso {check.get("case", "")} (kPa)</text>',
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{_WIDTH}" height="{height:.0f}" viewBox="0 0 {_WIDTH} {height:.0f}">',
+             f'<rect x="0" y="0" width="{_WIDTH}" height="{height:.0f}" fill="#ffffff"/>',
+             f'<text x="{_WIDTH / 2}" y="24" font-size="14" font-family="{_FONT}" text-anchor="middle" fill="{_ACCENT}" '
+             f'font-weight="bold">Presión del suelo en planta, caso {check.get("case", "")} (kPa)</text>',
              f'<rect x="{left:.1f}" y="{top:.1f}" width="{lx * scale:.1f}" height="{ly * scale:.1f}" fill="{_FILL}" '
              f'stroke="{_INK}" stroke-width="1.5"/>']
     for column in columns:
@@ -79,9 +112,14 @@ def pressure_svg(lx: float, ly: float, columns: list[dict[str, float]], check: d
               f'<text x="{ax + 56:.1f}" y="{ay + 44:.1f}" font-size="12" font-family="Helvetica" fill="{_INK}">X</text>',
               f'<line x1="{ax - 40:.1f}" y1="{ay:.1f}" x2="{ax - 40:.1f}" y2="{ay - 50:.1f}" stroke="{_INK}" stroke-width="1"/>',
               f'<text x="{ax - 44:.1f}" y="{ay - 56:.1f}" font-size="12" font-family="Helvetica" fill="{_INK}">Y</text>',
-              f'<text x="{_WIDTH / 2}" y="{_HEIGHT - 16}" font-size="12" font-family="Helvetica" text-anchor="middle" '
-              f'fill="{_INK}">lx = {lx:.0f} mm, ly = {ly:.0f} mm; {check.get("note", "")}</text>',
-              "</svg>"]
+              f'<text x="{_WIDTH / 2}" y="{height - 16:.0f}" font-size="12" font-family="{_FONT}" text-anchor="middle" '
+              f'fill="{_INK}">lx = {lx:.0f} mm, ly = {ly:.0f} mm; {check.get("note", "")}</text>']
+    parts += _legend(height - _LEGEND + 2, [
+        (f'<rect x="0" y="0" width="22" height="12" fill="{_FILL}" stroke="{_INK}" stroke-width="1"/>', "Zapata"),
+        (f'<rect x="0" y="0" width="22" height="12" fill="{_COLUMN}" stroke="{_INK}" stroke-width="1"/>', "Columna"),
+        (f'<circle cx="11" cy="6" r="4" fill="{_INK}"/>', "Presión en la esquina (kPa)"),
+        (f'<circle cx="11" cy="6" r="4" fill="{_NONE}"/>', "Esquina sin contacto")])
+    parts.append("</svg>")
     return "\n".join(parts) + "\n"
 
 
@@ -89,7 +127,8 @@ _PANEL = 220  # alto de cada panel de un diagrama
 _MAX_INK, _MIN_INK, _MARK = "#1f4e9c", "#c62828", "#8a94a3"
 
 
-DIAGRAM_ASPECT = (_PANEL + 40) / _WIDTH  # alto / ancho de una figura de diagrama (un panel)
+_LEGEND_BAND = 80  # alto debajo del panel para la leyenda y la nota
+DIAGRAM_ASPECT = (_PANEL + _LEGEND_BAND) / _WIDTH  # alto / ancho de una figura de diagrama (un panel)
 QUANTITIES = (("V", "Fuerza cortante", "kN", "cortante"), ("M", "Momento flector", "kN·m", "momento"))
 
 
@@ -126,13 +165,15 @@ def diagram_figures(results: dict[str, Any], folder: Path) -> dict[str, list[Pat
 def diagram_svg(envelope: dict[str, Any], key: str, title: str) -> str:
     """Un panel: la curva del máximo (azul) y la del mínimo (rojo) de los casos mayorados en cada posición, el eje cero y
     las marcas (columnas o caras)."""
-    height = _PANEL + 40
+    height = _PANEL + _LEGEND_BAND
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{_WIDTH}" height="{height}" viewBox="0 0 {_WIDTH} {height}">',
              f'<rect x="0" y="0" width="{_WIDTH}" height="{height}" fill="#ffffff"/>']
     parts += _panel(envelope, key, 20, f"{title}, envolvente de los casos mayorados")
-    parts.append(f'<text x="{_WIDTH / 2}" y="{height - 10}" font-size="11" font-family="Helvetica" text-anchor="middle" '
-                 f'fill="{_INK}">Azul: máximo; rojo: mínimo. M &gt; 0 tracciona la cara inferior; V del cuerpo libre a la '
-                 f'izquierda.</text>')
+    parts += _legend(_PANEL + 20, [
+        (f'<line x1="0" y1="6" x2="24" y2="6" stroke="{_MAX_INK}" stroke-width="2"/>', "Máximo de los casos mayorados"),
+        (f'<line x1="0" y1="6" x2="24" y2="6" stroke="{_MIN_INK}" stroke-width="2"/>', "Mínimo de los casos mayorados")])
+    parts.append(f'<text x="{_WIDTH / 2}" y="{height - 10}" font-size="11" font-family="{_FONT}" text-anchor="middle" '
+                 f'fill="{_INK}">M &gt; 0 tracciona la cara inferior; V del cuerpo libre a la izquierda.</text>')
     parts.append("</svg>")
     return "\n".join(parts) + "\n"
 
@@ -152,8 +193,8 @@ def _panel(envelope: dict[str, Any], key: str, top: float, title: str) -> list[s
         return x, plot_bottom - (value - low) / span * (plot_bottom - plot_top)
 
     zero = point(start, 0.0)[1]
-    parts = [f'<text x="{_WIDTH / 2}" y="{top + 16}" font-size="12" font-family="Helvetica" text-anchor="middle" '
-             f'fill="{_INK}">{title}</text>',
+    parts = [f'<text x="{_WIDTH / 2}" y="{top + 16}" font-size="12" font-family="{_FONT}" text-anchor="middle" '
+             f'fill="{_ACCENT}" font-weight="bold">{title}</text>',
              f'<line x1="{left:.1f}" y1="{zero:.1f}" x2="{right:.1f}" y2="{zero:.1f}" stroke="{_INK}" stroke-width="1"/>']
     for mark in envelope["marks"]:
         x = point(mark["position [mm]"], 0.0)[0]

@@ -155,7 +155,8 @@ def test_footing_report_draws_the_soil_pressure_in_plan(tmp_path: Path) -> None:
     figure = tmp_path / "presion_Z1.svg"
     assert figure in report.files
     svg = figure.read_text(encoding="utf-8")
-    assert svg.startswith("<svg") and svg.count("<circle") == 4
+    plan = svg.split('stroke="#c8ced8"')[0]  # la planta, sin la leyenda de muestras (D-105)
+    assert svg.startswith("<svg") and plan.count("<circle") == 4
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     assert "Presión del suelo en las esquinas (casos de servicio)" in text and "archivo presion_Z1.svg" in text
 
@@ -202,7 +203,8 @@ def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> 
     figure = tmp_path / "presion_ZC1.svg"
     assert figure in report.files
     svg = figure.read_text(encoding="utf-8")
-    assert svg.count("<circle") == 4 and svg.count('fill="#9aa4b2"') == 2  # las cuatro esquinas y las dos columnas
+    plan = svg.split('stroke="#c8ced8"')[0]  # la planta, sin la leyenda de muestras (D-105)
+    assert plan.count("<circle") == 4 and plan.count('fill="#9aa4b2"') == 2  # las cuatro esquinas y las dos columnas
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     assert text.count("# Memoria de cálculo — Zapata combinada ZC1") == 1
     # D-104: capítulos 1 a 3 en subcapítulos; las solicitaciones internas, un diagrama por magnitud y elemento.

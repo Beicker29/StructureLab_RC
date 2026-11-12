@@ -17,11 +17,11 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.reporting.figures import (
     CORNERS,
     DIAGRAM_ASPECT,
-    FIGURE_ASPECT,
     PRESSURE,
     QUANTITIES,
     corner_key,
     governing_pressure,
+    pressure_aspect,
 )
 from structurelab_rc.reporting.glossary import PROFILE_NAMES, STATUS_TEXT, classify, describe, display, number, unit_of
 
@@ -423,10 +423,16 @@ def _notes(results: dict[str, Any], conventions: tuple[str, ...], limitations: t
 
 
 def _assemble(head: list[Block], chapters: list[tuple[str, Callable[[str], list[Block]]]]) -> list[Block]:
+    """Encabezado y capítulos numerados; las figuras se numeran por capítulo ("Figura 3.2", D-105)."""
     blocks = list(head)
     for index, (title, build) in enumerate(chapters, start=1):
         blocks.append({"kind": "h1", "text": f"{index}. {title}"})
-        blocks.extend(build(str(index)))
+        figures = 0
+        for block in build(str(index)):
+            if block["kind"] == "image":
+                figures += 1
+                block = {**block, "number": f"{index}.{figures}"}
+            blocks.append(block)
     return blocks
 
 
@@ -565,7 +571,8 @@ def _soil_pressures(footing: dict[str, Any], figure: Path | None,
     blocks: list[Block] = [{"kind": "h2", "text": heading}]
     governing = governing_pressure(footing["checks"])
     if figure is not None and governing is not None:
-        blocks.append({"kind": "image", "path": str(figure), "aspect": FIGURE_ASPECT,
+        geometry = footing["geometry [mm]"]
+        blocks.append({"kind": "image", "path": str(figure), "aspect": pressure_aspect(geometry["lx"], geometry["ly"]),
                        "caption": f"Presión del suelo en planta, caso que gobierna {governing['case']}"})
     geometry = footing["geometry [mm]"]
     rows = [[check["case"], *(number(check["values"][corner_key(name)], "kPa") for name, _, _ in CORNERS),
