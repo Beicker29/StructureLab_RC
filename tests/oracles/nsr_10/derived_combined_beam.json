@@ -2669,9 +2669,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 3007.999999999999,
+            "as_min": 3007.9999999999995,
             "status": "PASS",
-            "demand": 3007.999999999999,
+            "demand": 3007.9999999999995,
             "case": "U1",
             "z_mm": 323.8000000000002,
             "face": "bottom"
@@ -2893,9 +2893,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 3007.999999999999,
+            "as_min": 3007.9999999999995,
             "status": "PASS",
-            "demand": 3007.999999999999,
+            "demand": 3007.9999999999995,
             "case": "U1",
             "z_mm": 5225.0,
             "face": "bottom"
@@ -2949,9 +2949,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 3007.999999999999,
+            "as_min": 3007.9999999999995,
             "status": "PASS",
-            "demand": 3007.999999999999,
+            "demand": 3007.9999999999995,
             "case": "U1",
             "z_mm": 5676.2,
             "face": "bottom"
@@ -3143,9 +3143,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 6092.666666666665,
+            "as_min": 6092.666666666666,
             "status": "FAIL",
-            "demand": 6092.666666666665,
+            "demand": 6092.666666666666,
             "case": "U1",
             "z_mm": 775.0,
             "face": "bottom"
@@ -3209,9 +3209,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 6092.666666666665,
+            "as_min": 6092.666666666666,
             "status": "FAIL",
-            "demand": 6092.666666666665,
+            "demand": 6092.666666666666,
             "case": "U1",
             "z_mm": 2138.9,
             "face": "top"
@@ -3275,9 +3275,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 6092.666666666665,
+            "as_min": 6092.666666666666,
             "status": "FAIL",
-            "demand": 6092.666666666665,
+            "demand": 6092.666666666666,
             "case": "U1",
             "z_mm": 3000.000036087915,
             "face": "top"
@@ -3341,9 +3341,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 6092.666666666665,
+            "as_min": 6092.666666666666,
             "status": "FAIL",
-            "demand": 6092.666666666665,
+            "demand": 6092.666666666666,
             "case": "U1",
             "z_mm": 3861.1,
             "face": "top"
@@ -3529,9 +3529,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 6092.666666666665,
+            "as_min": 6092.666666666666,
             "status": "FAIL",
-            "demand": 6092.666666666665,
+            "demand": 6092.666666666666,
             "case": "U1",
             "z_mm": 775.0,
             "face": "bottom"
@@ -3593,9 +3593,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 6092.666666666665,
+            "as_min": 6092.666666666666,
             "status": "FAIL",
-            "demand": 6092.666666666665,
+            "demand": 6092.666666666666,
             "case": "U1",
             "z_mm": 2138.9,
             "face": "top"
@@ -3657,9 +3657,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 6092.666666666665,
+            "as_min": 6092.666666666666,
             "status": "FAIL",
-            "demand": 6092.666666666665,
+            "demand": 6092.666666666666,
             "case": "U1",
             "z_mm": 3000.000036087915,
             "face": "top"
@@ -3721,9 +3721,9 @@
           {
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
-            "as_min": 6092.666666666665,
+            "as_min": 6092.666666666666,
             "status": "FAIL",
-            "demand": 6092.666666666665,
+            "demand": 6092.666666666666,
             "case": "U1",
             "z_mm": 3861.1,
             "face": "top"

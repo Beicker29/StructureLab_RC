@@ -2435,6 +2435,49 @@
   - Combinada: ubicación por sus columnas y el aviso cuando no cuadran.
   - `run`: los SVG de la planta y la memoria sin ella.
 
+### D-131: d reportado en la flexión como centroide de las fuerzas del acero en tracción
+
+- **Fecha:** 2026-11-13
+- **Problema:** la memoria de la flexión reportaba d como el centroide de **áreas** de las barras con deformación
+  positiva. Con barras superiores apenas traccionadas, bajo un eje neutro muy alto, d bajaba aunque esas barras casi no
+  trabajen. En la franja de C_Ext de `zapata_combinada_etabs_m` daba d = 545 mm, contra 699.5 mm del band. Mn no estaba
+  mal: se calcula barra por barra, con su deformación, su esfuerzo y su brazo.
+- **Decisión de ingeniería del usuario:** d es el centroide de las **fuerzas** del acero en tracción,
+  d = Σ(Ai·fsi·di)/Σ(Ai·fsi), con fsi el esfuerzo de cada barra en el estado nominal y di desde la fibra extrema
+  comprimida. As sigue siendo el área total de esas barras.
+- **Alcance (pedido del usuario: "aplica para todo", una sola fuente):** toda d que se define como centroide del acero
+  en tracción de un estado sale de `mechanics.section.force_centroid`. Hoy aplica en vigas y en zapatas (viga larga,
+  franjas y viga de la T); los elementos futuros usan la misma función:
+  - el d que reporta la resistencia a flexión (`domain/beam/flexure._strength_data`);
+  - As,min del eje fuerte y del eje débil, con el acero que cuenta según D-025/D-081 y d no menor que 0.8h o 0.8 veces
+    el ancho (D-043, D-046);
+  - el cortante (y con él la torsión) y el cortante V3, con d no menor que 0.8h o 0.8bw (D-043, D-047).
+
+  No cambia Mn, que se calcula barra por barra. La clase del empalme de la viga de la T (D-129) usa el centroide
+  geométrico de las capas, porque allí no hay un estado de esfuerzos: no aplica.
+- **Huellas** (comparadas contra HEAD; ningún estado y ninguna solución de diseño cambian):
+
+  | Ejemplo | d antes (mm) | d ahora (mm) | Otros cambios |
+  | --- | --- | --- | --- |
+  | `viga_t` (una estación) | 361.6 | 377.6 | Vc 389.9 → 408.9 kN, φVn 420.2 → 440.7 kN |
+  | `zapata_combinada` | 417.4 / 382.6 | 593.6 / 552.3 | solo el d reportado |
+  | `diseno_combinada` | 207.9 | 295.1 | solo el d reportado |
+  | `diseno_t_invertida` | 407.8 | 831.4 | cortante de la viga: Vc 498.6 → 518.2 kN, razones menores |
+
+  En las franjas de la combinada, el d del cortante suele quedar en 0.8h, que no cambia. También cambian las
+  plantillas de ETABS combinadas, que tienen las mismas secciones.
+- **Oráculos** (con la nueva definición, sin importar el paquete; fs = mín(Es·εs, fy)):
+  - `derive_combined_beam.force_centroid`, que usan `derive_combined_beam`, `derive_inverted_t` y
+    `derive_deep_beam`. `derive_combined_columns` lo toma de `derive_combined_beam`.
+  - Cambian el cortante de las franjas del caso `superior-primero-y` (Vu a d de la cara y φVn, unos +0.3 %) y, en el
+    último decimal, valores de una sola capa (los dos centroides coinciden).
+  - `derive_deep_beam` no cambia.
+- **Control:**
+  - `test_strip_flexure_d_is_the_centroid_of_the_tension_forces`, en `tests/test_combined_footing.py`: recalcula cada
+    capa con εs = 0.003·(di − c)/c y fs = mín(Es·εs, fy) en las franjas del caso `band-superior`.
+  - `test_shear_depth_is_not_less_than_0_8h` pasa a Pu = −500 kN, con las dos capas en fluencia, para que el mínimo de
+    0.8h siga gobernando. El valor esperado, 400 mm, no cambia.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

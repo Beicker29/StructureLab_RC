@@ -138,9 +138,10 @@ def test_torsion_threshold_matches_hand_value() -> None:
 
 
 def test_shear_depth_is_not_less_than_0_8h() -> None:
-    # Con tracción axial casi toda la sección trabaja a tracción; d no se toma menor que 0.8h = 400 mm (D-043).
+    # Con tracción axial toda la sección trabaja a tracción; d no se toma menor que 0.8h = 400 mm (D-043). Con −500 kN
+    # las dos capas fluyen y el centroide de fuerzas (D-131) es el de áreas, unos 279 mm: gobierna el mínimo.
     layers = [{"bars": ["#6", "#6", "#6", "#6"], "depth": 62.0, "role": "flexure"}, BOTTOM[0]]
-    checks = _checks(_member(layers=layers, Mu_kNm=5.0, Pu_kN=-300.0, Vu_kN=20.0))
+    checks = _checks(_member(layers=layers, Mu_kNm=5.0, Pu_kN=-500.0, Vu_kN=20.0))
     assert dict(checks[STRENGTH].values)["d"] == pytest.approx(400.0)
     assert dict(_checks(_member())[STRENGTH].values)["d"] == pytest.approx(440.0)
 

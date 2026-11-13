@@ -2,8 +2,8 @@
 
 No importa el paquete. Unidades de trabajo: N y mm. Para una estación de una viga declarada alta:
 
-1. d del cortante: centroide de las capas de flexión a tracción por compatibilidad de deformaciones (bloque de Whitney,
-   como derive_combined_beam.py), no menor que 0.8h.
+1. d del cortante: centroide de las fuerzas de las capas de flexión a tracción, Σ(A·fs·d)/Σ(A·fs), por compatibilidad de
+   deformaciones (bloque de Whitney, como derive_combined_beam.py), no menor que 0.8h (D-131).
 2. Límite de sección: Vu ≤ 0.75·0.83·√f'c·bw·d (ACI 9.9.2.1; NSR-10 C.11.7.3 con √f'c ≤ 8.3 MPa).
 3. Refuerzo distribuido transversal: ramas·Ab/s ≥ 0.0025·bw (ACI 9.9.3.1(a); NSR-10 C.11.7.4.1); sin estribos no cumple.
 4. Refuerzo distribuido longitudinal: cada capa intermedia (todas las capas menos la superior y la inferior) frente a
@@ -50,10 +50,8 @@ def _d(member: dict, mu: float) -> float:
     flexural = [(layer["depth"] if mu >= 0 else h - layer["depth"], _area(layer)) for layer in layers if layer["role"] == "flexure"]
     state = _B._state(flexural, bw, h)
     assert state is not None
-    pulled = [(depth, area) for (depth, area), strain in zip(flexural, state["strains"], strict=True) if strain > 0]
-    total = sum(area for _, area in pulled)
-    centroid = sum(depth * area for depth, area in pulled) / total
-    return max(centroid, 0.8 * h)
+    pulled = [(depth, area, strain) for (depth, area), strain in zip(flexural, state["strains"], strict=True) if strain > 0]
+    return max(_B.force_centroid(pulled), 0.8 * h)  # D-131
 
 
 def _expected(folder: str, member: dict) -> list[dict]:

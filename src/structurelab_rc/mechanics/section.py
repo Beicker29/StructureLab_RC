@@ -7,9 +7,10 @@ bruta. Los momentos siguen la convención de ETABS: M3 positivo comprime la cara
 """
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import lru_cache
+from typing import Protocol
 
 from structurelab_rc.mechanics.materials import ConcreteBlock, NoEquilibrium, SteelModel
 from structurelab_rc.mechanics.polygon import Point, area_centroid, clip
@@ -52,6 +53,31 @@ class SectionState:
     mn3: float
     mn2: float
     bars: tuple[PointState, ...]
+
+
+class Stressed(Protocol):
+    """Una barra (o capa) en un estado: profundidad desde la fibra extrema comprimida, área y esfuerzo (positivo en
+    tracción)."""
+
+    @property
+    def depth(self) -> float: ...
+
+    @property
+    def area(self) -> float: ...
+
+    @property
+    def stress(self) -> float: ...
+
+
+def force_centroid(bars: Iterable[Stressed]) -> float | None:
+    """Profundidad del centroide de las fuerzas de las barras, Σ(Ai·fsi·di)/Σ(Ai·fsi); None si la fuerza es nula. Es la
+    d de las barras a tracción de un estado (decisión de ingeniería del usuario, D-131): una barra poco esforzada, cerca
+    del eje neutro, casi no la mueve."""
+    items = list(bars)
+    force = sum(bar.area * bar.stress for bar in items)
+    if force <= 0:
+        return None
+    return sum(bar.area * bar.stress * bar.depth for bar in items) / force
 
 
 @dataclass(frozen=True)

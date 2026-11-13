@@ -250,6 +250,13 @@ def _oriented(rows: list[dict], h: float, moment: float) -> list[tuple[float, fl
     return [(row["depth"] if moment >= 0 else h - row["depth"], row["area"]) for row in rows]
 
 
+def force_centroid(pulled: list[tuple[float, float, float]]) -> float:
+    """d de las capas a tracción (profundidad, área, deformación > 0) como centroide de sus fuerzas, Σ(A·fs·d)/Σ(A·fs),
+    con fs = mín(Es·εs, fy) (D-131)."""
+    forces = [(depth, area * min(ES * strain, FY)) for depth, area, strain in pulled]
+    return sum(depth * force for depth, force in forces) / sum(force for _, force in forces)
+
+
 
 def _side_bars(f: dict, rows: list[dict]) -> list[tuple[float, float, float]]:
     """(profundidad, recubrimiento lateral, área de la capa) de las barras en las caras laterales: la piel, a la
@@ -322,7 +329,8 @@ def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float, width
     # As,min: solo el acero a tracción del lado en tracción, más allá de h/2 desde la cara comprimida (D-081).
     tension = [(layer, strain > 0 and layer[0] > h / 2) for layer, strain in zip(layers, state["strains"], strict=True)]
     provided = sum(area for (depth, area), pulled in tension if pulled)
-    centroid = sum(depth * area for (depth, area), pulled in tension if pulled) / provided
+    centroid = force_centroid([(depth, area, strain) for ((depth, area), pulled), strain in zip(tension, state["strains"], strict=True)
+                               if pulled])
     d = max(centroid, 0.8 * h)
     as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * b * d
     minimum = {"name": "Flexion: acero minimo (M3)", "capacity": provided, "as_min": as_min}
@@ -392,9 +400,9 @@ def _vc_d(folder: str, f: dict, rows: list[dict], given: tuple[float, float], b:
     state = _state(layers, b, h)
     if state is None or not any(strain > 0 for strain in state["strains"]):
         return None
-    pulled = [(depth, area) for (depth, area), strain in zip(layers, state["strains"], strict=True) if strain > 0]
-    area = sum(a for _, a in pulled)
-    d = max(sum(depth * a for depth, a in pulled) / area, 0.8 * h)
+    pulled = [(depth, area, strain) for (depth, area), strain in zip(layers, state["strains"], strict=True) if strain > 0]
+    area = sum(a for _, a, _ in pulled)
+    d = max(force_centroid(pulled), 0.8 * h)  # D-131
     return _S._one_way_vc(folder, b, d, area / (b * d), abs(shear), abs(moment)), d
 
 

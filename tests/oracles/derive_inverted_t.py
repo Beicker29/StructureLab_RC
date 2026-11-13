@@ -173,13 +173,13 @@ def _beam_checks(folder: str, f: dict, rows: dict, given: tuple[float, float]) -
     phi = _F._phi(state["et"], profile)
     checks = [{"name": "Flexion: resistencia", "status": "PASS" if phi * state["Mn"] >= abs(moment) else "FAIL",
                "demand": abs(moment), "capacity": phi * state["Mn"]}]
-    pulled = [(depth, area) for (depth, area), strain in zip(layers, state["strains"], strict=True) if strain > 0]
-    tension = [(depth, area) for depth, area in pulled if depth > big / 2]
+    pulled = [(depth, area, strain) for (depth, area), strain in zip(layers, state["strains"], strict=True) if strain > 0]
+    tension = [item for item in pulled if item[0] > big / 2]
     if moment != 0 and tension:
         checks.append({"name": "Flexion: deformacion neta de traccion (M3)",
                        "status": "PASS" if state["et"] >= profile["strain_min"] else "FAIL", "capacity": state["et"]})
-        provided = sum(area for _, area in tension)
-        d = max(sum(depth * area for depth, area in tension) / provided, 0.8 * big)
+        provided = sum(area for _, area, _ in tension)
+        d = max(_B.force_centroid(tension), 0.8 * big)  # D-131
         width = bw
         flange = _flange(f)
         if moment > 0 and flange:  # ala a tracción en una viga isostática
@@ -190,8 +190,8 @@ def _beam_checks(folder: str, f: dict, rows: dict, given: tuple[float, float]) -
         checks.append({"name": "Flexion: acero minimo (M3)", "capacity": provided, "demand": as_min,
                        "status": "PASS" if provided >= as_min else "FAIL"})
     if pulled:
-        area = sum(a for _, a in pulled)
-        d = max(sum(depth * a for depth, a in pulled) / area, 0.8 * big)
+        area = sum(a for _, a, _ in pulled)
+        d = max(_B.force_centroid(pulled), 0.8 * big)  # D-131
         vc = _S._one_way_vc(folder, bw, d, area / (bw * d), abs(shear), abs(moment))
         stirrups = f["beam"].get("stirrups")
         transverse = 0.0 if stirrups is None else stirrups["legs"] * BARS[stirrups["designation"]][1] / stirrups["spacing"]

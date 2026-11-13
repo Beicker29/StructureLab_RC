@@ -15,7 +15,15 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.checks import COMBINED_STRUCTURAL
 from structurelab_rc.domain.footing.combined_beam import beam_case, long_beam_checks, two_way_warning
-from structurelab_rc.domain.footing.combined_columns import column_checks, strip_demands, strip_limits, transverse_bottom
+from structurelab_rc.domain.footing.combined_columns import (
+    band_row,
+    column_checks,
+    strip_demands,
+    strip_limits,
+    strip_member,
+    strip_top,
+    transverse_bottom,
+)
 from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
 from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.footing.mesh import mat_rows
@@ -570,3 +578,35 @@ def test_wide_footing_warns_about_two_way_behaviour(tmp_path: Path) -> None:
     results = json.loads((tmp_path / "salida" / "resultado.json").read_text(encoding="utf-8"))
     assert results["combined_footings"][0]["two_way_warning"]["ln [mm]"] == pytest.approx(4475.0)
     assert "puede trabajar en dos direcciones" in (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
+
+
+def test_strip_flexure_d_is_the_centroid_of_the_tension_forces() -> None:
+    """D-131: en la flexión, d es el centroide de las fuerzas del acero en tracción, Σ(Ai·fsi·di)/Σ(Ai·fsi): las barras
+    del band superior bajo el eje neutro, poco esforzadas, casi no lo mueven (antes era el centroide de áreas)."""
+    oracle = _oracle("nsr_10", "derived_combined_columns")
+    case = next(item for item in oracle["cases"] if item["id"] == "band-superior")
+    footing = CombinedFooting.model_validate(case["footing"])
+    materials = Materials.model_validate(oracle["materials"])
+    basis = Basis(PROFILES["nsr-10"], materials, BARS, oracle["seismic_level"])
+    soil = Soil.model_validate(oracle["soil"])
+    checks = column_checks(basis, footing, soil, combined_factored_cases(footing, soil)[0])
+    row = mat_rows(footing, footing.bottom, BARS)["y"]
+    checked = 0
+    for check in checks:
+        if check.name != "Flexion: resistencia" or not check.note.startswith("Franja") or "momento positivo" not in check.note:
+            continue
+        column = next(column for column in footing.columns if f"columna {column.id}" in check.note)
+        top, _ = strip_top(footing, column, row.depth, BARS)
+        member = strip_member(footing, column, (transverse_bottom(footing, row), band_row(footing, column, row, basis), top))
+        values = dict(check.values)
+        c = values["c"]
+        forces = []
+        for layer in member.stations[0].layout.layers:
+            strain = 0.003 * (layer.depth - c) / c
+            if strain > 0:
+                area = sum(next(bar.area_mm2 for bar in BARS if bar.designation == name) for name in layer.designations())
+                forces.append((area * min(200000.0 * strain, materials.fy), layer.depth))
+        expected = sum(force * depth for force, depth in forces) / sum(force for force, _ in forces)
+        assert values["d"] == pytest.approx(expected, rel=1e-3), check.note
+        checked += 1
+    assert checked

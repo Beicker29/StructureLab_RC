@@ -13,7 +13,7 @@ from structurelab_rc.errors import StructuredError, incomplete, invalid_input
 from structurelab_rc.mechanics.flexure import FlexureState, SteelLayer, compression_strips, flexure_state
 from structurelab_rc.mechanics.materials import NoEquilibrium
 from structurelab_rc.mechanics.roots import find_root
-from structurelab_rc.mechanics.section import SectionState, SteelPoint, biaxial_state, section_state
+from structurelab_rc.mechanics.section import SectionState, SteelPoint, biaxial_state, force_centroid, section_state
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.project import Demands, Materials, Member, Section
 from structurelab_rc.model.reinforcement import ReinforcementLayout
@@ -164,11 +164,11 @@ def _min_reinforcement(
             return check_from_errors(MIN_REINFORCEMENT, [incomplete("Falta declarar si el miembro es isostatico (ala a traccion)")])
         if member.statically_determinate:
             bw = profile.flexure.determinate_flange_width(section.bw, section.bf)
-    # Cuenta todo el acero a tracción en el estado nominal (D-025); d es su centroide, no menor que 0.8h (D-043).
+    # Cuenta el acero a tracción del estado nominal (D-025, D-081); d es el centroide de sus fuerzas (D-131), no menor
+    # que 0.8h (D-043).
     tension = [layer for layer in state.layers if _counts_for_minimum(layer.depth, layer.strain, section.h)]
     provided = sum(layer.area for layer in tension)
-    centroid = sum(layer.depth * layer.area for layer in tension) / provided if provided else 0.0
-    depth = max(centroid, MIN_DEPTH_RATIO * section.h)
+    depth = max(force_centroid(tension) or 0.0, MIN_DEPTH_RATIO * section.h)
     required = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, bw, depth)
     return _min_check(profile, MIN_REINFORCEMENT, (required, abs(mu)), provided, design)
 
@@ -206,8 +206,7 @@ def _weak_min_reinforcement(given: StationInput, weak: SectionState, m2: float) 
     section = member.section
     tension = [bar for bar in weak.bars if _counts_for_minimum(bar.depth, bar.strain, section.flange_width)]
     provided = sum(bar.area for bar in tension)
-    centroid = sum(bar.depth * bar.area for bar in tension) / provided if provided else 0.0
-    depth = max(centroid, MIN_DEPTH_RATIO * section.flange_width)
+    depth = max(force_centroid(tension) or 0.0, MIN_DEPTH_RATIO * section.flange_width)  # D-131
     required = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, section.h, depth)
     design = _weak_design(given, weak) if member.min_steel_exception else None
     return _min_check(profile, MIN_REINFORCEMENT_M2, (required, abs(m2)), provided, design)
@@ -292,13 +291,15 @@ def _strain_check(name: str, profile: Profile, materials: Materials, strain: flo
 
 def _strength_data(given: StationInput, state: SectionState) -> tuple[tuple[str, float], ...]:
     """Los datos de la resistencia, sin el procedimiento (D-097): ancho y altura de la sección, d y As del acero a tracción
-    (barras con deformación positiva; d desde la fibra extrema comprimida), f'c, fy, β1 y la profundidad a del bloque."""
+    (barras con deformación positiva), f'c, fy, β1 y la profundidad a del bloque. d es el centroide de las fuerzas de esas
+    barras, Σ(Ai·fsi·di)/Σ(Ai·fsi), desde la fibra extrema comprimida (decisión de ingeniería del usuario, D-131): una
+    capa poco esforzada (cerca del eje neutro) casi no lo mueve. Solo se reporta; Mn sale de cada barra con su brazo."""
     section, materials = given.member.section, given.materials
     tension = [bar for bar in state.bars if bar.strain > 0]
-    area = sum(bar.area for bar in tension)
+    depth = force_centroid(tension)
     data = [("b", section.bw), ("h", section.h)]
-    if area > 0:
-        data += [("d", sum(bar.depth * bar.area for bar in tension) / area), ("As", area)]
+    if depth is not None:
+        data += [("d", depth), ("As", sum(bar.area for bar in tension))]
     beta1 = given.profile.strength_assumptions.beta1(materials.fc)
     data += [("fc", materials.fc), ("fy", materials.fy), *([("beta1", beta1)] if beta1 is not None else []), ("a", state.a)]
     return tuple(data)

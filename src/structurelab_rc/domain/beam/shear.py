@@ -11,6 +11,7 @@ from structurelab_rc.domain.shear_strength import concrete_lambda as shared_conc
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, blocked, incomplete
 from structurelab_rc.mechanics.materials import NoEquilibrium
+from structurelab_rc.mechanics.section import force_centroid
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.project import Materials, Member, Station
 
@@ -54,7 +55,7 @@ def concrete_lambda(profile: Profile, materials: Materials) -> float | Check:
 def _tension_steel(
     profile: Profile, materials: Materials, member: Member, station: Station, bars: Sequence[RebarSpec]
 ) -> tuple[float, float] | Check:
-    """Área del acero a tracción y d del cortante: su centroide, no menor que 0.8h (D-043)."""
+    """Área del acero a tracción y d del cortante: el centroide de sus fuerzas (D-131), no menor que 0.8h (D-043)."""
     layers = steel_layers(station.layout, bars)
     if isinstance(layers, StructuredError):
         return check_from_errors(STRENGTH, [layers])
@@ -65,10 +66,9 @@ def _tension_steel(
     if isinstance(state, StructuredError):
         return check_from_errors(STRENGTH, [state])
     tension = [layer for layer in state.layers if layer.strain > 0]
-    area = sum(layer.area for layer in tension)
-    if area == 0:
+    area, centroid = sum(layer.area for layer in tension), force_centroid(tension)
+    if centroid is None:
         return check_from_errors(STRENGTH, [blocked("No hay acero a traccion para definir d")])
-    centroid = sum(layer.depth * layer.area for layer in tension) / area
     return area, max(centroid, MIN_DEPTH_RATIO * member.section.h)
 
 
@@ -163,7 +163,8 @@ def shear_checks(given: StationInput) -> tuple[Check, ...]:
 
 
 def _weak_tension(given: StationInput) -> tuple[float, float] | Check:
-    """Área a tracción del estado de M2 solo y d del cortante V3: su centroide, no menor que 0.8bw (D-047)."""
+    """Área a tracción del estado de M2 solo y d del cortante V3: el centroide de sus fuerzas (D-131), no menor que
+    0.8bw (D-047)."""
     try:
         states = section_states(given)
     except NoEquilibrium:
@@ -171,10 +172,9 @@ def _weak_tension(given: StationInput) -> tuple[float, float] | Check:
     if isinstance(states, StructuredError):
         return check_from_errors(STRENGTH_V3, [states])
     tension = [bar for bar in states[1].bars if bar.strain > 0]
-    area = sum(bar.area for bar in tension)
-    if area == 0:
+    area, centroid = sum(bar.area for bar in tension), force_centroid(tension)
+    if centroid is None:
         return check_from_errors(STRENGTH_V3, [blocked("No hay acero a traccion en el eje debil para definir d")])
-    centroid = sum(bar.depth * bar.area for bar in tension) / area
     return area, max(centroid, MIN_DEPTH_RATIO * given.member.section.bw)
 
 
