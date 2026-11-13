@@ -88,7 +88,7 @@
   },
   "principal_direction": "y",
   "combined_design": {
-    "min_steel_exception": false,
+    "min_steel_exception": true,
     "fc_options": [24.5],
     "prices": {
       "concrete_per_m3": {
@@ -131,19 +131,19 @@
   "columns": [
     {
       "id": "C_Ext",
-      "etabs_unique_name": "1639",
+      "etabs_unique_name": "276",
       "cx": 1100.0,
       "cy": 500.0,
       "x": 0.0,
-      "y": -2330
+      "y": 2500
     },
     {
       "id": "C_Int",
-      "etabs_unique_name": "1614",
-      "cx": 450.0,
-      "cy": 800.0,
+      "etabs_unique_name": "288",
+      "cx": 1100,
+      "cy": 500.0,
       "x": 0.0,
-      "y": 1750.0
+      "y": -1580
     }
   ]
 }

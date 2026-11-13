@@ -32,12 +32,11 @@
   "combined_design": {
     "min_steel_exception": false,
     "fc_options": [
-      21.0,
-      28.0
+      24.5
     ],
     "prices": {
       "concrete_per_m3": {
-        "21": 520000.0,
+        "24.5": 520000.0,
         "28": 575000.0
       },
       "steel_per_kg": 6200.0

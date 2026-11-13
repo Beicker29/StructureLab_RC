@@ -17,8 +17,14 @@
     "coating": "uncoated",
     "max_aggregate": 19.0
   },
+  "detailing": {
+    "stock_length_mm": 12000.0
+  },
+  "drawing": {
+    "scale": 50.0
+  },
   "soil": {
-    "allowable_pressure_kPa": 300.0,
+    "allowable_pressure_kPa": 294.0,
     "min_contact_fraction": 0.5,
     "unit_weight_concrete_kNm3": 24.0,
     "unit_weight_fill_kNm3": 18.0,
@@ -90,11 +96,11 @@
   "combined_footings": [
     {
       "id": "ZC_B-K",
-      "min_steel_exception": false,
+      "min_steel_exception": true,
       "principal_direction": "y",
-      "lx": 4300,
-      "ly": 5900,
-      "h": 900.0,
+      "lx": 3400,
+      "ly": 6200,
+      "h": 850,
       "cover": 75.0,
       "fill_height": 300.0,
       "pedestal_height": 0.0,
@@ -107,42 +113,42 @@
       "columns": [
         {
           "id": "C_Ext",
-          "etabs_unique_name": "1643",
-          "cx": 1100.0,
-          "cy": 500.0,
+          "etabs_unique_name": "1638",
+          "cx": 500.0,
+          "cy": 1100.0,
           "x": 0.0,
-          "y": 2250,
+          "y": 2200,
           "dowels": {
             "designation": "#6",
             "count": 12
           },
           "band": {
-            "designation": "#8",
-            "spacing": 80
+            "designation": "#7",
+            "spacing": 140
           },
           "band_top": {
-            "designation": "#6",
-            "spacing": 120
+            "designation": "#4",
+            "spacing": 140
           }
         },
         {
           "id": "C_Int",
-          "etabs_unique_name": "1628",
-          "cx": 450.0,
+          "etabs_unique_name": "1612",
+          "cx": 500.0,
           "cy": 800.0,
           "x": 0.0,
-          "y": -1830,
+          "y": -1580,
           "dowels": {
             "designation": "#6",
             "count": 12
           },
           "band": {
-            "designation": "#8",
-            "spacing": 80
+            "designation": "#7",
+            "spacing": 120
           },
           "band_top": {
-            "designation": "#6",
-            "spacing": 150
+            "designation": "#4",
+            "spacing": 120
           }
         }
       ],
@@ -150,24 +156,24 @@
         "first": "y",
         "end": "straight",
         "x": {
-          "designation": "#6",
-          "spacing": 120
+          "designation": "#4",
+          "spacing": 150
         },
         "y": {
-          "designation": "#7",
-          "spacing": 130
+          "designation": "#6",
+          "spacing": 150
         }
       },
       "top": {
         "first": "x",
         "end": "straight",
         "x": {
-          "designation": "#6",
-          "spacing": 120.0
+          "designation": "#4",
+          "spacing": 150.0
         },
         "y": {
           "designation": "#7",
-          "spacing": 120
+          "spacing": 150
         }
       },
       "skin": {
