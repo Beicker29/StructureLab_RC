@@ -15,6 +15,11 @@ Geometría (independiente de detailing/schedule.py): longitud por el eje = tramo
 - Barra recta de largo L > longitud comercial S con traslapo t: el patrón A corta S, S, …; el patrón B empieza con S/2.
 Todas las longitudes de corte se redondean hacia arriba a 50 mm.
 
+Clase del empalme (D-129): ACI Tabla 25.5.2.1 y NSR-10 C.12.15.2, clase A si As provisto / As requerido por análisis
+≥ 2 y se empalma la mitad o menos. As requerido de una sección rectangular b × h con una capa a d, bloque de Whitney
+(β1 = 0.85 con f'c = 28 MPa), controlada por tracción (φ = 0.9, se comprueba εt ≥ 0.005):
+    Mu = φ·As·fy·(d − As·fy/(1.7·f'c·b))  →  As = [d − √(d² − 2Mu/(φ·0.85·f'c·b))]·0.85·f'c·b/fy.
+
 Uso: python tests/oracles/derive_detailing.py
 """
 
@@ -75,9 +80,31 @@ def tension_lap(db: float, cb: float) -> dict:
     return {"ld": ld, "A": max(ld, 300.0), "B": max(1.3 * ld, 300.0)}
 
 
+def required_steel(b: float, d: float, mu: float) -> float:
+    """As por análisis con φ = 0.9 (comprueba que la sección queda controlada por tracción)."""
+    k = 0.85 * FC * b
+    area = (d - math.sqrt(d * d - 2.0 * mu / (0.9 * k))) * k / FY
+    c = area * FY / k / 0.85
+    assert 0.003 * (d - c) / c >= 0.005, "la sección no queda controlada por tracción"
+    return area
+
+
+def splice_cases() -> list[dict]:
+    """Malla de 1000 × 500 mm con d = 420 mm y As = 1000 mm²: momento bajo (clase A), alto (clase B) y nulo."""
+    cases = []
+    for name, mu in (("momento bajo", 60e6), ("momento alto", 150e6)):
+        required = required_steel(1000.0, 420.0, mu)
+        ratio = 1000.0 / required
+        cases.append({"name": name, "b": 1000.0, "h": 500.0, "d": 420.0, "provided": 1000.0, "Mu": mu,
+                      "required": required, "ratio": ratio, "class": "A" if ratio >= 2.0 else "B"})
+    cases.append({"name": "sin momento", "b": 1000.0, "h": 500.0, "d": 420.0, "provided": 1000.0, "Mu": 0.0,
+                  "required": 0.0, "ratio": None, "class": "A"})
+    return cases
+
+
 def derive(folder: str) -> dict:
     return {
-        "source": "derive_detailing.py (D-125)",
+        "source": "derive_detailing.py (D-125, D-129)",
         "hooks": {name: hook(folder, db) for name, db in BARS.items()},
         "stirrups": {name: stirrup(folder, db) for name, db in BARS.items() if name in ("#4", "#5")},
         "u_bar": {"designation": "#6", "A": 2850.0, **u_bar(folder, BARS["#6"], 2850.0)},
@@ -86,6 +113,7 @@ def derive(folder: str) -> dict:
                     "pattern_a": spliced(6850.0, 6000.0, 833.0, 6000.0), "pattern_b": spliced(6850.0, 6000.0, 833.0, 3000.0)},
         "tension_lap": {"designation": "#6", "cb": 84.55, **tension_lap(BARS["#6"], 84.55)},
         "compression_lap": {"designation": "#6", "length": max(0.071 * FY * BARS["#6"], 300.0)},
+        "splice_class": splice_cases(),
     }
 
 

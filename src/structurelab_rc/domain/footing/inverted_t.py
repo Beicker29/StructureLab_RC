@@ -135,6 +135,17 @@ class Flanges:
         return max(options, key=lambda item: item[1])
 
 
+def flange_envelope(footing: CombinedFooting, depth: float, cases: Cases) -> tuple[float, float]:
+    """(mayor momento positivo, mayor momento negativo con signo positivo) de las aletas por unidad de longitud en todos
+    los casos (N·mm/mm), con d de la malla y: la clase de los empalmes de sus barras (D-129)."""
+    positive = negative = 0.0
+    for pressure, _ in cases:
+        flanges = Flanges(footing, pressure, depth)
+        positive = max(positive, flanges.governing("moment")[1])
+        negative = max(negative, flanges.governing("negative")[1])
+    return positive, negative
+
+
 def _side(side: float) -> str:
     return "+Y" if side > 0 else "-Y"
 

@@ -28,6 +28,32 @@ REQUIRED_UNITS = {"FX": "kN", "FY": "kN", "FZ": "kN", "MX": "kN-m", "MY": "kN-m"
 REQUIRED_COLUMNS = ("Label", "Unique Name", "Output Case", "Case Type", "Step Type", *REQUIRED_UNITS)
 
 
+LOCATION_SHEET = "Point Object Connectivity"  # tabla de coordenadas de los nudos de ETABS (D-130)
+LOCATION_UNITS = {"X": "m", "Y": "m"}
+LOCATION_COLUMNS = ("UniqueName", "Story", *LOCATION_UNITS)
+MM_PER_M = 1000.0
+
+
+def locations_by_joint(table: Table | None, names: list[str]) -> dict[str, dict[str, Any]]:
+    """La ubicación (formato de entrada, en mm) de cada Unique Name de names en la tabla de coordenadas de ETABS (D-130);
+    {} sin tabla. Lanza EtabsImportError si faltan columnas, unidades o nudos."""
+    if table is None:
+        return {}
+    errors = [invalid_input(f"Falta la columna '{column}' en la tabla de coordenadas") for column in LOCATION_COLUMNS
+              if column not in table.headers]
+    errors += [invalid_input(f"La columna '{column}' de la tabla de coordenadas debe venir en {unit}; viene en "
+                             f"'{table.units.get(column)}'") for column, unit in LOCATION_UNITS.items()
+               if column in table.headers and table.units.get(column) != unit]
+    if errors:
+        raise EtabsImportError(tuple(errors))
+    rows = {row["UniqueName"]: row for row in table.rows}
+    missing = [name for name in names if name not in rows]
+    if missing:
+        raise EtabsImportError((invalid_input(f"La tabla de coordenadas no tiene los Unique Name {', '.join(missing)}"),))
+    return {name: {"x": float(rows[name]["X"]) * MM_PER_M, "y": float(rows[name]["Y"]) * MM_PER_M,
+                   "story": rows[name]["Story"], "joint": name} for name in names}
+
+
 @dataclass(frozen=True)
 class FootingImportSummary:
     footings: int
@@ -118,9 +144,15 @@ def _summary(items: list[dict[str, Any]], skipped: int) -> FootingImportSummary:
                                 tuple(sorted({load["case"] for load in loads if load["kind"] == "factored"})), skipped)
 
 
-def _combined_footings(template: EtabsFootingTemplate, joints: list[_Joint]) -> list[dict[str, Any]]:
+def _located(locations: dict[str, dict[str, Any]], name: str) -> dict[str, Any]:
+    """{"location": ...} del nudo si hay tabla de coordenadas (D-130); {} si no."""
+    return {"location": locations[name]} if name in locations else {}
+
+
+def _combined_footings(template: EtabsFootingTemplate, joints: list[_Joint],
+                       locations: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     """Zapatas combinadas del proyecto (D-084): cada columna con las cargas de su nudo de los tipos que vienen de ETABS y
-    las de la plantilla de los demás."""
+    las de la plantilla de los demás, y su ubicación si hay tabla de coordenadas (D-130)."""
     loads = {(joint.group, joint.unique_name): joint.loads for joint in joints}
     footings = []
     for footing in template.combined_footings:
@@ -128,26 +160,30 @@ def _combined_footings(template: EtabsFootingTemplate, joints: list[_Joint]) -> 
         columns = []
         for column in footing.columns:
             own = column.model_dump(mode="json", exclude={"etabs_unique_name", "loads"}, exclude_none=True)
-            columns.append({**own, "loads": [*loads.get((footing.id, column.etabs_unique_name), []), *column.loads]})
+            columns.append({**own, **_located(locations, column.etabs_unique_name),
+                            "loads": [*loads.get((footing.id, column.etabs_unique_name), []), *column.loads]})
         footings.append({**data, "columns": columns})
     return footings
 
 
 def build_footing_project(
-    template: EtabsFootingTemplate, service: Table | None, factored: Table | None
+    template: EtabsFootingTemplate, service: Table | None, factored: Table | None, coordinates: Table | None = None
 ) -> tuple[dict[str, Any], FootingImportSummary]:
     """Proyecto de verificación en el formato de entrada JSON: una zapata aislada por nudo con la tipología de su grupo y
     las zapatas combinadas con las cargas de sus dos nudos (D-084). Un Excel puede omitirse (None) si ningún grupo pide
-    cargas de su tipo."""
+    cargas de su tipo. Con la tabla de coordenadas (D-130), cada zapata aislada lleva la ubicación de su nudo y el tipo
+    (su grupo), y cada columna de las combinadas la suya."""
     groups: list[Group] = [(footing.id, footing.etabs_unique_names, BOTH) for footing in template.footings]
     groups += [(footing.id, tuple(column.etabs_unique_name for column in footing.columns), footing.etabs_kinds())
                for footing in template.combined_footings]
     joints, skipped = _joint_loads(template.load_factors, {"service": service, "factored": factored}, groups)
+    locations = locations_by_joint(coordinates, [name for _, names, _ in groups for name in names])
     isolated = {footing.id for footing in template.footings}
     bases = {footing.id: footing.model_dump(mode="json", exclude={"id", "etabs_unique_names"}) for footing in template.footings}
-    footings = [{"id": f"{joint.group}-{joint.label}", **bases[joint.group], "loads": joint.loads} for joint in joints
-                if joint.group in isolated]
-    combined = _combined_footings(template, [joint for joint in joints if joint.group not in isolated])
+    footings = [{"id": f"{joint.group}-{joint.label}", **bases[joint.group], "loads": joint.loads,
+                 **({"typology": joint.group, **_located(locations, joint.unique_name)} if locations else {})}
+                for joint in joints if joint.group in isolated]
+    combined = _combined_footings(template, [joint for joint in joints if joint.group not in isolated], locations)
     project = template.model_dump(mode="json", exclude={"load_factors", "footings", "combined_footings", "etabs_files"})
     if footings:
         project["footings"] = footings
@@ -158,17 +194,19 @@ def build_footing_project(
 
 
 def build_footing_design_project(
-    template: EtabsFootingDesignTemplate, service: Table | None, factored: Table | None
+    template: EtabsFootingDesignTemplate, service: Table | None, factored: Table | None, coordinates: Table | None = None
 ) -> tuple[dict[str, Any], FootingImportSummary]:
-    """Proyecto de diseño por tipologías (D-069): una columna por nudo listado y no excluido, con su sección y sus casos
-    de carga. Los Unique Name de los Excel que no entran se avisan en el resumen y en la descripción (D-111)."""
+    """Proyecto de diseño por tipologías (D-069): una columna por nudo listado y no excluido, con su sección, sus casos
+    de carga y, con la tabla de coordenadas, su ubicación (D-130). Los Unique Name de los Excel que no entran se avisan
+    en el resumen y en la descripción (D-111)."""
     excluded = set(template.exclude_unique_names)
     groups: list[Group] = [(str(index), tuple(name for name in group.etabs_unique_names if name not in excluded), BOTH)
                            for index, group in enumerate(template.columns)]
     joints, skipped = _joint_loads(template.load_factors, {"service": service, "factored": factored}, groups)
+    locations = locations_by_joint(coordinates, [joint.unique_name for joint in joints])
     sections = {str(index): group for index, group in enumerate(template.columns)}
-    columns = [{"id": joint.label, "cx": sections[joint.group].cx, "cy": sections[joint.group].cy, "loads": joint.loads}
-               for joint in joints]
+    columns = [{"id": joint.label, "cx": sections[joint.group].cx, "cy": sections[joint.group].cy,
+                **_located(locations, joint.unique_name), "loads": joint.loads} for joint in joints]
     project = template.model_dump(mode="json", exclude={"load_factors", "columns", "etabs_files", "exclude_unique_names"})
     project["columns"] = columns
     used = {joint.unique_name for joint in joints}

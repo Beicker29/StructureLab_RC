@@ -1,6 +1,8 @@
 {
   "description": "Plantilla de importación de zapatas para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (73 apoyos en 4 niveles de cimentación). DATOS DE EJEMPLO: dimensiones, columnas, mallas, suelo, relleno y sobrecargas son supuestos para probar la importación; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3.",
-  "etabs_files": {"service": "../../../etabs/zapatas/pruebas/Joint Reactions - Servicio.xlsx", "factored": "../../../etabs/zapatas/pruebas/Joint Reactions - Ultimas.xlsx"},
+  "etabs_files": {"service": "../../../etabs/zapatas/pruebas/Joint Reactions - Servicio.xlsx", "factored": "../../../etabs/zapatas/pruebas/Joint Reactions - Ultimas.xlsx", "locations": "../../../etabs/zapatas/pruebas/Joint Location.xlsx"},
+  "detailing": {"stock_length_mm": 12000.0},
+  "drawing": {"scale": 50.0},
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",

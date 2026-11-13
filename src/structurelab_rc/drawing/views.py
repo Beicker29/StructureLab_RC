@@ -83,6 +83,33 @@ def _title(drawing: Drawing, view: View, scaled: bool = True) -> None:
     view.entities.append(Text("TEXTOS", ((x0 + x1) / 2, y0 - 2 * drawing.gap()), text, drawing.text_height(), align="center"))
 
 
+def titled(drawing: Drawing, view: View) -> View:
+    """La vista con su título y la escala debajo de lo dibujado."""
+    _title(drawing, view)
+    return view
+
+
+def table_view(drawing: Drawing, names: tuple[str, str], columns: tuple[tuple[str, float], ...], rows: list[list[str]]) -> View:
+    """Una tabla (names = nombre y título) con encabezados y filas de texto; columns = (encabezado, ancho en mm de papel)."""
+    scale, small = drawing.scale, drawing.text_height(small=True)
+    view = View(*names)
+    width = sum(size for _, size in columns) * scale
+    lefts = [sum(size for _, size in columns[:index]) * scale for index in range(len(columns))]
+    header, row_height = _HEADER * scale, _HEADER * scale
+    bottom = -header - row_height * len(rows)
+    view.entities.append(rectangle("CARTILLA", (0.0, 0.0), (width, bottom)))
+    view.entities += [Line("CARTILLA", (left, 0.0), (left, bottom)) for left in lefts[1:]]
+    view.entities += [Text("CARTILLA", (left + size * scale / 2, -header * 0.65), name, small, align="center")
+                      for (name, size), left in zip(columns, lefts, strict=True)]
+    for index, row in enumerate(rows):
+        top = -header - index * row_height
+        view.entities.append(Line("CARTILLA", (0.0, top), (width, top)))
+        view.entities += [Text("CARTILLA", (left + size * scale / 2, top - row_height * 0.65), text, small, align="center")
+                          for text, (_, size), left in zip(row, columns, lefts, strict=True) if text]
+    _title(drawing, view, scaled=False)
+    return view
+
+
 def plan_view(drawing: Drawing, names: tuple[str, str], outline: tuple[list[Polyline], list[tuple[str, Polyline]]],
               marked: list[Marked], layer: tuple[float, bool]) -> View:
     """Planta (names = nombre y título) del refuerzo inferior o superior: el concreto y las columnas de outline y las

@@ -569,7 +569,7 @@ def test_column_cost_comes_from_the_cartilla_with_detailing() -> None:
     column, dowels = detailed.project.columns[0], {"designation": "#5", "count": 4}
     cost, concrete, steel = column_cost(detailed, typology, column, dowels)
     basis = Basis(detailed.profile, detailed.materials(21.0), BARS, detailed.project.seismic.level)
-    runs = footing_runs(basis, typology_module.footing_for(detailed, typology, column, dowels))
+    runs = footing_runs(basis, typology_module.footing_for(detailed, typology, column, dowels), detailed.soil)
     assert steel == pytest.approx(sum(row.mass for row in schedule(column.id, runs, 6000.0)))
     assert cost == pytest.approx(concrete * 500000.0 + steel * 6000.0)
     estimate = column_cost(plain, typology, column, dowels)

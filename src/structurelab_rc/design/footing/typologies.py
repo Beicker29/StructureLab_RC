@@ -655,8 +655,10 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
         t = typology.design.typology
         for column_id in typology.columns:
             column = columns[column_id]
+            # D-130: la ubicación de la columna y el tipo pasan a la zapata, para la planta de localización.
+            located = {} if column.location is None else {"typology": typology.name, "location": column.location.model_dump()}
             footings.append({
-                "id": f"{typology.name}-{column_id}", "lx": t.lx, "ly": t.ly, "h": t.h, "cover": design.cover,
+                "id": f"{typology.name}-{column_id}", **located, "lx": t.lx, "ly": t.ly, "h": t.h, "cover": design.cover,
                 "fill_height": design.fill_height, "pedestal_height": design.pedestal_height,
                 "surcharge_dead_kNm2": design.surcharge_dead, "surcharge_live_kNm2": design.surcharge_live,
                 "column": {"cx": column.cx, "cy": column.cy, "offset_x": 0.0, "offset_y": 0.0,

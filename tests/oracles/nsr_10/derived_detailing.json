@@ -1,5 +1,5 @@
 {
-  "source": "derive_detailing.py (D-125)",
+  "source": "derive_detailing.py (D-125, D-129)",
   "hooks": {
     "#4": {
       "bend": 76.19999999999999,
@@ -67,5 +67,40 @@
   "compression_lap": {
     "designation": "#6",
     "length": 569.562
-  }
+  },
+  "splice_class": [
+    {
+      "name": "momento bajo",
+      "b": 1000.0,
+      "h": 500.0,
+      "d": 420.0,
+      "provided": 1000.0,
+      "Mu": 60000000.0,
+      "required": 380.9782012445699,
+      "ratio": 2.6248220941072886,
+      "class": "A"
+    },
+    {
+      "name": "momento alto",
+      "b": 1000.0,
+      "h": 500.0,
+      "d": 420.0,
+      "provided": 1000.0,
+      "Mu": 150000000.0,
+      "required": 964.3599821144701,
+      "ratio": 1.0369571721623962,
+      "class": "B"
+    },
+    {
+      "name": "sin momento",
+      "b": 1000.0,
+      "h": 500.0,
+      "d": 420.0,
+      "provided": 1000.0,
+      "Mu": 0.0,
+      "required": 0.0,
+      "ratio": null,
+      "class": "A"
+    }
+  ]
 }

@@ -9,7 +9,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator, model_validator
 
-from structurelab_rc.model.footing import FootingLoad, Soil
+from structurelab_rc.model.footing import FootingLoad, Location, Soil
 from structurelab_rc.model.project import Coating, DetailingSettings, DrawingSettings, SeismicFacts
 
 COMMERCIAL_FC = (21.0, 24.5, 28.0, 31.5, 35.0, 42.0, 48.0)  # MPa
@@ -108,11 +108,13 @@ class FootingDesign(DesignLimits):
 
 
 class DesignColumn(_Input):
-    """Columna a cimentar: sección cx × cy (cx a lo largo de X) y sus casos de carga en la base."""
+    """Columna a cimentar: sección cx × cy (cx a lo largo de X) y sus casos de carga en la base; location (opcional,
+    D-130) pasa a su zapata en el proyecto diseñado, para la planta de localización."""
 
     id: str = Field(min_length=1)
     cx: PositiveFloat
     cy: PositiveFloat
+    location: Location | None = None
     loads: tuple[FootingLoad, ...] = Field(min_length=1)
 
 

@@ -9,7 +9,7 @@ from typing import Any, Literal, Self
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
-from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Mat, RectangularBase, Soil, _Input
+from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Location, Mat, RectangularBase, Soil, _Input
 from structurelab_rc.model.reinforcement import BarLayer, Stirrups
 
 COLUMNS = 2
@@ -93,13 +93,15 @@ class CombinedColumn(_Input):
     paralelo a Y, en el ancho de su franja (opcional): si lo hay, es el único refuerzo inferior transversal de esa zona y
     la malla inferior en Y va fuera de ella (D-097). band_top es lo mismo arriba (D-119): las barras superiores
     transversales de la franja, para su momento negativo y el de la torsión de placa; si lo hay, top.y va fuera de esa
-    zona. loads son sus casos de carga en la base de la columna."""
+    zona. loads son sus casos de carga en la base de la columna. location (opcional, D-130) es su eje en el proyecto, en
+    ejes globales: no se rota con la zapata."""
 
     id: str = Field(min_length=1)
     cx: PositiveFloat
     cy: PositiveFloat
     x: float
     y: float
+    location: Location | None = None
     dowels: Dowels | None = None
     band: BarSet | None = None
     band_top: BarSet | None = None

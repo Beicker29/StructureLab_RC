@@ -12,3 +12,4 @@ datos: [aci_318_25/zapatas](../../aci_318_25/zapatas/LEEME.md) y [nsr_10/zapatas
 | --- | --- |
 | `Joint Reactions - Servicio.xlsx` | Tabla "Joint Reactions" de ETABS con las combinaciones de servicio (73 apoyos en 4 niveles de cimentación). |
 | `Joint Reactions - Ultimas.xlsx` | Tabla "Joint Reactions" con las combinaciones mayoradas de los mismos apoyos. |
+| `Joint Location.xlsx` | Tabla "Point Object Connectivity" con las coordenadas de los nudos del modelo (1412 puntos, X e Y en m): la planta de localización (`etabs_files.locations`, D-130). |

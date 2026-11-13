@@ -91,8 +91,8 @@ def _optional_path(value: str) -> Path | None:
     return None if value == "-" else Path(value)
 
 
-def _import_etabs_footings(service: str, factored: str, template: Path, output: Path) -> int:
-    project, summary, check = import_etabs_footings(_optional_path(service), _optional_path(factored), template)
+def _import_etabs_footings(service: str, factored: str, template: Path, output: Path, locations: Path | None = None) -> int:
+    project, summary, check = import_etabs_footings(_optional_path(service), _optional_path(factored), template, locations)
     print(f"{check.name}: {check.status}")
     _print_errors(check)
     if project is None or summary is None or check.status is Status.FAIL:
@@ -308,7 +308,7 @@ def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
         assert plan.workbook is not None
         code = _import_etabs(plan.workbook, plan.path, imported)
     else:
-        code = _import_etabs_footings(str(plan.service or "-"), str(plan.factored or "-"), plan.path, imported)
+        code = _import_etabs_footings(str(plan.service or "-"), str(plan.factored or "-"), plan.path, imported, plan.locations)
     if code:
         return code
     if plan.kind == "etabs_design":
@@ -364,6 +364,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     footings.add_argument("factored", help="Excel de ETABS con las reacciones mayoradas (Joint Reactions), o - para omitirlo")
     footings.add_argument("template", type=Path, help="plantilla JSON con los tipos de zapata y el suelo")
     footings.add_argument("--output", type=Path, required=True, help="ruta del proyecto JSON a escribir")
+    footings.add_argument("--locations", type=Path, default=None,
+                          help="Excel de ETABS con las coordenadas de los nudos (Point Object Connectivity), para la planta de "
+                               "localizacion (D-130)")
     designer = commands.add_parser("design-footings", help="disena zapatas por tipologias desde un proyecto de diseno")
     designer.add_argument("project", type=Path, help="proyecto de diseno en JSON (columnas y bloque design)")
     designer.add_argument("--output", type=Path, required=True, help="carpeta donde escribir proyecto.json y tipologias.json")
@@ -400,7 +403,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "design-footings": lambda: _design_footings(args.project, args.output, args.workers, args.profile, args.method),
         "design-combined": lambda: _design_combined(args.project, args.output, args.workers),
         "typology-curve": lambda: _typology_curve(args.project, args.output, args.n, args.workers, args.method),
-        "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output),
+        "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output,
+                                                                args.locations),
         "import-etabs": lambda: _import_etabs(args.workbook, args.template, args.output),
         "validate": lambda: _validate(args.project),
         "verify": lambda: _verify(args.project),

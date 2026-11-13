@@ -240,7 +240,7 @@ def column_cost(ctx: Context, typology: Typology, column: DesignColumn, dowels: 
     detailing = ctx.project.detailing
     if detailing is not None and not estimate:
         basis = Basis(ctx.profile, ctx.materials(typology.fc), ctx.bars, ctx.project.seismic.level)
-        runs = footing_runs(basis, footing_for(ctx, typology, column, dowels))
+        runs = footing_runs(basis, footing_for(ctx, typology, column, dowels), ctx.soil)
         steel = sum(row.mass for row in schedule(column.id, runs, detailing.stock_length))
     else:
         steel = _mat_mass(ctx, typology, typology.bottom) + (0.0 if typology.top is None else _mat_mass(ctx, typology, typology.top))

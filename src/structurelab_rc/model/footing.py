@@ -94,6 +94,17 @@ class Dowels(_Input):
     count: int = Field(ge=1)
 
 
+class Location(_Input):
+    """Dónde está el eje de una columna en el proyecto (D-130), para la planta de localización: x e y globales en mm, el
+    nivel (story) y el nudo de ETABS (joint). Lo llena el importador desde la tabla de coordenadas de ETABS o se declara;
+    el cálculo no lo usa."""
+
+    x: float
+    y: float
+    story: str = Field(min_length=1)
+    joint: str = Field(min_length=1)
+
+
 class Column(_Input):
     """Columna rectangular cx × cy (cx a lo largo de X); offset_x y offset_y ubican su eje respecto al centroide de la base.
 
@@ -228,10 +239,13 @@ class Footing(RectangularBase, _Input):
     """Zapata aislada de espesor h. fill_height es la altura del relleno sobre la zapata y pedestal_height la del
     pedestal, que tiene la sección de la columna; cover es el recubrimiento libre de las mallas. top es la malla
     superior, o None si no la hay. surcharge_dead y surcharge_live son las sobrecargas superimpuestas muerta y viva
-    sobre el relleno, repartidas en el área de la base menos la de la columna (D-057).
+    sobre el relleno, repartidas en el área de la base menos la de la columna (D-057). location y typology (opcionales,
+    D-130) ubican la columna en el proyecto y dan el tipo que rotula la planta de localización.
     """
 
     id: str = Field(min_length=1)
+    location: Location | None = None
+    typology: str | None = Field(default=None, min_length=1)
     lx: PositiveFloat
     ly: PositiveFloat
     h: PositiveFloat

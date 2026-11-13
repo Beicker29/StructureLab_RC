@@ -54,10 +54,12 @@ class BeamEtabsFiles(_Input):
 
 class FootingEtabsFiles(_Input):
     """Los Excel de ETABS de una plantilla de zapatas, con rutas relativas a la plantilla (D-096): `run` los usa. Uno
-    puede faltar si ninguna zapata toma de ETABS cargas de ese tipo (D-084)."""
+    puede faltar si ninguna zapata toma de ETABS cargas de ese tipo (D-084). locations (opcional, D-130) es la tabla de
+    coordenadas de los nudos ("Point Object Connectivity"), para la planta de localización."""
 
     service: str | None = Field(default=None, min_length=1)
     factored: str | None = Field(default=None, min_length=1)
+    locations: str | None = Field(default=None, min_length=1)
 
     @model_validator(mode="after")
     def _check_any(self) -> Self:

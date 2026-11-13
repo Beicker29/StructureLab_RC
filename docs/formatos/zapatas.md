@@ -67,6 +67,8 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 | `bottom` | objeto | Malla inferior (abajo). |
 | `top` | objeto o `null` | Malla superior, o `null` si no hay. |
 | `loads` | lista | Casos de carga (abajo). |
+| `location` | objeto | Opcional (D-130): `{"x", "y", "story", "joint"}`, el eje de la columna en el proyecto (x e y globales en mm, el nivel y el nudo de ETABS). Lo llena el importador con `etabs_files.locations` o se declara. Solo lo usa la planta de localización. También en `combined_footings[].columns[]`, en ejes globales aunque la viga vaya en Y, y en las columnas del diseño por tipologías, que lo pasan a su zapata. |
+| `typology` | texto | Opcional (D-130): el tipo que rotula la planta de localización y agrupa el cuadro de tipologías (el grupo de la plantilla o la tipología del diseño). Sin él, el `id`. |
 
 El relleno y las sobrecargas ocupan el área de la base menos la de la columna.
 
@@ -376,9 +378,17 @@ Con el bloque, `report` y `run` agregan a cada zapata su cartilla (`detailing` e
   compresión del propio pasador. Estribos cerrados con ganchos de 135°; con más de dos ramas, estribos de dos ramas
   anidados.
 - **Ganchos, doblados y empalmes del perfil** (ACI 25.3, 25.5.2.1 y 25.5.5.1; NSR-10 C.7.1, C.7.2, C.12.15 y C.12.16):
-  empalme clase A si As provisto ≥ 2 As requerido y se empalma la mitad o menos del acero; si no, clase B. El As
-  requerido se calcula en las barras x de la combinada con el mayor momento de su cara; en las demás barras el empalme
-  es clase B ("sin el As requerido en la zona del empalme").
+  empalme clase A si As provisto ≥ 2 As requerido por análisis y se empalma la mitad o menos del acero; si no, clase
+  B. El As requerido, sin el mínimo, sale del mayor momento del grupo de barras en todos los casos, el de su
+  verificación (D-129):
+  - en la aislada, las caras de la columna;
+  - en la combinada, la viga larga para las barras x, la franja de cada columna para su band y su band superior, y
+    |mxy| por metro para las barras y fuera de las franjas;
+  - en la T, la viga para sus capas y el voladizo para las aletas.
+
+  La nota de la cartilla dice la clase y la razón ("empalme clase A (As/As req = 2.62)"). Las barras sin demanda por
+  análisis (la malla x de la zarpa de la T fuera del ala, la piel) y las zapatas sin casos mayorados en equilibrio
+  quedan en clase B ("sin As requerido por analisis en la zona del empalme").
 - **Longitudes:** dimensiones exteriores y longitud de corte por el eje de la barra, redondeadas hacia arriba a 50 mm; el
   peso sale de la longitud de corte. Los empalmes de barras vecinas se escalonan: la mitad empieza con medio tramo
   comercial.
@@ -417,6 +427,17 @@ forma (recta, L, U, estribo) y sus dimensiones A, B y C. La combinada se dibuja 
 viga, D-094). En los cortes, las barras paralelas al plano son líneas con sus ganchos y las perpendiculares, puntos; los
 pasadores se dibujan en dos caras de la columna, a un recubrimiento de ellas (esquemático: su disposición no está en la
 entrada).
+
+**Planta de localización (D-130).** Si alguna zapata tiene `location` (en la combinada, sus dos columnas), el dibujo
+agrega el elemento `localizacion`, que va en el SVG, el DXF y el modelo de dibujo pero no en la memoria:
+
+- **Una planta por nivel** (`localizacion_<nivel>.svg`), en ejes globales.
+  - Cada zapata aislada se dibuja a escala, centrada en su nudo menos el desplazamiento de su columna, con la
+    columna, el tipo (`typology`) y el nudo.
+  - La combinada se ubica por sus dos columnas: el centro de la base es el promedio de lo que da cada una. Si
+    difieren en más de 10 mm (la distancia de ETABS no cuadra con la declarada), el plano lo avisa.
+- **El cuadro de tipologías** (`localizacion_cuadro_tipologias.svg`): tipo, lx × ly × h, mallas inferior y superior en
+  ejes globales, y cantidad.
 
 Capas fijas por tipo de objeto:
 
@@ -493,8 +514,8 @@ H = h + altura del pedestal. Las excentricidades son ex = My base/N y ey = −Mx
 | Altura mínima de la zapata | 150 mm, medidos como pide cada perfil. | ACI 13.3.1.2; NSR-10 C.15.7 |
 | Cortante en una dirección (barras x o y) | Por caso mayorado: Vu de la carga neta más allá de la sección a d de cada cara frente a φVc, con la d de esa dirección. | ACI 13.2.6.2(a) y 13.2.7.2; NSR-10 C.15.5 y C.11.2 |
 | Punzonamiento | Por caso mayorado: esfuerzo máximo vu = Vu/(b0·d) + γv·Msc·c/Jc en los dos ejes, en el perímetro a d/2 (recortado con la base: αs = 40, 30 o 20), frente a φvc. Valores: Vu, b0, d, αs, γv, vuv, Msc y Jc en cada eje, el centroide del perímetro (xc, yc) y el esfuerzo en cada esquina (`esquina i x`, `esquina i y`, `esquina i v`, D-083). | ACI 22.6.5.2, 22.6.5.3 y 8.4.4.2; NSR-10 C.11.11.2.1 y C.11.11.7 |
-| Transferencia de momento por flexión (barras x o y) | Por caso mayorado: γf·|Msc| frente a φMn de la malla inferior dentro de bslab = c + 1.5h a cada lado, sin pasar de los bordes de la zapata: a cada lado, el menor entre 1.5h y la distancia de la cara al borde (D-102; si recorta, el valor `bslab sin recortar` da c + 3h); en la combinada, más el band. No se suma al momento de la zapata. | ACI 8.4.2.2 (13.3.3.1); NSR-10 C.11.11.7.1 y C.13.5.3.2 (D-087) |
-| Transferencia de momento: parte negativa (barras x o y) | La misma γf·|Msc| frente a la malla superior en bslab o, sin ella, al concreto simple si el nivel lo permite. En la zapata aislada siempre CUMPLE: lo que la zapata no resiste lo debe tomar la viga de cimentación (valor `para la viga`, sin razón demanda/capacidad) y queda en `foundation_beam_moments` y en la memoria (D-087). En la combinada la resisten las barras superiores en bslab (top y band superior) o el concreto simple; si no alcanzan, NO CUMPLE (D-120). | Ídem (D-087, D-120) |
+| Transferencia de momento por flexión (barras x o y) | Por caso mayorado: γf·\|Msc\| frente a φMn de la malla inferior dentro de bslab = c + 1.5h a cada lado, sin pasar de los bordes de la zapata: a cada lado, el menor entre 1.5h y la distancia de la cara al borde (D-102; si recorta, el valor `bslab sin recortar` da c + 3h); en la combinada, más el band. No se suma al momento de la zapata. | ACI 8.4.2.2 (13.3.3.1); NSR-10 C.11.11.7.1 y C.13.5.3.2 (D-087) |
+| Transferencia de momento: parte negativa (barras x o y) | La misma γf·\|Msc\| frente a la malla superior en bslab o, sin ella, al concreto simple si el nivel lo permite. En la zapata aislada siempre CUMPLE: lo que la zapata no resiste lo debe tomar la viga de cimentación (valor `para la viga`, sin razón demanda/capacidad) y queda en `foundation_beam_moments` y en la memoria (D-087). En la combinada la resisten las barras superiores en bslab (top y band superior) o el concreto simple; si no alcanzan, NO CUMPLE (D-120). | Ídem (D-087, D-120) |
 | Fuera de la franja central malla … | Zapata rectangular: As fuera de la franja frente a (1 − γs)·As. | ACI 13.3.3.3(b); NSR-10 C.15.4.4.2 (D-087) |
 | Acero mínimo por punzonamiento (barras x o y) | Solo ACI, cuando vuv > φ0.17√f'c: As,min de 8.6.1.2 (con el bslab recortado por los bordes, D-102) frente a las barras de la malla inferior dentro de bslab. | ACI 8.6.1.2 |
 | Desarrollo malla … (barras x o y) | Longitud de desarrollo (recta o con gancho) frente a la disponible desde la cara de la columna hasta el extremo de la barra. La superior, solo con momento negativo. | ACI 25.4.2 y 25.4.3; NSR-10 C.12.2 y C.12.5 |

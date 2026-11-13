@@ -412,6 +412,15 @@ def outside_twist(footing: CombinedFooting, soil: Soil, given: tuple[FactoredCas
     return max(((x, abs(beam.twist(x))) for x in _outside_points(footing, zones)), key=lambda item: item[1], default=(0.0, 0.0))
 
 
+def outside_twist_envelope(footing: CombinedFooting, soil: Soil, depth: float, cases: Cases) -> float:
+    """El mayor |mxy| fuera de las franjas en todos los casos (N·mm/mm), con d de la malla y; 0 en la T invertida, sin
+    torsión de placa (D-118). La clase de los empalmes de las barras y fuera de las franjas parte de él (D-129)."""
+    if footing.beam is not None:
+        return 0.0
+    zones = [strip_limits(footing, column, depth) for column in footing.columns]
+    return max((outside_twist(footing, soil, given, zones)[1] for given in cases), default=0.0)
+
+
 def _outside_points(footing: CombinedFooting, zones: list[tuple[float, float]]) -> list[float]:
     """Las secciones x fuera de las franjas: 64 tramos del largo y los bordes de cada franja."""
     half = footing.lx / 2
@@ -666,6 +675,24 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     return checks
 
 
+def strip_envelope(footing: CombinedFooting, soil: Soil, column_depth: tuple[int, float], cases: Cases) -> tuple[float, float]:
+    """(mayor momento positivo en las caras, mayor momento negativo con signo positivo) de la franja de la columna en
+    todos los casos, con Wood-Armer en la combinada rectangular (D-118); column_depth = (índice de la columna, d de la
+    malla y). El desarrollo de las barras y y la clase de sus empalmes (D-129) parten de ellos."""
+    index, depth = column_depth
+    column = footing.columns[index]
+    limits = strip_limits(footing, column, depth)
+    width = limits[1] - limits[0]
+    positive = negative = 0.0
+    for pressure, loads in cases:
+        demands, _ = strip_demands(footing, pressure, column, (column_vertical(footing, soil, column, loads[index]), depth))
+        twist = strip_twist(footing, soil, (pressure, loads), limits) if footing.beam is None else 0.0
+        design = [(strip_moments(moment, width, twist), label) for _, moment, _, label in demands]
+        positive = max([positive, *(value for values, label in design if label.startswith("cara") for value in values)])
+        negative = max([negative, *(-value for values, _ in design for value in values)])
+    return positive, negative
+
+
 def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarRow, cases: Cases) -> list[Check]:
     """Barras y de cada franja desde la cara de la columna hasta el borde, menos el recubrimiento: las inferiores (el band
     si lo hay, que es el único refuerzo inferior de la franja, D-097; si no, la malla y) con el mayor momento positivo de
@@ -676,14 +703,7 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
         band = band_row(footing, column, row, basis)
         limits = strip_limits(footing, column, row.depth)
         width = limits[1] - limits[0]
-        positive = negative = 0.0
-        for pressure, loads in cases:
-            demands, _ = strip_demands(footing, pressure, column, (column_vertical(footing, soil, column, loads[index]), row.depth))
-            # Con los momentos de Wood-Armer de la franja en la combinada rectangular (D-118).
-            twist = strip_twist(footing, soil, (pressure, loads), limits) if footing.beam is None else 0.0
-            design = [(strip_moments(moment, width, twist), label) for _, moment, _, label in demands]
-            positive = max([positive, *(value for values, label in design if label.startswith("cara") for value in values)])
-            negative = max([negative, *(-value for values, _ in design for value in values)])
+        positive, negative = strip_envelope(footing, soil, (index, row.depth), cases)
         available = min(half - (column.y + column.cy / 2), column.y - column.cy / 2 + half) - footing.cover
         note = f"Franja transversal de la columna {column.id}, desde la cara de la columna"
         bottom = band if band is not None else row

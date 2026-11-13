@@ -2,16 +2,22 @@
 independiente (tests/oracles/derive_detailing.py) y con la coherencia de la cartilla de un ejemplo."""
 
 import json
+import math
+import re
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.detailing.schedule import BarRun, Hook, pieces, schedule, totals
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.development import BarAnchorage, lap_splice
-from structurelab_rc.domain.footing.detailing import combined_runs, footing_runs
+from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
+from structurelab_rc.domain.footing.checks import combined_footing_checks, footing_checks
+from structurelab_rc.domain.footing.combined_columns import band_row, strip_limits
+from structurelab_rc.domain.footing.detailing import combined_runs, footing_runs, splice_ratio
 from structurelab_rc.domain.footing.mesh import mat_rows
 from structurelab_rc.engine import report_file
 from structurelab_rc.model.loader import load_project
@@ -116,7 +122,77 @@ def test_example_schedule_has_every_bar_once(profile: str) -> None:
     assert sum(1 for _ in rows) <= pieces_by_run
     assert sum(row.mass for row in rows) == pytest.approx(sum(totals(rows).values()))
     isolated = load_project(ROOT / "examples" / FOLDERS[profile] / "zapatas" / "pruebas" / "zapata_centrica.json")
-    assert footing_runs(Basis(PROFILES[profile], isolated.materials, BARS, isolated.seismic.level), isolated.footings[0])
+    assert isolated.soil is not None
+    assert footing_runs(Basis(PROFILES[profile], isolated.materials, BARS, isolated.seismic.level), isolated.footings[0],
+                        isolated.soil)
+
+
+@pytest.mark.parametrize("profile", FOLDERS)
+def test_splice_ratio_and_class_match_the_oracle(profile: str) -> None:
+    """D-129: As provisto / As requerido por análisis (sin el mínimo) de una sección rectangular y la clase que da."""
+    basis = Basis(PROFILES[profile], MATERIALS, BARS, "none" if profile == "aci-318-25" else "DMI")
+    for case in _oracle(profile)["splice_class"]:
+        ratio = splice_ratio(basis, (case["b"], case["h"], case["d"]), case["provided"], case["Mu"])
+        if case["ratio"] is None:
+            assert math.isinf(ratio), case["name"]
+        else:
+            assert ratio == pytest.approx(case["ratio"], rel=1e-4), case["name"]
+        assert PROFILES[profile].detailing.lap_splice_class(ratio, 0.5) == case["class"], case["name"]
+
+
+def _note_ratio(note: str) -> float:
+    match = re.search(r"As/As req = ([0-9.]+)", note)
+    assert match is not None, note
+    return float(match.group(1))
+
+
+@pytest.mark.parametrize("profile", FOLDERS)
+def test_isolated_mesh_splice_uses_the_largest_face_moment_of_its_check(profile: str) -> None:
+    """D-129: la razón de la malla inferior de la aislada sale del mayor Mu de su verificación de flexión en todos los
+    casos, con el As requerido por análisis."""
+    project = load_project(ROOT / "examples" / FOLDERS[profile] / "zapatas" / "pruebas" / "zapata_centrica.json")
+    assert project.soil is not None
+    footing = project.footings[0]
+    basis = Basis(PROFILES[profile], project.materials, BARS, project.seismic.level)
+    checks = footing_checks(basis, footing, project.soil)
+    runs = {run.group: run for run in footing_runs(basis, footing, project.soil)}
+    for direction, row in mat_rows(footing, footing.bottom, BARS).items():
+        moment = max(check.demand or 0.0 for check in checks if check.name == f"Flexion malla inferior (barras {direction})")
+        required = required_area(basis.profile, basis.materials, RectangularSection(row.width, footing.h), row.depth, moment)
+        assert required is not None
+        assert _note_ratio(runs[f"malla inferior {direction}"].note) == pytest.approx(row.area / required, abs=0.006)
+
+
+@pytest.mark.parametrize("profile", FOLDERS)
+def test_combined_band_splice_uses_the_largest_positive_moment_of_its_strip(profile: str) -> None:
+    """D-129: la razón del band de cada columna sale del mayor Mu positivo (Wood-Armer) de la flexión de su franja, con
+    las barras del band en el ancho de la franja."""
+    project = load_project(ROOT / "examples" / FOLDERS[profile] / "zapatas" / "pruebas" / "zapata_combinada.json")
+    assert project.soil is not None
+    footing = project.combined_footings[0]
+    basis = Basis(PROFILES[profile], project.materials, BARS, project.seismic.level)
+    checks = combined_footing_checks(basis, footing, project.soil)
+    runs = {run.group: run for run in combined_runs(basis, footing, project.soil)}
+    row = mat_rows(footing, footing.bottom, BARS)["y"]
+    for column in footing.columns:
+        band = band_row(footing, column, row, basis)
+        if band is None:
+            continue
+        moment = max(check.demand or 0.0 for check in checks if check.name == "Flexion: resistencia"
+                     and check.note.startswith(f"Franja transversal de la columna {column.id}") and "momento positivo" in check.note)
+        x0, x1 = strip_limits(footing, column, row.depth)
+        provided = sum(1 for y in band.positions if x0 - 1e-6 <= y <= x1 + 1e-6) * band.bar_area
+        required = required_area(basis.profile, basis.materials, RectangularSection(x1 - x0, footing.h), row.depth, moment)
+        assert required is not None
+        assert _note_ratio(runs[f"band columna {column.id}"].note) == pytest.approx(provided / required, abs=0.006)
+
+
+def test_t_zarpa_bars_without_analysis_demand_keep_class_b(tmp_path: Path) -> None:
+    """D-129: la malla x de la zarpa de la T fuera del ala no tiene demanda por análisis: queda en clase B y lo dice."""
+    main(["run", str(ROOT / "examples" / "nsr_10" / "zapatas" / "pruebas" / "zapata_t_invertida_etabs.json"), "--output", str(tmp_path)])
+    rows = next(tmp_path.rglob("cartilla.csv")).read_text(encoding="utf-8").splitlines()
+    assert any("viga, capa" in line and "As/As req = " in line for line in rows)
+    assert all("clase B: sin As requerido por analisis" in line for line in rows if "zarpa, malla inferior x" in line)
 
 
 def test_report_writes_the_schedule(tmp_path: Path) -> None:

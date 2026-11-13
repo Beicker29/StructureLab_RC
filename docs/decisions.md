@@ -2347,8 +2347,93 @@
 - **Una fuente:** las funciones que usan los casos mayorados (`factored_cases`, `combined_factored_cases`) siguen
   devolviendo solo las fallas; las verificaciones completas salen de `equilibrium_checks`, con el mismo cálculo
   (`_equilibrium`).
-- **Huellas:** cambian los 18 ejemplos de zapatas solo por las verificaciones agregadas y el texto de la memoria. Sin
+- **Huellas (D-128):** cambian los 18 ejemplos de zapatas solo por las verificaciones agregadas y el texto de la memoria. Sin
   ellas, cada `resultado.json` es igual al de HEAD: ninguna solución ni costo del diseño cambia.
+
+### D-129: clase del empalme con el As requerido de cada grupo de barras (v3 Fase 4A)
+
+- **Fecha:** 2026-11-13
+- **Decisiones del usuario:**
+  - El As requerido se evalúa con la envolvente del grupo: el mayor momento que lo tracciona en todos los casos.
+    El empalme puede caer en cualquier parte, así que es el lado conservador.
+  - Solo por análisis, sin el acero mínimo. NSR-10 C.12.15.2(a) dice "el doble que el requerido por análisis";
+    ACI Tabla 25.5.2.1 y R25.5.2 dicen lo mismo.
+- **Regla (sin cambio):** clase A si As provisto / As requerido ≥ 2 y se empalma la mitad o menos (el escalonamiento
+  de `detailing/`); si no, clase B.
+- **Momento de cada grupo:** el de su verificación, sin fórmulas nuevas.
+
+  | Zapata | Grupo de barras | Momento | Sección |
+  | --- | --- | --- | --- |
+  | Aislada | Malla inferior / superior, en x o y | Mayor momento positivo / negativo en las caras de la columna | Ancho total |
+  | Combinada | Barras x inferiores / superiores | `extreme_moments` (Wood-Armer) | Ancho B |
+  | Combinada | Band / band superior (o barras y que pasan por una franja sin band de esa cara) | `strip_envelope` (Wood-Armer) | Ancho de la franja |
+  | Combinada | Malla y y superiores y fuera de las franjas | `outside_twist_envelope`, \|mxy\| por metro | 1 m |
+  | T | Capas de la viga, mitad inferior / superior | `extreme_moments` de la viga | Rectangular del alma (conservador con M negativo) |
+  | T | Aletas, malla y inferior / superior | `flange_envelope` | 1 m |
+
+  En las barras y de la combinada gobierna la menor razón entre fuera de las franjas y las franjas por las que pasan.
+  Sin demanda por análisis (la malla x de la zarpa fuera del ala, la piel) o sin casos mayorados en equilibrio, el
+  empalme queda en clase B, con la nota "sin As requerido por analisis en la zona del empalme".
+- **Antes:** solo las barras x de la combinada usaban el As requerido, y con el mínimo (`steel_excess`). El desarrollo
+  sigue con `steel_excess` (otra cláusula).
+- **Código:**
+  - `splice_ratio` en `domain/footing/detailing.py`.
+  - Las envolventes `strip_envelope` y `outside_twist_envelope` salen de la verificación (`_y_development` usa la
+    primera); `flange_envelope` va en `inverted_t.py`.
+  - `footing_runs` recibe `soil`.
+  - La nota de la cartilla dice la clase y la razón.
+- **Ejemplos** (huellas regeneradas, los dos perfiles):
+  - **`zapata_combinada`:** las barras x inferiores pasan a clase A (5.53) y su traslapo baja de 833 a 641 mm. Los
+    segundos tramos pasan de 1700 a 1500 mm y de 4700 a 4500 mm (46.5 → 41.1 kg y 114.4 → 109.5 kg).
+  - **`diseno_t_invertida` (6 m):** la misma solución. El acero baja de 829.0 a 823.1 kg en NSR-10 (costo de
+    8 959 480 a 8 922 531) y de 828.2 a 822.2 kg en ACI (de 8 768 285 a 8 731 337).
+  - **Cambian solo notas:** `zapata_centrica`, `zapata_t_invertida_etabs` y `diseno_combinada`.
+  - **Sin cambios:** `diseno_tipologias` y los diseños desde ETABS, que no tienen `detailing`.
+  - Los tiempos de corrida no cambian.
+- **Control:**
+  - Oráculo `derive_detailing.py`: el As por análisis con el bloque de Whitney, la razón y la clase de tres casos.
+  - Pruebas: la razón de la malla de la aislada y la del band salen del mayor Mu de su verificación; la malla x de la
+    zarpa de la T queda en clase B.
+
+### D-130: planta de localización de las zapatas (v3 Fase 4B)
+
+- **Fecha:** 2026-11-13
+- **Decisiones del usuario:**
+  - Las coordenadas salen de la tabla de ETABS "Point Object Connectivity", exportada a Excel y declarada en
+    `etabs_files.locations`.
+  - Una planta por nivel de cimentación, con el contorno y el rótulo del tipo de cada zapata, más el cuadro de
+    tipologías.
+  - Solo en SVG y DXF, no en la memoria, que es por elemento.
+  - El ejemplo de la huella es `zapata_centrica_etabs`. En `zapata_combinada_etabs` los pares de columnas son
+    ilustrativos (15/1659 a unos 50 m en ETABS, 1273/1601 a unos 37 m, en niveles distintos) y la planta sale con el
+    aviso.
+- **Entrada:**
+  - Se leen `UniqueName`, `Story`, `X` e `Y` (m, a mm al importar). Un nudo usado que falte, o X o Y en otra unidad,
+    es error.
+  - `location` (`x`, `y`, `story`, `joint`) es opcional en la zapata aislada, en las columnas de la combinada (en ejes
+    globales, sin rotar con la viga) y en las columnas del diseño por tipologías. `typology` es opcional en la zapata
+    aislada.
+  - El importador llena `location` y, en la aislada, `typology` con el grupo de la plantilla. El proyecto diseñado
+    pasa la ubicación de cada columna y su tipología a la zapata. El cálculo no usa ninguno de los dos.
+  - `import-etabs-footings --locations` hace lo mismo que `etabs_files.locations` en `run`. El diseño de una zapata
+    combinada no lo usa.
+- **Dibujo** (`domain/footing/drawing.location_views`, con `drawing/views.table_view`):
+  - El elemento `localizacion` tiene una vista por nivel y el cuadro de tipologías.
+  - La aislada se dibuja centrada en su nudo menos el desplazamiento de la columna.
+  - La combinada se ubica por sus dos columnas (centro = promedio). Con la viga en la Y global, sus dimensiones,
+    columnas y barras vuelven a ejes globales (D-094, D-101). Si las dos columnas ubican la base a más de 10 mm entre
+    sí, el plano lo avisa.
+  - Usa la escala del proyecto (`drawing.scale`).
+- **Ejemplo (cambio registrado):**
+  - La copia congelada `examples/etabs/zapatas/pruebas/Joint Location.xlsx` y las copias de `pruebas/` de
+    `zapata_centrica_etabs` (los dos perfiles) con `locations`, `detailing` (12 m) y `drawing` (1:50).
+  - Esa plantilla entra en la huella: 57 zapatas Z1 (15), Z2 (18) y Z3 (24) en el nivel CIM_SOT1_N-3.53, unos 28 s por
+    perfil. Las demás huellas no cambian.
+- **Control:** `tests/test_drawing.py`.
+  - Importación: nudo, nivel, posición en mm y tipo de cada zapata contra la tabla; nudo faltante y unidades como error.
+  - Planta: contorno de cada zapata en su nudo, una vista por nivel y cantidades del cuadro.
+  - Combinada: ubicación por sus columnas y el aviso cuando no cuadran.
+  - `run`: los SVG de la planta y la memoria sin ella.
 
 ## Consultas abiertas
 

@@ -185,7 +185,8 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
 def _declared_column(column: CombinedColumn, rotated: bool) -> dict[str, Any]:
     """Una columna de la zapata combinada con sus cargas, en los ejes declarados (D-101): con la dirección principal en
     la Y global, x = −y', y = x', cx = cy', cy = cx' y las fuerzas y momentos con el mismo giro."""
-    data = column.model_dump(mode="json", exclude={"loads"})
+    # La ubicación (D-130) sale solo si la columna la tiene.
+    data = column.model_dump(mode="json", exclude={"loads"} if column.location is not None else {"loads", "location"})
     loads = [_load_data(load) for load in column.loads]
     if not rotated:
         return {**data, "loads": loads}
