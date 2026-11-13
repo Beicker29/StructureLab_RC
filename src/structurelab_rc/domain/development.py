@@ -84,3 +84,20 @@ def development_check(name: str, required: DevelopmentLength | StructuredError, 
     notes = "; ".join(text for text in (note, required.note) if text)
     return Check(name, Status.PASS if required.length <= available else Status.FAIL, clause=required.clause,
                  demand=required.length, capacity=available, unit="mm", values=required.values, note=notes)
+
+
+def lap_splice(profile: Profile, materials: Materials, bar: BarAnchorage,
+               given: tuple[float, float]) -> tuple[float, str] | StructuredError:
+    """(longitud, clase) del empalme por traslapo a tracción de una barra recta (D-125): ℓd del perfil sin su mínimo ni el
+    factor de refuerzo en exceso (ACI 25.5.2.1, NSR-10 C.12.15.1) y la clase A o B según given = (As provisto/As
+    requerido en el empalme, fracción del acero empalmado en la sección)."""
+    lam = concrete_lambda(profile, materials)
+    if isinstance(lam, StructuredError):
+        return lam
+    development = profile.development
+    psi_e = development.tension_coating_factor(materials.coating, db=bar.diameter, clear_cover=bar.clear_cover,
+                                               clear_spacing=bar.clear_spacing)
+    length = development.tension_development_length(fy=materials.fy, fc=materials.fc, lam=lam, db=bar.diameter, cb=bar.cb,
+                                                    concrete_below=bar.concrete_below, psi_e=psi_e, excess=1.0, minimum=False)
+    splice_class = profile.detailing.lap_splice_class(*given)
+    return profile.detailing.tension_lap_length(length, splice_class), splice_class

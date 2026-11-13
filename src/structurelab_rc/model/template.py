@@ -203,6 +203,7 @@ class EtabsFootingTemplate(_Input):
     load_factors: dict[str, LoadFactors] = Field(min_length=1)
     footings: tuple[TemplateFooting, ...] = ()
     combined_footings: tuple[TemplateCombinedFooting, ...] = ()
+    detailing: dict[str, float] | None = None  # D-125: pasa al proyecto y se valida con él
     etabs_files: FootingEtabsFiles | None = None
 
     @model_validator(mode="after")

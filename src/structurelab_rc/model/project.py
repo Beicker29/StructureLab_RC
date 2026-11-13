@@ -133,6 +133,12 @@ class Member(_Input):
     stations: tuple[Station, ...] = Field(min_length=1)
 
 
+class DetailingSettings(_Input):
+    """Despiece (D-125): longitud comercial de las barras en mm; las más largas se empalman por traslapo."""
+
+    stock_length: PositiveFloat = Field(validation_alias="stock_length_mm")
+
+
 class Project(_Input):
     """Vigas (members), zapatas aisladas (footings), zapatas combinadas (combined_footings, D-080) o varias; las zapatas
     requieren los datos del suelo (D-052)."""
@@ -145,6 +151,7 @@ class Project(_Input):
     soil: Soil | None = None
     footings: tuple[Footing, ...] = ()
     combined_footings: tuple[CombinedFooting, ...] = ()
+    detailing: DetailingSettings | None = None  # D-125: sin él no se despieza
 
     @model_validator(mode="after")
     def _check_content(self) -> Self:

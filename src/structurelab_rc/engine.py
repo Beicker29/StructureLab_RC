@@ -14,11 +14,13 @@ from structurelab_rc.design.footing.assignment import available as solver_availa
 from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project, typology_curve
 from structurelab_rc.design.footing.typology import Context
+from structurelab_rc.detailing.schedule import schedule
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.footing.checks import combined_footing_checks, footing_checks
 from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
+from structurelab_rc.domain.footing.detailing import combined_runs, footing_runs
 from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
@@ -48,7 +50,7 @@ from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_documen
 from structurelab_rc.reporting.document import report_documents
 from structurelab_rc.reporting.figures import diagram_figures, pressure_figures
 from structurelab_rc.reporting.pdf import write_pdf
-from structurelab_rc.reporting.results import Diagrams, build_results
+from structurelab_rc.reporting.results import Diagrams, build_results, detailing_csv, detailing_data
 from structurelab_rc.reporting.text import render_text
 from structurelab_rc.setup import load_engine
 
@@ -178,11 +180,33 @@ def _combined_diagrams(project: Project | None, checks: tuple[Check, ...]) -> Di
     return diagrams
 
 
+def _detailing(project: Project | None, results: dict[str, Any]) -> bool:
+    """Agrega la cartilla de cada zapata a su entrada del resultado (D-125) si el proyecto pide despiece y la entrada es
+    válida; True si la agregó."""
+    if project is None or project.detailing is None or project.soil is None:
+        return False
+    if "footings" not in results and "combined_footings" not in results:
+        return False
+    bars = load_engine().bars
+    basis = Basis(PROFILES[project.profile], project.materials, bars, project.seismic.level)
+    stock, soil = project.detailing.stock_length, project.soil
+    entries = {entry["id"]: entry for entry in [*results.get("footings", []), *results.get("combined_footings", [])]}
+    for footing in project.footings:
+        concrete = sum(footing.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
+        entries[footing.id]["detailing"] = detailing_data(schedule(footing.id, footing_runs(basis, footing), stock), concrete, stock)
+    for combined in project.combined_footings:
+        concrete = sum(combined.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
+        rows = schedule(combined.id, combined_runs(basis, combined, soil), stock)
+        entries[combined.id]["detailing"] = detailing_data(rows, concrete, stock)
+    return True
+
+
 def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050), con
     las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
     project, checks = run_project(path)
     results = build_results(project, checks, __version__, _combined_diagrams(project, checks))
+    detailed = checks[0].status is not Status.FAIL and _detailing(project, results)
     output.mkdir(parents=True, exist_ok=True)
     figures = pressure_figures(results, output)
     diagram_files = diagram_figures(results, output)
@@ -193,6 +217,10 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     memoir_path.write_text(text, encoding="utf-8", newline="\n")
     pdf_written = write_pdf(documents, pdf_path)
     files = (result_path, memoir_path, pdf_path) if pdf_written else (result_path, memoir_path)
+    if detailed:  # la cartilla de todos los elementos (D-125)
+        schedule_path = output / "cartilla.csv"
+        schedule_path.write_text(detailing_csv(results), encoding="utf-8", newline="\n")
+        files = (*files, schedule_path)
     files = (*files, *figures.values(), *(path for paths in diagram_files.values() for path in paths))
     return Report(results["status"], files, pdf_written)
 

@@ -4,10 +4,13 @@ Trae todo lo que la memoria imprime: propiedades de los materiales que usa el pe
 estación, casos de carga de cada zapata y las verificaciones; la memoria no calcula nada.
 """
 
+import csv
+import io
 import math
 from typing import Any
 
 from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.detailing.schedule import ScheduleRow, round_up, totals
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.combined_beam import two_way_warning
 from structurelab_rc.domain.footing.combined_columns import BEAM_SHEAR
@@ -371,3 +374,33 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
                                       (diagrams or {}).get(footing.id))
                 for footing in project.combined_footings]
     return results
+
+
+def detailing_data(rows: list[ScheduleRow], concrete: float, stock: float) -> dict[str, Any]:
+    """Cartilla de un elemento (D-125): una fila por marca con sus dimensiones exteriores redondeadas hacia arriba, la
+    longitud de corte y el peso; el acero por designación, el total y el volumen de concreto (m³)."""
+    by_designation = totals(rows)
+    return {
+        "stock_length [mm]": stock,
+        "rows": [{"mark": row.mark, "group": row.piece.group, "designation": row.piece.designation, "shape": row.piece.shape,
+                  "count": row.piece.count, "dimensions [mm]": {name: round_up(value) for name, value in row.piece.dimensions},
+                  "cut_length [mm]": row.piece.cut_length, "mass [kg/m]": row.piece.mass_kg_m,
+                  "mass [kg]": round(row.mass, 1), "note": row.piece.note} for row in rows],
+        "steel_by_designation [kg]": {designation: round(mass, 1) for designation, mass in by_designation.items()},
+        "steel [kg]": round(sum(by_designation.values()), 1),
+        "concrete [m3]": round(concrete, 3),
+    }
+
+
+def detailing_csv(results: dict[str, Any]) -> str:
+    """La cartilla de todos los elementos, separada por punto y coma (entre comillas los campos que lo contienen)."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";", lineterminator="\n")
+    writer.writerow(["elemento", "marca", "grupo", "barra", "forma", "cantidad", "dimensiones (mm)", "longitud de corte (mm)",
+                     "peso (kg)", "nota"])
+    for footing in [*results.get("footings", []), *results.get("combined_footings", [])]:
+        for row in (footing.get("detailing") or {}).get("rows", []):
+            dimensions = " ".join(f"{name}={value:.0f}" for name, value in row["dimensions [mm]"].items())
+            writer.writerow([footing["id"], row["mark"], row["group"], row["designation"], row["shape"], row["count"], dimensions,
+                             f"{row['cut_length [mm]']:.0f}", f"{row['mass [kg]']:.1f}", row["note"]])
+    return buffer.getvalue()

@@ -2227,6 +2227,32 @@
   M2 = 0 (cambia resultados en secciones asimétricas, requiere decisión); acotar los rangos de los ejemplos de diseño de
   `pruebas/` más pesados.
 
+### D-125: despiece de zapatas (v3 Fase 4A)
+
+- **Fecha:** 2026-11-13
+- **Decisiones del usuario:** longitud comercial declarada por proyecto (`detailing.stock_length_mm`; sin ella no se
+  despieza); clase del empalme calculada por la norma; longitudes redondeadas hacia arriba a 50 mm; marcas por elemento y
+  consecutivo. Plan aprobado; el tramo del pasador que entra en la columna es el empalme a compresión del propio pasador
+  (las barras de la columna no están en el modelo).
+- **Normas** (leídas de los PDF): ACI 318-25 Tablas 25.3.1 y 25.3.2, 25.5.2.1 (Tabla 25.5.2.1) y 25.5.5.1; NSR-10 C.7.1,
+  C.7.2 (Tabla C.7.2), C.12.15.1, C.12.15.2 y C.12.16.1. Diferencias entre perfiles: el gancho de 135° de estribo pide en
+  ACI el mayor de 6db y 75 mm y en NSR-10 6db sin mínimo; ACI define además el gancho de 90° de estribo con 75 mm de
+  mínimo y el de 180°; con fy > 550 MPa el empalme a compresión de ACI (25.5.5.1(c)) exige ℓst y no se calcula.
+- **Código:** `codes/<perfil>/detailing.py` (ganchos, doblados y empalmes), `tension_development_length(minimum=False)`
+  para el ℓd de los empalmes, `domain/development.lap_splice`, `domain/footing/detailing.py` (las barras de cada zapata
+  con sus límites) y `detailing/schedule.py` (neutro: longitudes de corte, empalmes escalonados por longitud comercial,
+  marcas y cartilla). `engine` agrega la cartilla al resultado y escribe `cartilla.csv`; la memoria lleva el capítulo
+  "Despiece y cantidades".
+- **Simplificaciones declaradas:** la clase del empalme usa el As requerido solo en las barras x de la combinada (con el
+  mayor momento de su cara, del lado conservador); en las demás barras es clase B. La fracción empalmada es la mitad por
+  el escalonamiento. Los estribos de más de dos ramas son estribos de dos ramas anidados. El costo del diseño todavía no
+  usa la cartilla.
+- **Ejemplos:** la copia de pruebas de `zapata_centrica` y `zapata_t_invertida_etabs` declara 12 m y la de
+  `zapata_combinada` 6 m (para cubrir los empalmes: las barras x de 6.85 m se parten en dos tramos con traslapo clase B de
+  833 mm abajo y 1083 mm arriba). Cambian sus huellas, por la cartilla en el resultado y en la memoria.
+- **Control:** oráculo `derive_detailing.py` (ganchos, doblados, barra en U, estribo cerrado, tramos de una barra
+  empalmada, empalmes a tracción y a compresión) y pruebas de coherencia de la cartilla.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

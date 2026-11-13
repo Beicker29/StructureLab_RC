@@ -147,5 +147,8 @@
         }
       ]
     }
-  ]
+  ],
+  "detailing": {
+    "stock_length_mm": 12000.0
+  }
 }

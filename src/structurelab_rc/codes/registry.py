@@ -5,6 +5,7 @@ from typing import Protocol
 
 from structurelab_rc.codes.aci_318_25 import bearing as aci_bearing
 from structurelab_rc.codes.aci_318_25 import deep_beam as aci_deep_beam
+from structurelab_rc.codes.aci_318_25 import detailing as aci_detailing
 from structurelab_rc.codes.aci_318_25 import development as aci_development
 from structurelab_rc.codes.aci_318_25 import flexure as aci_flexure
 from structurelab_rc.codes.aci_318_25 import footing as aci_footing
@@ -15,6 +16,7 @@ from structurelab_rc.codes.aci_318_25 import strength_assumptions as aci_strengt
 from structurelab_rc.codes.aci_318_25 import torsion as aci_torsion
 from structurelab_rc.codes.nsr_10 import bearing as nsr_bearing
 from structurelab_rc.codes.nsr_10 import deep_beam as nsr_deep_beam
+from structurelab_rc.codes.nsr_10 import detailing as nsr_detailing
 from structurelab_rc.codes.nsr_10 import development as nsr_development
 from structurelab_rc.codes.nsr_10 import flexure as nsr_flexure
 from structurelab_rc.codes.nsr_10 import footing as nsr_footing
@@ -195,7 +197,8 @@ class Development(Protocol):
     def excess_factor_permitted(self, end: str, seismic_level: str) -> bool: ...
 
     def tension_development_length(
-        self, *, fy: float, fc: float, lam: float, db: float, cb: float, concrete_below: float, psi_e: float, excess: float
+        self, *, fy: float, fc: float, lam: float, db: float, cb: float, concrete_below: float, psi_e: float, excess: float,
+        minimum: bool = True,
     ) -> float: ...
 
     def hook_development_length(
@@ -227,6 +230,24 @@ class DeepBeam(Protocol):
     def max_span_to_depth(self) -> float: ...
 
 
+class Detailing(Protocol):
+    def clauses(self) -> dict[str, str]: ...
+
+    def hook_bend_diameter(self, db: float) -> float: ...
+
+    def hook_extension(self, db: float, angle: int) -> float: ...
+
+    def stirrup_bend_diameter(self, db: float) -> float: ...
+
+    def stirrup_hook_extension(self, db: float, angle: int) -> float | None: ...
+
+    def tension_lap_length(self, development: float, splice_class: str) -> float: ...
+
+    def lap_splice_class(self, provided_ratio: float, spliced_fraction: float) -> str: ...
+
+    def compression_lap_length(self, fy: float, fc: float, db: float) -> float | None: ...
+
+
 class Seismic(Protocol):
     def seismic_levels(self) -> frozenset[str]: ...
 
@@ -256,11 +277,12 @@ class Profile:
     bearing: Bearing
     plain: Plain
     deep_beam: DeepBeam
+    detailing: Detailing
 
 
 PROFILES = {
     "aci-318-25": Profile("aci-318-25", aci_strength_assumptions, aci_flexure, aci_shear, aci_torsion, aci_seismic, aci_footing,
-                          aci_development, aci_bearing, aci_plain, aci_deep_beam),
+                          aci_development, aci_bearing, aci_plain, aci_deep_beam, aci_detailing),
     "nsr-10": Profile("nsr-10", nsr_strength_assumptions, nsr_flexure, nsr_shear, nsr_torsion, nsr_seismic, nsr_footing,
-                      nsr_development, nsr_bearing, nsr_plain, nsr_deep_beam),
+                      nsr_development, nsr_bearing, nsr_plain, nsr_deep_beam, nsr_detailing),
 }

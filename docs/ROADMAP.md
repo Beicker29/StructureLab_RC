@@ -57,7 +57,8 @@ existente. Sin fórmulas propias; si nada cumple, `FAIL` con el motivo y los lí
 
 ### Fase 4: despiece y dibujo (alcance de la Fase 5 de vigas)
 
-- **4A Despiece** (`detailing/`, neutro, sin fórmulas normativas):
+- **4A Despiece** (hecho para zapatas aisladas, combinadas y T, D-125; queda que el costo del diseño use la cartilla y
+  la clase del empalme con el As requerido en cada zona) (`detailing/`, neutro, sin fórmulas normativas):
   - forma de cada barra (recta, gancho de 90° o 180°, L, U, estribo cerrado) con el diámetro de doblado y la
     extensión del gancho que da el perfil, y su longitud de corte;
   - empalmes por traslapo ubicados cuando la barra supera la longitud comercial;

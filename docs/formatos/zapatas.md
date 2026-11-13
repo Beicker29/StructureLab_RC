@@ -343,6 +343,42 @@ columnas respecto al centroide de la base; lo verifica `run`, `verify` o `report
 `--workers N` reparte los f'c entre procesos (por defecto, los núcleos del equipo); no cambia el resultado. `run`
 reconoce el ejemplo por el bloque `combined_design`, diseña y genera la memoria de verificación de la zapata diseñada.
 
+## Despiece (`detailing`, D-125)
+
+Bloque opcional del proyecto de verificación (y de las plantillas de ETABS de zapatas, que lo pasan al proyecto). Sin él
+no se despieza.
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `detailing.stock_length_mm` | mm | Longitud comercial de las barras: las más largas se parten en tramos con empalme por traslapo. |
+
+Con el bloque, `report` y `run` agregan a cada zapata su cartilla (`detailing` en `resultado.json`), escriben
+`cartilla.csv` (separado por punto y coma) y la memoria lleva el capítulo "Despiece y cantidades":
+
+- **Barras:** las mismas filas que revisa la verificación; las mallas de borde a borde menos el recubrimiento, con gancho
+  estándar de 90° en los dos extremos si `end` es `hook`. En la combinada, el band y el band superior de cada columna,
+  las barras superiores (top.y fuera de las zonas de band superior), la piel y los estribos; en la T, las capas de la
+  viga, sus estribos, la malla de la zarpa (las barras x fuera del ancho que cubre la capa inferior de la viga) y la malla
+  superior de la zarpa. Pasadores rectos hasta la malla inferior con gancho de 90° al pie, el pedestal y el empalme a
+  compresión del propio pasador. Estribos cerrados con ganchos de 135°; con más de dos ramas, estribos de dos ramas
+  anidados.
+- **Ganchos, doblados y empalmes del perfil** (ACI 25.3, 25.5.2.1 y 25.5.5.1; NSR-10 C.7.1, C.7.2, C.12.15 y C.12.16):
+  empalme clase A si As provisto ≥ 2 As requerido y se empalma la mitad o menos del acero; si no, clase B. El As
+  requerido se calcula en las barras x de la combinada con el mayor momento de su cara; en las demás barras el empalme
+  es clase B ("sin el As requerido en la zona del empalme").
+- **Longitudes:** dimensiones exteriores y longitud de corte por el eje de la barra, redondeadas hacia arriba a 50 mm; el
+  peso sale de la longitud de corte. Los empalmes de barras vecinas se escalonan: la mitad empieza con medio tramo
+  comercial.
+- **Marcas:** `<elemento>-01`, `-02`, … Barras iguales (designación, forma, dimensiones y longitud de corte) comparten
+  marca y la fila nombra los grupos que reúne.
+
+| Campo de `detailing` en el resultado | Unidad | Descripción |
+| --- | --- | --- |
+| `stock_length [mm]` | mm | Longitud comercial declarada. |
+| `rows` | lista | Una por marca: `mark`, `group`, `designation`, `shape` (recta, L, U, estribo), `count`, `dimensions [mm]` (A, B, C), `cut_length [mm]`, `mass [kg/m]`, `mass [kg]` y `note` (tramo y traslapo, clase del empalme). |
+| `steel_by_designation [kg]`, `steel [kg]` | kg | Acero por designación y total. |
+| `concrete [m3]` | m³ | Volumen de concreto de la zapata y los pedestales (en la T, con el alma). |
+
 ## Salida
 
 `report` escribe estos archivos en la carpeta de salida:

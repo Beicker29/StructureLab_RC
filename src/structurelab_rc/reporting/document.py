@@ -809,6 +809,7 @@ def footing_document(results: dict[str, Any], footing: dict[str, Any], full: boo
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, items, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, items, full)),
         ("Índices DCR", lambda _: _dcr(items)),
+        *_detailing_chapter(footing),
         ("Notas y limitaciones", lambda _: _notes(results, _FOOTING_CONVENTIONS, _FOOTING_LIMITATIONS)),
     ]
     return _assemble(head, chapters)
@@ -1121,9 +1122,36 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, others, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, others, full)),
         ("Índices DCR", lambda _: _dcr(items, _combined_label)),
+        *_detailing_chapter(footing),
         ("Notas y limitaciones", lambda _: _notes(results, _COMBINED_CONVENTIONS, _COMBINED_LIMITATIONS)),
     ]
     return _assemble(head, chapters)
+
+
+def _detailing_chapter(footing: dict[str, Any]) -> list[tuple[str, Callable[[str], list[Block]]]]:
+    """Capítulo "Despiece y cantidades" (D-125) si el proyecto pidió despiece."""
+    data = footing.get("detailing")
+    if not data:
+        return []
+
+    def build(_: str) -> list[Block]:
+        rows = [[row["mark"], row["group"], row["designation"], row["shape"], str(row["count"]),
+                 " ".join(f"{name}={value:.0f}" for name, value in row["dimensions [mm]"].items()),
+                 f"{row['cut_length [mm]']:.0f}", f"{row['mass [kg]']:.1f}"] for row in data["rows"]]
+        totals = [[designation, f"{mass:.1f}"] for designation, mass in data["steel_by_designation [kg]"].items()]
+        notes = sorted({row["note"] for row in data["rows"] if row["note"]})
+        return [
+            {"kind": "p", "text": f"Barras con dimensiones exteriores en mm y longitud de corte por el eje, redondeadas hacia arriba "
+                                  f"a 50 mm; longitud comercial {data['stock_length [mm]']:.0f} mm (las barras más largas se "
+                                  "empalman por traslapo, escalonado). Ganchos, doblados y empalmes del perfil."},
+            {"kind": "table", "headers": ["Marca", "Grupo", "Barra", "Forma", "Cant.", "Dimensiones (mm)", "L corte (mm)", "Peso (kg)"],
+             "rows": rows},
+            {"kind": "table", "headers": ["Barra", "Peso (kg)"],
+             "rows": [*totals, ["Total acero", f"{data['steel [kg]']:.1f}"], ["Concreto (m³)", f"{data['concrete [m3]']:.3f}"]]},
+            *({"kind": "p", "text": f"Nota: {note}."} for note in notes),
+        ]
+
+    return [("Despiece y cantidades", build)]
 
 
 def report_documents(results: dict[str, Any], *, full: bool = False, figures: dict[str, Path] | None = None,

@@ -77,19 +77,20 @@ def excess_factor_permitted(end: str, seismic_level: str) -> bool:
 
 
 def tension_development_length(*, fy: float, fc: float, lam: float, db: float, cb: float, concrete_below: float,
-                               psi_e: float, excess: float) -> float:
+                               psi_e: float, excess: float, minimum: bool = True) -> float:
     """C.12.2.3, ecuación (C.12-1), con Ktr = 0, multiplicada por excess = As requerido/As suministrado (C.12.2.5; 1 si no
     aplica) y no menor que 300 mm (C.12.2.1), en mm.
 
     cb es el menor entre la distancia del centro de la barra a la superficie más cercana y la mitad de la separación;
     concrete_below es el concreto fresco bajo la barra (ψt = 1.3 si supera 300 mm, C.12.2.4(a)); ψt·ψe ≤ 1.7.
+    minimum = False omite los 300 mm de C.12.2.1: el ℓd de los empalmes por traslapo (C.12.15.1).
     """
     psi_t = 1.3 if concrete_below > _TOP_BAR_CONCRETE else 1.0
     psi_s = 0.8 if db < _SMALL_BAR else 1.0
     confinement = min(cb / db, _CONFINEMENT_MAX)
     location = min(psi_t * psi_e, _TOP_EPOXY_MAX)
     length = fy / (1.1 * lam * _sqrt_fc(fc)) * location * psi_s / confinement * db
-    return max(length * excess, _LD_MIN)
+    return max(length * excess, _LD_MIN) if minimum else length * excess
 
 
 def hook_development_length(*, fy: float, fc: float, lam: float, db: float, psi_e: float, psi_cc: float, excess: float) -> float:
