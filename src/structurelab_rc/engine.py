@@ -21,9 +21,13 @@ from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.footing.checks import combined_footing_checks, footing_checks
 from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
 from structurelab_rc.domain.footing.detailing import combined_runs, footing_runs
+from structurelab_rc.domain.footing.drawing import combined_views, footing_views
 from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
+from structurelab_rc.drawing.dxf import write_dxf
+from structurelab_rc.drawing.model import Drawing
+from structurelab_rc.drawing.svg import view_svg
 from structurelab_rc.errors import invalid_input
 from structurelab_rc.io.etabs import footings as etabs_footings
 from structurelab_rc.io.etabs.footings import (
@@ -180,25 +184,54 @@ def _combined_diagrams(project: Project | None, checks: tuple[Check, ...]) -> Di
     return diagrams
 
 
-def _detailing(project: Project | None, results: dict[str, Any]) -> bool:
+def _detailing(project: Project | None, results: dict[str, Any], name: str) -> tuple[bool, Drawing | None]:
     """Agrega la cartilla de cada zapata a su entrada del resultado (D-125) si el proyecto pide despiece y la entrada es
-    válida; True si la agregó."""
+    válida: (True si la agregó, el dibujo del refuerzo si el proyecto lo pide, D-126)."""
     if project is None or project.detailing is None or project.soil is None:
-        return False
+        return False, None
     if "footings" not in results and "combined_footings" not in results:
-        return False
+        return False, None
     bars = load_engine().bars
     basis = Basis(PROFILES[project.profile], project.materials, bars, project.seismic.level)
     stock, soil = project.detailing.stock_length, project.soil
+    drawing = None if project.drawing is None else Drawing(name, project.drawing.scale)
     entries = {entry["id"]: entry for entry in [*results.get("footings", []), *results.get("combined_footings", [])]}
     for footing in project.footings:
         concrete = sum(footing.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
-        entries[footing.id]["detailing"] = detailing_data(schedule(footing.id, footing_runs(basis, footing), stock), concrete, stock)
+        runs = footing_runs(basis, footing)
+        rows = schedule(footing.id, runs, stock)
+        entries[footing.id]["detailing"] = detailing_data(rows, concrete, stock)
+        if drawing is not None:
+            drawing.views[footing.id] = footing_views(drawing, footing, runs, (rows, stock))
     for combined in project.combined_footings:
         concrete = sum(combined.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
-        rows = schedule(combined.id, combined_runs(basis, combined, soil), stock)
+        runs = combined_runs(basis, combined, soil)
+        rows = schedule(combined.id, runs, stock)
         entries[combined.id]["detailing"] = detailing_data(rows, concrete, stock)
-    return True
+        if drawing is not None:
+            drawing.views[combined.id] = combined_views(drawing, combined, runs, (rows, stock))
+    return True, drawing
+
+
+def _drawing_files(drawing: Drawing, output: Path) -> tuple[list[Path], dict[str, list[tuple[Path, float, str]]]]:
+    """Escribe el modelo de dibujo (<nombre>_drawing.json), un SVG por vista y, si ezdxf está instalado, <nombre>.dxf
+    (D-126): (archivos, vistas de cada elemento para la memoria)."""
+    model_path = output / f"{drawing.name}_drawing.json"
+    model_path.write_text(json.dumps(drawing.to_dict(), indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    files: list[Path] = [model_path]
+    figures: dict[str, list[tuple[Path, float, str]]] = {}
+    for element, views in drawing.views.items():
+        figures[element] = []
+        for view in views:
+            svg, aspect = view_svg(view, drawing.scale)
+            path = output / f"{element}_{view.name}.svg"
+            path.write_text(svg, encoding="utf-8", newline="\n")
+            files.append(path)
+            figures[element].append((path, aspect, view.title))
+    dxf_path = output / f"{drawing.name}.dxf"
+    if write_dxf(drawing, dxf_path):
+        files.append(dxf_path)
+    return files, figures
 
 
 def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
@@ -206,11 +239,12 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
     project, checks = run_project(path)
     results = build_results(project, checks, __version__, _combined_diagrams(project, checks))
-    detailed = checks[0].status is not Status.FAIL and _detailing(project, results)
+    detailed, drawing = (False, None) if checks[0].status is Status.FAIL else _detailing(project, results, path.stem)
     output.mkdir(parents=True, exist_ok=True)
     figures = pressure_figures(results, output)
     diagram_files = diagram_figures(results, output)
-    documents = report_documents(results, full=full, figures=figures, diagrams=diagram_files)
+    drawing_paths, drawings = ([], {}) if drawing is None else _drawing_files(drawing, output)
+    documents = report_documents(results, full=full, figures=figures, diagrams=diagram_files, drawings=drawings)
     text = render_text(documents)
     result_path, memoir_path, pdf_path = output / "resultado.json", output / "memoria.txt", output / "memoria.pdf"
     result_path.write_text(json.dumps(results, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
@@ -221,7 +255,7 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
         schedule_path = output / "cartilla.csv"
         schedule_path.write_text(detailing_csv(results), encoding="utf-8", newline="\n")
         files = (*files, schedule_path)
-    files = (*files, *figures.values(), *(path for paths in diagram_files.values() for path in paths))
+    files = (*files, *figures.values(), *(path for paths in diagram_files.values() for path in paths), *drawing_paths)
     return Report(results["status"], files, pdf_written)
 
 

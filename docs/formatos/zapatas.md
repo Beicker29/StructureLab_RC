@@ -379,6 +379,44 @@ Con el bloque, `report` y `run` agregan a cada zapata su cartilla (`detailing` e
 | `steel_by_designation [kg]`, `steel [kg]` | kg | Acero por designación y total. |
 | `concrete [m3]` | m³ | Volumen de concreto de la zapata y los pedestales (en la T, con el alma). |
 
+## Dibujo del refuerzo (`drawing`, D-126)
+
+Bloque opcional del proyecto de verificación (y de las plantillas de ETABS de zapatas, que lo pasan al proyecto); requiere
+`detailing`, porque el dibujo rotula las marcas de la cartilla. Sin él no se dibuja.
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `drawing.scale` | - | Escala de impresión (50 para 1:50). El modelo va a escala 1:1 en mm; los textos miden 2.5 mm × escala (títulos) y 2.0 mm × escala (rótulos, cotas y cartilla), para que impresos a esa escala midan 2.5 y 2.0 mm. |
+
+Con el bloque, `report` y `run` escriben:
+
+- `<nombre>_drawing.json`: el modelo de dibujo neutro (capas, y por elemento sus vistas con líneas, polilíneas, círculos,
+  textos y cotas en mm, redondeados a 0.1 mm). Entra en la huella.
+- `<zapata>_<vista>.svg`: una vista previa por vista, que la memoria incrusta en "Despiece y cantidades" después de la
+  cartilla.
+- `<nombre>.dxf` si está instalado el extra `cad` (`pip install structurelab-rc[cad]`): todas las vistas en el espacio
+  modelo, una fila por elemento.
+
+Vistas: planta del refuerzo inferior y, si lo hay, del superior (todas las barras con su marca, cantidad, barra y
+separación); en la aislada, cortes X-X e Y-Y por el eje de la columna; en la combinada y la T, alzado longitudinal por el
+eje de la viga (con los estribos) y un corte transversal por cada columna; y la cartilla como tabla con el croquis de cada
+forma (recta, L, U, estribo) y sus dimensiones A, B y C. La combinada se dibuja en los ejes de la viga (X a lo largo de la
+viga, D-094). En los cortes, las barras paralelas al plano son líneas con sus ganchos y las perpendiculares, puntos; los
+pasadores se dibujan en dos caras de la columna, a un recubrimiento de ellas (esquemático: su disposición no está en la
+entrada).
+
+Capas fijas por tipo de objeto:
+
+| Capa | Color | Grosor (mm) | Contenido |
+| --- | --- | --- | --- |
+| `CONCRETO` | 5 (azul) | 0.35 | Contorno de la zapata, el alma, los pedestales y el arranque de las columnas. |
+| `REFUERZO` | 1 (rojo) | 0.35 | Barras en planta y paralelas al corte, estribos y pasadores. |
+| `REFUERZO_CORTE` | 1 (rojo) | 0.25 | Barras cortadas (puntos). |
+| `COTAS` | 8 (gris) | 0.18 | Cotas. |
+| `TEXTOS` | 7 (negro) | 0.18 | Títulos, rótulos de las barras y sus líneas. |
+| `EJES` | 9 (gris claro) | 0.13 | Reservada para ejes. |
+| `CARTILLA` | 7 (negro) | 0.18 | Tabla y croquis de la cartilla. |
+
 ## Salida
 
 `report` escribe estos archivos en la carpeta de salida:

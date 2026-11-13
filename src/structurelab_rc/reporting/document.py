@@ -28,6 +28,7 @@ from structurelab_rc.reporting.glossary import PROFILE_NAMES, STATUS_TEXT, class
 Block = dict[str, Any]
 # Una verificación ubicada: (ubicación en palabras, verificación del resultado).
 Located = tuple[str, dict[str, Any]]
+DrawingFigure = tuple[Path, float, str]  # vista del refuerzo (D-126): archivo SVG, alto/ancho y rótulo
 
 _PRECEDENCE = {str(Status.FAIL): 3, str(Status.INCOMPLETE): 2, str(Status.BLOCKED): 1, str(Status.PASS): 0}
 _CONCRETE = {"normalweight": "concreto de peso normal", "lightweight": "concreto liviano"}
@@ -791,7 +792,8 @@ def _punching_corners(items: list[Located]) -> list[Block]:
     return blocks
 
 
-def footing_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None) -> list[Block]:
+def footing_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None,
+                     drawings: list[DrawingFigure] | None = None) -> list[Block]:
     items: list[Located] = [(f"caso {check['case']}" if check.get("case") else "toda la zapata", check) for check in footing["checks"]]
     counts = {kind: sum(1 for load in footing["loads"] if load["kind"] == kind) for kind in ("service", "factored")}
     meta = [("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados")]
@@ -809,7 +811,7 @@ def footing_document(results: dict[str, Any], footing: dict[str, Any], full: boo
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, items, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, items, full)),
         ("Índices DCR", lambda _: _dcr(items)),
-        *_detailing_chapter(footing),
+        *_detailing_chapter(footing, drawings),
         ("Notas y limitaciones", lambda _: _notes(results, _FOOTING_CONVENTIONS, _FOOTING_LIMITATIONS)),
     ]
     return _assemble(head, chapters)
@@ -1067,11 +1069,14 @@ def _outside_chapter(kind: str, number_text: str, items: list[Located], negative
     return _chapter(kind, number_text, own, full)
 
 
-def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bool, figure: Path | None = None,
-                      diagrams: list[Path] | None = None) -> list[Block]:
+def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bool,
+                      figures: tuple[Path | None, list[Path] | None] = (None, None),
+                      drawings: list[DrawingFigure] | None = None) -> list[Block]:
     """Memoria de una zapata combinada (D-080 a D-083): la viga larga y las franjas transversales con las verificaciones de
     vigas, el momento positivo y el negativo por separado y sus diagramas envolventes (D-095), el punzonamiento con los
-    esfuerzos de cada esquina, el desarrollo, el aplastamiento y los pasadores."""
+    esfuerzos de cada esquina, el desarrollo, el aplastamiento y los pasadores. figures = (planta de presiones,
+    diagramas); drawings, las vistas del refuerzo (D-126)."""
+    figure, diagrams = figures
     axes = _combined_axes(footing)
     principal, secondary = axes
     items: list[Located] = [(_combined_where(check, axes), check) for check in footing["checks"]]
@@ -1122,14 +1127,15 @@ def combined_document(results: dict[str, Any], footing: dict[str, Any], full: bo
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, others, full)),
         (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, others, full)),
         ("Índices DCR", lambda _: _dcr(items, _combined_label)),
-        *_detailing_chapter(footing),
+        *_detailing_chapter(footing, drawings),
         ("Notas y limitaciones", lambda _: _notes(results, _COMBINED_CONVENTIONS, _COMBINED_LIMITATIONS)),
     ]
     return _assemble(head, chapters)
 
 
-def _detailing_chapter(footing: dict[str, Any]) -> list[tuple[str, Callable[[str], list[Block]]]]:
-    """Capítulo "Despiece y cantidades" (D-125) si el proyecto pidió despiece."""
+def _detailing_chapter(footing: dict[str, Any], drawings: list[DrawingFigure] | None) -> list[tuple[str, Callable[[str], list[Block]]]]:
+    """Capítulo "Despiece y cantidades" (D-125) si el proyecto pidió despiece, con las vistas del refuerzo y el croquis de
+    las formas de la cartilla si pidió dibujo (D-126)."""
     data = footing.get("detailing")
     if not data:
         return []
@@ -1149,13 +1155,15 @@ def _detailing_chapter(footing: dict[str, Any]) -> list[tuple[str, Callable[[str
             {"kind": "table", "headers": ["Barra", "Peso (kg)"],
              "rows": [*totals, ["Total acero", f"{data['steel [kg]']:.1f}"], ["Concreto (m³)", f"{data['concrete [m3]']:.3f}"]]},
             *({"kind": "p", "text": f"Nota: {note}."} for note in notes),
+            *({"kind": "image", "path": str(path), "aspect": aspect, "caption": caption} for path, aspect, caption in drawings or []),
         ]
 
     return [("Despiece y cantidades", build)]
 
 
 def report_documents(results: dict[str, Any], *, full: bool = False, figures: dict[str, Path] | None = None,
-                     diagrams: dict[str, list[Path]] | None = None) -> list[list[Block]]:
+                     diagrams: dict[str, list[Path]] | None = None,
+                     drawings: dict[str, list[DrawingFigure]] | None = None) -> list[list[Block]]:
     """Una memoria por elemento (vigas y luego zapatas); con la entrada inválida, una memoria corta de validación."""
     if "project" not in results:
         validation = results["validation"]
@@ -1164,8 +1172,9 @@ def report_documents(results: dict[str, Any], *, full: bool = False, figures: di
                  {"kind": "p", "text": "La entrada no es válida:"},
                  *({"kind": "alert", "text": f"[{error['code']}] {error['message']}"} for error in validation["errors"])]]
     documents = [beam_document(results, member, full) for member in results["members"]]
-    documents += [footing_document(results, footing, full, (figures or {}).get(footing["id"]))
+    documents += [footing_document(results, footing, full, (figures or {}).get(footing["id"]), (drawings or {}).get(footing["id"]))
                   for footing in results.get("footings", [])]
-    documents += [combined_document(results, footing, full, (figures or {}).get(footing["id"]), (diagrams or {}).get(footing["id"]))
+    documents += [combined_document(results, footing, full, ((figures or {}).get(footing["id"]), (diagrams or {}).get(footing["id"])),
+                                    (drawings or {}).get(footing["id"]))
                   for footing in results.get("combined_footings", [])]
     return documents

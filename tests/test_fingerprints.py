@@ -1,4 +1,5 @@
-"""Huella de los ejemplos (D-051): SHA-256 de resultado.json y memoria.txt, que no llevan fecha.
+"""Huella de los ejemplos (D-051): SHA-256 de resultado.json, memoria.txt (con la cartilla, D-125) y
+<nombre>_drawing.json (el modelo de dibujo, D-126), que no llevan fecha. Nunca del DXF ni del PDF.
 
 Un cambio de cálculo intencional cambia la huella. Después de reportarlo, se actualiza con:
 
@@ -50,8 +51,7 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
         project = work / "proyecto.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         report_file(project, work / "salida")
-        digests = {file: hashlib.sha256((work / "salida" / file).read_bytes()).hexdigest() for file in files}
-        return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **digests}
+        return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **_digests(work / "salida", files)}
     if name in ETABS or name in COMBINED_ETABS:
         data = import_etabs(WORKBOOK, project)[0] if name in ETABS else import_etabs_footings(*REACTIONS, project)[0]
         project = work / "etabs.json"
@@ -62,7 +62,12 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
             project = work / "proyecto.json"
             project.write_text(json.dumps(designed, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     report_file(project, work / "salida")
-    return {file: hashlib.sha256((work / "salida" / file).read_bytes()).hexdigest() for file in ("resultado.json", "memoria.txt")}
+    return _digests(work / "salida", files)
+
+
+def _digests(folder: Path, files: tuple[str, ...]) -> dict[str, str]:
+    names = [*files, *sorted(path.name for path in folder.glob("*_drawing.json"))]
+    return {name: hashlib.sha256((folder / name).read_bytes()).hexdigest() for name in names}
 
 
 @pytest.mark.parametrize("name", [*EXAMPLES, *ETABS, *COMBINED_ETABS])

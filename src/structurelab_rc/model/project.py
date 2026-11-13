@@ -139,6 +139,12 @@ class DetailingSettings(_Input):
     stock_length: PositiveFloat = Field(validation_alias="stock_length_mm")
 
 
+class DrawingSettings(_Input):
+    """Dibujo del refuerzo (D-126): escala de impresión (50 para 1:50), que fija la altura de los textos y las cotas."""
+
+    scale: PositiveFloat
+
+
 class Project(_Input):
     """Vigas (members), zapatas aisladas (footings), zapatas combinadas (combined_footings, D-080) o varias; las zapatas
     requieren los datos del suelo (D-052)."""
@@ -152,6 +158,7 @@ class Project(_Input):
     footings: tuple[Footing, ...] = ()
     combined_footings: tuple[CombinedFooting, ...] = ()
     detailing: DetailingSettings | None = None  # D-125: sin él no se despieza
+    drawing: DrawingSettings | None = None  # D-126: sin él no se dibuja; requiere detailing
 
     @model_validator(mode="after")
     def _check_content(self) -> Self:
@@ -166,4 +173,6 @@ class Project(_Input):
                + [footing.id for footing in self.combined_footings])
         if len(ids) != len(set(ids)):
             raise ValueError("los identificadores de miembros y zapatas deben ser únicos")
+        if self.drawing is not None and self.detailing is None:
+            raise ValueError("drawing requiere detailing: el dibujo rotula las marcas de la cartilla (D-126)")
         return self

@@ -236,6 +236,9 @@ class _Renderer:
         pdf = self.pdf
         width = (pdf.w - pdf.l_margin - pdf.r_margin) * _IMAGE_FRACTION
         height = width * block["aspect"]
+        tallest = pdf.page_break_trigger - pdf.t_margin - 12  # una figura alta (la cartilla, D-126) cabe en una página
+        if height > tallest:
+            width, height = tallest / block["aspect"], tallest
         if pdf.get_y() + height + 8 > pdf.page_break_trigger:
             pdf.add_page()
         pdf.ln(1)

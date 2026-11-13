@@ -27,6 +27,24 @@ class Hook:
 
 
 @dataclass(frozen=True)
+class Placement:
+    """Dónde van las barras de una corrida, para el dibujo (D-126), en los ejes del elemento: origen en el centro de la
+    planta, z hacia arriba desde la base, en mm.
+
+    along: "x" o "y" (barras horizontales paralelas a ese eje: positions es la otra coordenada de cada barra, level la z
+    de su eje y span el inicio y el fin de su eje a lo largo de along); "estribo" (positions, las abscisas x de los
+    estribos; level, la z de su cara inferior exterior; cross, la y de su centro); "z" (pasadores de una columna:
+    positions, el centro (x, y) de la columna; span, la z del pie y del extremo superior; cross, la distancia del eje de
+    la columna a los pasadores que se dibujan, en x y en y, que es esquemática)."""
+
+    along: str
+    positions: tuple[float, ...]
+    level: float
+    span: tuple[float, float]
+    cross: tuple[float, float] = (0.0, 0.0)
+
+
+@dataclass(frozen=True)
 class BarRun:
     """Barras iguales de un grupo del elemento. length es la dimensión exterior del tramo recto principal (de cara
     exterior a cara exterior, ganchos incluidos); hooks, el gancho de cada extremo (None si es recto); lap, la longitud
@@ -43,6 +61,7 @@ class BarRun:
     lap: float | None = None
     stirrup: tuple[float, float] | None = None
     note: str = ""
+    placement: Placement | None = None
 
 
 @dataclass(frozen=True)
@@ -83,6 +102,11 @@ def _hook_parts(hook: Hook, db: float) -> tuple[float, float, float]:
     arc = math.radians(hook.angle) * (radius + db / 2)
     leg = hook.extension + radius + db if hook.angle < _HALF_TURN else hook.bend_diameter + 2 * db
     return radius + db, arc, leg
+
+
+def hook_leg(hook: Hook, db: float) -> float:
+    """Pata exterior de un gancho (la dimensión B o C de la cartilla), en mm."""
+    return _hook_parts(hook, db)[2]
 
 
 def _straight_length(run: BarRun, length: float, hooks: tuple[Hook | None, Hook | None]) -> tuple[float, list[tuple[str, float]]]:
@@ -167,19 +191,35 @@ def schedule(element: str, runs: list[BarRun], stock: float) -> list[ScheduleRow
     fila nombra todos los grupos que reúne."""
     marks: dict[tuple[object, ...], int] = {}
     counts: dict[tuple[object, ...], Piece] = {}
-    for run in runs:
-        for piece in pieces(run, stock):
-            key = (piece.designation, piece.shape, tuple((name, round_up(value)) for name, value in piece.dimensions), piece.cut_length)
-            if key in counts:
-                previous = counts[key]
-                groups = previous.group if piece.group in previous.group.split(", ") else f"{previous.group}, {piece.group}"
-                notes = previous.note if piece.note in previous.note.split(" | ") else f"{previous.note} | {piece.note}"
-                counts[key] = Piece(groups, previous.designation, previous.shape, previous.dimensions, previous.cut_length,
-                                    previous.mass_kg_m, previous.count + piece.count, notes)
-            else:
-                marks[key] = len(marks) + 1
-                counts[key] = piece
+    for _, key, piece in _keyed(runs, stock):
+        if key in counts:
+            previous = counts[key]
+            groups = previous.group if piece.group in previous.group.split(", ") else f"{previous.group}, {piece.group}"
+            notes = previous.note if piece.note in previous.note.split(" | ") else f"{previous.note} | {piece.note}"
+            counts[key] = Piece(groups, previous.designation, previous.shape, previous.dimensions, previous.cut_length,
+                                previous.mass_kg_m, previous.count + piece.count, notes)
+        else:
+            marks[key] = len(marks) + 1
+            counts[key] = piece
     return [ScheduleRow(f"{element}-{marks[key]:02d}", counts[key]) for key in marks]
+
+
+def _keyed(runs: list[BarRun], stock: float) -> list[tuple[int, tuple[object, ...], Piece]]:
+    """(índice de la corrida, clave de la marca, barra cortada) de todas las corridas, en orden."""
+    return [(index, (piece.designation, piece.shape, tuple((name, round_up(value)) for name, value in piece.dimensions),
+                     piece.cut_length), piece)
+            for index, run in enumerate(runs) for piece in pieces(run, stock)]
+
+
+def run_marks(element: str, runs: list[BarRun], stock: float) -> list[tuple[str, ...]]:
+    """Las marcas de la cartilla (las de schedule) de cada corrida, para rotular el dibujo (D-126)."""
+    numbers: dict[tuple[object, ...], int] = {}
+    result: list[list[str]] = [[] for _ in runs]
+    for index, key, _ in _keyed(runs, stock):
+        mark = f"{element}-{numbers.setdefault(key, len(numbers) + 1):02d}"
+        if mark not in result[index]:
+            result[index].append(mark)
+    return [tuple(marks) for marks in result]
 
 
 def totals(rows: list[ScheduleRow]) -> dict[str, float]:

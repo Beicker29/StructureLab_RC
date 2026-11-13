@@ -150,5 +150,8 @@
   ],
   "detailing": {
     "stock_length_mm": 12000.0
+  },
+  "drawing": {
+    "scale": 50.0
   }
 }

@@ -2253,6 +2253,32 @@
 - **Control:** oráculo `derive_detailing.py` (ganchos, doblados, barra en U, estribo cerrado, tramos de una barra
   empalmada, empalmes a tracción y a compresión) y pruebas de coherencia de la cartilla.
 
+### D-126: dibujo del refuerzo de zapatas (v3 Fase 4B)
+
+- **Fecha:** 2026-11-13
+- **Decisiones del usuario:** capas por tipo de objeto (concreto, refuerzo, refuerzo cortado, cotas, textos, ejes y
+  cartilla) con color y grosor fijos; escala de impresión declarada por proyecto (`drawing.scale`, requiere
+  `detailing`); cartilla como tabla con el croquis de cada forma. La memoria lleva las figuras del refuerzo en el capítulo
+  "Despiece y cantidades" (pedido del usuario al aprobar el plan).
+- **Modelo:** `drawing/model.py` (neutro): vistas con líneas, polilíneas, círculos, textos y cotas en mm reales, en las
+  capas fijas; textos de 2.5 y 2.0 mm de papel por la escala. Se guarda como `<nombre>_drawing.json` (en la huella) y
+  se escribe como SVG (`drawing/svg.py`, sin dependencias) y DXF (`drawing/dxf.py`, extra `cad`, ezdxf).
+- **Una fuente de la geometría:** cada corrida del despiece (`BarRun`) lleva su ubicación (`Placement`: dirección,
+  posiciones, nivel y tramo, o las estaciones de los estribos y el centro de los pasadores), tomada de las mismas filas de
+  barras que revisa la verificación (`domain/footing/detailing.py`). `run_marks` da las marcas de la cartilla de cada
+  corrida. Las vistas genéricas (planta, corte, cartilla) están en `drawing/views.py`; los contornos y los cortes de cada
+  tipo de zapata, en `domain/footing/drawing.py`. La piel de la combinada pasa a una corrida por nivel (la cartilla las
+  reúne en la misma marca: no cambia).
+- **Simplificaciones declaradas:** los pasadores se dibujan en dos caras de la columna a un recubrimiento de ellas
+  (su disposición no está en la entrada); en un corte, una barra paralela al plano se dibuja si hay una a menos de una
+  separación; las vistas de la combinada van en los ejes de la viga. Falta la planta de localización de las tipologías
+  con las coordenadas de ETABS.
+- **Ejemplos:** las copias de pruebas de `zapata_centrica`, `zapata_combinada` y `zapata_t_invertida_etabs` declaran
+  `drawing.scale = 50`. Cambian su `memoria.txt` (las figuras del capítulo de despiece) y entra `<nombre>_drawing.json` en
+  su huella; `resultado.json` no cambia.
+- **Control:** `tests/test_drawing.py`: vistas de cada tipo, barras de la planta y del corte frente a las posiciones del
+  despiece, capas, alturas de texto, marcas de la cartilla en las vistas, SVG, DXF leído con ezdxf y figuras en la memoria.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

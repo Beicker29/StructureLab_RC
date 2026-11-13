@@ -12,12 +12,17 @@ Reglas propias del despiece:
 - Pasadores: rectos hasta la malla inferior con gancho de 90° al pie, el pedestal y, encima, el empalme a compresión del
   propio pasador (las barras de la columna no están en el modelo).
 - Estribos cerrados con ganchos de 135°: con más de dos ramas, estribos cerrados anidados de dos ramas cada uno.
+
+Cada corrida lleva su ubicación (Placement) para el dibujo (D-126): las mismas posiciones que revisa la verificación.
+Los pasadores se dibujan en dos esquinas de la columna, a un recubrimiento de sus caras (esquemático: la disposición de
+los pasadores no está en el modelo).
 """
 
 import math
 from collections.abc import Sequence
+from dataclasses import replace
 
-from structurelab_rc.detailing.schedule import BarRun, Hook
+from structurelab_rc.detailing.schedule import BarRun, Hook, Placement
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.geometry import placed_bars
 from structurelab_rc.domain.development import BarAnchorage, lap_splice
@@ -34,8 +39,8 @@ from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows
 from structurelab_rc.errors import StructuredError
 from structurelab_rc.model.catalog import RebarSpec
-from structurelab_rc.model.combined import CombinedFooting
-from structurelab_rc.model.footing import Dowels, Footing, Soil
+from structurelab_rc.model.combined import CombinedColumn, CombinedFooting
+from structurelab_rc.model.footing import Column, Dowels, Footing, Soil
 from structurelab_rc.model.project import Section
 from structurelab_rc.model.reinforcement import ReinforcementLayout, Stirrups
 
@@ -65,18 +70,22 @@ def _row_run(basis: Basis, row: BarRow, given: tuple[str, float, tuple[Hook | No
     count = len(row.positions)
     if count == 0:
         return None
+    # depth se mide desde la cara opuesta a la fila: abajo, z = h − d; arriba, z = d.
+    place = Placement(row.direction, row.positions, footing[0] - row.depth if bottom else row.depth, (-length / 2, length / 2))
     bar = bar_anchorage(row, ("straight", spacing, bottom), footing, 1.0)
     lap = lap_splice(basis.profile, basis.materials, bar, (1.0 if ratio is None else ratio, 0.5 if count > 1 else 1.0))
     spec = _spec(basis.bars, row.designation)
     if isinstance(lap, StructuredError):
-        return BarRun(group, row.designation, spec.diameter_mm, spec.mass_kg_m, count, length, hooks, note=lap.message)
+        return BarRun(group, row.designation, spec.diameter_mm, spec.mass_kg_m, count, length, hooks, note=lap.message,
+                      placement=place)
     note = f"empalme clase {lap[1]}" + (f": {_CLASS_B_NOTE}" if ratio is None else "")
-    return BarRun(group, row.designation, spec.diameter_mm, spec.mass_kg_m, count, length, hooks, lap[0], note=note)
+    return BarRun(group, row.designation, spec.diameter_mm, spec.mass_kg_m, count, length, hooks, lap[0], note=note,
+                  placement=place)
 
 
 def _dowel_run(basis: Basis, dowels: Dowels | None, embed: float, pedestal: float, column: str) -> BarRun | None:
     """Pasadores de una columna: tramo vertical (empotramiento hasta la malla inferior, pedestal y empalme a compresión)
-    con gancho de 90° al pie."""
+    con gancho de 90° al pie. Sin ubicación: la agrega _placed_dowels."""
     if dowels is None:
         return None
     spec = _spec(basis.bars, dowels.designation)
@@ -89,6 +98,18 @@ def _dowel_run(basis: Basis, dowels: Dowels | None, embed: float, pedestal: floa
                       note=f"columna {column}: el perfil no define el empalme a compresión con este fy; sin la parte de la columna")
     return BarRun("pasadores", dowels.designation, spec.diameter_mm, spec.mass_kg_m, dowels.count, embed + pedestal + lap,
                   (_hook(basis, spec.diameter_mm), None), note=f"{note} {lap:.0f} mm")
+
+
+def _placed_dowels(run: BarRun | None, column: Column | CombinedColumn, top_embed: tuple[float, float], cover: float) -> BarRun | None:
+    """Los pasadores con su ubicación: el pie a embed bajo la cara superior top de la zapata (en la T, de la viga) y dos
+    esquinas de la columna a un recubrimiento de sus caras (esquemático)."""
+    if run is None:
+        return None
+    top, embed = top_embed
+    centre = (column.offset_x, column.offset_y) if isinstance(column, Column) else (column.x, column.y)
+    foot = top - embed
+    return replace(run, placement=Placement("z", centre, foot, (foot, foot + run.length),
+                                            (column.cx / 2 - cover, column.cy / 2 - cover)))
 
 
 def _stirrup_runs(basis: Basis, stirrups: Stirrups | None, frame: tuple[float, float, float], along: float) -> list[BarRun]:
@@ -108,11 +129,13 @@ def _stirrup_runs(basis: Basis, stirrups: Stirrups | None, frame: tuple[float, f
     count = math.floor((along - 2 * cover) / stirrups.spacing + 1e-6) + 1
     outer_width, outer_height = width - 2 * cover, height - 2 * cover
     gap = (outer_width - db) / max(stirrups.legs - 1, 1)
+    stations = tuple(-along / 2 + cover + index * stirrups.spacing for index in range(count))
+    place = Placement("estribo", stations, cover, (-along / 2, along / 2))
     runs = []
     for pair in range(max(stirrups.legs // 2, 1)):
         closed = (outer_width - 2 * pair * gap, outer_height)
         runs.append(BarRun("estribos", stirrups.designation, db, spec.mass_kg_m, count, 0.0, (hook, hook), stirrup=closed,
-                           note=f"{stirrups.legs} ramas c/{stirrups.spacing:.0f} mm"))
+                           note=f"{stirrups.legs} ramas c/{stirrups.spacing:.0f} mm", placement=place))
     return runs
 
 
@@ -133,7 +156,8 @@ def footing_runs(basis: Basis, footing: Footing) -> list[BarRun]:
                 runs.append(run)
     rows = mat_rows(footing, footing.bottom, basis.bars)
     embed = h - cover - rows["x"].diameter - rows["y"].diameter
-    dowels = _dowel_run(basis, footing.column.dowels, embed, footing.pedestal_height, footing.id)
+    dowels = _placed_dowels(_dowel_run(basis, footing.column.dowels, embed, footing.pedestal_height, footing.id),
+                            footing.column, (h, embed), cover)
     return [*runs, *([] if dowels is None else [dowels])]
 
 
@@ -191,14 +215,19 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
             runs.append(_row_run(basis, band_top, (f"band superior columna {column.id}", across, _hooks(basis, band_top.diameter, end)),
                                  (column.band_top.spacing, False, geometry, None)))
     if footing.skin is not None:
-        _, layout = beam_member(footing, (bottom["x"], tops.get("x")), bars)
-        levels = sum(1 for layer in layout.layers if layer.role == "skin")
+        section, layout = beam_member(footing, (bottom["x"], tops.get("x")), bars)
+        skin = [bar for bar in placed_bars(layout, section, bars) if bar.role == "skin"]
+        depths = sorted({round(bar.depth, 1) for bar in skin})
         spec = _spec(bars, footing.skin.designation)
-        runs.append(BarRun("piel", spec.designation, spec.diameter_mm, spec.mass_kg_m, 2 * levels, along,
-                           note=f"{levels} niveles en cada cara lateral"))
+        for depth in depths:  # una corrida por nivel, para el dibujo; la cartilla las reúne en una marca
+            ys = tuple(bar.x - footing.ly / 2 for bar in skin if round(bar.depth, 1) == depth)
+            runs.append(BarRun("piel", spec.designation, spec.diameter_mm, spec.mass_kg_m, len(ys), along,
+                               note=f"{len(depths)} niveles en cada cara lateral",
+                               placement=Placement("x", ys, h - depth, (-along / 2, along / 2))))
     runs += _stirrup_runs(basis, footing.stirrups, (footing.ly, h, cover), footing.lx)
     embed = h - cover - bottom["x"].diameter - bottom["y"].diameter
-    runs += [_dowel_run(basis, column.dowels, embed, footing.pedestal_height, column.id) for column in footing.columns]
+    runs += [_placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, column.id), column, (h, embed), cover)
+             for column in footing.columns]
     return [run for run in runs if run is not None]
 
 
@@ -238,7 +267,9 @@ def _t_runs(basis: Basis, footing: CombinedFooting) -> list[BarRun]:
         spec = _spec(bars, designation)
         name = "piel de la viga" if role == "skin" else f"viga, capa a {depth:.0f} mm"
         hooks = _hooks(basis, spec.diameter_mm, beam.end) if role == "flexure" else (None, None)
-        runs.append(_layer_run(basis, (name, spec, len(xs), hooks), (sorted(xs), depth, beam.height, cover + stirrup), along))
+        run = _layer_run(basis, (name, spec, len(xs), hooks), (sorted(xs), depth, beam.height, cover + stirrup), along)
+        ys = tuple(x - beam.width / 2 for x in sorted(xs))
+        runs.append(replace(run, placement=Placement("x", ys, beam.height - depth, (-along / 2, along / 2))))
     runs += _stirrup_runs(basis, beam.stirrups, (beam.width, beam.height, cover), footing.lx)
     rows = mat_rows(footing, footing.bottom, bars)
     half = covered_width(basis.profile, footing) / 2
@@ -257,5 +288,6 @@ def _t_runs(basis: Basis, footing: CombinedFooting) -> list[BarRun]:
                                               _hooks(basis, row.diameter, footing.top.end)),
                                  (bar_set.spacing, False, geometry, None)))
     embed = footing.total_height - cover - rows["y"].diameter
-    runs += [_dowel_run(basis, column.dowels, embed, footing.pedestal_height, column.id) for column in footing.columns]
+    runs += [_placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, column.id), column,
+                            (footing.total_height, embed), cover) for column in footing.columns]
     return [run for run in runs if run is not None]

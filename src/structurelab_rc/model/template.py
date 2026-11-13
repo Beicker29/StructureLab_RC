@@ -204,6 +204,7 @@ class EtabsFootingTemplate(_Input):
     footings: tuple[TemplateFooting, ...] = ()
     combined_footings: tuple[TemplateCombinedFooting, ...] = ()
     detailing: dict[str, float] | None = None  # D-125: pasa al proyecto y se valida con él
+    drawing: dict[str, float] | None = None  # D-126: pasa al proyecto y se valida con él
     etabs_files: FootingEtabsFiles | None = None
 
     @model_validator(mode="after")

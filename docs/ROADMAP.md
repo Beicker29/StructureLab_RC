@@ -67,7 +67,8 @@ existente. Sin fórmulas propias; si nada cumple, `FAIL` con el motivo y los lí
   - aplicado a mallas, pasadores, viga larga (cortes, estribos, piel) y franjas.
   - El costo del diseño por tipologías pasa a usar estas cantidades (una sola fuente de pesos); puede mover resultados
     del diseño, se revisa al implementarlo.
-- **4B Dibujo** (`drawing/`, neutro):
+- **4B Dibujo** (hecho para zapatas aisladas, combinadas y T, D-126; queda la planta de localización de las tipologías)
+  (`drawing/`, neutro):
   - modelo de dibujo neutro `<nombre>_drawing.json` (capas, líneas, polilíneas, círculos, textos, cotas y tablas en
     mm);
   - vistas: planta con mallas y marcas, cortes en X y en Y; en la combinada, alzado de la viga larga con cortes y
