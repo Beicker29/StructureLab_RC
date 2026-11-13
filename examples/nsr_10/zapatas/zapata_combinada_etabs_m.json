@@ -98,9 +98,9 @@
       "id": "ZC_m",
       "min_steel_exception": true,
       "principal_direction": "y",
-      "lx": 3200,
-      "ly": 6200,
-      "h": 850,
+      "lx": 3400,
+      "ly": 6800,
+      "h": 800,
       "cover": 75.0,
       "fill_height": 300.0,
       "pedestal_height": 0.0,
@@ -116,19 +116,19 @@
           "etabs_unique_name": "1651",
           "cx": 500.0,
           "cy": 1100.0,
-          "x": 0.0,
-          "y": 2100,
+          "x": 0.00,
+          "y": 2200,
           "dowels": {
             "designation": "#6",
             "count": 12
           },
           "band": {
             "designation": "#7",
-            "spacing": 110
+            "spacing": 150
           },
           "band_top": {
             "designation": "#4",
-            "spacing": 110
+            "spacing": 150
           }
         },
         {
@@ -136,19 +136,19 @@
           "etabs_unique_name": "1659",
           "cx": 500.0,
           "cy": 1100.0,
-          "x": 0.0,
-          "y": -1530,
+          "x": 0.00,
+          "y": -1230,
           "dowels": {
             "designation": "#6",
             "count": 12
           },
           "band": {
-            "designation": "#8",
-            "spacing": 120
+            "designation": "#7",
+            "spacing": 150
           },
           "band_top": {
             "designation": "#4",
-            "spacing": 120
+            "spacing": 150
           }
         }
       ],
@@ -156,24 +156,24 @@
         "first": "y",
         "end": "straight",
         "x": {
-          "designation": "#5",
+          "designation": "#4",
           "spacing": 150
         },
         "y": {
           "designation": "#6",
-          "spacing": 140
+          "spacing": 150
         }
       },
       "top": {
         "first": "x",
         "end": "straight",
         "x": {
-          "designation": "#5",
+          "designation": "#4",
           "spacing": 150.0
         },
         "y": {
           "designation": "#7",
-          "spacing": 140
+          "spacing": 150
         }
       },
       "skin": {

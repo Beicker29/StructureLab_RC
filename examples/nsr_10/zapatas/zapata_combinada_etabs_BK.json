@@ -156,8 +156,8 @@
         "first": "y",
         "end": "straight",
         "x": {
-          "designation": "#4",
-          "spacing": 140
+          "designation": "#5",
+          "spacing": 150
         },
         "y": {
           "designation": "#6",
@@ -168,8 +168,8 @@
         "first": "x",
         "end": "straight",
         "x": {
-          "designation": "#4",
-          "spacing": 140.0
+          "designation": "#5",
+          "spacing": 150.0
         },
         "y": {
           "designation": "#7",

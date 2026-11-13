@@ -95,7 +95,7 @@
   },
   "combined_footings": [
     {
-      "id": "ZC_B-K",
+      "id": "ZC_fhj",
       "min_steel_exception": true,
       "principal_direction": "y",
       "lx": 3400,
@@ -113,7 +113,7 @@
       "columns": [
         {
           "id": "C_Ext",
-          "etabs_unique_name": "1638",
+          "etabs_unique_name": "1642",
           "cx": 500.0,
           "cy": 1100.0,
           "x": 0.0,
@@ -133,7 +133,7 @@
         },
         {
           "id": "C_Int",
-          "etabs_unique_name": "1612",
+          "etabs_unique_name": "1623",
           "cx": 500.0,
           "cy": 800.0,
           "x": 0.0,
