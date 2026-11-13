@@ -41,6 +41,7 @@ from structurelab_rc.design.footing.typology import (
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.design import DesignColumn, FootingDesignProject
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, N_PER_KN, NMM_PER_KNM, FootingLoad, Soil
+from structurelab_rc.model.project import DetailingSettings, DrawingSettings
 
 # Tareas: ("single", fc, columna), ("covers", tipología, columna), ("design", fc, columnas, tipología de partida); las
 # columnas son índices de project.columns, para no copiar las columnas a cada proceso en cada tarea.
@@ -131,6 +132,7 @@ class DesignResult:
     method: str = "dp"
     milp: MilpInfo | None = None
     iterations: tuple[Iteration, ...] = ()
+    cost_basis: str = ""  # de dónde sale el acero del costo (COST_BASIS, D-127)
 
 
 def _duplicates(ctx: Context, typologies: Sequence[TypologyResult]) -> tuple[Duplicate, ...]:
@@ -639,7 +641,7 @@ def _design(ctx: Context, run: Runner, solve: Solver = _for_fc) -> DesignResult:
     return DesignResult(fc, typologies, solution.total, cost_before_reassignment=solution.before, reassigned=moves,
                         options=tuple(options), distinct_count=_distinct_count([item.design.typology for item in typologies]),
                         duplicates=_duplicates(ctx, typologies), method=ctx.design.method, milp=solution.milp,
-                        iterations=solution.iterations)
+                        iterations=solution.iterations, cost_basis=COST_BASIS[ctx.project.detailing is not None])
 
 
 def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
@@ -665,7 +667,8 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
     materials = project.materials
     return {
         "description": f"{project.description} Diseño por tipologías (D-069): {len(result.typologies)} tipologías, "
-                       f"f'c = {result.fc:g} MPa, costo total {result.cost:.2f}.{_duplicates_warning(result)}",
+                       f"f'c = {result.fc:g} MPa, costo total {result.cost:.2f} "
+                       f"(acero: {COST_BASIS[project.detailing is not None]}, D-127).{_duplicates_warning(result)}",
         "profile": project.profile,
         "seismic": project.seismic.model_dump(),
         "materials": {"fc": result.fc, "fy": materials.fy, "fyt": materials.fyt, "concrete": materials.concrete,
@@ -673,7 +676,19 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
                       **({} if materials.max_aggregate is None else {"max_aggregate": materials.max_aggregate})},
         "soil": soil_input(ctx.soil),
         "footings": footings,
+        # D-127: el proyecto diseñado sale con su despiece y su dibujo, para que run genere la cartilla y los planos.
+        **design_outputs(project.detailing, project.drawing),
     }
+
+
+# De dónde sale el acero del costo de un diseño (D-127): la cartilla si el proyecto declara detailing.
+COST_BASIS = {True: "cartilla", False: "estimado (barras rectas, sin ganchos ni traslapos)"}
+
+
+def design_outputs(detailing: DetailingSettings | None, drawing: DrawingSettings | None) -> dict[str, Any]:
+    """detailing y drawing de un proyecto de diseño en el formato de entrada del proyecto de verificación (D-127)."""
+    return {**({} if detailing is None else {"detailing": {"stock_length_mm": detailing.stock_length}}),
+            **({} if drawing is None else {"drawing": {"scale": drawing.scale}})}
 
 
 def load_input(load: FootingLoad) -> dict[str, Any]:

@@ -132,7 +132,7 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
         return 1
     output.mkdir(parents=True, exist_ok=True)
     (output / "proyecto.json").write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    summary = {"method": result.method, "fc [MPa]": result.fc, "cost": round(result.cost, 2),
+    summary = {"method": result.method, "fc [MPa]": result.fc, "cost": round(result.cost, 2), "cost_basis": result.cost_basis,
                **({"milp": _milp_summary(result.milp)} if result.milp is not None else {}),
                **({"iterations": _iterations(result.iterations)} if result.iterations else {}),
                "cost_before_reassignment": round(result.cost_before_reassignment, 2),
@@ -151,7 +151,7 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
          "columns": list(item.columns), "dowels": item.design.dowels, "concrete [m3]": round(item.design.concrete, 3),
          "steel [kg]": round(item.design.steel, 1), "cost": round(item.design.cost, 2)} for item in result.typologies]}
     (output / "tipologias.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"f'c = {result.fc:g} MPa; {len(result.typologies)} tipologias; costo total {result.cost:.2f}")
+    print(f"f'c = {result.fc:g} MPa; {len(result.typologies)} tipologias; costo total {result.cost:.2f} (acero: {result.cost_basis})")
     for item in result.typologies:
         t = item.design.typology
         print(f"  {item.name}: {t.lx:.0f} x {t.ly:.0f} x {t.h:.0f} mm; {len(item.columns)} columnas: {', '.join(item.columns)}")
@@ -182,6 +182,7 @@ def _combined_summary(result: CombinedDesignResult, placement: str) -> dict[str,
             "base_center [mm]": [round(g.center[0], 1), round(g.center[1], 1)], "placement_case": placement,
             "reinforcement": best.reinforcement,
             "concrete [m3]": round(best.concrete, 3), "steel [kg]": round(best.steel, 1), "cost": round(best.cost, 2),
+            "cost_basis": result.cost_basis,
             "by_fc": [{"fc [MPa]": option.fc,
                        **({"cost": round(option.solution.cost, 2), "length [mm]": option.solution.geometry.length,
                            "width [mm]": option.solution.geometry.width, "h [mm]": option.solution.geometry.h}
@@ -201,7 +202,7 @@ def _design_combined(path: Path, output: Path, workers: int | None) -> int:
                                          encoding="utf-8")
     g = result.best.geometry
     print(f"f'c = {result.best.fc:g} MPa; {g.length:g} x {g.width:g} x {g.h:g} mm; centroide de la base en "
-          f"({g.center[0]:.1f}, {g.center[1]:.1f}) mm; costo {result.best.cost:.2f}")
+          f"({g.center[0]:.1f}, {g.center[1]:.1f}) mm; costo {result.best.cost:.2f} (acero: {result.cost_basis})")
     print(f"Proyecto escrito en {output / 'proyecto.json'}; verifiquelo o genere su memoria con report")
     return 0
 

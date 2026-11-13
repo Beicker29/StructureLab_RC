@@ -12,6 +12,9 @@
     "coating": "uncoated",
     "max_aggregate": 19.0
   },
+  "detailing": {
+    "stock_length_mm": 12000.0
+  },
   "soil": {
     "allowable_pressure_kPa": 250.0,
     "min_contact_fraction": 0.5,

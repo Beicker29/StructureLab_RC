@@ -30,8 +30,9 @@ from pydantic import ValidationError
 
 from structurelab_rc.codes.registry import PROFILES, Profile
 from structurelab_rc.design.bars import Spread, bar_count, bar_options
-from structurelab_rc.design.footing.typologies import load_input, soil_input
+from structurelab_rc.design.footing.typologies import COST_BASIS, design_outputs, load_input, soil_input
 from structurelab_rc.design.stirrups import StirrupFrame, stirrup_options
+from structurelab_rc.detailing.schedule import schedule
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.deep import CURTAINS as DEEP_CURTAINS
 from structurelab_rc.domain.beam.deep import LONGITUDINAL as DEEP_LONGITUDINAL
@@ -67,6 +68,7 @@ from structurelab_rc.domain.footing.combined_columns import (
     transverse_bottom,
     transverse_top,
 )
+from structurelab_rc.domain.footing.detailing import combined_runs
 from structurelab_rc.domain.footing.inverted_t import DEPTH as T_DEPTH
 from structurelab_rc.domain.footing.inverted_t import DEVELOPMENT as T_DEVELOPMENT
 from structurelab_rc.domain.footing.inverted_t import DEVELOPMENT_TOP as T_DEVELOPMENT_TOP
@@ -227,6 +229,7 @@ class CombinedDesignResult:
     best: CombinedSolution | None
     options: tuple[FcOption, ...]
     placement: str  # el caso que ubica la base (D-108)
+    cost_basis: str = ""  # de dónde sale el acero del costo (COST_BASIS, D-127)
 
 
 def placement_loads(ctx: Context) -> tuple[FootingLoad, FootingLoad]:
@@ -899,12 +902,30 @@ def _needs_width(groups: dict[str, Group]) -> bool:
 
 
 def priced(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[str, Any]) -> CombinedSolution:
-    """Costo, concreto (m³) y acero (kg) de la zapata: barras rectas de borde a borde menos el recubrimiento, con las
-    posiciones de la verificación (domain/footing/mesh), y pasadores hasta la malla inferior, como en D-069."""
-    if geometry.beam is not None:
-        return _priced_t(ctx, fc, geometry, reinforcement)
+    """Costo, concreto (m³) y acero (kg) de la zapata (en la T, con el alma). Con detailing, el acero es el de la cartilla
+    (las barras del despiece, con ganchos y empalmes por la longitud comercial, D-127); sin él, el estimado de barras
+    rectas (_estimated_steel). Es el costo con que la búsqueda compara las candidatas."""
     footing = _footing(ctx, geometry, reinforcement)
     assert footing is not None
+    design = ctx.design
+    stem = 0.0 if geometry.beam is None else geometry.beam[0] * footing.lx * (geometry.beam[1] - footing.h)
+    concrete = (footing.lx * footing.ly * footing.h + stem + footing.column_area * footing.pedestal_height) / _MM3_PER_M3
+    detailing = ctx.project.detailing
+    if detailing is not None:
+        rows = schedule(FOOTING_ID, combined_runs(ctx.basis(fc), footing, ctx.project.soil), detailing.stock_length)
+        steel = sum(row.mass for row in rows)
+    else:
+        steel = _estimated_steel(ctx, fc, geometry, reinforcement, footing)
+    cost = concrete * design.prices.concrete(fc) + steel * design.prices.steel_per_kg
+    return CombinedSolution(fc, geometry, reinforcement, cost, concrete, steel, _footing_data(ctx, geometry, reinforcement))
+
+
+def _estimated_steel(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[str, Any], footing: CombinedFooting) -> float:
+    """Acero estimado (kg), sin despiece: barras rectas de borde a borde menos el recubrimiento, con las posiciones de la
+    verificación (domain/footing/mesh), y pasadores hasta la malla inferior, como en D-069; en la T (D-113), las x de la
+    zarpa solo fuera del ancho cubierto, las capas de la viga y sus estribos."""
+    if geometry.beam is not None:
+        return _estimated_t_steel(ctx, geometry, reinforcement, footing)
     design = ctx.design
     basis = ctx.basis(fc)
     long_bar, cross_bar = (footing.lx - 2 * design.cover) / 1000, (footing.ly - 2 * design.cover) / 1000  # m, ejes de la viga
@@ -939,17 +960,13 @@ def priced(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[str,
         count = math.floor((footing.lx - 2 * design.cover) / stirrups.spacing + 1e-6) + 1
         perimeter = (stirrups.legs * (footing.h - 2 * design.cover) + 2 * (footing.ly - 2 * design.cover)) / 1000
         steel += mass(stirrups.designation, count, perimeter)
-    concrete = (footing.lx * footing.ly * footing.h + footing.column_area * footing.pedestal_height) / _MM3_PER_M3
-    cost = concrete * design.prices.concrete(fc) + steel * design.prices.steel_per_kg
-    return CombinedSolution(fc, geometry, reinforcement, cost, concrete, steel, _footing_data(ctx, geometry, reinforcement))
+    return steel
 
 
-def _priced_t(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[str, Any]) -> CombinedSolution:
-    """Costo de la T invertida (D-113): zarpa, alma y pedestales; barras rectas de borde a borde menos el recubrimiento
-    (las x de la zarpa solo fuera del ancho cubierto), capas de la viga, estribos y pasadores hasta la capa inferior."""
-    assert geometry.beam is not None
-    footing = _footing(ctx, geometry, reinforcement)
-    assert footing is not None and footing.beam is not None
+def _estimated_t_steel(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any], footing: CombinedFooting) -> float:
+    """El acero estimado de la T invertida (D-113): las x de la zarpa fuera del ancho cubierto, las y de las aletas, la malla
+    superior de la zarpa, las capas de la viga, sus estribos y los pasadores hasta la capa inferior."""
+    assert geometry.beam is not None and footing.beam is not None
     design = ctx.design
     web, height = geometry.beam
     long_bar, cross_bar = (footing.lx - 2 * design.cover) / 1000, (footing.ly - 2 * design.cover) / 1000
@@ -974,10 +991,7 @@ def _priced_t(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[s
         count = math.floor((footing.lx - 2 * design.cover) / stirrups.spacing + 1e-6) + 1
         perimeter = (stirrups.legs * (height - 2 * design.cover) + 2 * (web - 2 * design.cover)) / 1000
         steel += mass(stirrups.designation, count, perimeter)
-    concrete = (footing.lx * footing.ly * footing.h + web * footing.lx * (height - footing.h)
-                + footing.column_area * footing.pedestal_height) / _MM3_PER_M3
-    cost = concrete * design.prices.concrete(fc) + steel * design.prices.steel_per_kg
-    return CombinedSolution(fc, geometry, reinforcement, cost, concrete, steel, _footing_data(ctx, geometry, reinforcement))
+    return steel
 
 
 def _concrete_floor(ctx: Context, fc: float, geometry: Geometry) -> float:
@@ -1131,7 +1145,7 @@ def design_combined(ctx: Context, workers: int = 1) -> CombinedDesignResult:
         options = tuple(design_for_fc(ctx, fc) for fc in fcs)
     solved = [option.solution for option in options if option.solution is not None]
     return CombinedDesignResult(min(solved, key=lambda solution: solution.cost) if solved else None, options,
-                                placement_loads(ctx)[0].case)
+                                placement_loads(ctx)[0].case, cost_basis(ctx))
 
 
 def _placement_note(ctx: Context) -> str:
@@ -1153,7 +1167,8 @@ def designed_project(ctx: Context, solution: CombinedSolution) -> dict[str, Any]
     return {
         "description": f"{project.description} Diseño de la zapata combinada (D-107){shape}: {g.length:g} × {g.width:g} × {g.h:g} mm, "
                        f"f'c = {solution.fc:g} MPa, centroide de la base en ({g.center[0]:.1f}, {g.center[1]:.1f}) mm de los "
-                       f"ejes de las columnas, sobre la resultante del caso {_placement_note(ctx)}, costo {solution.cost:.2f}.",
+                       f"ejes de las columnas, sobre la resultante del caso {_placement_note(ctx)}, costo {solution.cost:.2f} "
+                       f"(acero: {cost_basis(ctx)}, D-127).",
         "profile": project.profile,
         "seismic": project.seismic.model_dump(),
         "materials": {"fc": solution.fc, "fy": materials.fy, "fyt": materials.fyt, "concrete": materials.concrete,
@@ -1161,4 +1176,11 @@ def designed_project(ctx: Context, solution: CombinedSolution) -> dict[str, Any]
                       **({} if materials.max_aggregate is None else {"max_aggregate": materials.max_aggregate})},
         "soil": soil_input(project.soil),
         "combined_footings": [solution.data],
+        # D-127: el proyecto diseñado sale con su despiece y su dibujo, para que run genere la cartilla y los planos.
+        **design_outputs(project.detailing, project.drawing),
     }
+
+
+def cost_basis(ctx: Context) -> str:
+    """De dónde sale el acero del costo (D-127): la cartilla si el proyecto declara detailing; si no, el estimado."""
+    return COST_BASIS[ctx.project.detailing is not None]

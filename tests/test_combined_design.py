@@ -20,7 +20,7 @@ from structurelab_rc.domain.footing.base import combined_resultant
 from structurelab_rc.domain.footing.checks import combined_footing_checks
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
-from structurelab_rc.engine import RunPlan, design_combined_file, run_plan
+from structurelab_rc.engine import RunPlan, design_combined_file, report_file, run_plan
 from structurelab_rc.io.etabs.footings import build_combined_design_project
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.combined import CombinedFooting
@@ -369,3 +369,66 @@ def test_tall_t_beam_is_declared_deep_and_checked() -> None:
     checks = combined_footing_checks(ctx.basis(28.0), footing, ctx.project.soil)
     assert all(check.status is Status.PASS for check in checks)
     assert any(check.name.startswith("Viga alta") for check in checks)
+
+def test_cost_comes_from_the_cartilla_with_detailing(tmp_path: Path,
+                                                    designed: tuple[dict[str, Any], design.CombinedDesignResult]) -> None:
+    """D-127: con detailing, el costo es concreto × precio + acero de la cartilla × precio y el proyecto diseñado sale con su
+    despiece: la cartilla de su verificación pesa lo mismo que el acero con que el diseño calculó el costo."""
+    project, result = designed
+    best = result.best
+    assert best is not None
+    ctx = _context(json.loads(EXAMPLE.read_text(encoding="utf-8")))
+    assert ctx.project.detailing is not None and result.cost_basis == "cartilla"
+    prices = ctx.design.prices
+    assert best.cost == pytest.approx(best.concrete * prices.concrete(best.fc) + best.steel * prices.steel_per_kg, rel=1e-12)
+    assert project["detailing"] == {"stock_length_mm": ctx.project.detailing.stock_length}
+    assert "acero: cartilla" in project["description"]
+    path = tmp_path / "proyecto.json"
+    path.write_text(json.dumps(project), encoding="utf-8")
+    report_file(path, tmp_path / "salida")
+    cartilla = json.loads((tmp_path / "salida" / "resultado.json").read_text(encoding="utf-8"))["combined_footings"][0]["detailing"]
+    assert cartilla["steel [kg]"] == pytest.approx(best.steel, abs=0.05)
+    assert cartilla["concrete [m3]"] == pytest.approx(best.concrete, abs=5e-4)
+
+
+def test_without_detailing_the_cost_is_the_straight_bar_estimate(designed: tuple[dict[str, Any], design.CombinedDesignResult]) -> None:
+    """D-127: sin detailing, el acero del costo es el estimado de barras rectas, como antes, y el resumen lo dice; con
+    detailing, la misma zapata pesa lo de su cartilla, que con ganchos y traslapos es más."""
+    best = designed[1].best
+    assert best is not None
+    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    data.pop("detailing", None)
+    data.pop("drawing", None)
+    ctx = _context(data)
+    assert design.cost_basis(ctx) == "estimado (barras rectas, sin ganchos ni traslapos)"
+    solution = design.priced(ctx, best.fc, best.geometry, best.reinforcement)
+    footing = design._footing(ctx, best.geometry, best.reinforcement)
+    assert footing is not None
+    assert solution.steel == pytest.approx(design._estimated_steel(ctx, best.fc, best.geometry, best.reinforcement, footing))
+    assert solution.concrete == pytest.approx(best.concrete) and solution.steel < best.steel
+
+
+def test_inverted_t_with_short_bars_is_the_cheapest_by_cartilla(monkeypatch: pytest.MonkeyPatch) -> None:
+    """D-127: con barras de 6 m, cada candidata de la búsqueda de la T se precia con su cartilla (ganchos y traslapos) y la
+    elegida es la de menor costo por cartilla entre todas las que aprobaron la verificación."""
+    data = json.loads(EXAMPLE_T.read_text(encoding="utf-8"))
+    data["detailing"] = {"stock_length_mm": 6000.0}
+    data["combined_design"]["fc_options"] = [data["combined_design"]["fc_options"][0]]
+    ctx = _context(data)
+    seen: list[design.CombinedSolution] = []
+    original = design.priced
+
+    def recorded(*args: Any) -> design.CombinedSolution:
+        solution = original(*args)
+        seen.append(solution)
+        return solution
+
+    monkeypatch.setattr(design, "priced", recorded)
+    result = design.design_combined(ctx)
+    assert result.best is not None and seen and result.cost_basis == "cartilla"
+    assert result.best.cost == pytest.approx(min(solution.cost for solution in seen))
+    best = result.best
+    footing = design._footing(ctx, best.geometry, best.reinforcement)
+    assert footing is not None
+    # La cartilla con 6 m pesa más que el estimado: los traslapos y los ganchos cuentan.
+    assert best.steel > design._estimated_steel(ctx, best.fc, best.geometry, best.reinforcement, footing)

@@ -2279,6 +2279,54 @@
 - **Control:** `tests/test_drawing.py`: vistas de cada tipo, barras de la planta y del corte frente a las posiciones del
   despiece, capas, alturas de texto, marcas de la cartilla en las vistas, SVG, DXF leído con ezdxf y figuras en la memoria.
 
+### D-127: el costo del diseño sale de la cartilla
+
+- **Fecha:** 2026-11-13
+- **Decisión del usuario (plan 4C aprobado):** con `detailing` en el proyecto de diseño, el acero del costo es el de la
+  cartilla (D-125): ganchos, empalmes por la longitud comercial y longitudes redondeadas. Sin `detailing`, sigue el
+  estimado de barras rectas.
+- **Entrada:** `detailing` y `drawing` opcionales en los proyectos de diseño (`FootingDesignProject` y
+  `CombinedDesignProject`) y en sus plantillas de ETABS. `drawing` requiere `detailing`, como en la verificación.
+- **Cálculo (una fuente de cantidades):**
+  - **Combinada y T:** `priced()` es el único que precia cada candidata (antes `priced()` y `_priced_t()`). Con
+    `detailing`, el acero sale de `combined_runs` + `schedule`; sin él, de `_estimated_steel`. Así, todas las
+    comparaciones de la búsqueda usan el costo real.
+  - **Tipologías:** `column_cost()`, que arma la tabla de la DP y del MILP y el costo de cada tipología, usa
+    `footing_runs` + `schedule`. La malla dentro de cada tamaño de zapata (`_cheapest_bottom` y `_jointly`) se sigue
+    eligiendo con el estimado (`estimate=True`), rápido y suficiente para ordenarlas.
+- **Salida:** el proyecto diseñado lleva `detailing` y `drawing`, así que `run` genera su cartilla, sus planos y su
+  memoria. La descripción del proyecto diseñado y los resúmenes (`cost_basis`, también en la CLI) dicen la base del
+  costo: `cartilla` o `estimado (barras rectas, sin ganchos ni traslapos)`.
+- **Experimento** (copias de `pruebas/`, misma búsqueda, en los dos perfiles):
+
+  | Ejemplo | Acero | NSR-10: solución | NSR-10: acero / costo | ACI 318-25: acero / costo |
+  | --- | --- | --- | --- | --- |
+  | `diseno_combinada` | estimado | 6600 × 1600 × 600, f'c 28 | 890.1 kg / 9 161 742 | 902.6 kg / 9 239 514 |
+  | `diseno_combinada` | cartilla 12 m | la misma | 949.2 kg / 9 528 147 | 968.0 kg / 9 644 806 |
+  | `diseno_combinada` | cartilla 6 m | la misma | 1057.9 kg / 10 202 471 | 1076.8 kg / 10 319 130 |
+  | `diseno_t_invertida` | estimado | 6700 × 1900, viga 800 × 800, f'c 21 | 707.0 kg / 7 763 155 | 709.9 kg / 7 589 329 |
+  | `diseno_t_invertida` | cartilla 12 m | la misma | 758.3 kg / 8 081 185 | 766.4 kg / 7 939 757 |
+  | `diseno_t_invertida` | cartilla 6 m | 6500 × 1900, viga 800 × 1000 | 829.0 kg / 8 959 480 | 828.2 kg / 8 768 285 |
+
+  - La zarpa de la T es de 300 mm en NSR-10 y de 250 mm en ACI 318-25.
+  - Con 6 m, la ganadora del estimado preciada con su cartilla costaría 9 284 181 (NSR-10) y 9 142 753 (ACI): la
+    nueva ganadora es un 3.5 % y un 4.1 % más barata.
+  - El diseño tarda casi lo mismo: la combinada, 29 a 34 s; la T, de 33–39 s con el estimado a 37–44 s con la
+    cartilla.
+- **Ejemplos (cambio registrado):** las copias de `pruebas/` de `diseno_combinada` (12 m) y `diseno_t_invertida` (6 m)
+  llevan `detailing`. Sus costos suben y la T cambia de solución. Los demás diseños (`diseno_tipologias` y los de
+  ETABS) no cambian ningún valor: solo la descripción del proyecto diseñado (la base del costo), `cost_basis` en el
+  resumen y `"detailing": null` en el `diseno.json` intermedio de las plantillas.
+- **Control:** pruebas en `test_combined_design.py`:
+  - con `detailing`, el costo es concreto × precio + acero de la cartilla × precio, y la cartilla de la verificación
+    del proyecto diseñado pesa lo mismo;
+  - sin él, el acero es el estimado;
+  - en la T con barras de 6 m, la elegida es la más barata por cartilla entre todas las candidatas que aprobaron.
+
+  Y en `test_footing_design.py`: `column_cost` con la cartilla y, con `estimate`, el estimado de siempre.
+- **Riesgo:** la búsqueda del refuerzo dentro de cada geometría y la malla dentro de cada tamaño de zapata siguen
+  ordenadas por el peso estimado. La cartilla decide entre geometrías, f'c y tipologías.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

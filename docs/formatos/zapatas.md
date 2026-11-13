@@ -230,6 +230,7 @@ hay tipologías repetidas, su `description` termina con una advertencia que la m
 | `method` | texto | `dp`, `milp` o `milp_iter`. |
 | `fc [MPa]` | MPa | f'c elegido: el de menor costo total. |
 | `cost` | moneda | Costo total (con `dp`, después de la reasignación; con `milp`, el del MILP, o el de la DP si el MILP no tiene solución). |
+| `cost_basis` | texto | De dónde sale el acero del costo (D-127): `cartilla` si el proyecto declara `detailing`, o `estimado (barras rectas, sin ganchos ni traslapos)`. |
 | `milp` | objeto | Solo con `milp`: `status` (`optimal`: óptimo certificado en el catálogo; `time_limit`: sin certificar; `infeasible`: sin N tipologías distintas, queda la DP), `dp_cost`, `dp_distinct_count`, `milp_cost`, `candidates`, `seconds` (matriz y solucionador) y `note`. |
 | `iterations` | lista | Solo con `milp_iter`: cada iteración del f'c elegido con `number`, `candidates`, `cost`, `status` y `seconds` (también en `by_fc`). |
 | `cost_before_reassignment` | moneda | Costo de la partición, antes de reasignar (con `milp`, igual a `cost`). |
@@ -337,7 +338,8 @@ columnas respecto al centroide de la base; lo verifica `run`, `verify` o `report
 | `base_center [mm]` | mm | Centroide de la base en los ejes globales de las columnas de entrada. |
 | `placement_case` | texto | El caso que ubicó la base; la descripción de `proyecto.json` (y la memoria) dice además si se declaró o se eligió por la regla. |
 | `reinforcement` | objeto | Refuerzo en ejes de la viga: `bottom_x`, `bottom_y`, `top_x`, `top_y`, `skin`, `stirrups` (null si no hay), `bands`, `band_tops` (band superior, null si no hace falta, D-119) y `dowels` por columna. En la T: `top_x` y `bottom_x` son las capas superior e inferior de la viga (separación), `mat_x` las barras x de la zarpa y `bottom_y` las de las aletas. |
-| `concrete [m3]`, `steel [kg]`, `cost` | m³, kg, moneda | Cantidades y costo, con barras rectas de borde a borde menos el recubrimiento y pasadores hasta la malla inferior. |
+| `concrete [m3]`, `steel [kg]`, `cost` | m³, kg, moneda | Cantidades y costo: con `detailing`, el acero de la cartilla (ganchos, empalmes por la longitud comercial, longitudes redondeadas); sin él, barras rectas de borde a borde menos el recubrimiento y pasadores hasta la malla inferior (D-127). |
+| `cost_basis` | texto | `cartilla` o `estimado (barras rectas, sin ganchos ni traslapos)` (D-127). |
 | `by_fc` | lista | Cada f'c: `cost`, dimensiones, o `cost` null y `failure`. |
 
 `--workers N` reparte los f'c entre procesos (por defecto, los núcleos del equipo); no cambia el resultado. `run`
@@ -347,6 +349,17 @@ reconoce el ejemplo por el bloque `combined_design`, diseña y genera la memoria
 
 Bloque opcional del proyecto de verificación (y de las plantillas de ETABS de zapatas, que lo pasan al proyecto). Sin él
 no se despieza.
+
+En los proyectos de diseño (por tipologías y de la combinada o la T, y en sus plantillas de ETABS), `detailing` y
+`drawing` también son opcionales (D-127):
+
+- **Costo:** con `detailing`, el acero del costo sale de la cartilla de cada candidata. En la combinada y la T, con
+  ella se comparan todas las candidatas de la búsqueda. En las tipologías, con ella se arma la tabla con que se agrupan
+  las columnas y se calcula el costo de cada tipología; la malla dentro de cada tamaño de zapata se sigue eligiendo con
+  el acero estimado. Sin `detailing`, el costo es el estimado de barras rectas, como antes.
+- **Salida:** el proyecto diseñado lleva los dos bloques, así que `run` genera su cartilla, sus planos y su memoria.
+- **Base del costo:** la descripción del proyecto diseñado y los resúmenes (`cost_basis`) dicen de dónde sale el
+  acero.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |

@@ -19,10 +19,12 @@ from typing import Any
 
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.design.bars import Spread, bar_options
+from structurelab_rc.detailing.schedule import schedule
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.checks import footing_checks
 from structurelab_rc.domain.footing.connection import bearing_area, footing_support
+from structurelab_rc.domain.footing.detailing import footing_runs
 from structurelab_rc.domain.footing.flexure import PLAIN, face_moments
 from structurelab_rc.domain.footing.loads import factored_cases
 from structurelab_rc.domain.footing.service import service_checks
@@ -226,23 +228,32 @@ def column_checks(ctx: Context, typology: Typology, column: DesignColumn) -> tup
     return first
 
 
-def column_cost(ctx: Context, typology: Typology, column: DesignColumn, dowels: dict[str, Any]) -> tuple[float, float, float]:
-    """Costo, volumen de concreto (m³) y peso de acero (kg) de la zapata de una columna con la tipología y sus pasadores:
-    mallas rectas de borde a borde menos el recubrimiento y pasadores hasta la malla inferior. Es el costo por par de la
-    DP y del MILP (E2): el de un grupo es la suma del de sus columnas."""
+def column_cost(ctx: Context, typology: Typology, column: DesignColumn, dowels: dict[str, Any],
+                estimate: bool = False) -> tuple[float, float, float]:
+    """Costo, volumen de concreto (m³) y peso de acero (kg) de la zapata de una columna con la tipología y sus pasadores.
+    Es el costo por par de la DP y del MILP (E2): el de un grupo es la suma del de sus columnas. Con detailing, el acero
+    es el de la cartilla (ganchos y empalmes por la longitud comercial, D-127); sin él, o con estimate (la elección de la
+    malla dentro de cada tamaño, D-127), el estimado: mallas rectas de borde a borde menos el recubrimiento y pasadores
+    hasta la malla inferior."""
     design = ctx.design
     concrete = (typology.lx * typology.ly * typology.h + column.cx * column.cy * design.pedestal_height) / _MM3_PER_M3
-    steel = _mat_mass(ctx, typology, typology.bottom) + (0.0 if typology.top is None else _mat_mass(ctx, typology, typology.top))
-    steel += dowels["count"] * ctx.spec(dowels["designation"]).mass_kg_m * (typology.h - design.cover) / 1000
+    detailing = ctx.project.detailing
+    if detailing is not None and not estimate:
+        basis = Basis(ctx.profile, ctx.materials(typology.fc), ctx.bars, ctx.project.seismic.level)
+        runs = footing_runs(basis, footing_for(ctx, typology, column, dowels))
+        steel = sum(row.mass for row in schedule(column.id, runs, detailing.stock_length))
+    else:
+        steel = _mat_mass(ctx, typology, typology.bottom) + (0.0 if typology.top is None else _mat_mass(ctx, typology, typology.top))
+        steel += dowels["count"] * ctx.spec(dowels["designation"]).mass_kg_m * (typology.h - design.cover) / 1000
     price = design.prices
     return concrete * price.concrete(typology.fc) + steel * price.steel_per_kg, concrete, steel
 
 
 def _cost(
-    ctx: Context, typology: Typology, columns: Sequence[DesignColumn], dowels: dict[str, dict[str, Any]]
+    ctx: Context, typology: Typology, columns: Sequence[DesignColumn], dowels: dict[str, dict[str, Any]], estimate: bool = False
 ) -> tuple[float, float, float]:
-    """Costo, concreto y acero del grupo: la suma de los de sus columnas."""
-    parts = [column_cost(ctx, typology, column, dowels[column.id]) for column in columns]
+    """Costo, concreto y acero del grupo: la suma de los de sus columnas (estimate: con el acero estimado, D-127)."""
+    parts = [column_cost(ctx, typology, column, dowels[column.id], estimate) for column in columns]
     return sum(part[0] for part in parts), sum(part[1] for part in parts), sum(part[2] for part in parts)
 
 
@@ -341,7 +352,8 @@ def _cheapest_bottom(
         failures, dowels = _verify(ctx, typology, columns)
         own = [failure for failure in failures if not _top_related(failure)]
         if not own:
-            cost = priced(ctx, typology, columns, dowels).cost - _concrete_cost(ctx, typology, columns)
+            # La malla dentro de cada tamaño se elige con el acero estimado (D-127), rápido y suficiente para ordenarlas.
+            cost = _cost(ctx, typology, columns, dowels, estimate=True)[0] - _concrete_cost(ctx, typology, columns)
             best = (cost, bottom) if best is None or cost < best[0] else best
         elif best is None and not all(failure.name.startswith(_MAT_PREFIXES) for failure in own):
             return None  # falla algo que depende del espesor
@@ -352,16 +364,17 @@ def _jointly(
     ctx: Context, columns: Sequence[DesignColumn], provisional: Typology, bottoms: list[dict[str, Any]],
     tops: list[dict[str, Any] | None],
 ) -> GroupDesign | str:
-    """Respaldo si las mallas no resultaran separables: todas las combinaciones, la de menor costo que pasa."""
-    best: GroupDesign | None = None
+    """Respaldo si las mallas no resultaran separables: todas las combinaciones, la de menor costo que pasa (elegida con el
+    acero estimado, como las mallas de _cheapest_bottom, y preciada con el costo del diseño, D-127)."""
+    best: tuple[float, Typology, dict[str, dict[str, Any]]] | None = None
     for bottom in bottoms:
         for top in tops:
             typology = Typology(provisional.fc, provisional.lx, provisional.ly, provisional.h, bottom, top)
             failures, dowels = _verify(ctx, typology, columns)
             if not failures:
-                result = priced(ctx, typology, columns, dowels)
-                best = result if best is None or result.cost < best.cost else best
-    return "h" if best is None else best
+                cost = _cost(ctx, typology, columns, dowels, estimate=True)[0]
+                best = (cost, typology, dowels) if best is None or cost < best[0] else best
+    return "h" if best is None else priced(ctx, best[1], columns, best[2])
 
 
 def _concrete_cost(ctx: Context, typology: Typology, columns: Sequence[DesignColumn]) -> float:

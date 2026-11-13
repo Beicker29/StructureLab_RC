@@ -57,7 +57,7 @@ existente. Sin fórmulas propias; si nada cumple, `FAIL` con el motivo y los lí
 
 ### Fase 4: despiece y dibujo (alcance de la Fase 5 de vigas)
 
-- **4A Despiece** (hecho para zapatas aisladas, combinadas y T, D-125; queda que el costo del diseño use la cartilla y
+- **4A Despiece** (hecho para zapatas aisladas, combinadas y T, D-125; el costo del diseño usa la cartilla, D-127; queda
   la clase del empalme con el As requerido en cada zona) (`detailing/`, neutro, sin fórmulas normativas):
   - forma de cada barra (recta, gancho de 90° o 180°, L, U, estribo cerrado) con el diámetro de doblado y la
     extensión del gancho que da el perfil, y su longitud de corte;
@@ -65,8 +65,6 @@ existente. Sin fórmulas propias; si nada cumple, `FAIL` con el motivo y los lí
   - marcas, cartilla (marca, diámetro, cantidad, forma, dimensiones, longitud y peso) y cantidades (acero por diámetro y
     concreto);
   - aplicado a mallas, pasadores, viga larga (cortes, estribos, piel) y franjas.
-  - El costo del diseño por tipologías pasa a usar estas cantidades (una sola fuente de pesos); puede mover resultados
-    del diseño, se revisa al implementarlo.
 - **4B Dibujo** (hecho para zapatas aisladas, combinadas y T, D-126; queda la planta de localización de las tipologías)
   (`drawing/`, neutro):
   - modelo de dibujo neutro `<nombre>_drawing.json` (capas, líneas, polilíneas, círculos, textos, cotas y tablas en

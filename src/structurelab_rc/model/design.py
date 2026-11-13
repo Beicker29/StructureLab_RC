@@ -10,7 +10,7 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator, model_validator
 
 from structurelab_rc.model.footing import FootingLoad, Soil
-from structurelab_rc.model.project import Coating, SeismicFacts
+from structurelab_rc.model.project import Coating, DetailingSettings, DrawingSettings, SeismicFacts
 
 COMMERCIAL_FC = (21.0, 24.5, 28.0, 31.5, 35.0, 42.0, 48.0)  # MPa
 
@@ -146,6 +146,8 @@ class FootingDesignProject(_Input):
     design: FootingDesign
     columns: tuple[DesignColumn, ...] = Field(min_length=1)
     curve: CurveSettings | None = None  # solo el ejemplo de la curva costo–N (D-096)
+    detailing: DetailingSettings | None = None  # D-127: con él, el costo sale de la cartilla y el proyecto diseñado lo lleva
+    drawing: DrawingSettings | None = None  # D-127: pasa al proyecto diseñado; requiere detailing (D-126)
 
     @model_validator(mode="after")
     def _check(self) -> Self:
@@ -154,7 +156,13 @@ class FootingDesignProject(_Input):
             raise ValueError("los identificadores de las columnas deben ser únicos")
         if self.design.typologies > len(self.columns):
             raise ValueError("hay más tipologías que columnas")
+        _check_drawing(self.detailing, self.drawing)
         return self
+
+
+def _check_drawing(detailing: DetailingSettings | None, drawing: DrawingSettings | None) -> None:
+    if drawing is not None and detailing is None:
+        raise ValueError("drawing requiere detailing: el dibujo rotula las marcas de la cartilla (D-126)")
 
 
 class CombinedDesign(DesignLimits):
@@ -222,9 +230,12 @@ class CombinedDesignProject(_Input):
     principal_direction: Literal["x", "y"] = "x"
     combined_design: CombinedDesign
     columns: tuple[CombinedDesignColumn, ...] = Field(min_length=2, max_length=2)
+    detailing: DetailingSettings | None = None  # D-127: con él, el costo sale de la cartilla y el proyecto diseñado lo lleva
+    drawing: DrawingSettings | None = None  # D-127: pasa al proyecto diseñado; requiere detailing (D-126)
 
     @model_validator(mode="after")
     def _check(self) -> Self:
+        _check_drawing(self.detailing, self.drawing)
         first, second = self.columns
         if first.id == second.id:
             raise ValueError("los identificadores de las columnas deben ser únicos")

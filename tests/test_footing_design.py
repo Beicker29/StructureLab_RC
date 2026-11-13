@@ -43,6 +43,9 @@ from structurelab_rc.design.footing.typology import (
     design_group,
     priced,
 )
+from structurelab_rc.detailing.schedule import schedule
+from structurelab_rc.domain.basis import Basis
+from structurelab_rc.domain.footing.detailing import footing_runs
 from structurelab_rc.domain.status import Status
 from structurelab_rc.engine import design_footings, report_file, run_project
 from structurelab_rc.io.etabs.footings import build_footing_design_project
@@ -554,3 +557,21 @@ def test_cli_rejects_more_typologies_than_columns(tmp_path: Path) -> None:
     source = tmp_path / "diseno.json"
     source.write_text(json.dumps(_curve_data("milp_iter")), encoding="utf-8")
     assert main(["typology-curve", str(source), "--output", str(tmp_path / "curva"), "--n", "4"]) == 1
+
+def test_column_cost_comes_from_the_cartilla_with_detailing() -> None:
+    """D-127: con detailing, el costo de la zapata de una columna (el de la tabla de la DP y del MILP) usa el acero de su
+    cartilla: ganchos de la malla, pasadores con su gancho y su empalme, longitudes redondeadas; con estimate (la elección
+    de la malla dentro de cada tamaño), el estimado de barras rectas, igual que sin detailing."""
+    plain = _context(_project())
+    detailed = _context({**_project(), "detailing": {"stock_length_mm": 6000.0}})
+    bars = {"designation": "#5", "spacing": 200.0}
+    typology = typology_module.Typology(21.0, 2000.0, 2000.0, 500.0, {"first": "x", "end": "hook", "x": bars, "y": bars}, None)
+    column, dowels = detailed.project.columns[0], {"designation": "#5", "count": 4}
+    cost, concrete, steel = column_cost(detailed, typology, column, dowels)
+    basis = Basis(detailed.profile, detailed.materials(21.0), BARS, detailed.project.seismic.level)
+    runs = footing_runs(basis, typology_module.footing_for(detailed, typology, column, dowels))
+    assert steel == pytest.approx(sum(row.mass for row in schedule(column.id, runs, 6000.0)))
+    assert cost == pytest.approx(concrete * 500000.0 + steel * 6000.0)
+    estimate = column_cost(plain, typology, column, dowels)
+    assert column_cost(detailed, typology, column, dowels, estimate=True) == estimate
+    assert steel > estimate[2]

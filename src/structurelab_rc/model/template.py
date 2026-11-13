@@ -241,6 +241,8 @@ class EtabsFootingDesignTemplate(_Input):
     columns: tuple[TemplateColumns, ...] = Field(min_length=1)
     exclude_unique_names: tuple[str, ...] = ()
     etabs_files: FootingEtabsFiles | None = None
+    detailing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
+    drawing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
 
     @model_validator(mode="after")
     def _check_names(self) -> Self:
@@ -273,6 +275,8 @@ class EtabsCombinedDesignTemplate(_Input):
     combined_design: dict[str, Any]
     columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2, max_length=2)
     etabs_files: FootingEtabsFiles | None = None
+    detailing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
+    drawing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
 
     @model_validator(mode="after")
     def _check(self) -> Self:
