@@ -160,7 +160,28 @@ def test_footing_report_draws_the_soil_pressure_in_plan(tmp_path: Path) -> None:
     plan = svg.split('stroke="#c8ced8"')[0]  # la planta, sin la leyenda de muestras (D-105)
     assert svg.startswith("<svg") and plan.count("<circle") == 4
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
-    assert "Presión del suelo en las esquinas (casos de servicio)" in text and "archivo presion_Z1.svg" in text
+    assert "Presión del suelo en las esquinas" in text and "archivo presion_Z1.svg" in text
+    assert "Combinaciones de esfuerzos admisibles (ASD)" in text and "Combinaciones de resistencia última (LRFD)" in text
+
+
+def test_equilibrium_is_calculated_and_factored_pressures_go_in_their_own_table(tmp_path: Path) -> None:
+    """D-054: la memoria muestra el cálculo del equilibrio con cargas mayoradas (resultante, excentricidades y razón
+    máx(|e|/l) / 0.5) y la tabla de presiones de las combinaciones mayoradas, con las que salen de la base sin presiones."""
+    oracle = json.loads((Path(__file__).parent / "oracles" / "nsr_10" / "derived_footing_flexure.json").read_text(encoding="utf-8"))
+    case = next(item for item in oracle["cases"]
+                if any(check["name"] == "Zapata: equilibrio con cargas mayoradas" for check in item["expected"]["checks"]))
+    project = {"description": "prueba", "profile": "nsr-10", "seismic": {"level": case["seismic_level"], "justification": "prueba"},
+               "materials": oracle["materials"], "soil": oracle["soil"], "footings": [case["footing"]]}
+    path = tmp_path / "equilibrio.json"
+    path.write_text(json.dumps(project), encoding="utf-8")
+    report_file(path, tmp_path / "salida")
+    text = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
+    factored = text.split("Combinaciones de resistencia última (LRFD), para el diseño estructural")[1].split("\n- ")[0]
+    assert "sale de la base" in factored or "sin compresión" in factored
+    detail = text.split("Zapata: equilibrio con cargas mayoradas; ubicación gobernante")[1].split("\n### ")[0]
+    assert "Resultante vertical sobre la base" in detail and "NO CUMPLE" in detail
+    if "Excentricidad en X" in detail:
+        assert "Verificación: máx(|ex|/lx, |ey|/ly) / 1/2 = " in detail
 
 
 

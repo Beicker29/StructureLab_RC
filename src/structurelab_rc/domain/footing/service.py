@@ -13,7 +13,7 @@ from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING, overt
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete, invalid_input
 from structurelab_rc.mechanics.materials import NoEquilibrium
-from structurelab_rc.mechanics.soil_pressure import footing_pressure
+from structurelab_rc.mechanics.soil_pressure import SoilPressure, footing_pressure
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing, FootingBase, FootingLoad, Soil
 
@@ -21,6 +21,17 @@ BEARING = "Presion admisible del suelo"
 CONTACT = "Contacto con el suelo"
 CONTACT_CLAUSE = "D-052 (minimo declarado por el usuario)"
 _REGIONS = {"A": "triangular", "B": "pentagonal", "C": "total", "D": "trapezoidal en x", "E": "trapezoidal en y"}
+
+
+def contact_region(pressure: SoilPressure) -> str:
+    """La región de Bellos y Bakas (2017) en palabras, para la nota de la verificación."""
+    return f"Region {pressure.region} de Bellos y Bakas (2017): contacto {_REGIONS[pressure.region]}"
+
+
+def corner_values(pressure: SoilPressure) -> tuple[tuple[str, float], ...]:
+    """La presión en cada esquina, para la planta y las tablas de la memoria (D-080)."""
+    return tuple((f"p esquina {name}", value) for name, value in zip(("-x-y", "+x-y", "+x+y", "-x+y"), pressure.corners(),
+                                                                     strict=True))
 
 
 def _case_checks(profile: Profile, footing: FootingBase, soil: Soil, load: FootingLoad, resultant: BaseResultant) -> list[Check]:
@@ -47,10 +58,8 @@ def _case_checks(profile: Profile, footing: FootingBase, soil: Soil, load: Footi
     capacity = soil.bearing_capacity(load.seismic)
     bearing_ok = pressure.pmax <= capacity
     contact_ok = fraction >= soil.min_contact_fraction
-    region = f"Region {pressure.region} de Bellos y Bakas (2017): contacto {_REGIONS[pressure.region]}"
-    corners = tuple((f"p esquina {name}", value) for name, value in zip(("-x-y", "+x-y", "+x+y", "-x+y"), pressure.corners(),
-                                                                         strict=True))
-    bearing_values = (*values, *corners)  # presión en cada esquina, para la planta de la memoria (D-080)
+    region = contact_region(pressure)
+    bearing_values = (*values, *corner_values(pressure))  # presión en cada esquina, para la planta de la memoria (D-080)
     bearing_note = region
     if load.seismic and soil.seismic_bearing_factor != 1.0:
         bearing_values = (*bearing_values, ("qa", soil.allowable_pressure), ("factor sismo qa", soil.seismic_bearing_factor))

@@ -11,8 +11,9 @@ from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.flexure_strength import MomentStrength, RectangularSection, rectangular_strength, required_area
 from structurelab_rc.domain.footing.flexure import flexure_checks
-from structurelab_rc.domain.footing.loads import factored_cases
+from structurelab_rc.domain.footing.loads import EQUILIBRIUM, equilibrium_checks, factored_cases
 from structurelab_rc.domain.footing.mesh import mat_rows
+from structurelab_rc.domain.status import Status
 from structurelab_rc.mechanics.flexure import SteelLayer
 from structurelab_rc.model.footing import Footing, Soil
 from structurelab_rc.model.project import Materials
@@ -65,6 +66,29 @@ def test_flexure_checks_match_oracle(profile: str, case: dict[str, Any]) -> None
             assert check.clause == oracle["clauses"]["strength"]
         if key[0].startswith("Franja"):
             assert check.clause == oracle["clauses"]["band"]
+
+
+@pytest.mark.parametrize(("profile", "case"), CASES)
+def test_equilibrium_is_reported_for_every_factored_case(profile: str, case: dict[str, Any]) -> None:
+    """D-054: cada caso mayorado tiene su verificación de equilibrio con la resultante y sus excentricidades; las que no
+    cumplen son las del oráculo, y la razón es máx(|ex|/lx, |ey|/ly) / 0.5."""
+    oracle = _oracle(FOLDERS[profile])
+    footing = Footing.model_validate(case["footing"])
+    checks = equilibrium_checks(footing, Soil.model_validate(oracle["soil"]))
+    assert [check.case for check in checks] == [load.case for load in footing.loads if load.kind == "factored"]
+    failing = {item["case"] for item in case["expected"]["checks"] if item["name"] == EQUILIBRIUM}
+    assert {check.case for check in checks if check.status is Status.FAIL} == failing
+    for check in checks:
+        values = dict(check.values)
+        if "ex" not in values:  # sin compresión: solo la resultante
+            assert check.status is Status.FAIL and values["N"] <= 0
+            continue
+        assert values["ex"] == pytest.approx(values["My base"] / values["N"])
+        assert values["ey"] == pytest.approx(-values["Mx base"] / values["N"])
+        relative = max(abs(values["ex"]) / footing.lx, abs(values["ey"]) / footing.ly)
+        assert (check.demand, check.capacity) == (pytest.approx(relative), 0.5)
+        assert (check.status is Status.PASS) == (relative < 0.5)
+        assert ("p esquina -x-y" in values) == (check.status is Status.PASS)
 
 
 def test_band_spacing_places_bars_in_the_central_band() -> None:

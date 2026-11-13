@@ -12,6 +12,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
+from structurelab_rc.domain.footing.loads import EQUILIBRIUM
 from structurelab_rc.domain.footing.service import CONTACT
 from structurelab_rc.domain.status import Status
 from structurelab_rc.reporting.figures import (
@@ -628,33 +629,50 @@ def _footing_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[
 
 
 def _soil_pressures(footing: dict[str, Any], figure: Path | None,
-                    heading: str = "Presión del suelo en las esquinas (casos de servicio)") -> list[Block]:
-    """Presión del suelo en las esquinas (D-080): la planta del caso de servicio que gobierna la presión admisible y la
-    tabla de las esquinas de todos los casos de servicio."""
-    checks = [check for check in footing["checks"] if check["name"] == PRESSURE and corner_key("-x-y") in check["values"]]
-    if not checks:
+                    heading: str = "Presión del suelo en las esquinas") -> list[Block]:
+    """Presión del suelo en las esquinas (D-080): la planta del caso de servicio que gobierna la presión admisible, la
+    tabla de las combinaciones de servicio (ASD) y la de las mayoradas (LRFD), estas de la verificación de equilibrio
+    (D-054); una combinación mayorada sin equilibrio aparece sin presiones."""
+    service = [check for check in footing["checks"] if check["name"] == PRESSURE and corner_key("-x-y") in check["values"]]
+    factored = [check for check in footing["checks"] if check["name"] == EQUILIBRIUM]
+    if not service and not factored:
         return []
     blocks: list[Block] = [{"kind": "h2", "text": heading}]
+    geometry = footing["geometry [mm]"]
     governing = governing_pressure(footing["checks"])
     if figure is not None and governing is not None:
-        geometry = footing["geometry [mm]"]
         blocks.append({"kind": "image", "path": str(figure), "aspect": pressure_aspect(geometry["lx"], geometry["ly"]),
                        "caption": f"Presión del suelo en planta, caso que gobierna {governing['case']}"})
-    geometry = footing["geometry [mm]"]
-    rows = [[check["case"], *(number(check["values"][corner_key(name)], "kPa") for name, _, _ in CORNERS),
-             f"{check['values']['ex [mm]'] / geometry['lx']:.3f}", f"{check['values']['ey [mm]'] / geometry['ly']:.3f}",
-             _region(check)] for check in checks]
-    blocks.append({"kind": "table", "headers": ["Caso", "p (−x, −y) kPa", "p (+x, −y) kPa", "p (+x, +y) kPa", "p (−x, +y) kPa",
-                                                "ex/lx", "ey/ly", "Región"], "rows": rows})
+    headers = ["Caso", "p (−x, −y) kPa", "p (+x, −y) kPa", "p (+x, +y) kPa", "p (−x, +y) kPa", "ex/lx", "ey/ly", "Región"]
+    for checks, title in ((service, "Combinaciones de esfuerzos admisibles (ASD), para la presión admisible, el contacto y la "
+                                    "estabilidad:"),
+                          (factored, "Combinaciones de resistencia última (LRFD), para el diseño estructural y el equilibrio "
+                                     "(D-054):")):
+        if checks:
+            blocks += [{"kind": "p", "text": title},
+                       {"kind": "table", "headers": headers, "rows": [_pressure_row(check, geometry) for check in checks]}]
     blocks.append({"kind": "note", "text": "Presión bruta de Bellos y Bakas (2017) con los factores del caso; 0 indica una esquina "
                                            "sin contacto con el suelo. ex/lx y ey/ly son las excentricidades de la resultante "
                                            "respecto al centroide de la base, como fracción de su dimensión; la región es la "
-                                           "de Bellos y Bakas (A: contacto total; B a E: contacto parcial)."})
+                                           "de Bellos y Bakas (A: contacto total; B a E: contacto parcial). Una combinación "
+                                           "cuya resultante sale de la base (|e|/l ≥ 0.5) o no es de compresión no tiene "
+                                           "equilibrio con el suelo y no tiene presiones."})
     return blocks
 
 
+def _pressure_row(check: dict[str, Any], geometry: dict[str, Any]) -> list[str]:
+    """Fila de la tabla de presiones: las esquinas, las excentricidades relativas y la región, o por qué no las hay."""
+    values = check["values"]
+    corners = [number(values[corner_key(name)], "kPa") if corner_key(name) in values else "–" for name, _, _ in CORNERS]
+    if "ex [mm]" not in values:
+        return [check["case"], *corners, "–", "–", "sin compresión"]
+    region = _region(check) if corner_key("-x-y") in values else "sale de la base"
+    return [check["case"], *corners, f"{values['ex [mm]'] / geometry['lx']:.3f}", f"{values['ey [mm]'] / geometry['ly']:.3f}",
+            region]
+
+
 def _region(check: dict[str, Any]) -> str:
-    """Letra de la región de Bellos y Bakas (2017) de un caso de servicio, que la nota de la verificación trae."""
+    """Letra de la región de Bellos y Bakas (2017) de un caso, que la nota de la verificación trae."""
     note = check.get("note") or ""
     return note[len("Region "):].split(" ", 1)[0] if note.startswith("Region ") else "–"
 

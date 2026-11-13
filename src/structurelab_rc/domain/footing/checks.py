@@ -8,7 +8,7 @@ from structurelab_rc.domain.footing.connection import connection_checks
 from structurelab_rc.domain.footing.declared import declared_checks
 from structurelab_rc.domain.footing.flexure import flexure_checks
 from structurelab_rc.domain.footing.inverted_t import inverted_t_checks
-from structurelab_rc.domain.footing.loads import combined_factored_cases, factored_cases
+from structurelab_rc.domain.footing.loads import combined_factored_cases, equilibrium_checks, factored_cases
 from structurelab_rc.domain.footing.service import combined_service_checks, service_checks
 from structurelab_rc.domain.footing.shear import shear_checks
 from structurelab_rc.domain.footing.spacing import combined_min_spacing_checks, footing_min_spacing_checks
@@ -27,8 +27,8 @@ def structural_checks(basis: Basis, footing: Footing, soil: Soil) -> list[Check]
     if not any(load.kind == "factored" for load in footing.loads):
         error = incomplete("La zapata no tiene casos mayorados", member=footing.id)
         return [Check(STRUCTURAL, Status.INCOMPLETE, (error,), member=footing.id)]
-    cases, failures = factored_cases(footing, soil)
-    return [*failures, *flexure_checks(basis, footing, cases), *footing_min_spacing_checks(basis, footing),
+    cases, _ = factored_cases(footing, soil)
+    return [*equilibrium_checks(footing, soil), *flexure_checks(basis, footing, cases), *footing_min_spacing_checks(basis, footing),
             *shear_checks(basis, footing, cases), *connection_checks(basis, footing, cases)]
 
 
@@ -41,10 +41,10 @@ def combined_footing_checks(basis: Basis, footing: CombinedFooting, soil: Soil) 
     if not any(loads[0].kind == "factored" for loads in footing.cases()):
         error = incomplete("La zapata combinada no tiene casos mayorados", member=footing.id)
         return declared_checks(footing, [*service, Check(COMBINED_STRUCTURAL, Status.INCOMPLETE, (error,), member=footing.id)])
-    cases, failures = combined_factored_cases(footing, soil)
+    cases, _ = combined_factored_cases(footing, soil)
     # La T invertida no tiene punzonamiento ni franjas: sus aletas y columnas se revisan aparte (D-093).
     own = inverted_t_checks if footing.beam is not None else column_checks
-    return declared_checks(footing, [*service, *failures, *long_beam_checks(basis, footing, soil, cases),
+    return declared_checks(footing, [*service, *equilibrium_checks(footing, soil), *long_beam_checks(basis, footing, soil, cases),
                                      *own(basis, footing, soil, cases), *combined_min_spacing_checks(basis, footing)])
 
 

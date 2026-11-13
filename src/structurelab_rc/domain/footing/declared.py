@@ -31,7 +31,7 @@ _FLIP = {"+": "-", "-": "+", "−": "+"}
 # Pares (x, y) de valores: con signo, x = −y', y = x' (posiciones y momentos); sin signo, solo se intercambian
 # (magnitudes de cada eje).
 _SIGNED = (("ex", "ey"), ("Mx base", "My base"), ("xc", "yc"), ("Msc x", "Msc y"))
-_SWAPPED = (("Jc x", "Jc y"), ("gamma v x", "gamma v y"), ("Pp x", "Pp y"))
+_SWAPPED = (("Jc x", "Jc y"), ("gamma v x", "gamma v y"), ("Pp x", "Pp y"), ("ex/lx", "ey/ly"))
 _CORNER_NAMES = ("-x-y", "+x-y", "+x+y", "-x+y")
 
 

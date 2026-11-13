@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import BaseResultant, base_resultant, combined_load, combined_resultant
+from structurelab_rc.domain.footing.service import contact_region, corner_values
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import invalid_input
 from structurelab_rc.mechanics.materials import NoEquilibrium
@@ -60,16 +61,46 @@ def _net_load(footing: Footing | CombinedFooting, soil: Soil, load: FootingLoad)
     return load.dead_factor * dead + load.live_factor * footing.surcharge_live
 
 
-def _factored(footing: Footing | CombinedFooting, soil: Soil, load: FootingLoad, resultant: BaseResultant) -> FactoredCase | Check:
-    """El caso con su presión, o FAIL si no hay equilibrio con el suelo (D-054)."""
+def _equilibrium(footing: Footing | CombinedFooting, load: FootingLoad, resultant: BaseResultant) -> tuple[SoilPressure | None, Check]:
+    """La presión del caso mayorado y la verificación de su equilibrio con el suelo (D-054): la resultante debe ser de
+    compresión y caer dentro de la base, máx(|ex|/lx, |ey|/ly) < 1/2. La verificación lleva la resultante, sus
+    excentricidades y, con equilibrio, la presión en las esquinas y la región de Bellos y Bakas (2017)."""
+    values: tuple[tuple[str, float], ...] = (("N", resultant.n), ("Mx base", resultant.mx), ("My base", resultant.my))
+    ex, ey = resultant.ex, resultant.ey
+    if ex is None or ey is None:
+        failure = invalid_input("La resultante mayorada sale de la base: la carga mayorada sobre el suelo no es de compresion",
+                                member=footing.id, case=load.case)
+        return None, Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", values=values, member=footing.id, case=load.case)
+    relative_x, relative_y = abs(ex) / footing.lx, abs(ey) / footing.ly
+    values += (("ex", ex), ("ey", ey), ("ex/lx", relative_x), ("ey/ly", relative_y))
+    eccentricity = max(relative_x, relative_y)
     try:
-        if resultant.ex is None or resultant.ey is None:
-            raise NoEquilibrium("la carga mayorada sobre el suelo no es de compresion")
-        pressure = footing_pressure(footing.lx, footing.ly, resultant.n, resultant.ex, resultant.ey)
+        pressure = footing_pressure(footing.lx, footing.ly, resultant.n, ex, ey)
     except NoEquilibrium as error:
         failure = invalid_input(f"La resultante mayorada sale de la base: {error}", member=footing.id, case=load.case)
-        return Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", member=footing.id, case=load.case)
+        return None, Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", demand=eccentricity, capacity=0.5, values=values,
+                           member=footing.id, case=load.case)
+    return pressure, Check(EQUILIBRIUM, Status.PASS, clause="D-054", demand=eccentricity, capacity=0.5,
+                           values=(*values, *corner_values(pressure)), note=contact_region(pressure), member=footing.id,
+                           case=load.case)
+
+
+def _factored(footing: Footing | CombinedFooting, soil: Soil, load: FootingLoad, resultant: BaseResultant) -> FactoredCase | Check:
+    """El caso con su presión, o FAIL si no hay equilibrio con el suelo (D-054)."""
+    pressure, check = _equilibrium(footing, load, resultant)
+    if pressure is None:
+        return check
     return FactoredCase(load, pressure, _net_load(footing, soil, load))
+
+
+def equilibrium_checks(footing: Footing | CombinedFooting, soil: Soil) -> list[Check]:
+    """La verificación de equilibrio de cada caso mayorado, cumpla o no (D-054), para la memoria."""
+    if isinstance(footing, CombinedFooting):
+        pairs = [(combined_load(loads), combined_resultant(footing, soil, loads)) for loads in footing.cases()
+                 if loads[0].kind == "factored"]
+    else:
+        pairs = [(load, base_resultant(footing, soil, load)) for load in footing.loads if load.kind == "factored"]
+    return [_equilibrium(footing, load, resultant)[1] for load, resultant in pairs]
 
 
 def factored_cases(footing: Footing, soil: Soil) -> tuple[list[FactoredCase], list[Check]]:

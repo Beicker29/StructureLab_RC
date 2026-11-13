@@ -401,7 +401,7 @@ def _rotated_values(values: tuple[tuple[str, float], ...]) -> dict[str, Any]:
     for x_key, y_key in (("ex", "ey"), ("Mx base", "My base"), ("xc", "yc"), ("Msc x", "Msc y")):
         if x_key in old:
             new[x_key], new[y_key] = -old[y_key], old[x_key]
-    for x_key, y_key in (("Jc x", "Jc y"), ("gamma v x", "gamma v y"), ("Pp x", "Pp y")):
+    for x_key, y_key in (("Jc x", "Jc y"), ("gamma v x", "gamma v y"), ("Pp x", "Pp y"), ("ex/lx", "ey/ly")):
         if x_key in old:
             new[x_key], new[y_key] = old[y_key], old[x_key]
     for sx in "+-":

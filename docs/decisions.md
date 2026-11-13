@@ -2327,6 +2327,29 @@
 - **Riesgo:** la búsqueda del refuerzo dentro de cada geometría y la malla dentro de cada tamaño de zapata siguen
   ordenadas por el peso estimado. La cartilla decide entre geometrías, f'c y tipologías.
 
+### D-128: cálculo del equilibrio con cargas mayoradas y presiones de las combinaciones últimas en la memoria
+
+- **Fecha:** 2026-11-13
+- **Pedido del usuario:** la memoria solo mostraba "la resultante mayorada sale de la base" sin el cálculo; y la tabla de
+  presiones (3.4 en la combinada) traía solo las combinaciones de servicio.
+- **Decisión:** la regla de D-054 no cambia. Se reporta así:
+  - **Verificación:** "Zapata: equilibrio con cargas mayoradas" se emite en cada caso mayorado, cumpla o no. Antes solo
+    se emitía la que fallaba.
+    - Demanda: máx(|ex|/lx, |ey|/ly), con e = M/N de la resultante en el centroide de la base. Capacidad: 1/2, la
+      resultante en el borde.
+    - Valores: N, Mx y My en la base, ex, ey, |ex|/lx y |ey|/ly; con equilibrio, también la presión de Bellos y Bakas en
+      las esquinas y la región en la nota.
+    - Si N no es de compresión, FAIL sin demanda.
+    - En la combinada girada, |ex|/lx y |ey|/ly se intercambian como las demás magnitudes por eje (D-101).
+  - **Memoria:** la tabla de presiones se divide en dos, las combinaciones de servicio (ASD) y las mayoradas (LRFD).
+    La segunda sale de esas verificaciones. Una combinación sin equilibrio aparece sin presiones y con "sale de la base"
+    o "sin compresión". En la zapata aislada el título pasa a "Presión del suelo en las esquinas".
+- **Una fuente:** las funciones que usan los casos mayorados (`factored_cases`, `combined_factored_cases`) siguen
+  devolviendo solo las fallas; las verificaciones completas salen de `equilibrium_checks`, con el mismo cálculo
+  (`_equilibrium`).
+- **Huellas:** cambian los 18 ejemplos de zapatas solo por las verificaciones agregadas y el texto de la memoria. Sin
+  ellas, cada `resultado.json` es igual al de HEAD: ninguna solución ni costo del diseño cambia.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)
