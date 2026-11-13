@@ -16,6 +16,7 @@
     {
       "id": "V-1",
       "type": "beam",
+      "min_steel_exception": true,
       "length": 6000.0,
       "section": {
         "bw": 300.0,

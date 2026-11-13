@@ -168,6 +168,7 @@ class CombinedDesign(DesignLimits):
     h_min, h_step y h_max son los del espesor de la zarpa; beam_h_* los del alto total de la viga, y el alma parte de la
     columna más ancha más web_margin a cada lado y crece de a web_step."""
 
+    min_steel_exception: bool  # D-123: si el diseño y la verificación admiten la excepción de 4/3 del As,min
     max_cantilever_start: NonNegativeFloat | None = None
     max_cantilever_end: NonNegativeFloat | None = None
     placement_case: str | None = Field(None, min_length=1)

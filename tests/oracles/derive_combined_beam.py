@@ -295,6 +295,12 @@ def _skin_check(folder: str, f: dict, rows: list[dict], moment: float) -> dict |
             "capacity": limit, "clause": clause}
 
 
+def _design(profile: dict, layers: list[tuple[float, float]], b: float, h: float) -> float:
+    """φMn de la sección con las capas dadas (para la excepción de 4/3 por bisección, D-123)."""
+    state = _state(layers, b, h)
+    return 0.0 if state is None else _F._phi(state["et"], profile) * abs(state["Mn"])
+
+
 def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float, width: float | None = None) -> list[dict]:
     """Resistencia, εt (M3), As,min (M3) con la excepción de 4/3 y la separación por fisuración, como en las vigas. width:
     el ancho de la sección (por omisión, el de la viga larga, ly)."""
@@ -319,10 +325,26 @@ def _flexure_checks(folder: str, f: dict, rows: list[dict], moment: float, width
     centroid = sum(depth * area for (depth, area), pulled in tension if pulled) / provided
     d = max(centroid, 0.8 * h)
     as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * b * d
-    # Sin la excepción de 4/3 del As requerido (ACI 9.6.1.3, NSR-10 C.10.5.3): en las zapatas combinadas y en T, As ≥ As,min
-    # siempre (decisión del usuario, D-115).
-    checks.append({"name": "Flexion: acero minimo (M3)", "capacity": provided, "as_min": as_min, "demand": as_min,
-                   "status": "PASS" if provided >= as_min else "FAIL"})
+    minimum = {"name": "Flexion: acero minimo (M3)", "capacity": provided, "as_min": as_min}
+    if provided >= as_min or not f["min_steel_exception"]:
+        # Sin la excepción declarada (D-123), As ≥ As,min siempre.
+        minimum.update(status="PASS" if provided >= as_min else "FAIL", demand=as_min)
+    else:
+        # Excepción de 4/3 del As requerido (ACI 9.6.1.3, NSR-10 C.10.5.3), declarada: el acero a tracción escalado por k
+        # hasta φMn(k) = |Mu|, por bisección.
+        def design(k: float) -> float:
+            return _design(profile, [(depth, area * k if pulled else area) for (depth, area), pulled in tension], b, h)
+
+        if design(1.0) < abs(moment):
+            minimum.update(status="FAIL", demand=as_min)
+        else:
+            lo, hi = 0.0, 1.0
+            for _ in range(200):
+                mid = (lo + hi) / 2
+                lo, hi = (mid, hi) if design(mid) < abs(moment) else (lo, mid)
+            effective = min(as_min, 4 / 3 * hi * provided)
+            minimum.update(status="PASS" if provided >= effective else "FAIL", demand=effective, analysis=hi * provided)
+    checks.append(minimum)
     # El refuerzo superficial solo en la viga larga (width None): las franjas no tienen caras laterales libres (D-083).
     skin = _skin_check(folder, f, rows, moment) if width is None else None
     if skin is not None:
@@ -432,8 +454,8 @@ def _column(name: str, x: float, loads: list[dict], cx: float = 450.0, cy: float
 
 
 def _footing(columns: list[dict], **changes: object) -> dict:
-    data = {"id": "ZC", "lx": 6000.0, "ly": 2000.0, "h": 700.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
-            "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
+    data = {"id": "ZC", "min_steel_exception": False, "lx": 6000.0, "ly": 2000.0, "h": 700.0, "cover": 75.0,
+            "fill_height": 1000.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
             "bottom": {"first": "x", "end": "straight", "x": {"designation": "#7", "spacing": 150.0},
                        "y": {"designation": "#5", "spacing": 200.0}},
             "top": top_mat("#7", 150.0, "straight")}
@@ -469,13 +491,15 @@ CASES = [
               skin={"designation": "#4", "spacing": 200.0})),
     ("alta-sin-piel", "h = 1000 mm sin refuerzo superficial: no cumple 9.7.2.3 / C.10.6.7",
      _footing([_column("C1", -2000.0, [_load("U1", 1800.0)]), _column("C2", 2000.0, [_load("U1", 1800.0)])], h=1000.0)),
-    ("minimo-excepcion", "cargas pequeñas: As < As,min de vigas pero ≥ 4/3 del requerido (excepción)",
+    ("minimo-excepcion", "cargas pequeñas: As < As,min de vigas pero ≥ 4/3 del requerido, con la excepción declarada (D-123)",
      _footing([_column("C1", -1500.0, [_load("U1", 250.0)]), _column("C2", 1500.0, [_load("U1", 250.0)])], lx=4500.0,
+              min_steel_exception=True,
               bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 250.0},
                   "y": {"designation": "#5", "spacing": 250.0}},
               top=top_mat("#5", 250.0, "straight"))),
-    ("minimo-no-cumple", "As menor que As,min y que 4/3 del requerido",
+    ("minimo-no-cumple", "As menor que As,min y que 4/3 del requerido, con la excepción declarada (D-123)",
      _footing([_column("C1", -1200.0, [_load("U1", 1300.0)]), _column("C2", 1200.0, [_load("U1", 1300.0)])],
+              min_steel_exception=True,
               bottom={"first": "y", "end": "straight", "x": {"designation": "#4", "spacing": 350.0},
                   "y": {"designation": "#5", "spacing": 200.0}},
               top=top_mat("#8", 120.0, "straight"))),

@@ -14,9 +14,9 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.mechanics.flexure import CompressionStrip, FlexureState, SteelLayer, flexure_state
 from structurelab_rc.mechanics.materials import ConcreteBlock, SteelModel
+from structurelab_rc.mechanics.roots import find_root
 from structurelab_rc.model.project import Materials
 
-_BISECTION_STEPS = 80
 _RELATIVE_TOLERANCE = 1e-10
 
 
@@ -74,9 +74,9 @@ def rectangular_strength(
 
 @cache
 def required_area(profile: Profile, materials: Materials, section: RectangularSection, depth: float, moment: float) -> float | None:
-    """Área de una capa a la profundidad depth con φMn = moment, por bisección; None si ninguna cuantía la alcanza.
+    """Área de una capa a la profundidad depth con φMn = moment, por Brent (D-124); None si ninguna cuantía la alcanza.
 
-    Memoizada: el diseño la pide muchas veces con los mismos datos. La bisección se detiene con tolerancia relativa.
+    Memoizada: el diseño la pide muchas veces con los mismos datos. Se detiene con tolerancia relativa.
     """
     if moment <= 0:
         return 0.0
@@ -86,14 +86,12 @@ def required_area(profile: Profile, materials: Materials, section: RectangularSe
         result = rectangular_strength(profile, materials, section, (SteelLayer(depth, area),))
         return result.design if isinstance(result, MomentStrength) else 0.0
 
-    if design(high) < moment:
+    top = design(high)
+    if top < moment:
         return None
-    for _ in range(_BISECTION_STEPS):
-        middle = (low + high) / 2
-        low, high = (middle, high) if design(middle) < moment else (low, middle)
-        if high - low <= _RELATIVE_TOLERANCE * high:
-            break
-    return high
+    # Sin acero φMn = 0: el valor en el extremo inferior se conoce y no se evalúa (la sección sin acero no tiene equilibrio).
+    return find_root(lambda area: design(area) - moment, (low, high), (-moment, top - moment),
+                     lambda area: _RELATIVE_TOLERANCE * abs(area))
 
 
 def net_tensile_strain_check(name: str, clause: str, profile: Profile, materials: Materials, strain: float | None) -> Check:

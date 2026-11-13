@@ -31,6 +31,7 @@
       "description": "dos columnas iguales simétricas: presión uniforme, momento negativo entre columnas y voladizos",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -125,8 +126,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 161.0999999999999,
             "face": "bottom"
@@ -181,8 +182,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 1838.9,
             "face": "top"
@@ -237,8 +238,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 2999.9999799051634,
             "face": "top"
@@ -293,8 +294,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 4161.1,
             "face": "top"
@@ -349,8 +350,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 5225.0,
             "face": "bottom"
@@ -405,8 +406,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 5838.9,
             "face": "bottom"
@@ -500,6 +501,7 @@
       "description": "columna de borde y cargas desiguales (como el manual del ACI): presión trapezoidal",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2400.0,
         "h": 800.0,
@@ -594,8 +596,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "demand": 5698.399999999999,
             "status": "PASS",
+            "demand": 5698.399999999999,
             "case": "U1",
             "z_mm": 1237.3,
             "face": "top"
@@ -650,8 +652,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "demand": 5698.399999999999,
             "status": "PASS",
+            "demand": 5698.399999999999,
             "case": "U1",
             "z_mm": 1748.0113898949357,
             "face": "top"
@@ -706,8 +708,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "demand": 5698.399999999999,
             "status": "PASS",
+            "demand": 5698.399999999999,
             "case": "U1",
             "z_mm": 3037.7,
             "face": "top"
@@ -762,8 +764,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "demand": 5698.399999999999,
             "status": "PASS",
+            "demand": 5698.399999999999,
             "case": "U1",
             "z_mm": 4250.0,
             "face": "bottom"
@@ -818,8 +820,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 5698.399999999999,
-            "demand": 5698.399999999999,
             "status": "PASS",
+            "demand": 5698.399999999999,
             "case": "U1",
             "z_mm": 4962.3,
             "face": "bottom"
@@ -907,6 +909,7 @@
       "description": "dos casos: gravedad y sismo con My, Vx, pedestal y columnas desplazadas en Y",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -1025,8 +1028,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 1638.9,
             "face": "top"
@@ -1081,8 +1084,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 2951.984376125853,
             "face": "top"
@@ -1137,8 +1140,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 4261.1,
             "face": "top"
@@ -1193,8 +1196,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 4875.0,
             "face": "bottom"
@@ -1249,8 +1252,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 4875.0,
             "face": "top"
@@ -1287,8 +1290,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 5938.9,
             "face": "bottom"
@@ -1343,8 +1346,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U2",
             "z_mm": 1025.0,
             "face": "bottom"
@@ -1399,8 +1402,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U2",
             "z_mm": 1638.9,
             "face": "bottom"
@@ -1455,8 +1458,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U2",
             "z_mm": 1638.9,
             "face": "top"
@@ -1493,8 +1496,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U2",
             "z_mm": 3589.235139041089,
             "face": "top"
@@ -1549,8 +1552,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U2",
             "z_mm": 4261.1,
             "face": "top"
@@ -1605,8 +1608,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U2",
             "z_mm": 5938.9,
             "face": "bottom"
@@ -1724,6 +1727,7 @@
       "description": "sin barras superiores: el momento negativo lo resiste el concreto simple (D-072)",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -1811,8 +1815,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 161.0999999999999,
             "face": "bottom"
@@ -1867,8 +1871,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 775.0,
             "face": "bottom"
@@ -2007,8 +2011,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 5838.9,
             "face": "bottom"
@@ -2095,6 +2099,7 @@
       "description": "zapata delgada y cargas grandes: no cumple el cortante sin estribos",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 450.0,
@@ -2189,8 +2194,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "demand": 2425.9999999999995,
             "status": "PASS",
+            "demand": 2425.9999999999995,
             "case": "U1",
             "z_mm": 411.0999999999999,
             "face": "bottom"
@@ -2245,8 +2250,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "demand": 2425.9999999999995,
             "status": "PASS",
+            "demand": 2425.9999999999995,
             "case": "U1",
             "z_mm": 1588.9,
             "face": "top"
@@ -2301,8 +2306,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "demand": 2425.9999999999995,
             "status": "PASS",
+            "demand": 2425.9999999999995,
             "case": "U1",
             "z_mm": 2999.999991440158,
             "face": "top"
@@ -2357,8 +2362,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "demand": 2425.9999999999995,
             "status": "PASS",
+            "demand": 2425.9999999999995,
             "case": "U1",
             "z_mm": 4411.1,
             "face": "top"
@@ -2413,8 +2418,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "demand": 2425.9999999999995,
             "status": "PASS",
+            "demand": 2425.9999999999995,
             "case": "U1",
             "z_mm": 5225.0,
             "face": "bottom"
@@ -2469,8 +2474,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 2425.9999999999995,
-            "demand": 2425.9999999999995,
             "status": "PASS",
+            "demand": 2425.9999999999995,
             "case": "U1",
             "z_mm": 5588.9,
             "face": "bottom"
@@ -2564,6 +2569,7 @@
       "description": "la misma zapata delgada con estribos: Vs, Av,min (ACI 7.6.3.1) y d del acero a tracción",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 550.0,
@@ -2664,8 +2670,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 3007.999999999999,
-            "demand": 3007.999999999999,
             "status": "PASS",
+            "demand": 3007.999999999999,
             "case": "U1",
             "z_mm": 323.8000000000002,
             "face": "bottom"
@@ -2720,8 +2726,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 2997.333333333333,
-            "demand": 2997.333333333333,
             "status": "PASS",
+            "demand": 2997.333333333333,
             "case": "U1",
             "z_mm": 1676.2,
             "face": "top"
@@ -2776,8 +2782,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 2997.333333333333,
-            "demand": 2997.333333333333,
             "status": "PASS",
+            "demand": 2997.333333333333,
             "case": "U1",
             "z_mm": 2999.999991440158,
             "face": "top"
@@ -2832,8 +2838,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 7650.0,
             "as_min": 2997.333333333333,
-            "demand": 2997.333333333333,
             "status": "PASS",
+            "demand": 2997.333333333333,
             "case": "U1",
             "z_mm": 4323.8,
             "face": "top"
@@ -2888,8 +2894,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 3007.999999999999,
-            "demand": 3007.999999999999,
             "status": "PASS",
+            "demand": 3007.999999999999,
             "case": "U1",
             "z_mm": 5225.0,
             "face": "bottom"
@@ -2944,8 +2950,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 3007.999999999999,
-            "demand": 3007.999999999999,
             "status": "PASS",
+            "demand": 3007.999999999999,
             "case": "U1",
             "z_mm": 5676.2,
             "face": "bottom"
@@ -3039,6 +3045,7 @@
       "description": "h = 1000 mm (> 900): refuerzo superficial en las dos caras a 200 mm",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 1000.0,
@@ -3137,8 +3144,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "demand": 6092.666666666665,
             "status": "FAIL",
+            "demand": 6092.666666666665,
             "case": "U1",
             "z_mm": 775.0,
             "face": "bottom"
@@ -3203,8 +3210,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "demand": 6092.666666666665,
             "status": "FAIL",
+            "demand": 6092.666666666665,
             "case": "U1",
             "z_mm": 2138.9,
             "face": "top"
@@ -3269,8 +3276,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "demand": 6092.666666666665,
             "status": "FAIL",
+            "demand": 6092.666666666665,
             "case": "U1",
             "z_mm": 3000.000036087915,
             "face": "top"
@@ -3335,8 +3342,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "demand": 6092.666666666665,
             "status": "FAIL",
+            "demand": 6092.666666666665,
             "case": "U1",
             "z_mm": 3861.1,
             "face": "top"
@@ -3428,6 +3435,7 @@
       "description": "h = 1000 mm sin refuerzo superficial: no cumple 9.7.2.3 / C.10.6.7",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 1000.0,
@@ -3522,8 +3530,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "demand": 6092.666666666665,
             "status": "FAIL",
+            "demand": 6092.666666666665,
             "case": "U1",
             "z_mm": 775.0,
             "face": "bottom"
@@ -3586,8 +3594,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "demand": 6092.666666666665,
             "status": "FAIL",
+            "demand": 6092.666666666665,
             "case": "U1",
             "z_mm": 2138.9,
             "face": "top"
@@ -3650,8 +3658,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "demand": 6092.666666666665,
             "status": "FAIL",
+            "demand": 6092.666666666665,
             "case": "U1",
             "z_mm": 3000.000036087915,
             "face": "top"
@@ -3714,8 +3722,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 6092.666666666665,
-            "demand": 6092.666666666665,
             "status": "FAIL",
+            "demand": 6092.666666666665,
             "case": "U1",
             "z_mm": 3861.1,
             "face": "top"
@@ -3802,9 +3810,10 @@
     },
     {
       "id": "minimo-excepcion",
-      "description": "cargas pequeñas: As < As,min de vigas pero ≥ 4/3 del requerido (excepción)",
+      "description": "cargas pequeñas: As < As,min de vigas pero ≥ 4/3 del requerido, con la excepción declarada (D-123)",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": true,
         "lx": 4500.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -3899,8 +3908,9 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1592.0,
             "as_min": 4113.666666666666,
-            "demand": 4113.666666666666,
-            "status": "FAIL",
+            "status": "PASS",
+            "demand": 1.320938709647325e-57,
+            "analysis": 9.907040322354938e-58,
             "case": "U1",
             "z_mm": 525.0,
             "face": "bottom"
@@ -3955,8 +3965,9 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1592.0,
             "as_min": 4113.666666666666,
-            "demand": 4113.666666666666,
-            "status": "FAIL",
+            "status": "PASS",
+            "demand": 129.970271838424,
+            "analysis": 97.47770387881802,
             "case": "U1",
             "z_mm": 1592.05,
             "face": "top"
@@ -4011,8 +4022,9 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1592.0,
             "as_min": 4113.666666666666,
-            "demand": 4113.666666666666,
-            "status": "FAIL",
+            "status": "PASS",
+            "demand": 267.30588921518785,
+            "analysis": 200.4794169113909,
             "case": "U1",
             "z_mm": 2249.999973954012,
             "face": "top"
@@ -4067,8 +4079,9 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 1592.0,
             "as_min": 4113.666666666666,
-            "demand": 4113.666666666666,
-            "status": "FAIL",
+            "status": "PASS",
+            "demand": 129.97027183842314,
+            "analysis": 97.47770387881737,
             "case": "U1",
             "z_mm": 2907.95,
             "face": "top"
@@ -4147,9 +4160,10 @@
     },
     {
       "id": "minimo-no-cumple",
-      "description": "As menor que As,min y que 4/3 del requerido",
+      "description": "As menor que As,min y que 4/3 del requerido, con la excepción declarada (D-123)",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": true,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -4244,8 +4258,9 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "demand": 4018.333333333333,
-            "status": "FAIL",
+            "status": "PASS",
+            "demand": 466.1225205362217,
+            "analysis": 349.5918904021663,
             "case": "U1",
             "z_mm": 972.25,
             "face": "bottom"
@@ -4300,8 +4315,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "demand": 4018.333333333333,
             "status": "FAIL",
+            "demand": 4018.333333333333,
             "case": "U1",
             "z_mm": 2025.0,
             "face": "bottom"
@@ -4356,8 +4371,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "demand": 4018.333333333333,
             "status": "FAIL",
+            "demand": 4018.333333333333,
             "case": "U1",
             "z_mm": 2627.75,
             "face": "bottom"
@@ -4412,8 +4427,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "demand": 4018.333333333333,
             "status": "FAIL",
+            "demand": 4018.333333333333,
             "case": "U1",
             "z_mm": 3372.25,
             "face": "bottom"
@@ -4468,8 +4483,9 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 774.0,
             "as_min": 4018.333333333333,
-            "demand": 4018.333333333333,
-            "status": "FAIL",
+            "status": "PASS",
+            "demand": 466.1225205362258,
+            "analysis": 349.5918904021694,
             "case": "U1",
             "z_mm": 5027.75,
             "face": "bottom"
@@ -4557,6 +4573,7 @@
       "description": "columna desplazada 400 mm en Y con Mx y Vy: torsión de placa por Wood-Armer en las dos caras (D-118); los estribos solo para el cortante",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 600.0,
@@ -4657,8 +4674,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 277.0,
             "face": "bottom"
@@ -4713,8 +4730,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 277.0,
             "face": "top"
@@ -4751,8 +4768,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 1225.0,
             "face": "bottom"
@@ -4807,8 +4824,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 1225.0,
             "face": "top"
@@ -4845,8 +4862,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 1723.0,
             "face": "bottom"
@@ -4901,8 +4918,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 1723.0,
             "face": "top"
@@ -4939,8 +4956,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 2999.9999739558343,
             "face": "top"
@@ -4995,8 +5012,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 4277.0,
             "face": "top"
@@ -5051,8 +5068,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 5723.0,
             "face": "bottom"
@@ -5107,8 +5124,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 3319.9999999999995,
-            "demand": 3319.9999999999995,
             "status": "PASS",
+            "demand": 3319.9999999999995,
             "case": "U1",
             "z_mm": 5723.0,
             "face": "top"
@@ -5184,6 +5201,7 @@
       "description": "h = 1000 mm, columna desplazada en Y: Wood-Armer y el refuerzo superficial de cada cara (D-118)",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 1000.0,
@@ -5288,8 +5306,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 5986.666666666666,
-            "demand": 5986.666666666666,
             "status": "FAIL",
+            "demand": 5986.666666666666,
             "case": "U1",
             "z_mm": 1225.0,
             "face": "bottom"
@@ -5354,8 +5372,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 5986.666666666666,
-            "demand": 5986.666666666666,
             "status": "FAIL",
+            "demand": 5986.666666666666,
             "case": "U1",
             "z_mm": 1225.0,
             "face": "top"
@@ -5402,8 +5420,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 5986.666666666666,
-            "demand": 5986.666666666666,
             "status": "FAIL",
+            "demand": 5986.666666666666,
             "case": "U1",
             "z_mm": 2123.0,
             "face": "top"
@@ -5468,8 +5486,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 5986.666666666666,
-            "demand": 5986.666666666666,
             "status": "FAIL",
+            "demand": 5986.666666666666,
             "case": "U1",
             "z_mm": 2999.9999792810927,
             "face": "top"
@@ -5534,8 +5552,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 4644.0,
             "as_min": 5986.666666666666,
-            "demand": 5986.666666666666,
             "status": "FAIL",
+            "demand": 5986.666666666666,
             "case": "U1",
             "z_mm": 3877.0,
             "face": "top"
@@ -5627,6 +5645,7 @@
       "description": "sin barras superiores y columnas desplazadas: el momento superior de Wood-Armer en concreto simple (D-072, D-118)",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -5714,8 +5733,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 161.0999999999999,
             "face": "bottom"
@@ -5770,8 +5789,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 1225.0,
             "face": "bottom"
@@ -5836,8 +5855,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 1838.9,
             "face": "bottom"
@@ -5930,8 +5949,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 4161.1,
             "face": "bottom"
@@ -5996,8 +6015,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 5838.9,
             "face": "bottom"
@@ -6084,6 +6103,7 @@
       "description": "momento grande: contacto parcial, la carga uniforme supera la presión en un voladizo",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -6178,8 +6198,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 161.0999999999999,
             "face": "bottom"
@@ -6234,8 +6254,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 1225.0,
             "face": "bottom"
@@ -6290,8 +6310,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 1838.9,
             "face": "bottom"
@@ -6346,8 +6366,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 4161.1,
             "face": "top"
@@ -6402,8 +6422,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 4769.139899421869,
             "face": "top"
@@ -6458,8 +6478,8 @@
             "name": "Flexion: acero minimo (M3)",
             "capacity": 5031.0,
             "as_min": 4092.666666666666,
-            "demand": 4092.666666666666,
             "status": "PASS",
+            "demand": 4092.666666666666,
             "case": "U1",
             "z_mm": 5838.9,
             "face": "bottom"

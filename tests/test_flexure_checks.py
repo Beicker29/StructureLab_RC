@@ -28,6 +28,7 @@ def _member(layers: list[dict[str, Any]], demands: dict[str, float], **changes: 
     data: dict[str, Any] = {
         "id": "V",
         "type": "beam",
+        "min_steel_exception": True,
         "length": 6000.0,
         "section": {"bw": 300.0, "h": 500.0, "cover": 40.0},
         "stations": [{"z": 0.0, "layout": {"layers": layers, "stirrups": None}, "demands": demands}],

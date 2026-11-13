@@ -7,18 +7,22 @@ Las reglas de trabajo completas están en [CLAUDE.md](CLAUDE.md).
 Todos estos comandos deben terminar limpios antes de cerrar una tarea:
 
 ```console
-pytest
+pytest -n auto
 ruff check .
 mypy
 lint-imports
 python -m build
 ```
 
+`-n auto` reparte las pruebas entre los núcleos del equipo (`pytest-xdist`, extra `dev`; D-124); sin él corren en un solo
+proceso, con el mismo resultado. Lo más lento son las huellas de los ejemplos de diseño.
+
 La huella de los ejemplos (`tests/test_fingerprints.py`) debe mantenerse estable. Si un cambio de cálculo la
-modifica a propósito, se reporta la diferencia y solo entonces se actualiza:
+modifica a propósito, se reporta la diferencia y solo entonces se actualiza, en un solo proceso (en paralelo, varios
+procesos escribirían a la vez `tests/fingerprints.json`):
 
 ```console
-STRUCTURELAB_UPDATE_FINGERPRINTS=1 pytest tests/test_fingerprints.py
+STRUCTURELAB_UPDATE_FINGERPRINTS=1 pytest -n 0 tests/test_fingerprints.py
 ```
 
 ## Oráculos

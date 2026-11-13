@@ -229,7 +229,8 @@ def _combined_template(source: dict[str, str], loads: dict[str, list[dict[str, A
     columns = [{"id": name, "etabs_unique_name": unique, "cx": 450.0, "cy": 450.0, "x": 0.0, "y": 0.0, along: position,
                 "loads": loads.get(name, [])} for name, unique, position in (("C1", "10", -2000.0), ("C2", "11", 2000.0))]
     lx, ly = (6000.0, 2000.0) if principal == "x" else (2000.0, 6000.0)
-    combined = {"id": "ZC", "lx": lx, "ly": ly, "h": 700.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
+    combined = {"id": "ZC", "min_steel_exception": False,
+                "lx": lx, "ly": ly, "h": 700.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
                 "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "loads_source": source, "columns": columns, "bottom": mat,
                 "principal_direction": principal}
     data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},

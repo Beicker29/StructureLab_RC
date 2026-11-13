@@ -12,6 +12,7 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, incomplete, invalid_input
 from structurelab_rc.mechanics.flexure import FlexureState, SteelLayer, compression_strips, flexure_state
 from structurelab_rc.mechanics.materials import NoEquilibrium
+from structurelab_rc.mechanics.roots import find_root
 from structurelab_rc.mechanics.section import SectionState, SteelPoint, biaxial_state, section_state
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.project import Demands, Materials, Member, Section
@@ -27,7 +28,6 @@ CRACK_SPACING = "Flexion: separacion por fisuracion"
 SKIN = "Flexion: refuerzo superficial"
 # d de As,min, del cortante y de la torsión: no menor que 0.8h (D-043).
 MIN_DEPTH_RATIO = 0.8
-_BISECTION_STEPS = 200
 _RELATIVE_TOLERANCE = 1e-12
 _SAME_LAYER = 1e-6  # mm
 
@@ -95,30 +95,28 @@ def _counts_for_minimum(depth: float, strain: float, height: float) -> bool:
 
 def _analysis_area(provided: float, demand: float, design: Callable[[float], float]) -> float | None:
     """As a tracción requerido por análisis (ACI 9.6.1.3, NSR-10 C.10.5.3): el acero a tracción del estado nominal
-    escalado por k hasta φMn(k) = |Mu|, por bisección; None si el provisto no alcanza el momento (la excepción no
+    escalado por k hasta φMn(k) = |Mu|, por Brent (D-124); None si el provisto no alcanza el momento (la excepción no
     aplica). design(k) es φMn con el acero a tracción multiplicado por k."""
-    if design(1.0) < demand:
+    full = design(1.0)
+    if full < demand:
         return None
-    low, high = 0.0, 1.0
-    for _ in range(_BISECTION_STEPS):
-        middle = (low + high) / 2
-        low, high = (middle, high) if design(middle) < demand else (low, middle)
-        if high - low <= _RELATIVE_TOLERANCE:
-            break
-    return high * provided
+    # En k = 0 no se evalúa la sección (sin acero a tracción puede no haber equilibrio): se toma φMn < |Mu|, como la
+    # bisección anterior.
+    k = find_root(lambda factor: design(factor) - demand, (0.0, 1.0), (-demand, full - demand), lambda _: _RELATIVE_TOLERANCE)
+    return k * provided
 
 
 def _min_check(profile: Profile, name: str, demand: tuple[float, float], provided: float,
                design: Callable[[float], float] | None) -> Check:
     """As ≥ As,min, o As ≥ 4/3 del requerido por análisis si es menor (D-022 resuelta por D-081). Sin design, la excepción
-    no aplica (zapatas combinadas y en T, decisión del usuario, D-115): As ≥ As,min siempre."""
+    no aplica porque el elemento la declaró en false (min_steel_exception, D-123): As ≥ As,min siempre."""
     required, moment = demand
     clauses = profile.flexure.clauses()
     if design is None:
         return Check(name, Status.PASS if provided >= required else Status.FAIL, clause=clauses["min_reinforcement"],
                      demand=required, capacity=provided, unit="mm2", values=(("As,min", required),),
-                     note=f"Sin la excepcion de {clauses['min_reinforcement_exception']} (4/3 del As requerido): decision del "
-                          "usuario para zapatas combinadas y en T (D-115)")
+                     note=f"Sin la excepcion de {clauses['min_reinforcement_exception']} (4/3 del As requerido): "
+                          "min_steel_exception = false, declarado por el usuario (D-123)")
     clause = f"{clauses['min_reinforcement']} y {clauses['min_reinforcement_exception']}"
     if provided >= required:
         return Check(name, Status.PASS, clause=clause, demand=required, capacity=provided, unit="mm2", values=(("As,min", required),))
@@ -211,7 +209,8 @@ def _weak_min_reinforcement(given: StationInput, weak: SectionState, m2: float) 
     centroid = sum(bar.depth * bar.area for bar in tension) / provided if provided else 0.0
     depth = max(centroid, MIN_DEPTH_RATIO * section.flange_width)
     required = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, section.h, depth)
-    return _min_check(profile, MIN_REINFORCEMENT_M2, (required, abs(m2)), provided, _weak_design(given, weak))
+    design = _weak_design(given, weak) if member.min_steel_exception else None
+    return _min_check(profile, MIN_REINFORCEMENT_M2, (required, abs(m2)), provided, design)
 
 
 def _face_gaps(depths: list[float], start: float, end: float) -> float:
@@ -335,8 +334,8 @@ def _biaxial_checks(given: StationInput) -> tuple[Check, ...]:
 
 def flexure_checks(given: StationInput) -> tuple[Check, ...]:
     """Verificaciones a flexión de una estación dentro del alcance de viga, en los dos ejes (D-046). El As,min del eje
-    fuerte admite la excepción de 4/3 del As requerido por análisis (ACI 9.6.1.3, NSR-10 C.10.5.3), salvo en las zapatas
-    combinadas y en T (given.foundation; decisión del usuario, D-115)."""
+    fuerte y el del débil admiten la excepción de 4/3 del As requerido por análisis (ACI 9.6.1.3, NSR-10 C.10.5.3) solo si
+    el miembro la declara (min_steel_exception, D-123)."""
     profile, materials, member, station, bars = given.profile, given.materials, given.member, given.station, given.bars
     demands = station.demands
     if demands.mu is None or demands.pu is None:
@@ -354,5 +353,5 @@ def flexure_checks(given: StationInput) -> tuple[Check, ...]:
     if demands.mu == 0:
         strong_strain = _strain_check(NET_TENSILE_STRAIN, profile, materials, None)
     design = _strong_design(profile, materials, member, layers, (state, demands))
-    strong_minimum = _min_reinforcement(profile, materials, member, state, (demands.mu, None if given.foundation else design))
+    strong_minimum = _min_reinforcement(profile, materials, member, state, (demands.mu, design if member.min_steel_exception else None))
     return (*_biaxial_checks(given), strong_strain, strong_minimum, _crack_check(given, demands.mu))

@@ -88,13 +88,12 @@
   },
   "principal_direction": "y",
   "combined_design": {
-    "fc_options": [
-      21.0,
-      28.0
-    ],
+    "min_steel_exception": false,
+    "fc_options": [24.5],
     "prices": {
       "concrete_per_m3": {
         "21": 520000.0,
+        "24.5": 540000.0,
         "28": 575000.0
       },
       "steel_per_kg": 6200.0
@@ -103,12 +102,12 @@
     "plan_max": 9000.0,
     "h_min": 500.0,
     "h_step": 100.0,
-    "h_max": 1200.0,
+    "h_max": 1500.0,
     "cover": 75.0,
     "fill_height": 300.0,
     "pedestal_height": 0.0,
     "surcharge_dead_kNm2": 2.0,
-    "surcharge_live_kNm2": 5.0,
+    "surcharge_live_kNm2": 1.8,
     "bars": [
       "#4",
       "#5",
@@ -132,7 +131,7 @@
   "columns": [
     {
       "id": "C_Ext",
-      "etabs_unique_name": "253",
+      "etabs_unique_name": "1639",
       "cx": 1100.0,
       "cy": 500.0,
       "x": 0.0,
@@ -140,7 +139,7 @@
     },
     {
       "id": "C_Int",
-      "etabs_unique_name": "202",
+      "etabs_unique_name": "1614",
       "cx": 450.0,
       "cy": 800.0,
       "x": 0.0,

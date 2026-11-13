@@ -93,7 +93,7 @@ def geometry(columns: list[dict], design: dict, principal: str, h: float) -> dic
 
 
 def _design(**changes: object) -> dict:
-    design = {"fc_options": [28.0], "prices": {"concrete_per_m3": {"28": 575000.0}, "steel_per_kg": 6200.0},
+    design = {"min_steel_exception": False, "fc_options": [28.0], "prices": {"concrete_per_m3": {"28": 575000.0}, "steel_per_kg": 6200.0},
               "plan_step": STEP, "plan_max": 9000.0, "h_min": 600.0, "h_step": 100.0, "h_max": 1200.0, "cover": 75.0,
               "fill_height": 1200.0, "pedestal_height": 300.0, "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0,
               "bars": ["#5", "#6"], "spacing_step": 10.0, "end": "straight", "dowel_bars": ["#6"]}

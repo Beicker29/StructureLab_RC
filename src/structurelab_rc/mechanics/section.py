@@ -9,17 +9,19 @@ bruta. Los momentos siguen la convención de ETABS: M3 positivo comprime la cara
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import lru_cache
 
 from structurelab_rc.mechanics.materials import ConcreteBlock, NoEquilibrium, SteelModel
 from structurelab_rc.mechanics.polygon import Point, area_centroid, clip
+from structurelab_rc.mechanics.roots import find_root
 
-_BISECTION_STEPS = 100
 _RELATIVE_TOLERANCE = 1e-13
 _DIRECTION_STEP = math.radians(5.0)
 _DIRECTION_WALK = 36
 _DIRECTION_STEPS = 72
-_DIRECTION_REFINE_STEPS = 100
 _TOLERANCE = 1e-12
+# Estados guardados (D-124): el diseño repite secciones idénticas entre rondas; el estado es inmutable.
+_CACHED_STATES = 8192
 
 
 @dataclass(frozen=True)
@@ -117,17 +119,11 @@ def _neutral_axis(
     else:
         raise NoEquilibrium("la compresión axial supera la capacidad de la sección")
     high = high * (1 - 1e-12)
-    for _ in range(_BISECTION_STEPS):
-        if high - low <= _RELATIVE_TOLERANCE * high:
-            break
-        middle = (low + high) / 2
-        if residual(middle) >= 0:
-            high = middle
-        else:
-            low = middle
-    return (low + high) / 2
+    # Dentro del tramo el equilibrio es continuo: la raíz por Brent, con la misma tolerancia que tenía la bisección (D-124).
+    return find_root(residual, (low, high), (residual(low), residual(high)), lambda c: _RELATIVE_TOLERANCE * abs(c))
 
 
+@lru_cache(maxsize=_CACHED_STATES)
 def section_state(
     polygon: tuple[Point, ...],
     steel: tuple[SteelPoint, ...],
@@ -172,7 +168,7 @@ def biaxial_state(
     """Estado nominal cuyo momento resistente tiene la dirección de (M3, M2), a carga axial constante.
 
     Parte de la orientación estimada y avanza en pasos de 5° hasta encontrar el cambio de signo; si no lo encuentra,
-    recorre media vuelta completa. Luego refina por regula falsi (variante de Illinois) con respaldo de bisección.
+    recorre media vuelta completa. Luego refina por Brent (D-124).
     """
     mu3, mu2 = moments
     if mu3 == 0 and mu2 == 0:
@@ -217,25 +213,12 @@ def _scan(evaluate: Callable[[float], tuple[SectionState, float]], guess: float)
 def _refine(
     evaluate: Callable[[float], tuple[SectionState, float]], low: tuple[float, float], high: tuple[float, float]
 ) -> SectionState:
-    """Regula falsi de Illinois entre dos orientaciones con gaps de signo contrario."""
-    (theta_a, gap_a), (theta_b, gap_b) = low, high
-    side = 0
-    state, gap = evaluate(theta_a)
-    for _ in range(_DIRECTION_REFINE_STEPS):
-        theta = (theta_a * gap_b - theta_b * gap_a) / (gap_b - gap_a)
-        if not min(theta_a, theta_b) < theta < max(theta_a, theta_b):
-            theta = (theta_a + theta_b) / 2
-        state, gap = evaluate(theta)
-        if abs(gap) < _TOLERANCE or abs(theta_b - theta_a) < _TOLERANCE:
-            return state
-        if (gap > 0) == (gap_a > 0):
-            theta_a, gap_a = theta, gap
-            if side == -1:
-                gap_b /= 2
-            side = -1
-        else:
-            theta_b, gap_b = theta, gap
-            if side == 1:
-                gap_a /= 2
-            side = 1
-    return state
+    """La orientación entre dos con gaps de signo contrario, por Brent (D-124), con la tolerancia angular de siempre."""
+    states: dict[float, SectionState] = {}
+
+    def gap(theta: float) -> float:
+        states[theta], value = evaluate(theta)
+        return value
+
+    theta = find_root(gap, (low[0], high[0]), (low[1], high[1]), lambda _: _TOLERANCE)
+    return states[theta] if theta in states else evaluate(theta)[0]

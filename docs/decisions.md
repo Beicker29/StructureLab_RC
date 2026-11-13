@@ -2144,6 +2144,89 @@
   el mismo día: los resultados son salida generada y se regeneran en cada máquina con `structurelab-rc run`.
 - **Estado:** en GitHub `results/` nunca tuvo más que el esqueleto; ningún resultado local se subió.
 
+### D-122: band superior en C2 del ejemplo de pruebas de la zapata combinada
+
+- **Fecha:** 2026-11-12
+- **Problema:** al cerrar D-114 a D-120, `pruebas/zapata_combinada.json` salía NO CUMPLE en los dos perfiles. Con la
+  torsión de placa (D-118, mxy ≈ 71.5 kN·m/m), la franja de C2 tiene momento negativo en las secciones a d de las caras
+  ±Y (Mu = 76 kN·m frente a φMn = 289 kN·m en 1.2D+1.6L), y la separación por fisuración de sus barras superiores
+  (`top.y` #5 c/300) superaba el límite de 137 mm (ACI 24.3.2, NSR-10 C.10.6.4, fs = 2/3 fy, cc ≈ 97 mm bajo las
+  `top.x`) en 1.2D+1.6L, 1.2D+L+EX y 0.9D+EX.
+- **Alternativas consultadas:** (a) corregir el ejemplo, con un band superior en C2 (a1) o `top.y` más denso en todo el
+  largo (a2); (b) cambiar la regla: eximir la cara superior de las franjas (b1, se aparta de 24.3) o calcular fs con el
+  momento de servicio (b2, ACI 24.3.2.1 y NSR-10 C.10.6.4 lo permiten, pero requiere momentos de servicio por sección).
+- **Decisión del usuario:** a1. La copia congelada de los dos perfiles declara en C2 `band_top` #5 c/130, solo en el
+  ancho de su franja (D-119); `top.y` sigue a 300 fuera de las franjas. La regla no cambia. La copia de iterar del
+  usuario no se tocó.
+- **Resultado:** las 425 verificaciones del ejemplo cumplen en los dos perfiles.
+- **Ampliación (mismo día, decisión del usuario):** otros dos ejemplos de pruebas habían pasado a NO CUMPLE con D-115 y
+  D-118 sin que ninguna prueba lo detectara (la huella solo compara hashes). Se corrigieron en los dos perfiles con el menor
+  acero que hace cumplir todas las verificaciones:
+  - `zapata_combinada_etabs.json`: `band_top` #5 c/120 en C15 y C1659 de ZC-A (fisuración de la cara superior de sus
+    franjas, DCR 2.33; c/130 no alcanza) y la malla inferior x de ZC-A y ZC-B de #8 c/150 a c/140 (As,min de la viga larga
+    sin la excepción de 4/3, DCR 1.006). Cumplen las 1810 verificaciones.
+  - `zapata_t_invertida_etabs.json`: la capa superior de la viga de #8 a #9 en las mismas posiciones, con la profundidad
+    (105.3 mm) y las barras de esquina por dentro del estribo (As,min de la viga con momento negativo, DCR 1.16). Cumplen
+    las 454 verificaciones.
+- **Pendiente:** b2 (fs con el momento de servicio) queda en la hoja de ruta como mejora, junto con las cargas de
+  servicio de las vigas (D-017).
+
+### D-123: la excepción de 4/3 del As,min se declara en cada elemento
+
+- **Fecha:** 2026-11-12
+- **Decisión del usuario:** en lugar de quitar la excepción en las zapatas combinadas y en T (D-115) y aplicarla siempre
+  en las vigas (D-022, D-081), cada elemento declara si la usa: `min_steel_exception` (sí/no), obligatorio, en cada viga
+  (`members[]`), en cada zapata combinada o T (`combined_footings[]`), en el bloque `combined_design` del diseño y en las
+  plantillas de ETABS. Sin el campo, la entrada es inválida (no se suponen valores por ausencia de datos). Reemplaza la regla
+  de D-115.
+- **Alcance:** la excepción de ACI 9.6.1.3 y NSR-10 C.10.5.3 (As ≥ 4/3 del requerido por análisis en lugar de As,min) en
+  todo refuerzo de flexión revisado con el As,min de vigas: los dos ejes de las vigas, la viga de la dirección principal y
+  las franjas de la combinada, y la viga de la T. No aplica a las mallas de las zapatas ni a las aletas de la T, que usan
+  el mínimo de losa, ni a la sección de franja con momento negativo (D-116). La reducción de la longitud de desarrollo por
+  exceso de refuerzo usa el mismo mínimo (con la excepción, el menor entre As,min y 4/3 del de análisis).
+- **Ejemplos:** todos declaran el campo con el valor que conserva su resultado: `true` en las vigas (como D-022) y `false`
+  en las zapatas combinadas, la T y los diseños de combinada (como D-115). Se agregó también a las copias de iterar del
+  usuario, porque sin él dejarían de validar.
+- **Oráculos:** `derive_combined_beam.py` vuelve a calcular la excepción por bisección cuando se declara (la de antes de
+  D-115) y sus casos `minimo-excepcion` y `minimo-no-cumple` la declaran; `derive_combined_columns.py` aplica el mismo
+  mínimo en el desarrollo. Las demás entradas declaran el campo sin cambiar sus resultados.
+
+### D-124: tiempo de cálculo: Brent, estados de sección guardados y pruebas en paralelo
+
+- **Fecha:** 2026-11-12
+- **Problema:** la suite pasó de 12 a 47 min con D-114 a D-120. Medición (cProfile del diseño de `diseno_combinada`,
+  NSR-10, f'c 28): 86 % en verificaciones completas (≈ 250 por f'c, 0.9 s cada una) y 14 % en el As requerido de las
+  barras; por dentro, ≈ 90 % en `mechanics/section.section_state`, que buscaba el eje neutro por bisección (≈ 49
+  iteraciones sobre todas las barras, 129 815 llamadas por diseño); la flexión biaxial, ≈ 75 % de ese tiempo (busca la
+  rotación cuando las barras son algo asimétricas). Las secciones repetidas eran pocas (2.2× por verificación, 1.8× por
+  diseño).
+- **Decisión del usuario:** reducir el costo de cada verificación antes de pensar en otro algoritmo de búsqueda: un
+  algoritmo genético evaluaría más verificaciones, no menos (queda como posible mejora de la calidad del óptimo).
+  1. Brent (código propio, `mechanics/roots.find_root`; sin SciPy, para no agregar una dependencia compilada que no
+     acelera la función evaluada) en todas las búsquedas continuas, con las mismas tolerancias: el eje neutro, la
+     orientación de la flexión biaxial (antes regula falsi de Illinois), el As requerido (`required_area`), el acero de
+     análisis de la excepción de 4/3 y el cortante cero de la viga larga. Sirve a vigas y zapatas.
+  2. `section_state` guarda sus estados (`lru_cache`, 8192): son inmutables y el diseño repite secciones entre rondas.
+  3. `pytest-xdist` en el extra `dev`: `pytest -n auto`. La regeneración de huellas va en un solo proceso.
+- **Resultados:** el diseño de `diseno_combinada` (f'c 28) pasó de 266 s a 23 s con la misma solución y las mismas 254
+  verificaciones (cada verificación, de 0.9 a 0.07 s). Comparado contra la bisección anterior en vigas (viga T, viga
+  alta con la excepción, viga rectangular), la zapata aislada y la combinada, no cambia ningún valor real: solo el
+  ruido numérico de Mn2 ≈ 1e-13 kN·m (que la memoria mostraba como −0.0 y ahora 0.0, o al revés) y el cortante en la
+  sección "V = 0" de la viga larga, que con bisección dejaba un residuo de 1e-6 kN y ahora es 0. Por eso cambian las
+  huellas sin diferencias numéricas; los seis diseños de las huellas dan el mismo `proyecto.json` que antes.
+- **Suite:** 2 min en paralelo (`pytest -n auto`, 32 hilos; antes 47 min en un proceso). Lo más lento son las huellas de
+  los diseños de la T desde ETABS (≈ 65 s cada una) y de la T y la combinada (≈ 30 s).
+- **Ejemplo `diseno_t_invertida_etabs.json` (D-114, punto 3):** con los rangos amplios tarda ≈ 30 min por perfil aun con
+  Brent. Decisión del usuario: acotar la copia de `pruebas/` (un f'c, 21 MPa; alto de viga 1400 mm y zarpa 500 mm, los
+  de la solución con rangos acotados: base 6800 × 2900 × 500 mm, viga de 1000 × 1400 mm de gran altura, estribos #4 de
+  4 ramas c/200, costo 19 279 941; CUMPLE). Así tarda ≈ 1 min por perfil y sigue probando la T desde ETABS de punta a
+  punta (planta, alma y todo el refuerzo); la copia de iterar conserva los rangos amplios.
+- **Error encontrado al comparar:** Brent pedía el valor de la función en el extremo de área 0, donde la sección sin
+  acero no tiene equilibrio; ese extremo usa ahora su valor conocido (φMn = 0) sin evaluar la sección.
+- **Pendiente:** vectorizar el cálculo de las barras (NumPy) si hace falta otro salto; la flexión uniaxial en zapatas con
+  M2 = 0 (cambia resultados en secciones asimétricas, requiere decisión); acotar los rangos de los ejemplos de diseño de
+  `pruebas/` más pesados.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

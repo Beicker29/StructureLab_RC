@@ -44,7 +44,7 @@ def _member(data: dict[str, Any]) -> Member:
     layers += [{"depth": tie, "role": "flexure", "bars": [data["tie_designation"]] * data["tie_bars_per_layer"]} for tie in sorted(ties)]
     layers.sort(key=lambda layer: layer["depth"])
     return Member.model_validate({
-        "id": "MNL-14-1", "type": "beam", "deep_beam": True, "length": 302.0 * MM_PER_IN,
+        "id": "MNL-14-1", "type": "beam", "min_steel_exception": True, "deep_beam": True, "length": 302.0 * MM_PER_IN,
         "section": {"bw": data["bw_in"] * MM_PER_IN, "h": h, "cover": COVER_IN * MM_PER_IN},
         "stations": [{"z": 0.0, "layout": {"layers": layers, "stirrups": {"designation": web["designation"], "legs": 2, "spacing": step,
                                                                          "closed": True}},

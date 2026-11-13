@@ -15,6 +15,7 @@
       "member": {
         "id": "cumple",
         "type": "beam",
+        "min_steel_exception": true,
         "length": 4000.0,
         "section": {
           "bw": 400.0,
@@ -143,6 +144,7 @@
       "member": {
         "id": "limite-seccion",
         "type": "beam",
+        "min_steel_exception": true,
         "length": 4000.0,
         "section": {
           "bw": 400.0,
@@ -271,6 +273,7 @@
       "member": {
         "id": "distribuido-escaso",
         "type": "beam",
+        "min_steel_exception": true,
         "length": 4000.0,
         "section": {
           "bw": 400.0,
@@ -399,6 +402,7 @@
       "member": {
         "id": "cortinas",
         "type": "beam",
+        "min_steel_exception": true,
         "length": 4000.0,
         "section": {
           "bw": 900.0,
@@ -527,6 +531,7 @@
       "member": {
         "id": "sin-intermedias",
         "type": "beam",
+        "min_steel_exception": true,
         "length": 4000.0,
         "section": {
           "bw": 400.0,
@@ -612,6 +617,7 @@
       "member": {
         "id": "no-declarada",
         "type": "beam",
+        "min_steel_exception": true,
         "length": 4000.0,
         "section": {
           "bw": 400.0,

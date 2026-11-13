@@ -66,7 +66,8 @@ def _project(layer: dict[str, Any]) -> Project:
         "profile": "nsr-10",
         "seismic": {"level": "DMO", "justification": "Prueba"},
         "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"},
-        "members": [{"id": "V", "type": "beam", "length": 6000.0, "section": SECTION.model_dump(exclude_none=True), "stations": [station]}],
+        "members": [{"id": "V", "type": "beam", "min_steel_exception": True,
+                     "length": 6000.0, "section": SECTION.model_dump(exclude_none=True), "stations": [station]}],
     })
 
 
@@ -87,7 +88,7 @@ def test_invalid_bar_layers_are_rejected(bars: list[Any], message: str) -> None:
 def _detailing(layers: list[dict[str, Any]], bw: float = 300.0) -> str:
     station = {"z": 0.0, "layout": {"layers": layers, "stirrups": STIRRUPS | {"designation": "#4"}},
                "demands": {"Pu_kN": 0.0, "Mu_kNm": 100.0, "M2_kNm": 0.0, "Vu_kN": 120.0, "V3_kN": 0.0, "Tu_kNm": 25.0}}
-    member = Member.model_validate({"id": "V", "type": "beam", "length": 6000.0,
+    member = Member.model_validate({"id": "V", "type": "beam", "min_steel_exception": True, "length": 6000.0,
                                     "section": {"bw": bw, "h": 500.0, "cover": 40.0}, "stations": [station]})
     materials = Materials(fc=28.0, fy=420.0, fyt=420.0, concrete="normalweight", coating="uncoated")
     checks = station_checks(PROFILES["nsr-10"], materials, member, member.stations[0], BARS)

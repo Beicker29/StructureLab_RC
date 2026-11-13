@@ -33,6 +33,7 @@ Referencia de la entrada y la salida de la verificación de vigas, común a los 
 | --- | --- | --- |
 | `id` | texto | Identificador único. |
 | `type` | texto | Tipo de miembro; esta carpeta usa `beam`. |
+| `min_steel_exception` | sí/no | Obligatorio (D-123): si el As,min de flexión admite la excepción de 4/3 del As requerido por análisis (ACI 9.6.1.3, NSR-10 C.10.5.3), en los dos ejes; sin él, la entrada es inválida. |
 | `statically_determinate` | sí/no | Si la viga es isostática; solo se exige para As,min con el ala a tracción. |
 | `deep_beam` | sí/no | Viga de gran altura declarada por el usuario (ACI 9.9.1.1, NSR-10 C.11.7.1); opcional, por defecto no (D-089). |
 | `length` | mm | Longitud del miembro. |

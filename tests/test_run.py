@@ -18,7 +18,7 @@ EXAMPLES = sorted(path for path in (ROOT / "examples").glob("*/*/pruebas/*.json"
 
 
 _COMBINED_DESIGNS = {"diseno_combinada.json": "combined_design", "diseno_t_invertida.json": "combined_design",
-                     "diseno_combinada_etabs.json": "etabs_combined_design"}
+                     "diseno_combinada_etabs.json": "etabs_combined_design", "diseno_t_invertida_etabs.json": "etabs_combined_design"}
 
 
 def _expected_kind(path: Path) -> str:

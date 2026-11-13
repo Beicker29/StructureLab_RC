@@ -24,6 +24,7 @@
       "description": "dos columnas iguales simétricas: resultante en el centroide y presión uniforme",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -120,6 +121,7 @@
       "description": "cargas desiguales: la resultante se corre hacia la columna más cargada",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -216,6 +218,7 @@
       "description": "columna de borde, pedestal, columnas desplazadas en Y y momentos en los dos ejes",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -312,6 +315,7 @@
       "description": "combinación con sismo: cortantes, momentos y qa × 1.33",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -410,6 +414,7 @@
       "description": "cortante grande con poca carga vertical: no cumple el deslizamiento",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -506,6 +511,7 @@
       "description": "momento enorme: resultante fuera de la base",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2000.0,
         "h": 700.0,
@@ -583,6 +589,7 @@
       "description": "viga en la Y global (D-094), escrita en ejes globales: ly a lo largo de la viga, columnas a distintas y (una corrida en X y rectangular), cortantes y momentos de ETABS en los dos ejes y con sismo",
       "footing": {
         "id": "ZC",
+        "min_steel_exception": false,
         "lx": 2000.0,
         "ly": 6000.0,
         "h": 700.0,

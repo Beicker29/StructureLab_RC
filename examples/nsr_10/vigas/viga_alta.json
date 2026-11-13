@@ -16,6 +16,7 @@
     {
       "id": "VT-1",
       "type": "beam",
+      "min_steel_exception": true,
       "deep_beam": true,
       "length": 7670.0,
       "section": {

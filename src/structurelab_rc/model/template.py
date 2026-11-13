@@ -31,6 +31,7 @@ class TemplateMember(_Input):
     id: str = Field(min_length=1)
     type: Literal["beam", "column", "footing", "wall", "slab"]
     etabs_unique_name: str = Field(min_length=1)
+    min_steel_exception: bool  # D-123
     statically_determinate: bool | None = None
     deep_beam: bool = False
     length: PositiveFloat
@@ -140,6 +141,7 @@ class TemplateCombinedFooting(_Input):
     surcharge_dead_kNm2: NonNegativeFloat
     surcharge_live_kNm2: NonNegativeFloat
     loads_source: LoadsSource = LoadsSource()
+    min_steel_exception: bool  # D-123
     columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2, max_length=2)
     bottom: dict[str, Any]
     top: dict[str, Any] | None = None

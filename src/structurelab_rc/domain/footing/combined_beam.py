@@ -51,6 +51,7 @@ from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows
 from structurelab_rc.domain.status import Status
 from structurelab_rc.mechanics.plate import wood_armer
+from structurelab_rc.mechanics.roots import find_root
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import FootingLoad, Soil
@@ -60,7 +61,6 @@ from structurelab_rc.model.reinforcement import BarLayer, BarPosition, BarSpacin
 SPACING = "Direccion principal: separacion maxima"
 BARS = {"bottom": "barras inferiores", "top": "barras superiores"}
 _SUBDIVISIONS = 64
-_BISECTION_STEPS = 200
 _EDGE = 1e-6
 _TOUCH = 1.0  # mm: una barra de piel a menos de esto de la capa superior se omite
 _NEGLIGIBLE_TWIST = 1.0  # N·mm/mm: por debajo, la sección no lleva los datos de Wood-Armer en la nota
@@ -164,7 +164,7 @@ def _faces(beam: BeamCase) -> list[tuple[CriticalSection, float]]:
 
 
 def _zero_shear(beam: BeamCase, low: float, high: float) -> list[float]:
-    """Las x del tramo donde V cambia de signo (extremos de M), por muestreo y bisección."""
+    """Las x del tramo donde V cambia de signo (extremos de M), por muestreo y Brent (D-124)."""
     if high - low <= 0:
         return []
     step = (high - low) / _SUBDIVISIONS
@@ -177,15 +177,7 @@ def _zero_shear(beam: BeamCase, low: float, high: float) -> list[float]:
             continue
         if va * vb >= 0:
             continue
-        for _ in range(_BISECTION_STEPS):
-            middle = (a + b) / 2
-            if beam.shear(middle) * va > 0:
-                a = middle
-            else:
-                b = middle
-            if b - a <= 1e-9 * beam.lx:
-                break
-        roots.append((a + b) / 2)
+        roots.append(find_root(beam.shear, (a, b), (va, vb), lambda _: 1e-9 * beam.lx))
     # V es cero en un borde libre: un cambio de signo pegado a un extremo del tramo es ruido, no un extremo de M.
     return [x for x in roots if min(x - low, high - x) > _EDGE * beam.lx]
 
@@ -392,7 +384,8 @@ def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec], profil
     else:
         section, layout = beam_member(footing, (mat_rows(footing, footing.bottom, bars)["x"], top_rows(footing, bars).get("x")), bars)
     placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
-    return Member.model_construct(id=footing.id, type="beam", statically_determinate=True if footing.beam is not None else None,
+    return Member.model_construct(id=footing.id, type="beam", min_steel_exception=footing.min_steel_exception,
+                                  statically_determinate=True if footing.beam is not None else None,
                                   deep_beam=footing.deep_beam, length=footing.lx, section=section, stations=(placeholder,))
 
 

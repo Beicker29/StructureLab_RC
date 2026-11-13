@@ -55,6 +55,7 @@ def _footing(data: dict[str, Any]) -> CombinedFooting:
     bottom = {"designation": data["bottom"]["designation"], "spacing": data["bottom"]["spacing_mm"]}
     return CombinedFooting.model_validate({
         "id": "ZC", "lx": lx, "ly": data["ly_in"] * MM_PER_IN, "h": data["h_in"] * MM_PER_IN,
+        "min_steel_exception": False,
         "cover": data["cover_in"] * MM_PER_IN, "fill_height": 0.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0,
         "surcharge_live_kNm2": 0.0, "columns": columns,
         "bottom": {"first": "x", "end": "straight", "x": bottom,

@@ -1,0 +1,157 @@
+{
+  "description": "Diseño de zapata combinada en T invertida desde ETABS (D-113, D-114): las columnas C15 y C1659 (las de ZT-1 en zapata_t_invertida_etabs.json) toman sus cargas de servicio y mayoradas de los Excel compartidos; la base se ubica con SERVICIO 1 (D+L) (placement_case) y el diseño propone el alto de la viga, el alma (desde la columna más ancha más 100 mm a cada lado), la zarpa, la planta, f'c y el refuerzo de menor costo. **Datos supuestos.**",
+  "etabs_files": {
+    "service": "../../etabs/zapatas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../etabs/zapatas/Joint Reactions - Ultimas.xlsx"
+  },
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "special",
+    "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
+  },
+  "materials": {
+    "fy": 420.0,
+    "fyt": 420.0,
+    "concrete": "normalweight",
+    "coating": "uncoated",
+    "max_aggregate": 19.0
+  },
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.45,
+    "adhesion_kPa": 0.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "load_factors": {
+    "SERVICIO 1 (D+L)": {
+      "dead": 1.0,
+      "live": 1.0
+    },
+    "SERVICIO 2 (D+EX+EZ)": {
+      "dead": 1.0,
+      "live": 0.0,
+      "seismic": true
+    },
+    "SERVICIO 3 (D+EY+EZ)": {
+      "dead": 1.0,
+      "live": 0.0,
+      "seismic": true
+    },
+    "SERVICIO 4 (D+L+EX+EZ)": {
+      "dead": 1.0,
+      "live": 1.0,
+      "seismic": true
+    },
+    "SERVICIO 5  (D+L+EY+EZ)": {
+      "dead": 1.0,
+      "live": 1.0,
+      "seismic": true
+    },
+    "COMB0 (1.4D)": {
+      "dead": 1.4,
+      "live": 0.0
+    },
+    "COMB1 (1.2D+1.6L)": {
+      "dead": 1.2,
+      "live": 1.6
+    },
+    "COMB4A (1.2D+L+EX+EZ)": {
+      "dead": 1.2,
+      "live": 1.0,
+      "seismic": true
+    },
+    "COMB4B (1.2D+L+EY+EZ)": {
+      "dead": 1.2,
+      "live": 1.0,
+      "seismic": true
+    },
+    "COMB6A (0.9+EX+EZ)": {
+      "dead": 0.9,
+      "live": 0.0,
+      "seismic": true
+    },
+    "COMB6B (0.9D+EY+EZ)": {
+      "dead": 0.9,
+      "live": 0.0,
+      "seismic": true
+    }
+  },
+  "principal_direction": "x",
+  "combined_design": {
+    "min_steel_exception": false,
+    "fc_options": [
+      21.0,
+      28.0
+    ],
+    "prices": {
+      "concrete_per_m3": {
+        "21": 520000.0,
+        "28": 575000.0
+      },
+      "steel_per_kg": 6200.0
+    },
+    "plan_step": 100.0,
+    "plan_max": 9000.0,
+    "h_min": 400.0,
+    "h_step": 100.0,
+    "h_max": 800.0,
+    "cover": 75.0,
+    "fill_height": 1500.0,
+    "pedestal_height": 0.0,
+    "surcharge_dead_kNm2": 2.0,
+    "surcharge_live_kNm2": 5.0,
+    "bars": [
+      "#4",
+      "#5",
+      "#6",
+      "#7",
+      "#8"
+    ],
+    "spacing_step": 10.0,
+    "end": "straight",
+    "dowel_bars": [
+      "#5",
+      "#6",
+      "#8"
+    ],
+    "placement_case": "SERVICIO 1 (D+L)",
+    "stirrup_bars": [
+      "#4",
+      "#5"
+    ],
+    "shape": "inverted_t",
+    "web_margin": 100.0,
+    "web_step": 100.0,
+    "beam_h_min": 1300.0,
+    "beam_h_step": 100.0,
+    "beam_h_max": 2000.0
+  },
+  "columns": [
+    {
+      "id": "C15",
+      "etabs_unique_name": "15",
+      "cx": 600.0,
+      "cy": 600.0,
+      "x": -2700.0,
+      "y": 0.0
+    },
+    {
+      "id": "C1659",
+      "etabs_unique_name": "1659",
+      "cx": 600.0,
+      "cy": 600.0,
+      "x": 2700.0,
+      "y": 0.0
+    }
+  ]
+}

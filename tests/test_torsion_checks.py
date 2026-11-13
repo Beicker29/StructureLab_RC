@@ -40,7 +40,8 @@ def _member(
 ) -> Member:
     layout = {"layers": layers if layers is not None else [TOP, BOTTOM, TORSION_BARS], "stirrups": stirrups}
     station = {"z": 0.0, "layout": layout, "demands": DEMANDS | demands}
-    return Member.model_validate({"id": "V", "type": "beam", "length": 6000.0, "section": section, "stations": [station]})
+    return Member.model_validate({"id": "V", "type": "beam", "min_steel_exception": True,
+                                  "length": 6000.0, "section": section, "stations": [station]})
 
 
 def _checks(member: Member, profile: str = "nsr-10") -> dict[str, Check]:

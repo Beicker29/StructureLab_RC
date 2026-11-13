@@ -113,7 +113,7 @@ def _member(case: str, *, bw: float = 400.0, vu: float = 900.0, skin: str | None
     if skin is not None:
         layers += [{"depth": depth, "role": "skin", "bars": [skin, skin]} for depth in (180.0, 430.0, 680.0, 930.0, 1180.0)]
     layers.append({"depth": 1433.0, "role": "flexure", "bars": ["#8"] * 6})
-    member = {"id": case, "type": "beam", "length": 4000.0, "section": {"bw": bw, "h": 1500.0, "cover": 40.0},
+    member = {"id": case, "type": "beam", "min_steel_exception": True, "length": 4000.0, "section": {"bw": bw, "h": 1500.0, "cover": 40.0},
               "stations": [{"z": 0.0, "layout": {"layers": layers, "stirrups": stirrups or STIRRUPS},
                             "demands": {"Pu_kN": 0.0, "Mu_kNm": 1500.0, "M2_kNm": 0.0, "Vu_kN": vu, "V3_kN": 0.0, "Tu_kNm": 0.0}}]}
     if deep:

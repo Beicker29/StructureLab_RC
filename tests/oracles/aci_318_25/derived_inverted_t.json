@@ -31,6 +31,7 @@
       "description": "T invertida de 6.6 × 2.4 m, viga 600 × 900 sobre zarpa de 400 mm: ala bf = 4bw = 2400 mm",
       "footing": {
         "id": "ZT",
+        "min_steel_exception": false,
         "lx": 6600.0,
         "ly": 2400.0,
         "h": 400.0,
@@ -379,6 +380,7 @@
       "description": "zarpa de 280 mm < 0.5bw: el ala no cuenta (solo el alma) y las barras inferiores solo en el alma",
       "footing": {
         "id": "ZT",
+        "min_steel_exception": false,
         "lx": 6600.0,
         "ly": 2400.0,
         "h": 280.0,
@@ -679,6 +681,7 @@
       "description": "malla y #4 c/300: la aleta no cumple flexión ni el mínimo de losa",
       "footing": {
         "id": "ZT",
+        "min_steel_exception": false,
         "lx": 6600.0,
         "ly": 2400.0,
         "h": 400.0,
@@ -1027,6 +1030,7 @@
       "description": "momentos de columna grandes: momento positivo en las caras y el ala a tracción con min(bf, 2bw)",
       "footing": {
         "id": "ZT",
+        "min_steel_exception": false,
         "lx": 6600.0,
         "ly": 2400.0,
         "h": 400.0,
@@ -1347,6 +1351,7 @@
       "description": "capa inferior de la viga en 1200 mm (bottom_width): fuera de ella, las barras #5 c/200 de la malla de la zarpa cuentan dentro del ala (D-106)",
       "footing": {
         "id": "ZT",
+        "min_steel_exception": false,
         "lx": 6600.0,
         "ly": 2400.0,
         "h": 400.0,
@@ -1664,6 +1669,7 @@
       "description": "Mx grande: la presión baja hacia un borde y aparece el momento negativo en esa aleta, que toman las barras superiores y de la zarpa, #5 c/200 (top, D-114)",
       "footing": {
         "id": "ZT",
+        "min_steel_exception": false,
         "lx": 6600.0,
         "ly": 2400.0,
         "h": 400.0,

@@ -70,7 +70,7 @@ def checks_for(given: StationInput) -> tuple[Check, ...]:
         checks: tuple[Check, ...] = (blocking,)
     else:
         skin = skin_check(given)
-        # En las zapatas combinadas y en T no aplica la excepción de 4/3 del As,min (decisión del usuario, D-115).
+        # La excepción de 4/3 del As,min la declara cada elemento (min_steel_exception, D-123).
         flexure = flexure_checks(given)
         if given.foundation:  # la zapata no tiene M2: las verificaciones del eje débil no aplican (D-083)
             flexure = tuple(check for check in flexure if check.name not in _WEAK_AXIS)

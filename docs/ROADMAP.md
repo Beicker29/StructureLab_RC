@@ -11,20 +11,15 @@ neutras que después reutilizan las vigas (v1 fases 4 y 5).
 **Pendiente sin fase:** correr de nuevo el diseño por tipologías desde ETABS con D-079 (N = 6 y curva costo–N); diferido
 por el usuario.
 
-**Pendiente inmediato (diferido por el usuario, 2026-11-12):** cerrar D-114 a D-119, que se commitearon sin la corrida
-completa:
-
-- correr `pytest` completo y corregir las fallas;
-- regenerar `tests/fingerprints.json` (`STRUCTURELAB_UPDATE_FINGERPRINTS=1 pytest tests/test_fingerprints.py`) y
-  reportar las diferencias numéricas. Cambian los ejemplos de zapata combinada y de T por D-115 (sin 4/3), D-116,
-  D-118 (Wood-Armer) y D-119 (capítulos, índice DCR, `band_top`, cortante de placa).
-
-Hasta entonces, las huellas de esos ejemplos no coinciden y la CI puede fallar.
+**Rendimiento (D-124), después:** vectorizar el cálculo de las barras con NumPy si hace falta otro salto; flexión
+uniaxial en zapatas con M2 = 0 (cambia resultados en secciones asimétricas, requiere decisión); un algoritmo genético
+como mejora de la calidad del óptimo del diseño, no del tiempo.
 
 ## v3: zapatas (en curso)
 
 Hecho: zapata aislada (verificación, diseño por tipologías, estabilidad, concreto simple) y zapata combinada de dos
-columnas (verificación, entrada desde ETABS, D-052 a D-087; diseño de la rectangular, D-107).
+columnas, rectangular y en T invertida (verificación y entrada desde ETABS, D-052 a D-087, D-093, D-106; diseño con
+estribos, torsión, cargas de ETABS y T, D-107 a D-113; torsión de placa, band superior y memoria por zona, D-114 a D-123).
 
 ### Fase 1: zapatas combinadas completas
 

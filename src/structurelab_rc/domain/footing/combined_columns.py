@@ -235,7 +235,8 @@ def strip_member(footing: CombinedFooting, column: CombinedColumn, rows: tuple[B
                                    bars=tuple(BarPosition(designation=source.designation, x=position - x0) for position in inside)))
     layout = ReinforcementLayout(layers=tuple(layers), stirrups=None)
     placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
-    return Member.model_construct(id=footing.id, type="beam", statically_determinate=None, length=footing.ly,
+    return Member.model_construct(id=footing.id, type="beam", min_steel_exception=footing.min_steel_exception,
+                                  statically_determinate=None, length=footing.ly,
                                   section=Section(bw=x1 - x0, h=footing.h, cover=footing.cover), stations=(placeholder,))
 
 
@@ -599,16 +600,19 @@ def shrinkage_checks(basis: Basis, footing: CombinedFooting) -> list[Check]:
     return checks
 
 
-def steel_excess(basis: Basis, section: tuple[float, float, float], provided: float, moment: float) -> float:
-    """As requerido / As suministrado (≤ 1): el mayor entre el de análisis y el mínimo de vigas, sin la excepción de 4/3
-    (decisión del usuario, D-115). section = (ancho, h, d)."""
+def steel_excess(basis: Basis, section: tuple[float, float, float], provided: float, moment: float,
+                 exception: bool = False) -> float:
+    """As requerido / As suministrado (≤ 1): el mayor entre el de análisis y el mínimo de vigas; con la excepción de 4/3
+    declarada (min_steel_exception, D-123), el mínimo es el menor entre As,min y 4/3 del de análisis. section = (ancho, h,
+    d)."""
     width, h, depth = section
     profile, materials = basis.profile, basis.materials
     analysis = required_area(profile, materials, RectangularSection(width, h), depth, moment)
     if analysis is None or provided <= 0:
         return 1.0
     as_min = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, width, depth)
-    return min(max(analysis, as_min) / provided, 1.0)
+    minimum = profile.flexure.effective_min_reinforcement(as_min, analysis) if exception else as_min
+    return min(max(analysis, minimum) / provided, 1.0)
 
 
 def bar_development_check(basis: Basis, footing: CombinedFooting, row: BarRow, anchorage: tuple[float, str, float, float],
@@ -652,7 +656,8 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
         if row is None or moment <= 0:
             continue
         # En la T invertida la sección no es rectangular: sin reducción por As requerido / As provisto (D-093).
-        excess = 1.0 if footing.beam is not None else steel_excess(basis, (footing.ly, footing.h, row.depth), row.area, moment)
+        excess = 1.0 if footing.beam is not None else steel_excess(basis, (footing.ly, footing.h, row.depth), row.area, moment,
+                                                                    footing.min_steel_exception)
         available = min(x + half, half - x) - footing.cover
         sign = "positivo" if label == "inferiores" else "negativo"
         note = f"Desde la seccion de mayor momento {sign} (z = {x + half:.0f} mm)"
@@ -685,7 +690,7 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
         bottom_area = len(_inside(bottom, limits)) * bottom.bar_area
         if positive > 0 and bottom_area > 0:
             spacing = column.band.spacing if column.band is not None else footing.bottom.y.spacing
-            excess = steel_excess(basis, (width, footing.h, row.depth), bottom_area, positive)
+            excess = steel_excess(basis, (width, footing.h, row.depth), bottom_area, positive, footing.min_steel_exception)
             name = (f"{DEVELOPMENT} refuerzo band (columna {column.id})" if band is not None
                     else f"{DEVELOPMENT} barras inferiores, {SECONDARY} (franja de la columna {column.id})")
             checks.append(bar_development_check(basis, footing, bottom, (spacing, "bottom", excess, available), (name, note)))
@@ -694,7 +699,7 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
             continue
         top_area = len(_inside(top, limits)) * top.bar_area
         if top_area > 0:
-            excess = steel_excess(basis, (width, footing.h, top.depth), top_area, negative)
+            excess = steel_excess(basis, (width, footing.h, top.depth), top_area, negative, footing.min_steel_exception)
             name = (f"{DEVELOPMENT} band superior (columna {column.id})" if column.band_top is not None
                     else f"{DEVELOPMENT} barras superiores, {SECONDARY} (franja de la columna {column.id})")
             checks.append(bar_development_check(basis, footing, top, (top_spacing, "top", excess, available), (name, note)))

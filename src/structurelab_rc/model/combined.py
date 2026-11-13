@@ -139,6 +139,7 @@ class CombinedFooting(RectangularBase, _Input):
     top: TopMat | None = None
     stirrups: Stirrups | None = None
     skin: SkinBars | None = None
+    min_steel_exception: bool  # D-123: la excepción de 4/3 del As,min en la viga larga, las franjas y la viga de la T
     deep_beam: bool = False
     beam: FoundationBeam | None = None
     principal_direction: Literal["x", "y"] = "x"

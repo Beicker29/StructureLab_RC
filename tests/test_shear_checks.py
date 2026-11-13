@@ -35,7 +35,8 @@ def _member(
     **demands: float,
 ) -> Member:
     station = {"z": 0.0, "layout": {"layers": layers, "stirrups": stirrups}, "demands": DEMANDS | demands}
-    return Member.model_validate({"id": "V", "type": "beam", "length": 6000.0, "section": section, "stations": [station]})
+    return Member.model_validate({"id": "V", "type": "beam", "min_steel_exception": True,
+                                  "length": 6000.0, "section": section, "stations": [station]})
 
 
 def _checks(member: Member, profile: str = "nsr-10", materials: Materials = MATERIALS) -> dict[str, Check]:
@@ -118,7 +119,8 @@ def test_lightweight_concrete_is_blocked() -> None:
 def test_missing_torsion_is_incomplete() -> None:
     demands = {"Pu_kN": 0.0, "Mu_kNm": 100.0, "M2_kNm": 0.0, "Vu_kN": 120.0, "V3_kN": 0.0}
     station = {"z": 0.0, "layout": {"layers": BOTTOM, "stirrups": STIRRUPS}, "demands": demands}
-    member = Member.model_validate({"id": "V", "type": "beam", "length": 6000.0, "section": SECTION_300X500, "stations": [station]})
+    member = Member.model_validate({"id": "V", "type": "beam", "min_steel_exception": True,
+                                    "length": 6000.0, "section": SECTION_300X500, "stations": [station]})
     assert _checks(member)[STRENGTH].status is Status.INCOMPLETE
 
 

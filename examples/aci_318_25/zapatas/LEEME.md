@@ -10,6 +10,7 @@ Zapatas aisladas y combinadas según ACI CODE-318-25 (v3, en curso). Los campos 
 | `diseno_combinada.json` | Diseño de la zapata combinada (D-107): las columnas y cargas de `zapata_combinada.json` (posiciones con origen en C1); el diseño ubica la base en la resultante de D+L y elige dimensiones, f'c (21 o 28 MPa) y refuerzo de menor costo. |
 | `diseno_combinada_etabs.json` | Diseño de zapata combinada desde los Excel de `examples/etabs/zapatas/` (D-112): las dos columnas de ZC-A de `zapata_combinada_etabs.json` toman sus cargas de ETABS; la base se ubica con SERVICIO 1 (D+L) (`placement_case`). **Datos supuestos.** |
 | `diseno_t_invertida.json` | Diseño de zapata combinada en T invertida (D-113): las columnas y cargas de `diseno_combinada.json`, alma desde la columna más ancha más 50 mm a cada lado, viga de 700 a 1200 mm y zarpa de 250 a 400 mm. |
+| `diseno_t_invertida_etabs.json` | Diseño de zapata combinada en T invertida desde los Excel de `examples/etabs/zapatas/` (D-113, D-114): las columnas C15 y C1659 de ZT-1 toman sus cargas de ETABS; la base se ubica con SERVICIO 1 (D+L). **Datos supuestos.** |
 | `curva_tipologias.json` | Curva costo-N (D-078, D-096): el mismo proyecto de `diseno_tipologias.json`, diseñado para N = 1 a 6 (bloque `curve`). |
 | `diseno_tipologias_etabs.json` | Diseño por tipologías desde los Excel compartidos de `examples/etabs/zapatas/`: cada Unique Name es una columna de 500 × 800 mm (cx × cy) con la zapata centrada; 6 tipologías y f'c de 21, 24.5 y 28 MPa. **Datos supuestos.** El diseño de los 73 apoyos tarda varios minutos. |
 | `zapata_t_invertida_etabs.json` | Zapata combinada en T invertida desde los mismos Excel (D-093): ZT-1 toma de ETABS las cargas de servicio y mayoradas de los nudos 15 y 1659; viga de 1000 × 1700 mm sobre zarpa de 9.0 × 3.6 × 0.6 m. **Datos supuestos.** |
@@ -40,6 +41,7 @@ structurelab-rc run examples/aci_318_25/zapatas/curva_tipologias.json
 structurelab-rc run examples/aci_318_25/zapatas/diseno_combinada.json
 structurelab-rc run examples/aci_318_25/zapatas/diseno_combinada_etabs.json
 structurelab-rc run examples/aci_318_25/zapatas/diseno_t_invertida.json
+structurelab-rc run examples/aci_318_25/zapatas/diseno_t_invertida_etabs.json
 structurelab-rc run examples/aci_318_25/zapatas/diseno_tipologias.json
 structurelab-rc run examples/aci_318_25/zapatas/zapata_combinada_etabs.json
 structurelab-rc run examples/aci_318_25/zapatas/diseno_tipologias_etabs.json

@@ -22,6 +22,7 @@ dos estados de carga distintos. P cambia de signo para que la compresión sea po
 | `members[].id` | texto | Identificador de la viga. |
 | `members[].type` | texto | `beam`. |
 | `members[].etabs_unique_name` | texto | Unique Name del elemento en ETABS. |
+| `members[].min_steel_exception` | sí/no | Obligatorio (D-123); ver el proyecto de vigas. Las zapatas combinadas de la plantilla también lo declaran (`combined_footings[].min_steel_exception`) y la plantilla de diseño de la combinada, en `combined_design`. |
 | `members[].statically_determinate` | sí/no | Opcional; ver el proyecto de vigas. |
 | `members[].length` | mm | Longitud. |
 | `members[].section` | objeto | Sección, igual que en el proyecto. |

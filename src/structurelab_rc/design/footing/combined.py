@@ -262,6 +262,7 @@ def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any
         columns.append(item)
     data: dict[str, Any] = {
         "id": FOOTING_ID, "principal_direction": principal, "lx": lx, "ly": ly, "h": geometry.h, "cover": design.cover,
+        "min_steel_exception": design.min_steel_exception,
         "fill_height": design.fill_height, "pedestal_height": design.pedestal_height,
         "surcharge_dead_kNm2": design.surcharge_dead, "surcharge_live_kNm2": design.surcharge_live, "columns": columns,
         "bottom": _declared({"first": "x", "end": design.end, "x": reinforcement["bottom_x"], "y": reinforcement["bottom_y"]}, swap),
@@ -493,8 +494,9 @@ def _bar_group(given: tuple[Context, Materials], spread: Spread, depth_of: Calla
                moment: float, compression: float | None = None) -> list[dict[str, Any]]:
     """Opciones de un grupo de barras que ya cumplen los límites del perfil que la verificación revisa en él: el acero
     mínimo de losa en todo el grupo y, si hay momento (viga larga y franjas, revisadas como vigas, D-081 y D-082), el
-    As,min de vigas (sin la excepción de 4/3, D-115; con el ancho del alma) y la separación de control de fisuración con el
-    recubrimiento. compression es el ancho a compresión de la T, si difiere del de reparto (D-113)."""
+    As,min de vigas (con la excepción de 4/3 solo si se declara, D-123; con el ancho del alma) y la separación de
+    control de fisuración con el recubrimiento. compression es el ancho a compresión de la T, si difiere del de reparto
+    (D-113)."""
     ctx, materials = given
     profile = ctx.profile
     specs = [ctx.spec(designation) for designation in ctx.design.bars]
@@ -503,6 +505,9 @@ def _bar_group(given: tuple[Context, Materials], spread: Spread, depth_of: Calla
         depth = depth_of(specs[0].diameter_mm)
         web = min(spread.width, compression or spread.width)
         beam = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, web, depth)
+        if ctx.design.min_steel_exception:  # D-123: la excepción de 4/3 del As requerido, si se declara
+            section = RectangularSection(compression or spread.width, spread.h)
+            beam = profile.flexure.effective_min_reinforcement(beam, required_area(profile, materials, section, depth, moment) or 0.0)
         minimum = max(minimum, beam)
         crack = math.floor(profile.flexure.crack_control_spacing(materials.fy, ctx.design.cover) / spread.step) * spread.step
         spread = replace(spread, max_spacing=min(spread.max_spacing, crack))

@@ -90,6 +90,7 @@
   "combined_footings": [
     {
       "id": "ZT-1",
+      "min_steel_exception": false,
       "principal_direction": "x",
       "lx": 9000.0,
       "ly": 3600,
@@ -109,44 +110,44 @@
         "end": "straight",
         "layers": [
           {
-            "depth": 103.6,
+            "depth": 105.3,
             "role": "flexure",
             "bars": [
               {
-                "designation": "#8",
-                "x": 104.0
+                "designation": "#9",
+                "x": 105.3
               },
               {
-                "designation": "#8",
+                "designation": "#9",
                 "x": 203.0
               },
               {
-                "designation": "#8",
+                "designation": "#9",
                 "x": 302.0
               },
               {
-                "designation": "#8",
+                "designation": "#9",
                 "x": 401.0
               },
               {
-                "designation": "#8",
+                "designation": "#9",
                 "x": 500.0
               },
               {
-                "designation": "#8",
+                "designation": "#9",
                 "x": 599.0
               },
               {
-                "designation": "#8",
+                "designation": "#9",
                 "x": 698.0
               },
               {
-                "designation": "#8",
+                "designation": "#9",
                 "x": 797.0
               },
               {
-                "designation": "#8",
-                "x": 896.0
+                "designation": "#9",
+                "x": 894.7
               }
             ]
           },

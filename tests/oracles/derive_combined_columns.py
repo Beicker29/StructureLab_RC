@@ -606,10 +606,13 @@ def _whitney(moment: float, width: float, depth: float) -> float:
     return k / FY * (depth - math.sqrt(depth**2 - 2 * moment / (0.9 * k)))
 
 
-def _ratio(width: float, depth: float, area: float, moment: float) -> float:
+def _ratio(width: float, depth: float, area: float, moment: float, exception: bool) -> float:
+    """As requerido / suministrado del desarrollo: el mayor entre el de análisis y el mínimo de vigas; con la excepción de
+    4/3 declarada (D-123), el mínimo es el menor entre As,min y 4/3 del de análisis."""
     analysis = _whitney(moment, width, depth)
     as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * width * depth
-    return min(max(analysis, as_min) / area, 1.0)  # As requerido sin la excepción de 4/3 (D-115)
+    minimum = min(as_min, 4 / 3 * analysis) if exception else as_min
+    return min(max(analysis, minimum) / area, 1.0)
 
 
 def _develop(folder: str, f: dict, bar: tuple[float, float, float, str], given: tuple[float, float, str, str], level: str) -> dict:
@@ -661,7 +664,7 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
             continue
         # row["depth"]: la altura efectiva, medida desde la cara opuesta a la fila (inferior: desde arriba; superior: desde abajo).
         area = len(row["positions"]) * row["ab"]
-        ratio = _ratio(f["ly"], row["depth"], area, moment)
+        ratio = _ratio(f["ly"], row["depth"], area, moment, f["min_steel_exception"])
         available = min(x + half, half - x) - f["cover"]
         out.append(_develop(folder, f, (row["db"], row["spacing"], row["depth"], bottom),
                             (ratio, available, f"Desarrollo barras {label}, direccion principal", ""), level))
@@ -678,13 +681,13 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
             negative_y = max([negative_y, *(-v for values, _ in design for v in values)])
         available = min(hy - (c["y"] + c["cy"] / 2), c["y"] - c["cy"] / 2 + hy) - f["cover"]
         if positive_y > 0 and strip["bottom_area"] > 0:
-            ratio = _ratio(strip["width"], strip["depth"], strip["bottom_area"], positive_y)
+            ratio = _ratio(strip["width"], strip["depth"], strip["bottom_area"], positive_y, f["min_steel_exception"])
             name = (f"Desarrollo refuerzo band (columna {c['id']})" if strip["band"]
                     else f"Desarrollo barras inferiores, direccion secundaria (franja de la columna {c['id']})")
             out.append(_develop(folder, f, (strip["db"], strip["spacing"], strip["depth"], "bottom"), (ratio, available, name, ""), level))
         if top is not None and negative_y > 1e3 and strip["top_area"] > 0:
             depth = f["h"] - top["from_top"]
-            ratio = _ratio(strip["width"], depth, strip["top_area"], negative_y)
+            ratio = _ratio(strip["width"], depth, strip["top_area"], negative_y, f["min_steel_exception"])
             name = (f"Desarrollo band superior (columna {c['id']})" if c.get("band_top")
                     else f"Desarrollo barras superiores, direccion secundaria (franja de la columna {c['id']})")
             out.append(_develop(folder, f, (top["db"], top["spacing"], depth, "top"), (ratio, available, name, ""), level))
@@ -798,7 +801,8 @@ def _load(case: str, p: float, **changes: float) -> dict:
 
 
 def _footing(columns: list[dict], **changes: object) -> dict:
-    data = {"id": "ZC", "lx": 6000.0, "ly": 2400.0, "h": 750.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
+    data = {"id": "ZC", "min_steel_exception": False,
+            "lx": 6000.0, "ly": 2400.0, "h": 750.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
             "bottom": {"first": "x", "end": "straight", "x": {"designation": "#7", "spacing": 150.0},
                        "y": {"designation": "#6", "spacing": 150.0}},

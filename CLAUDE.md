@@ -82,6 +82,6 @@ Una fuente de verdad por concepto ([arquitectura](docs/architecture.md)).
 - Cambios de cálculo requieren casos en el oráculo independiente
   (`tests/oracles/<perfil>/`, no importa el paquete).
 - No modificar valores de referencia para hacer pasar un cambio.
-- Antes de cerrar: `pytest`, `ruff check`, `mypy`, `lint-imports` y la huella.
+- Antes de cerrar: `pytest` (en paralelo con `-n auto`, D-124), `ruff check`, `mypy`, `lint-imports` y la huella.
 - Cerrar cada tarea con: cambios, pruebas reales (comando y resultado), diferencias
   numéricas, riesgos y pendientes.

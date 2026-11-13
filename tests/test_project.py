@@ -57,6 +57,7 @@ BASE: dict[str, Any] = {
         {
             "id": "V1",
             "type": "beam",
+            "min_steel_exception": True,
             "length": 6000.0,
             "section": {"bw": 300.0, "h": 500.0, "cover": 40.0},
             "stations": [

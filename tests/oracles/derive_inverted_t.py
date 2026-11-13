@@ -185,7 +185,8 @@ def _beam_checks(folder: str, f: dict, rows: dict, given: tuple[float, float]) -
         if moment > 0 and flange:  # ala a tracción en una viga isostática
             width = min(flange, 2 * bw)
         as_min = max(0.25 * math.sqrt(FC), 1.4) / FY * width * d
-        # Sin la excepción de 4/3 del As requerido (decisión del usuario, D-115): As ≥ As,min siempre.
+        # Los casos declaran la excepción de 4/3 en false (D-123): As ≥ As,min siempre.
+        assert not f["min_steel_exception"], "el oráculo de la T solo cubre la excepción no declarada"
         checks.append({"name": "Flexion: acero minimo (M3)", "capacity": provided, "demand": as_min,
                        "status": "PASS" if provided >= as_min else "FAIL"})
     if pulled:
@@ -353,7 +354,8 @@ def _footing(**changes: object) -> dict:
                {"id": "C2", "cx": 500.0, "cy": 500.0, "x": 2500.0, "y": 0.0, "loads": [_load("U1", 1150.0)]}]
     beam = {"width": 600.0, "height": 900.0, "end": "straight", "layers": [TOP, BOTTOM],
             "stirrups": {"designation": "#4", "legs": 4, "spacing": 120.0, "closed": True}}
-    data = {"id": "ZT", "lx": 6600.0, "ly": 2400.0, "h": 400.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
+    data = {"id": "ZT", "min_steel_exception": False,
+            "lx": 6600.0, "ly": 2400.0, "h": 400.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns, "beam": beam,
             "bottom": {"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0},
                        "y": {"designation": "#5", "spacing": 150.0}}}

@@ -30,7 +30,7 @@ ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                      for path in (ROOT / "examples").glob("*/vigas/pruebas/viga_rectangular_etabs.json")))
 COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                               for name in ("zapata_combinada_etabs.json", "zapata_t_invertida_etabs.json",
-                                           "diseno_combinada_etabs.json")
+                                           "diseno_combinada_etabs.json", "diseno_t_invertida_etabs.json")
                               for path in (ROOT / "examples").glob(f"*/zapatas/pruebas/{name}")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "pruebas" / "Element Forces - Beams.xlsx"
 REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx",
@@ -56,7 +56,7 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
         data = import_etabs(WORKBOOK, project)[0] if name in ETABS else import_etabs_footings(*REACTIONS, project)[0]
         project = work / "etabs.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
-        if Path(name).name == "diseno_combinada_etabs.json":  # diseño de la combinada desde ETABS (D-112)
+        if Path(name).name.startswith("diseno_"):  # diseño de la combinada o la T desde ETABS (D-112, D-114)
             designed = design_combined_file(project, workers=2)[0]
             assert designed is not None, name
             project = work / "proyecto.json"

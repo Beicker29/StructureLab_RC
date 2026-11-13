@@ -119,10 +119,13 @@ class Station(_Input):
 
 class Member(_Input):
     """type declara el tipo de miembro; statically_determinate solo se exige para As,min con el ala a tracción (D-021);
-    deep_beam declara que es viga de gran altura (ACI 9.9.1.1, NSR-10 C.11.7.1): se verifican sus criterios (D-089)."""
+    deep_beam declara que es viga de gran altura (ACI 9.9.1.1, NSR-10 C.11.7.1): se verifican sus criterios (D-089);
+    min_steel_exception declara si el As,min de flexión admite la excepción de 4/3 del As requerido por análisis (ACI
+    9.6.1.3, NSR-10 C.10.5.3), en los dos ejes (obligatorio, D-123)."""
 
     id: str = Field(min_length=1)
     type: Literal["beam", "column", "footing", "wall", "slab"]
+    min_steel_exception: bool
     statically_determinate: bool | None = None
     deep_beam: bool = False
     length: PositiveFloat

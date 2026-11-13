@@ -1,6 +1,8 @@
 {
   "description": "Plantilla de importación para 'Element Forces - Beams.xlsx' (vigas B34 y B37 del 2do piso). Contiene lo que ETABS no exporta: perfil, nivel sísmico, materiales, secciones y armado por tramos, medidos en mm desde la estación 0 de ETABS. Unidades: mm y MPa.",
-  "etabs_files": {"workbook": "../../etabs/vigas/Element Forces - Beams.xlsx"},
+  "etabs_files": {
+    "workbook": "../../etabs/vigas/Element Forces - Beams.xlsx"
+  },
   "profile": "aci-318-25",
   "seismic": {
     "level": "intermediate",
@@ -17,6 +19,7 @@
     {
       "id": "B34",
       "type": "beam",
+      "min_steel_exception": true,
       "etabs_unique_name": "117",
       "length": 4625.0,
       "section": {
@@ -151,6 +154,7 @@
     {
       "id": "B37",
       "type": "beam",
+      "min_steel_exception": true,
       "etabs_unique_name": "120",
       "length": 2505.0,
       "section": {

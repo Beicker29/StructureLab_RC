@@ -37,6 +37,7 @@
         },
         "principal_direction": "x",
         "combined_design": {
+          "min_steel_exception": false,
           "fc_options": [
             28.0
           ],
@@ -227,6 +228,7 @@
         },
         "principal_direction": "x",
         "combined_design": {
+          "min_steel_exception": false,
           "fc_options": [
             28.0
           ],
@@ -418,6 +420,7 @@
         },
         "principal_direction": "x",
         "combined_design": {
+          "min_steel_exception": false,
           "fc_options": [
             28.0
           ],
@@ -609,6 +612,7 @@
         },
         "principal_direction": "y",
         "combined_design": {
+          "min_steel_exception": false,
           "fc_options": [
             28.0
           ],

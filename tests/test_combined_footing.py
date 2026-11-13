@@ -445,6 +445,7 @@ def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_pat
             along_x.pop(key, None)
         for column in along_x["columns"]:
             column.pop("band", None)
+            column.pop("band_top", None)  # la T no usa band ni band superior (D-119, D-122)
     along_y = {**_footing_along_global_y(along_x), "id": "ZCY"}
     assert along_y["ly"] > along_y["lx"] and along_y["columns"][0]["y"] != along_y["columns"][1]["y"]
     project["combined_footings"] = [along_x, along_y]

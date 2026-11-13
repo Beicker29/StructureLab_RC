@@ -88,6 +88,7 @@
   },
   "principal_direction": "x",
   "combined_design": {
+    "min_steel_exception": false,
     "fc_options": [
       21.0,
       28.0

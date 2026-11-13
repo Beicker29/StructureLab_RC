@@ -1,6 +1,9 @@
 {
   "description": "Plantilla de importación de zapatas combinadas para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (D-084). ZC-A toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos; ZC-B toma de ETABS solo las de servicio y trae las mayoradas escritas aquí. DATOS DE EJEMPLO: dimensiones, posiciones, columnas, mallas, suelo, relleno, sobrecargas y cargas escritas son supuestos para probar la importación. Unidades: mm, MPa, kPa, kN/m2, kN/m3, kN y kN-m.",
-  "etabs_files": {"service": "../../../etabs/zapatas/pruebas/Joint Reactions - Servicio.xlsx", "factored": "../../../etabs/zapatas/pruebas/Joint Reactions - Ultimas.xlsx"},
+  "etabs_files": {
+    "service": "../../../etabs/zapatas/pruebas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../../etabs/zapatas/pruebas/Joint Reactions - Ultimas.xlsx"
+  },
   "profile": "aci-318-25",
   "seismic": {
     "level": "special",
@@ -87,6 +90,7 @@
   "combined_footings": [
     {
       "id": "ZC-A",
+      "min_steel_exception": false,
       "principal_direction": "x",
       "lx": 9000.0,
       "ly": 3800.0,
@@ -115,6 +119,10 @@
           "band": {
             "designation": "#7",
             "spacing": 110.0
+          },
+          "band_top": {
+            "designation": "#5",
+            "spacing": 120.0
           }
         },
         {
@@ -131,6 +139,10 @@
           "band": {
             "designation": "#7",
             "spacing": 110.0
+          },
+          "band_top": {
+            "designation": "#5",
+            "spacing": 120.0
           }
         }
       ],
@@ -139,7 +151,7 @@
         "end": "straight",
         "x": {
           "designation": "#8",
-          "spacing": 150.0
+          "spacing": 140.0
         },
         "y": {
           "designation": "#6",
@@ -165,6 +177,7 @@
     },
     {
       "id": "ZC-B",
+      "min_steel_exception": false,
       "principal_direction": "x",
       "lx": 9000.0,
       "ly": 3800.0,
@@ -267,7 +280,7 @@
         "end": "straight",
         "x": {
           "designation": "#8",
-          "spacing": 150.0
+          "spacing": 140.0
         },
         "y": {
           "designation": "#6",
