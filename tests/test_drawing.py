@@ -12,7 +12,7 @@ from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.detailing.schedule import BarRun, run_marks, schedule, splice_spans
 from structurelab_rc.domain.basis import Basis
-from structurelab_rc.domain.footing.detailing import combined_runs, footing_runs
+from structurelab_rc.domain.footing.detailing import combined_runs, face_envelope, footing_runs
 from structurelab_rc.domain.footing.drawing import combined_views, footing_views, location_views
 from structurelab_rc.drawing.model import (
     BAR_PREFIX,
@@ -77,7 +77,7 @@ def _views(project: Project) -> _Drawn:
     drawing, stock = Drawing("prueba", SCALE), project.detailing.stock_length
     if project.footings:
         footing = project.footings[0]
-        runs = footing_runs(basis, footing, project.soil)
+        runs = footing_runs(basis, footing, face_envelope(footing, project.soil))
         rows = schedule(footing.id, runs, stock)
         views = footing_views(drawing, footing, runs, (rows, stock))
         split = footing.h / 2

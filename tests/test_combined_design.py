@@ -26,6 +26,7 @@ from structurelab_rc.io.etabs.footings import build_combined_design_project
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.design import CombinedDesignProject
+from structurelab_rc.model.layout import public
 from structurelab_rc.model.project import Project
 from structurelab_rc.model.template import EtabsCombinedDesignTemplate, LoadFactors
 from structurelab_rc.setup import load_engine
@@ -43,7 +44,7 @@ def _oracle(folder: str) -> dict[str, Any]:
 
 
 def _context(data: dict[str, Any]) -> design.Context:
-    project = CombinedDesignProject.model_validate(data)
+    project = CombinedDesignProject.model_validate(public(data))  # el oráculo trae la estructura interna (D-139)
     return design.Context(project, PROFILES[project.profile], BARS)
 
 
@@ -92,7 +93,7 @@ def test_design_input_is_validated() -> None:
         ({"combined_design": {**data["combined_design"], "placement_case": "D+0.7E"}}, "caso con sismo"),
     ):
         with pytest.raises(ValidationError, match=message):
-            CombinedDesignProject.model_validate({**data, **change})
+            CombinedDesignProject.model_validate(public({**data, **change}))
 
 
 @pytest.mark.parametrize(("name", "note", "group", "kind"), [
@@ -171,7 +172,7 @@ def test_example_design_passes_its_verification(designed: tuple[dict[str, Any], 
     ctx = _context(json.loads(EXAMPLE.read_text(encoding="utf-8")))
     checks = combined_footing_checks(ctx.basis(result.best.fc), footing, checked.soil)  # type: ignore[arg-type]
     assert all(check.status is Status.PASS for check in checks)
-    assert project["materials"]["fc"] == result.best.fc
+    assert project["concrete"]["fc"] == result.best.fc
     # Barras x continuas de borde a borde (sin cortes) y una barra de pasadores por columna.
     assert set(footing.bottom.model_dump(exclude_none=True)) >= {"x", "y"}
     assert all(column.dowels is not None and column.band is not None for column in footing.columns)
@@ -256,7 +257,8 @@ def test_etabs_template_builds_the_combined_design_project() -> None:
                  "Vy_kN": 0.0, "Mx_kNm": 0.0, "My_kNm": 0.0} for p in (1250.0, 1700.0)]
     columns = [{"id": column["id"], "etabs_unique_name": unique, "cx": column["cx"], "cy": column["cy"], "x": column["x"],
                 "y": column["y"], "loads": [load]} for column, unique, load in zip(data["columns"], ("7", "9"), factored, strict=True)]
-    raw = {key: data[key] for key in ("description", "profile", "seismic", "materials", "soil", "principal_direction")}
+    keys = ("description", "profile", "seismic", "concrete", "reinforcement_steel", "soil", "principal_direction")
+    raw = {key: data[key] for key in keys}
     template = EtabsCombinedDesignTemplate.model_validate({
         **raw,
         "loads_source": {"service": "etabs", "factored": "json"},
@@ -269,7 +271,7 @@ def test_etabs_template_builds_the_combined_design_project() -> None:
     assert checked.columns[1].loads[0].p == pytest.approx(1300e3)
     assert summary.footings == 1
     with pytest.raises(ValidationError, match="propone los pasadores"):
-        EtabsCombinedDesignTemplate.model_validate({**template.model_dump(mode="json"),
+        EtabsCombinedDesignTemplate.model_validate({**public(template.model_dump(mode="json")),
                                                     "columns": [{**columns[0], "dowels": {"designation": "#6", "count": 8,
                                                         "end": "hook90"}},
                                                                 columns[1]]})

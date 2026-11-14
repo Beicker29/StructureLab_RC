@@ -10,6 +10,7 @@ from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.beam.torsion import DETAILING
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
+from structurelab_rc.model.layout import public
 from structurelab_rc.model.project import Materials, Member, Project, Section
 from structurelab_rc.model.reinforcement import BarLayer, ReinforcementLayout
 from structurelab_rc.setup import load_engine
@@ -61,14 +62,14 @@ def _project(layer: dict[str, Any]) -> Project:
         "layout": {"layers": [layer], "stirrups": STIRRUPS},
         "demands": {"Pu_kN": 0.0, "Mu_kNm": 100.0, "M2_kNm": 0.0, "Vu_kN": 50.0, "V3_kN": 0.0, "Tu_kNm": 0.0},
     }
-    return Project.model_validate({
+    return Project.model_validate(public({
         "description": "Prueba",
         "profile": "nsr-10",
         "seismic": {"level": "DMO", "justification": "Prueba"},
         "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"},
         "members": [{"id": "V", "type": "beam", "min_steel_exception": True,
                      "length": 6000.0, "section": SECTION.model_dump(exclude_none=True), "stations": [station]}],
-    })
+    }))
 
 
 @pytest.mark.parametrize(

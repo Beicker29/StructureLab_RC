@@ -1,11 +1,13 @@
 """Proyecto de entrada. Geometría en mm y esfuerzos en MPa; las demandas se convierten a N y N·mm."""
 
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing, Soil
+from structurelab_rc.model.layout import internal
+from structurelab_rc.model.pile_cap import PileCap, PileCapSoil
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 
 N_PER_KN = 1e3
@@ -146,8 +148,10 @@ class DrawingSettings(_Input):
 
 
 class Project(_Input):
-    """Vigas (members), zapatas aisladas (footings), zapatas combinadas (combined_footings, D-080) o varias; las zapatas
-    requieren los datos del suelo (D-052)."""
+    """Vigas (members), zapatas aisladas (footings), zapatas combinadas (combined_footings, D-080), cabezales sobre
+    pilotes (pile_caps, D-138) o varios; las zapatas requieren los datos del suelo (D-052) y los cabezales, el suyo
+    (PileCapSoil). Los dos se declaran en soil: con cabezales y sin zapatas, soil es el de los cabezales (pile_soil). Un
+    proyecto no mezcla zapatas y cabezales."""
 
     description: str
     profile: str
@@ -157,22 +161,40 @@ class Project(_Input):
     soil: Soil | None = None
     footings: tuple[Footing, ...] = ()
     combined_footings: tuple[CombinedFooting, ...] = ()
+    pile_soil: PileCapSoil | None = None
+    pile_caps: tuple[PileCap, ...] = ()
     detailing: DetailingSettings | None = None  # D-125: sin él no se despieza
     drawing: DrawingSettings | None = None  # D-126: sin él no se dibuja; requiere detailing
+
+    @model_validator(mode="before")
+    @classmethod
+    def _pile_soil(cls, data: Any) -> Any:
+        """concrete, reinforcement_steel y soil de la entrada a la estructura interna (D-139); soil de un proyecto de
+        cabezales es el suelo de los cabezales (D-138)."""
+        data = internal(data)
+        if isinstance(data, dict) and data.get("pile_caps") and not data.get("footings") and not data.get("combined_footings"):
+            data = {key: value for key, value in data.items() if key != "soil"} | {"pile_soil": data.get("soil")}
+        return data
 
     @model_validator(mode="after")
     def _check_content(self) -> Self:
         any_footing = bool(self.footings or self.combined_footings)
-        if not self.members and not any_footing:
-            raise ValueError("el proyecto debe tener al menos un miembro o una zapata")
+        if not self.members and not any_footing and not self.pile_caps:
+            raise ValueError("el proyecto debe tener al menos un miembro, una zapata o un cabezal")
+        if self.pile_caps and (self.footings or self.combined_footings):
+            raise ValueError("un proyecto no mezcla zapatas y cabezales: cada uno lleva su suelo (soil)")
+        if self.pile_caps and self.pile_soil is None:
+            raise ValueError("los cabezales requieren los datos del suelo (soil)")
+        if self.pile_soil is not None and not self.pile_caps:
+            raise ValueError("el suelo de los cabezales solo se declara con cabezales")
         if any_footing and self.soil is None:
             raise ValueError("las zapatas requieren los datos del suelo (soil)")
         if self.soil is not None and not any_footing:
             raise ValueError("soil solo se declara con zapatas")
         ids = ([member.id for member in self.members] + [footing.id for footing in self.footings]
-               + [footing.id for footing in self.combined_footings])
+               + [footing.id for footing in self.combined_footings] + [cap.id for cap in self.pile_caps])
         if len(ids) != len(set(ids)):
-            raise ValueError("los identificadores de miembros y zapatas deben ser únicos")
+            raise ValueError("los identificadores de miembros, zapatas y cabezales deben ser únicos")
         if self.drawing is not None and self.detailing is None:
             raise ValueError("drawing requiere detailing: el dibujo rotula las marcas de la cartilla (D-126)")
         return self

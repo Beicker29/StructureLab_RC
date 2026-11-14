@@ -13,6 +13,7 @@ se aplican después, al cargar el proyecto (model/).
 """
 
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -20,6 +21,7 @@ from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.io.etabs.combinations import Combination
 from structurelab_rc.io.etabs.importer import EtabsImportError, case_label
 from structurelab_rc.io.etabs.xlsx import Table
+from structurelab_rc.model.layout import public
 from structurelab_rc.model.template import EtabsCombinedDesignTemplate, EtabsFootingDesignTemplate, EtabsFootingTemplate, LoadFactors
 
 KINDS = {"service": "servicio", "factored": "cargas mayoradas"}
@@ -68,10 +70,10 @@ class FootingImportSummary:
     ignored_combinations: tuple[str, ...] = ()  # combinaciones de las tablas que no están en el Excel de combinaciones (D-137)
 
 
-def _check_table(table: Table, which: str) -> list[StructuredError]:
+def _check_table(table: Table, which: str, spec: "TableSpec") -> list[StructuredError]:
     errors = [invalid_input(f"Falta la columna '{column}' en la tabla de {which}")
-              for column in REQUIRED_COLUMNS if column not in table.headers]
-    for column, unit in REQUIRED_UNITS.items():
+              for column in spec.columns if column not in table.headers]
+    for column, unit in spec.units.items():
         if column in table.headers and table.units.get(column) != unit:
             errors.append(invalid_input(f"La columna '{column}' de {which} debe venir en {unit}; viene en '{table.units.get(column)}'"))
     return errors
@@ -101,6 +103,19 @@ def _load(row: dict[str, str], kind: str, factors: LoadFactors) -> dict[str, Any
 
 
 @dataclass(frozen=True)
+class TableSpec:
+    """Lo que se lee de una tabla de ETABS (D-138): columnas requeridas, unidades y cómo una fila pasa a una carga del
+    proyecto (fila, tipo, factores de su combinación)."""
+
+    columns: tuple[str, ...]
+    units: dict[str, str]
+    convert: Callable[[dict[str, str], str, LoadFactors], dict[str, Any]]
+
+
+JOINT_REACTIONS = TableSpec(REQUIRED_COLUMNS, REQUIRED_UNITS, _load)
+
+
+@dataclass(frozen=True)
 class _Joint:
     group: str
     unique_name: str
@@ -108,8 +123,8 @@ class _Joint:
     loads: list[dict[str, Any]]
 
 
-def _joint_loads(
-    combinations: dict[str, Combination], tables: dict[str, Table | None], groups: list[Group]
+def joint_loads(
+    combinations: dict[str, Combination], tables: dict[str, Table | None], groups: list[Group], spec: TableSpec = JOINT_REACTIONS
 ) -> tuple[list[_Joint], int, tuple[str, ...]]:
     """Casos de cada nudo de los grupos, de los tipos que cada grupo toma de ETABS, con las combinaciones del Excel de
     combinaciones (D-137); lanza EtabsImportError con todos los problemas. tables: la tabla de cada tipo, o None si se
@@ -119,7 +134,7 @@ def _joint_loads(
               for kind in BOTH if kind in needed and tables[kind] is None]
     present_tables = {kind: table for kind, table in tables.items() if table is not None}
     for kind, table in present_tables.items():
-        errors += _check_table(table, KINDS[kind])
+        errors += _check_table(table, KINDS[kind], spec)
     if errors:
         raise EtabsImportError(tuple(errors))
     rows_by_kind, skipped, ignored = {}, 0, set()
@@ -144,8 +159,8 @@ def _joint_loads(
                                                 member=group))
             if not all(own.values()):
                 continue
-            loads = [_load(row, kind, combinations[row["Output Case"]].factors) for kind, rows in own.items() for row in rows]
-            label = next(rows[0]["Label"] for rows in own.values()) if own else unique_name
+            loads = [spec.convert(row, kind, combinations[row["Output Case"]].factors) for kind, rows in own.items() for row in rows]
+            label = next(rows[0].get("Label", unique_name) for rows in own.values()) if own else unique_name
             joints.append(_Joint(group, unique_name, label, loads))
     if errors:
         raise EtabsImportError(tuple(errors))
@@ -193,7 +208,7 @@ def build_footing_project(
     groups += [(footing.id, tuple(column.etabs_unique_name for column in footing.columns), footing.etabs_kinds())
                for footing in template.combined_footings]
     service, factored = tables
-    joints, skipped, ignored = _joint_loads(combinations, {"service": service, "factored": factored}, groups)
+    joints, skipped, ignored = joint_loads(combinations, {"service": service, "factored": factored}, groups)
     locations = locations_by_joint(coordinates, [name for _, names, _ in groups for name in names])
     isolated = {footing.id for footing in template.footings}
     bases = {footing.id: footing.model_dump(mode="json", exclude={"id", "etabs_unique_names"}) for footing in template.footings}
@@ -207,7 +222,7 @@ def build_footing_project(
     if combined:
         project["combined_footings"] = combined
     items = footings + [{"loads": [load for column in footing["columns"] for load in column["loads"]]} for footing in combined]
-    return project, _summary(items, skipped, ignored)
+    return public(project), _summary(items, skipped, ignored)
 
 
 def build_footing_design_project(
@@ -221,7 +236,7 @@ def build_footing_design_project(
     groups: list[Group] = [(str(index), tuple(name for name in group.etabs_unique_names if name not in excluded), BOTH)
                            for index, group in enumerate(template.columns)]
     service, factored = tables
-    joints, skipped, ignored = _joint_loads(combinations, {"service": service, "factored": factored}, groups)
+    joints, skipped, ignored = joint_loads(combinations, {"service": service, "factored": factored}, groups)
     locations = locations_by_joint(coordinates, [joint.unique_name for joint in joints])
     sections = {str(index): group for index, group in enumerate(template.columns)}
     columns = [{"id": joint.label, "cx": sections[joint.group].cx, "cy": sections[joint.group].cy,
@@ -235,7 +250,7 @@ def build_footing_design_project(
     if omitted:
         project["description"] = (f"{project['description']} Unique Name de ETABS que no entran al diseño (no listados o "
                                   f"excluidos): {', '.join(omitted)}.")
-    return project, replace(_summary(columns, skipped, ignored), omitted=omitted)
+    return public(project), replace(_summary(columns, skipped, ignored), omitted=omitted)
 
 
 def _natural(name: str) -> tuple[int, str]:
@@ -250,10 +265,10 @@ def build_combined_design_project(
     de ETABS y las de la plantilla de los demás. Un Excel puede omitirse (None) si ningún tipo sale de él."""
     group: Group = ("diseno", tuple(column.etabs_unique_name for column in template.columns), template.etabs_kinds())
     service, factored = tables
-    joints, skipped, ignored = _joint_loads(combinations, {"service": service, "factored": factored}, [group])
+    joints, skipped, ignored = joint_loads(combinations, {"service": service, "factored": factored}, [group])
     loads = {joint.unique_name: joint.loads for joint in joints}
     columns = [{**column.model_dump(mode="json", exclude={"etabs_unique_name", "loads", "dowels", "band", "band_top"}, exclude_none=True),
                 "loads": [*loads.get(column.etabs_unique_name, []), *column.loads]} for column in template.columns]
     project = template.model_dump(mode="json", exclude={"loads_source", "columns", "etabs_files"})
     project["columns"] = columns
-    return project, _summary([{"loads": [load for column in columns for load in column["loads"]]}], skipped, ignored)
+    return public(project), _summary([{"loads": [load for column in columns for load in column["loads"]]}], skipped, ignored)

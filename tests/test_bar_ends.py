@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.footing.checks import footing_checks
-from structurelab_rc.domain.footing.detailing import footing_runs
+from structurelab_rc.domain.footing.detailing import face_envelope, footing_runs
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.engine import report_file
@@ -99,7 +99,9 @@ def test_detailing_uses_the_declared_hooks(folder: str) -> None:
     data = _centric(folder)
     data["footings"][0]["column"]["dowels"]["end"] = "hook180"
     project = _with(data, end="hook135")
-    runs = {run.group: run for run in footing_runs(_basis(project), project.footings[0], project.soil)}  # type: ignore[arg-type]
+    assert project.soil is not None
+    footing = project.footings[0]
+    runs = {run.group: run for run in footing_runs(_basis(project), footing, face_envelope(footing, project.soil))}
     mesh = runs["malla inferior x"]
     db = mesh.diameter
     hook = mesh.hooks[0]

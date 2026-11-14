@@ -21,6 +21,8 @@ LAYERS: dict[str, tuple[str, int, float]] = {
     "EJES": ("#7f8c8d", 9, 0.13),
     "CARTILLA": ("#000000", 7, 0.18),
 }
+# Capas que solo aparecen si el dibujo las usa: los pilotes de los cabezales (D-138).
+OPTIONAL_LAYERS: dict[str, tuple[str, int, float]] = {"PILOTES": ("#5d4037", 34, 0.25)}
 BAR_PREFIX = "REFUERZO_"
 # Colores de las capas de barras (D-132), por el número de la designación (#5 -> 5): (RGB, ACI), uno distinto por barra
 # del catálogo y sin el amarillo de las columnas; una barra fuera de la tabla, gris.
@@ -41,6 +43,8 @@ def layer_style(name: str) -> tuple[str, int, float]:
     """(color RGB, color ACI, grosor en mm de papel) de una capa fija o de barras."""
     if name in LAYERS:
         return LAYERS[name]
+    if name in OPTIONAL_LAYERS:
+        return OPTIONAL_LAYERS[name]
     digits = "".join(character for character in name.removeprefix(BAR_PREFIX) if character.isdigit())
     color, aci = _BAR_COLORS.get(int(digits or 0), _OTHER_BAR)
     return color, aci, _BAR_WEIGHT
@@ -154,7 +158,7 @@ class Drawing:
         used = {entity.layer for views in self.views.values() for view in views for entity in view.entities}
         bars = sorted((name for name in used if name.startswith(BAR_PREFIX)),
                       key=lambda name: int("".join(c for c in name if c.isdigit()) or 0))
-        return [*LAYERS, *bars]
+        return [*LAYERS, *(name for name in OPTIONAL_LAYERS if name in used), *bars]
 
     def text_height(self, small: bool = False) -> float:
         return (PAPER_SMALL if small else PAPER_TEXT) * self.scale

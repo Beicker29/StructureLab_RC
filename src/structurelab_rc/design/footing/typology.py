@@ -24,7 +24,7 @@ from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.checks import footing_checks
 from structurelab_rc.domain.footing.connection import bearing_area, footing_support
-from structurelab_rc.domain.footing.detailing import footing_runs
+from structurelab_rc.domain.footing.detailing import face_envelope, footing_runs
 from structurelab_rc.domain.footing.flexure import PLAIN, face_moments
 from structurelab_rc.domain.footing.loads import factored_cases
 from structurelab_rc.domain.footing.service import service_checks
@@ -241,7 +241,8 @@ def column_cost(ctx: Context, typology: Typology, column: DesignColumn, dowels: 
     detailing = ctx.project.detailing
     if detailing is not None and not estimate:
         basis = Basis(ctx.profile, ctx.materials(typology.fc), ctx.bars, ctx.project.seismic.level)
-        runs = footing_runs(basis, footing_for(ctx, typology, column, dowels), ctx.soil)
+        designed = footing_for(ctx, typology, column, dowels)
+        runs = footing_runs(basis, designed, face_envelope(designed, ctx.soil))
         steel = sum(row.mass for row in schedule(column.id, runs, detailing.stock_length))
     else:
         steel = _mat_mass(ctx, typology, typology.bottom) + (0.0 if typology.top is None else _mat_mass(ctx, typology, typology.top))

@@ -52,7 +52,8 @@ BASE: dict[str, Any] = {
     "description": "Prueba",
     "profile": "nsr-10",
     "seismic": {"level": "DMO", "justification": "Declarado para la prueba"},
-    "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"},
+    "concrete": {"fc": 28.0, "type": "normalweight"},
+    "reinforcement_steel": {"fy": 420.0, "fyt": 420.0, "coating": "uncoated"},
     "members": [
         {
             "id": "V1",
@@ -156,8 +157,7 @@ def test_unknown_profile_is_rejected() -> None:
 
 
 def test_concrete_outside_the_beta1_table_is_rejected() -> None:
-    weak = {"fc": 14.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}
-    assert _validate(_project(materials=weak))[0] is Status.FAIL
+    assert _validate(_project(concrete={"fc": 14.0, "type": "normalweight"}))[0] is Status.FAIL
 
 
 def test_missing_demand_is_incomplete_and_not_assumed() -> None:

@@ -16,7 +16,7 @@ dos estados de carga distintos. P cambia de signo para que la compresión sea po
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
-| `description`, `profile`, `seismic`, `materials` | | Igual que en el proyecto (ver [vigas](vigas.md)). |
+| `description`, `profile`, `seismic`, `concrete`, `reinforcement_steel` | | Igual que en el proyecto (ver [vigas](vigas.md), D-139). |
 | `combinations` | lista | Combinaciones a importar; si falta, se importan todas. |
 | `etabs_files.workbook` | texto | Ruta del Excel de ETABS, relativa a la plantilla (D-096). La usa `run`, que importa y verifica con un solo comando; `import-etabs` recibe el Excel como argumento. |
 | `members[].id` | texto | Identificador de la viga. |
@@ -66,7 +66,7 @@ ETABS reporta la fuerza del apoyo sobre la estructura. Sobre la zapata actúa la
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
-| `description`, `profile`, `seismic`, `materials`, `soil` | | Igual que en el proyecto (ver [zapatas](zapatas.md)). |
+| `description`, `profile`, `seismic`, `concrete`, `reinforcement_steel`, `soil` | | Igual que en el proyecto (ver [zapatas](zapatas.md), D-139). |
 | `etabs_files` | objeto | `{"service": ..., "factored": ..., "combinations": ...}`: rutas de los Excel de servicio, de mayoradas y de combinaciones, relativas a la plantilla (D-096, D-137); el de servicio o el de mayoradas puede faltar si ninguna zapata toma de ETABS cargas de ese tipo. Las usa `run`; `import-etabs-footings` recibe los Excel como argumentos. También en la plantilla de diseño por tipologías. |
 | `etabs_files.locations` | texto | Opcional (D-130). Ruta del Excel con la tabla "Point Object Connectivity" de ETABS. Se leen las columnas `UniqueName`, `Story`, `X` y `Y`; X e Y deben venir en m y se pasan a mm. Cada zapata aislada recibe `location` (x, y, nivel y nudo) y `typology` (el `id` de su grupo); cada columna de una combinada recibe su `location`; en el diseño por tipologías, cada columna. Si falta algún nudo usado, es error. Con `drawing`, el proyecto dibuja la planta de localización. En `import-etabs-footings` se pasa con `--locations`. El diseño de una zapata combinada no la usa. |
 | `etabs_files.combinations` | texto | Obligatorio (D-137). Ruta del Excel de combinaciones (ver abajo): qué combinaciones de ETABS entran, de qué tipo y con qué factores. En `import-etabs-footings` se puede pasar o reemplazar con `--combinations`. |

@@ -35,6 +35,8 @@ COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                                            "diseno_combinada_etabs.json", "diseno_t_invertida_etabs.json",
                                            "zapata_centrica_etabs.json")
                               for path in (ROOT / "examples").glob(f"*/zapatas/pruebas/{name}")))
+# Cabezales desde ETABS (D-138): cargas de la columna (Joint Reactions) o de los pilotes (Element Forces - Columns).
+CAP_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/cabezales/pruebas/*_etabs.json")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "pruebas" / "Element Forces - Beams.xlsx"
 REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx",
              ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Ultimas.xlsx")
@@ -54,6 +56,13 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         report_file(project, work / Path(name).stem)
         return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **_digests(work / Path(name).stem, files)}
+    if name in CAP_ETABS:
+        excel = json.loads(project.read_text(encoding="utf-8"))["etabs_files"]
+        service, factored = ((project.parent / excel[key]).resolve() for key in ("service", "factored"))
+        data = import_etabs_footings(service, factored, project)[0]
+        assert data is not None, name
+        project = work / "etabs.json"
+        project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     if name in ETABS or name in COMBINED_ETABS:
         data = import_etabs(WORKBOOK, project)[0] if name in ETABS else import_etabs_footings(*REACTIONS, project, _locations(project))[0]
         project = work / "etabs.json"
@@ -78,7 +87,7 @@ def _digests(folder: Path, files: tuple[str, ...]) -> dict[str, str]:
     return {name: hashlib.sha256((folder / name).read_bytes()).hexdigest() for name in names}
 
 
-@pytest.mark.parametrize("name", [*EXAMPLES, *ETABS, *COMBINED_ETABS])
+@pytest.mark.parametrize("name", [*EXAMPLES, *ETABS, *COMBINED_ETABS, *CAP_ETABS])
 def test_fingerprint_is_stable(name: str, tmp_path: Path) -> None:
     current = _fingerprint(name, tmp_path)
     stored = json.loads(FINGERPRINTS.read_text(encoding="utf-8")) if FINGERPRINTS.exists() else {}

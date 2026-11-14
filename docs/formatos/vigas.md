@@ -19,12 +19,12 @@ Referencia de la entrada y la salida de la verificación de vigas, común a los 
 | `profile` | texto | Perfil normativo: `aci-318-25` o `nsr-10`. Todo el cálculo sale de él; nunca se mezcla con el otro perfil. |
 | `seismic.level` | texto | Nivel sísmico declarado por el ingeniero, en el vocabulario del perfil: `none`, `ordinary`, `intermediate`, `special` (ACI) o `DMI`, `DMO`, `DES` (NSR-10). La aplicación no lo deriva. |
 | `seismic.justification` | texto | Justificación del nivel sísmico; sale en la memoria. |
-| `materials.fc` | MPa | Resistencia especificada del concreto, f'c. |
-| `materials.fy` | MPa | Fluencia del refuerzo longitudinal. |
-| `materials.fyt` | MPa | Fluencia del refuerzo transversal (estribos). Se declara aunque el ejemplo no lo use. |
-| `materials.concrete` | texto | `normalweight` (peso normal) o `lightweight` (liviano); define λ. |
-| `materials.coating` | texto | Recubrimiento de las barras: `uncoated` (sin recubrimiento), `galvanized`, `epoxy` o `zinc_epoxy` (dual de zinc y epóxico); cambia la longitud de desarrollo (ψe, D-071). |
-| `materials.max_aggregate` | mm | Tamaño máximo nominal del agregado grueso, opcional. En vigas aún no se usa: la separación mínima de las barras se revisa por ahora en zapatas (D-102). |
+| `concrete.fc` | MPa | Resistencia especificada del concreto, f'c (en los diseños no va: f'c es una variable del diseño). |
+| `concrete.type` | texto | `normalweight` (peso normal) o `lightweight` (liviano); define λ. |
+| `concrete.max_aggregate` | mm | Tamaño máximo nominal del agregado grueso (dagg), opcional. En vigas aún no se usa: la separación mínima se revisa por ahora en zapatas (D-102). |
+| `reinforcement_steel.fy` | MPa | Fluencia del refuerzo longitudinal. |
+| `reinforcement_steel.fyt` | MPa | Fluencia del refuerzo transversal (estribos). Se declara aunque el ejemplo no lo use. |
+| `reinforcement_steel.coating` | texto | Recubrimiento de las barras: `uncoated` (sin recubrimiento), `galvanized`, `epoxy` o `zinc_epoxy` (dual de zinc y epóxico); cambia la longitud de desarrollo (ψe, D-071). |
 | `members` | lista | Vigas del proyecto. |
 
 ### Miembro (`members[]`)

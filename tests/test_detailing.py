@@ -17,7 +17,7 @@ from structurelab_rc.domain.development import BarAnchorage, lap_splice
 from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
 from structurelab_rc.domain.footing.checks import combined_footing_checks, footing_checks
 from structurelab_rc.domain.footing.combined_columns import band_row, strip_limits
-from structurelab_rc.domain.footing.detailing import combined_runs, footing_runs, splice_ratio
+from structurelab_rc.domain.footing.detailing import combined_runs, face_envelope, footing_runs, splice_ratio
 from structurelab_rc.domain.footing.mesh import mat_rows
 from structurelab_rc.engine import report_file
 from structurelab_rc.model.loader import load_project
@@ -124,7 +124,7 @@ def test_example_schedule_has_every_bar_once(profile: str) -> None:
     isolated = load_project(ROOT / "examples" / FOLDERS[profile] / "zapatas" / "pruebas" / "zapata_centrica.json")
     assert isolated.soil is not None
     assert footing_runs(Basis(PROFILES[profile], isolated.materials, BARS, isolated.seismic.level), isolated.footings[0],
-                        isolated.soil)
+                        face_envelope(isolated.footings[0], isolated.soil))
 
 
 @pytest.mark.parametrize("profile", FOLDERS)
@@ -155,7 +155,7 @@ def test_isolated_mesh_splice_uses_the_largest_face_moment_of_its_check(profile:
     footing = project.footings[0]
     basis = Basis(PROFILES[profile], project.materials, BARS, project.seismic.level)
     checks = footing_checks(basis, footing, project.soil)
-    runs = {run.group: run for run in footing_runs(basis, footing, project.soil)}
+    runs = {run.group: run for run in footing_runs(basis, footing, face_envelope(footing, project.soil))}
     for direction, row in mat_rows(footing, footing.bottom, BARS).items():
         moment = max(check.demand or 0.0 for check in checks if check.name == f"Flexion malla inferior (barras {direction})")
         required = required_area(basis.profile, basis.materials, RectangularSection(row.width, footing.h), row.depth, moment)

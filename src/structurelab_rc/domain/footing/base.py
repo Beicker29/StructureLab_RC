@@ -16,7 +16,7 @@ ex = My_base/N y ey = −Mx_base/N.
 from dataclasses import dataclass
 
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting
-from structurelab_rc.model.footing import Footing, FootingLoad, Soil
+from structurelab_rc.model.footing import Footing, FootingLoad, Soil, UnitWeighted
 
 
 @dataclass(frozen=True)
@@ -37,7 +37,7 @@ class BaseResultant:
         return -self.mx / self.n if self.n > 0 else None
 
 
-def base_resultant(footing: Footing, soil: Soil, load: FootingLoad) -> BaseResultant:
+def base_resultant(footing: Footing, soil: UnitWeighted, load: FootingLoad) -> BaseResultant:
     """Resultante en el centroide de la base con los factores de carga muerta y viva del caso."""
     column = footing.column
     ox, oy = column.offset_x, column.offset_y

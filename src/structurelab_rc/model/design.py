@@ -5,11 +5,12 @@ tipologías, los f'c comerciales permitidos, los precios y los límites de la b�
 kPa, kN/m² y kN/m³ (como en las zapatas); precios en la moneda del usuario por m³ de concreto y por kg de acero.
 """
 
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator, model_validator
 
 from structurelab_rc.model.footing import FootingLoad, Location, Soil
+from structurelab_rc.model.layout import internal
 from structurelab_rc.model.project import Coating, DetailingSettings, DrawingSettings, SeismicFacts
 from structurelab_rc.model.reinforcement import BarEnd, StirrupEnd
 
@@ -154,6 +155,13 @@ class CurveSettings(_Input):
 
 
 class FootingDesignProject(_Input):
+
+    @model_validator(mode="before")
+    @classmethod
+    def _layout(cls, data: Any) -> Any:
+        """concrete, reinforcement_steel y soil de la entrada a la estructura interna (D-139)."""
+        return internal(data)
+
     description: str
     profile: str
     seismic: SeismicFacts
@@ -242,6 +250,13 @@ class CombinedDesignColumn(_Input):
 class CombinedDesignProject(_Input):
     """Proyecto de diseño de una zapata combinada rectangular de dos columnas (D-107): las columnas con sus posiciones y
     sus cargas, la dirección principal (el eje global en que va la viga que las une) y el bloque combined_design."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _layout(cls, data: Any) -> Any:
+        """concrete, reinforcement_steel y soil de la entrada a la estructura interna (D-139)."""
+        return internal(data)
+
 
     description: str
     profile: str

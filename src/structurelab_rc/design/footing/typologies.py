@@ -41,6 +41,7 @@ from structurelab_rc.design.footing.typology import (
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.design import DesignColumn, FootingDesignProject
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, N_PER_KN, NMM_PER_KNM, FootingLoad, Soil
+from structurelab_rc.model.layout import public
 from structurelab_rc.model.project import DetailingSettings, DrawingSettings
 
 # Tareas: ("single", fc, columna), ("covers", tipología, columna), ("design", fc, columnas, tipología de partida); las
@@ -667,7 +668,7 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
                 "loads": [load_input(load) for load in column.loads],
             })
     materials = project.materials
-    return {
+    return public({
         "description": f"{project.description} Diseño por tipologías (D-069): {len(result.typologies)} tipologías, "
                        f"f'c = {result.fc:g} MPa, costo total {result.cost:.2f} "
                        f"(acero: {COST_BASIS[project.detailing is not None]}, D-127).{_duplicates_warning(result)}",
@@ -680,7 +681,7 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
         "footings": footings,
         # D-127: el proyecto diseñado sale con su despiece y su dibujo, para que run genere la cartilla y los planos.
         **design_outputs(project.detailing, project.drawing),
-    }
+    })
 
 
 # De dónde sale el acero del costo de un diseño (D-127): la cartilla si el proyecto declara detailing.

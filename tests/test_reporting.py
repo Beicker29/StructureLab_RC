@@ -10,6 +10,7 @@ from structurelab_rc.cli import main
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status
 from structurelab_rc.engine import report_file
+from structurelab_rc.model.layout import public
 from structurelab_rc.reporting.pdf import latin1, write_pdf
 from structurelab_rc.reporting.results import check_data, significant
 
@@ -172,6 +173,7 @@ def test_equilibrium_is_calculated_and_factored_pressures_go_in_their_own_table(
                 if any(check["name"] == "Zapata: equilibrio con cargas mayoradas" for check in item["expected"]["checks"]))
     project = {"description": "prueba", "profile": "nsr-10", "seismic": {"level": case["seismic_level"], "justification": "prueba"},
                "materials": oracle["materials"], "soil": oracle["soil"], "footings": [case["footing"]]}
+    project = public(project)
     path = tmp_path / "equilibrio.json"
     path.write_text(json.dumps(project), encoding="utf-8")
     report_file(path, tmp_path / "salida")
@@ -221,6 +223,7 @@ def test_strip_shear_over_phi_vc_is_reported_with_dcr_099_and_a_danger_alert(tmp
     footing = next(case["footing"] for case in oracle["cases"] if case["id"] == "delgada")
     project = {"description": "prueba", "profile": "nsr-10", "seismic": {"level": oracle["seismic_level"], "justification": "prueba"},
                "materials": oracle["materials"], "soil": oracle["soil"], "combined_footings": [footing]}
+    project = public(project)
     path = tmp_path / "delgada.json"
     path.write_text(json.dumps(project), encoding="utf-8")
     report_file(path, tmp_path / "salida")

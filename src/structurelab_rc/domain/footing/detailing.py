@@ -40,7 +40,7 @@ from structurelab_rc.domain.footing.combined_columns import (
     transverse_top,
 )
 from structurelab_rc.domain.footing.connection import bar_anchorage
-from structurelab_rc.domain.footing.flexure import face_moments
+from structurelab_rc.domain.footing.flexure import FaceMoments, face_moments
 from structurelab_rc.domain.footing.inverted_t import flange_envelope
 from structurelab_rc.domain.footing.loads import combined_factored_cases, factored_cases
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows
@@ -185,21 +185,30 @@ def _stirrup_runs(basis: Basis, stirrups: Stirrups | None, frame: tuple[float, f
     return runs
 
 
-def _face_envelope(footing: Footing, soil: Soil) -> dict[str, tuple[float, float]] | None:
+Envelope = dict[str, tuple[float, float]]
+
+
+def moment_envelope(moments: list[FaceMoments]) -> Envelope | None:
     """Por dirección de las barras, (mayor momento positivo, mayor negativo con signo positivo) en las caras de la
-    columna en todos los casos, el de la verificación de flexión; None sin casos mayorados en equilibrio (D-129)."""
-    cases, failures = factored_cases(footing, soil)
-    if failures or not cases:
+    columna en todos los casos, el de la verificación de flexión; None sin casos (D-129)."""
+    if not moments:
         return None
-    moments = [face_moments(footing, case).moments for case in cases]
-    return {direction: (max(max(case[direction]) for case in moments), max(-min(case[direction]) for case in moments))
-            for direction in ("x", "y")}
+    return {direction: (max(max(case.moments[direction]) for case in moments),
+                        max(-min(case.moments[direction]) for case in moments)) for direction in ("x", "y")}
 
 
-def footing_runs(basis: Basis, footing: Footing, soil: Soil) -> list[BarRun]:
-    """Zapata aislada: malla inferior, malla superior si la hay y pasadores."""
+def face_envelope(footing: Footing, soil: Soil) -> Envelope | None:
+    """La envolvente de la zapata aislada; None sin casos mayorados en equilibrio (D-129)."""
+    cases, failures = factored_cases(footing, soil)
+    if failures:
+        return None
+    return moment_envelope([face_moments(footing, case) for case in cases])
+
+
+def footing_runs(basis: Basis, footing: Footing, envelope: Envelope | None) -> list[BarRun]:
+    """Zapata aislada (o cabezal, D-138): malla inferior, malla superior si la hay y pasadores, con la envolvente de los
+    momentos de cara para la clase de los empalmes (D-129)."""
     h, cover = footing.h, footing.cover
-    envelope = _face_envelope(footing, soil)
     runs = []
     for name, mat in (("inferior", footing.bottom), ("superior", footing.top)):
         if mat is None:
@@ -217,7 +226,7 @@ def footing_runs(basis: Basis, footing: Footing, soil: Soil) -> list[BarRun]:
             if run is not None:
                 runs.append(run)
     rows = mat_rows(footing, footing.bottom, basis.bars)
-    embed = h - cover - rows["x"].diameter - rows["y"].diameter
+    embed = h - footing.bottom_face_cover - rows["x"].diameter - rows["y"].diameter
     dowels = _placed_dowels(_dowel_run(basis, footing.column.dowels, embed, footing.pedestal_height, footing.id),
                             footing.column, (h, embed), cover)
     return [*runs, *([] if dowels is None else [dowels])]

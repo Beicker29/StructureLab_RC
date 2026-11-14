@@ -35,6 +35,7 @@ from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.engine import report_file, run_project
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Soil
+from structurelab_rc.model.layout import public
 from structurelab_rc.model.project import Materials, Project
 from structurelab_rc.setup import load_engine
 
@@ -294,10 +295,11 @@ def test_band_is_the_only_bottom_transverse_steel_in_its_zone() -> None:
 def test_top_y_bars_must_be_in_the_catalog() -> None:
     footing = _footing(top={"first": "x", "x": {"designation": "#7", "spacing": 150.0, "end": "straight"},
                             "y": {"designation": "#99", "spacing": 200.0, "end": "straight"}})
-    project = Project.model_validate({"description": "prueba", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "prueba"},
+    seismic = {"level": "DES", "justification": "prueba"}
+    project = Project.model_validate(public({"description": "prueba", "profile": "nsr-10", "seismic": seismic,
                                       "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight",
                                                     "coating": "uncoated"},
-                                      "soil": _oracle("nsr_10")["soil"], "combined_footings": [footing]})
+                                      "soil": _oracle("nsr_10")["soil"], "combined_footings": [footing]}))
     check = validate_project(project, BARS)
     assert check.status is not Status.PASS
     assert any("'#99' de las barras y de la malla superior" in error.message for error in check.errors)
@@ -309,7 +311,7 @@ def _project(tmp_path: Path, footing: dict[str, Any]) -> list[Check]:
                "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"},
                "soil": oracle["soil"], "combined_footings": [footing]}
     path = tmp_path / "combinada.json"
-    path.write_text(json.dumps(project), encoding="utf-8")
+    path.write_text(json.dumps(public(project)), encoding="utf-8")
     _, checks = run_project(path)
     return list(checks)
 

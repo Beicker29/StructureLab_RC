@@ -16,6 +16,7 @@ from structurelab_rc.io.etabs.footings import build_footing_project
 from structurelab_rc.io.etabs.importer import EtabsImportError
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.footing import Footing, Soil
+from structurelab_rc.model.layout import public
 from structurelab_rc.model.project import Project
 from structurelab_rc.model.template import EtabsFootingTemplate, LoadFactors
 from structurelab_rc.setup import load_engine
@@ -26,7 +27,9 @@ FACTORED = EXAMPLES / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Ultim
 TEMPLATE = EXAMPLES / "nsr_10" / "zapatas" / "pruebas" / "zapata_centrica_etabs.json"
 HEADERS = ("Story", "Label", "Unique Name", "Output Case", "Case Type", "Step Type", "FX", "FY", "FZ", "MX", "MY", "MZ")
 UNITS = {"FX": "kN", "FY": "kN", "FZ": "kN", "MX": "kN-m", "MY": "kN-m", "MZ": "kN-m"}
-SOIL = {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.6, "unit_weight_concrete_kNm3": 24.0,
+CONCRETE = {"fc": 28.0, "type": "normalweight", "unit_weight_kNm3": 24.0}
+STEEL = {"fy": 420.0, "fyt": 420.0, "coating": "uncoated"}
+SOIL = {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.6,
         "unit_weight_fill_kNm3": 18.0,
         "friction_coefficient": 0.45, "adhesion_kPa": 0.0, "passive_coefficient": 3.0,
         "cohesion_kPa": 0.0, "passive_factor": 0.5, "sliding_safety_factor": 1.5,
@@ -52,7 +55,7 @@ def _footing(**changes: Any) -> dict[str, Any]:
 
 def _project(**footing_changes: Any) -> dict[str, Any]:
     return {"description": "zapata", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
-            "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}, "soil": SOIL,
+            "concrete": CONCRETE, "reinforcement_steel": STEEL, "soil": SOIL,
             "footings": [_footing(**footing_changes)]}
 
 
@@ -149,7 +152,7 @@ COMBINED = _combos(S1=("service", 1.0, 1.0), U1=("factored", 1.2, 1.6))  # las d
 def _template(**changes: Any) -> EtabsFootingTemplate:
     footing = {key: value for key, value in _footing().items() if key not in {"id", "loads"}}
     data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
-            "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}, "soil": SOIL,
+            "concrete": CONCRETE, "reinforcement_steel": STEEL, "soil": SOIL,
             "footings": [{"id": "Z1", "etabs_unique_names": ["10"], **footing}]}
     data.update(changes)
     return EtabsFootingTemplate.model_validate(data)
@@ -259,7 +262,7 @@ def _combined_template(source: dict[str, str], loads: dict[str, list[dict[str, A
                 "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "loads_source": source, "columns": columns, "bottom": mat,
                 "principal_direction": principal}
     data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
-            "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}, "soil": SOIL,
+            "concrete": CONCRETE, "reinforcement_steel": STEEL, "soil": SOIL,
             "combined_footings": [combined]}
     return EtabsFootingTemplate.model_validate(data)
 
@@ -338,7 +341,7 @@ def test_combined_template_sources_are_validated(source: dict[str, str], loads: 
 def test_cli_omits_an_excel_with_a_dash(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     template = tmp_path / "plantilla.json"
     loads = {name: [_json_load("J1", "factored", 600.0)] for name in ("C1", "C2")}
-    template.write_text(json.dumps(_combined_template({"service": "etabs", "factored": "json"}, loads).model_dump(mode="json")),
+    template.write_text(json.dumps(public(_combined_template({"service": "etabs", "factored": "json"}, loads).model_dump(mode="json"))),
                         encoding="utf-8")
     output = tmp_path / "proyecto.json"
     combinations = EXAMPLES / "etabs" / "zapatas" / "pruebas" / "Combinaciones.xlsx"  # sin etabs_files, el explícito (D-137)

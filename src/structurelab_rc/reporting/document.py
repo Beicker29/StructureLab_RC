@@ -151,6 +151,23 @@ _FOOTING_LIMITATIONS = (
     "Medianeras con viga de amarre, rotadas, escalonadas, losas de cimentación y pilotes: no cubiertas.",
 )
 _SOURCES = "Los factores φ, las capacidades y los numerales provienen del resultado de cada verificación."
+_CAP_CONVENTIONS = (
+    "Las cargas llegan mayoradas y de servicio, de la columna o de cada pilote, con los factores de carga muerta y viva "
+    "de su combinación; la aplicación no genera combinaciones (D-052, D-138).",
+    "Ejes globales con origen en el centroide del cabezal: X a lo largo de lx, Y a lo largo de ly, Z hacia arriba. La "
+    "reacción de un pilote es positiva en compresión.",
+    "Con las cargas de la columna, el cabezal es rígido y los pilotes, articulados: R = N/n ± momentos del grupo, con el "
+    "momento en el plano de la cabeza de los pilotes y el cortante repartido por igual (guía CRSI, cap. 3).",
+    "Mala ubicación: el brazo de cada pilote crece con la tolerancia del lado desfavorable en la flexión y en el cortante; "
+    "con las cargas de la columna, la excentricidad accidental aumenta además las reacciones (ΔR, D-138).",
+    "El cortante de cada sección toma la reacción de los pilotes interpolada entre dpile/2 afuera y dpile/2 adentro.",
+)
+_CAP_LIMITATIONS = (
+    "Puntal-tensor, cabezales de varias columnas y requisitos sísmicos de los pilotes: falta implementación.",
+    "Punzonamiento de grupos de pilotes con perímetros traslapados (guía CRSI P2) y cortante de esquina en una dirección "
+    "(P4): falta implementación.",
+    "El aumento del cortante en una dirección por pilotes cercanos (ACI 13.4.6.8(a)) no se usa: consulta abierta (D-138).",
+)
 
 
 def _severity(check: dict[str, Any]) -> tuple[int, float, float]:
@@ -1190,6 +1207,102 @@ def _detailing_chapter(footing: dict[str, Any], drawings: list[DrawingFigure] | 
     return [("Despiece y cantidades", build)]
 
 
+def _cap_geometry(results: dict[str, Any], cap: dict[str, Any]) -> list[Block]:
+    g, pile = cap["geometry [mm]"], cap["pile"]
+    column = g["column"]
+    rows = [["Largo a lo largo de X (lx)", number(g["lx"], "mm"), "mm"], ["Ancho a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
+            ["Espesor (h)", number(g["h"], "mm"), "mm"], ["Recubrimiento libre lateral y superior", number(g["cover"], "mm"), "mm"],
+            ["Recubrimiento libre inferior (sobre la cabeza de los pilotes)", number(g["bottom_cover"], "mm"), "mm"],
+            ["Columna cx × cy", f"{number(column['cx'], 'mm')} × {number(column['cy'], 'mm')}", "mm"],
+            ["Desplazamiento de la columna (X, Y)", f"{number(column['offset_x'], 'mm')}, {number(column['offset_y'], 'mm')}", "mm"],
+            ["Altura del pedestal", number(g["pedestal_height"], "mm"), "mm"], ["Altura del relleno", number(g["fill_height"], "mm"), "mm"],
+            ["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
+            ["Sobrecarga viva (qL)", number(g["surcharge_live [kN/m2]"], "kN/m²"), "kN/m²"],
+            ["Tolerancia de mala ubicación de los pilotes", number(g["mislocation"], "mm"), "mm"]]
+    shape = "circular, diámetro" if pile["shape"] == "circular" else "cuadrado, lado"
+    soil = results["soil"]
+    capacity = [["Sección del pilote", f"{shape} {number(pile['size [mm]'], 'mm')} mm"],
+                ["Empotramiento en el cabezal", f"{number(pile['embedment [mm]'], 'mm')} mm"]]
+    geotechnical = [*([name, "no declarada" if soil[key] is None else f"{number(soil[key], 'kN')} kN"]
+                      for name, key in (("Capacidad admisible del pilote a compresión (Qa)", "Qa compresion [kN]"),
+                                        ("Capacidad admisible del pilote a tracción (Qt)", "Qa traccion [kN]"),
+                                        ("Capacidad admisible lateral del pilote (Qh)", "Qa lateral [kN]"))),
+                    ["Factor de aumento de las capacidades con sismo", number(soil["factor sismo [-]"], "–")],
+                    ["Eficiencia del grupo de pilotes (η)", number(soil["eficiencia grupo [-]"], "–")],
+                    ["Excentricidad máxima en servicio sin sismo", f"{number(soil['excentricidad maxima [mm]'], 'mm')} mm"],
+                    ["Peso unitario del concreto (γc)", f"{number(soil['gamma concreto [kN/m3]'], 'kN/m³')} kN/m³"],
+                    ["Peso unitario del relleno (γf)", f"{number(soil['gamma relleno [kN/m3]'], 'kN/m³')} kN/m³"]]
+    options = cap["options"]
+    source = "de cada pilote" if options["loads_from"] == "piles" else "de la columna"
+    extra = ([["Las reacciones incluyen el peso del cabezal", "sí" if options["reactions_include_weight"] else "no (se suma repartido)"]]
+             if options["loads_from"] == "piles" else [])
+    return [{"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": rows},
+            {"kind": "table", "headers": ["Pilote (dato del usuario)", "Valor"], "rows": capacity},
+            {"kind": "table", "headers": ["Pilote", "x (mm)", "y (mm)"],
+             "rows": [[item["id"], number(item["x [mm]"], "mm"), number(item["y [mm]"], "mm")] for item in cap["piles"]]},
+            {"kind": "table", "headers": ["Suelo y pilotes (dato del usuario)", "Valor"], "rows": geotechnical},
+            {"kind": "table", "headers": ["Cargas", "Valor"], "rows": [["Origen de las cargas", source], *extra]},
+            {"kind": "p", "text": "Propiedades calculadas a partir de las dimensiones (nunca declaradas):"},
+            {"kind": "table", "headers": ["Propiedad", "Valor", "Unidad"], "rows": _properties_rows(cap)},
+            {"kind": "table", "headers": ["Refuerzo", "Descripción"],
+             "rows": [["Malla inferior", _mat_text(cap["reinforcement"]["bottom"])],
+                      ["Malla superior", _mat_text(cap["reinforcement"]["top"])], ["Pasadores", _dowel_text(column.get("dowels"))]]}]
+
+
+def _cap_demands(cap: dict[str, Any]) -> list[Block]:
+    piles = cap["options"]["loads_from"] == "piles"
+    text = ("Acción de cada pilote sobre el cabezal en su cabeza; P > 0 en compresión del pilote." if piles else
+            "Fuerzas de la columna sobre el cabezal, en la base de la columna; P > 0 en compresión.")
+    blocks: list[Block] = [{"kind": "p", "text": text}]
+    for kind, title in (("service", "Casos de servicio"), ("factored", "Casos mayorados")):
+        loads = [load for load in cap["loads"] if load["kind"] == kind]
+        blocks.append({"kind": "h2", "text": title})
+        if not loads:
+            blocks.append({"kind": "p", "text": "No aplica: ningún caso de este tipo."})
+            continue
+        if piles:
+            for pile in dict.fromkeys(load["pile"] for load in loads):
+                blocks.append(_loads_table([load for load in loads if load["pile"] == pile], f"Pilote {pile}"))
+        else:
+            blocks.append(_loads_table(loads))
+    ids = [item["id"] for item in cap["piles"]]
+    rows = [[reaction["case"], "servicio" if reaction["kind"] == "service" else "mayorado", number(reaction["N [kN]"], "kN"),
+             *(number(reaction["R [kN]"][pile], "kN") + (f" (±{number(reaction['delta R [kN]'][pile], 'kN')})"
+                                                         if reaction["delta R [kN]"][pile] else "") for pile in ids)]
+            for reaction in cap["reactions"]]
+    blocks += [{"kind": "h2", "text": "Reacciones de los pilotes"},
+               {"kind": "p", "text": "Reacción de cada pilote en kN (compresión positiva); entre paréntesis, ΔR por la mala ubicación."},
+               {"kind": "table", "headers": ["Caso", "Tipo", "N (kN)", *ids], "rows": rows}]
+    return blocks
+
+
+def pile_cap_document(results: dict[str, Any], cap: dict[str, Any], full: bool,
+                      drawings: list[DrawingFigure] | None = None) -> list[Block]:
+    """Memoria de un cabezal sobre pilotes (D-138)."""
+    items: list[Located] = [(f"caso {check['case']}" if check.get("case") else "todo el cabezal", check) for check in cap["checks"]]
+    kinds = [reaction["kind"] for reaction in cap["reactions"]]
+    counts = {kind: kinds.count(kind) for kind in ("service", "factored")}
+    meta = [("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados"),
+            ("Pilotes", str(len(cap["piles"])))]
+    head = [_title(f"Cabezal {cap['id']}", results, meta, items, cap["status"]), _summary(items)]
+    chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
+        ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
+        ("Propiedades geométricas, pilotes y armado", lambda _: _cap_geometry(results, cap)),
+        ("Solicitaciones y reacciones de los pilotes", lambda _: _cap_demands(cap)),
+        ("Revisión geotécnica: pilotes, grupo y excentricidad", lambda n: _chapter("geotechnical", n, items, full)),
+        (_CHAPTER_TITLES["requirements"], lambda n: _requirements(items, n)),
+        (_CHAPTER_TITLES["flexure"], lambda n: _chapter("flexure", n, items, full)),
+        (_CHAPTER_TITLES["one_way"], lambda n: _chapter("one_way", n, items, full)),
+        (_CHAPTER_TITLES["punching"], lambda n: _chapter("punching", n, items, full)),
+        (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, items, full)),
+        (_CHAPTER_TITLES["bearing"], lambda n: _chapter("bearing", n, items, full)),
+        ("Índices DCR", lambda _: _dcr(items)),
+        *_detailing_chapter(cap, drawings),
+        ("Notas y limitaciones", lambda _: _notes(results, _CAP_CONVENTIONS, _CAP_LIMITATIONS)),
+    ]
+    return _assemble(head, chapters)
+
+
 def report_documents(results: dict[str, Any], *, full: bool = False, figures: dict[str, Path] | None = None,
                      diagrams: dict[str, list[Path]] | None = None,
                      drawings: dict[str, list[DrawingFigure]] | None = None) -> list[list[Block]]:
@@ -1206,4 +1319,5 @@ def report_documents(results: dict[str, Any], *, full: bool = False, figures: di
     documents += [combined_document(results, footing, full, ((figures or {}).get(footing["id"]), (diagrams or {}).get(footing["id"])),
                                     (drawings or {}).get(footing["id"]))
                   for footing in results.get("combined_footings", [])]
+    documents += [pile_cap_document(results, cap, full, (drawings or {}).get(cap["id"])) for cap in results.get("pile_caps", [])]
     return documents

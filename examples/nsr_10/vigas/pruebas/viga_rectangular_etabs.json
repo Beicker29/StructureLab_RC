@@ -8,11 +8,13 @@
     "level": "DMO",
     "justification": "Capacidad moderada de disipación de energía (DMO) declarada por el ingeniero para este ejemplo."
   },
-  "materials": {
+  "concrete": {
     "fc": 28.0,
+    "type": "normalweight"
+  },
+  "reinforcement_steel": {
     "fy": 420.0,
     "fyt": 420.0,
-    "concrete": "normalweight",
     "coating": "uncoated"
   },
   "members": [

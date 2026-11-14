@@ -47,6 +47,11 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Torsion: refuerzo transversal", "torsion", "(Av + 2At)/s requerido", "(Av + 2At)/s"),
     ("Torsion: refuerzo longitudinal", "torsion", "Aℓ requerido", "Aℓ"),
     ("Torsion: distribucion", "requirements", "", ""),
+    ("Presion admisible del pilote: compresion", "geotechnical", "R", "f·Qa"),
+    ("Presion admisible del pilote: traccion", "geotechnical", "T", "f·Qt"),
+    ("Deslizamiento del pilote", "geotechnical", "H", "f·Qh"),
+    ("Capacidad del grupo de pilotes", "geotechnical", "ΣR", "η·n·f·Qa"),
+    ("Excentricidad en servicio", "geotechnical", "e", "e,máx"),
     ("Presion admisible", "geotechnical", "pmax", "qa"),
     ("Contacto con el suelo", "geotechnical", "fracción mínima", "fracción en contacto"),
     ("Deslizamiento", "geotechnical", "FS·V", "R"),
@@ -75,7 +80,12 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Altura minima", "requirements", "mínimo", "medido"),
     ("Pasadores: area minima", "requirements", "0.005·Ag", "As de pasadores"),
     ("Cortante en una direccion", "one_way", "Vu", "φVc"),
+    ("Cortante en la cara de la columna (dos direcciones)", "punching", "Vu", "φ·vc·bs·d"),
+    ("Cortante en la cara de la columna", "one_way", "Vu", "φ·vc·b·d"),
     ("Punzonamiento", "punching", "vu", "φvc"),
+    ("Pilotes: momento no resistido", "geotechnical", "M", "–"),
+    ("Cabezal: verificacion estructural", "flexure", "", ""),
+    ("Cabezal:", "requirements", "mínimo", "declarado"),
     ("Desarrollo malla", "development", "ℓ requerida", "ℓ disponible"),
     ("Desarrollo barras", "development", "ℓ requerida", "ℓ disponible"),
     ("Desarrollo refuerzo band", "development", "ℓ requerida", "ℓ disponible"),
@@ -208,6 +218,20 @@ VALUES = {
     "W relleno": ("Peso del relleno", "Wr"),
     "Sobrecarga muerta": ("Fuerza de la sobrecarga muerta", "QD"),
     "Sobrecarga viva": ("Fuerza de la sobrecarga viva", "QL"),
+    "rho t": ("Cuantía de retracción y temperatura sobre el área bruta", "ρt"),
+    "delta R": ("Aumento de la reacción por la excentricidad accidental de la mala ubicación", "ΔR"),
+    "Qa": ("Capacidad admisible a compresión del pilote", "Qa"),
+    "factor mala ubicacion": ("Aumento de la capacidad al considerar la mala ubicación", "f"),
+    "vc": ("Esfuerzo resistente del concreto en la cara de la columna (guía CRSI)", "vc"),
+    "w": ("Distancia de la cara de la columna al centro del pilote más cercano, más la tolerancia", "w"),
+    "bs": ("Perímetro de la cara de la columna, 2(cx + cy)", "bs"),
+    "Mu": ("Momento mayorado en la sección", "Mu"),
+    "W cabezal": ("Peso del cabezal", "Wc"),
+    "factor sismo": ("Aumento de la capacidad del pilote en combinaciones con sismo", "f sismo"),
+    "eficiencia": ("Eficiencia del grupo de pilotes", "η"),
+    "pilotes": ("Número de pilotes", "n"),
+    "R pilote": ("Reacción del pilote sobre el cabezal (compresión positiva)", "R"),
+    "c columna": ("Lado medio de la columna, (cx + cy)/2", "c"),
 }
 
 # Palabras de los nombres de las verificaciones, escritas sin tilde en el dominio (identificadores estables).
@@ -217,7 +241,8 @@ _ACCENTS = {"Presion": "Presión", "Flexion": "Flexión", "Deformacion": "Deform
             "Torsion": "Torsión", "seccion": "sección", "interaccion": "interacción", "verificacion": "verificación",
             "Validacion": "Validación", "distribucion": "distribución", "Area": "Área", "Retraccion": "Retracción",
             "cuantia": "cuantía", "fisuracion": "fisuración", "deformacion": "deformación",
-            "Direccion": "Dirección", "flexion": "flexión", "torsion": "torsión"}
+            "Direccion": "Dirección", "flexion": "flexión", "torsion": "torsión", "tension": "tensión",
+            "ubicacion": "ubicación"}
 
 
 def display(name: str) -> str:

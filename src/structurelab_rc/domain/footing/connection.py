@@ -14,7 +14,14 @@ from dataclasses import dataclass, replace
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.development import END_TEXT, BarAnchorage, developed_end, development_check, required_length
-from structurelab_rc.domain.footing.flexure import MAT_NAMES, FaceMoments, face_moments, has_negative_moment, required_mat_area
+from structurelab_rc.domain.footing.flexure import (
+    MAT_NAMES,
+    FaceMoments,
+    SectionRules,
+    face_moments,
+    has_negative_moment,
+    required_mat_area,
+)
 from structurelab_rc.domain.footing.loads import FactoredCase, column_faces
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.status import Status
@@ -47,7 +54,8 @@ def bar_anchorage(row: BarRow, layout: tuple[str, float, bool], footing: tuple[f
                         clear_spacing=spacing - row.diameter, side_cover=cover, extension_cover=cover, excess=excess)
 
 
-def _anchorage(basis: Basis, footing: Footing, mat_row: tuple[str, BarRow], cases: list[FaceMoments]) -> BarAnchorage:
+def _anchorage(basis: Basis, footing: Footing, mat_row: tuple[str, BarRow],
+               cases: tuple[list[FaceMoments], SectionRules | None]) -> BarAnchorage:
     mat, row = mat_row
     spec = getattr(footing, mat)
     bar_set = getattr(spec, row.direction)
@@ -58,15 +66,16 @@ def _anchorage(basis: Basis, footing: Footing, mat_row: tuple[str, BarRow], case
 
 
 def _development_checks(
-    basis: Basis, footing: Footing, rows: dict[str, dict[str, BarRow]], cases: list[FaceMoments]
+    basis: Basis, footing: Footing, rows: dict[str, dict[str, BarRow]], given: tuple[list[FaceMoments], SectionRules | None]
 ) -> list[Check]:
+    cases = given[0]
     checks = []
     for mat, mat_rows_ in rows.items():
         spec = getattr(footing, mat)
         for direction, row in mat_rows_.items():
             if mat == "top" and not has_negative_moment(cases, direction):
                 continue
-            bar = _anchorage(basis, footing, (mat, row), cases)
+            bar = _anchorage(basis, footing, (mat, row), given)
             required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
             end = END_TEXT[getattr(spec, direction).end]
             name = f"Desarrollo malla {MAT_NAMES[mat]} (barras {direction})"
@@ -151,7 +160,8 @@ def dowel_checks(basis: Basis, footing: FootingBase, support: Support, bottom: t
     # Los pasadores bajan hasta la malla inferior y se apoyan en ella; su gancho no cuenta a compresión (D-065).
     first, second = bottom
     depth = footing.h if support.surface is None else support.surface[2]
-    available = depth - footing.cover - first.diameter - second.diameter
+    face = footing.bottom_face_cover if isinstance(footing, Footing) else footing.cover  # sobre los pilotes en el cabezal
+    available = depth - face - first.diameter - second.diameter
     required_ldc = required_length(profile, materials, BarAnchorage(spec.diameter_mm, "compression"), basis.seismic_level)
     checks.append(replace(development_check(DOWELS_ANCHORAGE, required_ldc, available), member=footing.id, note=support.note))
     return checks, area
@@ -164,14 +174,21 @@ def footing_support(footing: Footing) -> Support:
 
 
 def connection_checks(basis: Basis, footing: Footing, cases: list[FactoredCase]) -> list[Check]:
+    moments = [face_moments(footing, case) for case in cases]
+    return column_connection_checks(basis, footing, (moments, None), [(case.case, case.load.p) for case in cases])
+
+
+def column_connection_checks(basis: Basis, footing: Footing, given: tuple[list[FaceMoments], SectionRules | None],
+                             loads: list[tuple[str, float]]) -> list[Check]:
+    """Desarrollo de las mallas con los momentos de cara ya calculados (y las reglas de su As mínimo, las de la zapata si
+    son None), pasadores y aplastamiento con la carga de la columna en cada caso, (caso, Pu): también el cabezal
+    (D-138)."""
     rows = {"bottom": mat_rows(footing, footing.bottom, basis.bars)}
     if footing.top is not None:
         rows["top"] = mat_rows(footing, footing.top, basis.bars)
-    moments = [face_moments(footing, case) for case in cases]
     support = footing_support(footing)
     bottom = rows["bottom"]
     first = footing.bottom.first
     dowels, dowel_area = dowel_checks(basis, footing, support, (bottom[first], bottom["y" if first == "x" else "x"]))
-    loads = [(case.case, case.load.p) for case in cases]
-    return [*_development_checks(basis, footing, rows, moments), *dowels, *bearing_checks(basis, footing, support, (loads, dowel_area))]
+    return [*_development_checks(basis, footing, rows, given), *dowels, *bearing_checks(basis, footing, support, (loads, dowel_area))]
 

@@ -48,6 +48,17 @@ class FootingBase(Protocol):
     def area(self) -> float: ...
 
 
+class UnitWeighted(Protocol):
+    """Lo que los pesos propios necesitan: los pesos unitarios del concreto y del relleno, en N/mm³ (el suelo de las
+    zapatas o los pesos unitarios de los cabezales, D-138)."""
+
+    @property
+    def unit_weight_concrete(self) -> float: ...
+
+    @property
+    def unit_weight_fill(self) -> float: ...
+
+
 class Soil(_Input):
     """Datos del suelo y de los pesos propios; obligatorios salvo passive_factor (D-052, puntos 3 y 5; D-070).
 
@@ -223,7 +234,7 @@ class RectangularBase:
         """Semidiagonales del núcleo central (lx/6, ly/6): con |ex|/lx + |ey|/ly ≤ 1/6 todo el contacto se comprime."""
         return self.lx / 6, self.ly / 6
 
-    def weights(self, soil: "Soil") -> tuple[float, float, float]:
+    def weights(self, soil: UnitWeighted) -> tuple[float, float, float]:
         """Pesos de la zapata, de los pedestales y del relleno, en N. El relleno ocupa la base menos las columnas o
         pedestales."""
         footing = soil.unit_weight_concrete * self.area * self.h
@@ -283,6 +294,12 @@ class Footing(RectangularBase, _Input):
         if len(names) != len(set(names)):
             raise ValueError(f"la zapata '{self.id}' repite un caso de carga")
         return self
+
+    @property
+    def bottom_face_cover(self) -> float:
+        """Recubrimiento libre de la malla inferior a la cara inferior: el mismo cover en la zapata; en el cabezal, el que
+        deja la malla sobre la cabeza de los pilotes (D-138)."""
+        return self.cover
 
     @property
     def short_direction(self) -> str | None:

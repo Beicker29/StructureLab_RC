@@ -90,6 +90,7 @@ from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.design import CombinedDesign, CombinedDesignColumn, CombinedDesignProject
 from structurelab_rc.model.footing import FootingLoad
+from structurelab_rc.model.layout import public
 from structurelab_rc.model.project import Materials, Project
 
 FOOTING_ID = "ZC1"
@@ -1227,7 +1228,7 @@ def designed_project(ctx: Context, solution: CombinedSolution) -> dict[str, Any]
     if g.beam is not None:  # T invertida (D-113)
         deep = ", de gran altura (deep_beam, D-089: sin puntal-tensor)" if solution.data.get("deep_beam") else ""
         shape = f" en T invertida con viga de {g.beam[0]:g} × {g.beam[1]:g} mm{deep}"
-    return {
+    return public({
         "description": f"{project.description} Diseño de la zapata combinada (D-107){shape}: {g.length:g} × {g.width:g} × {g.h:g} mm, "
                        f"f'c = {solution.fc:g} MPa, centroide de la base en ({g.center[0]:.1f}, {g.center[1]:.1f}) mm de los "
                        f"ejes de las columnas, sobre la resultante del caso {_placement_note(ctx)}, costo {solution.cost:.2f} "
@@ -1241,7 +1242,7 @@ def designed_project(ctx: Context, solution: CombinedSolution) -> dict[str, Any]
         "combined_footings": [solution.data],
         # D-127: el proyecto diseñado sale con su despiece y su dibujo, para que run genere la cartilla y los planos.
         **design_outputs(project.detailing, project.drawing),
-    }
+    })
 
 
 def cost_basis(ctx: Context) -> str:

@@ -231,4 +231,6 @@ def validate_project(project: Project, bars: Sequence[RebarSpec]) -> Check:
         errors.extend(_footing_errors(footing, specs, profile))
     for combined in project.combined_footings:
         errors.extend(_combined_errors(combined, specs, profile))
+    for cap in project.pile_caps:  # el cabezal tiene las mallas, la columna y los pasadores de la zapata (D-138)
+        errors.extend(_footing_errors(cap, specs, profile))
     return check_from_errors(CHECK_NAME, errors)

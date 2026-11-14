@@ -23,12 +23,13 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 | `profile` | texto | Perfil normativo: `aci-318-25` o `nsr-10`. Todo el cálculo sale de él; nunca se mezcla con el otro perfil. |
 | `seismic.level` | texto | Nivel sísmico declarado por el ingeniero, en el vocabulario del perfil: `none`, `ordinary`, `intermediate`, `special` (ACI) o `DMI`, `DMO`, `DES` (NSR-10). La aplicación no lo deriva. |
 | `seismic.justification` | texto | Justificación del nivel sísmico; sale en la memoria. |
-| `materials.fc` | MPa | Resistencia especificada del concreto, f'c. |
-| `materials.fy` | MPa | Fluencia del refuerzo longitudinal. |
-| `materials.fyt` | MPa | Fluencia del refuerzo transversal (estribos). Se declara aunque el ejemplo no lo use. |
-| `materials.concrete` | texto | `normalweight` (peso normal) o `lightweight` (liviano); define λ. |
-| `materials.coating` | texto | Recubrimiento de las barras: `uncoated` (sin recubrimiento), `galvanized`, `epoxy` o `zinc_epoxy` (dual de zinc y epóxico); cambia la longitud de desarrollo (ψe, D-071). |
-| `materials.max_aggregate` | mm | Tamaño máximo nominal del agregado grueso (dagg). Sin él, la separación mínima de las barras queda INCOMPLETE: no se supone (D-102). También en el diseño por tipologías. |
+| `concrete.fc` | MPa | Resistencia especificada del concreto, f'c (en los diseños no va: f'c es una variable del diseño). |
+| `concrete.type` | texto | `normalweight` (peso normal) o `lightweight` (liviano); define λ. |
+| `concrete.max_aggregate` | mm | Tamaño máximo nominal del agregado grueso (dagg), opcional. Sin él, la separación mínima de las barras queda INCOMPLETE: no se supone (D-102). |
+| `concrete.unit_weight_kNm3` | kN/m³ | Peso unitario del concreto de la zapata y del pedestal (zapatas y cabezales; D-139, antes en `soil`). |
+| `reinforcement_steel.fy` | MPa | Fluencia del refuerzo longitudinal. |
+| `reinforcement_steel.fyt` | MPa | Fluencia del refuerzo transversal (estribos). Se declara aunque el ejemplo no lo use. |
+| `reinforcement_steel.coating` | texto | Recubrimiento de las barras: `uncoated` (sin recubrimiento), `galvanized`, `epoxy` o `zinc_epoxy` (dual de zinc y epóxico); cambia la longitud de desarrollo (ψe, D-071). |
 | `soil` | objeto | Datos del suelo y de los pesos propios (abajo). Obligatorio con zapatas. |
 | `footings` | lista | Zapatas del proyecto. |
 
@@ -38,7 +39,6 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 | --- | --- | --- |
 | `allowable_pressure_kPa` | kPa | Presión admisible **bruta** del suelo, qa. Se compara con la presión que incluye los pesos propios y las sobrecargas. |
 | `min_contact_fraction` | - | Fracción mínima de la base que debe quedar en contacto con el suelo en los casos de servicio (0 a 1). |
-| `unit_weight_concrete_kNm3` | kN/m³ | Peso unitario del concreto de la zapata y del pedestal. |
 | `unit_weight_fill_kNm3` | kN/m³ | Peso unitario del relleno sobre la zapata; también el del suelo para el empuje pasivo. |
 | `friction_coefficient` | - | Coeficiente de fricción μ en la interfaz suelo–zapata (D-070). |
 | `adhesion_kPa` | kPa | Adherencia c_a suelo–zapata; actúa solo sobre el área en contacto (puede ser 0). |
@@ -194,8 +194,8 @@ No hay torsión de vigas: `torsion_layers` se rechaza. La T invertida conserva l
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 
-En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (D-069). `materials` declara solo `fy`,
-`fyt`, `concrete` y `coating`: f'c es una variable del diseño. `soil` es igual que en la verificación.
+En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (D-069). `concrete` no declara `fc`: f'c es
+una variable del diseño. `soil` es igual que en la verificación.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
@@ -280,8 +280,8 @@ El diseño del N elegido se obtiene con `design-footings` y se reverifica con `r
 ## Diseño de la zapata combinada (`diseno_combinada.json`, comando `design-combined`, D-107)
 
 Diseña una zapata combinada rectangular de dos columnas: ubica la base, propone largo, ancho, espesor, f'c y todo el
-refuerzo, y elige la solución de menor costo que aprueba la verificación de la combinada. `materials` declara solo `fy`,
-`fyt`, `concrete`, `coating` y, opcional, `max_aggregate`: f'c es una variable del diseño. `soil` es igual que en la
+refuerzo, y elige la solución de menor costo que aprueba la verificación de la combinada. `concrete` no declara `fc`:
+f'c es una variable del diseño. `soil` es igual que en la
 verificación. Las dos columnas deben tener los mismos casos de carga, con al menos un caso de servicio sin sismo y casos
 mayorados.
 
@@ -534,7 +534,7 @@ H = h + altura del pedestal. Las excentricidades son ex = My base/N y ey = −Mx
 | Deformación neta de tracción malla … | εt de la malla frente a la mínima del perfil. | ACI 8.3.3.1; NSR-10 C.10.3.5 |
 | Acero mínimo malla … | As frente a la cuantía mínima por el área bruta del ancho total. | ACI 8.6.1.1; NSR-10 C.10.5.4 y C.7.12.2.1 |
 | Separación máxima malla … | Separación (y la de la franja) frente al máximo del perfil. | ACI 8.7.2.2; NSR-10 C.10.5.4 |
-| Separación mínima (…) | Cada refuerzo declarado (cada malla y dirección, la franja central; en la combinada, las barras inferiores y superiores de cada dirección y el band de cada columna): separación libre s − db frente al mínimo (25 mm, db y 4/3·dagg). Sin `materials.max_aggregate`, INCOMPLETE (D-102). | ACI 25.2.1; NSR-10 C.7.6.1 y C.3.3.2(c) |
+| Separación mínima (…) | Cada refuerzo declarado (cada malla y dirección, la franja central; en la combinada, las barras inferiores y superiores de cada dirección y el band de cada columna): separación libre s − db frente al mínimo (25 mm, db y 4/3·dagg). Sin `concrete.max_aggregate`, INCOMPLETE (D-102). | ACI 25.2.1; NSR-10 C.7.6.1 y C.3.3.2(c) |
 | Franja central malla … | Zapata rectangular: As en la franja frente a γs·As. | ACI 13.3.3.3; NSR-10 C.15.4.4.2 |
 | Altura mínima de la zapata | 150 mm, medidos como pide cada perfil. | ACI 13.3.1.2; NSR-10 C.15.7 |
 | Cortante en una dirección (barras x o y) | Por caso mayorado: Vu de la carga neta más allá de la sección a d de cada cara frente a φVc, con la d de esa dirección. | ACI 13.2.6.2(a) y 13.2.7.2; NSR-10 C.15.5 y C.11.2 |

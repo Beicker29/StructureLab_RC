@@ -111,7 +111,9 @@ def mat_rows(footing: Footing | CombinedFooting, mat: Mat, bars: Sequence[RebarS
     order = (mat.first, "y" if mat.first == "x" else "x")
     first_diameter = specs[getattr(mat, mat.first).designation].diameter_mm
     stirrup = stirrup_diameter(footing, bars)
-    cover = footing.cover + stirrup
+    # La malla inferior del cabezal va sobre la cabeza de los pilotes (D-138); en la zapata, bottom_face_cover es cover.
+    face = footing.bottom_face_cover if isinstance(footing, Footing) and mat is footing.bottom else footing.cover
+    cover = face + stirrup
     # En la T invertida los estribos van en el alma: no encierran por los lados las barras de la zarpa (D-093).
     lateral = 0.0 if isinstance(footing, CombinedFooting) and footing.beam is not None else stirrup
     rows = {}

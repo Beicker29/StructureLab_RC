@@ -17,6 +17,7 @@ from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.domain.status import Status
 from structurelab_rc.engine import design_footings, run_project
 from structurelab_rc.model.design import FootingDesignProject
+from structurelab_rc.model.layout import public
 from structurelab_rc.setup import load_engine
 
 pytest.importorskip("highspy")
@@ -80,7 +81,7 @@ def _loads(p: float, m: float) -> list[dict[str, Any]]:
 
 def _project(method: str = "milp") -> dict[str, Any]:
     loads = [(400, 300.0, 20.0), (400, 480.0, 40.0), (500, 750.0, 60.0), (450, 600.0, 30.0)]
-    return {
+    return public({
         "description": "prueba", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "prueba"},
         "materials": {"fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated", "max_aggregate": 19.0},
         "soil": {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.5, "unit_weight_concrete_kNm3": 24.0,
@@ -96,7 +97,7 @@ def _project(method: str = "milp") -> dict[str, Any]:
                        "dowels": "hook90"}, "dowel_bars": ["#5"]},
         "columns": [{"id": f"C{index}", "cx": float(side), "cy": float(side), "loads": _loads(p, m)}
                     for index, (side, p, m) in enumerate(loads, start=1)],
-    }
+    })
 
 
 def _context(data: dict[str, Any]) -> Context:

@@ -1,0 +1,664 @@
+{
+ "description": "Oraculo de cabezales (D-138), derivado por tests/oracles/derive_pile_cap.py",
+ "materials": {
+  "fc": 28.0,
+  "fy": 420.0,
+  "fyt": 420.0,
+  "concrete": "normalweight",
+  "coating": "uncoated",
+  "max_aggregate": 19.0
+ },
+ "tolerance_rel": 1e-06,
+ "cases": [
+  {
+   "id": "A",
+   "cap": {
+    "id": "A",
+    "lx": 2000.0,
+    "ly": 2000.0,
+    "h": 900.0,
+    "cover": 75.0,
+    "bottom_cover": 150.0,
+    "fill_height": 600.0,
+    "pedestal_height": 0.0,
+    "surcharge_dead_kNm2": 2.0,
+    "surcharge_live_kNm2": 5.0,
+    "column": {
+     "cx": 500.0,
+     "cy": 500.0,
+     "offset_x": 0.0,
+     "offset_y": 0.0
+    },
+    "bottom": {
+     "first": "x",
+     "x": {
+      "designation": "#7",
+      "spacing": 150.0,
+      "end": "hook90"
+     },
+     "y": {
+      "designation": "#7",
+      "spacing": 150.0,
+      "end": "hook90"
+     }
+    },
+    "top": {
+     "first": "x",
+     "x": {
+      "designation": "#5",
+      "spacing": 250.0,
+      "end": "hook90"
+     },
+     "y": {
+      "designation": "#5",
+      "spacing": 250.0,
+      "end": "hook90"
+     }
+    },
+    "pile": {
+     "shape": "circular",
+     "size": 400.0,
+     "embedment": 75.0
+    },
+    "mislocation_mm": 75.0,
+    "piles": [
+     {
+      "id": "P1",
+      "x": -600.0,
+      "y": -600.0
+     },
+     {
+      "id": "P2",
+      "x": 600.0,
+      "y": -600.0
+     },
+     {
+      "id": "P3",
+      "x": 600.0,
+      "y": 600.0
+     },
+     {
+      "id": "P4",
+      "x": -600.0,
+      "y": 600.0
+     }
+    ],
+    "loads": [
+     {
+      "case": "S1",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "seismic": false,
+      "P_kN": 2000.0,
+      "Vx_kN": 6.0,
+      "Vy_kN": 4.0,
+      "Mx_kNm": -10.0,
+      "My_kNm": 15.0
+     },
+     {
+      "case": "S2",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 2100.0,
+      "Vx_kN": 80.0,
+      "Vy_kN": 10.0,
+      "Mx_kNm": -20.0,
+      "My_kNm": 250.0
+     },
+     {
+      "case": "U1",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.6,
+      "seismic": false,
+      "P_kN": 2900.0,
+      "Vx_kN": 9.0,
+      "Vy_kN": 6.0,
+      "Mx_kNm": -14.0,
+      "My_kNm": 22.0
+     },
+     {
+      "case": "U2",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 2600.0,
+      "Vx_kN": 120.0,
+      "Vy_kN": 15.0,
+      "Mx_kNm": -30.0,
+      "My_kNm": 400.0
+     }
+    ]
+   },
+   "soil": {
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "pile_capacity_compression_kN": 850.0,
+    "pile_capacity_tension_kN": 250.0,
+    "pile_capacity_lateral_kN": 80.0,
+    "seismic_capacity_factor": 1.33,
+    "group_efficiency": 0.85,
+    "max_eccentricity_mm": 150.0
+   },
+   "reactions": [
+    {
+     "case": "S1",
+     "R": [
+      524433.3333333334,
+      541058.3333333334,
+      552141.6666666666,
+      535516.6666666666
+     ],
+     "dR": [
+      95156.68536948843,
+      95156.68536948843,
+      95156.68536948843,
+      95156.68536948843
+     ]
+    },
+    {
+     "case": "S2",
+     "R": [
+      419850.0,
+      683183.3333333334,
+      706725.0000000001,
+      443391.6666666666
+     ],
+     "dR": [
+      99576.10275190436,
+      99576.10275190436,
+      99576.10275190436,
+      99576.10275190436
+     ]
+    },
+    {
+     "case": "U1",
+     "R": [
+      752663.75,
+      777184.5833333333,
+      792976.25,
+      768455.4166666667
+     ],
+     "dR": [
+      136616.56565914693,
+      136616.56565914693,
+      136616.56565914693,
+      136616.56565914693
+     ]
+    },
+    {
+     "case": "U2",
+     "R": [
+      469434.5833333333,
+      885267.9166666667,
+      920580.4166666667,
+      504747.0833333333
+     ],
+     "dR": [
+      122861.12905637738,
+      122861.12905637738,
+      122861.12905637738,
+      122861.12905637738
+     ]
+    }
+   ],
+   "moments": [
+    {
+     "case": "U1",
+     "direction": "x",
+     "plus": 757409934.9769416,
+     "minus": 733192226.6436083
+    },
+    {
+     "case": "U1",
+     "direction": "y",
+     "plus": 753137539.1436083,
+     "minus": 737464622.4769416
+    },
+    {
+     "case": "U2",
+     "direction": "x",
+     "plus": 868385001.3645874,
+     "minus": 469926668.0312541
+    },
+    {
+     "case": "U2",
+     "direction": "y",
+     "plus": 686976147.1979208,
+     "minus": 651335522.1979208
+    }
+   ],
+   "minimum": [
+    {
+     "direction": "x",
+     "required": 4225.4198567800395,
+     "provided": 5031.0
+    },
+    {
+     "direction": "y",
+     "required": 3772.3690581908527,
+     "provided": 5031.0
+    }
+   ],
+   "checks": [
+    {
+     "name": "Presion admisible del pilote: compresion",
+     "case": "S1",
+     "demand": 647298.3520361551,
+     "capacity": 850000.0
+    },
+    {
+     "name": "Deslizamiento del pilote",
+     "case": "S1",
+     "demand": 1802.7756377319947,
+     "capacity": 80000.0
+    },
+    {
+     "name": "Capacidad del grupo de pilotes",
+     "case": "S1",
+     "demand": 2153150.0,
+     "capacity": 2890000.0
+    },
+    {
+     "name": "Excentricidad en servicio",
+     "case": "S1",
+     "demand": 11.135738792854902,
+     "capacity": 150.0
+    },
+    {
+     "name": "Presion admisible del pilote: compresion",
+     "case": "S2",
+     "demand": 806301.1027519045,
+     "capacity": 1130500.0
+    },
+    {
+     "name": "Deslizamiento del pilote",
+     "case": "S2",
+     "demand": 20155.644370746373,
+     "capacity": 106400.0
+    },
+    {
+     "name": "Capacidad del grupo de pilotes",
+     "case": "S2",
+     "demand": 2253150.0,
+     "capacity": 3843700.0
+    },
+    {
+     "name": "Cortante en una direccion (barras x)",
+     "case": "U1",
+     "demand": 1094.0160000000021,
+     "capacity": 1002519.1589979006
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "U1",
+     "demand": 1769473.9646516272,
+     "capacity": 3598961.6351008066
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "U1",
+     "demand": 1720432.2979849607,
+     "capacity": 3611412.1762329396
+    },
+    {
+     "name": "Cortante en una direccion (barras y)",
+     "case": "U1",
+     "demand": 3282.048000000006,
+     "capacity": 974326.0330271961
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "U1",
+     "demand": 1760744.7979849607,
+     "capacity": 3305571.329044693
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "U1",
+     "demand": 1729161.4646516272,
+     "capacity": 3313543.8310100557
+    },
+    {
+     "name": "Cortante en la cara de la columna (dos direcciones)",
+     "case": "U1",
+     "demand": 3452946.262636588,
+     "capacity": 4032470.1377290767
+    },
+    {
+     "name": "Cortante en una direccion (barras x)",
+     "case": "U2",
+     "demand": 1027.416000000002,
+     "capacity": 1002519.1589979006
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "U2",
+     "demand": 1982150.5914460882,
+     "capacity": 3532488.7774975947
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "U2",
+     "demand": 1150483.9247794214,
+     "capacity": 3730013.823770463
+    },
+    {
+     "name": "Cortante en una direccion (barras y)",
+     "case": "U2",
+     "demand": 3082.248000000006,
+     "capacity": 974326.0330271961
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "U2",
+     "demand": 1601629.7581127547,
+     "capacity": 3298027.0771492305
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "U2",
+     "demand": 1531004.7581127547,
+     "capacity": 3320283.531709236
+    },
+    {
+     "name": "Cortante en la cara de la columna (dos direcciones)",
+     "case": "U2",
+     "demand": 3097924.5162255093,
+     "capacity": 4032470.1377290767
+    }
+   ]
+  },
+  {
+   "id": "B",
+   "cap": {
+    "id": "B",
+    "lx": 1200.0,
+    "ly": 3600.0,
+    "h": 800.0,
+    "cover": 75.0,
+    "bottom_cover": 150.0,
+    "fill_height": 0.0,
+    "pedestal_height": 0.0,
+    "surcharge_dead_kNm2": 0.0,
+    "surcharge_live_kNm2": 0.0,
+    "column": {
+     "cx": 500.0,
+     "cy": 500.0,
+     "offset_x": 0.0,
+     "offset_y": 0.0
+    },
+    "bottom": {
+     "first": "y",
+     "x": {
+      "designation": "#6",
+      "spacing": 150.0,
+      "end": "hook90"
+     },
+     "y": {
+      "designation": "#8",
+      "spacing": 100.0,
+      "end": "hook90"
+     }
+    },
+    "top": {
+     "first": "x",
+     "x": {
+      "designation": "#6",
+      "spacing": 150.0,
+      "end": "hook90"
+     },
+     "y": {
+      "designation": "#6",
+      "spacing": 150.0,
+      "end": "hook90"
+     }
+    },
+    "pile": {
+     "shape": "circular",
+     "size": 600.0,
+     "embedment": 75.0
+    },
+    "mislocation_mm": 75.0,
+    "reactions_include_weight": false,
+    "piles": [
+     {
+      "id": "P1",
+      "x": 0.0,
+      "y": -1200.0,
+      "loads": [
+       {
+        "case": "S1",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 1100.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 10.0,
+        "Mx_kNm": 20.0,
+        "My_kNm": 0.0
+       },
+       {
+        "case": "U1",
+        "kind": "factored",
+        "dead_factor": 1.2,
+        "live_factor": 1.6,
+        "seismic": false,
+        "P_kN": 1500.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 15.0,
+        "Mx_kNm": 30.0,
+        "My_kNm": 0.0
+       },
+       {
+        "case": "U2",
+        "kind": "factored",
+        "dead_factor": 1.2,
+        "live_factor": 1.0,
+        "seismic": true,
+        "P_kN": 1200.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 60.0,
+        "Mx_kNm": 120.0,
+        "My_kNm": 0.0
+       }
+      ]
+     },
+     {
+      "id": "P2",
+      "x": 0.0,
+      "y": 1200.0,
+      "loads": [
+       {
+        "case": "S1",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "live_factor": 1.0,
+        "seismic": false,
+        "P_kN": 1150.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 10.0,
+        "Mx_kNm": 20.0,
+        "My_kNm": 0.0
+       },
+       {
+        "case": "U1",
+        "kind": "factored",
+        "dead_factor": 1.2,
+        "live_factor": 1.6,
+        "seismic": false,
+        "P_kN": 1600.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 15.0,
+        "Mx_kNm": 30.0,
+        "My_kNm": 0.0
+       },
+       {
+        "case": "U2",
+        "kind": "factored",
+        "dead_factor": 1.2,
+        "live_factor": 1.0,
+        "seismic": true,
+        "P_kN": 1900.0,
+        "Vx_kN": 0.0,
+        "Vy_kN": 60.0,
+        "Mx_kNm": 120.0,
+        "My_kNm": 0.0
+       }
+      ]
+     }
+    ]
+   },
+   "soil": {
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "pile_capacity_compression_kN": 1300.0,
+    "pile_capacity_tension_kN": 300.0,
+    "pile_capacity_lateral_kN": 50.0,
+    "seismic_capacity_factor": 1.2,
+    "group_efficiency": 0.9,
+    "max_eccentricity_mm": 20.0
+   },
+   "reactions": [
+    {
+     "case": "S1",
+     "R": [
+      1141472.0,
+      1191472.0
+     ],
+     "dR": [
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "case": "U1",
+     "R": [
+      1549766.4,
+      1649766.4
+     ],
+     "dR": [
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "case": "U2",
+     "R": [
+      1249766.4,
+      1949766.4
+     ],
+     "dR": [
+      0.0,
+      0.0
+     ]
+    }
+   ],
+   "moments": [
+    {
+     "case": "U1",
+     "direction": "x",
+     "plus": -5080320.0,
+     "minus": -5080320.0
+    },
+    {
+     "case": "U1",
+     "direction": "y",
+     "plus": 1692673400.0,
+     "minus": 1520423400.0
+    },
+    {
+     "case": "U2",
+     "direction": "x",
+     "plus": -5080320.0,
+     "minus": -5080320.0
+    },
+    {
+     "case": "U2",
+     "direction": "y",
+     "plus": 2104798400.0,
+     "minus": 1108298400.0
+    }
+   ],
+   "minimum": [
+    {
+     "direction": "x",
+     "required": 5184.0,
+     "provided": 6532.0
+    },
+    {
+     "direction": "y",
+     "required": 9858.622281954917,
+     "provided": 5610.0
+    }
+   ],
+   "checks": [
+    {
+     "name": "Presion admisible del pilote: compresion",
+     "case": "S1",
+     "demand": 1191472.0,
+     "capacity": 1300000.0
+    },
+    {
+     "name": "Deslizamiento del pilote",
+     "case": "S1",
+     "demand": 10000.0,
+     "capacity": 50000.0
+    },
+    {
+     "name": "Capacidad del grupo de pilotes",
+     "case": "S1",
+     "demand": 2332944.0,
+     "capacity": 2340000.0
+    },
+    {
+     "name": "Excentricidad en servicio",
+     "case": "S1",
+     "demand": 25.71857704256939,
+     "capacity": 20.0
+    },
+    {
+     "name": "Cortante en una direccion (barras y)",
+     "case": "U1",
+     "demand": 1624532.0703999999,
+     "capacity": 557135.0454359415
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "U1",
+     "demand": 0.534361656105159,
+     "capacity": 1.3096468989769723
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "U1",
+     "demand": 0.5688417981514157,
+     "capacity": 1.3096468989769723
+    },
+    {
+     "name": "Cortante en una direccion (barras y)",
+     "case": "U2",
+     "demand": 1924532.0703999999,
+     "capacity": 557135.0454359415
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "U2",
+     "demand": 0.43092122996638876,
+     "capacity": 1.3096468989769723
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "U2",
+     "demand": 0.6722822242901858,
+     "capacity": 1.3096468989769723
+    }
+   ]
+  }
+ ]
+}

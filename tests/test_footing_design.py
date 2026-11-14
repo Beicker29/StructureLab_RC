@@ -45,13 +45,14 @@ from structurelab_rc.design.footing.typology import (
 )
 from structurelab_rc.detailing.schedule import schedule
 from structurelab_rc.domain.basis import Basis
-from structurelab_rc.domain.footing.detailing import footing_runs
+from structurelab_rc.domain.footing.detailing import face_envelope, footing_runs
 from structurelab_rc.domain.status import Status
 from structurelab_rc.engine import design_footings, report_file, run_project
 from structurelab_rc.io.etabs.combinations import Combination
 from structurelab_rc.io.etabs.footings import build_footing_design_project
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.design import DesignColumn, FootingDesignProject
+from structurelab_rc.model.layout import public
 from structurelab_rc.model.template import EtabsFootingDesignTemplate, LoadFactors
 from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.setup import load_engine
@@ -68,7 +69,7 @@ def _loads(p: float, m: float) -> list[dict[str, Any]]:
 
 def _project(typologies: int = 2, plan_max: float = 4000.0, columns: int = 3) -> dict[str, Any]:
     loads = [(400, 300.0, 20.0), (400, 480.0, 40.0), (500, 750.0, 60.0)][:columns]
-    return {
+    return public({
         "description": "prueba", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "prueba"},
         "materials": {"fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated", "max_aggregate": 19.0},
         "soil": {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.5, "unit_weight_concrete_kNm3": 24.0,
@@ -85,7 +86,7 @@ def _project(typologies: int = 2, plan_max: float = 4000.0, columns: int = 3) ->
                        "dowels": "hook90"}, "dowel_bars": ["#5"]},
         "columns": [{"id": f"C{index}", "cx": float(side), "cy": float(side), "loads": _loads(p, m)}
                     for index, (side, p, m) in enumerate(loads, start=1)],
-    }
+    })
 
 
 def _context(data: dict[str, Any]) -> Context:
@@ -293,7 +294,8 @@ def test_etabs_design_template_builds_a_design_project() -> None:
     factored = Table(headers, units, (row("10", "A1", "U", 700.0), row("11", "A2", "U", 950.0)))
     data = _project()
     template = EtabsFootingDesignTemplate.model_validate({
-        "description": "t", "profile": "nsr-10", "seismic": data["seismic"], "materials": data["materials"], "soil": data["soil"],
+        "description": "t", "profile": "nsr-10", "seismic": data["seismic"], "concrete": data["concrete"],
+        "reinforcement_steel": data["reinforcement_steel"], "soil": data["soil"],
         "design": data["design"],
         "columns": [{"etabs_unique_names": ["10", "11"], "cx": 400.0, "cy": 450.0}]})
     combos = {"S": Combination("S", "service", LoadFactors(dead=1.0, live=1.0)),
@@ -313,7 +315,7 @@ def test_etabs_design_template_builds_a_design_project() -> None:
     assert project["description"].endswith("(no listados o excluidos): 11, 12.")
     for excluded, message in ((["99"], "no estan en columns"), (["10", "11"], "quita todos")):
         with pytest.raises(ValidationError, match=message):
-            EtabsFootingDesignTemplate.model_validate({**template.model_dump(mode="json"), "exclude_unique_names": excluded})
+            EtabsFootingDesignTemplate.model_validate({**public(template.model_dump(mode="json")), "exclude_unique_names": excluded})
 
 
 @pytest.mark.parametrize(("level", "top"), [("DMO", False), ("DES", True)])
@@ -573,7 +575,8 @@ def test_column_cost_comes_from_the_cartilla_with_detailing() -> None:
     column, dowels = detailed.project.columns[0], {"designation": "#5", "count": 4, "end": "hook90"}
     cost, concrete, steel = column_cost(detailed, typology, column, dowels)
     basis = Basis(detailed.profile, detailed.materials(21.0), BARS, detailed.project.seismic.level)
-    runs = footing_runs(basis, typology_module.footing_for(detailed, typology, column, dowels), detailed.soil)
+    designed = typology_module.footing_for(detailed, typology, column, dowels)
+    runs = footing_runs(basis, designed, face_envelope(designed, detailed.soil))
     assert steel == pytest.approx(sum(row.mass for row in schedule(column.id, runs, 6000.0)))
     assert cost == pytest.approx(concrete * 500000.0 + steel * 6000.0)
     estimate = column_cost(plain, typology, column, dowels)

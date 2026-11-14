@@ -5,6 +5,7 @@ from typing import Any, Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, model_validator
 
 from structurelab_rc.model.footing import Column, Dowels, Mat
+from structurelab_rc.model.layout import internal
 from structurelab_rc.model.project import Materials, Section, SeismicFacts
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 
@@ -73,6 +74,13 @@ class FootingEtabsFiles(_Input):
 class EtabsTemplate(_Input):
     """combinations limita las combinaciones que se importan; si falta, se importan todas. etabs_files: el Excel, para
     `run` (D-096)."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _layout(cls, data: Any) -> Any:
+        """concrete, reinforcement_steel y soil de la entrada a la estructura interna (D-139)."""
+        return internal(data)
+
 
     description: str
     profile: str
@@ -198,6 +206,13 @@ class EtabsFootingTemplate(_Input):
     de carga muerta y viva (que se aplican al peso propio, al relleno y a las sobrecargas, D-054, D-057) vienen del Excel
     de combinaciones declarado en etabs_files.combinations (D-137)."""
 
+    @model_validator(mode="before")
+    @classmethod
+    def _layout(cls, data: Any) -> Any:
+        """concrete, reinforcement_steel y soil de la entrada a la estructura interna (D-139)."""
+        return internal(data)
+
+
     description: str
     profile: str
     seismic: SeismicFacts
@@ -233,6 +248,13 @@ class EtabsFootingDesignTemplate(_Input):
     hace el diseño (D-069). soil y design se validan con el proyecto de diseño que se genera. Solo entran los Unique Name
     de columns; exclude_unique_names quita algunos de ellos sin borrarlos de su grupo (D-111)."""
 
+    @model_validator(mode="before")
+    @classmethod
+    def _layout(cls, data: Any) -> Any:
+        """concrete, reinforcement_steel y soil de la entrada a la estructura interna (D-139)."""
+        return internal(data)
+
+
     description: str
     profile: str
     seismic: SeismicFacts
@@ -265,6 +287,13 @@ class EtabsCombinedDesignTemplate(_Input):
     salen de los Excel y las demás, de columns[].loads. combined_design, soil y materials se validan con el proyecto de
     diseño que se genera; placement_case nombra la combinación de ETABS (como la escribe el importador)."""
 
+    @model_validator(mode="before")
+    @classmethod
+    def _layout(cls, data: Any) -> Any:
+        """concrete, reinforcement_steel y soil de la entrada a la estructura interna (D-139)."""
+        return internal(data)
+
+
     description: str
     profile: str
     seismic: SeismicFacts
@@ -289,3 +318,87 @@ class EtabsCombinedDesignTemplate(_Input):
     def etabs_kinds(self) -> tuple[str, ...]:
         """Los tipos de carga que salen de los Excel de ETABS."""
         return _etabs_kinds(self.loads_source)
+
+
+class TemplatePile(_Input):
+    """Un pilote de la plantilla de cabezales (D-138): su centro respecto al centroide del cabezal y, si las cargas salen
+    de los pilotes, el Unique Name del elemento de ETABS que lo modela y el ángulo de su eje local 2 respecto a X global
+    (grados; 0 por omisión: eje 2 = X, eje 3 = Y)."""
+
+    id: str = Field(min_length=1)
+    x: float
+    y: float
+    etabs_unique_name: str | None = Field(default=None, min_length=1)
+    angle: float = 0.0
+
+
+class TemplatePileCap(BaseModel):
+    """Un cabezal de la plantilla (D-138): el cuerpo del cabezal del proyecto sin cargas (se valida al armar el proyecto)
+    y de dónde salen: etabs_unique_name, el nudo de la columna en "Joint Reactions"; o los pilotes con su Unique Name y
+    etabs_station, la estación (en m, como la escribe ETABS) de la que se toman sus fuerzas en "Element Forces - Columns".
+    Con las de los pilotes, column_unique_name es el nudo de la columna del cabezal en la tabla de coordenadas (Joint
+    Location), obligatorio si la plantilla la declara: ubica el cabezal en la planta de localización."""
+
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    id: str = Field(min_length=1)
+    etabs_unique_name: str | None = Field(default=None, min_length=1)
+    etabs_station: float | None = None
+    column_unique_name: str | None = Field(default=None, min_length=1)
+    piles: tuple[TemplatePile, ...] = Field(min_length=1)
+
+    @property
+    def from_piles(self) -> bool:
+        return self.etabs_unique_name is None
+
+    @property
+    def column_joint(self) -> str | None:
+        """El nudo de la columna del cabezal en la tabla de coordenadas: el de sus cargas o el declarado (D-138)."""
+        return self.etabs_unique_name or self.column_unique_name
+
+    @model_validator(mode="after")
+    def _check_source(self) -> Self:
+        named = [pile.etabs_unique_name is not None for pile in self.piles]
+        if self.etabs_unique_name is not None:
+            if any(named) or self.etabs_station is not None or self.column_unique_name is not None:
+                raise ValueError(f"el cabezal '{self.id}' toma las cargas de la columna: sus pilotes no llevan etabs_unique_name "
+                                 "ni el cabezal etabs_station ni column_unique_name (la columna es etabs_unique_name)")
+            return self
+        if not all(named):
+            raise ValueError(f"el cabezal '{self.id}' necesita etabs_unique_name (columna) o el de cada uno de sus pilotes")
+        if self.etabs_station is None:
+            raise ValueError(f"el cabezal '{self.id}' toma las cargas de los pilotes: declara etabs_station (m)")
+        return self
+
+
+class EtabsPileCapTemplate(_Input):
+    """Plantilla de cabezales de ETABS (D-138): lo que ETABS no trae (perfil, materiales, suelo y datos geotécnicos de
+    los pilotes, geometría, pilotes y armado) y los Excel. Todos los cabezales toman las
+    cargas de la misma fuente: de la columna (tablas Joint Reactions) o de los pilotes (tablas Element Forces - Columns)."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _layout(cls, data: Any) -> Any:
+        """concrete, reinforcement_steel y soil de la entrada a la estructura interna (D-139)."""
+        return internal(data)
+
+
+    description: str
+    profile: str
+    seismic: SeismicFacts
+    materials: Materials
+    soil: dict[str, Any]
+    pile_caps: tuple[TemplatePileCap, ...] = Field(min_length=1)
+    detailing: dict[str, float] | None = None
+    drawing: dict[str, float] | None = None
+    etabs_files: FootingEtabsFiles | None = None
+
+    @model_validator(mode="after")
+    def _check_source(self) -> Self:
+        if len({cap.from_piles for cap in self.pile_caps}) > 1:
+            raise ValueError("todos los cabezales de la plantilla toman las cargas de la misma fuente: la columna o los pilotes")
+        return self
+
+    @property
+    def from_piles(self) -> bool:
+        return self.pile_caps[0].from_piles

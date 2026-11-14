@@ -5,11 +5,13 @@
     "level": "intermediate",
     "justification": "Pórtico intermedio (equivalente a DMO) declarado por el ingeniero para este ejemplo."
   },
-  "materials": {
+  "concrete": {
     "fc": 28.0,
+    "type": "normalweight"
+  },
+  "reinforcement_steel": {
     "fy": 420.0,
     "fyt": 420.0,
-    "concrete": "normalweight",
     "coating": "uncoated"
   },
   "members": [

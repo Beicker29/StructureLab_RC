@@ -9,7 +9,17 @@ from typing import Any, Literal, Self
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
-from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Location, Mat, RectangularBase, Soil, _Input
+from structurelab_rc.model.footing import (
+    MPA_PER_KPA,
+    BarSet,
+    Dowels,
+    FootingLoad,
+    Location,
+    Mat,
+    RectangularBase,
+    UnitWeighted,
+    _Input,
+)
 from structurelab_rc.model.reinforcement import BarEnd, BarLayer, Stirrups
 
 COLUMNS = 2
@@ -252,7 +262,7 @@ class CombinedFooting(RectangularBase, _Input):
         """Área de las dos columnas (o pedestales), en mm²: el relleno y las sobrecargas ocupan el resto de la base."""
         return sum(column.area for column in self.columns)
 
-    def weights(self, soil: "Soil") -> tuple[float, float, float]:
+    def weights(self, soil: UnitWeighted) -> tuple[float, float, float]:
         """Pesos de la zapata (zarpa y viga), de los pedestales y del relleno, en N (D-093): el relleno ocupa la base sobre
         la zarpa menos la viga y, sobre la viga, su ancho menos las columnas."""
         if self.beam is None:

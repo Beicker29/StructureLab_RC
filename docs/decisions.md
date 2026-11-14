@@ -2632,6 +2632,66 @@
   las plantillas (mismos factores y marca de sismo). Se migraron las plantillas de los dos perfiles, las de iterar y las
   de `pruebas/`. Los proyectos importados son los mismos: las huellas no cambian.
 
+### D-138: verificación de cabezales sobre pilotes (v3 Fase 5)
+
+- **Alcance (plan aprobado):** cabezal de una columna sobre pilotes declarados por coordenadas, en los dos perfiles;
+  primero la verificación. El modelo hereda de la zapata aislada y reutiliza sus mallas, flexión, desarrollo,
+  pasadores, aplastamiento, despiece y dibujo; lo propio va en `domain/pile_cap/` y `codes/<perfil>/pile_cap.py`.
+- **Cargas (decisión del usuario):** de la columna o de cada pilote, declaradas o desde ETABS: cuatro ejemplos por perfil.
+  Con cargas de los pilotes se declara por cabezal si sus reacciones incluyen el peso (si no, se suma repartido). Desde
+  ETABS, los pilotes salen de "Element Forces - Columns" en la estación declarada (`etabs_station`); entran P, V y M
+  (decisión del usuario), opuestos a la fuerza interna, con el eje local 2 a un ángulo declarado de X (0 por omisión).
+- **Mala ubicación (decisión del usuario):** tolerancia obligatoria en los dos perfiles; con ACI, menor que 75 mm no
+  cumple (13.4.1.4). Siempre aumenta los brazos del lado desfavorable. Con cargas de la columna, la excentricidad
+  accidental (la tolerancia, en la dirección más desfavorable para cada pilote) aumenta además las reacciones, y con
+  ella la capacidad sube 10 % en ACI. Con cargas de los pilotes la tolerancia solo afecta la geometría del cabezal
+  (decisión del usuario, 2026-11-14).
+- **Guía CRSI:** límites en la cara de la columna (estados límite 4 a 6) con las constantes en √psi pasadas a √MPa con
+  0.083 (decisión del usuario); el estado límite 4 usa el perímetro real, bs = 2(cx + cy), c = (cx + cy)/2 (decisión
+  del usuario). El As mínimo es la interpretación de la guía (4.5), dada por el usuario: As requerido =
+  máx(As, mín(ηbd, 4/3·As), mín(ηbd, ρt·b·D)), que reproduce sus cuatro casos (en la imagen del caso 1 se lee "hbd";
+  la guía dice ηbd). η y 4/3 son los de ACI 9.6.1.2 y 9.6.1.3 (NSR-10 C.10.5.1 y C.10.5.3); ρt el de retracción de
+  cada perfil. d es el de las mallas, el mismo de zapatas y vigas (decisión del usuario).
+- **Cortante:** ACI 13.4.6.5 remite a 22.5 (con λs y ρw) y 22.6; el 13.2.6.2 de las zapatas sobre el suelo no aplica.
+  Con pilotes a 4 diámetros o menos, 13.4.6.8 permite en una dirección Vc = 0.17λ√f'c·bw·d (el PDF en SI escribe
+  2λ√f'c, la forma en √psi; la ecuación en SI es decisión del usuario, C-017 resuelta) y se toma el mayor con el de
+  22.5; en dos direcciones, λs = 1 (13.4.6.8(b)). NSR-10 C.15.5.3 permite el método por
+  secciones en todos los cabezales (C.11.11 con C.15.5.4). Un perímetro de pilote que pierde más de dos lados (cabezal
+  angosto) no se revisa: ahí gobierna el cortante a todo el ancho.
+- **No incluido:** puntal-tensor, cabezales de varias columnas, requisitos sísmicos de los pilotes, punzonamiento de
+  grupos traslapados (P2), cortante de esquina en una dirección (P4) y el diseño.
+- **Suelo y revisiones geotécnicas (decisión del usuario):** el JSON sigue el formato de las zapatas: un bloque `soil`
+  con los pesos unitarios y los datos geotécnicos de los pilotes (capacidades a compresión, tracción y lateral, aumento
+  con sismo, eficiencia de grupo y excentricidad máxima); cada cabezal lleva geometría, pilote (sección y
+  empotramiento), pilotes y armado. Las revisiones se presentan como en las zapatas: presión admisible del pilote a
+  compresión y a tracción, deslizamiento (carga lateral), capacidad del grupo y, en las combinaciones de servicio sin
+  sismo (D+L), la excentricidad de la resultante respecto al centroide del grupo (|e| = √(ex² + ey²)).
+- **Ubicación (decisión del usuario):** los Excel "Joint Location" (en `columna/` y en `pilotes/`, que reemplaza a
+  "Column Location") dan la ubicación de las columnas. Cada cabezal declara su columna (con cargas de la columna, la de
+  sus cargas; con las de los pilotes, `column_unique_name`) y recibe su ubicación para la planta de localización. Los
+  pilotes del cabezal se declaran con sus coordenadas y su Unique Name.
+- **Ejemplos:** `cabezal_columna`, `cabezal_pilotes` y sus `_etabs` en los dos perfiles, con `pruebas/`; los Excel en
+  `examples/etabs/cabezales/columna/` y `pilotes/`, cada uno con su Excel de combinaciones. Los factores de las 16
+  combinaciones de pilotes son supuestos por el nombre (aprobados para revisar). El oráculo es
+  `tests/oracles/derive_pile_cap.py`. Las huellas existentes no cambian.
+- **Riesgo:** la convención de signos de M2 y M3 de ETABS (momento sobre la cara positiva, regla de la mano derecha) se
+  validará con el modelo del usuario.
+
+### D-139: bloques concrete, reinforcement_steel y soil en los JSON de entrada
+
+- **Pedido del usuario:** reorganizar `materials` y `soil` en tres bloques y reasignar cada dato donde pertenece, en
+  todos los JSON (proyectos, diseños y plantillas de ETABS de vigas, zapatas y cabezales). Los precios quedan en el
+  diseño.
+- **Asignación (aprobada):** `concrete` = `fc` (no en los diseños), `type` (antes `materials.concrete`),
+  `max_aggregate` y `unit_weight_kNm3` (antes `soil.unit_weight_concrete_kNm3`; solo con `soil`); `reinforcement_steel`
+  = `fy`, `fyt`, `coating`; `soil` = peso del relleno y datos geotécnicos.
+- **Implementación:** `model/layout.py` es la única traducción: `internal()` pasa la entrada a la estructura interna
+  (materials y el peso del concreto en soil) en los modelos de entrada, y `public()` hace lo inverso al escribir un
+  proyecto importado o diseñado. El cálculo no cambia. `materials` y `soil.unit_weight_concrete_kNm3` ya no se aceptan
+  (error claro). Se convirtieron todos los ejemplos (de iterar y de `pruebas/`, cambio registrado) y las pruebas.
+- **Huellas:** `resultado.json` y la memoria no cambian; solo el `proyecto.json` de los 6 diseños, que sale en el
+  formato nuevo.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

@@ -21,9 +21,11 @@ from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.footing.checks import combined_footing_checks, footing_checks
 from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
-from structurelab_rc.domain.footing.detailing import combined_runs, footing_runs
+from structurelab_rc.domain.footing.detailing import combined_runs, face_envelope, footing_runs, moment_envelope
 from structurelab_rc.domain.footing.drawing import combined_views, footing_views, location_views
 from structurelab_rc.domain.footing.loads import combined_factored_cases
+from structurelab_rc.domain.pile_cap.checks import cap_face_moments, pile_cap_checks
+from structurelab_rc.domain.pile_cap.drawing import pile_cap_views
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.drawing.dxf import write_dxf
@@ -40,6 +42,7 @@ from structurelab_rc.io.etabs.footings import (
     build_footing_project,
 )
 from structurelab_rc.io.etabs.importer import SHEET, EtabsImportError, ImportSummary, build_project
+from structurelab_rc.io.etabs.pile_caps import PILE_SHEET, build_pile_cap_project
 from structurelab_rc.io.etabs.xlsx import XlsxError, read_table
 from structurelab_rc.model.design import CombinedDesignProject, FootingDesignProject
 from structurelab_rc.model.loader import (
@@ -52,7 +55,7 @@ from structurelab_rc.model.loader import (
     validate_input,
 )
 from structurelab_rc.model.project import Project
-from structurelab_rc.model.template import EtabsCombinedDesignTemplate, EtabsFootingDesignTemplate
+from structurelab_rc.model.template import EtabsCombinedDesignTemplate, EtabsFootingDesignTemplate, EtabsPileCapTemplate
 from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.reporting.document import report_documents
 from structurelab_rc.reporting.figures import diagram_figures, pressure_figures
@@ -106,7 +109,9 @@ def _footing_template(data: dict[str, Any]) -> bool:
     files = data.get("etabs_files") or {}
     if isinstance(files, dict) and any(key in files for key in ("service", "factored", "combinations")):
         return True
-    items = [*(data.get("footings") or []), *(data.get("columns") or [])]
+    items = [*(data.get("footings") or []), *(data.get("columns") or []), *(data.get("pile_caps") or [])]
+    for cap in data.get("pile_caps") or []:  # cabezales (D-138): la columna o sus pilotes llevan el Unique Name
+        items += cap.get("piles") or [] if isinstance(cap, dict) else []
     for footing in data.get("combined_footings") or []:
         items += footing.get("columns") or [] if isinstance(footing, dict) else []
     return any(isinstance(item, dict) and ("etabs_unique_names" in item or "etabs_unique_name" in item) for item in items)
@@ -179,6 +184,9 @@ def run_project(path: Path) -> tuple[Project | None, tuple[Check, ...]]:
         for combined in project.combined_footings:
             checks.extend(combined_footing_checks(Basis(profile, project.materials, bars, project.seismic.level), combined,
                                                   project.soil))
+    if project.pile_soil is not None:
+        for cap in project.pile_caps:
+            checks.extend(pile_cap_checks(Basis(profile, project.materials, bars, project.seismic.level), cap, project.pile_soil))
     return project, tuple(checks)
 
 
@@ -213,23 +221,35 @@ def _detailing(project: Project | None, results: dict[str, Any], name: str) -> t
     """Agrega la cartilla de cada zapata a su entrada del resultado (D-125) si el proyecto pide despiece y la entrada es
     válida: (la cartilla de cada elemento, vacía si no se despieza; el dibujo del refuerzo si el proyecto lo pide, D-126)."""
     schedules: dict[str, list[ScheduleRow]] = {}
-    if project is None or project.detailing is None or project.soil is None:
+    if project is None or project.detailing is None:
         return schedules, None
-    if "footings" not in results and "combined_footings" not in results:
+    if not any(key in results for key in ("footings", "combined_footings", "pile_caps")):
         return schedules, None
     bars = load_engine().bars
     basis = Basis(PROFILES[project.profile], project.materials, bars, project.seismic.level)
-    stock, soil = project.detailing.stock_length, project.soil
+    stock = project.detailing.stock_length
     drawing = None if project.drawing is None else Drawing(name, project.drawing.scale)
-    entries = {entry["id"]: entry for entry in [*results.get("footings", []), *results.get("combined_footings", [])]}
-    for footing in project.footings:
+    entries = {entry["id"]: entry for key in ("footings", "combined_footings", "pile_caps") for entry in results.get(key, [])}
+    weights = project.pile_soil
+    for cap in project.pile_caps if weights is not None else ():  # cabezales (D-138)
+        assert weights is not None
+        concrete = sum(cap.weights(weights)[:2]) / weights.unit_weight_concrete / 1e9
+        runs = footing_runs(basis, cap, moment_envelope(cap_face_moments(basis, cap, weights)))
+        rows = schedules[cap.id] = schedule(cap.id, runs, stock)
+        entries[cap.id]["detailing"] = detailing_data(rows, concrete, stock)
+        if drawing is not None:
+            drawing.views[cap.id] = pile_cap_views(drawing, cap, runs, (rows, stock))
+    soil = project.soil
+    for footing in project.footings if soil is not None else ():
+        assert soil is not None
         concrete = sum(footing.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
-        runs = footing_runs(basis, footing, soil)
+        runs = footing_runs(basis, footing, face_envelope(footing, soil))
         rows = schedules[footing.id] = schedule(footing.id, runs, stock)
         entries[footing.id]["detailing"] = detailing_data(rows, concrete, stock)
         if drawing is not None:
             drawing.views[footing.id] = footing_views(drawing, footing, runs, (rows, stock))
-    for combined in project.combined_footings:
+    for combined in project.combined_footings if soil is not None else ():
+        assert soil is not None
         concrete = sum(combined.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
         runs = combined_runs(basis, combined, soil)
         rows = schedules[combined.id] = schedule(combined.id, runs, stock)
@@ -237,7 +257,7 @@ def _detailing(project: Project | None, results: dict[str, Any], name: str) -> t
         if drawing is not None:
             drawing.views[combined.id] = combined_views(drawing, combined, runs, (rows, stock))
     if drawing is not None:
-        located = location_views(drawing, project.footings, project.combined_footings)  # D-130
+        located = location_views(drawing, [*project.footings, *project.pile_caps], project.combined_footings)  # D-130, D-138
         if located:
             drawing.views[LOCATION] = located
     return schedules, drawing
@@ -339,13 +359,17 @@ def import_etabs_footings(
             raise EtabsImportError((invalid_input("Falta el Excel de combinaciones: declarelo en etabs_files.combinations de la "
                                                   "plantilla (D-137)"),))
         listed = read_combinations(chosen)
-        found = tuple(None if path is None else read_table(path, etabs_footings.SHEET) for path in (service, factored))
+        sheet = PILE_SHEET if isinstance(template, EtabsPileCapTemplate) and template.from_piles else etabs_footings.SHEET
+        found = tuple(None if path is None else read_table(path, sheet) for path in (service, factored))
         tables = (found[0], found[1])
         coordinates = None if locations is None else read_table(locations, etabs_footings.LOCATION_SHEET)
         if isinstance(template, EtabsFootingDesignTemplate):
             project, summary = build_footing_design_project(template, tables, listed, coordinates)
             design = validate_input(project, FootingDesignProject)
             validation = _validate_design(design)
+        elif isinstance(template, EtabsPileCapTemplate):  # cabezales (D-138)
+            project, summary = build_pile_cap_project(template, tables, listed, coordinates)
+            validation = validate_project(validate_input(project, Project), load_engine().bars)
         elif isinstance(template, EtabsCombinedDesignTemplate):  # diseño de una zapata combinada (D-112)
             project, summary = build_combined_design_project(template, tables, listed)
             validation = _validate_design(validate_input(project, CombinedDesignProject))

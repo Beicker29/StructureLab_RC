@@ -5,17 +5,19 @@
     "level": "special",
     "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
   },
-  "materials": {
+  "concrete": {
+    "type": "normalweight",
+    "max_aggregate": 19.0,
+    "unit_weight_kNm3": 24.0
+  },
+  "reinforcement_steel": {
     "fy": 420.0,
     "fyt": 420.0,
-    "concrete": "normalweight",
-    "coating": "uncoated",
-    "max_aggregate": 19.0
+    "coating": "uncoated"
   },
   "soil": {
     "allowable_pressure_kPa": 250.0,
     "min_contact_fraction": 0.5,
-    "unit_weight_concrete_kNm3": 24.0,
     "unit_weight_fill_kNm3": 18.0,
     "friction_coefficient": 0.45,
     "adhesion_kPa": 0.0,

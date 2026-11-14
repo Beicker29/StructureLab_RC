@@ -115,6 +115,10 @@ de ETABS se convierte en la acción sobre la zapata: P = FZ, Vx = −FX, Vy = �
 casos de servicio se verifican la presión admisible (pmax ≤ qa, presión bruta con los pesos propios) y el
 contacto mínimo (D-056); la verificación estructural aún no existe y queda `BLOCKED`. La plantilla de ejemplo usa datos supuestos.
 
+Los cabezales sobre pilotes (`pile_caps`, D-138) se verifican con las cargas de la columna o de cada pilote, declaradas o
+desde ETABS ("Joint Reactions" o "Element Forces - Columns" en la estación declarada); ver
+[docs/formatos/cabezales.md](docs/formatos/cabezales.md).
+
 `design-footings` diseña zapatas por tipologías (D-069): a partir de columnas con sus casos de carga y un bloque
 `design` (número de tipologías, f'c comerciales con su precio por m³, precio del acero por kg, forma en planta y
 límites), encuentra las N zapatas tipo (f'c, dimensiones, mallas y pasadores por columna) de menor costo que cubren todas

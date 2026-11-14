@@ -10,6 +10,7 @@ from typing import Any
 
 from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.io.etabs.xlsx import Table
+from structurelab_rc.model.layout import public
 from structurelab_rc.model.template import EtabsTemplate, TemplateMember
 
 SHEET = "Element Forces - Beams"
@@ -115,4 +116,4 @@ def build_project(template: EtabsTemplate, table: Table) -> tuple[dict[str, Any]
     project["members"] = members
     cases = tuple(sorted({station["case"] for member in members for station in member["stations"]}))
     summary = ImportSummary(len(members), sum(len(member["stations"]) for member in members), cases, skipped)
-    return project, summary
+    return public(project), summary
