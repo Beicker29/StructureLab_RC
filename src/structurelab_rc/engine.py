@@ -1,6 +1,7 @@
 """Orquestación de los casos de uso."""
 
 import json
+import os
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -14,7 +15,7 @@ from structurelab_rc.design.footing.assignment import available as solver_availa
 from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project, typology_curve
 from structurelab_rc.design.footing.typology import Context
-from structurelab_rc.detailing.schedule import schedule
+from structurelab_rc.detailing.schedule import ScheduleRow, schedule
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check, check_from_errors
@@ -29,6 +30,7 @@ from structurelab_rc.drawing.dxf import write_dxf
 from structurelab_rc.drawing.model import Drawing
 from structurelab_rc.drawing.svg import view_svg
 from structurelab_rc.errors import invalid_input
+from structurelab_rc.io.dlnet import TEMPLATE_PATH, TEMPLATE_VARIABLE, find_template, schedule_dli
 from structurelab_rc.io.etabs import footings as etabs_footings
 from structurelab_rc.io.etabs.footings import (
     FootingImportSummary,
@@ -171,6 +173,7 @@ class Report:
     status: str
     files: tuple[Path, ...]
     pdf_written: bool
+    notes: tuple[str, ...] = ()  # lo que no se escribió y por qué (la cartilla DL-NET sin plantilla, D-133)
 
 
 def _combined_diagrams(project: Project | None, checks: tuple[Check, ...]) -> Diagrams:
@@ -188,13 +191,14 @@ def _combined_diagrams(project: Project | None, checks: tuple[Check, ...]) -> Di
     return diagrams
 
 
-def _detailing(project: Project | None, results: dict[str, Any], name: str) -> tuple[bool, Drawing | None]:
+def _detailing(project: Project | None, results: dict[str, Any], name: str) -> tuple[dict[str, list[ScheduleRow]], Drawing | None]:
     """Agrega la cartilla de cada zapata a su entrada del resultado (D-125) si el proyecto pide despiece y la entrada es
-    válida: (True si la agregó, el dibujo del refuerzo si el proyecto lo pide, D-126)."""
+    válida: (la cartilla de cada elemento, vacía si no se despieza; el dibujo del refuerzo si el proyecto lo pide, D-126)."""
+    schedules: dict[str, list[ScheduleRow]] = {}
     if project is None or project.detailing is None or project.soil is None:
-        return False, None
+        return schedules, None
     if "footings" not in results and "combined_footings" not in results:
-        return False, None
+        return schedules, None
     bars = load_engine().bars
     basis = Basis(PROFILES[project.profile], project.materials, bars, project.seismic.level)
     stock, soil = project.detailing.stock_length, project.soil
@@ -203,14 +207,14 @@ def _detailing(project: Project | None, results: dict[str, Any], name: str) -> t
     for footing in project.footings:
         concrete = sum(footing.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
         runs = footing_runs(basis, footing, soil)
-        rows = schedule(footing.id, runs, stock)
+        rows = schedules[footing.id] = schedule(footing.id, runs, stock)
         entries[footing.id]["detailing"] = detailing_data(rows, concrete, stock)
         if drawing is not None:
             drawing.views[footing.id] = footing_views(drawing, footing, runs, (rows, stock))
     for combined in project.combined_footings:
         concrete = sum(combined.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
         runs = combined_runs(basis, combined, soil)
-        rows = schedule(combined.id, runs, stock)
+        rows = schedules[combined.id] = schedule(combined.id, runs, stock)
         entries[combined.id]["detailing"] = detailing_data(rows, concrete, stock)
         if drawing is not None:
             drawing.views[combined.id] = combined_views(drawing, combined, runs, (rows, stock))
@@ -218,7 +222,18 @@ def _detailing(project: Project | None, results: dict[str, Any], name: str) -> t
         located = location_views(drawing, project.footings, project.combined_footings)  # D-130
         if located:
             drawing.views[LOCATION] = located
-    return True, drawing
+    return schedules, drawing
+
+
+def _dli_file(schedules: dict[str, list[ScheduleRow]], output: Path, start: Path) -> tuple[list[Path], list[str]]:
+    """Escribe la cartilla DL-NET <caso>.dli (D-133) con la plantilla que encuentra find_template: (archivos, avisos)."""
+    template = find_template(start, dict(os.environ))
+    if template is None:
+        return [], [f"{output.name}.dli no se genero: falta la plantilla DL-NET ({TEMPLATE_PATH.as_posix()} o la variable "
+                    f"{TEMPLATE_VARIABLE})"]
+    path = output / f"{output.name}.dli"
+    path.write_bytes(schedule_dli(list(schedules.items()), template))
+    return [path], []
 
 
 def _drawing_files(drawing: Drawing, output: Path) -> tuple[list[Path], dict[str, list[tuple[Path, float, str]]]]:
@@ -247,7 +262,7 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
     project, checks = run_project(path)
     results = build_results(project, checks, __version__, _combined_diagrams(project, checks))
-    detailed, drawing = (False, None) if checks[0].status is Status.FAIL else _detailing(project, results, path.stem)
+    schedules, drawing = ({}, None) if checks[0].status is Status.FAIL else _detailing(project, results, path.stem)
     output.mkdir(parents=True, exist_ok=True)
     figures = pressure_figures(results, output)
     diagram_files = diagram_figures(results, output)
@@ -259,12 +274,14 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     memoir_path.write_text(text, encoding="utf-8", newline="\n")
     pdf_written = write_pdf(documents, pdf_path)
     files = (result_path, memoir_path, pdf_path) if pdf_written else (result_path, memoir_path)
-    if detailed:  # la cartilla de todos los elementos (D-125)
+    notes: list[str] = []
+    if schedules:  # la cartilla de todos los elementos (D-125) y la cartilla DL-NET (D-133)
         schedule_path = output / "cartilla.csv"
         schedule_path.write_text(detailing_csv(results), encoding="utf-8", newline="\n")
-        files = (*files, schedule_path)
+        dli_paths, notes = _dli_file(schedules, output, path.parent)
+        files = (*files, schedule_path, *dli_paths)
     files = (*files, *figures.values(), *(path for paths in diagram_files.values() for path in paths), *drawing_paths)
-    return Report(results["status"], files, pdf_written)
+    return Report(results["status"], files, pdf_written, tuple(notes))
 
 
 def import_etabs(workbook: Path, template_path: Path) -> tuple[dict[str, Any] | None, ImportSummary | None, Check]:

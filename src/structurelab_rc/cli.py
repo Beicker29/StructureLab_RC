@@ -244,6 +244,8 @@ def _report(project: Path, output: Path, full: bool) -> int:
         print(f"  {path}")
     if not report.pdf_written:
         print("  memoria.pdf no se genero: instale el extra con  pip install structurelab-rc[pdf]")
+    for note in report.notes:
+        print(f"  {note}")
     return 1 if report.status == Status.FAIL else 0
 
 

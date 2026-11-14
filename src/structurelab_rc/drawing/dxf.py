@@ -3,7 +3,7 @@ elemento en fila, separadas, en el espacio modelo a escala 1:1 en mm."""
 
 from pathlib import Path
 
-from structurelab_rc.drawing.model import LAYERS, Circle, Dimension, Drawing, Line, Polyline, Text, dimension_line
+from structurelab_rc.drawing.model import Circle, Dimension, Drawing, Line, Polyline, Text, dimension_line, layer_style
 
 _GAP_FACTOR = 0.15  # separación entre vistas, fracción del ancho de la vista
 
@@ -26,7 +26,8 @@ def write_dxf(drawing: Drawing, path: Path) -> bool:
     aligns = {"left": TextEntityAlignment.LEFT, "center": TextEntityAlignment.CENTER, "right": TextEntityAlignment.RIGHT}
     document = ezdxf.new("R2010", setup=True)
     document.units = ezdxf.units.MM
-    for name, (_, aci, weight) in LAYERS.items():
+    for name in drawing.layers():
+        _, aci, weight = layer_style(name)
         document.layers.add(name, color=aci, lineweight=int(round(weight * 100)))
     space = document.modelspace()
     row = 0.0
@@ -43,7 +44,11 @@ def write_dxf(drawing: Drawing, path: Path) -> bool:
                     space.add_lwpolyline([_shift(p, dx, dy) for p in entity.points], close=entity.closed,
                                          dxfattribs={**attributes, **({"linetype": "DASHED"} if entity.dashed else {})})
                 elif isinstance(entity, Circle):
-                    space.add_circle(_shift(entity.center, dx, dy), entity.radius, dxfattribs=attributes)
+                    centre = _shift(entity.center, dx, dy)
+                    space.add_circle(centre, entity.radius, dxfattribs=attributes)
+                    if entity.filled:  # barra cortada: el círculo relleno
+                        hatch = space.add_hatch(color=256, dxfattribs=attributes)  # 256: color de la capa
+                        hatch.paths.add_edge_path().add_arc(centre, entity.radius, 0, 360)
                 elif isinstance(entity, Text):
                     text = space.add_text(entity.text, height=entity.height, dxfattribs=attributes)
                     text.set_placement(_shift(entity.at, dx, dy), align=aligns[entity.align])

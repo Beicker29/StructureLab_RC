@@ -2478,6 +2478,61 @@
   - `test_shear_depth_is_not_less_than_0_8h` pasa a Pu = −500 kN, con las dos capas en fluencia, para que el mínimo de
     0.8h siga gobernando. El valor esperado, 400 mm, no cambia.
 
+### D-132: plantas de refuerzo al estilo de los planos de despiece, planta de geometría y una capa por diámetro
+
+- **Fecha:** 2026-11-14
+- **Pedido del usuario** (con un croquis de una zapata combinada): mejorar el dibujo que se exporta al DXF.
+- **Decisiones del usuario:**
+  - En las plantas de refuerzo, una barra representativa por zona con su número en un círculo y una leyenda por número
+    ("① 1#8 @ 15 cm"); el número es por grupo de barras y la leyenda nombra además sus marcas de la cartilla.
+  - Las plantas de las zapatas alargadas siguen con el lado largo horizontal (los ejes de la viga, D-094).
+  - Las cotas de la posición de las columnas (la distancia del borde a la cara de la columna del croquis) no van en las
+    plantas de refuerzo, sino en una planta de geometría nueva con la base, las columnas, su posición y el recubrimiento.
+  - Una capa por diámetro de barra.
+- **Código:**
+  - `drawing/views.py`: `numbered` (número por grupo y designación), `legend_text`, `zones` (un grupo se parte donde el
+    hueco supera 1.5 separaciones), la barra representativa con los ganchos abatidos, la línea de distribución y los
+    tramos empalmados (`detailing/schedule.splice_spans`, que comparte con `_spliced` el cálculo de los cortes),
+    `geometry_view` y los cortes rotulados con el número y la leyenda.
+  - `drawing/model.py`: capas `REFUERZO_<barra>` con un color fijo por el número de la barra (`bar_layer`,
+    `layer_style`), capa `COLUMNAS` (amarillo), y `Circle.filled` (los números van en círculos sin relleno). Salen
+    `REFUERZO` y `REFUERZO_CORTE`; las barras cortadas son círculos rellenos (con sombreado en el DXF) en la capa de
+    su diámetro. `EJES` pasa a usarse en la planta de geometría.
+  - `domain/footing/drawing.py`: la planta de geometría de cada tipo y las columnas en `COLUMNAS`.
+- **Ejemplos:** sin cambios de entrada. Cambian `<nombre>_drawing.json` de las copias de pruebas con `drawing` y su
+  `memoria.txt` (la planta de geometría entra en el capítulo de despiece); `resultado.json` no cambia.
+- **Control:** `tests/test_drawing.py`: una barra por zona y tramo, una capa por diámetro, un número por grupo con su línea
+  de leyenda, tres zonas en la malla y de la combinada, los dos tramos traslapados de la barra x de la combinada, las
+  cotas de la planta de geometría y las capas y el sombreado del DXF.
+
+### D-133: cartilla DL-NET (.dli) para el pedido de acero figurado
+
+- **Fecha:** 2026-11-14
+- **Pedido del usuario:** además de la memoria, el DXF y la cartilla, generar un `.dli` que DL-NET (PazdelRío) abra
+  directamente, con el prototipo de lector y escritor validado y dos archivos guardados por DL-NET (`n_12.dli` y
+  `PRUEBA_StructureLab.dli`, que el usuario confirmó que abre bien).
+- **Decisiones del usuario:**
+  - Una sola función para todos los elementos: el exportador traduce la cartilla del despiece (`detailing/schedule`),
+    el mismo modelo de las zapatas, las vigas y lo que venga. `Piece` gana el ángulo de cada gancho, para que el
+    exportador distinga 90° (`L`) de lo que DL-NET no representa; la cartilla no cambia.
+  - La plantilla (un `.dli` real) lleva la licencia de DL-NET del usuario: queda local, fuera de Git
+    (`references/dlnet/plantilla.dli` o la variable `STRUCTURELAB_DLNET_TEMPLATE`; las pruebas con los archivos reales,
+    en `tests/fixtures/dlnet/`, ignorada, se saltan si no están).
+  - Se escribe siempre que el proyecto tenga `detailing` y haya plantilla; sin plantilla, `run` lo avisa.
+- **Formato** (ingeniería inversa; detalle en `docs/formatos/dlnet.md`): registros con puntero float64, largo uint16,
+  texto latin-1 y cola de 2 bytes; el bloque de elementos entre las librerías y la cola. Hallazgos al integrar: la cola
+  del archivo no es fija (la pertenencia de cada grupo lleva `" 1 "` por elemento) y se rehace con el número de
+  elementos; DL-NET deja residuo después de `FINALDEARCHIVORANDOM` al guardar encima de un archivo más largo (se
+  ignora).
+- **Código:** `io/dlnet.py` (en la capa `io`, junto al importador de ETABS: registros, lectura y escritura, mapa de
+  barras desde la librería de la plantilla, líneas, `schedule_dli` y `find_template`); `engine` escribe `<caso>.dli`
+  (con el nombre de la carpeta de salida) y `Report.notes` lleva el aviso si falta la plantilla.
+- **Por confirmar en DL-NET** (constantes con `TODO D-133`): longitud total desarrollada, patas y estribo con
+  dimensiones exteriores, `U` como gancho de 180°, el campo `F0/90` del estribo y la pertenencia de los grupos.
+- **Control:** `tests/test_dlnet.py`: round-trip byte a byte de `n_12.dli`, punteros de un archivo generado, líneas
+  iguales a las guardadas por DL-NET, formato numérico, mapa de diámetros, grupos, errores ante lo no soportado y la
+  salida de `report`.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

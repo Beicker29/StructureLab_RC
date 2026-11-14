@@ -66,7 +66,8 @@ existente. Sin fórmulas propias; si nada cumple, `FAIL` con el motivo y los lí
     concreto);
   - aplicado a mallas, pasadores, viga larga (cortes, estribos, piel) y franjas.
 - **4B Dibujo** (hecho para zapatas aisladas, combinadas y T, D-126; planta de localización por nivel con la tabla de
-  coordenadas de ETABS, D-130) (`drawing/`, neutro):
+  coordenadas de ETABS, D-130; plantas de refuerzo con barra representativa por zona, leyenda, planta de geometría y
+  una capa por diámetro, D-132) (`drawing/`, neutro):
   - modelo de dibujo neutro `<nombre>_drawing.json` (capas, líneas, polilíneas, círculos, textos, cotas y tablas en
     mm);
   - vistas: planta con mallas y marcas, cortes en X y en Y; en la combinada, alzado de la viga larga con cortes y

@@ -368,7 +368,8 @@ En los proyectos de diseño (por tipologías y de la combinada o la T, y en sus 
 | `detailing.stock_length_mm` | mm | Longitud comercial de las barras: las más largas se parten en tramos con empalme por traslapo. |
 
 Con el bloque, `report` y `run` agregan a cada zapata su cartilla (`detailing` en `resultado.json`), escriben
-`cartilla.csv` (separado por punto y coma) y la memoria lleva el capítulo "Despiece y cantidades":
+`cartilla.csv` (separado por punto y coma) y `<caso>.dli` (la cartilla en el formato de DL-NET para el pedido de acero,
+si hay plantilla; ver [dlnet.md](dlnet.md), D-133), y la memoria lleva el capítulo "Despiece y cantidades":
 
 - **Barras:** las mismas filas que revisa la verificación; las mallas de borde a borde menos el recubrimiento, con gancho
   estándar de 90° en los dos extremos si `end` es `hook`. En la combinada, el band y el band superior de cada columna,
@@ -402,7 +403,7 @@ Con el bloque, `report` y `run` agregan a cada zapata su cartilla (`detailing` e
 | `steel_by_designation [kg]`, `steel [kg]` | kg | Acero por designación y total. |
 | `concrete [m3]` | m³ | Volumen de concreto de la zapata y los pedestales (en la T, con el alma). |
 
-## Dibujo del refuerzo (`drawing`, D-126)
+## Dibujo del refuerzo (`drawing`, D-126, D-132)
 
 Bloque opcional del proyecto de verificación (y de las plantillas de ETABS de zapatas, que lo pasan al proyecto); requiere
 `detailing`, porque el dibujo rotula las marcas de la cartilla. Sin él no se dibuja.
@@ -420,13 +421,27 @@ Con el bloque, `report` y `run` escriben:
 - `<nombre>.dxf` si está instalado el extra `cad` (`pip install structurelab-rc[cad]`): todas las vistas en el espacio
   modelo, una fila por elemento.
 
-Vistas: planta del refuerzo inferior y, si lo hay, del superior (todas las barras con su marca, cantidad, barra y
-separación); en la aislada, cortes X-X e Y-Y por el eje de la columna; en la combinada y la T, alzado longitudinal por el
-eje de la viga (con los estribos) y un corte transversal por cada columna; y la cartilla como tabla con el croquis de cada
-forma (recta, L, U, estribo) y sus dimensiones A, B y C. La combinada se dibuja en los ejes de la viga (X a lo largo de la
-viga, D-094). En los cortes, las barras paralelas al plano son líneas con sus ganchos y las perpendiculares, puntos; los
-pasadores se dibujan en dos caras de la columna, a un recubrimiento de ellas (esquemático: su disposición no está en la
-entrada).
+Vistas de cada zapata (la combinada en los ejes de la viga, X a lo largo de la viga, D-094):
+
+- **Planta de geometría** (`<zapata>_geometria.svg`, D-132): contorno de la base (y el alma en la T), columnas con sus
+  ejes, el recubrimiento (línea a trazos y su valor) y cotas en cadena: abajo, de los bordes a las caras de las columnas
+  en x; a la izquierda, una cadena en y por cada columna (y otra por el alma); y los totales. Una nota da el espesor, el
+  pedestal y, en la T, la viga.
+- **Plantas del refuerzo inferior y, si lo hay, superior** (D-132), al estilo de los planos de despiece:
+  - cada grupo de barras (grupo y designación del despiece) lleva un número en un círculo, el mismo en todas las vistas
+    del elemento, y la leyenda a la derecha dice por número la cantidad, la barra, la separación y sus marcas de la
+    cartilla: `① 17 #7 c/150 (ZC1-01, ZC1-02)`;
+  - las barras de un grupo se parten en zonas donde el hueco entre dos barras vecinas supera 1.5 separaciones (la malla y
+    de la combinada queda a los lados de los band); cada zona se dibuja con una barra representativa a su largo real, con
+    los ganchos abatidos en el plano y una línea de distribución con marcas en la primera y la última barra;
+  - una barra empalmada se dibuja en sus tramos, desplazados y traslapados, con el rótulo `traslapo <mm>`;
+  - si una dirección tiene más de una zona, se acota cada una (de la primera a la última barra).
+  - Las plantas de refuerzo no acotan la posición de las columnas: eso va en la planta de geometría.
+- **Cortes:** en la aislada, X-X e Y-Y por el eje de la columna; en la combinada y la T, alzado longitudinal por el eje de
+  la viga (con los estribos) y un corte transversal por cada columna. Las barras paralelas al plano son líneas con sus
+  ganchos y las perpendiculares, puntos; cada grupo se rotula con su número y su leyenda. Los pasadores se dibujan en dos
+  caras de la columna, a un recubrimiento de ellas (esquemático: su disposición no está en la entrada).
+- **Cartilla** como tabla con el croquis de cada forma (recta, L, U, estribo) y sus dimensiones A, B y C.
 
 **Planta de localización (D-130).** Si alguna zapata tiene `location` (en la combinada, sus dos columnas), el dibujo
 agrega el elemento `localizacion`, que va en el SVG, el DXF y el modelo de dibujo pero no en la memoria:
@@ -439,16 +454,16 @@ agrega el elemento `localizacion`, que va en el SVG, el DXF y el modelo de dibuj
 - **El cuadro de tipologías** (`localizacion_cuadro_tipologias.svg`): tipo, lx × ly × h, mallas inferior y superior en
   ejes globales, y cantidad.
 
-Capas fijas por tipo de objeto:
+Capas fijas por tipo de objeto y una por diámetro de barra (D-132):
 
 | Capa | Color | Grosor (mm) | Contenido |
 | --- | --- | --- | --- |
-| `CONCRETO` | 5 (azul) | 0.35 | Contorno de la zapata, el alma, los pedestales y el arranque de las columnas. |
-| `REFUERZO` | 1 (rojo) | 0.35 | Barras en planta y paralelas al corte, estribos y pasadores. |
-| `REFUERZO_CORTE` | 1 (rojo) | 0.25 | Barras cortadas (puntos). |
-| `COTAS` | 8 (gris) | 0.18 | Cotas. |
-| `TEXTOS` | 7 (negro) | 0.18 | Títulos, rótulos de las barras y sus líneas. |
-| `EJES` | 9 (gris claro) | 0.13 | Reservada para ejes. |
+| `CONCRETO` | 5 (azul) | 0.35 | Contorno de la zapata, el alma y los pedestales. |
+| `COLUMNAS` | 2 (amarillo) | 0.35 | Columnas en planta y su arranque en los cortes. |
+| `REFUERZO_<barra>` | uno por diámetro | 0.35 | Todas las barras de ese diámetro (`REFUERZO_#5`): en planta, paralelas al corte, cortadas (círculo relleno), estribos y pasadores. Color por el número de la barra: #3 azul (4), #4 rojo (1), #5 naranja (30), #6 verde (94), #7 rojo oscuro (14), #8 morado (200), #9 verde azulado (130), #10 azul oscuro (150), #11 ocre (50), #14 violeta (6), #18 turquesa (3); otra barra, gris (251). |
+| `COTAS` | 8 (gris) | 0.18 | Cotas, líneas de distribución y recubrimiento. |
+| `TEXTOS` | 7 (negro) | 0.18 | Títulos, números de los grupos, leyendas, rótulos y sus líneas. |
+| `EJES` | 9 (gris claro) | 0.13 | Ejes de las columnas en la planta de geometría. |
 | `CARTILLA` | 7 (negro) | 0.18 | Tabla y croquis de la cartilla. |
 
 ## Salida

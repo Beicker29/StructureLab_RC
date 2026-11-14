@@ -66,7 +66,9 @@ class BarRun:
 
 @dataclass(frozen=True)
 class Piece:
-    """Un tipo de barra cortada: forma, dimensiones exteriores (mm) y longitud de corte redondeada (mm)."""
+    """Un tipo de barra cortada: forma, dimensiones exteriores (mm), longitud de corte redondeada (mm) y el ángulo del
+    gancho de cada extremo (None si no tiene; en el estribo, los dos ganchos de cierre). Es el modelo de despiece de
+    todos los elementos: la cartilla, el dibujo y la cartilla DL-NET (D-133) lo leen."""
 
     group: str
     designation: str
@@ -76,6 +78,7 @@ class Piece:
     mass_kg_m: float
     count: int
     note: str
+    angles: tuple[int | None, int | None] = (None, None)
 
 
 @dataclass(frozen=True)
@@ -136,6 +139,11 @@ def _stirrup_length(run: BarRun) -> tuple[float, list[tuple[str, float]]]:
     return straight + corners + 2 * hook.extension, [("A", width), ("B", height), ("C", hook.extension)]
 
 
+def _angles(hooks: tuple[Hook | None, Hook | None]) -> tuple[int | None, int | None]:
+    start, end = hooks
+    return None if start is None else start.angle, None if end is None else end.angle
+
+
 def _shape(hooks: tuple[Hook | None, Hook | None]) -> str:
     count = sum(hook is not None for hook in hooks)
     return ("recta", "L", "U")[count]
@@ -146,11 +154,13 @@ def pieces(run: BarRun, stock: float) -> list[Piece]:
     traslapo, con los empalmes de la mitad de las barras corridos medio tramo comercial."""
     if run.stirrup is not None:
         length, dimensions = _stirrup_length(run)
-        return [Piece(run.group, run.designation, "estribo", tuple(dimensions), round_up(length), run.mass_kg_m, run.count, run.note)]
+        return [Piece(run.group, run.designation, "estribo", tuple(dimensions), round_up(length), run.mass_kg_m, run.count, run.note,
+                      _angles(run.hooks))]
     total, dimensions = _straight_length(run, run.length, run.hooks)
     if round_up(total) <= stock or run.lap is None:
         note = run.note if round_up(total) <= stock else f"{run.note}; supera la longitud comercial y no se empalma".lstrip("; ")
-        return [Piece(run.group, run.designation, _shape(run.hooks), tuple(dimensions), round_up(total), run.mass_kg_m, run.count, note)]
+        return [Piece(run.group, run.designation, _shape(run.hooks), tuple(dimensions), round_up(total), run.mass_kg_m, run.count, note,
+                      _angles(run.hooks))]
     patterns = [(math.ceil(run.count / 2), stock), (run.count // 2, stock / 2)] if run.count > 1 else [(1, stock)]
     result: list[Piece] = []
     for count, first in patterns:
@@ -159,19 +169,40 @@ def pieces(run: BarRun, stock: float) -> list[Piece]:
     return result
 
 
-def _spliced(run: BarRun, total_count: tuple[float, int], lengths: tuple[float, float]) -> list[Piece]:
-    """Tramos de una barra partida: el primero de largo first (por el eje), los siguientes de la longitud comercial, cada
-    uno traslapado lap con el anterior; los ganchos van en el primero y en el último."""
-    total, count = total_count
+def _cuts(total: float, lap: float, lengths: tuple[float, float]) -> tuple[list[float], list[float]]:
+    """Inicio y fin, por el eje, de los tramos de una barra de largo total: el primero de largo first, los siguientes de la
+    longitud comercial, cada uno traslapado lap con el anterior; lengths = (first, stock)."""
     first, stock = lengths
-    assert run.lap is not None
     starts, ends, start, size = [], [], 0.0, first
     while start + size < total:
         starts.append(start)
         ends.append(start + size)
-        start, size = start + size - run.lap, stock
+        start, size = start + size - lap, stock
     starts.append(start)
     ends.append(total)
+    return starts, ends
+
+
+def splice_spans(run: BarRun, stock: float) -> list[tuple[float, float]]:
+    """Los tramos de las barras de una corrida que empiezan con un tramo comercial entero, para el dibujo (D-132): inicio y
+    fin de cada uno a lo largo del tramo recto exterior (de 0 a run.length); uno solo si la barra no se empalma."""
+    total, _ = _straight_length(run, run.length, run.hooks)
+    if run.lap is None or round_up(total) <= stock:
+        return [(0.0, run.length)]
+    hook, start_extra = run.hooks[0], 0.0  # lo que el gancho inicial agrega por el eje antes del tramo recto exterior
+    if hook is not None:
+        cut, arc, _ = _hook_parts(hook, run.diameter)
+        start_extra = arc + hook.extension - cut
+    starts, ends = _cuts(total, run.lap, (stock, stock))
+    return [(max(begin - start_extra, 0.0), min(end - start_extra, run.length)) for begin, end in zip(starts, ends, strict=True)]
+
+
+def _spliced(run: BarRun, total_count: tuple[float, int], lengths: tuple[float, float]) -> list[Piece]:
+    """Tramos de una barra partida: el primero de largo first (por el eje), los siguientes de la longitud comercial, cada
+    uno traslapado lap con el anterior; los ganchos van en el primero y en el último."""
+    total, count = total_count
+    assert run.lap is not None
+    starts, ends = _cuts(total, run.lap, lengths)
     result = []
     for index, (begin, end) in enumerate(zip(starts, ends, strict=True)):
         hooks = (run.hooks[0] if index == 0 else None, run.hooks[1] if index == len(starts) - 1 else None)
@@ -181,7 +212,8 @@ def _spliced(run: BarRun, total_count: tuple[float, int], lengths: tuple[float, 
                     for hook in hooks if hook is not None)
         _, dimensions = _straight_length(run, axis - extra, hooks)
         note = f"tramo {index + 1} de {len(starts)}, traslapo {run.lap:.0f} mm" + (f"; {run.note}" if run.note else "")
-        result.append(Piece(run.group, run.designation, _shape(hooks), tuple(dimensions), round_up(axis), run.mass_kg_m, count, note))
+        result.append(Piece(run.group, run.designation, _shape(hooks), tuple(dimensions), round_up(axis), run.mass_kg_m, count, note,
+                            _angles(hooks)))
     return result
 
 
@@ -197,7 +229,7 @@ def schedule(element: str, runs: list[BarRun], stock: float) -> list[ScheduleRow
             groups = previous.group if piece.group in previous.group.split(", ") else f"{previous.group}, {piece.group}"
             notes = previous.note if piece.note in previous.note.split(" | ") else f"{previous.note} | {piece.note}"
             counts[key] = Piece(groups, previous.designation, previous.shape, previous.dimensions, previous.cut_length,
-                                previous.mass_kg_m, previous.count + piece.count, notes)
+                                previous.mass_kg_m, previous.count + piece.count, notes, previous.angles)
         else:
             marks[key] = len(marks) + 1
             counts[key] = piece
@@ -207,7 +239,7 @@ def schedule(element: str, runs: list[BarRun], stock: float) -> list[ScheduleRow
 def _keyed(runs: list[BarRun], stock: float) -> list[tuple[int, tuple[object, ...], Piece]]:
     """(índice de la corrida, clave de la marca, barra cortada) de todas las corridas, en orden."""
     return [(index, (piece.designation, piece.shape, tuple((name, round_up(value)) for name, value in piece.dimensions),
-                     piece.cut_length), piece)
+                     piece.cut_length, piece.angles), piece)
             for index, run in enumerate(runs) for piece in pieces(run, stock)]
 
 

@@ -1,19 +1,35 @@
-"""Dibujo del refuerzo (v3 Fase 4B, D-126): vistas de cada tipo de zapata con las barras de su despiece, capas fijas,
-textos a la escala declarada, marcas de la cartilla, salidas JSON, SVG y DXF, y figuras en la memoria."""
+"""Dibujo del refuerzo (v3 Fase 4B, D-126, D-132): vistas de cada tipo de zapata con las barras de su despiece, capas fijas
+y una por diámetro, barra representativa por zona con su número y la leyenda, planta de geometría, textos a la escala
+declarada, marcas de la cartilla, salidas JSON, SVG y DXF, y figuras en la memoria."""
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
 from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
-from structurelab_rc.detailing.schedule import run_marks, schedule
+from structurelab_rc.detailing.schedule import BarRun, run_marks, schedule, splice_spans
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.footing.detailing import combined_runs, footing_runs
 from structurelab_rc.domain.footing.drawing import combined_views, footing_views, location_views
-from structurelab_rc.drawing.model import LAYERS, PAPER_SMALL, PAPER_TEXT, Circle, Drawing, Line, Polyline, Text, View
+from structurelab_rc.drawing.model import (
+    BAR_PREFIX,
+    LAYERS,
+    PAPER_SMALL,
+    PAPER_TEXT,
+    Circle,
+    Dimension,
+    Drawing,
+    Polyline,
+    Text,
+    View,
+    bar_layer,
+    layer_style,
+)
 from structurelab_rc.drawing.svg import view_svg
+from structurelab_rc.drawing.views import legend_text, numbered, zones
 from structurelab_rc.engine import import_etabs_footings, report_file
 from structurelab_rc.io.etabs.footings import LOCATION_SHEET, locations_by_joint
 from structurelab_rc.io.etabs.importer import EtabsImportError
@@ -40,8 +56,22 @@ def _project(name: str, tmp_path: Path) -> Project:
     return load_project(path)
 
 
-def _views(project: Project) -> tuple[list[View], list[str], int]:
-    """Vistas de la primera zapata, las marcas de su cartilla y el número de barras horizontales de la malla inferior."""
+@dataclass
+class _Drawn:
+    """Las vistas de la primera zapata de un proyecto, con sus corridas, sus marcas, la longitud comercial y la altura que
+    separa las plantas inferior y superior."""
+
+    views: list[View]
+    runs: list[BarRun]
+    marks: list[str]
+    stock: float
+    split: float
+
+    def view(self, name: str) -> View:
+        return next(view for view in self.views if view.name == name)
+
+
+def _views(project: Project) -> _Drawn:
     assert project.detailing is not None and project.soil is not None
     basis = Basis(PROFILES[project.profile], project.materials, BARS, project.seismic.level)
     drawing, stock = Drawing("prueba", SCALE), project.detailing.stock_length
@@ -57,41 +87,101 @@ def _views(project: Project) -> tuple[list[View], list[str], int]:
         rows = schedule(combined.id, runs, stock)
         views = combined_views(drawing, combined, runs, (rows, stock))
         split = (combined.h if combined.beam is None else combined.total_height) / 2
-    bottom = sum(len(run.placement.positions) for run in runs
-                 if run.placement is not None and run.placement.along in ("x", "y") and run.placement.level <= split)
-    return views, [row.mark for row in rows], bottom
+    return _Drawn(views, runs, [row.mark for row in rows], stock, split)
+
+
+def _bars(view: View) -> list[Polyline]:
+    return [entity for entity in view.entities if isinstance(entity, Polyline) and entity.layer.startswith(BAR_PREFIX)]
 
 
 @pytest.mark.parametrize(("name", "expected"), [
-    ("zapata_centrica.json", ["planta_inferior", "planta_superior", "corte_x", "corte_y", "cartilla"]),
-    ("zapata_combinada.json", ["planta_inferior", "planta_superior", "alzado", "corte_C1", "corte_C2", "cartilla"]),
-    ("zapata_t_invertida_etabs.json", ["planta_inferior", "planta_superior", "alzado", "corte_C15", "corte_C1659", "cartilla"]),
+    ("zapata_centrica.json", ["geometria", "planta_inferior", "planta_superior", "corte_x", "corte_y", "cartilla"]),
+    ("zapata_combinada.json", ["geometria", "planta_inferior", "planta_superior", "alzado", "corte_C1", "corte_C2", "cartilla"]),
+    ("zapata_t_invertida_etabs.json",
+     ["geometria", "planta_inferior", "planta_superior", "alzado", "corte_C15", "corte_C1659", "cartilla"]),
 ])
 def test_views_of_each_footing_type(name: str, expected: list[str], tmp_path: Path) -> None:
-    views, marks, bottom = _views(_project(name, tmp_path))
+    drawn = _views(_project(name, tmp_path))
+    views = drawn.views
     assert [view.name for view in views] == expected
-    plan = views[0]
-    assert sum(1 for entity in plan.entities if isinstance(entity, Line) and entity.layer == "REFUERZO") == bottom
+    # D-132: en planta, una barra representativa por zona, con un trazo por tramo empalmado.
+    bottom = [run for run in drawn.runs if run.placement is not None and run.placement.along in ("x", "y")
+              and run.placement.level <= drawn.split]
+    expected_bars = sum(len(zones(run.placement.positions)) * len(splice_spans(run, drawn.stock)) for run in bottom
+                        if run.placement is not None)
+    assert len(_bars(drawn.view("planta_inferior"))) == expected_bars
+    # Capas fijas y una capa por diámetro: la de cada barra.
+    used = {entity.layer for view in views for entity in view.entities}
+    assert {layer for layer in used if layer.startswith(BAR_PREFIX)} == {bar_layer(run.designation) for run in drawn.runs
+                                                                          if run.placement is not None}
+    assert {layer for layer in used if not layer.startswith(BAR_PREFIX)} <= set(LAYERS)
     texts = [entity for view in views for entity in view.entities if isinstance(entity, Text)]
-    assert {entity.layer for view in views for entity in view.entities} <= set(LAYERS)
     # Textos a la escala de impresión: títulos, rótulos y cotas; las letras del croquis de la cartilla, al 80 %.
     assert {round(text.height, 6) for text in texts} <= {PAPER_TEXT * SCALE, PAPER_SMALL * SCALE, 0.8 * PAPER_SMALL * SCALE}
     labels = " ".join(text.text for text in texts if text.layer == "TEXTOS")
     cartilla = {text.text for text in views[-1].entities if isinstance(text, Text)}
-    for mark in marks:  # cada marca se rotula en alguna vista y está en la cartilla
+    for mark in drawn.marks:  # cada marca está en la leyenda de alguna vista y en la cartilla
         assert mark in labels, mark
         assert mark in cartilla, mark
 
 
+def test_each_group_has_one_number_and_a_legend_line(tmp_path: Path) -> None:
+    """D-132: el número de un grupo es el mismo en todas sus zonas y vistas; la leyenda de la planta tiene una línea por
+    número, con la cantidad total del grupo, la barra, la separación y sus marcas."""
+    drawn = _views(_project("zapata_combinada.json", tmp_path))
+    marks = run_marks("ZC1", drawn.runs, drawn.stock)
+    groups = numbered(drawn.runs, marks, drawn.stock)
+    mesh = [item for item in groups if item.run.group == "malla inferior y"]
+    assert len({item.number for item in mesh}) == 1
+    plan = drawn.view("planta_inferior")
+    texts = [entity.text for entity in plan.entities if isinstance(entity, Text)]
+    bottom = {item.number for item in groups if item.place.along in ("x", "y") and item.place.level <= drawn.split}
+    for number in bottom:
+        line = legend_text([item for item in groups if item.number == number])
+        assert line in texts, line
+    # Un círculo por zona en la planta, con su número.
+    circles = [entity for entity in plan.entities if isinstance(entity, Circle) and not entity.filled]
+    zone_count = sum(len(zones(item.place.positions)) for item in groups
+                     if item.place.along in ("x", "y") and item.place.level <= drawn.split)
+    assert len(circles) == zone_count + len(bottom)  # los de las barras y los de la leyenda
+    assert len(zones(mesh[0].place.positions)) == 3  # la malla y a los lados de los dos band y entre ellos
+
+
+def test_spliced_bar_is_drawn_in_overlapping_pieces(tmp_path: Path) -> None:
+    """D-132: la barra x inferior de la combinada (6.85 m, barras de 6 m) se dibuja en dos tramos traslapados."""
+    drawn = _views(_project("zapata_combinada.json", tmp_path))
+    run = next(run for run in drawn.runs if run.group == "malla inferior x")
+    spans = splice_spans(run, drawn.stock)
+    assert len(spans) == 2
+    lap = spans[0][1] - spans[1][0]
+    assert run.lap is not None and lap == pytest.approx(run.lap)
+    texts = [entity.text for entity in drawn.view("planta_inferior").entities if isinstance(entity, Text)]
+    assert f"traslapo {lap:.0f}" in texts
+
+
+def test_geometry_plan_dimensions_columns_from_the_edges(tmp_path: Path) -> None:
+    """D-132: la planta de geometría acota la base, las columnas desde los bordes, sus ejes y el recubrimiento."""
+    project = _project("zapata_centrica.json", tmp_path)
+    footing = project.footings[0]
+    view = _views(project).view("geometria")
+    column = footing.column
+    dimensions = [entity.text for entity in view.entities if isinstance(entity, Dimension)]
+    left = footing.lx / 2 + column.offset_x - column.cx / 2
+    assert {f"{left:.0f}", f"{column.cx:.0f}", f"{footing.lx:.0f}", f"{footing.ly:.0f}"} <= set(dimensions)
+    assert any(isinstance(entity, Polyline) and entity.layer == "COLUMNAS" for entity in view.entities)
+    assert sum(1 for entity in view.entities if isinstance(entity, Polyline) and entity.layer == "EJES") == 2
+    assert f"recubrimiento {footing.cover:.0f} mm" in {entity.text for entity in view.entities if isinstance(entity, Text)}
+    # Las plantas de refuerzo no acotan la posición de la columna.
+    plan = _views(project).view("planta_inferior")
+    assert f"{left:.0f}" not in {entity.text for entity in plan.entities if isinstance(entity, Dimension)}
+
+
 def test_isolated_section_cuts_every_perpendicular_bar(tmp_path: Path) -> None:
     project = _project("zapata_centrica.json", tmp_path)
-    views, _, _ = _views(project)
-    basis = Basis(PROFILES[project.profile], project.materials, BARS, project.seismic.level)
-    assert project.soil is not None
-    runs = footing_runs(basis, project.footings[0], project.soil)
-    across = sum(len(run.placement.positions) for run in runs if run.placement is not None and run.placement.along == "y")
-    section = next(view for view in views if view.name == "corte_x")
-    assert sum(1 for entity in section.entities if isinstance(entity, Circle)) == across
+    drawn = _views(project)
+    across = sum(len(run.placement.positions) for run in drawn.runs if run.placement is not None and run.placement.along == "y")
+    section = drawn.view("corte_x")
+    assert sum(1 for entity in section.entities if isinstance(entity, Circle) and entity.filled) == across
 
 
 def test_run_marks_match_the_schedule(tmp_path: Path) -> None:
@@ -116,20 +206,22 @@ def test_drawing_requires_detailing() -> None:
 
 
 def test_svg_keeps_the_model_scale(tmp_path: Path) -> None:
-    views, _, _ = _views(_project("zapata_centrica.json", tmp_path))
-    svg, aspect = view_svg(views[1], SCALE)
+    drawn = _views(_project("zapata_centrica.json", tmp_path))
+    svg, aspect = view_svg(drawn.view("planta_inferior"), SCALE)
     assert svg.startswith("<svg") and svg.rstrip().endswith("</svg>")
     assert aspect > 0
-    assert f'stroke-width="{LAYERS["REFUERZO"][2] * SCALE:.1f}"' in svg
+    color, _, weight = layer_style(bar_layer("#5"))
+    assert f'stroke="{color}" stroke-width="{weight * SCALE:.1f}"' in svg
 
 
 def test_report_writes_the_drawing(tmp_path: Path) -> None:
     report = report_file(PRUEBAS / "zapata_centrica.json", tmp_path)
     names = {path.name for path in report.files}
-    assert {"zapata_centrica_drawing.json", "Z1_planta_inferior.svg", "Z1_corte_x.svg", "Z1_cartilla.svg"} <= names
+    assert {"zapata_centrica_drawing.json", "Z1_geometria.svg", "Z1_planta_inferior.svg", "Z1_corte_x.svg", "Z1_cartilla.svg"} <= names
     model = json.loads((tmp_path / "zapata_centrica_drawing.json").read_text(encoding="utf-8"))
-    assert model["scale"] == SCALE and set(model["layers"]) == set(LAYERS)
-    assert [view["name"] for view in model["elements"]["Z1"]][0] == "planta_inferior"
+    assert model["scale"] == SCALE and set(LAYERS) <= set(model["layers"])
+    assert {bar_layer("#4"), bar_layer("#5")} <= set(model["layers"])
+    assert [view["name"] for view in model["elements"]["Z1"]][:2] == ["geometria", "planta_inferior"]
     memoir = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     chapter = memoir[memoir.index("Despiece y cantidades"):]
     assert "Planta refuerzo inferior Z1" in chapter and "Cartilla de despiece Z1" in chapter and "Z1_corte_x.svg" in chapter
@@ -139,10 +231,15 @@ def test_dxf_has_the_layers_and_views(tmp_path: Path) -> None:
     ezdxf = pytest.importorskip("ezdxf")
     report_file(PRUEBAS / "zapata_combinada.json", tmp_path)
     document = ezdxf.readfile(tmp_path / "zapata_combinada.dxf")
-    assert set(LAYERS) <= {layer.dxf.name for layer in document.layers}
+    names = {layer.dxf.name for layer in document.layers}
+    assert set(LAYERS) <= names
     space = document.modelspace()
     layers = {entity.dxf.layer for entity in space}
-    assert {"CONCRETO", "REFUERZO", "REFUERZO_CORTE", "COTAS", "TEXTOS", "CARTILLA"} <= layers
+    assert {"CONCRETO", "COLUMNAS", "COTAS", "TEXTOS", "CARTILLA", "EJES"} <= layers
+    bars = {layer for layer in layers if layer.startswith(BAR_PREFIX)}
+    assert len(bars) >= 2 and bars <= names  # una capa por diámetro, cada una con su color
+    assert len({document.layers.get(name).dxf.color for name in bars}) == len(bars)
+    assert space.query("HATCH")  # barras cortadas rellenas
     heights = {round(entity.dxf.height, 6) for entity in space.query("TEXT")}
     assert PAPER_TEXT * SCALE in heights and PAPER_SMALL * SCALE in heights
 

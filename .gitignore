@@ -186,6 +186,8 @@ results/**
 !results/**/
 !results/**/.gitkeep
 references/
+# Plantilla DL-NET real (lleva la licencia del usuario, D-133): local, fuera de Git.
+tests/fixtures/dlnet/
 *.pdf
 .tmp*/
 *.whl

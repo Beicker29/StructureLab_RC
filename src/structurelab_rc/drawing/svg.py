@@ -3,7 +3,7 @@ invierte para el SVG y el grosor de línea es el de la capa en papel, por la esc
 
 from html import escape
 
-from structurelab_rc.drawing.model import LAYERS, Circle, Dimension, Line, Polyline, Text, View, dimension_line
+from structurelab_rc.drawing.model import Circle, Dimension, Line, Polyline, Text, View, dimension_line, layer_style
 
 _WIDTH = 800.0  # px de ancho del SVG
 _MARGIN = 0.04  # fracción del tamaño de la vista
@@ -20,7 +20,7 @@ def view_svg(view: View, scale: float) -> tuple[str, float]:
              f'viewBox="{x0:.1f} {-y1:.1f} {width:.1f} {height:.1f}" font-family="Helvetica, Arial, sans-serif">',
              f'<rect x="{x0:.1f}" y="{-y1:.1f}" width="{width:.1f}" height="{height:.1f}" fill="white"/>']
     for entity in view.entities:
-        color, _, weight = LAYERS[entity.layer]
+        color, _, weight = layer_style(entity.layer)
         stroke = f'stroke="{color}" stroke-width="{weight * scale:.1f}" fill="none"'
         if isinstance(entity, Line):
             parts.append(f'<line x1="{entity.start[0]:.1f}" y1="{-entity.start[1]:.1f}" x2="{entity.end[0]:.1f}" '
@@ -31,7 +31,8 @@ def view_svg(view: View, scale: float) -> tuple[str, float]:
             dash = f' stroke-dasharray="{6 * scale:.0f} {3 * scale:.0f}"' if entity.dashed else ""
             parts.append(f'<{tag} points="{points}" {stroke}{dash}/>')
         elif isinstance(entity, Circle):
-            parts.append(f'<circle cx="{entity.center[0]:.1f}" cy="{-entity.center[1]:.1f}" r="{entity.radius:.1f}" fill="{color}"/>')
+            paint = f'fill="{color}"' if entity.filled else stroke
+            parts.append(f'<circle cx="{entity.center[0]:.1f}" cy="{-entity.center[1]:.1f}" r="{entity.radius:.1f}" {paint}/>')
         elif isinstance(entity, Text):
             anchor = {"left": "start", "center": "middle", "right": "end"}[entity.align]
             parts.append(f'<text x="{entity.at[0]:.1f}" y="{-entity.at[1]:.1f}" font-size="{entity.height:.1f}" fill="{color}" '

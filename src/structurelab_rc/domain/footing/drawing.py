@@ -2,9 +2,11 @@
 dibujan, con las corridas del despiece (su ubicación y sus marcas). La geometría de las barras sale de domain/footing/
 detailing.py y el dibujo en sí es neutro (drawing/views.py).
 
-- Zapata aislada: planta y cortes X-X e Y-Y por el eje de la columna.
-- Zapata combinada: planta, alzado longitudinal por el eje de la viga (y = 0) y un corte transversal por cada columna.
-- T invertida: lo mismo, con el alma en la planta, el alzado a la altura de la viga y el corte en T.
+- Zapata aislada: planta de geometría, plantas del refuerzo inferior y superior y cortes X-X e Y-Y por el eje de la
+  columna.
+- Zapata combinada: planta de geometría, plantas del refuerzo, alzado longitudinal por el eje de la viga (y = 0) y un
+  corte transversal por cada columna.
+- T invertida: lo mismo, con el alma en las plantas, el alzado a la altura de la viga y el corte en T.
 La combinada se dibuja en los ejes de la viga (X a lo largo de la viga), en los que se calcula (D-094).
 
 Planta de localización (D-130): una por nivel de cimentación, en ejes globales, con cada zapata a escala en su nudo, su
@@ -19,7 +21,17 @@ from dataclasses import dataclass, field
 
 from structurelab_rc.detailing.schedule import BarRun, ScheduleRow, run_marks
 from structurelab_rc.drawing.model import Drawing, Entity, Polyline, Text, View
-from structurelab_rc.drawing.views import Marked, cartilla_view, plan_view, rectangle, section_view, table_view, titled
+from structurelab_rc.drawing.views import (
+    Marked,
+    cartilla_view,
+    geometry_view,
+    numbered,
+    plan_view,
+    rectangle,
+    section_view,
+    table_view,
+    titled,
+)
 from structurelab_rc.model.combined import CombinedFooting, beam_to_global
 from structurelab_rc.model.footing import Footing, Mat
 
@@ -30,7 +42,7 @@ _TABLE = (("Tipo", 24.0), ("Dimensiones lx x ly x h (mm)", 50.0), ("Malla inferi
 
 
 def _marked(element: str, runs: list[BarRun], stock: float) -> list[Marked]:
-    return [Marked(run, marks) for run, marks in zip(runs, run_marks(element, runs, stock), strict=True) if run.placement is not None]
+    return numbered(runs, run_marks(element, runs, stock), stock)
 
 
 def _stub(centre: float, size: float, top: float, pedestal: float) -> list[Polyline]:
@@ -38,7 +50,7 @@ def _stub(centre: float, size: float, top: float, pedestal: float) -> list[Polyl
     left, right = centre - size / 2, centre + size / 2
     stub = top + pedestal
     shapes = [rectangle("CONCRETO", (left, top), (right, stub))] if pedestal > 0 else []
-    return [*shapes, Polyline("CONCRETO", ((left, stub), (left, stub + _STUB * size), (right, stub + _STUB * size), (right, stub)),
+    return [*shapes, Polyline("COLUMNAS", ((left, stub), (left, stub + _STUB * size), (right, stub + _STUB * size), (right, stub)),
                               dashed=True)]
 
 
@@ -49,9 +61,12 @@ def footing_views(drawing: Drawing, footing: Footing, runs: list[BarRun], rows: 
     column, h, pedestal = footing.column, footing.h, footing.pedestal_height
     lx, ly = footing.lx, footing.ly
     outline = rectangle("CONCRETO", (-lx / 2, -ly / 2), (lx / 2, ly / 2))
-    columns = [(footing.id, rectangle("CONCRETO", (column.offset_x - column.cx / 2, column.offset_y - column.cy / 2),
+    columns = [(footing.id, rectangle("COLUMNAS", (column.offset_x - column.cx / 2, column.offset_y - column.cy / 2),
                                       (column.offset_x + column.cx / 2, column.offset_y + column.cy / 2)))]
     return [
+        geometry_view(drawing, ("geometria", f"Planta de geometria {footing.id}"), (outline, []),
+                      [(footing.id, (column.offset_x, column.offset_y), (column.cx, column.cy))],
+                      (footing.cover, f"Espesor h = {h:.0f} mm; pedestal {pedestal:.0f} mm.")),
         *_plans(drawing, (footing.id, ""), ([outline], columns), marked, h / 2),
         section_view(drawing, ("corte_x", "Corte X-X"), ("x", column.offset_y),
                      [rectangle("CONCRETO", (-lx / 2, 0.0), (lx / 2, h)), *_stub(column.offset_x, column.cx, h, pedestal)], marked),
@@ -83,7 +98,7 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
     concrete = [rectangle("CONCRETO", (-lx / 2, -ly / 2), (lx / 2, ly / 2))]
     if beam is not None:
         concrete += [Polyline("CONCRETO", ((-lx / 2, side * beam.width / 2), (lx / 2, side * beam.width / 2))) for side in (-1, 1)]
-    columns = [(column.id, rectangle("CONCRETO", (column.x - column.cx / 2, column.y - column.cy / 2),
+    columns = [(column.id, rectangle("COLUMNAS", (column.x - column.cx / 2, column.y - column.cy / 2),
                                      (column.x + column.cx / 2, column.y + column.cy / 2))) for column in footing.columns]
     if beam is None:
         cross = rectangle("CONCRETO", (-ly / 2, 0.0), (ly / 2, h))
@@ -93,7 +108,11 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
                                       (-half, h), (-ly / 2, h)), closed=True)
     elevation = [rectangle("CONCRETO", (-lx / 2, 0.0), (lx / 2, top))]
     elevation += [shape for column in footing.columns for shape in _stub(column.x, column.cx, top, pedestal)]
+    note = f"Espesor h = {h:.0f} mm; pedestal {pedestal:.0f} mm" + (
+        "." if beam is None else f"; viga {beam.width:.0f} x {beam.height:.0f} mm (alto desde la base).")
     views = [
+        geometry_view(drawing, ("geometria", f"Planta de geometria {footing.id} (ejes de la viga)"), (concrete[0], concrete[1:]),
+                      [(column.id, (column.x, column.y), (column.cx, column.cy)) for column in footing.columns], (footing.cover, note)),
         *_plans(drawing, (footing.id, " (ejes de la viga)"), (concrete, columns), marked, h / 2 if beam is None else top / 2),
         section_view(drawing, ("alzado", "Alzado longitudinal A-A"), ("x", 0.0), elevation, marked),
     ]
@@ -129,7 +148,7 @@ def _outline(drawing: Drawing, centre: tuple[float, float], size: tuple[float, f
     entities: list[Entity] = [rectangle("CONCRETO", (x - width / 2, y - depth / 2), (x + width / 2, y + depth / 2))]
     small = drawing.text_height(small=True)
     for (cx, cy), (bx, by), joint in columns:
-        entities.append(rectangle("CONCRETO", (cx - bx / 2, cy - by / 2), (cx + bx / 2, cy + by / 2)))
+        entities.append(rectangle("COLUMNAS", (cx - bx / 2, cy - by / 2), (cx + bx / 2, cy + by / 2)))
         entities.append(Text("TEXTOS", (cx, cy - by / 2 - 1.5 * small), joint, small, align="center"))
     entities.append(Text("TEXTOS", (x, y + depth / 2 + 0.5 * small), label, drawing.text_height(), align="center"))
     return entities
