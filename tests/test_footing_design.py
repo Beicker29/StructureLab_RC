@@ -48,10 +48,11 @@ from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.footing.detailing import footing_runs
 from structurelab_rc.domain.status import Status
 from structurelab_rc.engine import design_footings, report_file, run_project
+from structurelab_rc.io.etabs.combinations import Combination
 from structurelab_rc.io.etabs.footings import build_footing_design_project
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.design import DesignColumn, FootingDesignProject
-from structurelab_rc.model.template import EtabsFootingDesignTemplate
+from structurelab_rc.model.template import EtabsFootingDesignTemplate, LoadFactors
 from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.setup import load_engine
 
@@ -293,9 +294,11 @@ def test_etabs_design_template_builds_a_design_project() -> None:
     data = _project()
     template = EtabsFootingDesignTemplate.model_validate({
         "description": "t", "profile": "nsr-10", "seismic": data["seismic"], "materials": data["materials"], "soil": data["soil"],
-        "load_factors": {"S": {"dead": 1.0, "live": 1.0}, "U": {"dead": 1.2, "live": 1.6}}, "design": data["design"],
+        "design": data["design"],
         "columns": [{"etabs_unique_names": ["10", "11"], "cx": 400.0, "cy": 450.0}]})
-    project, summary = build_footing_design_project(template, service, factored)
+    combos = {"S": Combination("S", "service", LoadFactors(dead=1.0, live=1.0)),
+              "U": Combination("U", "factored", LoadFactors(dead=1.2, live=1.6))}  # D-137
+    project, summary = build_footing_design_project(template, (service, factored), combos)
     design = FootingDesignProject.model_validate(project)
     assert [column.id for column in design.columns] == ["A1", "A2"]
     assert (design.columns[1].cy, design.columns[1].loads[1].p) == (450.0, 950e3)
@@ -304,7 +307,7 @@ def test_etabs_design_template_builds_a_design_project() -> None:
     # D-111: exclude_unique_names quita un nudo listado; los nudos de los Excel que no entran se avisan.
     extra = Table(headers, units, (*service.rows, row("12", "A3", "S", 400.0)))
     excluding = template.model_copy(update={"exclude_unique_names": ("11",)})
-    project, summary = build_footing_design_project(excluding, extra, factored)
+    project, summary = build_footing_design_project(excluding, (extra, factored), combos)
     assert [column["id"] for column in project["columns"]] == ["A1"]
     assert summary.omitted == ("11", "12")
     assert project["description"].endswith("(no listados o excluidos): 11, 12.")

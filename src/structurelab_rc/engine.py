@@ -32,6 +32,7 @@ from structurelab_rc.drawing.svg import view_svg
 from structurelab_rc.errors import invalid_input
 from structurelab_rc.io.dlnet import TEMPLATE_PATH, TEMPLATE_VARIABLE, DliError, find_template, schedule_dli
 from structurelab_rc.io.etabs import footings as etabs_footings
+from structurelab_rc.io.etabs.combinations import read_combinations
 from structurelab_rc.io.etabs.footings import (
     FootingImportSummary,
     build_combined_design_project,
@@ -86,6 +87,7 @@ class RunPlan:
     service: Path | None = None
     factored: Path | None = None
     locations: Path | None = None  # tabla de coordenadas de los nudos (D-130)
+    combinations: Path | None = None  # Excel de combinaciones (D-137)
 
 
 def default_output(path: Path) -> Path:
@@ -98,8 +100,21 @@ def default_output(path: Path) -> Path:
     return Path("results") / path.stem
 
 
+def _footing_template(data: dict[str, Any]) -> bool:
+    """Si el JSON es una plantilla de cimentaciones de ETABS: sus zapatas, columnas o grupos se ligan a nudos de ETABS
+    (Unique Name) o declara Excel de reacciones o de combinaciones (D-137)."""
+    files = data.get("etabs_files") or {}
+    if isinstance(files, dict) and any(key in files for key in ("service", "factored", "combinations")):
+        return True
+    items = [*(data.get("footings") or []), *(data.get("columns") or [])]
+    for footing in data.get("combined_footings") or []:
+        items += footing.get("columns") or [] if isinstance(footing, dict) else []
+    return any(isinstance(item, dict) and ("etabs_unique_names" in item or "etabs_unique_name" in item) for item in items)
+
+
 def run_plan(path: Path, output: Path | None = None) -> RunPlan:
-    """El tipo del ejemplo por su contenido (D-096): plantilla de ETABS (load_factors, o miembros con Unique Name) con sus
+    """El tipo del ejemplo por su contenido (D-096): plantilla de ETABS (de zapatas, con los Excel de reacciones y de
+    combinaciones en etabs_files, D-137; o de vigas, con miembros con Unique Name) con sus
     Excel en etabs_files (rutas relativas a la plantilla); diseño por tipologías (design y columns), curva costo-N si
     trae curve; diseño de zapata combinada (combined_design, D-107); si no, un proyecto de verificación."""
     try:
@@ -116,11 +131,14 @@ def run_plan(path: Path, output: Path | None = None) -> RunPlan:
         return None if value is None else (path.parent / value).resolve()
 
     members = data.get("members") or []
-    if "load_factors" in data:
+    if _footing_template(data):  # plantilla de zapatas de ETABS
         if not files:
             raise RunError(f"La plantilla {path.name} no declara sus Excel de ETABS en etabs_files (D-096)")
+        if "combinations" not in files:
+            raise RunError(f"La plantilla {path.name} no declara su Excel de combinaciones en etabs_files.combinations (D-137)")
         kind = "etabs_design" if "design" in data else "etabs_combined_design" if "combined_design" in data else "etabs_footings"
-        return RunPlan(kind, path, out, service=excel("service"), factored=excel("factored"), locations=excel("locations"))
+        return RunPlan(kind, path, out, service=excel("service"), factored=excel("factored"), locations=excel("locations"),
+                       combinations=excel("combinations"))
     if any(isinstance(member, dict) and "etabs_unique_name" in member for member in members):
         if "workbook" not in files:
             raise RunError(f"La plantilla {path.name} no declara su Excel de ETABS en etabs_files.workbook (D-096)")
@@ -304,24 +322,35 @@ def import_etabs(workbook: Path, template_path: Path) -> tuple[dict[str, Any] | 
 
 
 def import_etabs_footings(
-    service: Path | None, factored: Path | None, template_path: Path, locations: Path | None = None
+    service: Path | None, factored: Path | None, template_path: Path, locations: Path | None = None,
+    combinations: Path | None = None,
 ) -> tuple[dict[str, Any] | None, FootingImportSummary | None, Check]:
     """Proyecto de zapatas a partir de las reacciones de servicio y mayoradas de ETABS y la plantilla (D-055). Un Excel
     puede omitirse (None) si la plantilla no pide cargas de su tipo (zapatas combinadas, D-084). locations es la tabla
-    de coordenadas de los nudos, para la planta de localización (D-130); el diseño de una zapata combinada no la usa."""
+    de coordenadas de los nudos, para la planta de localización (D-130); el diseño de una zapata combinada no la usa.
+    combinations es el Excel de combinaciones (D-137); sin él, el de etabs_files.combinations de la plantilla."""
     try:
         template = load_footing_template(template_path)
-        tables = [None if path is None else read_table(path, etabs_footings.SHEET) for path in (service, factored)]
+        if combinations is not None:
+            chosen = combinations
+        elif template.etabs_files is not None:
+            chosen = template_path.parent / template.etabs_files.combinations
+        else:
+            raise EtabsImportError((invalid_input("Falta el Excel de combinaciones: declarelo en etabs_files.combinations de la "
+                                                  "plantilla (D-137)"),))
+        listed = read_combinations(chosen)
+        found = tuple(None if path is None else read_table(path, etabs_footings.SHEET) for path in (service, factored))
+        tables = (found[0], found[1])
         coordinates = None if locations is None else read_table(locations, etabs_footings.LOCATION_SHEET)
         if isinstance(template, EtabsFootingDesignTemplate):
-            project, summary = build_footing_design_project(template, tables[0], tables[1], coordinates)
+            project, summary = build_footing_design_project(template, tables, listed, coordinates)
             design = validate_input(project, FootingDesignProject)
             validation = _validate_design(design)
         elif isinstance(template, EtabsCombinedDesignTemplate):  # diseño de una zapata combinada (D-112)
-            project, summary = build_combined_design_project(template, *tables)
+            project, summary = build_combined_design_project(template, tables, listed)
             validation = _validate_design(validate_input(project, CombinedDesignProject))
         else:
-            project, summary = build_footing_project(template, tables[0], tables[1], coordinates)
+            project, summary = build_footing_project(template, tables, listed, coordinates)
             validation = validate_project(validate_input(project, Project), load_engine().bars)
     except (ProjectLoadError, EtabsImportError) as error:
         return None, None, check_from_errors(CHECK_NAME, error.errors)

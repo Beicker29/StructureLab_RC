@@ -51,12 +51,12 @@ existente. Sin fórmulas propias; si nada cumple, `FAIL` con el motivo y los lí
 - **3B Zapata combinada, enfoque 1: dos columnas declaradas:** hecho (rectangular y T invertida, con estribos,
   torsión y cargas de ETABS; D-107, D-110, D-112, D-113; plantilla de ETABS de la T con la copia de pruebas acotada,
   D-124; búsqueda de la T sin pasos inútiles y `web_max`, D-136: el ejemplo amplio de iterar baja de 22 min a 105 s con la
-  misma solución). Queda, diferido por el usuario: un algoritmo genético solo para la geometría (H, alma, zarpa,
+  misma solución). Las combinaciones de ETABS que entran se declaran en un Excel de combinaciones, D-137. Queda, diferido por el usuario: un algoritmo genético solo para la geometría (H, alma, zarpa,
   planta), con el refuerzo determinista actual por geometría y la cota de costo del concreto para descartar.
 - **3C Integración con las tipologías (enfoque 2, pendiente por decisión del usuario, D-109):** todos los nudos de
   ETABS y la configuración por tipologías más económica, con pares de columnas con zapata combinada declarados en la
   plantilla, y la planta de cada tipo; el caso que ubica la base se declara en
-  `placement_case` con el nombre de la combinación de `load_factors` (D-108).
+  `placement_case` con el nombre de la combinación del Excel de combinaciones (D-108, D-137).
 
 ### Fase 4: despiece y dibujo (alcance de la Fase 5 de vigas)
 

@@ -91,8 +91,11 @@ def _optional_path(value: str) -> Path | None:
     return None if value == "-" else Path(value)
 
 
-def _import_etabs_footings(service: str, factored: str, template: Path, output: Path, locations: Path | None = None) -> int:
-    project, summary, check = import_etabs_footings(_optional_path(service), _optional_path(factored), template, locations)
+def _import_etabs_footings(service: str, factored: str, template: Path, output: Path,
+                           extra: tuple[Path | None, Path | None] = (None, None)) -> int:
+    """extra = (tabla de coordenadas, Excel de combinaciones); sin este último, el de la plantilla (D-137)."""
+    locations, combinations = extra
+    project, summary, check = import_etabs_footings(_optional_path(service), _optional_path(factored), template, locations, combinations)
     print(f"{check.name}: {check.status}")
     _print_errors(check)
     if project is None or summary is None or check.status is Status.FAIL:
@@ -102,6 +105,9 @@ def _import_etabs_footings(service: str, factored: str, template: Path, output: 
     print(f"Zapatas: {summary.footings}; casos de servicio: {len(summary.service_cases)}; "
           f"casos mayorados: {len(summary.factored_cases)}")
     print(f"Filas omitidas (no son combinaciones): {summary.skipped_rows}")
+    if summary.ignored_combinations:
+        print(f"Combinaciones de ETABS ignoradas (no estan en el Excel de combinaciones o tienen Usar = No): "
+              f"{', '.join(summary.ignored_combinations)}")
     if summary.omitted:
         print(f"ADVERTENCIA: {len(summary.omitted)} Unique Name de ETABS no entran (no listados o excluidos): "
               f"{', '.join(summary.omitted)}")
@@ -310,7 +316,8 @@ def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
         assert plan.workbook is not None
         code = _import_etabs(plan.workbook, plan.path, imported)
     else:
-        code = _import_etabs_footings(str(plan.service or "-"), str(plan.factored or "-"), plan.path, imported, plan.locations)
+        code = _import_etabs_footings(str(plan.service or "-"), str(plan.factored or "-"), plan.path, imported,
+                                      (plan.locations, plan.combinations))
     if code:
         return code
     if plan.kind == "etabs_design":
@@ -369,6 +376,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     footings.add_argument("--locations", type=Path, default=None,
                           help="Excel de ETABS con las coordenadas de los nudos (Point Object Connectivity), para la planta de "
                                "localizacion (D-130)")
+    footings.add_argument("--combinations", type=Path, default=None,
+                          help="Excel de combinaciones (hoja Combinaciones, D-137); por defecto, el de etabs_files.combinations")
     designer = commands.add_parser("design-footings", help="disena zapatas por tipologias desde un proyecto de diseno")
     designer.add_argument("project", type=Path, help="proyecto de diseno en JSON (columnas y bloque design)")
     designer.add_argument("--output", type=Path, required=True, help="carpeta donde escribir proyecto.json y tipologias.json")
@@ -406,7 +415,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "design-combined": lambda: _design_combined(args.project, args.output, args.workers),
         "typology-curve": lambda: _typology_curve(args.project, args.output, args.n, args.workers, args.method),
         "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output,
-                                                                args.locations),
+                                                                (args.locations, args.combinations)),
         "import-etabs": lambda: _import_etabs(args.workbook, args.template, args.output),
         "validate": lambda: _validate(args.project),
         "verify": lambda: _verify(args.project),

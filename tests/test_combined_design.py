@@ -21,12 +21,13 @@ from structurelab_rc.domain.footing.checks import combined_footing_checks
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.engine import RunPlan, design_combined_file, report_file, run_plan
+from structurelab_rc.io.etabs.combinations import Combination
 from structurelab_rc.io.etabs.footings import build_combined_design_project
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.design import CombinedDesignProject
 from structurelab_rc.model.project import Project
-from structurelab_rc.model.template import EtabsCombinedDesignTemplate
+from structurelab_rc.model.template import EtabsCombinedDesignTemplate, LoadFactors
 from structurelab_rc.setup import load_engine
 
 ROOT = Path(__file__).parent.parent
@@ -257,11 +258,12 @@ def test_etabs_template_builds_the_combined_design_project() -> None:
                 "y": column["y"], "loads": [load]} for column, unique, load in zip(data["columns"], ("7", "9"), factored, strict=True)]
     raw = {key: data[key] for key in ("description", "profile", "seismic", "materials", "soil", "principal_direction")}
     template = EtabsCombinedDesignTemplate.model_validate({
-        **raw, "load_factors": {"SERV (D+L)": {"dead": 1.0, "live": 1.0}},
+        **raw,
         "loads_source": {"service": "etabs", "factored": "json"},
         "combined_design": {**data["combined_design"], "placement_case": "SERV (D+L)"}, "columns": columns})
     service = Table(headers, units, (row("7", 900.0), row("9", 1300.0)))
-    project, summary = build_combined_design_project(template, service, None)
+    combos = {"SERV (D+L)": Combination("SERV (D+L)", "service", LoadFactors(dead=1.0, live=1.0))}  # D-137
+    project, summary = build_combined_design_project(template, (service, None), combos)
     checked = CombinedDesignProject.model_validate(project)
     assert [load.case for load in checked.columns[1].loads] == ["SERV (D+L)", "1.2D+1.6L"]
     assert checked.columns[1].loads[0].p == pytest.approx(1300e3)

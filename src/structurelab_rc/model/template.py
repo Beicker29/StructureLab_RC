@@ -53,12 +53,14 @@ class BeamEtabsFiles(_Input):
 
 
 class FootingEtabsFiles(_Input):
-    """Los Excel de ETABS de una plantilla de zapatas, con rutas relativas a la plantilla (D-096): `run` los usa. Uno
-    puede faltar si ninguna zapata toma de ETABS cargas de ese tipo (D-084). locations (opcional, D-130) es la tabla de
+    """Los Excel de una plantilla de zapatas, con rutas relativas a la plantilla (D-096): `run` los usa. Uno de los de
+    ETABS puede faltar si ninguna zapata toma de ETABS cargas de ese tipo (D-084). combinations es el Excel de
+    combinaciones (D-137): las que entran, con su tipo y sus factores. locations (opcional, D-130) es la tabla de
     coordenadas de los nudos ("Point Object Connectivity"), para la planta de localización."""
 
     service: str | None = Field(default=None, min_length=1)
     factored: str | None = Field(default=None, min_length=1)
+    combinations: str = Field(min_length=1)
     locations: str | None = Field(default=None, min_length=1)
 
     @model_validator(mode="after")
@@ -183,7 +185,8 @@ def _etabs_kinds(source: LoadsSource) -> tuple[str, ...]:
 
 
 class LoadFactors(_Input):
-    """Factores de carga muerta y viva de una combinación de ETABS (D-054, D-057) y si incluye sismo (D-070)."""
+    """Factores de carga muerta y viva de una combinación de ETABS (D-054, D-057) y si incluye sismo (D-070); salen del
+    Excel de combinaciones (D-137)."""
 
     dead: NonNegativeFloat
     live: NonNegativeFloat
@@ -191,18 +194,15 @@ class LoadFactors(_Input):
 
 
 class EtabsFootingTemplate(_Input):
-    """Plantilla de zapatas: lo que las tablas de reacciones de ETABS no traen.
-
-    load_factors da los factores de carga muerta y viva de cada combinación, de servicio y mayorada; se aplican al
-    peso propio, al relleno y a las sobrecargas (D-054, D-057).
-    """
+    """Plantilla de zapatas: lo que las tablas de reacciones de ETABS no traen. Las combinaciones que entran y sus factores
+    de carga muerta y viva (que se aplican al peso propio, al relleno y a las sobrecargas, D-054, D-057) vienen del Excel
+    de combinaciones declarado en etabs_files.combinations (D-137)."""
 
     description: str
     profile: str
     seismic: SeismicFacts
     materials: Materials
     soil: dict[str, float]
-    load_factors: dict[str, LoadFactors] = Field(min_length=1)
     footings: tuple[TemplateFooting, ...] = ()
     combined_footings: tuple[TemplateCombinedFooting, ...] = ()
     detailing: dict[str, float] | None = None  # D-125: pasa al proyecto y se valida con él
@@ -238,7 +238,6 @@ class EtabsFootingDesignTemplate(_Input):
     seismic: SeismicFacts
     materials: dict[str, Any]
     soil: dict[str, float]
-    load_factors: dict[str, LoadFactors] = Field(min_length=1)
     design: dict[str, Any]
     columns: tuple[TemplateColumns, ...] = Field(min_length=1)
     exclude_unique_names: tuple[str, ...] = ()
@@ -271,7 +270,6 @@ class EtabsCombinedDesignTemplate(_Input):
     seismic: SeismicFacts
     materials: dict[str, Any]
     soil: dict[str, float]
-    load_factors: dict[str, LoadFactors] = Field(min_length=1)
     principal_direction: Literal["x", "y"] = "x"
     loads_source: LoadsSource = LoadsSource()
     combined_design: dict[str, Any]

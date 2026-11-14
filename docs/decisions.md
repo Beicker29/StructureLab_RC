@@ -2612,6 +2612,26 @@
   cada ejemplo en una carpeta con su nombre: en las 8 huellas con dibujo cambia solo el nombre del archivo del modelo
   de dibujo (`<caso>_drawing.json`); su contenido, la memoria y el resultado no cambian.
 
+### D-137: Excel de combinaciones para las cimentaciones
+
+- **Pedido del usuario:** los factores de carga que hoy van en `load_factors` de las plantillas de zapatas, zapatas
+  combinadas y T invertida (y de los cabezales) vienen de un Excel, para tener control explícito de qué combinaciones
+  se usan: el Excel de Joint Reactions puede traer combinaciones que no se quieren en la verificación o el diseño.
+- **Formato (aprobado):** hoja `Combinaciones` con `Combinacion | Tipo (Servicio/Última) | Factor D | Factor L | Sismo
+  (Sí/No) | Usar (Sí/No)`. Solo entran las filas con `Usar = Sí`; cada combinación se lee solo de la tabla de su tipo.
+- **Reglas:**
+  1. Una combinación listada que no está en la tabla de su tipo es un error (como antes una del bloque).
+  2. Las combinaciones de las tablas que no están listadas (o con otro tipo, o con `No`) se ignoran y el importador las
+     nombra. Antes, una combinación sin factores era un error.
+  3. Errores del libro reunidos: columnas faltantes, nombre vacío o repetido, tipo, sismo o usar inválidos, factores no
+     numéricos o negativos, ninguna fila con `Usar = Sí`.
+- **Plantillas:** se quita `load_factors` y `etabs_files.combinations` es obligatorio (ruta relativa a la plantilla);
+  `import-etabs-footings --combinations` lo pasa o lo reemplaza. Una plantilla de zapatas de ETABS sin `etabs_files`
+  sigue siendo un error claro de `run`.
+- **Ejemplos:** `examples/etabs/zapatas/Combinaciones.xlsx` y su copia en `pruebas/`, con las 11 combinaciones que traían
+  las plantillas (mismos factores y marca de sismo). Se migraron las plantillas de los dos perfiles, las de iterar y las
+  de `pruebas/`. Los proyectos importados son los mismos: las huellas no cambian.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

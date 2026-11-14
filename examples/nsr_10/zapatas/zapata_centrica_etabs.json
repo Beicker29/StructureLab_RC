@@ -1,6 +1,10 @@
 {
   "description": "Plantilla de importación de zapatas para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (73 apoyos en 4 niveles de cimentación). DATOS DE EJEMPLO: dimensiones, columnas, mallas, suelo, relleno y sobrecargas son supuestos para probar la importación; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3.",
-  "etabs_files": {"service": "../../etabs/zapatas/Joint Reactions - Servicio.xlsx", "factored": "../../etabs/zapatas/Joint Reactions - Ultimas.xlsx"},
+  "etabs_files": {
+    "service": "../../etabs/zapatas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../etabs/zapatas/Joint Reactions - Ultimas.xlsx",
+    "combinations": "../../etabs/zapatas/Combinaciones.xlsx"
+  },
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",
@@ -29,60 +33,6 @@
     "overturning_safety_factor": 2.0,
     "overturning_safety_factor_seismic": 1.5,
     "seismic_bearing_factor": 1.33
-  },
-  "load_factors": {
-    "SERVICIO 1 (D+L)": {
-      "dead": 1.0,
-      "live": 1.0
-    },
-    "SERVICIO 2 (D+EX+EZ)": {
-      "dead": 1.0,
-      "live": 0.0,
-      "seismic": true
-    },
-    "SERVICIO 3 (D+EY+EZ)": {
-      "dead": 1.0,
-      "live": 0.0,
-      "seismic": true
-    },
-    "SERVICIO 4 (D+L+EX+EZ)": {
-      "dead": 1.0,
-      "live": 1.0,
-      "seismic": true
-    },
-    "SERVICIO 5  (D+L+EY+EZ)": {
-      "dead": 1.0,
-      "live": 1.0,
-      "seismic": true
-    },
-    "COMB0 (1.4D)": {
-      "dead": 1.4,
-      "live": 0.0
-    },
-    "COMB1 (1.2D+1.6L)": {
-      "dead": 1.2,
-      "live": 1.6
-    },
-    "COMB4A (1.2D+L+EX+EZ)": {
-      "dead": 1.2,
-      "live": 1.0,
-      "seismic": true
-    },
-    "COMB4B (1.2D+L+EY+EZ)": {
-      "dead": 1.2,
-      "live": 1.0,
-      "seismic": true
-    },
-    "COMB6A (0.9+EX+EZ)": {
-      "dead": 0.9,
-      "live": 0.0,
-      "seismic": true
-    },
-    "COMB6B (0.9D+EY+EZ)": {
-      "dead": 0.9,
-      "live": 0.0,
-      "seismic": true
-    }
   },
   "footings": [
     {

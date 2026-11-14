@@ -63,8 +63,8 @@ def _cell_text(cell: ElementTree.Element, strings: list[str]) -> str:
     return strings[int(value.text)] if kind == "s" else value.text
 
 
-def read_table(path: Path, sheet: str) -> Table:
-    """Lee una hoja con el formato de ETABS: título, encabezados, unidades y datos."""
+def _grid(path: Path, sheet: str) -> list[list[str]]:
+    """Las celdas de una hoja como texto, fila por fila."""
     try:
         with zipfile.ZipFile(path) as book:
             strings = _shared_strings(book)
@@ -75,6 +75,24 @@ def read_table(path: Path, sheet: str) -> Table:
     for row in root.iter(f"{_MAIN}row"):
         cells = {_column(cell.get("r", "A1")): _cell_text(cell, strings) for cell in row.iter(f"{_MAIN}c")}
         grid.append([cells.get(index, "") for index in range(max(cells, default=-1) + 1)])
+    return grid
+
+
+def read_rows(path: Path, sheet: str) -> tuple[tuple[str, ...], tuple[dict[str, str], ...]]:
+    """Lee una hoja con los encabezados en la primera fila y los datos debajo (los libros propios del programa, como el de
+    combinaciones, D-137): (encabezados, filas no vacías)."""
+    grid = _grid(path, sheet)
+    if not grid:
+        raise XlsxError(f"la hoja '{sheet}' esta vacia")
+    headers = tuple(header.strip() for header in grid[0])
+    rows = tuple({header: (values[index].strip() if index < len(values) else "") for index, header in enumerate(headers)}
+                 for values in grid[1:] if any(value.strip() for value in values))
+    return headers, rows
+
+
+def read_table(path: Path, sheet: str) -> Table:
+    """Lee una hoja con el formato de ETABS: título, encabezados, unidades y datos."""
+    grid = _grid(path, sheet)
     if len(grid) < _TABLE_HEAD_ROWS:
         raise XlsxError(f"la hoja '{sheet}' no tiene titulo, encabezados y unidades")
     headers = tuple(grid[1])

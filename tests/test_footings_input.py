@@ -11,12 +11,13 @@ from structurelab_rc.cli import main
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.engine import import_etabs_footings, run_project
+from structurelab_rc.io.etabs.combinations import Combination
 from structurelab_rc.io.etabs.footings import build_footing_project
 from structurelab_rc.io.etabs.importer import EtabsImportError
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.footing import Footing, Soil
 from structurelab_rc.model.project import Project
-from structurelab_rc.model.template import EtabsFootingTemplate
+from structurelab_rc.model.template import EtabsFootingTemplate, LoadFactors
 from structurelab_rc.setup import load_engine
 
 EXAMPLES = Path(__file__).parent.parent / "examples"
@@ -136,12 +137,19 @@ def _row(case: str, step: str, forces: tuple[float, float, float, float, float])
             "Step Type": step, **{name: str(value) for name, value in zip(HEADERS[6:], values, strict=True)}}
 
 
+def _combos(**given: tuple[str, float, float]) -> dict[str, Combination]:
+    """Combinaciones del Excel de combinaciones (D-137): nombre -> (tipo, factor D, factor L)."""
+    return {name: Combination(name, kind, LoadFactors(dead=dead, live=live)) for name, (kind, dead, live) in given.items()}
+
+
+COMBOS = _combos(S1=("service", 1.0, 1.0), U1=("factored", 1.2, 1.6), U2=("factored", 0.9, 0.0))
+COMBINED = _combos(S1=("service", 1.0, 1.0), U1=("factored", 1.2, 1.6))  # las de las zapatas combinadas de prueba
+
+
 def _template(**changes: Any) -> EtabsFootingTemplate:
     footing = {key: value for key, value in _footing().items() if key not in {"id", "loads"}}
     data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
             "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}, "soil": SOIL,
-            "load_factors": {"S1": {"dead": 1.0, "live": 1.0}, "U1": {"dead": 1.2, "live": 1.6},
-                             "U2": {"dead": 0.9, "live": 0.0}},
             "footings": [{"id": "Z1", "etabs_unique_names": ["10"], **footing}]}
     data.update(changes)
     return EtabsFootingTemplate.model_validate(data)
@@ -153,7 +161,7 @@ def test_reactions_become_actions_on_the_footing() -> None:
     factored = Table(HEADERS, UNITS, (_row("U1", "Max", (1.0, 2.0, 700.0, 3.0, 4.0)), _row("U1", "Min", (-1.0, -2.0, 600.0, -3.0, -4.0)),
                                       _row("U2", "", (0.0, 0.0, -50.0, 0.0, 0.0))))
 
-    project, summary = build_footing_project(_template(), service, factored)
+    project, summary = build_footing_project(_template(), (service, factored), COMBOS)
 
     footing = project["footings"][0]
     assert footing["id"] == "Z1-7"
@@ -170,24 +178,39 @@ def test_reactions_become_actions_on_the_footing() -> None:
     Project.model_validate(project)
 
 
-def test_missing_factors_and_joint_are_reported() -> None:
+def test_listed_combination_missing_and_joint_are_reported() -> None:
+    """D-137: una combinación del Excel de combinaciones que no está en la tabla de su tipo es un error, como un nudo sin
+    combinaciones."""
     service = Table(HEADERS, UNITS, (_row("S1", "", (0.0, 0.0, 500.0, 0.0, 0.0)),))
-    factored = Table(HEADERS, UNITS, (_row("U1", "", (0.0, 0.0, 700.0, 0.0, 0.0)), _row("U3", "", (0.0, 0.0, 700.0, 0.0, 0.0))))
+    factored = Table(HEADERS, UNITS, (_row("U1", "", (0.0, 0.0, 700.0, 0.0, 0.0)),))
     template = _template(footings=[{**_template().footings[0].model_dump(mode="json"), "etabs_unique_names": ["10", "99"]}])
 
     with pytest.raises(EtabsImportError) as raised:
-        build_footing_project(template, service, factored)
+        build_footing_project(template, (service, factored), COMBOS)
 
     messages = " | ".join(error.message for error in raised.value.errors)
-    assert "'U3' no tiene factores de carga" in messages
-    assert "'U2' de la plantilla no aparece en las tablas" in messages
+    assert "'U2' del Excel de combinaciones (cargas mayoradas) no aparece en la tabla de cargas mayoradas" in messages
     assert "'99' no tiene combinaciones en la tabla de servicio" in messages
+
+
+def test_unlisted_and_other_kind_combinations_are_ignored() -> None:
+    """D-137: las combinaciones de las tablas que no están en el Excel de combinaciones (o que están con otro tipo) no
+    entran y el resumen las nombra; ya no son un error."""
+    service = Table(HEADERS, UNITS, (_row("S1", "", (0.0, 0.0, 500.0, 0.0, 0.0)), _row("U1", "", (0.0, 0.0, 9.0, 0.0, 0.0))))
+    factored = Table(HEADERS, UNITS, (_row("U1", "", (0.0, 0.0, 700.0, 0.0, 0.0)), _row("U3", "", (0.0, 0.0, 800.0, 0.0, 0.0)),
+                                      _row("ENV", "", (0.0, 0.0, 900.0, 0.0, 0.0))))
+
+    project, summary = build_footing_project(_template(), (service, factored), _combos(S1=("service", 1.0, 1.0),
+                                                                                         U1=("factored", 1.2, 1.6)))
+
+    assert {(load["kind"], load["case"]) for load in project["footings"][0]["loads"]} == {("service", "S1"), ("factored", "U1")}
+    assert summary.ignored_combinations == ("ENV", "U3")  # U1 de la tabla de servicio no se lee, pero U1 sí se usa
 
 
 def test_wrong_units_are_rejected() -> None:
     table = Table(HEADERS, {**UNITS, "FZ": "kip"}, ())
     with pytest.raises(EtabsImportError, match="FZ"):
-        build_footing_project(_template(), table, table)
+        build_footing_project(_template(), (table, table), COMBOS)
 
 
 def test_example_workbooks_import(tmp_path: Path) -> None:
@@ -237,7 +260,7 @@ def _combined_template(source: dict[str, str], loads: dict[str, list[dict[str, A
                 "principal_direction": principal}
     data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
             "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight", "coating": "uncoated"}, "soil": SOIL,
-            "load_factors": {"S1": {"dead": 1.0, "live": 1.0}, "U1": {"dead": 1.2, "live": 1.6}}, "combined_footings": [combined]}
+            "combined_footings": [combined]}
     return EtabsFootingTemplate.model_validate(data)
 
 
@@ -249,7 +272,8 @@ FACTORED_ROWS = Table(HEADERS, UNITS, (_joint_row("10", "U1", (1.0, 2.0, 700.0, 
 
 def test_combined_footing_takes_both_kinds_from_etabs() -> None:
     """Cada columna recibe las reacciones de su nudo, con el signo de la acción sobre la zapata (P = FZ, el resto opuesto)."""
-    project, summary = build_footing_project(_combined_template({"service": "etabs", "factored": "etabs"}), SERVICE_ROWS, FACTORED_ROWS)
+    project, summary = build_footing_project(_combined_template({"service": "etabs", "factored": "etabs"}), (SERVICE_ROWS, FACTORED_ROWS),
+                                             COMBINED)
     footing = project["combined_footings"][0]
     assert "footings" not in project and "loads_source" not in footing
     c1, c2 = footing["columns"]
@@ -267,7 +291,7 @@ def test_principal_direction_y_keeps_the_etabs_forces_and_rotates_them_on_load()
     las fuerzas de ETABS tal cual; el modelo las rota a los ejes de la viga al cargar: lx' = ly, columnas x' = y,
     y' = −x, y cargas Vx' = Vy, Vy' = −Vx, Mx' = My, My' = −Mx."""
     template = _combined_template({"service": "etabs", "factored": "etabs"}, principal="y")
-    project, _ = build_footing_project(template, SERVICE_ROWS, FACTORED_ROWS)
+    project, _ = build_footing_project(template, (SERVICE_ROWS, FACTORED_ROWS), COMBINED)
     data = project["combined_footings"][0]
     assert (data["principal_direction"], data["lx"], data["ly"], data["columns"][0]["y"]) == ("y", 2000.0, 6000.0, -2000.0)
     service = next(load for load in data["columns"][0]["loads"] if load["case"] == "S1")
@@ -286,7 +310,7 @@ def test_combined_footing_mixes_etabs_and_template_loads(source: dict[str, str],
                                                          json_kind: str) -> None:
     """Un tipo de carga sale del Excel y el otro de la plantilla; el Excel que no se usa puede omitirse."""
     loads = {name: [_json_load("J1", json_kind, p)] for name, p in (("C1", 600.0), ("C2", 900.0))}
-    project, _ = build_footing_project(_combined_template(source, loads), *tables)
+    project, _ = build_footing_project(_combined_template(source, loads), tables, COMBINED)
     c1, c2 = project["combined_footings"][0]["columns"]
     assert {load["kind"] for load in c1["loads"]} == {"service", "factored"}
     assert next(load["P_kN"] for load in c2["loads"] if load["case"] == "J1") == 900.0
@@ -295,11 +319,11 @@ def test_combined_footing_mixes_etabs_and_template_loads(source: dict[str, str],
 
 def test_combined_footing_needs_the_excel_it_uses_and_its_joints() -> None:
     with pytest.raises(EtabsImportError, match="Falta el Excel de cargas mayoradas"):
-        build_footing_project(_combined_template({"service": "etabs", "factored": "etabs"}), SERVICE_ROWS, None)
+        build_footing_project(_combined_template({"service": "etabs", "factored": "etabs"}), (SERVICE_ROWS, None), COMBINED)
     lonely = Table(HEADERS, UNITS, (_joint_row("10", "S1", (0.0, 0.0, 500.0, 0.0, 0.0)),))
     loads = {name: [_json_load("J1", "factored", 600.0)] for name in ("C1", "C2")}
     with pytest.raises(EtabsImportError, match="'11' no tiene combinaciones en la tabla de servicio"):
-        build_footing_project(_combined_template({"service": "etabs", "factored": "json"}, loads), lonely, None)
+        build_footing_project(_combined_template({"service": "etabs", "factored": "json"}, loads), (lonely, None), COMBINED)
 
 
 @pytest.mark.parametrize(("source", "loads", "message"), [
@@ -317,7 +341,9 @@ def test_cli_omits_an_excel_with_a_dash(tmp_path: Path, capsys: pytest.CaptureFi
     template.write_text(json.dumps(_combined_template({"service": "etabs", "factored": "json"}, loads).model_dump(mode="json")),
                         encoding="utf-8")
     output = tmp_path / "proyecto.json"
-    assert main(["import-etabs-footings", str(SERVICE), "-", str(template), "--output", str(output)]) == 1  # nudos 10 y 11 no existen
+    combinations = EXAMPLES / "etabs" / "zapatas" / "pruebas" / "Combinaciones.xlsx"  # sin etabs_files, el explícito (D-137)
+    assert main(["import-etabs-footings", str(SERVICE), "-", str(template), "--output", str(output),
+                 "--combinations", str(combinations)]) == 1  # nudos 10 y 11 no existen
     assert "no tiene combinaciones" in capsys.readouterr().out
 
 
