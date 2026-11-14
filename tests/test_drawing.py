@@ -215,22 +215,23 @@ def test_svg_keeps_the_model_scale(tmp_path: Path) -> None:
 
 
 def test_report_writes_the_drawing(tmp_path: Path) -> None:
-    report = report_file(PRUEBAS / "zapata_centrica.json", tmp_path)
+    output = tmp_path / "zapata_centrica"  # los archivos llevan el nombre del caso (la carpeta de salida)
+    report = report_file(PRUEBAS / "zapata_centrica.json", output)
     names = {path.name for path in report.files}
     assert {"zapata_centrica_drawing.json", "Z1_geometria.svg", "Z1_planta_inferior.svg", "Z1_corte_x.svg", "Z1_cartilla.svg"} <= names
-    model = json.loads((tmp_path / "zapata_centrica_drawing.json").read_text(encoding="utf-8"))
+    model = json.loads((output / "zapata_centrica_drawing.json").read_text(encoding="utf-8"))
     assert model["scale"] == SCALE and set(LAYERS) <= set(model["layers"])
     assert {bar_layer("#4"), bar_layer("#5")} <= set(model["layers"])
     assert [view["name"] for view in model["elements"]["Z1"]][:2] == ["geometria", "planta_inferior"]
-    memoir = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
+    memoir = (output / "memoria.txt").read_text(encoding="utf-8")
     chapter = memoir[memoir.index("Despiece y cantidades"):]
     assert "Planta refuerzo inferior Z1" in chapter and "Cartilla de despiece Z1" in chapter and "Z1_corte_x.svg" in chapter
 
 
 def test_dxf_has_the_layers_and_views(tmp_path: Path) -> None:
     ezdxf = pytest.importorskip("ezdxf")
-    report_file(PRUEBAS / "zapata_combinada.json", tmp_path)
-    document = ezdxf.readfile(tmp_path / "zapata_combinada.dxf")
+    report_file(PRUEBAS / "zapata_combinada.json", tmp_path / "zapata_combinada")
+    document = ezdxf.readfile(tmp_path / "zapata_combinada" / "zapata_combinada.dxf")
     names = {layer.dxf.name for layer in document.layers}
     assert set(LAYERS) <= names
     space = document.modelspace()
@@ -329,9 +330,10 @@ def test_combined_footing_is_placed_by_its_columns_and_warns_if_they_disagree(tm
 def test_run_writes_the_location_plan_outside_the_memoir(tmp_path: Path) -> None:
     """D-130: run con etabs_files.locations escribe la planta por nivel y el cuadro (SVG y modelo de dibujo); la memoria
     no la lleva."""
-    assert main(["run", str(PRUEBAS / "zapata_centrica_etabs.json"), "--output", str(tmp_path)]) in (0, 1)
-    model = json.loads((tmp_path / "proyecto_drawing.json").read_text(encoding="utf-8"))
+    output = tmp_path / "zapata_centrica_etabs"
+    assert main(["run", str(PRUEBAS / "zapata_centrica_etabs.json"), "--output", str(output)]) in (0, 1)
+    model = json.loads((output / "zapata_centrica_etabs_drawing.json").read_text(encoding="utf-8"))  # con el nombre del caso
     names = [view["name"] for view in model["elements"]["localizacion"]]
     assert names[-1] == "cuadro_tipologias" and len(names) >= 2
-    assert all((tmp_path / f"localizacion_{name}.svg").exists() for name in names)
-    assert "localizacion" not in (tmp_path / "memoria.txt").read_text(encoding="utf-8").lower()
+    assert all((output / f"localizacion_{name}.svg").exists() for name in names)
+    assert "localizacion" not in (output / "memoria.txt").read_text(encoding="utf-8").lower()

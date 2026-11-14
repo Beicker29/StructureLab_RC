@@ -301,7 +301,7 @@ mayorados.
 | `combined_design.min_steel_exception` | sí/no | Obligatorio (D-123): lo mismo para la zapata que se diseña; el diseño parte del As,min con o sin la excepción y lo escribe en `proyecto.json`. |
 | `combined_design.stirrup_bars` | - | Opcional (D-110): barras permitidas para estribos cerrados de la viga larga, por ejemplo `["#3", "#4"]`. Con ellas, el cortante (y en la T, la torsión del alma, con Aℓ en la piel) pueden tomarlos estribos en lugar de un espesor mayor; gana lo más barato. Sin ellas no se proponen estribos. En la combinada rectangular la torsión es de placa (D-118): la toman las barras x e y. |
 | `combined_design.shape` | texto | `rectangular` (por defecto) o `inverted_t` (D-113): con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa. |
-| `combined_design.web_margin`, `combined_design.web_step` | mm | Solo con `inverted_t`: el alma parte de la columna más ancha (respecto a la resultante transversal) más `web_margin` a cada lado y crece de a `web_step`. |
+| `combined_design.web_margin`, `combined_design.web_step`, `combined_design.web_max` | mm | Solo con `inverted_t`: el alma parte de la columna más ancha (respecto a la resultante transversal) más `web_margin` a cada lado y crece de a `web_step`. El alma crece hasta `web_max`, obligatorio con la T (D-136). |
 | `combined_design.beam_h_min`, `combined_design.beam_h_step`, `combined_design.beam_h_max` | mm | Solo con `inverted_t`: alto total de la viga; `beam_h_min` debe superar `h_min`. |
 | `combined_design.placement_case` | texto | Opcional (D-108): el caso de servicio sin sismo cuya resultante ubica la base, por ejemplo `"D+L"`. Debe existir en las dos columnas, ser de servicio y no tener sismo. Sin él, se usa el de servicio sin sismo de mayor carga total. |
 
@@ -424,11 +424,11 @@ Bloque opcional del proyecto de verificación (y de las plantillas de ETABS de z
 
 Con el bloque, `report` y `run` escriben:
 
-- `<nombre>_drawing.json`: el modelo de dibujo neutro (capas, y por elemento sus vistas con líneas, polilíneas, círculos,
+- `<caso>_drawing.json` (`<caso>` es el nombre de la carpeta de salida, como en `<caso>.dli`): el modelo de dibujo neutro (capas, y por elemento sus vistas con líneas, polilíneas, círculos,
   textos y cotas en mm, redondeados a 0.1 mm). Entra en la huella.
 - `<zapata>_<vista>.svg`: una vista previa por vista, que la memoria incrusta en "Despiece y cantidades" después de la
   cartilla.
-- `<nombre>.dxf` si está instalado el extra `cad` (`pip install structurelab-rc[cad]`): todas las vistas en el espacio
+- `<caso>.dxf` si está instalado el extra `cad` (`pip install structurelab-rc[cad]`): todas las vistas en el espacio
   modelo, una fila por elemento.
 
 Vistas de cada zapata (la combinada en los ejes de la viga, X a lo largo de la viga, D-094):

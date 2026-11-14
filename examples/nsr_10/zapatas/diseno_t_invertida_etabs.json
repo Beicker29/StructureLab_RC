@@ -139,6 +139,7 @@
     "shape": "inverted_t",
     "web_margin": 100.0,
     "web_step": 100.0,
+    "web_max": 1500.0,
     "beam_h_min": 1300.0,
     "beam_h_step": 100.0,
     "beam_h_max": 2000.0

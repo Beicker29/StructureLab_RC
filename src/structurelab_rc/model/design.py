@@ -190,7 +190,7 @@ class CombinedDesign(DesignLimits):
     barras permitidas para estribos de la viga larga (D-110): con ellas, el cortante y la torsión pueden tomarlos estribos
     en lugar de un espesor mayor; sin ellas no se proponen estribos. shape = "inverted_t" diseña una T invertida (D-113):
     h_min, h_step y h_max son los del espesor de la zarpa; beam_h_* los del alto total de la viga, y el alma parte de la
-    columna más ancha más web_margin a cada lado y crece de a web_step."""
+    columna más ancha más web_margin a cada lado y crece de a web_step hasta web_max (D-136)."""
 
     min_steel_exception: bool  # D-123: si el diseño y la verificación admiten la excepción de 4/3 del As,min
     max_cantilever_start: NonNegativeFloat | None = None
@@ -200,6 +200,7 @@ class CombinedDesign(DesignLimits):
     shape: Literal["rectangular", "inverted_t"] = "rectangular"  # D-113
     web_margin: NonNegativeFloat | None = None  # T invertida: margen del alma a cada lado de la columna más ancha, mm
     web_step: PositiveFloat | None = None  # T invertida: paso del ancho del alma, mm
+    web_max: PositiveFloat | None = None  # T invertida: ancho máximo del alma que prueba la búsqueda, mm (D-136)
     beam_h_min: PositiveFloat | None = None  # T invertida: alto total de la viga, mm
     beam_h_step: PositiveFloat | None = None
     beam_h_max: PositiveFloat | None = None
@@ -210,7 +211,7 @@ class CombinedDesign(DesignLimits):
             raise ValueError("combined_design.ends necesita skin: cómo terminan las barras de piel que se diseñen (D-134)")
         if self.stirrup_bars and self.ends.stirrups is None:
             raise ValueError("combined_design.ends necesita stirrups (hook90, hook135 o hook180) si hay stirrup_bars (D-134)")
-        t_fields = ("web_margin", "web_step", "beam_h_min", "beam_h_step", "beam_h_max")
+        t_fields = ("web_margin", "web_step", "web_max", "beam_h_min", "beam_h_step", "beam_h_max")
         declared = [name for name in t_fields if getattr(self, name) is not None]
         if self.shape == "inverted_t":
             missing = [name for name in t_fields if name not in declared]

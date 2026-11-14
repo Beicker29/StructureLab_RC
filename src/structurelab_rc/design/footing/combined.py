@@ -103,7 +103,9 @@ _MM3_PER_M3 = 1e9
 _SOIL = ("Presion admisible del suelo", "Contacto con el suelo", "Deslizamiento", "Volcamiento")
 _THICKNESS = ("Cortante", "Punzonamiento", "Torsion", "Flexion: deformacion neta")
 # demanda = área requerida y capacidad = área provista: la proporción que falta
-_SCALED = (TORSION_LONGITUDINAL, DEEP_TRANSVERSE, DEEP_LONGITUDINAL)
+_SCALED = (TORSION_LONGITUDINAL, DEEP_TRANSVERSE, DEEP_LONGITUDINAL, DEEP_SPACING)
+_RATIO_KINDS = ("area", "max_spacing")  # tipos de falla cuya razón descarta de una vez (D-136)
+_SPACING_TOLERANCE = 1e-6  # mm
 _STIRRUP_CHECKS = (SHEAR_STRENGTH, SHEAR_MINIMUM, SHEAR_SPACING, TORSION_TRANSVERSE, TORSION_MIN_TRANSVERSE)
 Cases = list[tuple[FactoredCase, tuple[FootingLoad, ...]]]
 _COLUMN = re.compile(r"columna (\S+?)(?=[\s,):]|$)", re.IGNORECASE)
@@ -166,14 +168,16 @@ class Group:
             return None
         return next((option for option in self.options if not any(_ruled_out(option, *seen) for seen in self.failures)), None)
 
-    def tighten(self, kinds: set[str], ratio: float = 1.0) -> None:
-        """Las fallas de la opción vigente (todas las de una ronda) descartan las opciones que las repetirían; ratio > 1
-        (área requerida sobre provista, si la falla la da) descarta además las que no llegan a esa proporción."""
+    def tighten(self, kinds: set[str], ratios: dict[str, float] | None = None) -> None:
+        """Las fallas de la opción vigente (todas las de una ronda) descartan las opciones que las repetirían; la razón > 1
+        de un tipo de falla (área requerida sobre provista; separación provista sobre la máxima, D-136) descarta además
+        las que no llegan a esa proporción."""
         now = self.current()
         if now is None:
             self.optional = False
             return
-        self.failures += [(kind, now, ratio if kind == "area" else 1.0) for kind in sorted(kinds)]
+        given = ratios or {}
+        self.failures += [(kind, now, given.get(kind, 1.0) if kind in _RATIO_KINDS else 1.0) for kind in sorted(kinds)]
 
 
 _Option = dict[str, Any]
@@ -196,7 +200,11 @@ def _ruled_out(option: dict[str, Any], kind: str, failed: dict[str, Any], ratio:
     """Si la opción repetiría la falla de failed: con menos o igual área (resistencia, mínimos), con diámetro mayor o
     igual y separación menor o igual (desarrollo: ld crece con db y decrece con cb), con menos o igual luz libre
     (separación mínima) o con mayor o igual separación (separaciones máximas y fisuración). El área se compara total
-    (resistencia, en el ancho del grupo) y por metro (cuantías de retracción): se descarta la que no mejora ninguna."""
+    (resistencia, en el ancho del grupo) y por metro (cuantías de retracción): se descarta la que no mejora ninguna. Con
+    la razón de una separación máxima cuyo límite no depende de la opción (la del refuerzo distribuido de la viga alta,
+    d/5 y 300 mm, D-136), se descartan de una vez las que la exceden."""
+    if kind == "max_spacing" and ratio > 1.0 and option["_spacing"] > failed["_spacing"] / ratio + _SPACING_TOLERANCE:
+        return True
     if kind in _SAME_OR_WORSE:
         return _SAME_OR_WORSE[kind](option, failed)
     if ratio > 1.0:
@@ -882,11 +890,30 @@ def reinforce(ctx: Context, fc: float, geometry: Geometry) -> CombinedSolution |
         signal = next((name for name in ("soil", "zarpa", "web", "h") if name in targets), None)
         if signal is not None or not targets <= groups.keys():
             return signal or "h"
-        ratios = {sort(check)[0]: max(check.demand / check.capacity, 1.0) for check in failures
-                  if check.name in _SCALED and check.demand and check.capacity}
+        # Una razón por grupo y tipo de falla (el área y la separación de los estribos de la viga alta van aparte, D-136);
+        # en cada tipo, la de la última verificación que falla, como antes: el área de la piel no es lineal en su
+        # separación (cuenta capas), así que la mayor de varias estaciones podría descartar una opción que cumple.
+        ratios: dict[tuple[str, str], float] = {}
+        for check in failures:
+            if check.name in _SCALED and check.capacity:
+                key = sort(check)
+                ratios[key] = _scaled_ratio(check, key[0])
         for target in sorted(targets):
-            groups[target].tighten({kind for group, kind in wanted if group == target}, ratios.get(target, 1.0))
+            groups[target].tighten({kind for group, kind in wanted if group == target},
+                                   {kind: ratio for (group, kind), ratio in ratios.items() if group == target})
     return "h"
+
+
+def _scaled_ratio(check: Check, group: str) -> float:
+    """La razón de una falla escalable: demanda sobre capacidad. En la separación del refuerzo distribuido de la viga alta,
+    solo la de los estribos (su separación es exactamente la del estribo, D-136); la vertical de la piel es el mayor hueco
+    real entre capas, que puede exceder su separación nominal, y no escala: se corrige paso a paso."""
+    assert check.capacity
+    if check.name == DEEP_SPACING:
+        if group != "stirrups":
+            return 1.0
+        return max(dict(check.values).get("s estribos", 0.0) / check.capacity, 1.0)
+    return max((check.demand or 0.0) / check.capacity, 1.0)
 
 
 def _valid(ctx: Context, solution: CombinedSolution) -> bool:
@@ -1032,13 +1059,17 @@ def _at_beam_height(ctx: Context, fc: float, extra: int, height: float) -> Combi
     design = ctx.design
     assert design.web_step is not None
     zarpa, web = design.h_min, web_minimum(ctx, height)
+    if design.web_max is not None and web > design.web_max:
+        return "h"  # las columnas no caben en el alma máxima declarada (D-136)
+    reached = 0.0  # el ancho de la base que ya pidieron el suelo y el desarrollo transversal: no baja (D-136)
     while True:
-        result = _sized(ctx, fc, geometry_for(ctx, zarpa, extra, (web, height)))
+        result, reached = _sized_from(ctx, fc, geometry_for(ctx, zarpa, extra, (web, height)), reached)
         if result == "zarpa" and zarpa + design.h_step <= min(design.h_max, height - design.h_step):
             zarpa += design.h_step
         elif result == "web" and isinstance(result, str):
             footing_width = geometry_for(ctx, zarpa, extra, (web + design.web_step, height))
-            if footing_width is None or web + design.web_step + 2 * design.cover > design.plan_max:
+            too_wide = web + design.web_step > (design.web_max or design.plan_max)  # el ancho máximo declarado (D-136)
+            if footing_width is None or too_wide or web + design.web_step + 2 * design.cover > design.plan_max:
                 return "h"
             web += design.web_step
         else:
@@ -1055,16 +1086,26 @@ def _at_height(ctx: Context, fc: float, extra: int, h: float) -> CombinedSolutio
 
 
 def _sized(ctx: Context, fc: float, geometry: Geometry | None) -> CombinedSolution | str:
+    return _sized_from(ctx, fc, geometry, 0.0)[0]
+
+
+def _sized_from(ctx: Context, fc: float, geometry: Geometry | None, reached: float) -> tuple[CombinedSolution | str, float]:
+    """El refuerzo con el ancho mínimo del suelo, o el siguiente que desarrolle las barras transversales, desde reached
+    (el ancho al que ya llegó la búsqueda con un alma o una zarpa menores: el que piden el suelo y el desarrollo de las
+    aletas, (B − bw)/2, no baja al crecer el alma ni la zarpa, D-136); (resultado, ancho al que llegó)."""
     if geometry is None:
-        return "plan"
+        return "plan", reached
     sized = width_for(ctx, geometry)
     if sized is None:
-        return "soil"
+        return "soil", reached
+    step, top = ctx.design.plan_step, ctx.design.plan_max
+    while sized.width + step <= reached + _SPACING_TOLERANCE and sized.width + step <= top:
+        sized = replace(sized, width=sized.width + step)  # sobre la malla de anchos del suelo, hasta el ya alcanzado
     result = reinforce(ctx, fc, sized)
-    while result == "width" and sized.width + ctx.design.plan_step <= ctx.design.plan_max:
-        sized = replace(sized, width=sized.width + ctx.design.plan_step)  # más largo de desarrollo transversal
+    while result == "width" and sized.width + step <= top:
+        sized = replace(sized, width=sized.width + step)  # más largo de desarrollo transversal
         result = reinforce(ctx, fc, sized)
-    return "h" if result == "width" else result
+    return ("h" if result == "width" else result), sized.width
 
 
 def _heights(ctx: Context) -> list[float]:
@@ -1121,6 +1162,8 @@ def design_for_fc(ctx: Context, fc: float) -> FcOption:
     failure = "h"
     extra, remaining = 0, None
     while remaining is None or remaining > 0:
+        if best is not None and _length_floor(ctx, fc, extra) >= best.cost:
+            break  # ni el concreto mínimo de este largo (ni de los mayores) alcanza el mejor costo (D-136)
         result = _for_length(ctx, fc, extra)
         if result == "plan":
             failure = "plan" if best is None and extra == 0 else failure
@@ -1133,6 +1176,19 @@ def design_for_fc(ctx: Context, fc: float) -> FcOption:
             remaining = _EXTRA_LENGTHS if remaining is None else remaining - 1
         extra += 1
     return FcOption(fc, best, None if best is not None else _FAILURES[failure])
+
+
+def _length_floor(ctx: Context, fc: float, extra: int) -> float:
+    """Cota inferior del costo de cualquier solución con este largo: el concreto con el menor espesor (en la T, el menor
+    alto de viga y el alma mínima) y el ancho mínimo del suelo; infinito si el largo no cabe (D-136)."""
+    design = ctx.design
+    beam = None
+    if design.shape == "inverted_t":
+        assert design.beam_h_min is not None
+        beam = (web_minimum(ctx, design.beam_h_min), design.beam_h_min)
+    geometry = geometry_for(ctx, design.h_min, extra, beam)
+    sized = None if geometry is None else width_for(ctx, geometry)
+    return math.inf if sized is None else _concrete_floor(ctx, fc, sized)
 
 
 def _fc_in_worker(task: tuple[CombinedDesignProject, tuple[RebarSpec, ...], float]) -> FcOption:

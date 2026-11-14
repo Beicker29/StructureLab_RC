@@ -280,7 +280,7 @@ EXAMPLE_T = ROOT / "examples" / "nsr_10" / "zapatas" / "pruebas" / "diseno_t_inv
 def test_inverted_t_input_is_validated() -> None:
     data = json.loads(EXAMPLE_T.read_text(encoding="utf-8"))
     block = data["combined_design"]
-    for change, message in (({"web_margin": None}, "necesita web_margin"),
+    for change, message in (({"web_margin": None}, "necesita web_margin"), ({"web_max": None}, "necesita web_max"),
                             ({"beam_h_max": 600.0}, "beam_h_max debe ser al menos beam_h_min"),
                             ({"beam_h_min": 200.0, "beam_h_max": 900.0}, "beam_h_min debe superar h_min")):
         with pytest.raises(ValidationError, match=message):

@@ -52,8 +52,8 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
         assert data is not None, name
         project = work / "proyecto.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
-        report_file(project, work / "salida")
-        return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **_digests(work / "salida", files)}
+        report_file(project, work / Path(name).stem)
+        return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **_digests(work / Path(name).stem, files)}
     if name in ETABS or name in COMBINED_ETABS:
         data = import_etabs(WORKBOOK, project)[0] if name in ETABS else import_etabs_footings(*REACTIONS, project, _locations(project))[0]
         project = work / "etabs.json"
@@ -63,8 +63,8 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
             assert designed is not None, name
             project = work / "proyecto.json"
             project.write_text(json.dumps(designed, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
-    report_file(project, work / "salida")
-    return _digests(work / "salida", files)
+    report_file(project, work / Path(name).stem)
+    return _digests(work / Path(name).stem, files)
 
 
 def _locations(template: Path) -> Path | None:

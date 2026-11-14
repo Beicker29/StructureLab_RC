@@ -2580,6 +2580,38 @@
   la T invertida pasa de f'c 21 con viga de 1000 mm a f'c 28 con viga de 800 mm y planta 6600 × 1800 (ACI: $8.731.337
   → $8.408.621; NSR-10: $8.922.531 → $8.649.192), porque el acero quedó más barato frente al concreto.
 
+### D-136: búsqueda del diseño de la T invertida sin pasos inútiles (cierre de la v3 Fase 3B)
+
+- **Fecha:** 2026-11-14
+- **Problema medido:** el diseño amplio de la T desde ETABS (`diseno_t_invertida_etabs.json` de iterar, NSR-10) tardaba
+  22 min. Una traza de cada geometría probada mostró que más del 90 % del tiempo se iba en altos de viga y largos sin
+  solución: la separación del refuerzo distribuido de la viga alta (s ≤ d/5 y 300 mm) se corregía de 10 en 10 mm por
+  ronda, la capa inferior se agotaba antes y la búsqueda respondía "alma insuficiente", ensanchaba el alma de 900 a 4100
+  mm y, en cada paso del alma, volvía a empezar el ancho de la base desde el mínimo del suelo (3075 de 3804
+  verificaciones).
+- **Cambios (plan aprobado):**
+  1. La separación del refuerzo distribuido de la viga alta escala en los estribos: su límite depende solo de la
+     geometría y la separación revisada es la del estribo, así que se descartan de una vez las opciones con separación
+     mayor que s/DCR. La razón de separación va aparte de la de área (una por grupo y tipo de falla). La piel no escala:
+     su separación vertical revisada es el mayor hueco real entre capas, que puede exceder la nominal (al compararlo se
+     vio que descartaba una opción que cumple). En el área se conserva la razón de la última verificación que falla:
+     tomar la mayor de varias estaciones cambiaba la piel elegida, porque su área no es lineal en la separación.
+  2. El ancho de la base no reinicia al crecer el alma o la zarpa: el que piden el suelo y el desarrollo de las aletas,
+     (B − bw)/2, no baja (monótono).
+  3. `combined_design.web_max`, obligatorio con la T (decisión del usuario): el ancho máximo del alma que prueba la
+     búsqueda, como `beam_h_max`; los ejemplos declaran 1500 mm. Ensanchar el alma no resuelve la capa inferior agotada
+     (el As,min crece con bw y el desarrollo depende del largo), pero no se puede probar que nunca lo haga: el límite es
+     un dato del usuario, no una regla de la búsqueda.
+  4. Cota entre largos: con una solución, el largo cuyo concreto mínimo (menor espesor, alto de viga y alma, y ancho del
+     suelo) ya cuesta más se descarta, y con él los mayores.
+- **Resultado:** el ejemplo amplio baja de 1332 s a 105 s con la misma solución (f'c 21, 6900 × 2900 × 500, viga 1000 ×
+  1400, costo 18 153 792). Los cambios 1, 2 y 4 solo podan: los diseños de todas las huellas salen idénticos (se
+  compararon contra el código anterior).
+- **Además (pedido del usuario):** el modelo de dibujo y el DXF llevan el nombre del caso (la carpeta de salida), como el
+  `.dli`: con una plantilla de ETABS salían como `proyecto_drawing.json` y `proyecto.dxf`. La prueba de huellas escribe
+  cada ejemplo en una carpeta con su nombre: en las 8 huellas con dibujo cambia solo el nombre del archivo del modelo
+  de dibujo (`<caso>_drawing.json`); su contenido, la memoria y el resultado no cambian.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

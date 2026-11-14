@@ -46,7 +46,7 @@
   "examples/aci_318_25/zapatas/pruebas/zapata_centrica_etabs.json": {
     "resultado.json": "af001b1d0de5651f330d433f1cf1db1e6504f3cfccad99a8bbb9fec3c8f13a80",
     "memoria.txt": "c04d8102a88ee52aa1f00418f67982c10896c7ff2943b1389e11d895df7ca986",
-    "etabs_drawing.json": "6e0b07249754b6d24394d6311ae81a4393fb10b01a3aad1c1b65cf260258ae75"
+    "zapata_centrica_etabs_drawing.json": "d6f68aaf653abec0b0a8012e3a2fc0dacb8e6625eea6e7a48192edf7333c6975"
   },
   "examples/aci_318_25/zapatas/pruebas/zapata_combinada.json": {
     "resultado.json": "c7ab9d8cb95b653340b6a6ef524d66901afeb15d1da6fb84cba43f75f2cf24f1",
@@ -60,7 +60,7 @@
   "examples/aci_318_25/zapatas/pruebas/zapata_t_invertida_etabs.json": {
     "resultado.json": "2e8ef733e905f61aaf3c4748086e503bba58d81eeaedd6bb9b460296d80dd903",
     "memoria.txt": "60d1077270b7464d5792b1a4d44ea045a261dcb08f9e5ebddc87ee2b1ffbcb2d",
-    "etabs_drawing.json": "7b333efd600809062f50c9e5f4f1ee06c664a88b1563b75719ebab8220971d71"
+    "zapata_t_invertida_etabs_drawing.json": "490d258187fb0660a8cbb26f0210b84af34cb734b217c10874883e562105f0bf"
   },
   "examples/nsr_10/vigas/pruebas/viga_alta.json": {
     "resultado.json": "99e3654b0749aa7542a8fc4e71d3163348182c36d6b858b4d0ac46ffa032746e",
@@ -109,7 +109,7 @@
   "examples/nsr_10/zapatas/pruebas/zapata_centrica_etabs.json": {
     "resultado.json": "cf7e9dc6523146e8b6a20115fd65b3e9bef8d23bd051ae9ebadc30ed27ea743e",
     "memoria.txt": "6af1c78ea6665bde9f9b345c879b225846515d7b133f91740b64c54480ba90c3",
-    "etabs_drawing.json": "6e0b07249754b6d24394d6311ae81a4393fb10b01a3aad1c1b65cf260258ae75"
+    "zapata_centrica_etabs_drawing.json": "d6f68aaf653abec0b0a8012e3a2fc0dacb8e6625eea6e7a48192edf7333c6975"
   },
   "examples/nsr_10/zapatas/pruebas/zapata_combinada.json": {
     "resultado.json": "a362a8e51c8bf42042fb379ecdfd7f4ae833a79d7c2a436fd3e93d0d73d011e9",
@@ -123,6 +123,6 @@
   "examples/nsr_10/zapatas/pruebas/zapata_t_invertida_etabs.json": {
     "resultado.json": "9e05c8d7d8478718e17e074c2a1b74089fc1d5b8718dd52a4a00f3053ace6251",
     "memoria.txt": "c5acfc51e04cc269a0be3084e6ddadc3902dd7783ee253c8237a7dcdc1a125ad",
-    "etabs_drawing.json": "7b333efd600809062f50c9e5f4f1ee06c664a88b1563b75719ebab8220971d71"
+    "zapata_t_invertida_etabs_drawing.json": "490d258187fb0660a8cbb26f0210b84af34cb734b217c10874883e562105f0bf"
   }
 }

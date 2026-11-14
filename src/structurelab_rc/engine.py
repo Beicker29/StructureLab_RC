@@ -266,7 +266,8 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
     project, checks = run_project(path)
     results = build_results(project, checks, __version__, _combined_diagrams(project, checks))
-    schedules, drawing = ({}, None) if checks[0].status is Status.FAIL else _detailing(project, results, path.stem)
+    # El dibujo y el DXF llevan el nombre del caso (la carpeta de salida), como el .dli.
+    schedules, drawing = ({}, None) if checks[0].status is Status.FAIL else _detailing(project, results, output.name)
     output.mkdir(parents=True, exist_ok=True)
     figures = pressure_figures(results, output)
     diagram_files = diagram_figures(results, output)

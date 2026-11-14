@@ -124,12 +124,12 @@
             "end": "hook90"
           },
           "band": {
-            "end": "hook",
+            "end": "hook90",
             "designation": "#8",
             "spacing": 150
           },
           "band_top": {
-            "end": "hook",
+            "end": "hook90",
             "designation": "#4",
             "spacing": 150
           }
@@ -147,12 +147,12 @@
             "end": "hook90"
           },
           "band": {
-            "end": "hook",
+            "end": "hook90",
             "designation": "#8",
             "spacing": 110
           },
           "band_top": {
-            "end": "hook",
+            "end": "hook90",
             "designation": "#4",
             "spacing": 110
           }
