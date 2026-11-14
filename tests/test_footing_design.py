@@ -80,7 +80,8 @@ def _project(typologies: int = 2, plan_max: float = 4000.0, columns: int = 3) ->
                    "prices": {"concrete_per_m3": {"21": 500000.0}, "steel_per_kg": 6000.0},
                    "plan_step": 100.0, "plan_max": plan_max, "h_min": 350.0, "h_step": 50.0, "h_max": 900.0, "cover": 75.0,
                    "fill_height": 800.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
-                   "bars": ["#4", "#5"], "spacing_step": 25.0, "end": "straight", "dowel_bars": ["#5"]},
+                   "bars": ["#4", "#5"], "spacing_step": 25.0, "ends": {"bottom": "straight", "top": "straight",
+                       "dowels": "hook90"}, "dowel_bars": ["#5"]},
         "columns": [{"id": f"C{index}", "cx": float(side), "cy": float(side), "loads": _loads(p, m)}
                     for index, (side, p, m) in enumerate(loads, start=1)],
     }
@@ -330,11 +331,11 @@ def _enumerate(ctx: Context, column: DesignColumn, fc: float, plan: tuple[float,
     best = math.inf
     count = int(round((design.h_max - design.h_min) / design.h_step)) + 1
     for h in (design.h_min + index * design.h_step for index in range(count)):
-        bars = {"designation": design.bars[0], "spacing": 100.0}
-        provisional = Typology(fc, plan[0], plan[1], h, {"first": "x", "end": design.end, "x": bars, "y": bars}, None)
-        bottoms = list(_mat_candidates(ctx, provisional, _demands(ctx, [column], provisional, 1.0)))
+        bars = {"designation": design.bars[0], "spacing": 100.0, "end": design.ends.bottom}
+        provisional = Typology(fc, plan[0], plan[1], h, {"first": "x", "x": bars, "y": bars}, None)
+        bottoms = list(_mat_candidates(ctx, provisional, _demands(ctx, [column], provisional, 1.0), design.ends.bottom))
         negative = _demands(ctx, [column], provisional, -1.0)
-        tops = [None, *_mat_candidates(ctx, provisional, negative)] if max(negative.values()) > 0 else [None]
+        tops = [None, *_mat_candidates(ctx, provisional, negative, design.ends.top)] if max(negative.values()) > 0 else [None]
         for bottom, top in itertools.product(bottoms, tops):
             typology = Typology(fc, plan[0], plan[1], h, bottom, top)
             for dowels in _dowel_options(ctx, typology, column):  # de menor a mayor área (y costo)
@@ -564,9 +565,9 @@ def test_column_cost_comes_from_the_cartilla_with_detailing() -> None:
     de la malla dentro de cada tamaño), el estimado de barras rectas, igual que sin detailing."""
     plain = _context(_project())
     detailed = _context({**_project(), "detailing": {"stock_length_mm": 6000.0}})
-    bars = {"designation": "#5", "spacing": 200.0}
-    typology = typology_module.Typology(21.0, 2000.0, 2000.0, 500.0, {"first": "x", "end": "hook", "x": bars, "y": bars}, None)
-    column, dowels = detailed.project.columns[0], {"designation": "#5", "count": 4}
+    bars = {"designation": "#5", "spacing": 200.0, "end": "hook90"}
+    typology = typology_module.Typology(21.0, 2000.0, 2000.0, 500.0, {"first": "x", "x": bars, "y": bars}, None)
+    column, dowels = detailed.project.columns[0], {"designation": "#5", "count": 4, "end": "hook90"}
     cost, concrete, steel = column_cost(detailed, typology, column, dowels)
     basis = Basis(detailed.profile, detailed.materials(21.0), BARS, detailed.project.seismic.level)
     runs = footing_runs(basis, typology_module.footing_for(detailed, typology, column, dowels), detailed.soil)

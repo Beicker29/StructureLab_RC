@@ -46,6 +46,10 @@ _VALUE_UNITS = {"s": "mm", "db": "mm", "dagg": "mm", "bslab sin recortar": "mm",
 _CORNER_UNITS = {"x": "mm", "y": "mm", "v": "MPa"}
 
 
+# Las vigas todavía no usan el extremo de sus barras ni el gancho de sus estribos (D-134: llegan con su despiece).
+_BEAM_UNUSED: dict[str, Any] = {"layers": {"__all__": {"end"}}, "stirrups": {"end"}}
+
+
 def significant(value: float) -> float:
     """Redondeo de presentación a 6 cifras significativas; el cálculo interno no se redondea."""
     if value == 0 or not math.isfinite(value):
@@ -342,7 +346,8 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
             here = [check for check in own if check.z == station.z and check.case == station.case]
             data = [check_data(check) for check in here]
             stations.append({"z [mm]": station.z, "case": station.case, "status": _status(here),
-                             "demands": _demands_data(station.demands), "layout": station.layout.model_dump(mode="json", by_alias=True),
+                             "demands": _demands_data(station.demands),
+                             "layout": station.layout.model_dump(mode="json", by_alias=True, exclude=_BEAM_UNUSED),
                              "checks": data})
         members.append({
             "id": member.id,

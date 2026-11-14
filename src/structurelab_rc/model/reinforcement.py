@@ -4,6 +4,12 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, model_validator
 
+# Cómo termina cada grupo de barras (D-134), declarado siempre, sin valor por defecto. Barras: recta o gancho de 90°, 180°
+# o 135° (este no es gancho estándar de desarrollo: la barra se desarrolla como recta). Estribos: gancho de 90°, 135° o
+# 180°.
+BarEnd = Literal["straight", "hook90", "hook180", "hook135"]
+StirrupEnd = Literal["hook90", "hook135", "hook180"]
+
 
 class BarPosition(BaseModel):
     """Barra con posición propia; x es la coordenada de su centro sobre el eje 3, desde la cara −3 del alma, en mm.
@@ -38,7 +44,8 @@ class BarLayer(BaseModel):
     bars admite tres formas (D-040, D-045): solo designaciones, repartidas de forma uniforme en el alma entre las
     esquinas interiores del estribo; barras con posición x; o barras iguales por separación. role declara su función:
     las capas de torsión (Aℓ, D-027) y las de refuerzo superficial (skin, ACI 9.7.2.3 / NSR-10 C.10.6.7, D-083) no
-    cuentan como As de flexión.
+    cuentan como As de flexión. end es cómo terminan sus barras (D-134): obligatorio en la viga de la T invertida; las
+    vigas lo usarán con su despiece.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -46,6 +53,7 @@ class BarLayer(BaseModel):
     depth: PositiveFloat
     role: Literal["flexure", "torsion", "skin"]
     bars: tuple[str, ...] | tuple[BarPosition, ...] | BarSpacing
+    end: BarEnd | None = None
 
     @model_validator(mode="after")
     def _check_bars(self) -> Self:
@@ -60,7 +68,8 @@ class BarLayer(BaseModel):
 
 
 class Stirrups(BaseModel):
-    """Estribos verticales: barra, número de ramas, separación a lo largo del miembro (mm) y si son cerrados."""
+    """Estribos verticales: barra, número de ramas, separación a lo largo del miembro (mm), si son cerrados y el gancho
+    de cierre (D-134): obligatorio en las zapatas; las vigas lo usarán con su despiece."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -68,6 +77,7 @@ class Stirrups(BaseModel):
     legs: int = Field(ge=2)
     spacing: PositiveFloat
     closed: bool
+    end: StirrupEnd | None = None
 
 
 class ReinforcementLayout(BaseModel):

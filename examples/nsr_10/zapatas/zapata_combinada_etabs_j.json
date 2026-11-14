@@ -120,13 +120,16 @@
           "y": 2050,
           "dowels": {
             "designation": "#6",
-            "count": 12
+            "count": 12,
+            "end": "hook90"
           },
           "band": {
+            "end": "hook",
             "designation": "#8",
             "spacing": 150
           },
           "band_top": {
+            "end": "hook",
             "designation": "#4",
             "spacing": 150
           }
@@ -140,13 +143,16 @@
           "y": -1730,
           "dowels": {
             "designation": "#6",
-            "count": 12
+            "count": 12,
+            "end": "hook90"
           },
           "band": {
+            "end": "hook",
             "designation": "#8",
             "spacing": 110
           },
           "band_top": {
+            "end": "hook",
             "designation": "#4",
             "spacing": 110
           }
@@ -154,31 +160,34 @@
       ],
       "bottom": {
         "first": "y",
-        "end": "straight",
         "x": {
           "designation": "#4",
-          "spacing": 150
+          "spacing": 150,
+          "end": "hook90"
         },
         "y": {
           "designation": "#6",
-          "spacing": 150
+          "spacing": 150,
+          "end": "hook90"
         }
       },
       "top": {
         "first": "x",
-        "end": "straight",
         "x": {
           "designation": "#4",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "hook90"
         },
         "y": {
           "designation": "#7",
-          "spacing": 150
+          "spacing": 150,
+          "end": "hook90"
         }
       },
       "skin": {
         "designation": "#3",
-        "spacing": 150.0
+        "spacing": 150.0,
+        "end": "straight"
       }
     }
   ]

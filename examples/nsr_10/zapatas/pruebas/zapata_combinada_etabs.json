@@ -114,15 +114,18 @@
           "y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           },
           "band": {
             "designation": "#7",
-            "spacing": 110.0
+            "spacing": 110.0,
+            "end": "straight"
           },
           "band_top": {
             "designation": "#5",
-            "spacing": 120.0
+            "spacing": 120.0,
+            "end": "straight"
           }
         },
         {
@@ -134,45 +137,51 @@
           "y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           },
           "band": {
             "designation": "#7",
-            "spacing": 110.0
+            "spacing": 110.0,
+            "end": "straight"
           },
           "band_top": {
             "designation": "#5",
-            "spacing": 120.0
+            "spacing": 120.0,
+            "end": "straight"
           }
         }
       ],
       "bottom": {
         "first": "x",
-        "end": "straight",
         "x": {
           "designation": "#8",
-          "spacing": 140.0
+          "spacing": 140.0,
+          "end": "straight"
         },
         "y": {
           "designation": "#6",
-          "spacing": 140.0
+          "spacing": 140.0,
+          "end": "straight"
         }
       },
       "top": {
         "first": "x",
-        "end": "straight",
         "x": {
           "designation": "#8",
-          "spacing": 140.0
+          "spacing": 140.0,
+          "end": "straight"
         },
         "y": {
           "designation": "#5",
-          "spacing": 300.0
+          "spacing": 300.0,
+          "end": "straight"
         }
       },
       "skin": {
         "designation": "#5",
-        "spacing": 180.0
+        "spacing": 180.0,
+        "end": "straight"
       }
     },
     {
@@ -201,11 +210,13 @@
           "y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           },
           "band": {
             "designation": "#7",
-            "spacing": 110.0
+            "spacing": 110.0,
+            "end": "straight"
           },
           "loads": [
             {
@@ -242,11 +253,13 @@
           "y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           },
           "band": {
             "designation": "#7",
-            "spacing": 110.0
+            "spacing": 110.0,
+            "end": "straight"
           },
           "loads": [
             {
@@ -277,31 +290,34 @@
       ],
       "bottom": {
         "first": "x",
-        "end": "straight",
         "x": {
           "designation": "#8",
-          "spacing": 140.0
+          "spacing": 140.0,
+          "end": "straight"
         },
         "y": {
           "designation": "#6",
-          "spacing": 140.0
+          "spacing": 140.0,
+          "end": "straight"
         }
       },
       "top": {
         "first": "x",
-        "end": "straight",
         "x": {
           "designation": "#8",
-          "spacing": 140.0
+          "spacing": 140.0,
+          "end": "straight"
         },
         "y": {
           "designation": "#5",
-          "spacing": 300.0
+          "spacing": 300.0,
+          "end": "straight"
         }
       },
       "skin": {
         "designation": "#5",
-        "spacing": 180.0
+        "spacing": 180.0,
+        "end": "straight"
       }
     }
   ]

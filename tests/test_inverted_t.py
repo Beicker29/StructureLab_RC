@@ -87,14 +87,19 @@ def test_inverted_t_input_is_validated() -> None:
     for change, message in (({"h": 950.0}, "más alta que la zarpa"),
                             ({"beam": {**beam, "width": 400.0}}, "se sale del ancho de la viga"),
                             # D-106: el refuerzo de la viga va en beam (capas y estribos), no en la zapata.
-                            ({"stirrups": {"designation": "#4", "legs": 2, "spacing": 150.0, "closed": True}},
+                            ({"stirrups": {"designation": "#4", "legs": 2, "spacing": 150.0, "closed": True, "end": "hook135"}},
                              "declara el refuerzo de la viga en beam"),
-                            ({"beam": {key: value for key, value in beam.items() if key != "end"}}, "end"),
+                            # D-134: cada capa de la viga y sus estribos declaran end.
+                            ({"beam": {**beam, "layers": [{key: value for key, value in layer.items() if key != "end"}
+                                                          for layer in beam["layers"]]}}, "declara end"),
+                            ({"beam": {**beam, "stirrups": {key: value for key, value in beam["stirrups"].items() if key != "end"}}},
+                             "declaran end"),
                             ({"beam": {**beam, "bottom_width": 500.0}}, "no puede ser menor que el ancho del alma")):
         with pytest.raises(ValidationError, match=message):
             CombinedFooting.model_validate({**footing, **change})
     # D-114: top es la malla superior de la zarpa (como bottom) y se acepta en la T.
-    top = {"first": "y", "end": "straight", "x": {"designation": "#4", "spacing": 300.0}, "y": {"designation": "#5", "spacing": 200.0}}
+    top = {"first": "y", "x": {"designation": "#4", "spacing": 300.0, "end": "straight"}, "y": {"designation": "#5",
+        "spacing": 200.0, "end": "straight"}}
     assert CombinedFooting.model_validate({**footing, "top": top}).top is not None
 
 

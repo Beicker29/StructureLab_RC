@@ -268,7 +268,8 @@ def test_etabs_template_builds_the_combined_design_project() -> None:
     assert summary.footings == 1
     with pytest.raises(ValidationError, match="propone los pasadores"):
         EtabsCombinedDesignTemplate.model_validate({**template.model_dump(mode="json"),
-                                                    "columns": [{**columns[0], "dowels": {"designation": "#6", "count": 8}},
+                                                    "columns": [{**columns[0], "dowels": {"designation": "#6", "count": 8,
+                                                        "end": "hook90"}},
                                                                 columns[1]]})
 
 

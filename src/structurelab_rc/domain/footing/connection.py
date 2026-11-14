@@ -13,7 +13,7 @@ from dataclasses import dataclass, replace
 
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.development import BarAnchorage, development_check, required_length
+from structurelab_rc.domain.development import END_TEXT, BarAnchorage, developed_end, development_check, required_length
 from structurelab_rc.domain.footing.flexure import MAT_NAMES, FaceMoments, face_moments, has_negative_moment, required_mat_area
 from structurelab_rc.domain.footing.loads import FactoredCase, column_faces
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
@@ -35,13 +35,14 @@ def _available(footing: Footing, direction: str) -> float:
 
 
 def bar_anchorage(row: BarRow, layout: tuple[str, float, bool], footing: tuple[float, float], excess: float) -> BarAnchorage:
-    """Anclaje de una fila de barras de zapata: layout = (extremo, menor separación, malla inferior), footing = (h,
-    recubrimiento) y excess = As requerido / As suministrado. La barra extrema queda al recubrimiento de la cara lateral
-    y el extremo de la barra, al del extremo."""
+    """Anclaje de una fila de barras de zapata: layout = (extremo declarado, menor separación, malla inferior), footing =
+    (h, recubrimiento) y excess = As requerido / As suministrado. La barra extrema queda al recubrimiento de la cara
+    lateral y el extremo de la barra, al del extremo. El gancho de 135° se desarrolla como barra recta (D-134)."""
     end, spacing, bottom = layout
     h, cover = footing
+    kind, angle = developed_end(end)
     face_cover = h - row.depth - row.diameter / 2  # recubrimiento libre a la cara de la malla
-    return BarAnchorage(row.diameter, end, cb=min(cover + row.diameter / 2, spacing / 2),  # type: ignore[arg-type]
+    return BarAnchorage(row.diameter, kind, angle, cb=min(cover + row.diameter / 2, spacing / 2),
                         concrete_below=h - row.depth if bottom else row.depth, clear_cover=min(face_cover, cover),
                         clear_spacing=spacing - row.diameter, side_cover=cover, extension_cover=cover, excess=excess)
 
@@ -53,7 +54,7 @@ def _anchorage(basis: Basis, footing: Footing, mat_row: tuple[str, BarRow], case
     spacing = min(bar_set.spacing, bar_set.band_spacing or bar_set.spacing)
     required = required_mat_area(basis.profile, basis.materials, footing, mat_row, cases)
     excess = 1.0 if required is None else min(required / row.area, 1.0)
-    return bar_anchorage(row, (spec.end, spacing, mat == "bottom"), (footing.h, footing.cover), excess)
+    return bar_anchorage(row, (bar_set.end, spacing, mat == "bottom"), (footing.h, footing.cover), excess)
 
 
 def _development_checks(
@@ -67,7 +68,7 @@ def _development_checks(
                 continue
             bar = _anchorage(basis, footing, (mat, row), cases)
             required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
-            end = "con gancho estandar" if spec.end == "hook" else "rectas"
+            end = END_TEXT[getattr(spec, direction).end]
             name = f"Desarrollo malla {MAT_NAMES[mat]} (barras {direction})"
             checks.append(replace(development_check(name, required, _available(footing, direction), f"Barras {end}"),
                                   member=footing.id))

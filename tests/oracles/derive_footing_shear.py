@@ -249,8 +249,8 @@ def _expected(folder: str, f: dict) -> list[dict]:
 
 
 def _mat(first: str, x: tuple[str, float], y: tuple[str, float]) -> dict:
-    return {"first": first, "end": "straight", "x": {"designation": x[0], "spacing": x[1]},
-            "y": {"designation": y[0], "spacing": y[1]}}
+    return {"first": first, "x": {"designation": x[0], "spacing": x[1], "end": "straight"},
+            "y": {"designation": y[0], "spacing": y[1], "end": "straight"}}
 
 
 def _load(case: str, dead: float, live: float, p: float, mx: float = 0.0, my: float = 0.0, vx: float = 0.0) -> dict:

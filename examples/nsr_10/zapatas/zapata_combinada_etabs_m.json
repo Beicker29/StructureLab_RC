@@ -116,19 +116,22 @@
           "etabs_unique_name": "1651",
           "cx": 500.0,
           "cy": 1100.0,
-          "x": 0.00,
+          "x": 0.0,
           "y": 2200,
           "dowels": {
             "designation": "#6",
-            "count": 12
+            "count": 12,
+            "end": "hook90"
           },
           "band": {
             "designation": "#7",
-            "spacing": 150
+            "spacing": 150,
+            "end": "straight"
           },
           "band_top": {
             "designation": "#4",
-            "spacing": 150
+            "spacing": 150,
+            "end": "straight"
           }
         },
         {
@@ -136,49 +139,55 @@
           "etabs_unique_name": "1659",
           "cx": 500.0,
           "cy": 1100.0,
-          "x": 0.00,
+          "x": 0.0,
           "y": -1230,
           "dowels": {
             "designation": "#6",
-            "count": 12
+            "count": 12,
+            "end": "hook90"
           },
           "band": {
             "designation": "#7",
-            "spacing": 150
+            "spacing": 150,
+            "end": "straight"
           },
           "band_top": {
             "designation": "#4",
-            "spacing": 150
+            "spacing": 150,
+            "end": "straight"
           }
         }
       ],
       "bottom": {
         "first": "y",
-        "end": "straight",
         "x": {
           "designation": "#4",
-          "spacing": 150
+          "spacing": 150,
+          "end": "straight"
         },
         "y": {
           "designation": "#6",
-          "spacing": 150
+          "spacing": 150,
+          "end": "straight"
         }
       },
       "top": {
         "first": "x",
-        "end": "straight",
         "x": {
           "designation": "#4",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         },
         "y": {
           "designation": "#7",
-          "spacing": 150
+          "spacing": 150,
+          "end": "straight"
         }
       },
       "skin": {
         "designation": "#3",
-        "spacing": 150.0
+        "spacing": 150.0,
+        "end": "straight"
       }
     }
   ]

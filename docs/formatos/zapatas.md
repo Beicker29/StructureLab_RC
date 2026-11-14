@@ -63,7 +63,7 @@ Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3
 | `surcharge_live_kNm2` | kN/m² | Sobrecarga superimpuesta viva sobre el relleno (0 si no hay). |
 | `column.cx`, `column.cy` | mm | Dimensiones de la columna a lo largo de X y de Y. |
 | `column.offset_x`, `column.offset_y` | mm | Posición del eje de la columna respecto al centroide de la base. |
-| `column.dowels.designation`, `column.dowels.count` | -, - | Pasadores entre la columna y la zapata: barra del catálogo y número. Si faltan, sus verificaciones salen `INCOMPLETE`. |
+| `column.dowels.designation`, `column.dowels.count`, `column.dowels.end` | -, -, texto | Pasadores entre la columna y la zapata: barra del catálogo, número y cómo termina su pie (`straight`, `hook90`, `hook180` o `hook135`; obligatorio, D-134). Si faltan, sus verificaciones salen `INCOMPLETE`. |
 | `bottom` | objeto | Malla inferior (abajo). |
 | `top` | objeto o `null` | Malla superior, o `null` si no hay. |
 | `loads` | lista | Casos de carga (abajo). |
@@ -77,9 +77,17 @@ El relleno y las sobrecargas ocupan el área de la base menos la de la columna.
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `first` | texto | Dirección de las barras más cercanas a la cara de la zapata: `x` o `y`. Define la d de cada dirección. |
-| `end` | texto | Cómo terminan las barras: `straight` (rectas) o `hook` (gancho estándar); define la longitud de desarrollo. |
-| `x.designation`, `x.spacing` | -, mm | Barras paralelas a X: designación del catálogo y separación centro a centro. |
-| `y.designation`, `y.spacing` | -, mm | Barras paralelas a Y. |
+| `x.designation`, `x.spacing`, `x.end` | -, mm, texto | Barras paralelas a X: designación del catálogo, separación centro a centro y cómo terminan (obligatorio, D-134). |
+| `y.designation`, `y.spacing`, `y.end` | -, mm, texto | Barras paralelas a Y. |
+
+**Extremos (`end`, D-134).** Cada grupo de barras declara el suyo, sin valor por defecto: `straight` (recta), `hook90`,
+`hook180` o `hook135`. Con 90° y 180° la barra se desarrolla con gancho estándar (ℓdh; ACI 25.4.3, NSR-10 C.12.5; el
+factor de recubrimiento 0.7 pide el recubrimiento sobre la extensión solo con 90°) y el despiece usa la extensión y el
+doblado del gancho estándar (ACI Tabla 25.3.1, NSR-10 C.7.1 y C.7.2). El de 135° no es gancho estándar de barras: se
+desarrolla como barra recta y el despiece usa la extensión del gancho de 135° de estribos (ACI Tabla 25.3.2, NSR-10
+C.7.1.3) con el doblado del gancho estándar; en una barra mayor que lo que cubre esa tabla (No. 25 / #8) es un error de
+entrada. Los estribos declaran su gancho de cierre en `stirrups.end`: `hook90`, `hook135` o `hook180` (este último no
+existe en NSR-10, C.7.1.3).
 | `x.band_spacing` o `y.band_spacing` | mm | Opcional, solo en la dirección corta de una zapata rectangular: separación en la franja central de ancho igual al lado corto, centrada en la columna; fuera de ella rige `spacing`. |
 
 ### Caso de carga (`loads[]`)
@@ -147,16 +155,16 @@ los dos perfiles.
 | `columns[].cx`, `columns[].cy` | mm | Sección (cx a lo largo de X). |
 | `columns[].x`, `columns[].y` | mm | Posición del eje de la columna respecto al centroide de la base. |
 | `columns[].dowels` | | Pasadores, como en la zapata aislada (opcional; sin ellos sus verificaciones quedan INCOMPLETE). |
-| `columns[].band` | | Refuerzo transversal inferior bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation` y `spacing` (opcional). Es el único refuerzo inferior transversal de esa zona: la malla inferior y va solo fuera de las zonas de band (D-097). |
-| `columns[].band_top` | | Band superior (D-119): barras transversales arriba en el ancho de la franja, `designation` y `spacing` (opcional, sin `band_spacing`); toman el momento negativo de la franja y el de la torsión de placa. Van como `top.y` (debajo de `top.x` si esa dirección va más cerca de la cara) y son la capa superior de la franja; donde lo hay, `top.y` va solo fuera de esa zona. Sin `top`, terminan como la malla inferior. No aplica en la T invertida. |
+| `columns[].band` | | Refuerzo transversal inferior bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation`, `spacing` y `end` (opcional). Es el único refuerzo inferior transversal de esa zona: la malla inferior y va solo fuera de las zonas de band (D-097). |
+| `columns[].band_top` | | Band superior (D-119): barras transversales arriba en el ancho de la franja, `designation`, `spacing` y `end` (opcional, sin `band_spacing`); toman el momento negativo de la franja y el de la torsión de placa. Van como `top.y` (debajo de `top.x` si esa dirección va más cerca de la cara) y son la capa superior de la franja; donde lo hay, `top.y` va solo fuera de esa zona. Sin `top`, terminan como la malla inferior. No aplica en la T invertida. |
 | `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; las dos columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
 | `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
-| `top` | | Barras superiores con la estructura de `bottom` (D-099), opcional: `end` (`straight` o `hook`, para las dos direcciones), `x` (paralelas a X, a lo largo de la viga) e `y` (paralelas a Y, uniformes en todo el largo, D-097), cada una `{designation, spacing}` y opcional, con al menos una; `first`, la dirección más cercana a la cara superior, obligatoria si se declaran las dos. Sin barras superiores en la dirección principal, el momento negativo de la viga se revisa como concreto simple (D-072); sin ellas en la secundaria, el de las franjas transversales. Con `principal_direction: "y"`, `x`, `y` y `first` están en ejes globales y se intercambian como en `bottom`. En la T invertida, `top` es la malla superior de la zarpa (D-114; el refuerzo de la viga va en `beam.layers`): con `top.y`, el momento negativo de las aletas se revisa con esas barras por metro y se revisa su desarrollo desde la cara de la viga; sin ellas, de concreto simple. |
-| `stirrups` | | Estribos de la viga de la dirección principal, como en las vigas (`designation`, `legs`, `spacing`, `closed`), opcional (D-081); solo para el cortante: la torsión de la combinada rectangular es de placa (D-118). |
-| `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
+| `top` | | Barras superiores con la estructura de `bottom` (D-099), opcional: `x` (paralelas a X, a lo largo de la viga) e `y` (paralelas a Y, uniformes en todo el largo, D-097), cada una `{designation, spacing, end}` y opcional, con al menos una; `first`, la dirección más cercana a la cara superior, obligatoria si se declaran las dos. Sin barras superiores en la dirección principal, el momento negativo de la viga se revisa como concreto simple (D-072); sin ellas en la secundaria, el de las franjas transversales. Con `principal_direction: "y"`, `x`, `y` y `first` están en ejes globales y se intercambian como en `bottom`. En la T invertida, `top` es la malla superior de la zarpa (D-114; el refuerzo de la viga va en `beam.layers`): con `top.y`, el momento negativo de las aletas se revisa con esas barras por metro y se revisa su desarrollo desde la cara de la viga; sin ellas, de concreto simple. |
+| `stirrups` | | Estribos de la viga de la dirección principal, como en las vigas (`designation`, `legs`, `spacing`, `closed`) más su gancho de cierre `end` (obligatorio, D-134), opcional (D-081); solo para el cortante: la torsión de la combinada rectangular es de placa (D-118). |
+| `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical, `end`), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
 | `min_steel_exception` | sí/no | Obligatorio (D-123): si el As,min de flexión admite la excepción de 4/3 del As requerido por análisis (ACI 9.6.1.3, NSR-10 C.10.5.3) en la viga de la dirección principal, en las franjas y en la viga de la T; sin él, la entrada es inválida. No aplica a las mallas ni a las aletas, que usan el mínimo de losa. |
 | `deep_beam` | sí/no | La viga de la dirección principal es de gran altura (declarado por el usuario): se verifican los criterios de vigas altas como en las vigas (D-089). |
-| `beam` | mm | T invertida (D-093, D-106): `width` (bw) y `height` (H, altura total desde la base) de la viga centrada en Y sobre la zarpa de espesor `h`; `layers`, las capas de la viga como en las vigas (`depth` desde la cara superior de la viga, `role` flexure/skin/torsion, `bars` con x desde la cara −Y del alma, o solo la lista de barras, por ejemplo `["#6", "#6", "#6", "#6"]`, D-114); `stirrups`, sus estribos; `end` (`straight` o `hook`), cómo terminan sus barras; `bottom_width` (opcional), el ancho centrado en el alma que cubre la capa de flexión más profunda, que puede salir del alma sobre la zarpa (por defecto, el ala efectiva). Con solo la lista de barras, la capa inferior se reparte a igual separación en ese ancho (al recubrimiento si llega al borde de la base; por dentro del estribo si el ala no cuenta) y las demás capas entre las esquinas del estribo, como en las vigas. Las columnas deben caber en bw; `stirrups` y `skin` de la zapata no se usan (van en `beam`); `top` es la malla superior de la zarpa; `band` no aplica. La malla `bottom` es la de la zarpa: sus barras x van solo fuera del ancho cubierto y las y son las de las aletas. |
+| `beam` | mm | T invertida (D-093, D-106): `width` (bw) y `height` (H, altura total desde la base) de la viga centrada en Y sobre la zarpa de espesor `h`; `layers`, las capas de la viga como en las vigas (`depth` desde la cara superior de la viga, `role` flexure/skin/torsion, `bars` con x desde la cara −Y del alma, o solo la lista de barras, por ejemplo `["#6", "#6", "#6", "#6"]`, D-114, y `end`, obligatorio en cada capa, D-134); `stirrups`, sus estribos, con su gancho de cierre `end`; `bottom_width` (opcional), el ancho centrado en el alma que cubre la capa de flexión más profunda, que puede salir del alma sobre la zarpa (por defecto, el ala efectiva). Con solo la lista de barras, la capa inferior se reparte a igual separación en ese ancho (al recubrimiento si llega al borde de la base; por dentro del estribo si el ala no cuenta) y las demás capas entre las esquinas del estribo, como en las vigas. Las columnas deben caber en bw; `stirrups` y `skin` de la zapata no se usan (van en `beam`); `top` es la malla superior de la zarpa; `band` no aplica. La malla `bottom` es la de la zarpa: sus barras x van solo fuera del ancho cubierto y las y son las de las aletas. |
 
 **Torsión de placa (D-118).** Mx, Vy y la posición en Y de las columnas producen la torsión T(x) de la combinada
 rectangular. Se diseña como de placa, por Wood-Armer, con mxy = T/B uniforme en el ancho:
@@ -203,7 +211,8 @@ En lugar de zapatas, el proyecto de diseño trae columnas y un bloque `design` (
 | `design.h_min`, `design.h_step`, `design.h_max` | mm | Espesor mínimo, paso y máximo. |
 | `design.cover`, `design.fill_height`, `design.pedestal_height` | mm | Recubrimiento, relleno y pedestal de todas las zapatas. |
 | `design.surcharge_dead_kNm2`, `design.surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas. |
-| `design.bars`, `design.spacing_step`, `design.end` | -, mm, texto | Barras permitidas para las mallas, paso de separación y extremo de las barras. |
+| `design.bars`, `design.spacing_step` | -, mm | Barras permitidas para las mallas y paso de separación. |
+| `design.ends` | objeto | Cómo terminan las barras que se diseñan (D-134): `bottom` (malla inferior), `top` (malla superior) y `dowels` (pie de los pasadores), cada uno `straight`, `hook90`, `hook180` o `hook135`. |
 | `design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `design.method` | texto | `milp_iter` (por defecto desde E3b: iterativo, sin tabla de tramos, D-077), `milp` (asignación óptima sobre la tabla completa de tramos, D-075) o `dp` (solo la partición y la reasignación). `milp_iter` y `milp` requieren `pip install structurelab-rc[opt]`. `--method` en la CLI lo reemplaza. |
 | `design.milp_time_limit_s` | s | Límite de tiempo del MILP (por f'c con `milp`; por solución con `milp_iter`; por defecto 120). |
@@ -285,7 +294,8 @@ mayorados.
 | `combined_design.h_min`, `combined_design.h_step`, `combined_design.h_max` | mm | Espesor mínimo, paso y máximo. |
 | `combined_design.cover`, `combined_design.fill_height`, `combined_design.pedestal_height` | mm | Recubrimiento, relleno y pedestal. |
 | `combined_design.surcharge_dead_kNm2`, `combined_design.surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas. |
-| `combined_design.bars`, `combined_design.spacing_step`, `combined_design.end` | -, mm, texto | Barras permitidas para todo el refuerzo, paso de separación y extremo de las barras. |
+| `combined_design.bars`, `combined_design.spacing_step` | -, mm | Barras permitidas para todo el refuerzo y paso de separación. |
+| `combined_design.ends` | objeto | Cómo terminan las barras que se diseñan (D-134): `bottom` (malla inferior, band y capa inferior de la viga de la T), `top` (barras superiores, band superior y capa superior de la viga), `dowels` (pie de los pasadores) y `skin` (piel), cada uno `straight`, `hook90`, `hook180` o `hook135`; y `stirrups` (`hook90`, `hook135` o `hook180`), obligatorio con `stirrup_bars`. |
 | `combined_design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `combined_design.max_cantilever_start`, `combined_design.max_cantilever_end` | mm | Opcionales: voladizo máximo más allá de la cara exterior de la columna de cada extremo, a lo largo de la dirección principal (`start`: la columna con la menor coordenada). Por ejemplo, 0 en una columna de lindero. |
 | `combined_design.min_steel_exception` | sí/no | Obligatorio (D-123): lo mismo para la zapata que se diseña; el diseño parte del As,min con o sin la excepción y lo escribe en `proyecto.json`. |
@@ -372,7 +382,7 @@ Con el bloque, `report` y `run` agregan a cada zapata su cartilla (`detailing` e
 si hay plantilla; ver [dlnet.md](dlnet.md), D-133), y la memoria lleva el capítulo "Despiece y cantidades":
 
 - **Barras:** las mismas filas que revisa la verificación; las mallas de borde a borde menos el recubrimiento, con gancho
-  estándar de 90° en los dos extremos si `end` es `hook`. En la combinada, el band y el band superior de cada columna,
+  el gancho que declara cada grupo en su `end` (D-134). En la combinada, el band y el band superior de cada columna,
   las barras superiores (top.y fuera de las zonas de band superior), la piel y los estribos; en la T, las capas de la
   viga, sus estribos, la malla de la zarpa (las barras x fuera del ancho que cubre la capa inferior de la viga) y la malla
   superior de la zarpa. Pasadores rectos hasta la malla inferior con gancho de 90° al pie, el pedestal y el empalme a

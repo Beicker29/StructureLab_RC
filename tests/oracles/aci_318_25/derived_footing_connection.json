@@ -44,19 +44,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -140,31 +142,34 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 4
+            "count": 4,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "hook",
           "x": {
             "designation": "#8",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "hook90"
           },
           "y": {
             "designation": "#6",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "hook90"
           }
         },
         "top": {
           "first": "y",
-          "end": "straight",
           "x": {
             "designation": "#5",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "straight"
           }
         },
         "loads": [
@@ -259,19 +264,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#8",
-            "spacing": 110.0
+            "spacing": 110.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#8",
-            "spacing": 110.0
+            "spacing": 110.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -355,19 +362,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#7",
-            "count": 6
+            "count": 6,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -485,14 +494,15 @@
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -572,19 +582,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#8",
-            "count": 4
+            "count": 4,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -668,19 +680,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#6",
-            "spacing": 120.0
+            "spacing": 120.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#6",
-            "spacing": 120.0
+            "spacing": 120.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -764,19 +778,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#4",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#4",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -860,31 +876,34 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#6",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#6",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "straight"
           }
         },
         "top": {
           "first": "y",
-          "end": "straight",
           "x": {
             "designation": "#8",
-            "spacing": 250.0
+            "spacing": 250.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#8",
-            "spacing": 250.0
+            "spacing": 250.0,
+            "end": "straight"
           }
         },
         "loads": [
@@ -977,19 +996,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#8",
-            "spacing": 250.0
+            "spacing": 250.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#8",
-            "spacing": 250.0
+            "spacing": 250.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -1073,19 +1094,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#8",
-            "spacing": 250.0
+            "spacing": 250.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#8",
-            "spacing": 250.0
+            "spacing": 250.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -1169,19 +1192,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#5",
-            "spacing": 140.0
+            "spacing": 140.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 140.0
+            "spacing": 140.0,
+            "end": "straight"
           }
         },
         "top": null,
@@ -1265,19 +1290,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "hook",
           "x": {
             "designation": "#8",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "hook90"
           },
           "y": {
             "designation": "#8",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "hook90"
           }
         },
         "top": null,
@@ -1363,19 +1390,21 @@
           "offset_y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "hook",
           "x": {
             "designation": "#6",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "hook90"
           },
           "y": {
             "designation": "#6",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "hook90"
           }
         },
         "top": null,

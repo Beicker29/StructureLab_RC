@@ -85,7 +85,6 @@
         "beam": {
           "width": 600.0,
           "height": 900.0,
-          "end": "straight",
           "layers": [
             {
               "depth": 100.4,
@@ -115,7 +114,8 @@
                   "designation": "#8",
                   "x": 499.5999999999999
                 }
-              ]
+              ],
+              "end": "straight"
             },
             {
               "depth": 815.45,
@@ -181,26 +181,29 @@
                   "designation": "#6",
                   "x": 1350.0
                 }
-              ]
+              ],
+              "end": "straight"
             }
           ],
           "stirrups": {
             "designation": "#4",
             "legs": 4,
             "spacing": 120.0,
-            "closed": true
+            "closed": true,
+            "end": "hook135"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#6",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           }
         }
       },
@@ -434,7 +437,6 @@
         "beam": {
           "width": 600.0,
           "height": 900.0,
-          "end": "straight",
           "layers": [
             {
               "depth": 100.4,
@@ -464,7 +466,8 @@
                   "designation": "#8",
                   "x": 499.5999999999999
                 }
-              ]
+              ],
+              "end": "straight"
             },
             {
               "depth": 815.45,
@@ -486,26 +489,29 @@
                   "designation": "#6",
                   "x": 500.0
                 }
-              ]
+              ],
+              "end": "straight"
             }
           ],
           "stirrups": {
             "designation": "#4",
             "legs": 4,
             "spacing": 120.0,
-            "closed": true
+            "closed": true,
+            "end": "hook135"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#6",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           }
         }
       },
@@ -735,7 +741,6 @@
         "beam": {
           "width": 600.0,
           "height": 900.0,
-          "end": "straight",
           "layers": [
             {
               "depth": 100.4,
@@ -765,7 +770,8 @@
                   "designation": "#8",
                   "x": 499.5999999999999
                 }
-              ]
+              ],
+              "end": "straight"
             },
             {
               "depth": 815.45,
@@ -831,26 +837,29 @@
                   "designation": "#6",
                   "x": 1350.0
                 }
-              ]
+              ],
+              "end": "straight"
             }
           ],
           "stirrups": {
             "designation": "#4",
             "legs": 4,
             "spacing": 120.0,
-            "closed": true
+            "closed": true,
+            "end": "hook135"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#6",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#4",
-            "spacing": 300.0
+            "spacing": 300.0,
+            "end": "straight"
           }
         }
       },
@@ -1084,7 +1093,6 @@
         "beam": {
           "width": 600.0,
           "height": 900.0,
-          "end": "straight",
           "layers": [
             {
               "depth": 100.4,
@@ -1114,7 +1122,8 @@
                   "designation": "#8",
                   "x": 499.5999999999999
                 }
-              ]
+              ],
+              "end": "straight"
             },
             {
               "depth": 818.65,
@@ -1152,26 +1161,29 @@
                   "designation": "#4",
                   "x": 1350.0
                 }
-              ]
+              ],
+              "end": "straight"
             }
           ],
           "stirrups": {
             "designation": "#4",
             "legs": 4,
             "spacing": 120.0,
-            "closed": true
+            "closed": true,
+            "end": "hook135"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#4",
-            "spacing": 300.0
+            "spacing": 300.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           }
         }
       },
@@ -1405,7 +1417,6 @@
         "beam": {
           "width": 600.0,
           "height": 900.0,
-          "end": "straight",
           "layers": [
             {
               "depth": 100.4,
@@ -1435,7 +1446,8 @@
                   "designation": "#8",
                   "x": 499.5999999999999
                 }
-              ]
+              ],
+              "end": "straight"
             },
             {
               "depth": 815.45,
@@ -1469,27 +1481,30 @@
                   "designation": "#6",
                   "x": 750.0
                 }
-              ]
+              ],
+              "end": "straight"
             }
           ],
           "stirrups": {
             "designation": "#4",
             "legs": 4,
             "spacing": 120.0,
-            "closed": true
+            "closed": true,
+            "end": "hook135"
           },
           "bottom_width": 1200.0
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#5",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           }
         }
       },
@@ -1723,7 +1738,6 @@
         "beam": {
           "width": 600.0,
           "height": 900.0,
-          "end": "straight",
           "layers": [
             {
               "depth": 100.4,
@@ -1753,7 +1767,8 @@
                   "designation": "#8",
                   "x": 499.5999999999999
                 }
-              ]
+              ],
+              "end": "straight"
             },
             {
               "depth": 815.45,
@@ -1819,34 +1834,37 @@
                   "designation": "#6",
                   "x": 1350.0
                 }
-              ]
+              ],
+              "end": "straight"
             }
           ],
           "stirrups": {
             "designation": "#4",
             "legs": 4,
             "spacing": 120.0,
-            "closed": true
+            "closed": true,
+            "end": "hook135"
           }
         },
         "bottom": {
           "first": "x",
-          "end": "straight",
           "x": {
             "designation": "#6",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           },
           "y": {
             "designation": "#5",
-            "spacing": 150.0
+            "spacing": 150.0,
+            "end": "straight"
           }
         },
         "top": {
           "first": "y",
-          "end": "straight",
           "y": {
             "designation": "#5",
-            "spacing": 200.0
+            "spacing": 200.0,
+            "end": "straight"
           }
         }
       },

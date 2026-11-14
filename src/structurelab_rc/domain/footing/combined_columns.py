@@ -29,7 +29,7 @@ from structurelab_rc.domain.beam.shear import MIN_REINFORCEMENT, STRENGTH, concr
 from structurelab_rc.domain.beam.station import checks_for, flexure_station_checks, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check, check_from_errors
-from structurelab_rc.domain.development import development_check, required_length
+from structurelab_rc.domain.development import END_TEXT, development_check, required_length
 from structurelab_rc.domain.flexure_strength import MomentStrength, RectangularSection, rectangular_strength, required_area
 from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.combined_beam import BeamCase, beam_case, extreme_moments, moment_sign
@@ -624,22 +624,16 @@ def steel_excess(basis: Basis, section: tuple[float, float, float], provided: fl
     return min(max(analysis, minimum) / provided, 1.0)
 
 
-def bar_development_check(basis: Basis, footing: CombinedFooting, row: BarRow, anchorage: tuple[float, str, float, float],
-                          text: tuple[str, str]) -> Check:
-    """anchorage = (menor separación, capa: "bottom" o "top", As requerido / As suministrado, longitud disponible);
-    text = (nombre, nota). El tipo de extremo es el de la malla inferior o el de las barras superiores (D-082, D-099)."""
-    spacing, layer, excess, available = anchorage
+def bar_development_check(basis: Basis, footing: CombinedFooting, row: BarRow,
+                          anchorage: tuple[str, float, str, float, float], text: tuple[str, str]) -> Check:
+    """anchorage = (extremo declarado del grupo de barras, menor separación, capa: "bottom" o "top", As requerido / As
+    suministrado, longitud disponible); text = (nombre, nota). Cada grupo trae su extremo (D-134)."""
+    end, spacing, layer, excess, available = anchorage
     name, note = text
-    bottom = layer == "bottom"
-    if footing.beam is not None and row.direction == "x":
-        end = footing.beam.end  # barras de la viga de la T invertida (D-106)
-    else:
-        end = footing.bottom.end if bottom or footing.top is None else footing.top.end
     # La altura bajo las barras superiores es la total (en la T invertida, la de la viga, D-093).
-    bar = bar_anchorage(row, (end, spacing, bottom), (footing.total_height, footing.cover), excess)
+    bar = bar_anchorage(row, (end, spacing, layer == "bottom"), (footing.total_height, footing.cover), excess)
     required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
-    kind = "Barras con gancho estandar" if end == "hook" else "Barras rectas"
-    return replace(development_check(name, required, available, f"{note}; {kind}"), member=footing.id)
+    return replace(development_check(name, required, available, f"{note}; Barras {END_TEXT[end]}"), member=footing.id)
 
 
 def _row_spacing(row: BarRow) -> float:
@@ -654,13 +648,18 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     positive, negative = extreme_moments(footing, soil, cases)
     half = footing.lx / 2
     checks = []
-    top_spacing = footing.top.x.spacing if footing.top is not None and footing.top.x is not None else 0.0
-    spacings = (footing.bottom.x.spacing, top_spacing)
+    top_x = footing.top.x if footing.top is not None else None
+    spacings = (footing.bottom.x.spacing, 0.0 if top_x is None else top_x.spacing)
+    ends = (footing.bottom.x.end, "straight" if top_x is None else top_x.end)
     if footing.beam is not None:
+        # Las capas de la viga de la T invertida (D-106): la inferior y la de flexión más alta, cada una con su extremo.
+        flexure = [layer for layer in footing.beam.layers if layer.role == "flexure"]
+        top_layer = min(flexure, key=lambda layer: layer.depth)
+        ends = (footing.beam.bottom_layer.end or "straight", top_layer.end or "straight")
         # Barras de las capas de la viga de la T invertida (D-106): la menor separación entre las de cada capa.
         spacings = (_row_spacing(bottom), _row_spacing(top) if top is not None else 0.0)
-    for moment_at, row, spacing, label in ((positive, bottom, spacings[0], "inferiores"),
-                                           (negative, top, spacings[1], "superiores")):
+    for moment_at, row, spacing, end, label in ((positive, bottom, spacings[0], ends[0], "inferiores"),
+                                                (negative, top, spacings[1], ends[1], "superiores")):
         moment, x = moment_at
         if row is None or moment <= 0:
             continue
@@ -670,7 +669,7 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
         available = min(x + half, half - x) - footing.cover
         sign = "positivo" if label == "inferiores" else "negativo"
         note = f"Desde la seccion de mayor momento {sign} (z = {x + half:.0f} mm)"
-        checks.append(bar_development_check(basis, footing, row, (spacing, "bottom" if label == "inferiores" else "top", excess,
+        checks.append(bar_development_check(basis, footing, row, (end, spacing, "bottom" if label == "inferiores" else "top", excess,
                                                                   available), (f"{DEVELOPMENT} barras {label}, {PRINCIPAL}", note)))
     return checks
 
@@ -709,11 +708,12 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
         bottom = band if band is not None else row
         bottom_area = len(_inside(bottom, limits)) * bottom.bar_area
         if positive > 0 and bottom_area > 0:
-            spacing = column.band.spacing if column.band is not None else footing.bottom.y.spacing
+            bar_set = column.band if column.band is not None else footing.bottom.y
+            spacing = bar_set.spacing
             excess = steel_excess(basis, (width, footing.h, row.depth), bottom_area, positive, footing.min_steel_exception)
             name = (f"{DEVELOPMENT} refuerzo band (columna {column.id})" if band is not None
                     else f"{DEVELOPMENT} barras inferiores, {SECONDARY} (franja de la columna {column.id})")
-            checks.append(bar_development_check(basis, footing, bottom, (spacing, "bottom", excess, available), (name, note)))
+            checks.append(bar_development_check(basis, footing, bottom, (bar_set.end, spacing, "bottom", excess, available), (name, note)))
         top, top_spacing = strip_top(footing, column, row.depth, basis.bars)  # el band superior o top.y (D-119)
         if top is None or top_spacing is None or negative <= _NEGLIGIBLE_MOMENT:
             continue
@@ -722,7 +722,9 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
             excess = steel_excess(basis, (width, footing.h, top.depth), top_area, negative, footing.min_steel_exception)
             name = (f"{DEVELOPMENT} band superior (columna {column.id})" if column.band_top is not None
                     else f"{DEVELOPMENT} barras superiores, {SECONDARY} (franja de la columna {column.id})")
-            checks.append(bar_development_check(basis, footing, top, (top_spacing, "top", excess, available), (name, note)))
+            top_set = column.band_top if column.band_top is not None else footing.top.y if footing.top is not None else None
+            end = "straight" if top_set is None else top_set.end
+            checks.append(bar_development_check(basis, footing, top, (end, top_spacing, "top", excess, available), (name, note)))
     return checks
 
 

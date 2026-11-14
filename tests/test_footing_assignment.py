@@ -92,7 +92,8 @@ def _project(method: str = "milp") -> dict[str, Any]:
                    "prices": {"concrete_per_m3": {"21": 500000.0}, "steel_per_kg": 6000.0},
                    "plan_step": 100.0, "plan_max": 4000.0, "h_min": 350.0, "h_step": 50.0, "h_max": 900.0, "cover": 75.0,
                    "fill_height": 800.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
-                   "bars": ["#4", "#5"], "spacing_step": 25.0, "end": "straight", "dowel_bars": ["#5"]},
+                   "bars": ["#4", "#5"], "spacing_step": 25.0, "ends": {"bottom": "straight", "top": "straight",
+                       "dowels": "hook90"}, "dowel_bars": ["#5"]},
         "columns": [{"id": f"C{index}", "cx": float(side), "cy": float(side), "loads": _loads(p, m)}
                     for index, (side, p, m) in enumerate(loads, start=1)],
     }

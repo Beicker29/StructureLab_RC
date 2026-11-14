@@ -118,7 +118,13 @@
       "#8"
     ],
     "spacing_step": 10.0,
-    "end": "straight",
+    "ends": {
+      "bottom": "straight",
+      "top": "straight",
+      "dowels": "hook90",
+      "stirrups": "hook135",
+      "skin": "straight"
+    },
     "dowel_bars": [
       "#5",
       "#6",

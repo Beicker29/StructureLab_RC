@@ -51,11 +51,13 @@
           "y": 0.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           },
           "band": {
             "designation": "#6",
-            "spacing": 120.0
+            "spacing": 120.0,
+            "end": "straight"
           },
           "loads": [
             {
@@ -126,11 +128,13 @@
           "y": 150.0,
           "dowels": {
             "designation": "#6",
-            "count": 8
+            "count": 8,
+            "end": "hook90"
           },
           "band": {
             "designation": "#6",
-            "spacing": 120.0
+            "spacing": 120.0,
+            "end": "straight"
           },
           "loads": [
             {
@@ -196,28 +200,36 @@
       ],
       "bottom": {
         "first": "x",
-        "end": "straight",
         "x": {
           "designation": "#7",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         },
         "y": {
           "designation": "#5",
-          "spacing": 130.0
+          "spacing": 130.0,
+          "end": "straight"
         }
       },
       "top": {
         "first": "x",
-        "end": "straight",
         "x": {
           "designation": "#7",
-          "spacing": 130.0
+          "spacing": 130.0,
+          "end": "straight"
         },
         "y": {
           "designation": "#5",
-          "spacing": 300.0
+          "spacing": 300.0,
+          "end": "straight"
         }
       }
     }
-  ]
+  ],
+  "detailing": {
+    "stock_length_mm": 6000.0
+  },
+  "drawing": {
+    "scale": 50.0
+  }
 }

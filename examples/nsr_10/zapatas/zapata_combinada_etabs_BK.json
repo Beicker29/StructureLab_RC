@@ -120,15 +120,18 @@
           "y": 2250,
           "dowels": {
             "designation": "#6",
-            "count": 12
+            "count": 12,
+            "end": "hook90"
           },
           "band": {
             "designation": "#8",
-            "spacing": 100
+            "spacing": 100,
+            "end": "straight"
           },
           "band_top": {
             "designation": "#5",
-            "spacing": 150
+            "spacing": 150,
+            "end": "straight"
           }
         },
         {
@@ -140,45 +143,51 @@
           "y": -1830,
           "dowels": {
             "designation": "#6",
-            "count": 12
+            "count": 12,
+            "end": "hook90"
           },
           "band": {
             "designation": "#8",
-            "spacing": 100
+            "spacing": 100,
+            "end": "straight"
           },
           "band_top": {
             "designation": "#5",
-            "spacing": 150
+            "spacing": 150,
+            "end": "straight"
           }
         }
       ],
       "bottom": {
         "first": "y",
-        "end": "straight",
         "x": {
           "designation": "#5",
-          "spacing": 150
+          "spacing": 150,
+          "end": "straight"
         },
         "y": {
           "designation": "#6",
-          "spacing": 140
+          "spacing": 140,
+          "end": "straight"
         }
       },
       "top": {
         "first": "x",
-        "end": "straight",
         "x": {
           "designation": "#5",
-          "spacing": 150.0
+          "spacing": 150.0,
+          "end": "straight"
         },
         "y": {
           "designation": "#7",
-          "spacing": 140
+          "spacing": 140,
+          "end": "straight"
         }
       },
       "skin": {
         "designation": "#3",
-        "spacing": 150.0
+        "spacing": 150.0,
+        "end": "straight"
       }
     }
   ]

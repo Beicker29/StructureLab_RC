@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFlo
 
 from structurelab_rc.model.footing import FootingLoad, Location, Soil
 from structurelab_rc.model.project import Coating, DetailingSettings, DrawingSettings, SeismicFacts
+from structurelab_rc.model.reinforcement import BarEnd, StirrupEnd
 
 COMMERCIAL_FC = (21.0, 24.5, 28.0, 31.5, 35.0, 42.0, 48.0)  # MPa
 
@@ -51,11 +52,24 @@ class Prices(_Input):
         return any(float(key) == fc for key in self.concrete_per_m3)
 
 
+class DesignEnds(_Input):
+    """Cómo terminan las barras que diseña (D-134), por clase de grupo, sin valor por defecto: bottom (malla inferior,
+    band y capa inferior de la viga de la T), top (malla y barras superiores, band superior y capa superior de la viga),
+    dowels (el pie de los pasadores), stirrups (el gancho de cierre de los estribos, si se diseñan) y skin (la piel, si
+    se diseña)."""
+
+    bottom: BarEnd
+    top: BarEnd
+    dowels: BarEnd
+    stirrups: StirrupEnd | None = None
+    skin: BarEnd | None = None
+
+
 class DesignLimits(_Input):
     """Límites comunes del diseño de zapatas (D-069, D-107). fc_options son las resistencias comerciales que se evalúan,
     cada una con su precio (D-072); plan_step y plan_max, el paso y el mayor lado en planta; h_min, h_step y h_max, los
     del espesor; bars y dowel_bars, las barras permitidas para las mallas y para los pasadores; spacing_step, el paso de
-    la separación; end, cómo terminan las barras."""
+    la separación; ends, cómo terminan las barras de cada clase de grupo (D-134)."""
 
     fc_options: tuple[float, ...] = Field(min_length=1)
     prices: Prices
@@ -71,7 +85,7 @@ class DesignLimits(_Input):
     surcharge_live: NonNegativeFloat = Field(validation_alias="surcharge_live_kNm2")
     bars: tuple[str, ...] = Field(min_length=1)
     spacing_step: PositiveFloat
-    end: Literal["straight", "hook"]
+    ends: DesignEnds
     dowel_bars: tuple[str, ...] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -192,6 +206,10 @@ class CombinedDesign(DesignLimits):
 
     @model_validator(mode="after")
     def _check_shape(self) -> Self:
+        if self.ends.skin is None:
+            raise ValueError("combined_design.ends necesita skin: cómo terminan las barras de piel que se diseñen (D-134)")
+        if self.stirrup_bars and self.ends.stirrups is None:
+            raise ValueError("combined_design.ends necesita stirrups (hook90, hook135 o hook180) si hay stirrup_bars (D-134)")
         t_fields = ("web_margin", "web_step", "beam_h_min", "beam_h_step", "beam_h_max")
         declared = [name for name in t_fields if getattr(self, name) is not None]
         if self.shape == "inverted_t":

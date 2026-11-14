@@ -10,6 +10,8 @@ from typing import Literal, Protocol, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
+from structurelab_rc.model.reinforcement import BarEnd
+
 N_PER_KN = 1e3
 NMM_PER_KNM = 1e6
 MPA_PER_KPA = 1e-3  # también kN/m² a N/mm²
@@ -88,10 +90,12 @@ class Soil(_Input):
 
 
 class Dowels(_Input):
-    """Pasadores entre la columna (o el pedestal) y la zapata: designación y número de barras (D-059, punto 7)."""
+    """Pasadores entre la columna (o el pedestal) y la zapata: designación, número de barras (D-059, punto 7) y cómo
+    termina su pie (D-134)."""
 
     designation: str = Field(min_length=1)
     count: int = Field(ge=1)
+    end: BarEnd
 
 
 class Location(_Input):
@@ -123,22 +127,20 @@ class BarSet(_Input):
 
     band_spacing es la separación en la franja central de una zapata rectangular, de ancho igual al lado corto y
     centrada en la columna; solo la admiten las barras de la dirección corta (D-059, punto 4). spacing rige fuera de
-    la franja, o en todo el ancho si no hay franja.
+    la franja, o en todo el ancho si no hay franja. end es cómo terminan las barras (D-134).
     """
 
     designation: str = Field(min_length=1)
     spacing: PositiveFloat
+    end: BarEnd
     band_spacing: PositiveFloat | None = None
 
 
 class Mat(_Input):
-    """Malla: x son las barras paralelas a X y y las paralelas a Y. first es la dirección más cercana a la cara.
-
-    end declara cómo terminan las barras: rectas o con gancho estándar (D-059, punto 8).
-    """
+    """Malla: x son las barras paralelas a X y y las paralelas a Y, cada una con su extremo (D-134). first es la dirección
+    más cercana a la cara."""
 
     first: Literal["x", "y"]
-    end: Literal["straight", "hook"]
     x: BarSet
     y: BarSet
 

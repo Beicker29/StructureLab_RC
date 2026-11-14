@@ -179,9 +179,9 @@ def top_mat(designation: str, spacing: float, end: str = "straight", y: tuple[st
             first: str | None = None) -> dict:
     """Las barras superiores de la zapata combinada con la estructura de la malla inferior (D-099): x = (designación,
     separación) y, opcional, y = (designación, separación) con first."""
-    top: dict = {"end": end, "x": {"designation": designation, "spacing": spacing}}
+    top: dict = {"x": {"designation": designation, "spacing": spacing, "end": end}}
     if y is not None:
-        top["y"] = {"designation": y[0], "spacing": y[1]}
+        top["y"] = {"designation": y[0], "spacing": y[1], "end": end}
     if first is not None:
         top["first"] = first
     return top
@@ -195,7 +195,7 @@ def top_x(f: dict) -> dict | None:
         return None
     nearest = top.get("first") or "x"
     above = BARS[top["y"]["designation"]][0] if nearest == "y" and top.get("y") else 0.0
-    return {**top["x"], "end": top["end"], "above": above}
+    return {**top["x"], "above": above}
 
 
 def _rows(f: dict) -> list[dict]:
@@ -464,8 +464,8 @@ def _column(name: str, x: float, loads: list[dict], cx: float = 450.0, cy: float
 def _footing(columns: list[dict], **changes: object) -> dict:
     data = {"id": "ZC", "min_steel_exception": False, "lx": 6000.0, "ly": 2000.0, "h": 700.0, "cover": 75.0,
             "fill_height": 1000.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
-            "bottom": {"first": "x", "end": "straight", "x": {"designation": "#7", "spacing": 150.0},
-                       "y": {"designation": "#5", "spacing": 200.0}},
+            "bottom": {"first": "x", "x": {"designation": "#7", "spacing": 150.0, "end": "straight"},
+                       "y": {"designation": "#5", "spacing": 200.0, "end": "straight"}},
             "top": top_mat("#7", 150.0, "straight")}
     data.update(changes)
     return {key: value for key, value in data.items() if value is not None}
@@ -476,8 +476,8 @@ CASES = [
      _footing([_column("C1", -2000.0, [_load("U1", 1300.0)]), _column("C2", 2000.0, [_load("U1", 1300.0)])])),
     ("borde-desigual", "columna de borde y cargas desiguales (como el manual del ACI): presión trapezoidal",
      _footing([_column("C1", -2700.0, [_load("U1", 900.0)], cx=450.0), _column("C2", 1000.0, [_load("U1", 1600.0)], cx=500.0, cy=500.0)],
-              lx=6000.0, ly=2400.0, h=800.0, bottom={"first": "x", "end": "straight", "x": {"designation": "#8", "spacing": 150.0},
-                                                       "y": {"designation": "#5", "spacing": 200.0}},
+              lx=6000.0, ly=2400.0, h=800.0, bottom={"first": "x", "x": {"designation": "#8", "spacing": 150.0, "end": "straight"},
+                                                       "y": {"designation": "#5", "spacing": 200.0, "end": "straight"}},
               top=top_mat("#8", 150.0, "straight"))),
     ("momentos-sismo", "dos casos: gravedad y sismo con My, Vx, pedestal y columnas desplazadas en Y",
      _footing([_column("C1", -2200.0, [_load("U1", 1100.0, mx=20.0), _load("U2", 800.0, dead=1.0, live=0.5, my=250.0,
@@ -492,34 +492,34 @@ CASES = [
      _footing([_column("C1", -2000.0, [_load("U1", 2200.0)]), _column("C2", 2000.0, [_load("U1", 2200.0)])], h=450.0)),
     ("cortante-con-estribos", "la misma zapata delgada con estribos: Vs, Av,min (ACI 7.6.3.1) y d del acero a tracción",
      _footing([_column("C1", -2000.0, [_load("U1", 2200.0)]), _column("C2", 2000.0, [_load("U1", 2200.0)])], h=550.0,
-              stirrups={"designation": "#4", "legs": 8, "spacing": 250.0, "closed": True},
+              stirrups={"designation": "#4", "legs": 8, "spacing": 250.0, "closed": True, "end": "hook135"},
               top=top_mat("#8", 120.0, "straight"))),
     ("alta-con-piel", "h = 1000 mm (> 900): refuerzo superficial en las dos caras a 200 mm",
      _footing([_column("C1", -2000.0, [_load("U1", 1800.0)]), _column("C2", 2000.0, [_load("U1", 1800.0)])], h=1000.0,
-              skin={"designation": "#4", "spacing": 200.0})),
+              skin={"designation": "#4", "spacing": 200.0, "end": "straight"})),
     ("alta-sin-piel", "h = 1000 mm sin refuerzo superficial: no cumple 9.7.2.3 / C.10.6.7",
      _footing([_column("C1", -2000.0, [_load("U1", 1800.0)]), _column("C2", 2000.0, [_load("U1", 1800.0)])], h=1000.0)),
     ("minimo-excepcion", "cargas pequeñas: As < As,min de vigas pero ≥ 4/3 del requerido, con la excepción declarada (D-123)",
      _footing([_column("C1", -1500.0, [_load("U1", 250.0)]), _column("C2", 1500.0, [_load("U1", 250.0)])], lx=4500.0,
               min_steel_exception=True,
-              bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 250.0},
-                  "y": {"designation": "#5", "spacing": 250.0}},
+              bottom={"first": "x", "x": {"designation": "#5", "spacing": 250.0, "end": "straight"},
+                  "y": {"designation": "#5", "spacing": 250.0, "end": "straight"}},
               top=top_mat("#5", 250.0, "straight"))),
     ("minimo-no-cumple", "As menor que As,min y que 4/3 del requerido, con la excepción declarada (D-123)",
      _footing([_column("C1", -1200.0, [_load("U1", 1300.0)]), _column("C2", 1200.0, [_load("U1", 1300.0)])],
               min_steel_exception=True,
-              bottom={"first": "y", "end": "straight", "x": {"designation": "#4", "spacing": 350.0},
-                  "y": {"designation": "#5", "spacing": 200.0}},
+              bottom={"first": "y", "x": {"designation": "#4", "spacing": 350.0, "end": "straight"},
+                  "y": {"designation": "#5", "spacing": 200.0, "end": "straight"}},
               top=top_mat("#8", 120.0, "straight"))),
     ("torsion-placa", "columna desplazada 400 mm en Y con Mx y Vy: torsión de placa por Wood-Armer en las dos caras (D-118); "
      "los estribos solo para el cortante",
      _footing([_column("C1", -2000.0, [_load("U1", 1500.0, mx=-60.0, vy=40.0)], y=400.0),
                _column("C2", 2000.0, [_load("U1", 1500.0)])], h=600.0,
-              stirrups={"designation": "#5", "legs": 8, "spacing": 100.0, "closed": True})),
+              stirrups={"designation": "#5", "legs": 8, "spacing": 100.0, "closed": True, "end": "hook135"})),
     ("torsion-placa-alta", "h = 1000 mm, columna desplazada en Y: Wood-Armer y el refuerzo superficial de cada cara (D-118)",
      _footing([_column("C1", -2000.0, [_load("U1", 1800.0, mx=-80.0)], y=450.0), _column("C2", 2000.0, [_load("U1", 1700.0)])],
-              h=1000.0, skin={"designation": "#5", "spacing": 200.0},
-              stirrups={"designation": "#5", "legs": 8, "spacing": 120.0, "closed": True})),
+              h=1000.0, skin={"designation": "#5", "spacing": 200.0, "end": "straight"},
+              stirrups={"designation": "#5", "legs": 8, "spacing": 120.0, "closed": True, "end": "hook135"})),
     ("torsion-sin-superior", "sin barras superiores y columnas desplazadas: el momento superior de Wood-Armer en concreto "
      "simple (D-072, D-118)",
      _footing([_column("C1", -2000.0, [_load("U1", 900.0)], y=450.0), _column("C2", 2000.0, [_load("U1", 900.0)], y=-450.0)],

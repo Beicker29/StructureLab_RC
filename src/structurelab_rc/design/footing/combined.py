@@ -247,20 +247,24 @@ def placement_loads(ctx: Context) -> tuple[FootingLoad, FootingLoad]:
 def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any]) -> dict[str, Any]:
     """La zapata en el formato de entrada, en ejes globales con la dirección principal declarada; reinforcement va en
     ejes de la viga (x a lo largo de ella) y se escribe en los globales (D-094)."""
-    design = ctx.design
+    design, ends = ctx.design, ctx.design.ends
     principal, _ = ctx.axes()
     swap = principal == "y"
     lx, ly = (geometry.width, geometry.length) if swap else (geometry.length, geometry.width)
+
+    def ended(item: dict[str, Any], end: str | None) -> dict[str, Any]:  # cada grupo con su extremo declarado (D-134)
+        return {**item, "end": end}
+
     columns = []
     for column in ctx.project.columns:
         item: dict[str, Any] = {"id": column.id, "cx": column.cx, "cy": column.cy,
                                 "x": round(column.x - geometry.center[0], 6), "y": round(column.y - geometry.center[1], 6)}
         if column.id in reinforcement["dowels"]:
-            item["dowels"] = reinforcement["dowels"][column.id]
+            item["dowels"] = ended(reinforcement["dowels"][column.id], ends.dowels)
         if column.id in reinforcement["bands"]:
-            item["band"] = reinforcement["bands"][column.id]
+            item["band"] = ended(reinforcement["bands"][column.id], ends.bottom)
         if reinforcement.get("band_tops", {}).get(column.id) is not None:  # band superior (D-119)
-            item["band_top"] = reinforcement["band_tops"][column.id]
+            item["band_top"] = ended(reinforcement["band_tops"][column.id], ends.top)
         item["loads"] = [load_input(load) for load in column.loads]
         columns.append(item)
     data: dict[str, Any] = {
@@ -268,22 +272,24 @@ def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any
         "min_steel_exception": design.min_steel_exception,
         "fill_height": design.fill_height, "pedestal_height": design.pedestal_height,
         "surcharge_dead_kNm2": design.surcharge_dead, "surcharge_live_kNm2": design.surcharge_live, "columns": columns,
-        "bottom": _declared({"first": "x", "end": design.end, "x": reinforcement["bottom_x"], "y": reinforcement["bottom_y"]}, swap),
+        "bottom": _declared({"first": "x", "x": ended(reinforcement["bottom_x"], ends.bottom),
+                             "y": ended(reinforcement["bottom_y"], ends.bottom)}, swap),
     }
     if geometry.beam is not None:  # T invertida (D-106, D-113): el refuerzo de la viga va en beam
-        data["bottom"] = _declared({"first": "y", "end": design.end, "x": reinforcement["mat_x"], "y": reinforcement["bottom_y"]}, swap)
+        data["bottom"] = _declared({"first": "y", "x": ended(reinforcement["mat_x"], ends.bottom),
+                                    "y": ended(reinforcement["bottom_y"], ends.bottom)}, swap)
         if reinforcement.get("top_y") is not None:  # malla superior de la zarpa (D-114)
-            data["top"] = _declared({"end": design.end, "y": reinforcement["top_y"]}, swap)
+            data["top"] = _declared({"y": ended(reinforcement["top_y"], ends.top)}, swap)
         data["beam"] = _beam_data(ctx, geometry, reinforcement)
         data["deep_beam"] = _is_deep(ctx, geometry)
         return data
-    top = {key: reinforcement[f"top_{key}"] for key in ("x", "y") if reinforcement.get(f"top_{key}") is not None}
+    top = {key: ended(reinforcement[f"top_{key}"], ends.top) for key in ("x", "y") if reinforcement.get(f"top_{key}") is not None}
     if top:
-        data["top"] = _declared({**({"first": "x"} if len(top) == len(("x", "y")) else {}), "end": design.end, **top}, swap)
+        data["top"] = _declared({**({"first": "x"} if len(top) == len(("x", "y")) else {}), **top}, swap)
     if reinforcement.get("skin") is not None:
-        data["skin"] = reinforcement["skin"]
+        data["skin"] = ended(reinforcement["skin"], ends.skin)
     if reinforcement.get("stirrups") is not None:
-        data["stirrups"] = reinforcement["stirrups"]
+        data["stirrups"] = ended(reinforcement["stirrups"], ends.stirrups)
     return data
 
 
@@ -334,22 +340,23 @@ def _beam_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any]) 
     bottom_depth, xs = bottom_layer(ctx, geometry, bottom, aleta_db)
     top_bars = [{"designation": top["designation"], "x": round(x, 3)} for x in uniform_positions(inset, web - inset, top["spacing"])]
     bottom_bars = [{"designation": bottom["designation"], "x": round(x, 3)} for x in xs]
-    layers: list[dict[str, Any]] = [{"depth": round(top_depth, 3), "role": "flexure", "bars": top_bars},
-                                    {"depth": round(bottom_depth, 3), "role": "flexure", "bars": bottom_bars}]
+    ends = design.ends  # cada capa con el extremo de su clase (D-134)
+    layers: list[dict[str, Any]] = [{"depth": round(top_depth, 3), "role": "flexure", "bars": top_bars, "end": ends.top},
+                                    {"depth": round(bottom_depth, 3), "role": "flexure", "bars": bottom_bars, "end": ends.bottom}]
     skin = reinforcement.get("skin")
     if skin is not None:
         skin_db = ctx.spec(skin["designation"]).diameter_mm
         side = cover + stirrup + skin_db / 2
         depth = bottom_depth - skin["spacing"]
         while depth > top_depth + _TOUCH:
-            layers.append({"depth": round(depth, 3), "role": "skin",
+            layers.append({"depth": round(depth, 3), "role": "skin", "end": ends.skin,
                            "bars": [{"designation": skin["designation"], "x": round(side, 3)},
                                     {"designation": skin["designation"], "x": round(web - side, 3)}]})
             depth -= skin["spacing"]
     layers.sort(key=lambda layer: layer["depth"])
-    beam: dict[str, Any] = {"width": web, "height": height, "end": design.end, "layers": layers}
+    beam: dict[str, Any] = {"width": web, "height": height, "layers": layers}
     if reinforcement.get("stirrups") is not None:
-        beam["stirrups"] = reinforcement["stirrups"]
+        beam["stirrups"] = {**reinforcement["stirrups"], "end": ends.stirrups}
     return beam
 
 

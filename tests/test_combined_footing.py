@@ -292,8 +292,8 @@ def test_band_is_the_only_bottom_transverse_steel_in_its_zone() -> None:
 
 
 def test_top_y_bars_must_be_in_the_catalog() -> None:
-    footing = _footing(top={"first": "x", "end": "straight", "x": {"designation": "#7", "spacing": 150.0},
-                            "y": {"designation": "#99", "spacing": 200.0}})
+    footing = _footing(top={"first": "x", "x": {"designation": "#7", "spacing": 150.0, "end": "straight"},
+                            "y": {"designation": "#99", "spacing": 200.0, "end": "straight"}})
     project = Project.model_validate({"description": "prueba", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "prueba"},
                                       "materials": {"fc": 28.0, "fy": 420.0, "fyt": 420.0, "concrete": "normalweight",
                                                     "coating": "uncoated"},
@@ -329,8 +329,8 @@ def test_project_with_a_combined_footing_runs_every_structural_check(tmp_path: P
     for column, beam_column in zip(footing["columns"], _oracle("nsr_10", "derived_combined_beam")["cases"][0]["footing"]["columns"],
                                    strict=True):
         column["loads"] = column["loads"] + beam_column["loads"]
-    footing["top"] = {"end": "straight", "x": {"designation": "#7", "spacing": 150.0}}
-    footing["bottom"]["x"] = {"designation": "#7", "spacing": 150.0}
+    footing["top"] = {"x": {"designation": "#7", "spacing": 150.0, "end": "straight"}}
+    footing["bottom"]["x"] = {"designation": "#7", "spacing": 150.0, "end": "straight"}
     checks = _project(tmp_path, footing)
     by_name = {check.name: check for check in checks}
     assert by_name["Validacion de entrada"].status is Status.PASS
@@ -446,9 +446,10 @@ def test_principal_direction_y_gives_the_same_verification(variant: str, tmp_pat
     if variant == "t invertida":
         height = along_x["h"] + 800.0
         # D-106: el refuerzo de la viga va en sus capas; la zapata no declara top, estribos ni piel.
-        layers = [{"depth": depth, "role": "flexure", "bars": [{"designation": "#6", "x": x} for x in (120.0, 340.0, 560.0, 780.0)]}
+        layers = [{"depth": depth, "role": "flexure", "bars": [{"designation": "#6", "x": x} for x in (120.0, 340.0, 560.0, 780.0)],
+                   "end": "straight"}
                   for depth in (100.0, height - 100.0)]
-        along_x["beam"] = {"width": 900.0, "height": height, "end": "straight", "layers": layers}
+        along_x["beam"] = {"width": 900.0, "height": height, "layers": layers}
         for key in ("top", "stirrups", "skin"):
             along_x.pop(key, None)
         for column in along_x["columns"]:

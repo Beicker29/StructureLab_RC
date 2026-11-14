@@ -103,7 +103,7 @@ def _development(folder: str, f: dict, coating: str, level: str) -> list[dict]:
             plus, minus = faces[direction]
             available = min(half - plus, minus + half) - f["cover"]
             db = row["db"]
-            hook = f[mat]["end"] == "hook"
+            hook = f[mat][direction]["end"] == "hook90"
             ratio = min(_required_area(f, mat, direction, row, moments) / row["area"], 1.0)
             permitted = low and (not hook or folder == "nsr_10")
             excess = ratio if permitted else 1.0
@@ -183,7 +183,8 @@ def _expected(folder: str, f: dict, coating: str, level: str) -> list[dict]:
 
 
 def _mat(first: str, x: tuple[str, float], y: tuple[str, float], end: str = "straight") -> dict:
-    return {"first": first, "end": end, "x": {"designation": x[0], "spacing": x[1]}, "y": {"designation": y[0], "spacing": y[1]}}
+    return {"first": first, "x": {"designation": x[0], "spacing": x[1], "end": end}, "y": {"designation": y[0], "spacing": y[1],
+        "end": end}}
 
 
 def _load(case: str, dead: float, live: float, p: float, mx: float = 0.0, my: float = 0.0) -> dict:
@@ -194,7 +195,8 @@ def _load(case: str, dead: float, live: float, p: float, mx: float = 0.0, my: fl
 def _footing(**changes: object) -> dict:
     data = {"id": "Z", "lx": 2400.0, "ly": 2400.0, "h": 550.0, "cover": 75.0, "fill_height": 1000.0,
             "pedestal_height": 0.0, "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0,
-            "column": {"cx": 450.0, "cy": 450.0, "offset_x": 0.0, "offset_y": 0.0, "dowels": {"designation": "#6", "count": 8}},
+            "column": {"cx": 450.0, "cy": 450.0, "offset_x": 0.0, "offset_y": 0.0, "dowels": {"designation": "#6", "count": 8,
+                "end": "hook90"}},
             "bottom": _mat("x", ("#5", 150.0), ("#5", 150.0)), "top": None, "loads": [_load("1.2D+1.6L", 1.2, 1.6, 1500.0)]}
     data.update(changes)
     return data
@@ -204,19 +206,20 @@ CASES = [
     ("barras-rectas", "zapata cuadrada con barras rectas, pasadores y aplastamiento holgados", _footing()),
     ("ganchos-y-malla-superior", "voladizo corto con barras #8 en gancho y malla superior con momento negativo (ψt = 1.3)",
      _footing(lx=1600.0, ly=2400.0, h=700.0, column={"cx": 400.0, "cy": 400.0, "offset_x": 0.0, "offset_y": 0.0,
-                                                      "dowels": {"designation": "#6", "count": 4}},
-              bottom=_mat("x", ("#8", 200.0), ("#6", 200.0), end="hook"), top=_mat("y", ("#5", 200.0), ("#5", 200.0)),
+                                                      "dowels": {"designation": "#6", "count": 4, "end": "hook90"}},
+              bottom=_mat("x", ("#8", 200.0), ("#6", 200.0), end="hook90"), top=_mat("y", ("#5", 200.0), ("#5", 200.0)),
               loads=[_load("0.9D+E", 0.9, 0.0, 250.0, mx=180.0)])),
     ("rectas-insuficientes", "barras #8 rectas a 110 mm en un voladizo corto: cb = s/2 gobierna y el desarrollo no cabe",
      _footing(lx=1500.0, ly=1500.0, h=600.0, bottom=_mat("x", ("#8", 110.0), ("#8", 110.0)), loads=[_load("1.2D", 1.2, 0.0, 600.0)])),
     ("aplastamiento-excedido", "columna pequeña cerca del borde (A2 limitada por el borde, √(A2/A1) < 2) y carga alta: excede φBn",
      _footing(lx=2000.0, ly=2000.0, h=600.0, column={"cx": 250.0, "cy": 250.0, "offset_x": 760.0, "offset_y": 0.0,
-                                                     "dowels": {"designation": "#7", "count": 6}},
+                                                     "dowels": {"designation": "#7", "count": 6, "end": "hook90"}},
               loads=[_load("1.2D+1.6L", 1.2, 1.6, 2600.0), _load("1.4D", 1.4, 0.0, 2200.0)])),
     ("sin-pasadores", "sin pasadores declarados: INCOMPLETE, también para el exceso de aplastamiento",
      _footing(column={"cx": 250.0, "cy": 250.0, "offset_x": 0.0, "offset_y": 0.0}, loads=[_load("1.2D+1.6L", 1.2, 1.6, 2600.0)])),
     ("pasadores-largos", "zapata delgada con pasadores #8: el anclaje a compresión no cabe",
-     _footing(h=400.0, column={"cx": 450.0, "cy": 450.0, "offset_x": 0.0, "offset_y": 0.0, "dowels": {"designation": "#8", "count": 4}},
+     _footing(h=400.0, column={"cx": 450.0, "cy": 450.0, "offset_x": 0.0, "offset_y": 0.0, "dowels": {"designation": "#8",
+         "count": 4, "end": "hook90"}},
               loads=[_load("1.2D", 1.2, 0.0, 700.0)])),
 ]
 # Casos de D-071: (id, descripción, zapata, recubrimiento de las barras, nivel sísmico "bajo" o "alto").
@@ -240,10 +243,10 @@ FACTOR_CASES = [
      _footing(lx=1800.0, ly=1800.0, h=600.0, bottom=_mat("x", ("#5", 140.0), ("#5", 140.0)),
               loads=[_load("1.2D", 1.2, 0.0, 1000.0)]), "uncoated", "bajo"),
     ("exceso-ganchos-nivel-bajo", "ganchos #8 con acero en exceso y nivel bajo: NSR-10 aplica el factor (C.12.5.3(d)), ACI no",
-     _footing(lx=1600.0, ly=1600.0, h=650.0, bottom=_mat("x", ("#8", 150.0), ("#8", 150.0), end="hook"),
+     _footing(lx=1600.0, ly=1600.0, h=650.0, bottom=_mat("x", ("#8", 150.0), ("#8", 150.0), end="hook90"),
               loads=[_load("1.2D", 1.2, 0.0, 500.0)]), "epoxy", "bajo"),
     ("ganchos-recubrimiento-corto", "ganchos con recubrimiento de 60 mm: no alcanza 65 mm, ψcc = 1.0",
-     _footing(cover=60.0, bottom=_mat("x", ("#6", 150.0), ("#6", 150.0), end="hook")), "uncoated", "alto"),
+     _footing(cover=60.0, bottom=_mat("x", ("#6", 150.0), ("#6", 150.0), end="hook90")), "uncoated", "alto"),
 ]
 
 

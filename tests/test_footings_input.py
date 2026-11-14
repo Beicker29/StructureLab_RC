@@ -31,7 +31,8 @@ SOIL = {"allowable_pressure_kPa": 200.0, "min_contact_fraction": 0.6, "unit_weig
         "cohesion_kPa": 0.0, "passive_factor": 0.5, "sliding_safety_factor": 1.5,
         "sliding_safety_factor_seismic": 1.1, "overturning_safety_factor": 2.0,
         "overturning_safety_factor_seismic": 1.5}
-MAT = {"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 150.0}, "y": {"designation": "#5", "spacing": 200.0}}
+MAT = {"first": "x", "x": {"designation": "#5", "spacing": 150.0, "end": "straight"}, "y": {"designation": "#5",
+    "spacing": 200.0, "end": "straight"}}
 
 
 def _footing(**changes: Any) -> dict[str, Any]:
@@ -107,8 +108,8 @@ def test_soil_has_no_defaults() -> None:
 
 @pytest.mark.parametrize(
     ("changes", "message"),
-    [({"bottom": {**MAT, "x": {"designation": "#99", "spacing": 150.0}}}, "no esta en el catalogo"),
-     ({"bottom": {**MAT, "y": {"designation": "#5", "spacing": 10.0}}}, "espacio libre"),
+    [({"bottom": {**MAT, "x": {"designation": "#99", "spacing": 150.0, "end": "straight"}}}, "no esta en el catalogo"),
+     ({"bottom": {**MAT, "y": {"designation": "#5", "spacing": 10.0, "end": "straight"}}}, "espacio libre"),
      ({"h": 200.0, "cover": 75.0, "top": MAT}, "no caben")],
     ids=["catalogo", "separacion", "espesor"],
 )
@@ -224,7 +225,8 @@ def _combined_template(source: dict[str, str], loads: dict[str, list[dict[str, A
     """Plantilla con una zapata combinada; con principal "y", la misma zapata con la viga en la Y global, escrita en ejes
     globales (ly a lo largo de la viga y columnas a distintas y, D-094)."""
     loads = loads or {}
-    mat = {"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0}, "y": {"designation": "#5", "spacing": 150.0}}
+    mat = {"first": "x", "x": {"designation": "#6", "spacing": 150.0, "end": "straight"}, "y": {"designation": "#5",
+        "spacing": 150.0, "end": "straight"}}
     along = "x" if principal == "x" else "y"
     columns = [{"id": name, "etabs_unique_name": unique, "cx": 450.0, "cy": 450.0, "x": 0.0, "y": 0.0, along: position,
                 "loads": loads.get(name, [])} for name, unique, position in (("C1", "10", -2000.0), ("C2", "11", 2000.0))]

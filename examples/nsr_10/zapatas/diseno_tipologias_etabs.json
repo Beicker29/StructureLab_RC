@@ -92,11 +92,12 @@
     ],
     "prices": {
       "concrete_per_m3": {
-        "21": 520000.0,
-        "24.5": 545000.0,
-        "28": 575000.0
+        "21": 711357.0,
+        "24.5": 729470.0,
+        "28": 747582.0,
+        "35": 779082.0
       },
-      "steel_per_kg": 6200.0
+      "steel_per_kg": 4385.0
     },
     "shape": "square",
     "plan_step": 100.0,
@@ -115,7 +116,11 @@
       "#7"
     ],
     "spacing_step": 25.0,
-    "end": "straight",
+    "ends": {
+      "bottom": "straight",
+      "top": "straight",
+      "dowels": "hook90"
+    },
     "dowel_bars": [
       "#5",
       "#6"
@@ -201,5 +206,11 @@
       "cx": 500.0,
       "cy": 800.0
     }
-  ]
+  ],
+  "detailing": {
+    "stock_length_mm": 12000.0
+  },
+  "drawing": {
+    "scale": 50.0
+  }
 }

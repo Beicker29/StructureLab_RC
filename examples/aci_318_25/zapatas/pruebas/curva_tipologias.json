@@ -61,7 +61,11 @@
       "#6"
     ],
     "spacing_step": 25.0,
-    "end": "straight",
+    "ends": {
+      "bottom": "straight",
+      "top": "straight",
+      "dowels": "hook90"
+    },
     "dowel_bars": [
       "#5",
       "#6"

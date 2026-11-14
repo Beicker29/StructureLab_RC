@@ -621,7 +621,8 @@ def _develop(folder: str, f: dict, bar: tuple[float, float, float, str], given: 
     db, spacing, depth, layer = bar
     bottom = layer == "bottom"
     ratio, available, name, _ = given
-    hook = (f.get(layer) or f["bottom"])["end"] == "hook"  # el band superior sin top termina como la malla inferior
+    mat = f.get(layer) or f["bottom"]  # el band superior sin top termina como la malla inferior
+    hook = any((mat.get(direction) or {}).get("end") == "hook90" for direction in ("x", "y"))  # sus grupos, iguales (D-134)
     permitted = level == LEVELS[folder]["bajo"] and (not hook or folder == "nsr_10")
     excess = ratio if permitted else 1.0
     if hook:
@@ -791,7 +792,7 @@ def _expected(folder: str, f: dict, level: str) -> list[dict]:
 
 def _column(name: str, x: float, loads: list[dict], **changes: object) -> dict:
     data = {"id": name, "cx": 450.0, "cy": 450.0, "x": x, "y": 0.0, "loads": loads,
-            "dowels": {"designation": "#6", "count": 4}}
+            "dowels": {"designation": "#6", "count": 4, "end": "hook90"}}
     data.update(changes)
     return {key: value for key, value in data.items() if value is not None}
 
@@ -804,21 +805,21 @@ def _footing(columns: list[dict], **changes: object) -> dict:
     data = {"id": "ZC", "min_steel_exception": False,
             "lx": 6000.0, "ly": 2400.0, "h": 750.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
-            "bottom": {"first": "x", "end": "straight", "x": {"designation": "#7", "spacing": 150.0},
-                       "y": {"designation": "#6", "spacing": 150.0}},
+            "bottom": {"first": "x", "x": {"designation": "#7", "spacing": 150.0, "end": "straight"},
+                       "y": {"designation": "#6", "spacing": 150.0, "end": "straight"}},
             "top": _B.top_mat("#7", 150.0, "straight")}
     data.update(changes)
     return {key: value for key, value in data.items() if value is not None}
 
 
-BAND = {"designation": "#7", "spacing": 120.0}
+BAND = {"designation": "#7", "spacing": 120.0, "end": "straight"}
 CASES = [
     ("interiores", "dos columnas interiores simétricas, con band bajo cada una; barras superiores con gancho y malla recta",
      _footing([_column("C1", -1800.0, [_load("U1", 1300.0)], band=BAND), _column("C2", 1800.0, [_load("U1", 1300.0)], band=BAND)],
-              top=_B.top_mat("#7", 150.0, "hook"))),
+              top=_B.top_mat("#7", 150.0, "hook90"))),
     ("band-apretado", "el caso anterior con el band de C1 a 50 mm: separación libre 24.6 mm, menor que la mínima (D-102)",
-     _footing([_column("C1", -1800.0, [_load("U1", 1300.0)], band={"designation": "#8", "spacing": 50.0}),
-               _column("C2", 1800.0, [_load("U1", 1300.0)], band=BAND)], top=_B.top_mat("#7", 150.0, "hook"))),
+     _footing([_column("C1", -1800.0, [_load("U1", 1300.0)], band={"designation": "#8", "spacing": 50.0, "end": "straight"}),
+               _column("C2", 1800.0, [_load("U1", 1300.0)], band=BAND)], top=_B.top_mat("#7", 150.0, "hook90"))),
     ("borde", "columna de borde (perímetro de 3 lados, αs = 30), cargas desiguales, sin band",
      _footing([_column("C1", -2775.0, [_load("U1", 900.0)]), _column("C2", 1200.0, [_load("U1", 1800.0)], cx=500.0, cy=500.0)])),
     ("momentos", "dos casos con My, Mx, Vx y columnas desplazadas en Y; pedestal",
@@ -827,10 +828,10 @@ CASES = [
                _column("C2", 2000.0, [_load("U1", 1400.0, mx=-30.0), _load("U2", 1000.0, dead=1.0, live=0.5, my=300.0, vx=110.0,
                                                                             seismic=True)], y=-150.0)], pedestal_height=600.0)),
     ("ganchos-pasadores", "barras con gancho; columna pequeña y carga alta: el aplastamiento no alcanza y toman los pasadores",
-     _footing([_column("C1", -1800.0, [_load("U1", 2600.0)], cx=300.0, cy=300.0, dowels={"designation": "#8", "count": 8}),
+     _footing([_column("C1", -1800.0, [_load("U1", 2600.0)], cx=300.0, cy=300.0, dowels={"designation": "#8", "count": 8, "end": "hook90"}),
                _column("C2", 1800.0, [_load("U1", 2600.0)], cx=300.0, cy=300.0, dowels=None)],
-              bottom={"first": "y", "end": "hook", "x": {"designation": "#8", "spacing": 120.0},
-                      "y": {"designation": "#5", "spacing": 300.0}}, top=_B.top_mat("#7", 150.0, "hook"))),
+              bottom={"first": "y", "x": {"designation": "#8", "spacing": 120.0, "end": "hook90"},
+                      "y": {"designation": "#5", "spacing": 300.0, "end": "hook90"}}, top=_B.top_mat("#7", 150.0, "hook90"))),
     ("presion-nula-franja", "C1 en la zona sin presión: su franja toca la zona en contacto (forma integrada en la franja)",
      _footing([_column("C1", -2300.0, [_load("U1", 300.0, live=0.0)], dowels=None),
                _column("C2", 1800.0, [_load("U1", 2500.0, mx=500.0, my=1500.0, live=0.0)], dowels=None)])),
@@ -862,14 +863,15 @@ CASES = [
                       "su zona; C1 corrida en Y con Mx: torsión de placa, su cortante fuera de las franjas y la retracción "
                       "de la zona con el band superior",
      _footing([_column("C1", -1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)], y=300.0, band=BAND,
-                       band_top={"designation": "#6", "spacing": 150.0}),
+                       band_top={"designation": "#6", "spacing": 150.0, "end": "straight"}),
                _column("C2", 1800.0, [_load("U1", 1000.0, mx=-1100.0, live=0.0)])], ly=3000.0,
               top=_B.top_mat("#7", 150.0, "straight", y=("#5", 200.0), first="x"))),
     ("band-superior-sin-top", "D-119: band superior en las dos columnas y sin barras superiores: fuera de las franjas, la "
                               "torsión de placa superior en concreto simple y el band superior termina como la malla",
      _footing([_column("C1", -1800.0, [_load("U1", 1000.0, mx=-600.0, live=0.0)], y=300.0,
-                       band_top={"designation": "#5", "spacing": 150.0}),
-               _column("C2", 1800.0, [_load("U1", 1000.0, mx=-600.0, live=0.0)], band_top={"designation": "#5", "spacing": 200.0})],
+                       band_top={"designation": "#5", "spacing": 150.0, "end": "straight"}),
+               _column("C2", 1800.0, [_load("U1", 1000.0, mx=-600.0, live=0.0)], band_top={"designation": "#5", "spacing": 200.0,
+                   "end": "straight"})],
               ly=3000.0, top=None)),
 ]
 

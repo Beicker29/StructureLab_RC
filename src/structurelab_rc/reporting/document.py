@@ -12,6 +12,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
+from structurelab_rc.domain.development import END_TEXT
 from structurelab_rc.domain.footing.loads import EQUILIBRIUM
 from structurelab_rc.domain.footing.service import CONTACT
 from structurelab_rc.domain.status import Status
@@ -35,7 +36,7 @@ _PRECEDENCE = {str(Status.FAIL): 3, str(Status.INCOMPLETE): 2, str(Status.BLOCKE
 _CONCRETE = {"normalweight": "concreto de peso normal", "lightweight": "concreto liviano"}
 _COATING = {"uncoated": "sin recubrimiento", "galvanized": "galvanizado (zinc)", "epoxy": "epóxico",
             "zinc_epoxy": "recubrimiento dual de zinc y epóxico"}
-_ENDS = {"straight": "rectas", "hook": "con gancho estándar"}
+_STIRRUP_ENDS = {"hook90": "gancho de 90°", "hook135": "gancho de 135°", "hook180": "gancho de 180°"}  # D-134
 _CHAPTER_TITLES = {
     "requirements": "Revisión de requerimientos técnicos",
     "flexure": "Revisión de capacidad a momento flector",
@@ -512,7 +513,8 @@ def _layers(layout: dict[str, Any]) -> str:
             # Cantidad y designación de cada tipo de barra, en el orden de la capa ("9 #8", "2 #6 + 2 #5").
             text = " + ".join(f"{names.count(name)} {name}" for name in dict.fromkeys(names))
         role = {"torsion": "torsión", "skin": "piel"}.get(layer["role"], "flexión")
-        parts.append(f"{layer['depth']:.0f} mm: {text} ({role})")
+        end = f", {END_TEXT[layer['end']]}" if layer.get("end") else ""  # D-134: las capas de la T declaran su extremo
+        parts.append(f"{layer['depth']:.0f} mm: {text} ({role}{end})")
     return "; ".join(parts)
 
 
@@ -521,7 +523,15 @@ def _stirrups(layout: dict[str, Any]) -> str:
     if stirrups is None:
         return "sin estribos"
     closed = "cerrados" if stirrups["closed"] else "abiertos"
-    return f"{stirrups['designation']} de {stirrups['legs']} ramas c/{stirrups['spacing']:.0f} mm, {closed}"
+    hook = f", {_STIRRUP_ENDS[stirrups['end']]}" if stirrups.get("end") else ""
+    return f"{stirrups['designation']} de {stirrups['legs']} ramas c/{stirrups['spacing']:.0f} mm, {closed}{hook}"
+
+
+def _dowel_text(dowels: dict[str, Any] | None) -> str:
+    """Los pasadores: cantidad, barra y cómo termina su pie (D-134)."""
+    if not dowels:
+        return "no declarados"
+    return f"{dowels['count']} {dowels['designation']}, pie {END_TEXT[dowels['end']]}"
 
 
 def _beam_geometry(member: dict[str, Any]) -> list[Block]:
@@ -572,8 +582,9 @@ def _mat_text(mat: dict[str, Any] | None) -> str:
     sets = "; ".join(
         f"barras {direction} {mat[direction]['designation']} c/{mat[direction]['spacing']:.0f} mm"
         + (f" (franja central c/{mat[direction]['band_spacing']:.0f} mm)" if mat[direction].get("band_spacing") else "")
+        + f", {END_TEXT[mat[direction]['end']]}"
         for direction in ("x", "y"))
-    return f"{sets}; primero {mat['first']}; barras {_ENDS[mat['end']]}"
+    return f"{sets}; primero {mat['first']}"
 
 
 def _soil_rows(results: dict[str, Any]) -> list[list[str]]:
@@ -620,7 +631,7 @@ def _footing_geometry(results: dict[str, Any], footing: dict[str, Any]) -> list[
     dowels = column.get("dowels")
     reinforcement = [["Malla inferior", _mat_text(footing["reinforcement"]["bottom"])],
                      ["Malla superior", _mat_text(footing["reinforcement"]["top"])],
-                     ["Pasadores", f"{dowels['count']} {dowels['designation']}" if dowels else "no declarados"]]
+                     ["Pasadores", _dowel_text(dowels)]]
     return [{"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": rows},
             {"kind": "table", "headers": ["Suelo y pesos (dato del usuario)", "Valor", "Unidad"], "rows": soil_rows},
             {"kind": "p", "text": "Propiedades calculadas a partir de las dimensiones (nunca declaradas):"},
@@ -862,7 +873,7 @@ def _combined_where(check: dict[str, Any], axes: tuple[str, str]) -> str:
 def _bar_text(bars: dict[str, Any] | None, extra: str = "") -> str:
     if bars is None:
         return "no hay"
-    return f"{bars['designation']} c/{bars['spacing']:.0f} mm{extra}"
+    return f"{bars['designation']} c/{bars['spacing']:.0f} mm{extra}, {END_TEXT[bars['end']]}"
 
 
 def _top_text(top: dict[str, Any] | None) -> str:
@@ -871,9 +882,10 @@ def _top_text(top: dict[str, Any] | None) -> str:
     if top is None:
         return "no hay"
     sets = [f"barras {direction} {top[direction]['designation']} c/{top[direction]['spacing']:.0f} mm"
-            + (" (todo el largo)" if direction == "y" else "") for direction in ("x", "y") if top.get(direction)]
+            + (" (todo el largo)" if direction == "y" else "") + f", {END_TEXT[top[direction]['end']]}"
+            for direction in ("x", "y") if top.get(direction)]
     first = f"; primero {top['first']}" if top.get("first") else ""
-    return f"{'; '.join(sets)}{first}; barras {_ENDS[top['end']]}"
+    return f"{'; '.join(sets)}{first}"
 
 
 def _combined_materials(results: dict[str, Any], number_text: str) -> list[Block]:
@@ -903,7 +915,7 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any], number_
                ["Altura total de la viga (H)", number(g["beam"]["height"], "mm"), "mm"]] if g.get("beam") else []),
             ["Recubrimiento libre", number(g["cover"], "mm"), "mm"]]
     columns = [[column["id"], number(column["cx"], "mm"), number(column["cy"], "mm"), number(column["x"], "mm"), number(column["y"], "mm"),
-                f"{column['dowels']['count']} {column['dowels']['designation']}" if column.get("dowels") else "no declarados",
+                _dowel_text(column.get("dowels")),
                 _bar_text(column.get("band")), _bar_text(column.get("band_top"))] for column in footing["columns"]]
     reinforcement = footing["reinforcement"]
     stirrups = reinforcement.get("stirrups")
@@ -911,7 +923,7 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any], number_
     bars = [["Malla inferior", _mat_text(reinforcement["bottom"])],
             ["Barras superiores", _top_text(reinforcement.get("top"))],
             ["Estribos de la viga (dirección principal)", "no hay" if stirrups is None else
-             f"{stirrups['legs']} ramas {stirrups['designation']} c/{stirrups['spacing']:.0f} mm"],
+             f"{stirrups['legs']} ramas {stirrups['designation']} c/{stirrups['spacing']:.0f} mm, {_STIRRUP_ENDS[stirrups['end']]}"],
             ["Refuerzo superficial (caras largas)", _bar_text(skin, " en vertical" if skin else "")]]
     if g.get("beam"):
         # T invertida (D-106): el refuerzo de la viga va en sus capas; la malla es la de la zarpa.
@@ -919,7 +931,6 @@ def _combined_geometry(results: dict[str, Any], footing: dict[str, Any], number_
         covered = "el ala efectiva" if beam.get("bottom_width") is None else f"{beam['bottom_width']:.0f} mm"
         bars = [["Viga: capas (profundidad desde la cara superior)", _layers(beam)],
                 ["Viga: estribos", _stirrups(beam)],
-                ["Viga: extremos de las barras", _ENDS[beam["end"]]],
                 ["Ancho que cubre la capa inferior de la viga", covered],
                 ["Malla inferior de la zarpa (barras x fuera de ese ancho; barras y de las aletas)",
                  _mat_text(reinforcement["bottom"])]]

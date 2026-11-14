@@ -25,6 +25,7 @@ class BarAnchorage:
 
     diameter: float
     end: Literal["straight", "hook", "compression"]
+    hook_angle: int = 90  # ángulo del gancho estándar (90° o 180°); ψcc pide el recubrimiento de la extensión solo con 90°
     cb: float = 0.0
     concrete_below: float = 0.0
     clear_cover: float = 0.0
@@ -32,6 +33,19 @@ class BarAnchorage:
     side_cover: float = 0.0
     extension_cover: float = 0.0
     excess: float = 1.0
+
+
+# Cómo se desarrolla cada extremo declarado (D-134): (forma de desarrollo, ángulo del gancho). El gancho de 135° no es
+# gancho estándar de desarrollo (ACI Tabla 25.3.1, NSR-10 C.7.1): la barra se desarrolla como recta (decisión del usuario).
+_DEVELOPED: dict[str, tuple[Literal["straight", "hook"], int]] = {
+    "straight": ("straight", 90), "hook90": ("hook", 90), "hook180": ("hook", 180), "hook135": ("straight", 90)}
+END_TEXT = {"straight": "rectas", "hook90": "con gancho de 90°", "hook180": "con gancho de 180°",
+            "hook135": "con gancho de 135° (desarrollo como barra recta, D-134)"}
+
+
+def developed_end(end: str) -> tuple[Literal["straight", "hook"], int]:
+    """(forma de desarrollo, ángulo del gancho) de un extremo declarado: straight, hook90, hook180 o hook135."""
+    return _DEVELOPED[end]
 
 
 @dataclass(frozen=True)
@@ -67,7 +81,8 @@ def required_length(profile: Profile, materials: Materials, bar: BarAnchorage, s
     clause = clauses[bar.end if bar.end == "hook" else "tension"] + (f"; {clauses['excess']}" if excess < 1.0 else "")
     if bar.end == "hook":
         psi_e = development.hook_coating_factor(materials.coating)
-        psi_cc = development.hook_cover_factor(db=db, side_cover=bar.side_cover, extension_cover=bar.extension_cover)
+        psi_cc = development.hook_cover_factor(db=db, side_cover=bar.side_cover, extension_cover=bar.extension_cover,
+                                               angle=bar.hook_angle)
         length = development.hook_development_length(fy=fy, fc=fc, lam=lam, db=db, psi_e=psi_e, psi_cc=psi_cc, excess=excess)
         values = (("psi e", psi_e), ("psi cc", psi_cc), *excess_values, ("factor exceso", excess))
         return DevelopmentLength(length, clause, values, note)

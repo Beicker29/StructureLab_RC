@@ -2533,6 +2533,42 @@
   iguales a las guardadas por DL-NET, formato numérico, mapa de diámetros, grupos, errores ante lo no soportado y la
   salida de `report`.
 
+### D-134: extremos de las barras declarados por grupo (recta, gancho de 90°, 180° o 135°)
+
+- **Fecha:** 2026-11-14
+- **Pedido del usuario:** declarar en todos los refuerzos cómo terminan, sin dejar rectas por defecto: `straight`,
+  `hook90`, `hook135` o `hook180`.
+- **Decisiones del usuario:**
+  - Por grupo de barras, obligatorio y sin valor por defecto: `bottom.x`, `bottom.y`, `top.x`, `top.y`, `band` y
+    `band_top` de cada columna, la piel, cada capa de la viga de la T, el pie de los pasadores y el gancho de cierre de
+    los estribos (`hook90`, `hook135` o `hook180`).
+  - El gancho de 135° en una barra (que la norma no define como gancho estándar de desarrollo: ACI Tabla 25.3.1, NSR-10
+    C.7.1) se permite y la barra se desarrolla como recta, con una nota.
+  - Las vigas lo declararán con su despiece (v1 Fase 5); hoy `BarLayer.end` y `Stirrups.end` son opcionales en el
+    modelo compartido y la zapata los exige.
+  - El plan proponía, y se aprobó: en el diseño, `ends` por clase de grupo (`bottom`, `top`, `dowels`, `stirrups`,
+    `skin`); en el despiece del gancho de 135° de una barra, la extensión del gancho de 135° de estribos del perfil (ACI
+    Tabla 25.3.2, NSR-10 C.7.1.3) con el doblado del gancho estándar, y error de entrada en las barras fuera de esa
+    tabla.
+- **Normas:** ℓdh de ACI 25.4.3 y NSR-10 C.12.5 para 90° y 180°. El factor ψcc (ACI Tabla 25.4.3.2) / C.12.5.3(a) pide
+  el recubrimiento sobre la extensión (≥ 50 mm) solo en ganchos de 90°, como dicen sus docstrings: hoy se exigía siempre;
+  `hook_cover_factor` recibe el ángulo. NSR-10 C.7.1.3 no define gancho de estribo de 180°: un estribo `hook180` en
+  NSR-10 es error de entrada.
+- **Código:** `model/reinforcement.py` (`BarEnd`, `StirrupEnd`), `BarSet.end`, `Dowels.end`, `SkinBars.end`,
+  `BarLayer.end`, `Stirrups.end`; `domain/development.developed_end` y `END_TEXT` (una sola fuente de cómo se desarrolla
+  y cómo se nombra cada extremo); cada verificación de desarrollo toma el extremo de su grupo; el despiece arma los
+  ganchos de cada grupo, de los pasadores y de los estribos; `domain/validation` rechaza los ganchos que el perfil no
+  define; la memoria muestra el extremo de cada grupo; la cartilla DL-NET avisa en lugar de detener la salida ante un
+  gancho sin sintaxis.
+- **Migración (cambio registrado):** `hook` → `hook90` y cada `end` baja a sus grupos en todos los ejemplos de zapatas
+  (los de iterar y las copias de `pruebas/`, los dos perfiles, plantillas de ETABS y diseños); pasadores `hook90` y
+  estribos `hook135` (lo que estaba fijo), piel `straight`; las capas de piel o torsión de la T, `straight` (no llevaban
+  gancho). Los oráculos se migraron y, regenerados, son idénticos a sus versiones anteriores migradas: ningún valor de
+  referencia cambió.
+- **Control:** `tests/test_bar_ends.py`: obligatoriedad y vocabulario, ψcc con 90° y 180°, ecuación de desarrollo por
+  extremo (135° como recta), ganchos del despiece (135° en malla, 180° en pasadores), errores de entrada (135° en #9,
+  estribo de 180° en NSR-10) y el aviso de DL-NET.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

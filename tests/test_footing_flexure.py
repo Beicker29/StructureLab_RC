@@ -94,7 +94,7 @@ def test_equilibrium_is_reported_for_every_factored_case(profile: str, case: dic
 def test_band_spacing_places_bars_in_the_central_band() -> None:
     """Con band_spacing, la franja (lado corto, centrada en la columna) lleva su separación y fuera rige spacing."""
     data = _oracle("nsr_10")["cases"][1]["footing"]
-    data = {**data, "bottom": {**data["bottom"], "y": {"designation": "#5", "spacing": 300.0, "band_spacing": 125.0}}}
+    data = {**data, "bottom": {**data["bottom"], "y": {"designation": "#5", "spacing": 300.0, "band_spacing": 125.0, "end": "straight"}}}
     rows = mat_rows(Footing.model_validate(data), Footing.model_validate(data).bottom, BARS)
     row = rows["y"]
     assert row.band == (350.0 - 1100.0, 350.0 + 1100.0)

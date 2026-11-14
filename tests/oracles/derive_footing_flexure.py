@@ -245,8 +245,8 @@ def _expected(f: dict, profile: dict, level: str) -> dict:
 
 
 def _mat(first: str, x: tuple[str, float], y: tuple[str, float]) -> dict:
-    return {"first": first, "end": "straight", "x": {"designation": x[0], "spacing": x[1]},
-            "y": {"designation": y[0], "spacing": y[1]}}
+    return {"first": first, "x": {"designation": x[0], "spacing": x[1], "end": "straight"},
+            "y": {"designation": y[0], "spacing": y[1], "end": "straight"}}
 
 
 def _load(case: str, dead: float, live: float, p: float, mx: float = 0.0, my: float = 0.0, vx: float = 0.0) -> dict:
@@ -272,8 +272,8 @@ CASES = [
               loads=[_load("1.2D+1.6L", 1.2, 1.6, 1400.0, my=60.0), _load("0.9D+E", 0.9, 0.0, 450.0, my=420.0, vx=90.0)]), "alto"),
     ("franja-concentrada", "franja central con barras muy juntas y pocas fuera: fuera de la franja no alcanza (1 − γs)·As",
      _footing(lx=3600.0, ly=2000.0, h=600.0, column={"cx": 450.0, "cy": 450.0, "offset_x": 0.0, "offset_y": 0.0},
-              bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 150.0},
-                      "y": {"designation": "#5", "spacing": 450.0, "band_spacing": 110.0}},
+              bottom={"first": "x", "x": {"designation": "#5", "spacing": 150.0, "end": "straight"},
+                      "y": {"designation": "#5", "spacing": 450.0, "band_spacing": 110.0, "end": "straight"}},
               loads=[_load("1.2D+1.6L", 1.2, 1.6, 1600.0)]), "bajo"),
     ("sin-malla-superior", "momento negativo sin malla superior con nivel alto: el concreto simple no se permite, FAIL",
      _footing(loads=[_load("0.9D+E", 0.9, 0.0, 300.0, my=330.0)]), "alto"),

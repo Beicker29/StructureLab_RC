@@ -33,12 +33,12 @@ def test_square_footing_flexure_matches_wight(profile: str) -> None:
     data, expected = oracle["data"], oracle["expected"]
     tolerance = oracle["tolerance_rel"]
     side, column = data["side_ft"] * MM_PER_FT, data["column_in"] * MM_PER_IN
-    mat = {"designation": data["bar"], "spacing": data["spacing_mm"]}
+    mat = {"designation": data["bar"], "spacing": data["spacing_mm"], "end": "straight"}
     footing = Footing.model_validate({
         "id": "Z", "lx": side, "ly": side, "h": data["h_in"] * MM_PER_IN, "cover": data["cover_in"] * MM_PER_IN,
         "fill_height": 0.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
         "column": {"cx": column, "cy": column, "offset_x": 0.0, "offset_y": 0.0},
-        "bottom": {"first": "x", "end": "straight", "x": mat, "y": mat}, "top": None,
+        "bottom": {"first": "x", "x": mat, "y": mat}, "top": None,
         # Wight trabaja con la presión neta de la columna: sin pesos propios (factores en cero).
         "loads": [{"case": "1.2D+1.6L", "kind": "factored", "dead_factor": 0.0, "live_factor": 0.0,
                    "P_kN": data["Pu_kips"] * KN_PER_KIP, "Vx_kN": 0.0, "Vy_kN": 0.0, "Mx_kNm": 0.0, "My_kNm": 0.0}],

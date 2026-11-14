@@ -11,7 +11,7 @@ from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import BarSet, Dowels, Footing
 from structurelab_rc.model.project import Member, Project, Station
-from structurelab_rc.model.reinforcement import BarPosition, BarSpacing
+from structurelab_rc.model.reinforcement import BarPosition, BarSpacing, Stirrups
 
 CHECK_NAME = "Validacion de entrada"
 
@@ -92,14 +92,42 @@ def _dowel_errors(dowels: Dowels | None, specs: dict[str, RebarSpec], where: dic
         yield invalid_input(f"La barra '{dowels.designation}' de los pasadores no esta en el catalogo", **where)
 
 
-def _footing_errors(footing: Footing, specs: dict[str, RebarSpec]) -> Iterator[StructuredError]:
-    """Barras del catálogo, separación libre positiva y mallas dentro del espesor."""
+_HOOK_135 = "hook135"
+
+
+def _hook_errors(groups: list[tuple[str, str, str]], stirrups: list[tuple[str, Stirrups]], specs: dict[str, RebarSpec],
+                 context: tuple[Profile, dict[str, str]]) -> Iterator[StructuredError]:
+    """Ganchos que el perfil no define (D-134): el de 135° de una barra (grupo, designación, extremo) toma la extensión del
+    gancho de 135° de estribos, que el perfil define solo hasta cierto diámetro; y el gancho de cierre de los estribos."""
+    profile, where = context
+    detailing = profile.detailing
+    clause = detailing.clauses()["stirrup_hook"]
+    for name, designation, end in groups:
+        spec = specs.get(designation)
+        if end == _HOOK_135 and spec is not None and detailing.stirrup_hook_extension(spec.diameter_mm, 135) is None:
+            yield invalid_input(f"El gancho de 135 grados de {name} ({designation}) no esta definido para esa barra: su extension "
+                                f"es la del gancho de 135 grados de estribos ({clause}, D-134)", **where)
+    for name, own in stirrups:
+        spec = specs.get(own.designation)
+        angle = int((own.end or "hook135").removeprefix("hook"))
+        if spec is not None and detailing.stirrup_hook_extension(spec.diameter_mm, angle) is None:
+            yield invalid_input(f"El gancho de {angle} grados de {name} ({own.designation}) no esta definido en {clause} (D-134)",
+                                **where)
+
+
+def _footing_errors(footing: Footing, specs: dict[str, RebarSpec], profile: Profile) -> Iterator[StructuredError]:
+    """Barras del catálogo, separación libre positiva, mallas dentro del espesor y ganchos que el perfil define."""
     where = {"member": footing.id}
     layers = [("inferior", [("x", footing.bottom.x), ("y", footing.bottom.y)])]
     if footing.top is not None:
         layers.append(("superior", [("x", footing.top.x), ("y", footing.top.y)]))
     yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
     yield from _dowel_errors(footing.column.dowels, specs, where)
+    groups: list[tuple[str, str, str]] = [(f"la malla {name} {direction}", bars.designation, bars.end)
+                                          for name, sets in layers for direction, bars in sets]
+    dowels = footing.column.dowels
+    groups += [] if dowels is None else [("los pasadores", dowels.designation, dowels.end)]
+    yield from _hook_errors(groups, [], specs, (profile, where))
 
 
 def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], profile: Profile) -> Iterator[StructuredError]:
@@ -125,6 +153,34 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], prof
         yield invalid_input(f"La barra '{footing.stirrups.designation}' de los estribos no esta en el catalogo", **where)
     if footing.beam is not None:
         yield from _t_beam_errors(footing, specs, profile)
+    yield from _hook_errors(_combined_groups(footing, layers), _combined_stirrups(footing), specs, (profile, where))
+
+
+def _combined_groups(footing: CombinedFooting, layers: list[tuple[str, list[tuple[str, BarSet]]]]) -> list[tuple[str, str, str]]:
+    """Los grupos de barras de una combinada con su extremo (D-134): mallas, band, band superior, piel, pasadores y capas
+    de la viga de la T."""
+    groups: list[tuple[str, str, str]] = [(f"la malla {name} {direction}", bars.designation, bars.end)
+                                          for name, sets in layers for direction, bars in sets]
+    for column in footing.columns:
+        for name, bars in ((f"el band de la columna '{column.id}'", column.band),
+                           (f"el band superior de la columna '{column.id}'", column.band_top)):
+            if bars is not None:
+                groups.append((name, bars.designation, bars.end))
+        if column.dowels is not None:
+            groups.append((f"los pasadores de la columna '{column.id}'", column.dowels.designation, column.dowels.end))
+    if footing.skin is not None:
+        groups.append(("el refuerzo superficial", footing.skin.designation, footing.skin.end))
+    if footing.beam is not None:
+        groups += [(f"la capa a {layer.depth:.0f} mm de la viga", designation, layer.end or "straight")
+                   for layer in footing.beam.layers for designation in dict.fromkeys(layer.designations())]
+    return groups
+
+
+def _combined_stirrups(footing: CombinedFooting) -> list[tuple[str, Stirrups]]:
+    own = [("los estribos", footing.stirrups)] if footing.stirrups is not None else []
+    if footing.beam is not None and footing.beam.stirrups is not None:
+        own.append(("los estribos de la viga", footing.beam.stirrups))
+    return own
 
 
 def _t_beam_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], profile: Profile) -> Iterator[StructuredError]:
@@ -172,7 +228,7 @@ def validate_project(project: Project, bars: Sequence[RebarSpec]) -> Check:
         for station in member.stations:
             errors.extend(_station_errors(member, station, specs))
     for footing in project.footings:
-        errors.extend(_footing_errors(footing, specs))
+        errors.extend(_footing_errors(footing, specs, profile))
     for combined in project.combined_footings:
         errors.extend(_combined_errors(combined, specs, profile))
     return check_from_errors(CHECK_NAME, errors)

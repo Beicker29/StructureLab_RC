@@ -47,20 +47,20 @@ def _footing(data: dict[str, Any]) -> CombinedFooting:
             "loads": [{"case": "1.2D+1.6L", "kind": "factored", "dead_factor": 0.0, "live_factor": 0.0,
                        "P_kN": column["Pu_kips"] * KN_PER_KIP, "Vx_kN": 0.0, "Vy_kN": 0.0, "Mx_kNm": 0.0, "My_kNm": 0.0}]}
         if "band" in column:
-            item["band"] = {"designation": column["band"]["designation"], "spacing": column["band"]["spacing_mm"]}
+            item["band"] = {"designation": column["band"]["designation"], "spacing": column["band"]["spacing_mm"], "end": "straight"}
         if "dowels" in column:
-            item["dowels"] = column["dowels"]
+            item["dowels"] = {**column["dowels"], "end": "hook90"}
         columns.append(item)
     y_bars = data.get("bottom_y", {"designation": "#5", "spacing_mm": 300.0})
-    bottom = {"designation": data["bottom"]["designation"], "spacing": data["bottom"]["spacing_mm"]}
+    bottom = {"designation": data["bottom"]["designation"], "spacing": data["bottom"]["spacing_mm"], "end": "straight"}
     return CombinedFooting.model_validate({
         "id": "ZC", "lx": lx, "ly": data["ly_in"] * MM_PER_IN, "h": data["h_in"] * MM_PER_IN,
         "min_steel_exception": False,
         "cover": data["cover_in"] * MM_PER_IN, "fill_height": 0.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0,
         "surcharge_live_kNm2": 0.0, "columns": columns,
-        "bottom": {"first": "x", "end": "straight", "x": bottom,
-                   "y": {"designation": y_bars["designation"], "spacing": y_bars["spacing_mm"]}},
-        "top": {"end": "straight", "x": {"designation": data["top"]["designation"], "spacing": data["top"]["spacing_mm"]}}})
+        "bottom": {"first": "x", "x": bottom,
+                   "y": {"designation": y_bars["designation"], "spacing": y_bars["spacing_mm"], "end": "straight"}},
+        "top": {"x": {"designation": data["top"]["designation"], "spacing": data["top"]["spacing_mm"], "end": "straight"}}})
 
 
 def _checks(profile: str, data: dict[str, Any]) -> tuple[CombinedFooting, list[Check]]:

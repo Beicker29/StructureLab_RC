@@ -10,17 +10,18 @@ from typing import Any, Literal, Self
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
 from structurelab_rc.model.footing import MPA_PER_KPA, BarSet, Dowels, FootingLoad, Location, Mat, RectangularBase, Soil, _Input
-from structurelab_rc.model.reinforcement import BarLayer, Stirrups
+from structurelab_rc.model.reinforcement import BarEnd, BarLayer, Stirrups
 
 COLUMNS = 2
 
 
 class SkinBars(_Input):
     """Refuerzo superficial en las caras laterales largas (y = ±ly/2) de la zapata combinada: barras paralelas a X a la
-    separación vertical spacing, al recubrimiento de la cara (ACI 9.7.2.3, NSR-10 C.10.6.7; D-083)."""
+    separación vertical spacing, al recubrimiento de la cara (ACI 9.7.2.3, NSR-10 C.10.6.7; D-083), y su extremo (D-134)."""
 
     designation: str = Field(min_length=1)
     spacing: PositiveFloat
+    end: BarEnd
 
 
 class FoundationBeam(_Input):
@@ -28,8 +29,9 @@ class FoundationBeam(_Input):
     total height medida desde la base (la zarpa tiene el espesor h de la zapata).
 
     El refuerzo de la viga se declara como en las vigas (D-106): layers con depth desde la cara superior de la viga, role
-    (flexure, skin o torsion) y bars con x desde la cara −Y del alma; stirrups, los estribos; end, cómo terminan las barras
-    longitudinales (rectas o con gancho estándar). La capa de flexión más profunda es la inferior: puede salir del alma,
+    (flexure, skin o torsion), bars con x desde la cara −Y del alma y end, cómo terminan sus barras (obligatorio, D-134);
+    stirrups, los estribos, con su gancho de cierre (end, obligatorio). La capa de flexión más profunda es la inferior:
+    puede salir del alma,
     sobre la zarpa, hasta bottom_width (centrado en el alma; por defecto, el ala efectiva del perfil); fuera de ese ancho
     van las barras x de la malla de la zarpa.
     """
@@ -38,13 +40,16 @@ class FoundationBeam(_Input):
     height: PositiveFloat
     layers: tuple[BarLayer, ...] = Field(min_length=1)
     stirrups: Stirrups | None = None
-    end: Literal["straight", "hook"]
     bottom_width: PositiveFloat | None = None
 
     @model_validator(mode="after")
     def _check_layers(self) -> Self:
         if not any(layer.role == "flexure" for layer in self.layers):
             raise ValueError("la viga de la T invertida necesita al menos una capa de flexion")
+        if any(layer.end is None for layer in self.layers):
+            raise ValueError("cada capa de la viga de la T invertida declara end: straight, hook90, hook180 o hook135 (D-134)")
+        if self.stirrups is not None and self.stirrups.end is None:
+            raise ValueError("los estribos de la viga de la T invertida declaran end: hook90, hook135 o hook180 (D-134)")
         if any(layer.depth >= self.height for layer in self.layers):
             raise ValueError("las capas de la viga de la T invertida deben quedar dentro de su altura")
         if self.bottom_width is not None and self.bottom_width < self.width:
@@ -60,11 +65,10 @@ class FoundationBeam(_Input):
 class TopMat(_Input):
     """Barras superiores de la zapata combinada, con la estructura de la malla inferior (D-099): x son las paralelas a X
     (a lo largo de la viga) y y las paralelas a Y (transversales, uniformes en todo el largo, D-097); cada dirección es
-    opcional, pero hay al menos una. first es la dirección más cercana a la cara superior: obligatoria con las dos. end
-    declara cómo terminan las dos: rectas o con gancho estándar (D-082)."""
+    opcional, pero hay al menos una, cada una con su extremo (D-134). first es la dirección más cercana a la cara
+    superior: obligatoria con las dos."""
 
     first: Literal["x", "y"] | None = None
-    end: Literal["straight", "hook"]
     x: BarSet | None = None
     y: BarSet | None = None
 
@@ -196,6 +200,8 @@ class CombinedFooting(RectangularBase, _Input):
             raise ValueError(f"las columnas de la zapata combinada '{self.id}' se traslapan a lo largo de la viga (dirección "
                              f"principal {self.principal_direction.upper()} global)")
         self._check_beam()
+        if self.stirrups is not None and self.stirrups.end is None:
+            raise ValueError(f"los estribos de la zapata combinada '{self.id}' declaran end: hook90, hook135 o hook180 (D-134)")
         if 2 * self.cover >= self.h:
             raise ValueError(f"el recubrimiento de la zapata combinada '{self.id}' no deja espacio para las mallas")
         if any(bar_set.band_spacing is not None for bar_set in (self.bottom.x, self.bottom.y)):

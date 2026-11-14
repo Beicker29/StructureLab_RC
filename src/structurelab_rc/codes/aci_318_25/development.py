@@ -21,6 +21,7 @@ _EPOXY_CLOSE, _EPOXY_OTHER = 1.5, 1.2  # Tabla 25.4.2.5: recubrimiento libre < 3
 _EPOXY_COVER_BARS, _EPOXY_SPACING_BARS = 3.0, 6.0
 _TOP_EPOXY_MAX = 1.7  # ψt·ψe
 _HOOK_EPOXY = 1.2  # Tabla 25.4.3.2
+_HOOK_90 = 90  # °: solo el gancho de 90° pide el recubrimiento de la extensión
 _HOOK_COVER_FACTOR = 0.7  # ψcc
 _HOOK_COVER_MAX_DB = 36.0  # No. 36 y menores
 _HOOK_SIDE_COVER, _HOOK_EXTENSION_COVER = 65.0, 50.0
@@ -70,10 +71,11 @@ def hook_coating_factor(coating: str) -> float:
     return _HOOK_EPOXY if coating in _EPOXY else 1.0
 
 
-def hook_cover_factor(*, db: float, side_cover: float, extension_cover: float) -> float:
+def hook_cover_factor(*, db: float, side_cover: float, extension_cover: float, angle: int) -> float:
     """Tabla 25.4.3.2, ψcc: 0.7 en ganchos de barras No. 36 y menores con recubrimiento lateral (normal al plano del
     gancho) ≥ 65 mm y, en ganchos de 90°, recubrimiento sobre la extensión ≥ 50 mm; 1.0 en otro caso (D-071)."""
-    ok = db <= _HOOK_COVER_MAX_DB and side_cover >= _HOOK_SIDE_COVER and extension_cover >= _HOOK_EXTENSION_COVER
+    extension = angle != _HOOK_90 or extension_cover >= _HOOK_EXTENSION_COVER
+    ok = db <= _HOOK_COVER_MAX_DB and side_cover >= _HOOK_SIDE_COVER and extension
     return _HOOK_COVER_FACTOR if ok else 1.0
 
 

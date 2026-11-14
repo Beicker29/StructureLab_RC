@@ -337,7 +337,7 @@ def _load(case: str, p: float, dead: float = 1.2, live: float = 1.6, mx: float =
 
 
 def _layer(depth: float, designation: str, xs: list[float]) -> dict:
-    return {"depth": depth, "role": "flexure", "bars": [{"designation": designation, "x": x} for x in xs]}
+    return {"depth": depth, "role": "flexure", "bars": [{"designation": designation, "x": x} for x in xs], "end": "straight"}
 
 
 def _spread(low: float, high: float, count: int) -> list[float]:
@@ -352,13 +352,13 @@ BOTTOM = _layer(900 - 75 - 19.1 / 2, "#6", [y + 300 for y in _spread(-1050, 1050
 def _footing(**changes: object) -> dict:
     columns = [{"id": "C1", "cx": 500.0, "cy": 500.0, "x": -2500.0, "y": 0.0, "loads": [_load("U1", 1000.0)]},
                {"id": "C2", "cx": 500.0, "cy": 500.0, "x": 2500.0, "y": 0.0, "loads": [_load("U1", 1150.0)]}]
-    beam = {"width": 600.0, "height": 900.0, "end": "straight", "layers": [TOP, BOTTOM],
-            "stirrups": {"designation": "#4", "legs": 4, "spacing": 120.0, "closed": True}}
+    beam = {"width": 600.0, "height": 900.0, "layers": [TOP, BOTTOM],
+            "stirrups": {"designation": "#4", "legs": 4, "spacing": 120.0, "closed": True, "end": "hook135"}}
     data = {"id": "ZT", "min_steel_exception": False,
             "lx": 6600.0, "ly": 2400.0, "h": 400.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns, "beam": beam,
-            "bottom": {"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0},
-                       "y": {"designation": "#5", "spacing": 150.0}}}
+            "bottom": {"first": "x", "x": {"designation": "#6", "spacing": 150.0, "end": "straight"},
+                       "y": {"designation": "#5", "spacing": 150.0, "end": "straight"}}}
     beam_changes = changes.pop("beam_changes", {})
     data.update(changes)
     data["beam"] = {**beam, **beam_changes}  # type: ignore[dict-item]
@@ -370,25 +370,25 @@ CASES = [
     ("ala-delgada", "zarpa de 280 mm < 0.5bw: el ala no cuenta (solo el alma) y las barras inferiores solo en el alma",
      _footing(h=280.0, beam_changes={"layers": [TOP, _layer(900 - 75 - 19.1 / 2, "#6", _spread(100.0, 500.0, 4))]})),
     ("aleta-escasa", "malla y #4 c/300: la aleta no cumple flexión ni el mínimo de losa",
-     _footing(bottom={"first": "x", "end": "straight", "x": {"designation": "#6", "spacing": 150.0},
-                      "y": {"designation": "#4", "spacing": 300.0}})),
+     _footing(bottom={"first": "x", "x": {"designation": "#6", "spacing": 150.0, "end": "straight"},
+                      "y": {"designation": "#4", "spacing": 300.0, "end": "straight"}})),
     ("momento-positivo", "momentos de columna grandes: momento positivo en las caras y el ala a tracción con min(bf, 2bw)",
      _footing(columns=[{"id": "C1", "cx": 500.0, "cy": 500.0, "x": -2500.0, "y": 0.0, "loads": [_load("U1", 1500.0, my=-600.0)]},
                        {"id": "C2", "cx": 500.0, "cy": 500.0, "x": 2500.0, "y": 0.0, "loads": [_load("U1", 1800.0, my=650.0)]}],
-              bottom={"first": "x", "end": "straight", "x": {"designation": "#4", "spacing": 300.0},
-                      "y": {"designation": "#5", "spacing": 150.0}},
+              bottom={"first": "x", "x": {"designation": "#4", "spacing": 300.0, "end": "straight"},
+                      "y": {"designation": "#5", "spacing": 150.0, "end": "straight"}},
               beam_changes={"layers": [TOP, _layer(900 - 75 - 12.7 / 2, "#4", [y + 300 for y in _spread(-1050, 1050, 8)])]})),
     ("capa-angosta", "capa inferior de la viga en 1200 mm (bottom_width): fuera de ella, las barras #5 c/200 de la malla de la "
                      "zarpa cuentan dentro del ala (D-106)",
-     _footing(bottom={"first": "x", "end": "straight", "x": {"designation": "#5", "spacing": 200.0},
-                      "y": {"designation": "#5", "spacing": 150.0}},
+     _footing(bottom={"first": "x", "x": {"designation": "#5", "spacing": 200.0, "end": "straight"},
+                      "y": {"designation": "#5", "spacing": 150.0, "end": "straight"}},
               beam_changes={"bottom_width": 1200.0,
                             "layers": [TOP, _layer(900 - 75 - 19.1 / 2, "#6", [y + 300 for y in _spread(-450, 450, 7)])]})),
     ("aleta-superior", "Mx grande: la presión baja hacia un borde y aparece el momento negativo en esa aleta, que toman las "
                        "barras superiores y de la zarpa, #5 c/200 (top, D-114)",
      _footing(columns=[{"id": "C1", "cx": 500.0, "cy": 500.0, "x": -2500.0, "y": 0.0, "loads": [_load("U1", 350.0, mx=350.0)]},
                        {"id": "C2", "cx": 500.0, "cy": 500.0, "x": 2500.0, "y": 0.0, "loads": [_load("U1", 400.0, mx=350.0)]}],
-              top={"first": "y", "end": "straight", "y": {"designation": "#5", "spacing": 200.0}})),
+              top={"first": "y", "y": {"designation": "#5", "spacing": 200.0, "end": "straight"}})),
 ]
 
 

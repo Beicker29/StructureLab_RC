@@ -275,13 +275,15 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
     checks += outside_checks(basis, footing, row, (MINIMUM, SPACING))
     cantilever = (footing.ly - footing.beam.width) / 2
     excess = steel_excess(basis, (STRIP, footing.h, row.depth), per_metre, largest * STRIP) if largest > 0 else 1.0
-    checks.append(bar_development_check(basis, footing, row, (footing.bottom.y.spacing, "bottom", excess, cantilever - footing.cover),
+    checks.append(bar_development_check(basis, footing, row, (footing.bottom.y.end, footing.bottom.y.spacing, "bottom", excess,
+                                                              cantilever - footing.cover),
                                         (DEVELOPMENT, "Desde la cara de la viga hasta el borde de la zarpa")))
     if top is not None and footing.top is not None and footing.top.y is not None and negative > _NEGLIGIBLE:
         # Las barras superiores de la aleta, a tracción con el momento negativo, desde la cara de la viga (D-114).
         top_metre = _per_metre(top, footing.top.y.spacing)
         excess = steel_excess(basis, (STRIP, footing.h, top.depth), top_metre, negative * STRIP)
-        checks.append(bar_development_check(basis, footing, top, (footing.top.y.spacing, "top", excess, cantilever - footing.cover),
+        checks.append(bar_development_check(basis, footing, top, (footing.top.y.end, footing.top.y.spacing, "top", excess,
+                                                                  cantilever - footing.cover),
                                             (DEVELOPMENT_TOP, "Desde la cara de la viga hasta el borde de la zarpa")))
     checks += _tension_flange(basis, footing, bottom["x"])
     checks += x_development(basis, footing, soil, t_beam_rows(profile, footing, basis.bars), cases)

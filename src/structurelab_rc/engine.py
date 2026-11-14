@@ -30,7 +30,7 @@ from structurelab_rc.drawing.dxf import write_dxf
 from structurelab_rc.drawing.model import Drawing
 from structurelab_rc.drawing.svg import view_svg
 from structurelab_rc.errors import invalid_input
-from structurelab_rc.io.dlnet import TEMPLATE_PATH, TEMPLATE_VARIABLE, find_template, schedule_dli
+from structurelab_rc.io.dlnet import TEMPLATE_PATH, TEMPLATE_VARIABLE, DliError, find_template, schedule_dli
 from structurelab_rc.io.etabs import footings as etabs_footings
 from structurelab_rc.io.etabs.footings import (
     FootingImportSummary,
@@ -232,7 +232,11 @@ def _dli_file(schedules: dict[str, list[ScheduleRow]], output: Path, start: Path
         return [], [f"{output.name}.dli no se genero: falta la plantilla DL-NET ({TEMPLATE_PATH.as_posix()} o la variable "
                     f"{TEMPLATE_VARIABLE})"]
     path = output / f"{output.name}.dli"
-    path.write_bytes(schedule_dli(list(schedules.items()), template))
+    try:
+        data = schedule_dli(list(schedules.items()), template)
+    except DliError as error:  # una barra que DL-NET no representa (p. ej., gancho de 135° en una malla, D-134)
+        return [], [f"{output.name}.dli no se genero: {error}"]
+    path.write_bytes(data)
     return [path], []
 
 

@@ -162,8 +162,9 @@ def _bar_options(ctx: Context, fc: float, section: tuple[float, float], depth_of
     return bar_options((profile, materials, specs), spread, depth_of, (demand, minimum), _MAT_TRIES * len(design.bars))
 
 
-def _mat_candidates(ctx: Context, typology: Typology, demands: dict[str, float]) -> Iterator[dict[str, Any]]:
-    """Mallas candidatas de menor a mayor peso; la dirección larga va primero (más cerca de la cara)."""
+def _mat_candidates(ctx: Context, typology: Typology, demands: dict[str, float], end: str) -> Iterator[dict[str, Any]]:
+    """Mallas candidatas de menor a mayor peso, con el extremo declarado de su clase (end, D-134); la dirección larga va
+    primero (más cerca de la cara)."""
     lx, ly, h, fc = typology.lx, typology.ly, typology.h, typology.fc
     first = "x" if lx >= ly else "y"
     second = "y" if first == "x" else "x"
@@ -178,7 +179,7 @@ def _mat_candidates(ctx: Context, typology: Typology, demands: dict[str, float])
                                       demands[second])
         for weight_b, set_b in second_options[:_MAT_TRIES]:
             total = weight_a * lengths[first] + weight_b * lengths[second]
-            combos.append((total, {"first": first, "end": ctx.design.end, first: set_a, second: set_b}))
+            combos.append((total, {"first": first, first: {**set_a, "end": end}, second: {**set_b, "end": end}}))
     for _, mat in sorted(combos, key=lambda combo: combo[0])[: _MAT_TRIES * 2]:
         yield mat
 
@@ -211,7 +212,7 @@ def _dowel_options(ctx: Context, typology: Typology, column: DesignColumn) -> li
         spec = ctx.spec(designation)
         count = max(_DOWELS_MIN, math.ceil(required / spec.area_mm2))
         count += count % 2
-        options.append((count * spec.area_mm2, {"designation": designation, "count": count}))
+        options.append((count * spec.area_mm2, {"designation": designation, "count": count, "end": ctx.design.ends.dowels}))
     return [option for _, option in sorted(options, key=lambda option: option[0])]
 
 
@@ -310,16 +311,16 @@ def _at_height(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: t
     que pasa (ninguna primero, si el perfil permite concreto simple con el nivel sísmico, D-072; luego todas las
     candidatas). El par se confirma con una verificación completa."""
     design = ctx.design
-    any_bars = {"designation": design.bars[0], "spacing": design.spacing_step * 4}
-    provisional = Typology(fc, plan[0], plan[1], h, {"first": "x", "end": design.end, "x": any_bars, "y": any_bars}, None)
+    any_bars = {"designation": design.bars[0], "spacing": design.spacing_step * 4, "end": design.ends.bottom}
+    provisional = Typology(fc, plan[0], plan[1], h, {"first": "x", "x": any_bars, "y": any_bars}, None)
     if not _soil_ok(ctx, columns, provisional):
         return "soil"
-    bottoms = sorted(_mat_candidates(ctx, provisional, _demands(ctx, columns, provisional, 1.0)),
+    bottoms = sorted(_mat_candidates(ctx, provisional, _demands(ctx, columns, provisional, 1.0), design.ends.bottom),
                      key=lambda mat: _mat_mass(ctx, provisional, mat))
     negative = _demands(ctx, columns, provisional, -1.0)
     tops: list[dict[str, Any] | None] = [None]
     if max(negative.values()) > 0:
-        candidates = sorted(_mat_candidates(ctx, provisional, negative), key=lambda mat: _mat_mass(ctx, provisional, mat))
+        candidates = sorted(_mat_candidates(ctx, provisional, negative, design.ends.top), key=lambda mat: _mat_mass(ctx, provisional, mat))
         tops = [None, *candidates] if ctx.profile.plain.permitted_in_foundations(ctx.project.seismic.level) else [*candidates]
     bottom = _cheapest_bottom(ctx, columns, provisional, bottoms)
     if bottom is None:
@@ -397,8 +398,8 @@ def _lower_bound(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan:
     per_direction = {"x": ratio * h * ly * (lx - 2 * design.cover) * unit / 1000,
                      "y": ratio * h * lx * (ly - 2 * design.cover) * unit / 1000}
     steel = len(columns) * sum(per_direction.values())
-    bars = {"designation": design.bars[0], "spacing": design.spacing_step * 4}
-    provisional = Typology(fc, lx, ly, h, {"first": "x", "end": design.end, "x": bars, "y": bars}, None)
+    bars = {"designation": design.bars[0], "spacing": design.spacing_step * 4, "end": design.ends.bottom}
+    provisional = Typology(fc, lx, ly, h, {"first": "x", "x": bars, "y": bars}, None)
     for column in columns:
         steel += min(option["count"] * ctx.spec(option["designation"]).mass_kg_m
                      for option in _dowel_options(ctx, provisional, column)) * (h - design.cover) / 1000
