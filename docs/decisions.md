@@ -2569,6 +2569,17 @@
   extremo (135° como recta), ganchos del despiece (135° en malla, 180° en pasadores), errores de entrada (135° en #9,
   estribo de 180° en NSR-10) y el aviso de DL-NET.
 
+### D-135: precios de concreto y acero actualizados en los ejemplos de diseño
+
+- **Fecha:** 2026-11-14
+- **Datos del usuario:** concreto de 3000, 4000 y 5000 psi a $711.357, $747.582 y $779.082 por m³ (f'c 21, 28 y 35
+  MPa); acero de refuerzo a $4.385 por kg. El de 24.5 MPa (3500 psi), que la tabla no trae, se interpola linealmente
+  entre 21 y 28 MPa por decisión del usuario: $729.470 por m³.
+- **Ejemplos (cambio registrado):** los ejemplos de diseño para iterar y sus copias de `pruebas/`, en los dos perfiles.
+- **Efecto en las huellas:** las 10 de diseño. Las combinadas y las tipologías eligen la misma zapata y bajan de costo;
+  la T invertida pasa de f'c 21 con viga de 1000 mm a f'c 28 con viga de 800 mm y planta 6600 × 1800 (ACI: $8.731.337
+  → $8.408.621; NSR-10: $8.922.531 → $8.649.192), porque el acero quedó más barato frente al concreto.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)
