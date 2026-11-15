@@ -67,7 +67,10 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
   C.15.5.4): una dirección a d de las caras (ACI 22.5 con λs y, con pilotes a 4 diámetros o menos, el mayor entre ese y
   0.17λ√f'c·bw·d de 13.4.6.8(a); NSR-10 C.11.2) y dos direcciones a d/2 de la columna. Con
   pilotes dentro de d o d/2, los límites de la guía CRSI en la cara de la columna (estados límite 4 a 6, constantes
-  pasadas a SI con 0.083). Además, el punzonamiento de cada pilote, aislado (P1) o de esquina (P3).
+  pasadas a SI con 0.083). Además, el punzonamiento de cada pilote, aislado (P1) o de esquina (P3), el de dos pilotes
+  vecinos cuya falla conjunta es más corta (P2: L < π(dp + d)/2, b0 = π(dp + d) + 2L, vc de la norma con
+  β = (L + dp)/dp) y el cortante en una dirección en la esquina (P4: b = 2·((Ex + Ey)/√2 + dp/2 + d), d ≤ 330 mm solo
+  en b, vc = 0.166λ√f'c), todos con las reacciones mayoradas.
 - **Geometría:** d ≥ 300 mm (ACI 13.4.6.2; NSR-10 C.15.7, sobre el refuerzo inferior). En ACI también el empotramiento
   ≥ 75 mm y el borde ≥ 100 mm (13.4.6.3).
 - **Desarrollo, pasadores y aplastamiento:** los de la zapata aislada.

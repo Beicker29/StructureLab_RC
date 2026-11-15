@@ -379,6 +379,66 @@
      "capacity": 1.3096468989769725
     },
     {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.41686086224791213,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.36025174592677134,
+     "capacity": 0.9320432097991878
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.41484273493935186,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.4261808535177552,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.36025174592677134,
+     "capacity": 0.9320432097991878
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.4241627262091949,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U1",
+     "demand": 929592.815659147,
+     "capacity": 1050694.1122605896
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U1",
+     "demand": 905071.9823258137,
+     "capacity": 1050694.1122605896
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U1",
+     "demand": 889280.315659147,
+     "capacity": 1050694.1122605896
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U1",
+     "demand": 913801.1489924802,
+     "capacity": 1050694.1122605896
+    },
+    {
      "name": "Cortante en una direccion (barras x)",
      "case": "U2",
      "demand": 1027.416000000002,
@@ -443,6 +503,66 @@
      "case": "U2",
      "demand": 0.45813118356924687,
      "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U2",
+     "demand": 0.37000793236965024,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U2",
+     "demand": 0.3239792775901251,
+     "capacity": 0.9320432097991878
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U2",
+     "demand": 0.28203395792847036,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U2",
+     "demand": 0.4743099535316404,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U2",
+     "demand": 0.3239792775901251,
+     "capacity": 0.9320432097991878
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U2",
+     "demand": 0.38633597909046047,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U2",
+     "demand": 1043441.5457230441,
+     "capacity": 1050694.1122605896
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U2",
+     "demand": 627608.2123897107,
+     "capacity": 1050694.1122605896
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U2",
+     "demand": 592295.7123897107,
+     "capacity": 1050694.1122605896
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U2",
+     "demand": 1008129.0457230441,
+     "capacity": 1050694.1122605896
     },
     {
      "name": "Retraccion y temperatura: cuantia (barras x)",
@@ -1017,6 +1137,54 @@
      "case": "U1",
      "demand": 1.1034077370923618,
      "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.7689861146270768,
+     "capacity": 1.0344887626262549
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.7689861146270768,
+     "capacity": 1.0344887626262549
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.7689861146270768,
+     "capacity": 1.0344887626262549
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "U1",
+     "demand": 0.7689861146270768,
+     "capacity": 1.0344887626262549
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U1",
+     "demand": 1037968.0100138054,
+     "capacity": 811136.2463046463
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U1",
+     "demand": 1037968.0100138054,
+     "capacity": 811136.2463046463
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U1",
+     "demand": 1037968.0100138054,
+     "capacity": 811136.2463046463
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "U1",
+     "demand": 1037968.0100138054,
+     "capacity": 811136.2463046463
     },
     {
      "name": "Punzonamiento",

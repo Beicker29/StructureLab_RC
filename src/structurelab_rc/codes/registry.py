@@ -293,6 +293,10 @@ class PileCap(Protocol):
 
     def column_face_one_way_stress(self, *, fc: float, lam: float, d: float, w: float, vu: float, mu: float) -> float: ...
 
+    def corner_one_way_stress(self, *, fc: float, lam: float) -> float: ...
+
+    def corner_depth_limit(self) -> float: ...
+
 
 @dataclass(frozen=True)
 class Profile:

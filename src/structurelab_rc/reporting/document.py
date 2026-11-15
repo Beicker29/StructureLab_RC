@@ -164,9 +164,8 @@ _CAP_CONVENTIONS = (
 )
 _CAP_LIMITATIONS = (
     "Puntal-tensor, cabezales de varias columnas y requisitos sísmicos de los pilotes: falta implementación.",
-    "Punzonamiento de grupos de pilotes con perímetros traslapados (guía CRSI P2) y cortante de esquina en una dirección "
-    "(P4): falta implementación.",
-    "El aumento del cortante en una dirección por pilotes cercanos (ACI 13.4.6.8(a)) no se usa: consulta abierta (D-138).",
+    "Punzonamiento de grupos de más de dos pilotes con perímetros traslapados: falta implementación (se revisan los pares, "
+    "guía CRSI P2).",
 )
 
 

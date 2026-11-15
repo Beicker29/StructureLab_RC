@@ -42,6 +42,7 @@ _VALUE_UNITS = {"s": "mm", "db": "mm", "dagg": "mm", "bslab sin recortar": "mm",
                 "b": "mm", "h": "mm", "bw": "mm", "a": "mm", "fc": "MPa", "fy": "MPa",
                 # Cabezales (D-138): reacción de un pilote, su aumento por la mala ubicación y los límites de la guía CRSI.
                 "R pilote": "N", "delta R": "N", "Qa": "N", "vc": "MPa", "w": "mm", "bs": "mm", "c columna": "mm", "Mu": "N*mm",
+                "L": "mm", "dp": "mm", "Ex": "mm", "Ey": "mm",
                 # Torsión de placa (Wood-Armer, D-118, D-119): composición de Mu y Vu y los momentos por unidad de ancho.
                 "M flexion": "N*mm", "M torsion": "N*mm", "V flexion": "N", "V torsion": "N",
                 "mx": "N*mm/mm", "my": "N*mm/mm", "mxy": "N*mm/mm", "mx* inf": "N*mm/mm", "mx* sup": "N*mm/mm",

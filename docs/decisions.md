@@ -2661,7 +2661,12 @@
   secciones en todos los cabezales (C.11.11 con C.15.5.4). Un perímetro de pilote que pierde más de dos lados (cabezal
   angosto) no se revisa: ahí gobierna el cortante a todo el ancho.
 - **No incluido:** puntal-tensor, cabezales de varias columnas, requisitos sísmicos de los pilotes, punzonamiento de
-  grupos traslapados (P2), cortante de esquina en una dirección (P4) y el diseño.
+  grupos de más de dos pilotes y el diseño.
+- **P2 y P4 de la guía CRSI (decisiones del usuario, 2026-11-14):** P2, el punzonamiento de dos pilotes vecinos cuando
+  la falla conjunta es más corta, L < π(dp + d)/2, con b0 = π(dp + d) + 2L, la suma de sus reacciones mayoradas y el vc
+  de la norma (ACI 22.6.5.2, NSR-10 C.11.11.2.1) con β = (L + dp)/dp y αs = 40; P4, el cortante en una dirección en la
+  esquina, con la reacción mayorada del pilote de esquina, b = 2s, s = (Ex + Ey)/√2 + dp/2 + d (proyección sobre la
+  diagonal; d ≤ 330 mm solo en b) y vc = 0.166λ√f'c (2√f'c). Pilotes cuadrados como redondos de igual área.
 - **Suelo y revisiones geotécnicas (decisión del usuario):** el JSON sigue el formato de las zapatas: un bloque `soil`
   con los pesos unitarios y los datos geotécnicos de los pilotes (capacidades a compresión, tracción y lateral, aumento
   con sismo, eficiencia de grupo y excentricidad máxima); cada cabezal lleva geometría, pilote (sección y

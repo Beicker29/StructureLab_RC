@@ -82,6 +82,7 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Cortante en una direccion", "one_way", "Vu", "φVc"),
     ("Cortante en la cara de la columna (dos direcciones)", "punching", "Vu", "φ·vc·bs·d"),
     ("Cortante en la cara de la columna", "one_way", "Vu", "φ·vc·b·d"),
+    ("Cortante de esquina del pilote", "one_way", "Vu", "φ·vc·b·d"),
     ("Punzonamiento", "punching", "vu", "φvc"),
     ("Pilotes: momento no resistido", "geotechnical", "M", "–"),
     ("Cabezal: verificacion estructural", "flexure", "", ""),
@@ -230,6 +231,10 @@ VALUES = {
     "factor sismo": ("Aumento de la capacidad del pilote en combinaciones con sismo", "f sismo"),
     "eficiencia": ("Eficiencia del grupo de pilotes", "η"),
     "pilotes": ("Número de pilotes", "n"),
+    "L": ("Separación entre los centros de los dos pilotes", "L"),
+    "dp": ("Diámetro del pilote (o el equivalente de igual área)", "dp"),
+    "Ex": ("Distancia del centro del pilote al borde en X", "Ex"),
+    "Ey": ("Distancia del centro del pilote al borde en Y", "Ey"),
     "R pilote": ("Reacción del pilote sobre el cabezal (compresión positiva)", "R"),
     "c columna": ("Lado medio de la columna, (cx + cy)/2", "c"),
 }

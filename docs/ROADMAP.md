@@ -95,8 +95,8 @@ entrada desde ETABS si aplica); su diseño, despiece y dibujo se agregan con las
    con más de dos columnas. La T invertida de dos columnas está hecha (D-093).
 4. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
 5. Losas de cimentación.
-6. Pilotes y dados: la verificación del cabezal de una columna está hecha (D-138); siguen el diseño, P2 y P4 de la
-   guía CRSI, la planta de localización de los pilotes y los cabezales de varias columnas.
+6. Pilotes y dados: la verificación del cabezal de una columna está hecha (D-138, con P1 a P4 de la guía CRSI);
+   siguen el diseño, la posición de la columna en la planta y el DXF, y los cabezales de varias columnas.
 7. Muros.
 
 ## v1: vigas (pendientes)

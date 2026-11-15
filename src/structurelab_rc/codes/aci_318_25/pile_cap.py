@@ -24,6 +24,8 @@ _CRSI_ONE_WAY_BASE = 1.9 * _PSI_TO_MPA  # LS5 y LS6: 1.9√f'c
 _CRSI_ONE_WAY_SHEAR_SPAN = 0.1 * _PSI_TO_MPA  # LS5 y LS6: 0.1√f'c·Vu·d/Mu
 _CRSI_ONE_WAY_MAX = 10.0 * _PSI_TO_MPA  # LS5 y LS6: ≤ 10√f'c
 _CRSI_DEEP_A, _CRSI_DEEP_B = 3.5, 2.5  # factor de viga alta 3.5 − 2.5·Mu/(Vu·d)
+_CRSI_CORNER = 2.0 * _PSI_TO_MPA  # P4: 2√f'c
+_CRSI_CORNER_DEPTH = 330.0  # P4: d ≤ 13 in en la longitud de la sección (decisión del usuario, D-138)
 
 
 def clauses() -> dict[str, str]:
@@ -42,6 +44,8 @@ def clauses() -> dict[str, str]:
         "column_face_two_way": "Guia CRSI, estado limite 4 (R13.4.6.7)",
         "column_face_one_way": "Guia CRSI, estados limite 5 y 6 (R13.4.6.7)",
         "pile_punching": "13.4.6.5(b) y 22.6 (guia CRSI, estados limite P1 y P3)",
+        "adjacent_piles_punching": "13.4.6.5(b) y 22.6 (guia CRSI, estado limite P2)",
+        "corner_one_way": "Guia CRSI, estado limite P4 (R13.4.6.7)",
     }
 
 
@@ -121,3 +125,14 @@ def column_face_one_way_stress(*, fc: float, lam: float, d: float, w: float, vu:
     ratio = min(mu / (vu * d), 1.0)
     stress = d / w * (_CRSI_DEEP_A - _CRSI_DEEP_B * ratio) * (_CRSI_ONE_WAY_BASE + _CRSI_ONE_WAY_SHEAR_SPAN / ratio)
     return min(stress, _CRSI_ONE_WAY_MAX) * lam * sqrt_fc
+
+
+def corner_one_way_stress(*, fc: float, lam: float) -> float:
+    """Guía CRSI, estado límite P4: cortante en una dirección en la esquina de un pilote, vc = 0.166λ√f'c (2√f'c);
+    en MPa."""
+    return _CRSI_CORNER * lam * shear.limited_sqrt_fc(fc, av_ge_min=False)
+
+
+def corner_depth_limit() -> float:
+    """Guía CRSI, estado límite P4: d que entra en la longitud de la sección, ≤ 330 mm (13 in); en mm."""
+    return _CRSI_CORNER_DEPTH

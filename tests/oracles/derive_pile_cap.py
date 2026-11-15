@@ -24,7 +24,8 @@ Para cada caso:
 6. Guía CRSI, cara de la columna (factor 0.083 de √psi a √MPa): estado límite 4 con un pilote a menos de d/2,
    vc = mín((d/w)(1 + d/c)·0.166, 2.656)·√f'c en bs = 2(cx + cy); estados límite 5 y 6 con un pilote a menos de d,
    vc = mín((d/w)(3.5 − 2.5r)(0.1577 + 0.0083/r), 0.83)·√f'c en todo el ancho, r = mín(Mu/(Vu·d), 1).
-7. Punzonamiento del pilote P1 (cuadrado de igual área, lado √π·D/2), perímetro a d/2 completo: vu = R/(b0·d) y
+7. Guía CRSI P2 (dos pilotes vecinos) y P4 (cortante de esquina), con las reacciones mayoradas (D-138).
+8. Punzonamiento del pilote P1 (cuadrado de igual área, lado √π·D/2), perímetro a d/2 completo: vu = R/(b0·d) y
    φvc = 0.75·mín(0.33, 0.17 + 0.33/β, 0.17 + 0.083·40·d/b0)·λs·√f'c en ACI (λs = 1 con pilotes a 4D o menos) y
    0.75·mín(0.17(1 + 2/β), 0.083(40·d/b0 + 2), 0.33)·√f'c en NSR-10.
 
@@ -362,6 +363,7 @@ def _two_way(folder: str, cap: dict, case: dict) -> list[dict]:
                 best = (demand / capacity, demand, capacity)
         if best is not None:
             out.append({"name": "Punzonamiento del pilote", "case": name, "demand": best[1], "capacity": best[2]})
+    out += _pairs_and_corners(folder, cap, case, (davg, lam_s, sense))
     if cap.get("symmetric"):  # punzonamiento de la columna sin momento transferido (oráculo del caso simétrico)
         found = _perimeter((0.0, 0.0), (column["cx"], column["cy"]), davg, bounds)
         assert found is not None
@@ -375,6 +377,40 @@ def _two_way(folder: str, cap: dict, case: dict) -> list[dict]:
         beta = max(column["cx"], column["cy"]) / min(column["cx"], column["cy"])
         out.append({"name": "Punzonamiento", "case": name, "demand": force / (b0 * davg),
                     "capacity": PHI_V * _vc_two_way(folder, (beta, alpha[lost], davg / b0, lam_s))})
+    return out
+
+
+def _pairs_and_corners(folder: str, cap: dict, case: dict, given: tuple[float, float, float]) -> list[dict]:
+    """Guía CRSI P2 (dos pilotes vecinos con L < π(dp + d)/2: b0 = π(dp + d) + 2L, vc de la norma con β = (L + dp)/dp y
+    αs = 40) y P4 (esquina: b = 2·((Ex + Ey)/√2 + dp/2 + mín(d, 330)), φ·0.166√f'c·b·d), con las reacciones mayoradas."""
+    d, lam_s, sense = given
+    piles, dp, name = cap["piles"], cap["pile"]["size"], case["load"]["case"]
+    reaction = [case["R"][i] + sense * case["dR"][i] for i in range(len(piles))]
+    out = []
+    for i in range(len(piles)):
+        for j in range(i + 1, len(piles)):
+            spacing = math.dist((piles[i]["x"], piles[i]["y"]), (piles[j]["x"], piles[j]["y"]))
+            if spacing >= math.pi * (dp + d) / 2 or min(reaction[i], reaction[j]) <= 1.0:
+                continue
+            b0 = math.pi * (dp + d) + 2 * spacing
+            vc = _vc_two_way(folder, ((spacing + dp) / dp, 40.0, d / b0, lam_s))
+            out.append({"name": "Punzonamiento de dos pilotes", "case": name, "demand": (reaction[i] + reaction[j]) / (b0 * d),
+                        "capacity": PHI_V * vc})
+    hx, hy = cap["lx"] / 2, cap["ly"] / 2
+    corners = []
+    for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+        k = min(range(len(piles)), key=lambda i: math.dist((sx * hx, sy * hy), (piles[i]["x"], piles[i]["y"])))
+        if piles[k]["x"] * sx > 0 and piles[k]["y"] * sy > 0 and k not in corners:
+            corners.append(k)
+    for k in corners:
+        if reaction[k] <= 1.0:
+            continue
+        ex, ey = hx - abs(piles[k]["x"]), hy - abs(piles[k]["y"])
+        reach = (ex + ey) / math.sqrt(2) + dp / 2 + min(d, 330.0)
+        if reach * math.sqrt(2) > min(cap["lx"], cap["ly"]):
+            continue
+        out.append({"name": "Cortante de esquina del pilote", "case": name, "demand": reaction[k],
+                    "capacity": PHI_V * 2 * 0.083 * SQRT_FC * 2 * reach * d})
     return out
 
 

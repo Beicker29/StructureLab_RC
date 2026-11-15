@@ -27,6 +27,8 @@ FACE_ONE_WAY = "Cortante en la cara de la columna"
 FACE_TWO_WAY = "Cortante en la cara de la columna (dos direcciones)"
 PUNCHING = "Punzonamiento"
 PILE_PUNCHING = "Punzonamiento del pilote"
+PAIR_PUNCHING = "Punzonamiento de dos pilotes"
+CORNER_ONE_WAY = "Cortante de esquina del pilote"
 SHEAR = "Cabezal: cortante"
 _FACES = {"x": ("+X", "-X"), "y": ("+Y", "-Y")}
 _NEGLIGIBLE_FORCE = 1.0  # N
@@ -235,6 +237,77 @@ def _pile_punching(basis: Basis, item: FactoredCap, strength: _Strength) -> list
     return checks
 
 
+def _round_size(cap: PileCap) -> float:
+    """Diámetro del pilote, o el del círculo de igual área si es cuadrado (guía CRSI: pilotes redondos o equivalentes)."""
+    return cap.pile.size if cap.pile.shape == "circular" else cap.pile.size * 2 / math.sqrt(math.pi)
+
+
+def _pair_punching(basis: Basis, item: FactoredCap, strength: _Strength) -> list[Check]:
+    """Guía CRSI, estado límite P2: dos pilotes vecinos a compresión cuya falla conjunta es más corta que las dos aisladas,
+    L < π(dp + d)/2: b0 = π(dp + d) + 2L con la suma de sus reacciones, frente al vc de la norma con β = (L + dp)/dp y
+    αs = 40 (decisiones del usuario, D-138)."""
+    profile, materials, cap = basis.profile, basis.materials, item.cap
+    dp, d = _round_size(cap), strength.depth
+    phi = profile.shear.strength_reduction()
+    clause = profile.pile_cap.clauses()["adjacent_piles_punching"]
+    checks = []
+    for first in range(len(cap.piles)):
+        for second in range(first + 1, len(cap.piles)):
+            a, b = cap.piles[first], cap.piles[second]
+            spacing = math.hypot(a.x - b.x, a.y - b.y)
+            force = item.reaction(first) + item.reaction(second)
+            if spacing >= math.pi * (dp + d) / 2 or min(item.reaction(first), item.reaction(second)) <= _NEGLIGIBLE_FORCE:
+                continue
+            b0 = math.pi * (dp + d) + 2 * spacing
+            vc = profile.shear.punching_concrete_stress(fc=materials.fc, lam=strength.lam, lam_s=strength.lam_s,
+                                                        beta=(spacing + dp) / dp, alpha_s=40.0, d=d, b0=b0)
+            demand, capacity = force / (b0 * d), phi * vc
+            checks.append(Check(PAIR_PUNCHING, Status.PASS if demand <= capacity else Status.FAIL, clause=clause, member=cap.id,
+                                case=item.case.case, demand=demand, capacity=capacity, unit="MPa",
+                                values=(("Vu", force), ("b0", b0), ("d", d), ("L", spacing), ("dp", dp)),
+                                note=f"Pilotes {a.id} y {b.id} (P2)"))
+    return checks
+
+
+def _corner_piles(cap: PileCap) -> list[int]:
+    """El pilote más cercano a cada esquina del cabezal, si queda en el cuadrante de esa esquina."""
+    hx, hy = cap.lx / 2, cap.ly / 2
+    found = []
+    for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+        index = min(range(len(cap.piles)), key=lambda i: math.hypot(sx * hx - cap.piles[i].x, sy * hy - cap.piles[i].y))
+        pile = cap.piles[index]
+        if pile.x * sx > 0 and pile.y * sy > 0 and index not in found:
+            found.append(index)
+    return found
+
+
+def _corner_one_way(basis: Basis, item: FactoredCap, strength: _Strength) -> list[Check]:
+    """Guía CRSI, estado límite P4: sección a 45° que corta la esquina a d de la cara del pilote de esquina, con su
+    reacción; su longitud b = 2s, s = (Ex + Ey)/√2 + dp/2 + d (d ≤ 330 mm solo aquí; proyección sobre la diagonal,
+    decisión del usuario, D-138), frente a φ·0.166λ√f'c·b·d. Si la sección no cabe en la esquina, no se revisa."""
+    profile, materials, cap = basis.profile, basis.materials, item.cap
+    rules = profile.pile_cap
+    dp, d = _round_size(cap), strength.depth
+    phi = profile.shear.strength_reduction()
+    stress = rules.corner_one_way_stress(fc=materials.fc, lam=strength.lam)
+    checks = []
+    for index in _corner_piles(cap):
+        pile, force = cap.piles[index], item.reaction(index)
+        if force <= _NEGLIGIBLE_FORCE:
+            continue
+        ex, ey = cap.lx / 2 - abs(pile.x), cap.ly / 2 - abs(pile.y)
+        reach = (ex + ey) / math.sqrt(2) + dp / 2 + min(d, rules.corner_depth_limit())
+        if reach * math.sqrt(2) > min(cap.lx, cap.ly):
+            continue
+        width = 2 * reach
+        capacity = phi * stress * width * d
+        checks.append(Check(CORNER_ONE_WAY, Status.PASS if force <= capacity else Status.FAIL, clause=rules.clauses()["corner_one_way"],
+                            member=cap.id, case=item.case.case, demand=force, capacity=capacity, unit="N",
+                            values=(("phi", phi), ("vc", stress), ("b", width), ("d", d), ("Ex", ex), ("Ey", ey), ("dp", dp)),
+                            note=f"Pilote {pile.id} (P4)"))
+    return checks
+
+
 def shear_checks(basis: Basis, cap: PileCap, analysis: CapAnalysis) -> list[Check]:
     """Cortante en una dirección, límites CRSI en la cara de la columna y punzonamiento de la columna y de los pilotes de
     cada caso mayorado."""
@@ -252,5 +325,6 @@ def shear_checks(basis: Basis, cap: PileCap, analysis: CapAnalysis) -> list[Chec
             checks.extend([] if one_way is None else [one_way])
             checks.extend(_face_one_way(basis, item, bottom[direction], strength))
         checks.extend([*_column_punching(basis, item, strength), *_face_two_way(basis, item, strength),
-                       *_pile_punching(basis, item, strength)])
+                       *_pile_punching(basis, item, strength), *_pair_punching(basis, item, strength),
+                       *_corner_one_way(basis, item, strength)])
     return checks
