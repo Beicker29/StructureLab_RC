@@ -53,6 +53,20 @@ class Prices(_Input):
         return any(float(key) == fc for key in self.concrete_per_m3)
 
 
+def check_options(fc_options: tuple[float, ...], prices: Prices, heights: tuple[float, float]) -> None:
+    """f'c comerciales, con precio y sin repetir, y h_max ≥ h_min: lo común a los diseños de zapatas y cabezales."""
+    h_min, h_max = heights
+    if h_max < h_min:
+        raise ValueError("h_max debe ser al menos h_min")
+    for fc in fc_options:
+        if fc not in COMMERCIAL_FC:
+            raise ValueError(f"f'c = {fc:g} MPa no es un valor comercial; valores: {', '.join(f'{v:g}' for v in COMMERCIAL_FC)}")
+        if not prices.has(fc):
+            raise ValueError(f"f'c = {fc:g} MPa no tiene precio en prices.concrete_per_m3")
+    if len(set(fc_options)) != len(fc_options):
+        raise ValueError("fc_options repite una resistencia")
+
+
 class DesignEnds(_Input):
     """Cómo terminan las barras que diseña (D-134), por clase de grupo, sin valor por defecto: bottom (malla inferior,
     band y capa inferior de la viga de la T), top (malla y barras superiores, band superior y capa superior de la viga),
@@ -91,15 +105,7 @@ class DesignLimits(_Input):
 
     @model_validator(mode="after")
     def _check_limits(self) -> Self:
-        if self.h_max < self.h_min:
-            raise ValueError("h_max debe ser al menos h_min")
-        for fc in self.fc_options:
-            if fc not in COMMERCIAL_FC:
-                raise ValueError(f"f'c = {fc:g} MPa no es un valor comercial; valores: {', '.join(f'{v:g}' for v in COMMERCIAL_FC)}")
-            if not self.prices.has(fc):
-                raise ValueError(f"f'c = {fc:g} MPa no tiene precio en prices.concrete_per_m3")
-        if len(set(self.fc_options)) != len(self.fc_options):
-            raise ValueError("fc_options repite una resistencia")
+        check_options(self.fc_options, self.prices, (self.h_min, self.h_max))
         return self
 
 

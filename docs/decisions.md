@@ -2741,7 +2741,7 @@
 - **Niveles sísmicos:** el concreto simple solo entra donde la norma lo permite (D-072): ACI none, ordinary e
   intermediate (14.1.3; special se toma como categorías D a F) y NSR-10 DMI y DMO (C.22.10.1); nunca en cabezales.
 
-### D-141: cabezales de tres pilotes con esquinas recortadas (verificación) y plan del diseño de cabezales
+### D-141: cabezales de tres pilotes con esquinas recortadas (verificación) y diseño de cabezales
 
 - **Pedido del usuario:** verificar cabezales con esquinas recortadas (los de tres pilotes de la guía CRSI), con un
   ejemplo propio, y diseñar cabezales incluyéndolos.
@@ -2761,9 +2761,25 @@
   y P4 de los recortes. Ejemplo `cabezal_tres_pilotes` en los dos perfiles.
 - **Corrección:** `cartilla.csv` no incluía los cabezales (desde D-138); ahora sí. Una sección a d sin barras que la
   crucen se revisa con ρw = 0 (antes se omitía).
-- **Diseño de cabezales (plan aprobado):** con cargas de la columna diseña pilotes (número y arreglo de familias
-  generadas: mallas, triángulo de tres con esquinas recortadas, malla con pilote central y filas desplazadas, con L y E
-  declarados) y cabezal; con cargas de los pilotes, solo el cabezal. Costo: concreto, acero y pilotes. Pendiente.
+- **Diseño de cabezales (decisiones del usuario):** con cargas de la columna diseña pilotes y cabezal; con cargas de los
+  pilotes, solo el cabezal (arreglo declarado, coordenadas desde el eje de la columna). Costo: concreto, acero y pilotes
+  (`prices.pile_each`). L (separación entre centros) y E (centro del pilote al borde) declarados. Familias generadas en
+  lugar de los 26 patrones de la guía CRSI: mallas nx × ny, triángulo de tres con las esquinas superiores recortadas
+  paralelas a sus lados a E, malla con pilote central (a L·√2) y filas desplazadas (a L·√3/2), cada una girada 90°;
+  distancias irracionales redondeadas hacia arriba al milímetro (ningún par queda a menos de L). Sin cabezales de varias
+  columnas ni recortes fuera del triángulo.
+- **Diseño, implementación (`design/pile_cap/`):** `patterns.py` genera los arreglos y `search.py` busca sin fórmulas
+  propias: número de pilotes desde la cota de capacidad del grupo, arreglos de menor área, espesores ascendentes con poda
+  por cota inferior (pilotes, concreto y retracción mínima), malla inferior más liviana que cumple lo que no depende de la
+  superior y luego la superior (momento negativo y retracción de las dos mallas, D-140). La franja central de la
+  dirección corta (decisión de D-138) se diseña con `design/bars.band_options` (neutra, reutilizable por las zapatas).
+  Los pasadores salen de `design/footing/typology.dowel_choices` (compartida con el diseño por tipologías). Un proyecto
+  declara un solo f'c: se diseñan todos los cabezales con cada f'c y gana el de menor costo total, como en el diseño por
+  tipologías. Cada candidato lo aprueba `pile_cap_checks`. Salida: `proyecto.json` (verificación) y `resumen.json`.
+  Comando `design-pile-caps` y detección en `run` por `pile_cap_design`.
+- **Diseño, oráculo y ejemplos:** `derive_pile_cap_design.py` (arreglos de 2 a 13 pilotes con los recortes del triángulo
+  por triángulos semejantes, cota del número de pilotes y aritmética del costo); `diseno_cabezal_columna` (dos cabezales)
+  y `diseno_cabezal_pilotes` en los dos perfiles, con su copia en `pruebas/` y su huella.
 
 ## Consultas abiertas
 

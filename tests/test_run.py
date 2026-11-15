@@ -30,7 +30,7 @@ def _expected_kind(path: Path) -> str:
             return "etabs_design"
         return "etabs_beams" if path.parts[-3] == "vigas" else "etabs_footings"
     if name.startswith("diseno_"):
-        return "design"
+        return "pile_cap_design" if path.parts[-3] == "cabezales" else "design"
     if name.startswith("curva_"):
         return "curve"
     return "project"

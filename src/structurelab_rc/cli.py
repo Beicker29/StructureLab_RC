@@ -13,6 +13,7 @@ from typing import Any
 from structurelab_rc import __version__
 from structurelab_rc.design.footing.combined import CombinedDesignResult
 from structurelab_rc.design.footing.typologies import Iteration, MilpInfo
+from structurelab_rc.design.pile_cap.search import summary as pile_cap_summary
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.engine import (
@@ -21,6 +22,7 @@ from structurelab_rc.engine import (
     RunPlan,
     design_combined_file,
     design_footings,
+    design_pile_caps_file,
     import_etabs,
     import_etabs_footings,
     profile_footings,
@@ -213,6 +215,26 @@ def _design_combined(path: Path, output: Path, workers: int | None) -> int:
     return 0
 
 
+def _design_pile_caps(path: Path, output: Path) -> int:
+    project, result, check = design_pile_caps_file(path)
+    print(f"{check.name}: {check.status}")
+    _print_errors(check)
+    if result is not None:
+        output.mkdir(parents=True, exist_ok=True)
+        (output / "resumen.json").write_text(json.dumps(pile_cap_summary(result), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    if project is None or result is None:
+        return 1
+    (output / "proyecto.json").write_text(json.dumps(project, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"f'c = {result.fc:g} MPa; costo total {result.cost:.2f} (concreto, acero y pilotes)")
+    for design in result.caps:
+        best = design.best
+        assert best is not None
+        print(f"  {design.cap.id}: {best.arrangement.name}, {len(best.arrangement.piles)} pilotes, {best.arrangement.lx:g} x "
+              f"{best.arrangement.ly:g} x {best.h:g} mm, costo {best.cost:.2f}")
+    print(f"Proyecto escrito en {output / 'proyecto.json'} y arreglos probados en {output / 'resumen.json'}")
+    return 0
+
+
 def _milp_summary(milp: MilpInfo) -> dict[str, Any]:
     return {"status": milp.status, "dp_cost": round(milp.dp_cost, 2), "dp_distinct_count": milp.dp_distinct_count,
             "milp_cost": None if milp.milp_cost is None else round(milp.milp_cost, 2), "candidates": milp.candidates,
@@ -301,10 +323,13 @@ def _run_one(path: Path, output: Path | None, workers: int | None, full: bool) -
         return _report(path, out, full)
     if plan.kind == "curve":
         return _typology_curve(path, out, None, workers, None)
-    if plan.kind == "design":
-        return _design_footings(path, out, workers, False, None) or _report(out / "proyecto.json", out, full)
-    if plan.kind == "combined_design":
-        return _design_combined(path, out, workers) or _report(out / "proyecto.json", out, full)
+    designs: dict[str, Callable[[], int]] = {
+        "design": lambda: _design_footings(path, out, workers, False, None),
+        "combined_design": lambda: _design_combined(path, out, workers),
+        "pile_cap_design": lambda: _design_pile_caps(path, out),
+    }
+    if plan.kind in designs:  # diseña y verifica el proyecto diseñado
+        return designs[plan.kind]() or _report(out / "proyecto.json", out, full)
     return _run_etabs(plan, workers, full)
 
 
@@ -391,6 +416,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     combined.add_argument("project", type=Path, help="proyecto de diseno en JSON (dos columnas y bloque combined_design)")
     combined.add_argument("--output", type=Path, required=True, help="carpeta donde escribir proyecto.json y resumen.json")
     combined.add_argument("--workers", type=int, help="procesos en paralelo, uno por f'c (por defecto, los nucleos del equipo)")
+    caps = commands.add_parser("design-pile-caps", help="disena cabezales sobre pilotes (D-141)")
+    caps.add_argument("project", type=Path, help="proyecto de diseno en JSON (cabezales y bloque pile_cap_design)")
+    caps.add_argument("--output", type=Path, required=True, help="carpeta donde escribir proyecto.json y resumen.json")
     curve = commands.add_parser("typology-curve", help="curva costo-N del diseno por tipologias (D-078)")
     curve.add_argument("project", type=Path, help="proyecto de diseno en JSON (columnas y bloque design)")
     curve.add_argument("--output", type=Path, required=True, help="carpeta de salida: resultado.json, curva.csv, curva.svg y la memoria")
@@ -413,6 +441,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "run": lambda: _run(args.target, args.output, args.workers, args.full),
         "design-footings": lambda: _design_footings(args.project, args.output, args.workers, args.profile, args.method),
         "design-combined": lambda: _design_combined(args.project, args.output, args.workers),
+        "design-pile-caps": lambda: _design_pile_caps(args.project, args.output),
         "typology-curve": lambda: _typology_curve(args.project, args.output, args.n, args.workers, args.method),
         "import-etabs-footings": lambda: _import_etabs_footings(args.service, args.factored, args.template, args.output,
                                                                 (args.locations, args.combinations)),

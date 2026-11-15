@@ -197,23 +197,32 @@ def _demands(ctx: Context, columns: Sequence[DesignColumn], typology: Typology, 
     return demands
 
 
-def _dowel_options(ctx: Context, typology: Typology, column: DesignColumn) -> list[dict[str, Any]]:
-    """Pasadores candidatos, de menor a mayor área: cubren 0.005Ag y la compresión que excede φBn (D-065), en número
-    par, al menos 4; el anclaje lo decide la verificación."""
-    footing = footing_for(ctx, typology, column, None)
+def dowel_choices(basis: Basis, footing: Footing, column_loads: Sequence[float], given: tuple[Sequence[str], str]) -> list[dict[str, Any]]:
+    """Pasadores candidatos de una zapata o un cabezal, de menor a mayor área: cubren 0.005Ag y la compresión mayorada de
+    la columna (column_loads, en N) que excede φBn (D-065), en número par, al menos 4; given es (designaciones, extremo).
+    El anclaje lo decide la verificación."""
     a1, a2 = bearing_area(footing, footing_support(footing))
-    bearing = ctx.profile.bearing
+    bearing = basis.profile.bearing
     phi = bearing.strength_reduction()
-    capacity = phi * bearing.nominal_bearing(typology.fc, a1, a2)
-    excess = max((load.p - capacity for load in column.loads if load.kind == "factored"), default=0.0)
-    required = max(ctx.profile.footing.dowel_min_ratio() * a1, max(excess, 0.0) / (phi * ctx.project.materials.fy))
+    capacity = phi * bearing.nominal_bearing(basis.materials.fc, a1, a2)
+    excess = max((load - capacity for load in column_loads), default=0.0)
+    required = max(basis.profile.footing.dowel_min_ratio() * a1, max(excess, 0.0) / (phi * basis.materials.fy))
+    designations, end = given
     options = []
-    for designation in ctx.design.dowel_bars:
-        spec = ctx.spec(designation)
+    for designation in designations:
+        spec = next(bar for bar in basis.bars if bar.designation == designation)
         count = max(_DOWELS_MIN, math.ceil(required / spec.area_mm2))
         count += count % 2
-        options.append((count * spec.area_mm2, {"designation": designation, "count": count, "end": ctx.design.ends.dowels}))
+        options.append((count * spec.area_mm2, {"designation": designation, "count": count, "end": end}))
     return [option for _, option in sorted(options, key=lambda option: option[0])]
+
+
+def _dowel_options(ctx: Context, typology: Typology, column: DesignColumn) -> list[dict[str, Any]]:
+    """Pasadores candidatos de la columna con la tipología (dowel_choices)."""
+    footing = footing_for(ctx, typology, column, None)
+    basis = Basis(ctx.profile, ctx.materials(typology.fc), ctx.bars, ctx.project.seismic.level)
+    loads = [load.p for load in column.loads if load.kind == "factored"]
+    return dowel_choices(basis, footing, loads, (ctx.design.dowel_bars, ctx.design.ends.dowels))
 
 
 def column_checks(ctx: Context, typology: Typology, column: DesignColumn) -> tuple[list[Check], dict[str, Any]]:

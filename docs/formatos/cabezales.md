@@ -1,7 +1,7 @@
 # Formato de cabezales sobre pilotes (D-138)
 
-Un cabezal de una columna sobre un grupo de pilotes declarados por coordenadas, en los dos perfiles. La v1 es solo
-verificación. Unidades de entrada: mm, MPa, kN, kN·m, kN/m² y kN/m³.
+Un cabezal de una columna sobre un grupo de pilotes declarados por coordenadas, en los dos perfiles: verificación y
+diseño ([Diseño](#diseño-d-141)). Unidades de entrada: mm, MPa, kN, kN·m, kN/m² y kN/m³.
 
 ## Proyecto
 
@@ -88,6 +88,49 @@ contorno, la distancia de los pilotes a los bordes y, en cada recorte, el cortan
 al recorte a dp/2 + d (d ≤ 330 mm) del pilote más cercano; P3 solo en las esquinas sin recortar. El despiece da barras de
 largo variable (de borde a borde del contorno menos el recubrimiento, medido a lo largo de la barra) y el dibujo, el
 contorno real. El As mínimo, la separación y la franja central se revisan con las mallas completas.
+
+## Diseño (D-141)
+
+Un proyecto de diseño trae `pile_cap_design` y `caps` en lugar de `pile_caps`; `concrete` va sin `fc` (lo elige el
+diseño) y `soil`, `reinforcement_steel`, `detailing` y `drawing` son los del proyecto de verificación. `run` lo detecta
+por `pile_cap_design`; también `structurelab-rc design-pile-caps <diseño.json> --output <carpeta>`. Escribe
+`proyecto.json` (un proyecto de verificación con los cabezales diseñados, que `run` verifica a continuación con su
+memoria, cartilla y DXF) y `resumen.json` (por f'c, los arreglos probados de cada cabezal con su costo o por qué no
+tienen solución).
+
+| Campo de `pile_cap_design` | Unidad | Descripción |
+| --- | --- | --- |
+| `fc_options` | MPa | Resistencias comerciales que se evalúan. Todos los cabezales del proyecto llevan el mismo f'c: gana el de menor costo total. |
+| `prices` | | `concrete_per_m3` (por f'c, clave en MPa como texto), `steel_per_kg` y `pile_each` (cada pilote), en la moneda del usuario. |
+| `pile` | | `shape`, `size` y `embedment`, como en el cabezal. |
+| `pile_spacing` | mm | Separación mínima entre centros de pilotes, L (mayor que el tamaño del pilote). |
+| `edge_distance` | mm | Distancia del centro de los pilotes al borde del cabezal, E (mayor que medio pilote). |
+| `max_piles` | | Máximo de pilotes por cabezal (30 si no se declara). |
+| `h_min`, `h_step`, `h_max` | mm | Espesores que se prueban. |
+| `cover`, `bottom_cover`, `fill_height`, `pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2`, `mislocation_mm` | | Como en el cabezal. |
+| `bars`, `spacing_step` | | Barras de las mallas y paso de su separación (mm). |
+| `ends` | | Extremos de las barras: `bottom`, `top` y `dowels` (D-134). |
+| `dowel_bars` | | Barras de los pasadores. |
+
+| Campo de `caps[]` | Descripción |
+| --- | --- |
+| `id` | Identificador único. |
+| `loads_from` | `column`: `loads` de la columna; el diseño elige el número y el arreglo de los pilotes y el cabezal. `piles`: `piles[]` con `id`, `x`, `y` (mm, desde el eje de la columna) y `loads`, y `reactions_include_weight`; el arreglo queda declarado y se diseña solo el cabezal. |
+| `column` | `cx`, `cy` (mm). Con cargas de la columna va en el centroide del grupo. |
+| `clipped_corners` | Solo con cargas de los pilotes: los recortes declarados (D-141). |
+
+Arreglos que se prueban con cargas de la columna (familias generadas con L y E; las distancias irracionales se redondean
+hacia arriba al milímetro): mallas nx × ny, el triángulo de tres pilotes con las dos esquinas superiores recortadas
+paralelas a sus lados a E de ellos, mallas con un pilote en el centro de cada celda (a L·√2, cinco, ocho, trece…) y
+filas desplazadas (a L·√3/2, de k y k − 1 o todas de k), cada una también girada 90°; no se prueban las de relación de
+lados mayor que 2.5 con más de tres pilotes. El cabezal es el rectángulo que encierra los pilotes más E.
+
+La búsqueda empieza en n0 = máx(2, ⌈máx P/(η·fs·Qa)⌉) pilotes con las cargas de servicio y sube hasta `max_piles`; se
+para cuando el costo de los pilotes y del concreto mínimo ya no puede ganar. Para cada arreglo, los espesores desde
+`h_min`: la malla inferior más liviana que cumple (con la franja central en la dirección corta de los rectangulares) con
+sus pasadores, y la superior más liviana que completa el momento negativo y la retracción (D-140). Cada candidato lo
+aprueba la verificación completa del cabezal; el costo es concreto, acero (la cartilla con `detailing`, D-127; si no,
+barras rectas) y pilotes.
 
 ## Plantilla de ETABS
 

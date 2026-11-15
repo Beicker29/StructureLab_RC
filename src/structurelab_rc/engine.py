@@ -15,6 +15,7 @@ from structurelab_rc.design.footing.assignment import available as solver_availa
 from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project, typology_curve
 from structurelab_rc.design.footing.typology import Context
+from structurelab_rc.design.pile_cap import search as pile_cap_design
 from structurelab_rc.detailing.schedule import ScheduleRow, schedule
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.station import station_checks
@@ -52,10 +53,12 @@ from structurelab_rc.model.loader import (
     load_combined_design,
     load_design_project,
     load_footing_template,
+    load_pile_cap_design,
     load_project,
     load_template,
     validate_input,
 )
+from structurelab_rc.model.pile_cap_design import PileCapDesignProject
 from structurelab_rc.model.project import Project
 from structurelab_rc.model.template import EtabsCombinedDesignTemplate, EtabsFootingDesignTemplate, EtabsPileCapTemplate
 from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
@@ -75,7 +78,8 @@ RUN_KINDS = {"project": "proyecto de verificación", "design": "diseño por tipo
              "combined_design": "diseño de zapata combinada",
              "etabs_beams": "plantilla de vigas de ETABS", "etabs_footings": "plantilla de zapatas de ETABS",
              "etabs_design": "plantilla de diseño de zapatas de ETABS",
-             "etabs_combined_design": "plantilla de diseño de zapata combinada de ETABS"}
+             "etabs_combined_design": "plantilla de diseño de zapata combinada de ETABS",
+             "pile_cap_design": "diseño de cabezales"}
 
 
 LOCATION = "localizacion"  # el "elemento" del dibujo con las plantas de localización del proyecto (D-130)
@@ -124,7 +128,8 @@ def run_plan(path: Path, output: Path | None = None) -> RunPlan:
     """El tipo del ejemplo por su contenido (D-096): plantilla de ETABS (de zapatas, con los Excel de reacciones y de
     combinaciones en etabs_files, D-137; o de vigas, con miembros con Unique Name) con sus
     Excel en etabs_files (rutas relativas a la plantilla); diseño por tipologías (design y columns), curva costo-N si
-    trae curve; diseño de zapata combinada (combined_design, D-107); si no, un proyecto de verificación."""
+    trae curve; diseño de zapata combinada (combined_design, D-107); diseño de cabezales (pile_cap_design, D-141); si no,
+    un proyecto de verificación."""
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -155,6 +160,8 @@ def run_plan(path: Path, output: Path | None = None) -> RunPlan:
         return RunPlan("curve" if "curve" in data else "design", path, out)
     if "combined_design" in data:
         return RunPlan("combined_design", path, out)
+    if "pile_cap_design" in data:
+        return RunPlan("pile_cap_design", path, out)
     return RunPlan("project", path, out)
 
 
@@ -402,7 +409,7 @@ def import_etabs_footings(
     return project, summary, validation
 
 
-def _validate_design(design: FootingDesignProject | CombinedDesignProject) -> Check:
+def _validate_design(design: FootingDesignProject | CombinedDesignProject | PileCapDesignProject) -> Check:
     """El perfil y el nivel sísmico, y que las barras del bloque de diseño estén en el catálogo."""
     errors = []
     profile = PROFILES.get(design.profile)
@@ -411,9 +418,13 @@ def _validate_design(design: FootingDesignProject | CombinedDesignProject) -> Ch
     elif design.seismic.level not in profile.seismic.seismic_levels():
         errors.append(invalid_input(f"El nivel sismico '{design.seismic.level}' no existe en {profile.id}"))
     known = {bar.designation for bar in load_engine().bars}
-    limits = design.design if isinstance(design, FootingDesignProject) else design.combined_design
-    stirrups = () if isinstance(design, FootingDesignProject) else design.combined_design.stirrup_bars
-    for designation in sorted({*limits.bars, *limits.dowel_bars, *stirrups} - known):
+    if isinstance(design, PileCapDesignProject):
+        bars = {*design.pile_cap_design.bars, *design.pile_cap_design.dowel_bars}
+    elif isinstance(design, FootingDesignProject):
+        bars = {*design.design.bars, *design.design.dowel_bars}
+    else:
+        bars = {*design.combined_design.bars, *design.combined_design.dowel_bars, *design.combined_design.stirrup_bars}
+    for designation in sorted(bars - known):
         errors.append(invalid_input(f"La barra '{designation}' del bloque de diseno no esta en el catalogo"))
     return check_from_errors(CHECK_NAME, errors)
 
@@ -514,6 +525,24 @@ def _design_footings(
         return None, result, failure, measurement
     return designed_project(ctx, result), result, validation, measurement
 
+
+
+def design_pile_caps_file(path: Path) -> tuple[dict[str, Any] | None, pile_cap_design.DesignResult | None, Check]:
+    """Diseño de cabezales (D-141): el proyecto de verificación con los cabezales de menor costo, el resultado de la
+    búsqueda (cada f'c, cada cabezal y sus arreglos probados) y la validación; sin solución, un Check con el motivo."""
+    try:
+        design = load_pile_cap_design(path)
+    except ProjectLoadError as error:
+        return None, None, check_from_errors(CHECK_NAME, error.errors)
+    validation = _validate_design(design)
+    if validation.status is Status.FAIL:
+        return None, None, validation
+    ctx = pile_cap_design.Context(design, PROFILES[design.profile], load_engine().bars)
+    result = pile_cap_design.design_caps(ctx)
+    if result.fc is None:
+        reasons = "; ".join(item.failure for _, designs in result.options for item in designs if item.failure)
+        return None, result, check_from_errors(CHECK_NAME, [invalid_input(f"Sin solucion dentro de los limites: {reasons}")])
+    return pile_cap_design.designed_project(ctx, result), result, validation
 
 
 def design_combined_file(

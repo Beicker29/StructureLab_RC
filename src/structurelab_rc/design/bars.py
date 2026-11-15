@@ -61,3 +61,36 @@ def bar_options(
             if limit is not None and len(options) > limit:
                 break
     return sorted(options, key=lambda option: option[0])
+
+
+def band_options(
+    given: tuple[Profile, Materials, Sequence[RebarSpec]], spread: Spread, depth_of: Callable[[float], float],
+    demand: tuple[float, float], band: tuple[float, float],
+) -> list[tuple[float, dict[str, Any]]]:
+    """Opciones de barras de la dirección corta de una base rectangular con franja central (D-059): band es (ancho de la
+    franja, fracción γs que va en ella). Para cada designación, el As total (como en bar_options) se reparte γs·As en la
+    franja (band_spacing) y el resto fuera (spacing), con la separación mayor que cabe y las menores de la franja hasta
+    cuatro pasos; ordenadas por peso por metro de barra. Una designación sin espacio fuera de la franja se omite."""
+    profile, materials, specs = given
+    moment, min_area = demand
+    width, gamma = band
+    options: list[tuple[float, dict[str, Any]]] = []
+    for spec in specs:
+        needed = required_area(profile, materials, RectangularSection(spread.width, spread.h), depth_of(spec.diameter_mm), moment)
+        if needed is None:
+            continue
+        total = max(needed, min_area)
+        zone = (spread.width - width) / 2 - spread.cover - spec.diameter_mm / 2  # ancho útil a cada lado de la franja
+        side = max(math.ceil((1 - gamma) * total / spec.area_mm2 / 2), 1)
+        outside = min(math.floor(zone / side / spread.step) * spread.step, spread.max_spacing)
+        if outside <= spec.diameter_mm + spread.step / 2:
+            continue
+        inner = max(math.ceil(gamma * total / spec.area_mm2), 2)
+        spacing = min(math.floor(width / inner / spread.step) * spread.step, spread.max_spacing)
+        for _ in range(4):
+            if spacing <= spec.diameter_mm + spread.step / 2:
+                break
+            count = math.floor(width / spacing + 1e-6) + 1 + 2 * math.floor(zone / outside + 1e-6)
+            options.append((count * spec.mass_kg_m, {"designation": spec.designation, "spacing": outside, "band_spacing": spacing}))
+            spacing -= spread.step
+    return sorted(options, key=lambda option: option[0])

@@ -24,6 +24,18 @@
     "memoria.txt": "8e6d034189581ed122bf6077d4417d11560ba868a4af77f4b93f52a3737fa004",
     "cabezal_tres_pilotes_drawing.json": "58b1c1b323ca9a6965e5ac82dcb25fcb63fcc02af39954b812c2f6ecc3d0932f"
   },
+  "examples/aci_318_25/cabezales/pruebas/diseno_cabezal_columna.json": {
+    "proyecto.json": "42df44f06719467321c4079c5ff9683750f28ba83ecc6c5c899d76ccf00e9e57",
+    "resultado.json": "0e44e339fe6d6c0976dab175ec6c4c4b5c6a2bc4a6b8dc8371977d774dda0228",
+    "memoria.txt": "144271059fee1280f1b6991e8899bbdd9b6f7f44a2e20307941b4b2a12460e77",
+    "diseno_cabezal_columna_drawing.json": "2ea18b2d9fab8564e314cd7459c3e50d908af1ba833fdc30c66d52f5ac2f6699"
+  },
+  "examples/aci_318_25/cabezales/pruebas/diseno_cabezal_pilotes.json": {
+    "proyecto.json": "1c533c6e115edef1d0a2fdc98416d6979c34f917c832154724c2ba88f16ac58a",
+    "resultado.json": "ec0e266367a4950f7333c722d5b782fe8b6345ff07f143e2184a1b0fd8b61807",
+    "memoria.txt": "ed415482c48cee39ee095df54ee86c44e46c03e2c03a7d72ff6db3320e114bfd",
+    "diseno_cabezal_pilotes_drawing.json": "013d626278a1fb59d6cda142e1fd9e4ba816e2789a437962d90b8955d500335f"
+  },
   "examples/aci_318_25/vigas/pruebas/viga_alta.json": {
     "resultado.json": "3da4d3275a4874c36fe2049067afc56fc8a6222bd71d47b59772aa82ad1b9887",
     "memoria.txt": "cc4a3b39b54cb2d7c2a3179e3ae03561067cb4d3e0694eb9d7dae36a52efa099"
@@ -111,6 +123,18 @@
     "resultado.json": "375d2a1064e12ce0b32164cd458758d055b90df467aa172aba26a429f2b64f18",
     "memoria.txt": "9e3ec859fce591ee02415f1b1ea1231c5c23c57331dea239de913677d3bf9845",
     "cabezal_tres_pilotes_drawing.json": "58b1c1b323ca9a6965e5ac82dcb25fcb63fcc02af39954b812c2f6ecc3d0932f"
+  },
+  "examples/nsr_10/cabezales/pruebas/diseno_cabezal_columna.json": {
+    "proyecto.json": "dbd6c05fcf0d411348cf4620905268f65b4c1fb5e438f58d0bdace27afbdaf94",
+    "resultado.json": "6c29f41a62b627fd8b758c625abbdd768129b3844aa8840c40c1d4764fda4969",
+    "memoria.txt": "3e443eb63eea45d01a50cb0ca62e9adaae0c137bf333ef6ec059aff4e671e440",
+    "diseno_cabezal_columna_drawing.json": "2ea18b2d9fab8564e314cd7459c3e50d908af1ba833fdc30c66d52f5ac2f6699"
+  },
+  "examples/nsr_10/cabezales/pruebas/diseno_cabezal_pilotes.json": {
+    "proyecto.json": "9802d6eae2cc35c65a1c5bb77172719c06b656dcc225cc2f74c0de1fc0d6a043",
+    "resultado.json": "e3dc290ada4a3022d7a80523225c8df2d4cc892387d2a5f7b502bf850def69a7",
+    "memoria.txt": "944eda08be18c1d2360a29e5b2a3ed414ba81f360a8567e8a7023dc34c262a08",
+    "diseno_cabezal_pilotes_drawing.json": "013d626278a1fb59d6cda142e1fd9e4ba816e2789a437962d90b8955d500335f"
   },
   "examples/nsr_10/vigas/pruebas/viga_alta.json": {
     "resultado.json": "99e3654b0749aa7542a8fc4e71d3163348182c36d6b858b4d0ac46ffa032746e",

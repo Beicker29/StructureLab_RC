@@ -48,6 +48,7 @@ structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - 
 structurelab-rc design-footings examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
 structurelab-rc typology-curve examples/nsr_10/zapatas/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias_curva
 structurelab-rc design-combined examples/nsr_10/zapatas/diseno_combinada.json --output results/nsr_10/zapatas/diseno_combinada
+structurelab-rc design-pile-caps examples/nsr_10/cabezales/diseno_cabezal_columna.json --output results/nsr_10/cabezales/diseno_cabezal_columna
 ```
 
 `report` verifica el proyecto y escribe en la carpeta de salida `resultado.json` (todo el detalle, en kN, kN·m, mm
@@ -131,6 +132,12 @@ el diseño (D-075); requiere el extra `opt` (`pip install structurelab-rc[opt]`)
 cargas de servicio D+L (con un voladizo máximo opcional en cada extremo, para columnas de lindero) y elige largo, ancho,
 espesor, f'c y refuerzo (barras de la viga larga continuas, band de cada columna, mallas, piel y pasadores) de menor
 costo, aprobado por la verificación de la combinada. Escribe `proyecto.json` y `resumen.json`.
+
+`design-pile-caps` diseña cabezales sobre pilotes (D-141): con las cargas de la columna elige el número y el arreglo de
+los pilotes (familias generadas con la separación y el borde declarados, incluido el triángulo de tres con esquinas
+recortadas) y el cabezal; con las de los pilotes, solo el cabezal. Elige espesor, mallas, pasadores y f'c de menor costo
+(concreto, acero y pilotes), aprobado por la verificación de cabezales. Escribe `proyecto.json` y `resumen.json`
+([docs/formatos/cabezales.md](docs/formatos/cabezales.md)).
 
 ### Supuestos de las zapatas
 

@@ -1,0 +1,405 @@
+{
+  "description": "Ejemplo de diseño de un cabezal con la acción de cada pilote (D-141): el arreglo es el declarado (coordenadas desde el eje de la columna) y el diseño elige el espesor, las mallas, los pasadores y f'c de menor costo; la planta es el rectángulo que encierra los pilotes más el borde de 500 mm. Cargas del ejemplo cabezal_pilotes. Datos ilustrativos; precios en la moneda del usuario. Unidades: mm, MPa, kN/m2, kN/m3, kN y kN-m.",
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "special",
+    "justification": "Pórtico especial (special) declarado por el ingeniero para este ejemplo."
+  },
+  "concrete": {
+    "type": "normalweight",
+    "max_aggregate": 19.0,
+    "unit_weight_kNm3": 24.0
+  },
+  "reinforcement_steel": {
+    "fy": 420.0,
+    "fyt": 420.0,
+    "coating": "uncoated"
+  },
+  "soil": {
+    "unit_weight_fill_kNm3": 18.0,
+    "pile_capacity_compression_kN": 850.0,
+    "pile_capacity_tension_kN": 250.0,
+    "pile_capacity_lateral_kN": 80.0,
+    "seismic_capacity_factor": 1.33,
+    "group_efficiency": 0.85,
+    "max_eccentricity_mm": 150.0
+  },
+  "pile_cap_design": {
+    "fc_options": [
+      21.0,
+      28.0
+    ],
+    "prices": {
+      "concrete_per_m3": {
+        "21": 711357.0,
+        "28": 747582.0,
+        "35": 779082.0
+      },
+      "steel_per_kg": 4385.0,
+      "pile_each": 9500000.0
+    },
+    "pile": {
+      "shape": "circular",
+      "size": 400.0,
+      "embedment": 75.0
+    },
+    "pile_spacing": 1200.0,
+    "edge_distance": 500.0,
+    "max_piles": 16,
+    "h_min": 600.0,
+    "h_step": 100.0,
+    "h_max": 1500.0,
+    "cover": 75.0,
+    "bottom_cover": 150.0,
+    "fill_height": 600.0,
+    "pedestal_height": 0.0,
+    "surcharge_dead_kNm2": 2.0,
+    "surcharge_live_kNm2": 5.0,
+    "bars": [
+      "#4",
+      "#5",
+      "#6",
+      "#7",
+      "#8"
+    ],
+    "spacing_step": 10.0,
+    "ends": {
+      "bottom": "hook90",
+      "top": "hook90",
+      "dowels": "hook90"
+    },
+    "dowel_bars": [
+      "#5",
+      "#6",
+      "#7"
+    ],
+    "mislocation_mm": 75.0
+  },
+  "caps": [
+    {
+      "id": "CP1",
+      "loads_from": "piles",
+      "column": {
+        "cx": 500.0,
+        "cy": 500.0
+      },
+      "piles": [
+        {
+          "id": "P1",
+          "x": -600.0,
+          "y": -600.0,
+          "loads": [
+            {
+              "case": "D+L",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "P_kN": 500.0,
+              "Vx_kN": 1.5,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 1.0
+            },
+            {
+              "case": "D+L+0.7EX",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "seismic": true,
+              "P_kN": 415.0,
+              "Vx_kN": 20.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 5.0
+            },
+            {
+              "case": "0.6D+0.7EX",
+              "kind": "service",
+              "dead_factor": 0.6,
+              "live_factor": 0.0,
+              "seismic": true,
+              "P_kN": 115.0,
+              "Vx_kN": 20.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 5.0
+            },
+            {
+              "case": "1.2D+1.6L",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.6,
+              "P_kN": 722.0,
+              "Vx_kN": 2.2,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 1.5
+            },
+            {
+              "case": "1.2D+L+EX",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.0,
+              "seismic": true,
+              "P_kN": 480.0,
+              "Vx_kN": 30.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 8.0
+            },
+            {
+              "case": "0.9D+EX",
+              "kind": "factored",
+              "dead_factor": 0.9,
+              "live_factor": 0.0,
+              "seismic": true,
+              "P_kN": 105.0,
+              "Vx_kN": 30.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 8.0
+            }
+          ]
+        },
+        {
+          "id": "P2",
+          "x": 600.0,
+          "y": -600.0,
+          "loads": [
+            {
+              "case": "D+L",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "P_kN": 505.0,
+              "Vx_kN": 1.5,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 1.0
+            },
+            {
+              "case": "D+L+0.7EX",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "seismic": true,
+              "P_kN": 635.0,
+              "Vx_kN": 20.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 5.0
+            },
+            {
+              "case": "0.6D+0.7EX",
+              "kind": "service",
+              "dead_factor": 0.6,
+              "live_factor": 0.0,
+              "seismic": true,
+              "P_kN": 335.0,
+              "Vx_kN": 20.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 5.0
+            },
+            {
+              "case": "1.2D+1.6L",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.6,
+              "P_kN": 730.0,
+              "Vx_kN": 2.2,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 1.5
+            },
+            {
+              "case": "1.2D+L+EX",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.0,
+              "seismic": true,
+              "P_kN": 820.0,
+              "Vx_kN": 30.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 8.0
+            },
+            {
+              "case": "0.9D+EX",
+              "kind": "factored",
+              "dead_factor": 0.9,
+              "live_factor": 0.0,
+              "seismic": true,
+              "P_kN": 445.0,
+              "Vx_kN": 30.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 8.0
+            }
+          ]
+        },
+        {
+          "id": "P3",
+          "x": 600.0,
+          "y": 600.0,
+          "loads": [
+            {
+              "case": "D+L",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "P_kN": 503.0,
+              "Vx_kN": 1.5,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 1.0
+            },
+            {
+              "case": "D+L+0.7EX",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "seismic": true,
+              "P_kN": 630.0,
+              "Vx_kN": 20.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 5.0
+            },
+            {
+              "case": "0.6D+0.7EX",
+              "kind": "service",
+              "dead_factor": 0.6,
+              "live_factor": 0.0,
+              "seismic": true,
+              "P_kN": 330.0,
+              "Vx_kN": 20.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 5.0
+            },
+            {
+              "case": "1.2D+1.6L",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.6,
+              "P_kN": 728.0,
+              "Vx_kN": 2.2,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 1.5
+            },
+            {
+              "case": "1.2D+L+EX",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.0,
+              "seismic": true,
+              "P_kN": 815.0,
+              "Vx_kN": 30.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 8.0
+            },
+            {
+              "case": "0.9D+EX",
+              "kind": "factored",
+              "dead_factor": 0.9,
+              "live_factor": 0.0,
+              "seismic": true,
+              "P_kN": 440.0,
+              "Vx_kN": 30.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 8.0
+            }
+          ]
+        },
+        {
+          "id": "P4",
+          "x": -600.0,
+          "y": 600.0,
+          "loads": [
+            {
+              "case": "D+L",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "P_kN": 498.0,
+              "Vx_kN": 1.5,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 1.0
+            },
+            {
+              "case": "D+L+0.7EX",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "seismic": true,
+              "P_kN": 420.0,
+              "Vx_kN": 20.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 5.0
+            },
+            {
+              "case": "0.6D+0.7EX",
+              "kind": "service",
+              "dead_factor": 0.6,
+              "live_factor": 0.0,
+              "seismic": true,
+              "P_kN": 120.0,
+              "Vx_kN": 20.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 5.0
+            },
+            {
+              "case": "1.2D+1.6L",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.6,
+              "P_kN": 720.0,
+              "Vx_kN": 2.2,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 1.5
+            },
+            {
+              "case": "1.2D+L+EX",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.0,
+              "seismic": true,
+              "P_kN": 485.0,
+              "Vx_kN": 30.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 8.0
+            },
+            {
+              "case": "0.9D+EX",
+              "kind": "factored",
+              "dead_factor": 0.9,
+              "live_factor": 0.0,
+              "seismic": true,
+              "P_kN": 110.0,
+              "Vx_kN": 30.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 8.0
+            }
+          ]
+        }
+      ],
+      "reactions_include_weight": false
+    }
+  ],
+  "detailing": {
+    "stock_length_mm": 12000.0
+  },
+  "drawing": {
+    "scale": 50.0
+  }
+}

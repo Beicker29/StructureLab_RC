@@ -7,6 +7,7 @@ from pydantic import BaseModel, ValidationError
 
 from structurelab_rc.errors import StructuredError, invalid_input
 from structurelab_rc.model.design import CombinedDesignProject, FootingDesignProject
+from structurelab_rc.model.pile_cap_design import PileCapDesignProject
 from structurelab_rc.model.project import Project
 from structurelab_rc.model.template import (
     EtabsCombinedDesignTemplate,
@@ -73,3 +74,7 @@ def load_design_project(path: Path) -> FootingDesignProject:
 
 def load_combined_design(path: Path) -> CombinedDesignProject:
     return _load(path, CombinedDesignProject, "el proyecto de diseño de la zapata combinada")
+
+
+def load_pile_cap_design(path: Path) -> PileCapDesignProject:
+    return _load(path, PileCapDesignProject, "el proyecto de diseño de cabezales")

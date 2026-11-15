@@ -15,7 +15,14 @@ from pathlib import Path
 
 import pytest
 
-from structurelab_rc.engine import design_combined_file, design_footings, import_etabs, import_etabs_footings, report_file
+from structurelab_rc.engine import (
+    design_combined_file,
+    design_footings,
+    design_pile_caps_file,
+    import_etabs,
+    import_etabs_footings,
+    report_file,
+)
 
 ROOT = Path(__file__).parent.parent
 FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
@@ -47,10 +54,16 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
     project = ROOT / name
     files = ("resultado.json", "memoria.txt")
     if Path(name).name.startswith("diseno_") and name not in COMBINED_ETABS:
-        # Diseño por tipologías (D-069) o de la zapata combinada (D-107, un proceso por f'c, sin cambiar el resultado):
+        # Diseño por tipologías (D-069), de la zapata combinada (D-107, un proceso por f'c, sin cambiar el resultado) o de
+        # cabezales (D-141):
         # huella del proyecto diseñado y de su verificación.
-        combined = "combined_design" in json.loads(project.read_text(encoding="utf-8"))  # D-107, D-113
-        data = design_combined_file(project, workers=2)[0] if combined else design_footings(project)[0]
+        raw = json.loads(project.read_text(encoding="utf-8"))
+        if "pile_cap_design" in raw:  # diseño de cabezales (D-141)
+            data = design_pile_caps_file(project)[0]
+        elif "combined_design" in raw:  # D-107, D-113
+            data = design_combined_file(project, workers=2)[0]
+        else:
+            data = design_footings(project)[0]
         assert data is not None, name
         project = work / "proyecto.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
