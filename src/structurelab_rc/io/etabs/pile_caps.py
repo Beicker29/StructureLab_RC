@@ -10,10 +10,12 @@ un ángulo θ de X global (0 por omisión: eje 2 = X, eje 3 = Y, eje 1 hacia arr
     Vx = −V2·cos θ + V3·sen θ        Vy = −V2·sen θ − V3·cos θ
     Mx = −M2·cos θ + M3·sen θ        My = −M2·sen θ − M3·cos θ
 
-La torsión T no carga el cabezal. Las combinaciones que entran salen del Excel de combinaciones (D-137).
+La torsión T no carga el cabezal. Las combinaciones que entran salen del Excel de combinaciones (D-137). La plantilla de
+diseño (D-141) lee las cargas igual y arma el proyecto de diseño.
 """
 
 import math
+from collections.abc import Sequence
 from typing import Any
 
 from structurelab_rc.errors import invalid_input
@@ -22,7 +24,13 @@ from structurelab_rc.io.etabs.footings import BOTH, FootingImportSummary, Group,
 from structurelab_rc.io.etabs.importer import EtabsImportError, case_label
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.layout import public
-from structurelab_rc.model.template import EtabsPileCapTemplate, LoadFactors
+from structurelab_rc.model.template import (
+    EtabsPileCapDesignTemplate,
+    EtabsPileCapTemplate,
+    LoadFactors,
+    TemplateDesignCap,
+    TemplatePileCap,
+)
 
 PILE_SHEET = "Element Forces - Columns"
 PILE_UNITS = {"Station": "m", "P": "kN", "V2": "kN", "V3": "kN", "M2": "kN-m", "M3": "kN-m"}
@@ -68,6 +76,41 @@ def _at_station(table: Table | None, stations: dict[str, float]) -> Table | None
     return Table(table.headers, table.units, tuple(rows))
 
 
+_Loads = dict[tuple[str, str | None], list[dict[str, Any]]]
+
+
+def _cap_loads(
+    caps: Sequence[TemplatePileCap | TemplateDesignCap], tables: tuple[Table | None, Table | None], combinations: dict[str, Combination],
+) -> tuple[_Loads, int, tuple[str, ...]]:
+    """Las cargas de cada cabezal por (id, Unique Name): las de su columna en "Joint Reactions" o las de cada pilote en
+    "Element Forces - Columns" en su estación; con lo omitido y las combinaciones ignoradas."""
+    service, factored = tables
+    if caps[0].from_piles:
+        stations = {pile.etabs_unique_name: cap.etabs_station for cap in caps for pile in cap.piles
+                    if pile.etabs_unique_name is not None and cap.etabs_station is not None}
+        angles = {pile.etabs_unique_name: pile.angle for cap in caps for pile in cap.piles if pile.etabs_unique_name}
+        groups: list[Group] = [(cap.id, tuple(name for pile in cap.piles if (name := pile.etabs_unique_name)), BOTH) for cap in caps]
+        given = {"service": _at_station(service, stations), "factored": _at_station(factored, stations)}
+        joints, skipped, ignored = joint_loads(combinations, given, groups, _pile_spec(angles))
+    else:
+        groups = [(cap.id, (cap.column_unique_name,), BOTH) for cap in caps]
+        joints, skipped, ignored = joint_loads(combinations, {"service": service, "factored": factored}, groups)
+    return {(joint.group, joint.unique_name): joint.loads for joint in joints}, skipped, ignored
+
+
+def _summary(caps: list[dict[str, Any]], skipped: int, ignored: tuple[str, ...]) -> FootingImportSummary:
+    every = [load for cap in caps
+             for load in [*cap.get("loads", []), *(load for pile in cap.get("piles", []) for load in pile.get("loads", []))]]
+    return FootingImportSummary(len(caps), tuple(sorted({load["case"] for load in every if load["kind"] == "service"})),
+                                tuple(sorted({load["case"] for load in every if load["kind"] == "factored"})), skipped,
+                                ignored_combinations=ignored)
+
+
+def _piles(cap: TemplatePileCap | TemplateDesignCap, loads: _Loads) -> list[dict[str, Any]]:
+    return [{"id": pile.id, "x": pile.x, "y": pile.y,
+             **({"loads": loads[(cap.id, pile.etabs_unique_name)]} if pile.etabs_unique_name else {})} for pile in cap.piles]
+
+
 def build_pile_cap_project(
     template: EtabsPileCapTemplate, tables: tuple[Table | None, Table | None], combinations: dict[str, Combination],
     coordinates: Table | None = None,
@@ -76,32 +119,36 @@ def build_pile_cap_project(
     las de cada uno de sus pilotes y, con la tabla de coordenadas (Joint Location), la ubicación de su columna y su tipo
     (su id) para la planta de localización (D-130)."""
     locations = locations_by_joint(coordinates, [cap.column_unique_name for cap in template.pile_caps])
-    service, factored = tables
-    if template.from_piles:
-        stations = {pile.etabs_unique_name: cap.etabs_station for cap in template.pile_caps for pile in cap.piles
-                    if pile.etabs_unique_name is not None and cap.etabs_station is not None}
-        angles = {pile.etabs_unique_name: pile.angle for cap in template.pile_caps for pile in cap.piles if pile.etabs_unique_name}
-        groups: list[Group] = [(cap.id, tuple(name for pile in cap.piles if (name := pile.etabs_unique_name)), BOTH)
-                               for cap in template.pile_caps]
-        given = {"service": _at_station(service, stations), "factored": _at_station(factored, stations)}
-        joints, skipped, ignored = joint_loads(combinations, given, groups, _pile_spec(angles))
-    else:
-        groups = [(cap.id, (cap.column_unique_name,), BOTH) for cap in template.pile_caps]
-        joints, skipped, ignored = joint_loads(combinations, {"service": service, "factored": factored}, groups)
-    loads = {(joint.group, joint.unique_name): joint.loads for joint in joints}
+    loads, skipped, ignored = _cap_loads(template.pile_caps, tables, combinations)
     caps = []
     for cap in template.pile_caps:
         body = cap.model_dump(mode="json", exclude={"etabs_station", "column_unique_name", "piles"}, exclude_none=True)
         if cap.column_unique_name in locations:
             body.update(location=locations[cap.column_unique_name], typology=cap.id)
-        piles = [{"id": pile.id, "x": pile.x, "y": pile.y,
-                  **({"loads": loads[(cap.id, pile.etabs_unique_name)]} if pile.etabs_unique_name else {})} for pile in cap.piles]
         column = {} if cap.from_piles else {"loads": loads[(cap.id, cap.column_unique_name)]}
-        caps.append({**body, "piles": piles, **column})
+        caps.append({**body, "piles": _piles(cap, loads), **column})
     project = template.model_dump(mode="json", exclude={"pile_caps", "etabs_files"}, exclude_none=True)
     project["pile_caps"] = caps
-    every = [load for cap in caps for load in [*cap.get("loads", []), *(load for pile in cap["piles"] for load in pile.get("loads", []))]]
-    summary = FootingImportSummary(len(caps), tuple(sorted({load["case"] for load in every if load["kind"] == "service"})),
-                                   tuple(sorted({load["case"] for load in every if load["kind"] == "factored"})), skipped,
-                                   ignored_combinations=ignored)
-    return public(project), summary
+    return public(project), _summary(caps, skipped, ignored)
+
+
+def build_pile_cap_design_project(
+    template: EtabsPileCapDesignTemplate, tables: tuple[Table | None, Table | None], combinations: dict[str, Combination],
+    coordinates: Table | None = None,
+) -> tuple[dict[str, Any], FootingImportSummary]:
+    """Proyecto de diseño de cabezales (D-141) en el formato de entrada JSON: cada cabezal con las cargas de su columna o
+    las de sus pilotes, como en build_pile_cap_project, y, con la tabla de coordenadas, la ubicación de su columna."""
+    locations = locations_by_joint(coordinates, [cap.column_unique_name for cap in template.caps])
+    loads, skipped, ignored = _cap_loads(template.caps, tables, combinations)
+    caps = []
+    for cap in template.caps:
+        body = cap.model_dump(mode="json", exclude={"etabs_station", "column_unique_name", "piles"}, exclude_none=True)
+        if not body.get("clipped_corners"):
+            body.pop("clipped_corners", None)
+        if cap.column_unique_name in locations:
+            body["location"] = locations[cap.column_unique_name]
+        source = {"piles": _piles(cap, loads)} if cap.from_piles else {"loads": loads[(cap.id, cap.column_unique_name)]}
+        caps.append({**body, **source})
+    project = template.model_dump(mode="json", exclude={"caps", "etabs_files"}, exclude_none=True)
+    project["caps"] = caps
+    return public(project), _summary(caps, skipped, ignored)

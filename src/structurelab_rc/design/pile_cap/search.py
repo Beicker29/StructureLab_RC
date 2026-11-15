@@ -152,6 +152,8 @@ def cap_data(ctx: Context, candidate: _Candidate, mats: Mats, dowels: dict[str, 
         data["loads"] = [load_input(load) for load in cap.loads]
     if arrangement.clips:
         data["clipped_corners"] = [clip.model_dump() for clip in arrangement.clips]
+    if cap.location is not None:  # D-130: la planta de localización, con el cabezal como su tipo
+        data |= {"typology": cap.id, "location": cap.location.model_dump()}
     return data
 
 
@@ -217,7 +219,8 @@ def _needs(basis: Basis, cap: PileCap, demands: dict[str, float], mat: str, floo
     needs = {}
     for direction, row in rows.items():
         demand = max(demands[direction], 0.0)
-        required = rules.minimum(mat, row, demand)[0] if demand > 0 else 0.0
+        # La malla inferior lleva su mínimo aunque no haya momento positivo; la superior, solo con momento negativo.
+        required = rules.minimum(mat, row, demand)[0] if demand > 0 or mat == "bottom" else 0.0
         needs[direction] = (demand, max(required, floor.get(direction, 0.0)))
     return needs
 

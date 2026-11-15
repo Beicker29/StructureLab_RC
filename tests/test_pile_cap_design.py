@@ -24,7 +24,8 @@ from structurelab_rc.setup import load_engine
 ROOT = Path(__file__).parent.parent
 ORACLES = Path(__file__).parent / "oracles"
 FOLDERS = {"aci-318-25": "aci_318_25", "nsr-10": "nsr_10"}
-EXAMPLES = sorted((ROOT / "examples").glob("*/cabezales/pruebas/diseno_*.json"))
+EXAMPLES = sorted(path for path in (ROOT / "examples").glob("*/cabezales/pruebas/diseno_*.json") if not path.stem.endswith("_etabs"))
+TEMPLATES = sorted((ROOT / "examples").glob("*/cabezales/pruebas/diseno_*_etabs.json"))
 
 
 def _oracle(folder: str) -> dict[str, Any]:
@@ -167,3 +168,25 @@ def test_pile_cap_without_solution_reports_why(tmp_path: Path) -> None:
     assert project is None and result is not None and result.fc is None
     assert check.status is Status.FAIL
     assert "Sin solucion" in check.errors[0].message
+
+
+@pytest.mark.parametrize("path", TEMPLATES, ids=lambda path: f"{path.parts[-4]}-{path.stem}")
+def test_etabs_template_imports_and_designs(path: Path, tmp_path: Path) -> None:
+    """Plantilla de diseño de ETABS (D-141): importa las cargas de la columna o de los pilotes, diseña y el proyecto
+    diseñado pasa la verificación; con la tabla de coordenadas, la columna queda ubicada."""
+    from structurelab_rc.engine import import_etabs_footings, verify_file
+
+    plan = run_plan(path)
+    assert plan.kind == "etabs_pile_cap_design"
+    imported, summary, check = import_etabs_footings(plan.service, plan.factored, path, plan.locations, plan.combinations)
+    assert check.status is Status.PASS, check
+    assert imported is not None and summary is not None and summary.factored_cases
+    source = tmp_path / "diseno.json"
+    source.write_text(json.dumps(imported, ensure_ascii=False), encoding="utf-8")
+    project, result, check = design_pile_caps_file(source)
+    assert check.status is Status.PASS, check
+    assert project is not None and result is not None
+    assert all(("location" in cap) == (plan.locations is not None) for cap in project["pile_caps"])
+    designed = tmp_path / "proyecto.json"
+    designed.write_text(json.dumps(project, ensure_ascii=False), encoding="utf-8")
+    assert all(item.status is Status.PASS for item in verify_file(designed))

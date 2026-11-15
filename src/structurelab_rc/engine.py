@@ -45,7 +45,7 @@ from structurelab_rc.io.etabs.footings import (
     build_footing_project,
 )
 from structurelab_rc.io.etabs.importer import SHEET, EtabsImportError, ImportSummary, build_project
-from structurelab_rc.io.etabs.pile_caps import PILE_SHEET, build_pile_cap_project
+from structurelab_rc.io.etabs.pile_caps import PILE_SHEET, build_pile_cap_design_project, build_pile_cap_project
 from structurelab_rc.io.etabs.xlsx import XlsxError, read_table
 from structurelab_rc.model.design import CombinedDesignProject, FootingDesignProject
 from structurelab_rc.model.loader import (
@@ -60,7 +60,12 @@ from structurelab_rc.model.loader import (
 )
 from structurelab_rc.model.pile_cap_design import PileCapDesignProject
 from structurelab_rc.model.project import Project
-from structurelab_rc.model.template import EtabsCombinedDesignTemplate, EtabsFootingDesignTemplate, EtabsPileCapTemplate
+from structurelab_rc.model.template import (
+    EtabsCombinedDesignTemplate,
+    EtabsFootingDesignTemplate,
+    EtabsPileCapDesignTemplate,
+    EtabsPileCapTemplate,
+)
 from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.reporting.document import report_documents
 from structurelab_rc.reporting.figures import diagram_figures, pressure_figures
@@ -79,7 +84,8 @@ RUN_KINDS = {"project": "proyecto de verificación", "design": "diseño por tipo
              "etabs_beams": "plantilla de vigas de ETABS", "etabs_footings": "plantilla de zapatas de ETABS",
              "etabs_design": "plantilla de diseño de zapatas de ETABS",
              "etabs_combined_design": "plantilla de diseño de zapata combinada de ETABS",
-             "pile_cap_design": "diseño de cabezales"}
+             "pile_cap_design": "diseño de cabezales",
+             "etabs_pile_cap_design": "plantilla de diseño de cabezales de ETABS"}
 
 
 LOCATION = "localizacion"  # el "elemento" del dibujo con las plantas de localización del proyecto (D-130)
@@ -115,8 +121,9 @@ def _footing_template(data: dict[str, Any]) -> bool:
     files = data.get("etabs_files") or {}
     if isinstance(files, dict) and any(key in files for key in ("service", "factored", "combinations")):
         return True
-    items = [*(data.get("footings") or []), *(data.get("columns") or []), *(data.get("pile_caps") or [])]
-    for cap in data.get("pile_caps") or []:  # cabezales (D-138): la columna o sus pilotes llevan el Unique Name
+    caps = [*(data.get("pile_caps") or []), *(data.get("caps") or [])]  # cabezales (D-138) y su diseño (D-141)
+    items = [*(data.get("footings") or []), *(data.get("columns") or []), *caps]
+    for cap in caps:  # la columna o sus pilotes llevan el Unique Name
         items += cap.get("piles") or [] if isinstance(cap, dict) else []
     for footing in data.get("combined_footings") or []:
         items += footing.get("columns") or [] if isinstance(footing, dict) else []
@@ -149,7 +156,8 @@ def run_plan(path: Path, output: Path | None = None) -> RunPlan:
             raise RunError(f"La plantilla {path.name} no declara sus Excel de ETABS en etabs_files (D-096)")
         if "combinations" not in files:
             raise RunError(f"La plantilla {path.name} no declara su Excel de combinaciones en etabs_files.combinations (D-137)")
-        kind = "etabs_design" if "design" in data else "etabs_combined_design" if "combined_design" in data else "etabs_footings"
+        kinds = {"design": "etabs_design", "combined_design": "etabs_combined_design", "pile_cap_design": "etabs_pile_cap_design"}
+        kind = next((value for key, value in kinds.items() if key in data), "etabs_footings")
         return RunPlan(kind, path, out, service=excel("service"), factored=excel("factored"), locations=excel("locations"),
                        combinations=excel("combinations"))
     if any(isinstance(member, dict) and "etabs_unique_name" in member for member in members):
@@ -385,7 +393,8 @@ def import_etabs_footings(
             raise EtabsImportError((invalid_input("Falta el Excel de combinaciones: declarelo en etabs_files.combinations de la "
                                                   "plantilla (D-137)"),))
         listed = read_combinations(chosen)
-        sheet = PILE_SHEET if isinstance(template, EtabsPileCapTemplate) and template.from_piles else etabs_footings.SHEET
+        piles = isinstance(template, EtabsPileCapTemplate | EtabsPileCapDesignTemplate) and template.from_piles
+        sheet = PILE_SHEET if piles else etabs_footings.SHEET
         found = tuple(None if path is None else read_table(path, sheet) for path in (service, factored))
         tables = (found[0], found[1])
         coordinates = None if locations is None else read_table(locations, etabs_footings.LOCATION_SHEET)
@@ -393,6 +402,9 @@ def import_etabs_footings(
             project, summary = build_footing_design_project(template, tables, listed, coordinates)
             design = validate_input(project, FootingDesignProject)
             validation = _validate_design(design)
+        elif isinstance(template, EtabsPileCapDesignTemplate):  # diseño de cabezales (D-141)
+            project, summary = build_pile_cap_design_project(template, tables, listed, coordinates)
+            validation = _validate_design(validate_input(project, PileCapDesignProject))
         elif isinstance(template, EtabsPileCapTemplate):  # cabezales (D-138)
             project, summary = build_pile_cap_project(template, tables, listed, coordinates)
             validation = validate_project(validate_input(project, Project), load_engine().bars)

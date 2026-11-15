@@ -336,7 +336,12 @@ def _run_one(path: Path, output: Path | None, workers: int | None, full: bool) -
 def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
     """Plantilla de ETABS: importa sus Excel (etabs_files) y verifica el proyecto, o lo diseña si es de diseño."""
     out = plan.output
-    imported = out / ("diseno.json" if plan.kind in ("etabs_design", "etabs_combined_design") else "proyecto.json")
+    designs: dict[str, Callable[[Path], int]] = {
+        "etabs_design": lambda path: _design_footings(path, out, workers, False, None),
+        "etabs_combined_design": lambda path: _design_combined(path, out, workers),
+        "etabs_pile_cap_design": lambda path: _design_pile_caps(path, out),
+    }
+    imported = out / ("diseno.json" if plan.kind in designs else "proyecto.json")
     if plan.kind == "etabs_beams":
         assert plan.workbook is not None
         code = _import_etabs(plan.workbook, plan.path, imported)
@@ -345,10 +350,8 @@ def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
                                       (plan.locations, plan.combinations))
     if code:
         return code
-    if plan.kind == "etabs_design":
-        return _design_footings(imported, out, workers, False, None) or _report(out / "proyecto.json", out, full)
-    if plan.kind == "etabs_combined_design":
-        return _design_combined(imported, out, workers) or _report(out / "proyecto.json", out, full)
+    if plan.kind in designs:  # diseña y verifica el proyecto diseñado
+        return designs[plan.kind](imported) or _report(out / "proyecto.json", out, full)
     return _report(imported, out, full)
 
 

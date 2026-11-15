@@ -27,7 +27,7 @@ def _expected_kind(path: Path) -> str:
         return _COMBINED_DESIGNS[name]
     if path.stem.endswith("_etabs"):
         if name.startswith("diseno_"):
-            return "etabs_design"
+            return "etabs_pile_cap_design" if path.parts[-3] == "cabezales" else "etabs_design"
         return "etabs_beams" if path.parts[-3] == "vigas" else "etabs_footings"
     if name.startswith("diseno_"):
         return "pile_cap_design" if path.parts[-3] == "cabezales" else "design"

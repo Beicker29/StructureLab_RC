@@ -2780,6 +2780,13 @@
 - **Diseño, oráculo y ejemplos:** `derive_pile_cap_design.py` (arreglos de 2 a 13 pilotes con los recortes del triángulo
   por triángulos semejantes, cota del número de pilotes y aritmética del costo); `diseno_cabezal_columna` (dos cabezales)
   y `diseno_cabezal_pilotes` en los dos perfiles, con su copia en `pruebas/` y su huella.
+- **Diseño desde ETABS (entrega 2):** `EtabsPileCapDesignTemplate` (`pile_cap_design` y `caps` con `column_unique_name`;
+  con cargas de los pilotes, sus Unique Name y `etabs_station`); `io/etabs/pile_caps.py` lee las cargas con la misma
+  función que la plantilla de verificación y arma el proyecto de diseño, con la ubicación de la columna (D-130). `run`
+  la detecta (`etabs_pile_cap_design`): importa, diseña y verifica. Ejemplos `diseno_cabezal_columna_etabs` y
+  `diseno_cabezal_pilotes_etabs` en los dos perfiles, con huella. Corrección: la malla inferior se propone con su As
+  mínimo aunque la dirección no tenga momento positivo (antes, As = 0 y ningún candidato cumplía); los ejemplos
+  anteriores no cambian.
 
 ### D-142: franja central que cubre todo el ancho útil
 

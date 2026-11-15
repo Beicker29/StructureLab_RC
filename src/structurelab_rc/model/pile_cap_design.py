@@ -12,7 +12,7 @@ from typing import Any, Literal, Self
 from pydantic import Field, NonNegativeFloat, PositiveFloat, PositiveInt, model_validator
 
 from structurelab_rc.model.design import DesignEnds, DesignMaterials, Prices, _check_drawing, check_options
-from structurelab_rc.model.footing import FootingLoad, _Input
+from structurelab_rc.model.footing import FootingLoad, Location, _Input
 from structurelab_rc.model.layout import internal
 from structurelab_rc.model.pile_cap import CornerClip, Pile, PileCapSoil, PileType
 from structurelab_rc.model.project import DetailingSettings, DrawingSettings, SeismicFacts
@@ -70,7 +70,8 @@ class DesignCapColumn(_Input):
 
 class DesignCap(_Input):
     """Un cabezal a diseñar: su columna y sus cargas, de la columna (loads) o de cada pilote (piles con sus coordenadas
-    y cargas, y si sus reacciones incluyen el peso); clipped_corners solo con el arreglo declarado."""
+    y cargas, y si sus reacciones incluyen el peso); clipped_corners solo con el arreglo declarado. location (opcional,
+    D-130) ubica la columna en la planta de localización; la llena el importador de ETABS."""
 
     id: str = Field(min_length=1)
     loads_from: Literal["column", "piles"]
@@ -79,6 +80,7 @@ class DesignCap(_Input):
     piles: tuple[Pile, ...] = ()
     reactions_include_weight: bool | None = None
     clipped_corners: tuple[CornerClip, ...] = ()
+    location: Location | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:

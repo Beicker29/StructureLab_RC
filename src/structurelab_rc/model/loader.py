@@ -13,6 +13,7 @@ from structurelab_rc.model.template import (
     EtabsCombinedDesignTemplate,
     EtabsFootingDesignTemplate,
     EtabsFootingTemplate,
+    EtabsPileCapDesignTemplate,
     EtabsPileCapTemplate,
     EtabsTemplate,
 )
@@ -52,9 +53,11 @@ def load_template(path: Path) -> EtabsTemplate:
 
 def load_footing_template(
     path: Path,
-) -> EtabsFootingTemplate | EtabsFootingDesignTemplate | EtabsCombinedDesignTemplate | EtabsPileCapTemplate:
+) -> (EtabsFootingTemplate | EtabsFootingDesignTemplate | EtabsCombinedDesignTemplate | EtabsPileCapTemplate
+      | EtabsPileCapDesignTemplate):
     """Plantilla de verificación (tipos asignados a mano), de diseño por tipologías (trae el bloque design, D-069) o de
-    diseño de una zapata combinada (trae combined_design, D-112)."""
+    diseño de una zapata combinada (trae combined_design, D-112); de cabezales (pile_caps, D-138) o de su diseño
+    (pile_cap_design, D-141)."""
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
@@ -65,6 +68,8 @@ def load_footing_template(
         return validate_input(raw, EtabsCombinedDesignTemplate)
     if isinstance(raw, dict) and "pile_caps" in raw:  # cabezales (D-138)
         return validate_input(raw, EtabsPileCapTemplate)
+    if isinstance(raw, dict) and "pile_cap_design" in raw:  # diseño de cabezales (D-141)
+        return validate_input(raw, EtabsPileCapDesignTemplate)
     return validate_input(raw, EtabsFootingTemplate)
 
 

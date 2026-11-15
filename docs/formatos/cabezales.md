@@ -149,6 +149,16 @@ De los pilotes se leen `P`, `V2`, `V3`, `M2` y `M3` (kN, kN-m) y se toma la acci
 P = −P, Vx = −V2·cos θ + V3·sen θ, Vy = −V2·sen θ − V3·cos θ, Mx = −M2·cos θ + M3·sen θ y My = −M2·sen θ − M3·cos θ.
 Las filas Max y Min son dos casos.
 
+### Plantilla de diseño de ETABS (D-141)
+
+El proyecto de diseño con `etabs_files` y, en cada elemento de `caps`, `column_unique_name` (obligatorio). Con
+`loads_from: column` las cargas salen de las reacciones de esa columna en "Joint Reactions" y el cabezal no lleva
+pilotes (los elige el diseño). Con `loads_from: piles` cada pilote lleva `etabs_unique_name` (y `angle`, si aplica) y el
+cabezal `etabs_station`, como en la plantilla de verificación; sus coordenadas son desde el eje de la columna. Todos los
+cabezales toman las cargas de la misma fuente. Con `etabs_files.locations`, la ubicación de la columna pasa al cabezal
+diseñado (planta de localización, D-130). `run` importa (`diseno.json`), diseña (`proyecto.json`, `resumen.json`) y
+verifica.
+
 ## Salida
 
 `pile_caps[]` en `resultado.json`: geometría, pilote y pilotes, pesos, armado, cargas, la reacción de cada pilote en

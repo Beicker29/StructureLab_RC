@@ -333,6 +333,24 @@ class TemplatePile(_Input):
     angle: float = 0.0
 
 
+def _check_cap_source(cap: str, from_piles: bool, station: float | None, piles: tuple[TemplatePile, ...]) -> None:
+    """Con cargas de la columna, ni etabs_station ni Unique Name en los pilotes; con las de los pilotes, ambos (D-138)."""
+    if not from_piles:
+        if station is not None or any(pile.etabs_unique_name is not None for pile in piles):
+            raise ValueError(f"el cabezal '{cap}' declara loads_from = column: sus pilotes no llevan etabs_unique_name ni "
+                             "el cabezal etabs_station")
+        return
+    if not all(pile.etabs_unique_name is not None for pile in piles):
+        raise ValueError(f"el cabezal '{cap}' toma las cargas de los pilotes: todos llevan etabs_unique_name")
+    if station is None:
+        raise ValueError(f"el cabezal '{cap}' toma las cargas de los pilotes: declara etabs_station (m)")
+
+
+def _check_one_source(caps: tuple[Any, ...]) -> None:
+    if len({cap.loads_from for cap in caps}) > 1:
+        raise ValueError("todos los cabezales de la plantilla toman las cargas de la misma fuente: la columna o los pilotes")
+
+
 class TemplatePileCap(_Input):
     """Un cabezal de la plantilla (D-138): el cuerpo del cabezal del proyecto sin cargas (se valida al armar el proyecto),
     column_unique_name (obligatorio), el Unique Name declarado de su columna, y loads_from (obligatorio), de dónde salen
@@ -369,15 +387,7 @@ class TemplatePileCap(_Input):
 
     @model_validator(mode="after")
     def _check_source(self) -> Self:
-        if not self.from_piles:
-            if self.etabs_station is not None or any(pile.etabs_unique_name is not None for pile in self.piles):
-                raise ValueError(f"el cabezal '{self.id}' declara loads_from = column: sus pilotes no llevan etabs_unique_name ni "
-                                 "el cabezal etabs_station")
-            return self
-        if not all(pile.etabs_unique_name is not None for pile in self.piles):
-            raise ValueError(f"el cabezal '{self.id}' toma las cargas de los pilotes: todos llevan etabs_unique_name")
-        if self.etabs_station is None:
-            raise ValueError(f"el cabezal '{self.id}' toma las cargas de los pilotes: declara etabs_station (m)")
+        _check_cap_source(self.id, self.from_piles, self.etabs_station, self.piles)
         return self
 
 
@@ -405,10 +415,66 @@ class EtabsPileCapTemplate(_Input):
 
     @model_validator(mode="after")
     def _check_source(self) -> Self:
-        if len({cap.from_piles for cap in self.pile_caps}) > 1:
-            raise ValueError("todos los cabezales de la plantilla toman las cargas de la misma fuente: la columna o los pilotes")
+        _check_one_source(self.pile_caps)
         return self
 
     @property
     def from_piles(self) -> bool:
         return self.pile_caps[0].from_piles
+
+
+class TemplateDesignCap(_Input):
+    """Un cabezal de la plantilla de diseño (D-141): como el del proyecto de diseño, sin cargas, con column_unique_name
+    (obligatorio) y, con cargas de los pilotes, el Unique Name de cada pilote y etabs_station, como en la plantilla de
+    verificación (D-138). Con cargas de la columna no lleva pilotes: el diseño los elige."""
+
+    id: str = Field(min_length=1)
+    loads_from: Literal["column", "piles"]
+    column_unique_name: str = Field(min_length=1)
+    etabs_station: float | None = None
+    column: dict[str, float]
+    piles: tuple[TemplatePile, ...] = ()
+    reactions_include_weight: bool | None = None
+    clipped_corners: tuple[dict[str, Any], ...] = ()
+
+    @property
+    def from_piles(self) -> bool:
+        return self.loads_from == "piles"
+
+    @model_validator(mode="after")
+    def _check_source(self) -> Self:
+        if not self.from_piles and self.piles:
+            raise ValueError(f"el cabezal '{self.id}' declara loads_from = column: el diseño elige los pilotes, no se declaran")
+        _check_cap_source(self.id, self.from_piles, self.etabs_station, self.piles)
+        return self
+
+
+class EtabsPileCapDesignTemplate(_Input):
+    """Plantilla del diseño de cabezales desde ETABS (D-141): el proyecto de diseño con cada cabezal ligado a su columna
+    (o a sus pilotes) de ETABS. pile_cap_design, soil y materials se validan con el proyecto de diseño que se genera."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _layout(cls, data: Any) -> Any:
+        """concrete, reinforcement_steel y soil de la entrada a la estructura interna (D-139)."""
+        return internal(data)
+
+    description: str
+    profile: str
+    seismic: SeismicFacts
+    materials: dict[str, Any]
+    soil: dict[str, Any]
+    pile_cap_design: dict[str, Any]
+    caps: tuple[TemplateDesignCap, ...] = Field(min_length=1)
+    detailing: dict[str, float] | None = None
+    drawing: dict[str, float] | None = None
+    etabs_files: FootingEtabsFiles | None = None
+
+    @model_validator(mode="after")
+    def _check_source(self) -> Self:
+        _check_one_source(self.caps)
+        return self
+
+    @property
+    def from_piles(self) -> bool:
+        return self.caps[0].from_piles

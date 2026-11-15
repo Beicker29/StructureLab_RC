@@ -42,7 +42,8 @@ COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                                            "diseno_combinada_etabs.json", "diseno_t_invertida_etabs.json",
                                            "zapata_centrica_etabs.json")
                               for path in (ROOT / "examples").glob(f"*/zapatas/pruebas/{name}")))
-# Cabezales desde ETABS (D-138): cargas de la columna (Joint Reactions) o de los pilotes (Element Forces - Columns).
+# Cabezales desde ETABS (D-138): cargas de la columna (Joint Reactions) o de los pilotes (Element Forces - Columns);
+# las plantillas de diseño (diseno_*, D-141) se diseñan después de importarlas.
 CAP_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/cabezales/pruebas/*_etabs.json")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "pruebas" / "Element Forces - Beams.xlsx"
 REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx",
@@ -53,7 +54,7 @@ UPDATE = os.environ.get("STRUCTURELAB_UPDATE_FINGERPRINTS") == "1"
 def _fingerprint(name: str, work: Path) -> dict[str, str]:
     project = ROOT / name
     files = ("resultado.json", "memoria.txt")
-    if Path(name).name.startswith("diseno_") and name not in COMBINED_ETABS:
+    if Path(name).name.startswith("diseno_") and name not in COMBINED_ETABS and name not in CAP_ETABS:
         # Diseño por tipologías (D-069), de la zapata combinada (D-107, un proceso por f'c, sin cambiar el resultado) o de
         # cabezales (D-141):
         # huella del proyecto diseñado y de su verificación.
@@ -76,6 +77,11 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
         assert data is not None, name
         project = work / "etabs.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+        if Path(name).name.startswith("diseno_"):  # diseño de cabezales desde ETABS (D-141)
+            designed = design_pile_caps_file(project)[0]
+            assert designed is not None, name
+            project = work / "proyecto.json"
+            project.write_text(json.dumps(designed, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     if name in ETABS or name in COMBINED_ETABS:
         data = import_etabs(WORKBOOK, project)[0] if name in ETABS else import_etabs_footings(*REACTIONS, project, _locations(project))[0]
         project = work / "etabs.json"
