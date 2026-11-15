@@ -8,6 +8,7 @@ from structurelab_rc.domain.flexure_strength import RectangularSection, required
 from structurelab_rc.domain.footing.flexure import SectionRules, Values, mat_flexure_checks
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis
+from structurelab_rc.domain.pile_cap.outline import section_row
 from structurelab_rc.domain.status import Status
 from structurelab_rc.model.pile_cap import PileCap
 
@@ -33,7 +34,8 @@ def cap_rules(basis: Basis, cap: PileCap) -> SectionRules:
         required = max(flexural, min(minimum_area, ratio * row.width * cap.h))
         return required, (("As analisis", analysis), ("As,min", minimum_area), ("rho t", ratio)), clauses["min_reinforcement"]
 
-    return SectionRules(minimum, (profile.pile_cap.min_depth(), clauses["min_depth"]), clauses["plain"])
+    row_at = (lambda row, plane: section_row(cap, row, plane)) if cap.clipped_corners else None
+    return SectionRules(minimum, (profile.pile_cap.min_depth(), clauses["min_depth"]), clauses["plain"], row_at)
 
 
 SHRINKAGE = "Retraccion y temperatura: cuantia"

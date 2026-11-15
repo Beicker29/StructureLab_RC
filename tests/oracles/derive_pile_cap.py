@@ -41,7 +41,15 @@ FC, FY, PHI_V, PHI_M = 28.0, 420.0, 0.75, 0.9
 GAMMA_C, GAMMA_F = 24e-6, 18e-6
 BARS = {"#5": (15.9, 199.0), "#6": (19.1, 284.0), "#7": (22.2, 387.0), "#8": (25.4, 510.0)}
 SQRT_FC = min(math.sqrt(FC), 8.3)
-SOIL = {"D": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 1500.0,
+SOIL = {"E": {'unit_weight_concrete_kNm3': 24.0,
+              'unit_weight_fill_kNm3': 18.0,
+              'pile_capacity_compression_kN': 850.0,
+              'pile_capacity_tension_kN': 250.0,
+              'pile_capacity_lateral_kN': 80.0,
+              'seismic_capacity_factor': 1.33,
+              'group_efficiency': 0.85,
+              'max_eccentricity_mm': 150.0},
+        "D": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 1500.0,
               "pile_capacity_tension_kN": 300.0, "pile_capacity_lateral_kN": 80.0, "seismic_capacity_factor": 1.0,
               "group_efficiency": 0.9, "max_eccentricity_mm": 150.0},
         "C": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 850.0,
@@ -126,14 +134,139 @@ CAP_D = {"id": "D", "loads_from": "column",
                    _load("U1", "factored", 1.2, 1.6, (4200.0, 0.0, 0.0, 0.0, 0.0))]}
 
 
+# Tres pilotes en triángulo con las dos esquinas superiores recortadas y la columna en el centroide del grupo (D-141).
+CAP_E = {'loads_from': 'column',
+         'lx': 2200.0,
+         'ly': 2200.0,
+         'h': 1000.0,
+         'cover': 75.0,
+         'bottom_cover': 150.0,
+         'fill_height': 600.0,
+         'pedestal_height': 0.0,
+         'surcharge_dead_kNm2': 2.0,
+         'surcharge_live_kNm2': 5.0,
+         'column': {'cx': 500.0,
+                    'cy': 500.0,
+                    'offset_x': 0.0,
+                    'offset_y': -253.6,
+                    'dowels': {'designation': '#6', 'count': 8, 'end': 'hook90'}},
+         'bottom': {'first': 'x',
+                    'x': {'designation': '#7', 'spacing': 150.0, 'end': 'hook90'},
+                    'y': {'designation': '#7', 'spacing': 150.0, 'end': 'hook90'}},
+         'top': {'first': 'x',
+                 'x': {'designation': '#5', 'spacing': 250.0, 'end': 'hook90'},
+                 'y': {'designation': '#5', 'spacing': 250.0, 'end': 'hook90'}},
+         'pile': {'shape': 'circular', 'size': 400.0, 'embedment': 75.0},
+         'mislocation_mm': 75.0,
+         'piles': [{'id': 'P1', 'x': 0.0, 'y': 439.2}, {'id': 'P2', 'x': -600.0, 'y': -600.0}, {'id': 'P3', 'x': 600.0, 'y': -600.0}],
+         'loads': [{'case': 'D+L',
+                    'kind': 'service',
+                    'dead_factor': 1.0,
+                    'live_factor': 1.0,
+                    'P_kN': 1500.0,
+                    'Vx_kN': 6.0,
+                    'Vy_kN': 4.0,
+                    'Mx_kNm': -10.0,
+                    'My_kNm': 15.0},
+                   {'case': 'D+L+0.7EX',
+                    'kind': 'service',
+                    'dead_factor': 1.0,
+                    'live_factor': 1.0,
+                    'seismic': True,
+                    'P_kN': 1575.0,
+                    'Vx_kN': 80.0,
+                    'Vy_kN': 10.0,
+                    'Mx_kNm': -20.0,
+                    'My_kNm': 250.0},
+                   {'case': '0.6D+0.7EX',
+                    'kind': 'service',
+                    'dead_factor': 0.6,
+                    'live_factor': 0.0,
+                    'seismic': True,
+                    'P_kN': 675.0,
+                    'Vx_kN': 80.0,
+                    'Vy_kN': 10.0,
+                    'Mx_kNm': -20.0,
+                    'My_kNm': 250.0},
+                   {'case': '1.2D+1.6L',
+                    'kind': 'factored',
+                    'dead_factor': 1.2,
+                    'live_factor': 1.6,
+                    'P_kN': 2175.0,
+                    'Vx_kN': 9.0,
+                    'Vy_kN': 6.0,
+                    'Mx_kNm': -14.0,
+                    'My_kNm': 22.0},
+                   {'case': '1.2D+L+EX',
+                    'kind': 'factored',
+                    'dead_factor': 1.2,
+                    'live_factor': 1.0,
+                    'seismic': True,
+                    'P_kN': 1950.0,
+                    'Vx_kN': 120.0,
+                    'Vy_kN': 15.0,
+                    'Mx_kNm': -30.0,
+                    'My_kNm': 400.0},
+                   {'case': '0.9D+EX',
+                    'kind': 'factored',
+                    'dead_factor': 0.9,
+                    'live_factor': 0.0,
+                    'seismic': True,
+                    'P_kN': 825.0,
+                    'Vx_kN': 120.0,
+                    'Vy_kN': 15.0,
+                    'Mx_kNm': -30.0,
+                    'My_kNm': 400.0}],
+         'clipped_corners': [{'corner': '-x+y', 'along_x': 700.0, 'along_y': 1100.0},
+                             {'corner': '+x+y', 'along_x': 700.0, 'along_y': 1100.0}],
+         'id': 'E'}
+
+
 def _uniform(cap: dict, load: dict) -> float:
     """q hacia abajo en N/mm²."""
     dead = GAMMA_C * cap["h"] + GAMMA_F * cap["fill_height"] + cap["surcharge_dead_kNm2"] * 1e-3
     return load["dead_factor"] * dead + load["live_factor"] * cap["surcharge_live_kNm2"] * 1e-3
 
 
+def _outline(cap: dict) -> list[tuple[float, float]]:
+    """Contorno antihorario con las esquinas recortadas (D-141)."""
+    hx, hy = cap["lx"] / 2, cap["ly"] / 2
+    clips = {c["corner"]: c for c in cap.get("clipped_corners", [])}
+    points = []
+    for key, sx, sy in (("-x-y", -1, -1), ("+x-y", 1, -1), ("+x+y", 1, 1), ("-x+y", -1, 1)):
+        c = clips.get(key)
+        if c is None:
+            points.append((sx * hx, sy * hy))
+            continue
+        side, top = (sx * hx, sy * (hy - c["along_y"])), (sx * (hx - c["along_x"]), sy * hy)
+        points += [side, top] if key in ("-x-y", "+x+y") else [top, side]
+    return points
+
+
+def _shoelace(points: list[tuple[float, float]]) -> tuple[float, float, float]:
+    """Área y centroide de un polígono."""
+    a = cx = cy = 0.0
+    for (x1, y1), (x2, y2) in zip(points, points[1:] + points[:1], strict=True):
+        k = x1 * y2 - x2 * y1
+        a, cx, cy = a + k, cx + (x1 + x2) * k, cy + (y1 + y2) * k
+    return (abs(a) / 2, cx / (3 * a), cy / (3 * a)) if abs(a) > 1e-9 else (0.0, 0.0, 0.0)
+
+
+def _half(points: list[tuple[float, float]], axis: int, plane: float, outward: float) -> list[tuple[float, float]]:
+    """La parte del polígono con outward·(coordenada − plane) ≥ 0."""
+    out = []
+    for a, b in zip(points, points[1:] + points[:1], strict=True):
+        fa, fb = outward * (a[axis] - plane), outward * (b[axis] - plane)
+        if fa >= 0:
+            out.append(a)
+        if (fa >= 0) != (fb >= 0):
+            t = fa / (fa - fb)
+            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))
+    return out
+
+
 def _weight(cap: dict, load: dict) -> float:
-    area = cap["lx"] * cap["ly"]
+    area = _shoelace(_outline(cap))[0]
     net = area - cap["column"]["cx"] * cap["column"]["cy"]
     dead = GAMMA_C * area * cap["h"] + (GAMMA_F * cap["fill_height"] + cap["surcharge_dead_kNm2"] * 1e-3) * net
     return load["dead_factor"] * dead + load["live_factor"] * cap["surcharge_live_kNm2"] * 1e-3 * net
@@ -143,8 +276,6 @@ def _cases(cap: dict) -> list[dict]:
     """Por caso: carga de referencia, R, ΔR y fuerzas de la cabeza (Vx, Vy, Mx, My) de cada pilote, en N y N·mm."""
     piles, tolerance, e = cap["piles"], cap["mislocation_mm"], cap["pile"]["embedment"]
     n = len(piles)
-    sxx = sum(p["x"] ** 2 for p in piles)
-    syy = sum(p["y"] ** 2 for p in piles)
     out = []
     if "loads" in cap:
         for load in cap["loads"]:
@@ -152,10 +283,27 @@ def _cases(cap: dict) -> list[dict]:
             mx, my = load["Mx_kNm"] * 1e6, load["My_kNm"] * 1e6
             total = p + _weight(cap, load)
             arm = cap["h"] + cap["pedestal_height"] - e
-            my_h, mx_h = my + arm * vx, mx - arm * vy
-            gx = [p_["x"] / sxx if sxx else 0.0 for p_ in piles]
-            gy = [p_["y"] / syy if syy else 0.0 for p_ in piles]
-            reactions = [total / n + my_h * gx[i] - mx_h * gy[i] for i in range(n)]
+            column = cap["column"]
+            ox, oy, acol = column["offset_x"], column["offset_y"], column["cx"] * column["cy"]
+            # La columna desplaza el relleno y las sobrecargas que el peso uniforme cuenta en todo el contorno.
+            vertical = p - (load["dead_factor"] * (GAMMA_F * cap["fill_height"] + cap["surcharge_dead_kNm2"] * 1e-3)
+                            + load["live_factor"] * cap["surcharge_live_kNm2"] * 1e-3) * acol
+            area, xc, yc = _shoelace(_outline(cap))
+            spread_weight = _uniform(cap, load) * area
+            my_h = my + arm * vx + vertical * ox + spread_weight * xc
+            mx_h = mx - arm * vy - vertical * oy - spread_weight * yc
+            # Reparto rígido respecto al centroide del grupo con la matriz completa (resuelta por Cramer).
+            xg, yg = sum(p_["x"] for p_ in piles) / n, sum(p_["y"] for p_ in piles) / n
+            dxs, dys = [p_["x"] - xg for p_ in piles], [p_["y"] - yg for p_ in piles]
+            kxx, kyy = sum(v * v for v in dxs), sum(v * v for v in dys)
+            kxy = sum(a_ * b_ for a_, b_ in zip(dxs, dys, strict=True))
+            det = kxx * kyy - kxy * kxy
+            my_c, mx_c = my_h - total * xg, mx_h + total * yg
+            bx = (my_c * kyy - kxy * -mx_c) / det
+            by = (kxx * -mx_c - kxy * my_c) / det
+            reactions = [total / n + bx * dxs[i] + by * dys[i] for i in range(n)]
+            gx = [(kyy * dxs[i] - kxy * dys[i]) / det for i in range(n)]
+            gy = [(kxx * dys[i] - kxy * dxs[i]) / det for i in range(n)]
             spread = [abs(total) * tolerance * math.hypot(gx[i], gy[i]) for i in range(n)]
             heads = [(vx / n, vy / n, 0.0, 0.0)] * n
             out.append({"load": load, "R": reactions, "dR": spread, "heads": heads, "column": p, "spread_on_cap": True})
@@ -204,10 +352,10 @@ def _beyond(cap: dict, case: dict, axis: int, plane: float, outward: float, sens
         moment += r * arm
         vx, vy, mx, my = case["heads"][i]
         moment += -outward * (my + lever * vx) if axis == 0 else outward * (mx - lever * vy)
-    half, width = (cap["lx"] / 2, cap["ly"]) if axis == 0 else (cap["ly"] / 2, cap["lx"])
-    length = max(half - outward * plane, 0.0)
-    w = q * width * length
-    return shear - w, full - w, moment - w * length / 2
+    piece = _half(_outline(cap), axis, plane, outward)
+    area, xc, yc = _shoelace(piece) if len(piece) >= 3 else (0.0, 0.0, 0.0)
+    w = q * area
+    return shear - w, full - w, moment - w * outward * ((xc, yc)[axis] - plane)
 
 
 def _sense(case: dict) -> float:
@@ -267,7 +415,7 @@ def _service(folder: str, cap: dict, cases: list[dict]) -> list[dict]:
     spread, n = "loads" in cap, len(cap["piles"])
     expected = []
     for case in (case for case in cases if case["load"]["kind"] == "service"):
-        name, seismic = case["load"]["case"], case["load"]["seismic"]
+        name, seismic = case["load"]["case"], case["load"].get("seismic", False)
         fs = soil["seismic_capacity_factor"] if seismic else 1.0
         demand = max(r + (dr if spread else 0.0) for r, dr in zip(case["R"], case["dR"], strict=True))
         qa = soil["pile_capacity_compression_kN"] * 1e3
@@ -291,7 +439,8 @@ def _service(folder: str, cap: dict, cases: list[dict]) -> list[dict]:
 
 def _faces(cap: dict) -> dict[str, tuple[float, float]]:
     column = cap["column"]
-    return {"x": (column["cx"] / 2, -column["cx"] / 2), "y": (column["cy"] / 2, -column["cy"] / 2)}
+    ox, oy = column["offset_x"], column["offset_y"]
+    return {"x": (ox + column["cx"] / 2, ox - column["cx"] / 2), "y": (oy + column["cy"] / 2, oy - column["cy"] / 2)}
 
 
 def _minimum(cap: dict, moments: dict) -> list[dict]:
@@ -305,6 +454,37 @@ def _minimum(cap: dict, moments: dict) -> list[dict]:
         required = max(analysis, min(eta_bd, 4 / 3 * analysis), min(eta_bd, 0.0018 * b * cap["h"]))
         minimum.append({"direction": direction, "required": required, "provided": area})
     return minimum
+
+
+def _line_interval(outline: list[tuple[float, float]], axis: int, value: float) -> tuple[float, float] | None:
+    """Intervalo de la otra coordenada de la recta (x = value si axis = 0) dentro del contorno."""
+    hits = []
+    for a, b in zip(outline, outline[1:] + outline[:1], strict=True):
+        if (a[axis] - value) * (b[axis] - value) > 0 or a[axis] == b[axis]:
+            continue
+        t = (value - a[axis]) / (b[axis] - a[axis])
+        hits.append(a[1 - axis] + t * (b[1 - axis] - a[1 - axis]))
+    return (min(hits), max(hits)) if hits else None
+
+
+def _section(cap: dict, direction: str, plane: float) -> tuple[float, float]:
+    """(ancho, As) de la sección normal a las barras de una dirección en plane, con el contorno recortado: la cuerda y
+    las barras cuyo tramo (de borde a borde menos el recubrimiento) cruza la sección."""
+    axis = 0 if direction == "x" else 1
+    outline = _outline(cap)
+    across = _line_interval(outline, axis, plane)
+    bar = cap["bottom"][direction]
+    db, ab = BARS[bar["designation"]]
+    width = cap["ly"] if direction == "x" else cap["lx"]
+    half = width / 2 - cap["cover"] - db / 2
+    count = math.floor(2 * half / bar["spacing"] + 1e-6) + 1
+    start = -half + (2 * half - (count - 1) * bar["spacing"]) / 2
+    crossing = 0
+    for i in range(count):
+        span = _line_interval(outline, 1 - axis, start + i * bar["spacing"])
+        if span is not None and span[0] + cap["cover"] - 1e-6 <= plane <= span[1] - cap["cover"] + 1e-6:
+            crossing += 1
+    return (0.0 if across is None else across[1] - across[0]), crossing * ab
 
 
 def _one_way(folder: str, cap: dict, case: dict) -> list[dict]:
@@ -321,7 +501,8 @@ def _one_way(folder: str, cap: dict, case: dict) -> list[dict]:
             if abs(plane) >= half:
                 continue
             v, _, m = _beyond(cap, case, axis, plane, outward, _sense(case))
-            capacity = PHI_V * _vc_one_way(folder, (b, d, area / (b * d)), abs(v), abs(m), _spaced(cap))
+            width, steel = _section(cap, direction, plane) if cap.get("clipped_corners") else (b, area)
+            capacity = PHI_V * _vc_one_way(folder, (width, d, steel / (width * d)), abs(v), abs(m), _spaced(cap))
             if worst is None or abs(v) / capacity > worst[0]:
                 worst = (abs(v) / capacity, abs(v), capacity)
         if worst is not None:
@@ -333,10 +514,15 @@ def _one_way(folder: str, cap: dict, case: dict) -> list[dict]:
                 continue
             w = min([value for value in near if value > 0], default=0.0) + t
             _, v, m = _beyond(cap, case, axis, plane, outward, _sense(case))
-            ratio = min(m / (v * d), 1.0)
-            stress = min(d / w * (3.5 - 2.5 * ratio) * (1.9 * 0.083 + 0.1 * 0.083 / ratio), 10 * 0.083) * SQRT_FC
+            v, m = max(v, 0.0), max(m, 0.0)  # sin cortante o momento positivos, el tope de vc
+            if v <= 0 or m <= 0:
+                stress = 10 * 0.083 * SQRT_FC
+            else:
+                ratio = min(m / (v * d), 1.0)
+                stress = min(d / w * (3.5 - 2.5 * ratio) * (1.9 * 0.083 + 0.1 * 0.083 / ratio), 10 * 0.083) * SQRT_FC
+            face_width = _section(cap, direction, plane)[0] if cap.get("clipped_corners") else b  # el ancho en la cara
             out.append({"name": f"Cortante en la cara de la columna (barras {direction})", "case": name, "demand": v,
-                        "capacity": PHI_V * stress * b * d})
+                        "capacity": PHI_V * stress * face_width * d})
     return out
 
 
@@ -346,13 +532,14 @@ def _two_way(folder: str, cap: dict, case: dict) -> list[dict]:
     davg = (depths["x"] + depths["y"]) / 2
     name = case["load"]["case"]
     t, sense = cap["mislocation_mm"], _sense(case)
-    outside = [(max(abs(p["x"]) - column["cx"] / 2, abs(p["y"]) - column["cy"] / 2), i) for i, p in enumerate(cap["piles"])]
+    outside = [(max(abs(p["x"] - column["offset_x"]) - column["cx"] / 2, abs(p["y"] - column["offset_y"]) - column["cy"] / 2), i)
+               for i, p in enumerate(cap["piles"])]
     outside = [item for item in outside if item[0] + t > 0]
     if outside and min(outside)[0] < davg / 2:
         w = min([distance for distance, _ in outside if distance > 0], default=0.0) + t
         c, bs = (column["cx"] + column["cy"]) / 2, 2 * (column["cx"] + column["cy"])
         v = sum(case["R"][i] + sense * case["dR"][i] for _, i in outside)
-        v -= _uniform(cap, case["load"]) * (cap["lx"] * cap["ly"] - column["cx"] * column["cy"])
+        v -= _uniform(cap, case["load"]) * (_shoelace(_outline(cap))[0] - column["cx"] * column["cy"])
         stress = min(davg / w * (1 + davg / c) * 2 * 0.083, 32 * 0.083) * SQRT_FC
         out.append({"name": "Cortante en la cara de la columna (dos direcciones)", "case": name, "demand": v,
                     "capacity": PHI_V * stress * bs * davg})
@@ -365,12 +552,14 @@ def _two_way(folder: str, cap: dict, case: dict) -> list[dict]:
         if r <= 1.0:
             continue
         shapes = [((p["x"], p["y"]), (side, side))]
-        if p["x"] and p["y"]:
+        key = f"{'+' if p['x'] > 0 else '-'}x{'+' if p['y'] > 0 else '-'}y"
+        if p["x"] and p["y"] and key not in {c["corner"] for c in cap.get("clipped_corners", [])}:
             c1, c2 = bounds[0] - abs(p["x"]) + side / 2, bounds[1] - abs(p["y"]) + side / 2
             shapes.append(((math.copysign(bounds[0] - c1 / 2, p["x"]), math.copysign(bounds[1] - c2 / 2, p["y"])), (c1, c2)))
         best = None
         for centre, size in shapes:
-            found = _perimeter(centre, size, davg, bounds)
+            clipped_cap = cap.get("clipped_corners")
+            found = _poly_perimeter(centre, size, davg, _outline(cap)) if clipped_cap else _perimeter(centre, size, davg, bounds)
             if found is None:
                 continue
             b0, lost = found
@@ -497,7 +686,10 @@ def _pairs_and_corners(folder: str, cap: dict, case: dict, given: tuple[float, f
     out += _groups(folder, cap, case, given)
     hx, hy = cap["lx"] / 2, cap["ly"] / 2
     corners = []
+    clipped = {c["corner"] for c in cap.get("clipped_corners", [])}
     for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+        if f"{'+' if sx > 0 else '-'}x{'+' if sy > 0 else '-'}y" in clipped:
+            continue
         k = min(range(len(piles)), key=lambda i: math.dist((sx * hx, sy * hy), (piles[i]["x"], piles[i]["y"])))
         if piles[k]["x"] * sx > 0 and piles[k]["y"] * sy > 0 and k not in corners:
             corners.append(k)
@@ -510,7 +702,76 @@ def _pairs_and_corners(folder: str, cap: dict, case: dict, given: tuple[float, f
             continue
         out.append({"name": "Cortante de esquina del pilote", "case": name, "demand": reaction[k],
                     "capacity": PHI_V * 2 * 0.083 * SQRT_FC * 2 * reach * d})
+    for c in cap.get("clipped_corners", []):  # P4 de cada recorte: la sección paralela al recorte (D-141)
+        sx, sy = (1 if c["corner"][0] == "+" else -1), (1 if c["corner"][2] == "+" else -1)
+        a, b = (sx * hx, sy * (hy - c["along_y"])), (sx * (hx - c["along_x"]), sy * hy)
+        middle = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+        k = min(range(len(piles)), key=lambda i: math.dist(middle, (piles[i]["x"], piles[i]["y"])))
+        if reaction[k] <= 1.0:
+            continue
+        length = math.dist(a, b)
+        distance = abs((b[0] - a[0]) * (a[1] - piles[k]["y"]) - (a[0] - piles[k]["x"]) * (b[1] - a[1])) / length
+        offset = distance + dp / 2 + min(d, 330.0)
+        width = _chord_parallel(_outline(cap), (a, b), offset, (piles[k]["x"], piles[k]["y"]))
+        out.append({"name": "Cortante de esquina del pilote", "case": name, "demand": reaction[k],
+                    "capacity": PHI_V * 2 * 0.083 * SQRT_FC * width * d})
     return out
+
+
+def _poly_perimeter(centre: tuple[float, float], size: tuple[float, float], d: float,
+                    outline: list[tuple[float, float]]) -> tuple[float, int] | None:
+    """b0 y lados perdidos del perímetro a d/2 recortado con un contorno convexo: cada lado se recorta muestreando su
+    parte dentro del contorno con bisección en los extremos (otro método que el del programa)."""
+    (x, y), (c1, c2) = centre, size
+    corners = [(x - (c1 + d) / 2, y - (c2 + d) / 2), (x + (c1 + d) / 2, y - (c2 + d) / 2), (x + (c1 + d) / 2, y + (c2 + d) / 2),
+               (x - (c1 + d) / 2, y + (c2 + d) / 2)]
+
+    def inside(point: tuple[float, float]) -> bool:
+        return all((b[0] - a[0]) * (point[1] - a[1]) - (b[1] - a[1]) * (point[0] - a[0]) >= -1e-9
+                   for a, b in zip(outline, outline[1:] + outline[:1], strict=True))
+
+    total, lost = 0.0, 0
+    for a, b in zip(corners, corners[1:] + corners[:1], strict=True):
+        steps = 2000
+        ts = [i / steps for i in range(steps + 1)]
+        kept = [t for t in ts if inside((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))]
+        if not kept:
+            lost += 1
+            continue
+        def edge(t_in: float, t_out: float, a: tuple[float, float] = a, b: tuple[float, float] = b) -> float:
+            for _ in range(60):
+                mid = (t_in + t_out) / 2
+                if inside((a[0] + mid * (b[0] - a[0]), a[1] + mid * (b[1] - a[1]))):
+                    t_in = mid
+                else:
+                    t_out = mid
+            return t_in
+        low = kept[0] if kept[0] == 0.0 else edge(kept[0], kept[0] - 1 / steps)
+        high = kept[-1] if kept[-1] == 1.0 else edge(kept[-1], kept[-1] + 1 / steps)
+        total += (high - low) * math.dist(a, b)
+    return (total, lost) if lost <= 2 else None
+
+
+def _chord_parallel(outline: list[tuple[float, float]], edge: tuple[tuple[float, float], tuple[float, float]], offset: float,
+                    toward: tuple[float, float]) -> float:
+    """Longitud dentro del contorno de la recta paralela a edge a la distancia offset, del lado del punto toward."""
+    (ax, ay), (bx, by) = edge
+    length = math.dist(edge[0], edge[1])
+    ux, uy = (bx - ax) / length, (by - ay) / length
+    nx, ny = -uy, ux
+    if nx * (toward[0] - ax) + ny * (toward[1] - ay) < 0:
+        nx, ny = -nx, -ny
+    px, py = ax + nx * offset, ay + ny * offset
+    ts = []
+    for a, b in zip(outline, outline[1:] + outline[:1], strict=True):
+        den = (b[0] - a[0]) * uy - (b[1] - a[1]) * ux
+        if abs(den) < 1e-12:
+            continue
+        s_edge = ((px - a[0]) * uy - (py - a[1]) * ux) / den
+        if -1e-12 <= s_edge <= 1 + 1e-12:
+            hit = (a[0] + s_edge * (b[0] - a[0]), a[1] + s_edge * (b[1] - a[1]))
+            ts.append((hit[0] - px) * ux + (hit[1] - py) * uy)
+    return max(ts) - min(ts) if len(ts) >= 2 else 0.0
 
 
 def _derive(folder: str, cap: dict) -> dict:
@@ -544,7 +805,7 @@ def main() -> None:
         data = {"description": "Oraculo de cabezales (D-138), derivado por tests/oracles/derive_pile_cap.py",
                 "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight", "coating": "uncoated", "max_aggregate": 19.0},
                 "tolerance_rel": 1e-6,
-                "cases": [_derive(folder, cap) for cap in (CAP_A, CAP_B, CAP_C, CAP_D)]}
+                "cases": [_derive(folder, cap) for cap in (CAP_A, CAP_B, CAP_C, CAP_D, CAP_E)]}
         (HERE / folder / "derived_pile_cap.json").write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8",
                                                              newline="\n")
     print("ok")

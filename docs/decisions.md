@@ -2741,6 +2741,30 @@
 - **Niveles sísmicos:** el concreto simple solo entra donde la norma lo permite (D-072): ACI none, ordinary e
   intermediate (14.1.3; special se toma como categorías D a F) y NSR-10 DMI y DMO (C.22.10.1); nunca en cabezales.
 
+### D-141: cabezales de tres pilotes con esquinas recortadas (verificación) y plan del diseño de cabezales
+
+- **Pedido del usuario:** verificar cabezales con esquinas recortadas (los de tres pilotes de la guía CRSI), con un
+  ejemplo propio, y diseñar cabezales incluyéndolos.
+- **Entrada:** `clipped_corners` en el cabezal (proyecto y plantilla), cada recorte con su esquina y lo que quita de cada
+  borde; el contorno es el rectángulo menos los triángulos (`PileCap.outline`) y su área reemplaza la del rectángulo.
+- **Cálculo con el contorno (`domain/pile_cap/outline.py`, una sola fuente):** el peso uniforme en el centroide del
+  contorno (corrige los momentos del reparto rígido con las cargas de la columna), el peso más allá de cada sección por
+  recorte del polígono, el ancho real y las barras que cruzan cada sección (flexión en las caras, cortante a d y en la
+  cara), el perímetro de punzonamiento recortado con el contorno (`mechanics/perimeter.polygon_perimeter`; en un
+  rectángulo coincide con el recortado por los bordes), la distancia a los bordes y P4 en cada recorte con la sección
+  paralela al recorte; P3 solo en esquinas sin recortar. Despiece con barras de largo variable (una marca por largo) y
+  dibujo con el contorno. Los cabezales rectangulares siguen por el camino anterior: sus resultados no cambian.
+- **Aproximaciones:** el recubrimiento en un recorte se mide a lo largo de la barra; el As mínimo, la separación y la
+  franja central usan las mallas completas.
+- **Oráculo:** caso E (tres pilotes con dos recortes y la columna desplazada), con contorno, centroide, reparto rígido
+  con la matriz completa respecto al centroide del grupo, cuerdas, barras que cruzan, perímetro recortado (otro método)
+  y P4 de los recortes. Ejemplo `cabezal_tres_pilotes` en los dos perfiles.
+- **Corrección:** `cartilla.csv` no incluía los cabezales (desde D-138); ahora sí. Una sección a d sin barras que la
+  crucen se revisa con ρw = 0 (antes se omitía).
+- **Diseño de cabezales (plan aprobado):** con cargas de la columna diseña pilotes (número y arreglo de familias
+  generadas: mallas, triángulo de tres con esquinas recortadas, malla con pilote central y filas desplazadas, con L y E
+  declarados) y cabezal; con cargas de los pilotes, solo el cabezal. Costo: concreto, acero y pilotes. Pendiente.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

@@ -16,10 +16,12 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.loads import column_faces
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.pile_cap.loads import AXES, CapAnalysis, FactoredCap
+from structurelab_rc.domain.pile_cap.outline import centroid, parallel_chord, section_row
+from structurelab_rc.domain.pile_cap.outline import inside as region_inside
 from structurelab_rc.domain.shear_strength import TransferredLoad, TwoWayShear, concrete_lambda, two_way_shear
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, blocked
-from structurelab_rc.mechanics.perimeter import Perimeter, critical_perimeter
+from structurelab_rc.mechanics.perimeter import Perimeter, critical_perimeter, polygon_perimeter
 from structurelab_rc.model.pile_cap import PileCap
 
 ONE_WAY = "Cortante en una direccion"
@@ -55,23 +57,27 @@ def _one_way(basis: Basis, item: FactoredCap, row: BarRow, strength: _Strength) 
     plus, minus = column_faces(cap)[row.direction]
     half = cap.lx / 2 if axis == 0 else cap.ly / 2
     phi = profile.shear.strength_reduction()
-    rho = row.area / (row.width * row.depth)
-    worst: tuple[float, float, float, str] | None = None
+    full_row = row
+    worst: tuple[float, float, float, str, float, float] | None = None
     for plane, outward, face in ((plus + row.depth, 1.0, _FACES[row.direction][0]), (minus - row.depth, -1.0, _FACES[row.direction][1])):
         if abs(plane) >= half:
             continue
+        row = section_row(cap, full_row, plane) if cap.clipped_corners else full_row  # D-141: ancho real y barras que cruzan
+        if row.width <= 0:  # la sección no corta el contorno; sin barras que la crucen, ρw = 0 (el concreto resiste igual)
+            continue
+        rho = row.area / (row.width * row.depth)
         shear, _, moment = item.beyond(axis, plane, outward)
         vc = profile.pile_cap.one_way_concrete_shear(fc=materials.fc, lam=strength.lam, bw=row.width, d=row.depth, h=cap.h, rho_w=rho,
                                                      vu=abs(shear), mu=abs(moment), closely_spaced=strength.closely)
         demand, capacity = abs(shear), phi * vc
         if worst is None or demand / capacity > worst[0]:
-            worst = (demand / capacity, demand, capacity, face)
+            worst = (demand / capacity, demand, capacity, face, row.width, rho)
     if worst is None:
         return None
-    _, demand, capacity, face = worst
+    _, demand, capacity, face, width, rho = worst
     return Check(f"{ONE_WAY} (barras {row.direction})", Status.PASS if demand <= capacity else Status.FAIL,
                  clause=profile.pile_cap.clauses()["one_way_shear"], member=cap.id, case=item.case.case, demand=demand,
-                 capacity=capacity, unit="N", values=(("phi", phi), ("Vc", capacity / phi), ("bw", row.width), ("d", row.depth),
+                 capacity=capacity, unit="N", values=(("phi", phi), ("Vc", capacity / phi), ("bw", width), ("d", row.depth),
                                                       ("rho w", rho), ("lambda", strength.lam), ("fc", materials.fc)),
                  note=f"Seccion a d de la cara {face} de la columna, reacciones interpoladas")
 
@@ -90,14 +96,15 @@ def _face_one_way(basis: Basis, item: FactoredCap, row: BarRow, strength: _Stren
         if not near or min(near) >= row.depth:
             continue
         w = _clear_distance(near) + cap.mislocation
+        section = section_row(cap, row, plane) if cap.clipped_corners else row  # D-141: el ancho real en la cara
         _, shear, moment = item.beyond(axis, plane, outward)
         stress = profile.pile_cap.column_face_one_way_stress(fc=materials.fc, lam=strength.lam, d=row.depth, w=w, vu=max(shear, 0.0),
                                                              mu=max(moment, 0.0))
-        capacity = phi * stress * row.width * row.depth
+        capacity = phi * stress * section.width * row.depth
         checks.append(Check(f"{FACE_ONE_WAY} (barras {row.direction})", Status.PASS if shear <= capacity else Status.FAIL,
                             clause=profile.pile_cap.clauses()["column_face_one_way"], member=cap.id, case=item.case.case,
                             demand=max(shear, 0.0), capacity=capacity, unit="N",
-                            values=(("phi", phi), ("vc", stress), ("w", w), ("b", row.width), ("d", row.depth), ("Mu", moment)),
+                            values=(("phi", phi), ("vc", stress), ("w", w), ("b", section.width), ("d", row.depth), ("Mu", moment)),
                             note=f"Cara {face} de la columna"))
     return checks
 
@@ -173,16 +180,26 @@ def _column_punching(basis: Basis, item: FactoredCap, strength: _Strength) -> li
     cap = item.cap
     column, depth = cap.column, strength.depth
     bounds = ((-cap.lx / 2, -cap.ly / 2), (cap.lx / 2, cap.ly / 2))
-    perimeter = critical_perimeter((column.offset_x, column.offset_y), column.cx, column.cy, depth, bounds)
+    centre = (column.offset_x, column.offset_y)
+    if cap.clipped_corners:  # D-141: el perímetro recortado con el contorno
+        perimeter = polygon_perimeter(centre, column.cx, column.cy, depth, cap.outline)
+    else:
+        perimeter = critical_perimeter(centre, column.cx, column.cy, depth, bounds)
     if not perimeter.sides:
         return []
     half_x, half_y = (column.cx + depth) / 2, (column.cy + depth) / 2
     xc, yc = perimeter.centroid
     (x0, y0), (x1, y1) = perimeter.region
-    inside = (x1 - x0) * (y1 - y0)
-    force = -item.load * (cap.area - inside)  # el peso fuera del área crítica; el cabezal tiene su centroide en el origen
-    along_x = item.load * inside * (x0 + x1) / 2 - xc * force
-    along_y = item.load * inside * (y0 + y1) / 2 - yc * force
+    if cap.clipped_corners:
+        area, area_x, area_y = centroid(cap)
+        rectangle = ((centre[0] - half_x, centre[1] - half_y), (centre[0] + half_x, centre[1] + half_y))
+        inside, inside_x, inside_y = region_inside(cap, rectangle)
+    else:
+        area, area_x, area_y = cap.area, 0.0, 0.0
+        inside, inside_x, inside_y = (x1 - x0) * (y1 - y0), (x0 + x1) / 2, (y0 + y1) / 2
+    force = -item.load * (area - inside)  # el peso fuera del área crítica
+    along_x = -item.load * (area * area_x - inside * inside_x) - xc * force
+    along_y = -item.load * (area * area_y - inside * inside_y) - yc * force
     lever = cap.pile.embedment - cap.h / 2
     for index, pile in enumerate(cap.piles):
         offset = max(abs(pile.x - column.offset_x) - half_x, abs(pile.y - column.offset_y) - half_y) + cap.mislocation
@@ -206,8 +223,12 @@ def _pile_perimeters(cap: PileCap, index: int, depth: float) -> list[tuple[str, 
     pile, side = cap.piles[index], cap.pile.side
     hx, hy = cap.lx / 2, cap.ly / 2
     bounds = ((-hx, -hy), (hx, hy))
-    shapes = [("P1", critical_perimeter((pile.x, pile.y), side, side, depth, bounds), (side, side))]
-    if pile.x != 0 and pile.y != 0:
+    if cap.clipped_corners:
+        shapes = [("P1", polygon_perimeter((pile.x, pile.y), side, side, depth, cap.outline), (side, side))]
+    else:
+        shapes = [("P1", critical_perimeter((pile.x, pile.y), side, side, depth, bounds), (side, side))]
+    clipped = {clip.corner for clip in cap.clipped_corners}
+    if pile.x != 0 and pile.y != 0 and _corner_key(pile.x, pile.y) not in clipped:  # P3 solo en esquinas sin recortar
         sx, sy = math.copysign(1.0, pile.x), math.copysign(1.0, pile.y)
         c1, c2 = hx - abs(pile.x) + side / 2, hy - abs(pile.y) + side / 2
         shapes.append(("P3", critical_perimeter((sx * (hx - c1 / 2), sy * (hy - c2 / 2)), c1, c2, depth, bounds), (c1, c2)))
@@ -407,11 +428,18 @@ def _group_punching(basis: Basis, item: FactoredCap, given: tuple[_Strength, lis
     return [] if worst is None else [worst[1]]
 
 
+def _corner_key(x: float, y: float) -> str:
+    return f"{'+' if x > 0 else '-'}x{'+' if y > 0 else '-'}y"
+
+
 def _corner_piles(cap: PileCap) -> list[int]:
-    """El pilote más cercano a cada esquina del cabezal, si queda en el cuadrante de esa esquina."""
+    """El pilote más cercano a cada esquina sin recortar del cabezal, si queda en el cuadrante de esa esquina."""
     hx, hy = cap.lx / 2, cap.ly / 2
+    clipped = {clip.corner for clip in cap.clipped_corners}
     found = []
     for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+        if _corner_key(sx, sy) in clipped:
+            continue
         index = min(range(len(cap.piles)), key=lambda i: math.hypot(sx * hx - cap.piles[i].x, sy * hy - cap.piles[i].y))
         pile = cap.piles[index]
         if pile.x * sx > 0 and pile.y * sy > 0 and index not in found:
@@ -443,6 +471,40 @@ def _corner_one_way(basis: Basis, item: FactoredCap, strength: _Strength) -> lis
                             member=cap.id, case=item.case.case, demand=force, capacity=capacity, unit="N",
                             values=(("phi", phi), ("vc", stress), ("b", width), ("d", d), ("Ex", ex), ("Ey", ey), ("dp", dp)),
                             note=f"Pilote {pile.id} (P4)"))
+    return [*checks, *_clip_one_way(basis, item, strength)]
+
+
+def _clip_one_way(basis: Basis, item: FactoredCap, strength: _Strength) -> list[Check]:
+    """Cortante de esquina (P4) en una esquina recortada (D-141): la sección paralela al recorte, a dp/2 + d (d ≤ 330 mm)
+    del centro del pilote más cercano al recorte hacia adentro, con la longitud de esa recta dentro del contorno y su reacción."""
+    profile, materials, cap = basis.profile, basis.materials, item.cap
+    rules = profile.pile_cap
+    dp, d = _round_size(cap), strength.depth
+    phi = profile.shear.strength_reduction()
+    stress = rules.corner_one_way_stress(fc=materials.fc, lam=strength.lam)
+    outline, checks = cap.outline, []
+    for clip in cap.clipped_corners:
+        sx, sy = (1.0 if clip.corner[0] == "+" else -1.0), (1.0 if clip.corner[2] == "+" else -1.0)
+        ends = {(sx * cap.lx / 2, sy * (cap.ly / 2 - clip.along_y)), (sx * (cap.lx / 2 - clip.along_x), sy * cap.ly / 2)}
+        edge = next((outline[i], outline[(i + 1) % len(outline)]) for i in range(len(outline))
+                    if {outline[i], outline[(i + 1) % len(outline)]} == ends)
+        middle = ((edge[0][0] + edge[1][0]) / 2, (edge[0][1] + edge[1][1]) / 2)
+        # El pilote más cercano al recorte, aunque no quede en el cuadrante de la esquina (el del vértice en un cabezal de
+        # tres pilotes sirve a los dos recortes).
+        index = min(range(len(cap.piles)), key=lambda i: math.hypot(cap.piles[i].x - middle[0], cap.piles[i].y - middle[1]))
+        pile, force = cap.piles[index], item.reaction(index)
+        if force <= _NEGLIGIBLE_FORCE:
+            continue
+        (ax, ay), (bx, by) = edge
+        distance = abs((bx - ax) * (ay - pile.y) - (ax - pile.x) * (by - ay)) / math.hypot(bx - ax, by - ay)
+        width = parallel_chord(cap, edge, distance + dp / 2 + min(d, rules.corner_depth_limit()))
+        if width <= 0:
+            continue
+        capacity = phi * stress * width * d
+        checks.append(Check(CORNER_ONE_WAY, Status.PASS if force <= capacity else Status.FAIL, clause=rules.clauses()["corner_one_way"],
+                            member=cap.id, case=item.case.case, demand=force, capacity=capacity, unit="N",
+                            values=(("phi", phi), ("vc", stress), ("b", width), ("d", d), ("dp", dp)),
+                            note=f"Pilote {pile.id} (P4, esquina recortada {clip.corner})"))
     return checks
 
 

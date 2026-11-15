@@ -1216,7 +1216,9 @@ def _cap_geometry(results: dict[str, Any], cap: dict[str, Any]) -> list[Block]:
             ["Altura del pedestal", number(g["pedestal_height"], "mm"), "mm"], ["Altura del relleno", number(g["fill_height"], "mm"), "mm"],
             ["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
             ["Sobrecarga viva (qL)", number(g["surcharge_live [kN/m2]"], "kN/m²"), "kN/m²"],
-            ["Tolerancia de mala ubicación de los pilotes", number(g["mislocation"], "mm"), "mm"]]
+            ["Tolerancia de mala ubicación de los pilotes", number(g["mislocation"], "mm"), "mm"],
+            *([f"Esquina recortada {clip['corner']} (en X × en Y)",
+               f"{number(clip['along_x'], 'mm')} × {number(clip['along_y'], 'mm')}", "mm"] for clip in g.get("clipped_corners") or [])]
     shape = "circular, diámetro" if pile["shape"] == "circular" else "cuadrado, lado"
     soil = results["soil"]
     capacity = [["Sección del pilote", f"{shape} {number(pile['size [mm]'], 'mm')} mm"],

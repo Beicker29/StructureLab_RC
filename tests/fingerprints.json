@@ -19,6 +19,11 @@
     "memoria.txt": "d84797c53feb68fbc1d47d81f6997759bacc6242555214b8e2ac524a3cb9ace7",
     "cabezal_pilotes_etabs_drawing.json": "98ade2afb1bed2c5d9e57df8a32460cdbba8d7f0b4764be7e23850cc4107c834"
   },
+  "examples/aci_318_25/cabezales/pruebas/cabezal_tres_pilotes.json": {
+    "resultado.json": "70d9c7722191734283b61d41f41a8ee19f24e5ff182887f993e91288e6564275",
+    "memoria.txt": "8e6d034189581ed122bf6077d4417d11560ba868a4af77f4b93f52a3737fa004",
+    "cabezal_tres_pilotes_drawing.json": "58b1c1b323ca9a6965e5ac82dcb25fcb63fcc02af39954b812c2f6ecc3d0932f"
+  },
   "examples/aci_318_25/vigas/pruebas/viga_alta.json": {
     "resultado.json": "3da4d3275a4874c36fe2049067afc56fc8a6222bd71d47b59772aa82ad1b9887",
     "memoria.txt": "cc4a3b39b54cb2d7c2a3179e3ae03561067cb4d3e0694eb9d7dae36a52efa099"
@@ -101,6 +106,11 @@
     "resultado.json": "89b38c13a2245b2f951b7da54f3ec6c5a6742131d0446801ab8273fa0f8b5295",
     "memoria.txt": "9a3ad973b5e6a70af38640af66daa190d3d3cffeebcfb4b6194eadaefa67de50",
     "cabezal_pilotes_etabs_drawing.json": "98ade2afb1bed2c5d9e57df8a32460cdbba8d7f0b4764be7e23850cc4107c834"
+  },
+  "examples/nsr_10/cabezales/pruebas/cabezal_tres_pilotes.json": {
+    "resultado.json": "375d2a1064e12ce0b32164cd458758d055b90df467aa172aba26a429f2b64f18",
+    "memoria.txt": "9e3ec859fce591ee02415f1b1ea1231c5c23c57331dea239de913677d3bf9845",
+    "cabezal_tres_pilotes_drawing.json": "58b1c1b323ca9a6965e5ac82dcb25fcb63fcc02af39954b812c2f6ecc3d0932f"
   },
   "examples/nsr_10/vigas/pruebas/viga_alta.json": {
     "resultado.json": "99e3654b0749aa7542a8fc4e71d3163348182c36d6b858b4d0ac46ffa032746e",

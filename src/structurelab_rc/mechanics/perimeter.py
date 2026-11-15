@@ -10,6 +10,7 @@ comentario ACI R8.4.4.2.3). No conoce φ ni numerales.
 from dataclasses import dataclass
 
 Point = tuple[float, float]
+_EMPTY = 1e-12  # fracción del lado: por debajo, el lado queda fuera del contorno
 
 
 @dataclass(frozen=True)
@@ -76,3 +77,43 @@ def critical_perimeter(centre: Point, c1: float, c2: float, depth: float, bounds
                   "top": Side((cr, top), (cl, top)), "left": Side((left, ct), (left, cb))}
     sides = tuple(side for name, side in candidates.items() if inside[name])
     return Perimeter(sides, sum(1 for present in inside.values() if not present), depth, ((cl, cb), (cr, ct)))
+
+
+def _inside_part(start: Point, end: Point, outline: tuple[Point, ...]) -> tuple[Point, Point] | None:
+    """La parte de un segmento dentro de un polígono convexo en sentido antihorario (Cyrus-Beck); None si queda fuera."""
+    low, high = 0.0, 1.0
+    dx, dy = end[0] - start[0], end[1] - start[1]
+    for index, (x1, y1) in enumerate(outline):
+        x2, y2 = outline[(index + 1) % len(outline)]
+        normal = (-(y2 - y1), x2 - x1)  # hacia adentro
+        num = normal[0] * (start[0] - x1) + normal[1] * (start[1] - y1)
+        den = normal[0] * dx + normal[1] * dy
+        if den == 0:
+            if num < 0:
+                return None
+            continue
+        t = -num / den
+        if den > 0:
+            low = max(low, t)
+        else:
+            high = min(high, t)
+    if high - low <= _EMPTY:
+        return None
+    return (start[0] + low * dx, start[1] + low * dy), (start[0] + high * dx, start[1] + high * dy)
+
+
+def polygon_perimeter(centre: Point, c1: float, c2: float, depth: float, outline: tuple[Point, ...]) -> Perimeter:
+    """Perímetro a d/2 de un área cargada c1 × c2, recortado con un contorno poligonal convexo (cabezal con esquinas
+    recortadas, D-141): de cada lado queda la parte dentro del contorno; outside cuenta los lados que quedan del todo
+    fuera; region es el rectángulo que encierra lo que queda de los lados."""
+    left, right = centre[0] - (c1 + depth) / 2, centre[0] + (c1 + depth) / 2
+    bottom, top = centre[1] - (c2 + depth) / 2, centre[1] + (c2 + depth) / 2
+    corners = ((left, bottom), (right, bottom), (right, top), (left, top))
+    sides = []
+    for index, start in enumerate(corners):
+        part = _inside_part(start, corners[(index + 1) % 4], outline)
+        if part is not None:
+            sides.append(Side(*part))
+    points = [point for side in sides for point in (side.start, side.end)] or [centre]
+    region = ((min(p[0] for p in points), min(p[1] for p in points)), (max(p[0] for p in points), max(p[1] for p in points)))
+    return Perimeter(tuple(sides), 4 - len(sides), depth, region)

@@ -27,6 +27,7 @@ from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.pile_cap.checks import cap_analysis, pile_cap_checks
 from structurelab_rc.domain.pile_cap.drawing import pile_cap_views
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis
+from structurelab_rc.domain.pile_cap.outline import bar_span
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.drawing.dxf import write_dxf
@@ -251,7 +252,8 @@ def _detailing(
     if pile_soil is not None:  # cabezales (D-138), con su análisis
         for cap in project.pile_caps:
             concrete = sum(cap.weights(pile_soil)[:2]) / pile_soil.unit_weight_concrete / 1e9
-            runs = footing_runs(basis, cap, moment_envelope(list(analyses[cap.id].moments)))
+            spans = (lambda direction, position, cap=cap: bar_span(cap, direction, position)) if cap.clipped_corners else None
+            runs = footing_runs(basis, cap, moment_envelope(list(analyses[cap.id].moments)), spans)
             rows = schedules[cap.id] = schedule(cap.id, runs, stock)
             entries[cap.id]["detailing"] = detailing_data(rows, concrete, stock)
             if drawing is not None:

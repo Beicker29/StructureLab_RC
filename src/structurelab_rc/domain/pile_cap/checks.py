@@ -15,6 +15,7 @@ from structurelab_rc.domain.footing.connection import column_connection_checks
 from structurelab_rc.domain.footing.spacing import footing_min_spacing_checks
 from structurelab_rc.domain.pile_cap.flexure import cap_rules, flexure_checks
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis, analyze
+from structurelab_rc.domain.pile_cap.outline import edge_distance
 from structurelab_rc.domain.pile_cap.service import service_checks
 from structurelab_rc.domain.pile_cap.shear import shear_checks
 from structurelab_rc.domain.status import Status
@@ -44,7 +45,7 @@ def _geometry_checks(basis: Basis, cap: PileCap) -> list[Check]:
         checks.append(_requirement(EMBEDMENT, (embedment, cap.pile.embedment, clauses["embedment"]), cap))
     edge = rules.min_edge_distance()
     if edge is not None:
-        distance, pile = min((min(cap.lx / 2 - abs(item.x), cap.ly / 2 - abs(item.y)) - cap.pile.size / 2, item.id) for item in cap.piles)
+        distance, pile = min((edge_distance(cap, (item.x, item.y)) - cap.pile.size / 2, item.id) for item in cap.piles)
         checks.append(_requirement(EDGE, (edge, distance, clauses["edge"]), cap, f"Pilote {pile}"))
     tolerance = rules.min_mislocation()
     if tolerance is not None:

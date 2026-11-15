@@ -21,7 +21,7 @@ los pasadores no está en el modelo).
 """
 
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import replace
 
 from structurelab_rc.detailing.schedule import BarRun, Hook, Placement
@@ -99,16 +99,17 @@ def _hooks(basis: Basis, db: float, end: str) -> tuple[Hook | None, Hook | None]
 
 
 def _row_run(basis: Basis, row: BarRow, given: tuple[str, float, tuple[Hook | None, Hook | None]],
-             anchorage: tuple[float, bool, tuple[float, float], float | None]) -> BarRun | None:
+             anchorage: tuple[float, bool, tuple[float, float], float | None], span: tuple[float, float] | None = None) -> BarRun | None:
     """Las barras de una fila: given = (grupo, largo exterior, ganchos); anchorage = (separación, malla inferior, (h,
-    recubrimiento), As provisto/As requerido o None si no se calcula)."""
+    recubrimiento), As provisto/As requerido o None si no se calcula); span, el tramo de las barras a lo largo de su eje
+    si no es el centrado de largo length (contorno recortado, D-141)."""
     group, length, hooks = given
     spacing, bottom, footing, ratio = anchorage
     count = len(row.positions)
     if count == 0:
         return None
     # depth se mide desde la cara opuesta a la fila: abajo, z = h − d; arriba, z = d.
-    place = Placement(row.direction, row.positions, footing[0] - row.depth if bottom else row.depth, (-length / 2, length / 2))
+    place = Placement(row.direction, row.positions, footing[0] - row.depth if bottom else row.depth, span or (-length / 2, length / 2))
     bar = bar_anchorage(row, ("straight", spacing, bottom), footing, 1.0)
     lap = lap_splice(basis.profile, basis.materials, bar, (1.0 if ratio is None else ratio, 0.5 if count > 1 else 1.0))
     spec = _spec(basis.bars, row.designation)
@@ -205,9 +206,26 @@ def face_envelope(footing: Footing, soil: Soil) -> Envelope | None:
     return moment_envelope([face_moments(footing, case) for case in cases])
 
 
-def footing_runs(basis: Basis, footing: Footing, envelope: Envelope | None) -> list[BarRun]:
+Spans = Callable[[str, float], tuple[float, float] | None]
+
+
+def _span_groups(row: BarRow, spans: Spans | None, length: float) -> list[tuple[BarRow, tuple[float, float] | None, float]]:
+    """Las barras de una fila agrupadas por su tramo: una sola con el tramo centrado si no hay contorno recortado; con él
+    (D-141), un grupo por cada largo distinto, de borde a borde del contorno."""
+    if spans is None:
+        return [(row, None, length)]
+    groups: dict[tuple[float, float], list[float]] = {}
+    for position in row.positions:
+        span = spans(row.direction, position)
+        if span is not None:
+            groups.setdefault((round(span[0], 1), round(span[1], 1)), []).append(position)
+    return [(replace(row, positions=tuple(positions), band_positions=()), span, span[1] - span[0]) for span, positions in groups.items()]
+
+
+def footing_runs(basis: Basis, footing: Footing, envelope: Envelope | None, spans: Spans | None = None) -> list[BarRun]:
     """Zapata aislada (o cabezal, D-138): malla inferior, malla superior si la hay y pasadores, con la envolvente de los
-    momentos de cara para la clase de los empalmes (D-129)."""
+    momentos de cara para la clase de los empalmes (D-129). spans da el tramo de cada barra en un cabezal con esquinas
+    recortadas (D-141): las barras de largo distinto van en grupos aparte."""
     h, cover = footing.h, footing.cover
     runs = []
     for name, mat in (("inferior", footing.bottom), ("superior", footing.top)):
@@ -221,10 +239,13 @@ def footing_runs(basis: Basis, footing: Footing, envelope: Envelope | None) -> l
             if envelope is not None:
                 moment = envelope[direction][0 if name == "inferior" else 1]
                 ratio = splice_ratio(basis, (row.width, h, row.depth), row.area, moment)
-            run = _row_run(basis, row, (f"malla {name} {direction}", length, _hooks(basis, row.diameter, bar_set.end)),
-                           (spacing, name == "inferior", (h, cover), ratio))
-            if run is not None:
-                runs.append(run)
+            groups = _span_groups(row, spans, length)
+            for number, (part, span, size) in enumerate(groups, start=1):
+                label = f"malla {name} {direction}" + (f" ({number})" if len(groups) > 1 else "")
+                run = _row_run(basis, part, (label, size, _hooks(basis, row.diameter, bar_set.end)),
+                               (spacing, name == "inferior", (h, cover), ratio), span)
+                if run is not None:
+                    runs.append(run)
     rows = mat_rows(footing, footing.bottom, basis.bars)
     embed = h - footing.bottom_face_cover - rows["x"].diameter - rows["y"].diameter
     dowels = _placed_dowels(_dowel_run(basis, footing.column.dowels, embed, footing.pedestal_height, footing.id),

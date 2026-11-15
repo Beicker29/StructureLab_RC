@@ -176,7 +176,7 @@ def pile_cap_data(cap: PileCap, soil: PileCapSoil, checks: list[Check], analysis
                  for case in analysis.cases]
     return {
         "id": cap.id,
-        "geometry [mm]": _geometry(cap, {"column", "bottom_cover", "mislocation"}),
+        "geometry [mm]": _geometry(cap, {"column", "bottom_cover", "mislocation", *(["clipped_corners"] if cap.clipped_corners else [])}),
         "pile": {"shape": pile.shape, "size [mm]": pile.size, "embedment [mm]": pile.embedment},
         "piles": [{"id": item.id, "x [mm]": item.x, "y [mm]": item.y} for item in cap.piles],
         "options": {"loads_from": "piles" if cap.from_piles else "column", "reactions_include_weight": cap.reactions_include_weight},
@@ -457,7 +457,7 @@ def detailing_csv(results: dict[str, Any]) -> str:
     writer = csv.writer(buffer, delimiter=";", lineterminator="\n")
     writer.writerow(["elemento", "marca", "grupo", "barra", "forma", "cantidad", "dimensiones (mm)", "longitud de corte (mm)",
                      "peso (kg)", "nota"])
-    for footing in [*results.get("footings", []), *results.get("combined_footings", [])]:
+    for footing in [*results.get("footings", []), *results.get("combined_footings", []), *results.get("pile_caps", [])]:
         for row in (footing.get("detailing") or {}).get("rows", []):
             dimensions = " ".join(f"{name}={value:.0f}" for name, value in row["dimensions [mm]"].items())
             writer.writerow([footing["id"], row["mark"], row["group"], row["designation"], row["shape"], row["count"], dimensions,

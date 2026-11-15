@@ -73,6 +73,27 @@ class Pile(_Input):
     loads: tuple[FootingLoad, ...] = ()
 
 
+_ON_EDGE = 1e-9  # mm²: tolerancia del producto cruz para un punto sobre el borde
+Corner = Literal["+x+y", "-x+y", "-x-y", "+x-y"]
+_CORNER_SIGNS: dict[str, tuple[float, float]] = {"-x-y": (-1.0, -1.0), "+x-y": (1.0, -1.0), "+x+y": (1.0, 1.0), "-x+y": (-1.0, 1.0)}
+
+
+class CornerClip(_Input):
+    """Una esquina recortada del cabezal (D-141): la esquina y lo que el recorte quita de cada borde, along_x sobre el
+    borde paralelo a X y along_y sobre el paralelo a Y, en mm. El recorte es la recta que une esos dos puntos."""
+
+    corner: Corner
+    along_x: PositiveFloat
+    along_y: PositiveFloat
+
+
+def _inside_convex(outline: tuple[tuple[float, float], ...], point: tuple[float, float]) -> bool:
+    """Si el punto queda dentro del polígono convexo (en sentido antihorario) o en su borde."""
+    count = len(outline)
+    return all((outline[(i + 1) % count][0] - outline[i][0]) * (point[1] - outline[i][1])
+               - (outline[(i + 1) % count][1] - outline[i][1]) * (point[0] - outline[i][0]) >= -_ON_EDGE for i in range(count))
+
+
 class PileCap(Footing):
     """Cabezal (D-138). mislocation es la tolerancia de mala ubicación de los pilotes, en mm (obligatoria en los dos
     perfiles; con ACI 318-25, menor que 75 mm no cumple, 13.4.1.4): con las cargas de la columna aumenta los brazos y las
@@ -88,15 +109,22 @@ class PileCap(Footing):
     mislocation: NonNegativeFloat = Field(validation_alias="mislocation_mm")
     reactions_include_weight: bool | None = None
     loads: tuple[FootingLoad, ...] = ()
+    clipped_corners: tuple[CornerClip, ...] = ()
 
     @model_validator(mode="after")
     def _check_piles(self) -> Self:
         ids = [pile.id for pile in self.piles]
         if len(ids) != len(set(ids)):
             raise ValueError(f"el cabezal '{self.id}' repite un pilote")
+        self._check_clips()
+        outline = self.outline
         for pile in self.piles:
-            if abs(pile.x) >= self.lx / 2 or abs(pile.y) >= self.ly / 2:
+            if not _inside_convex(outline, (pile.x, pile.y)) or abs(pile.x) >= self.lx / 2 or abs(pile.y) >= self.ly / 2:
                 raise ValueError(f"el pilote '{pile.id}' del cabezal '{self.id}' queda fuera del cabezal")
+        column = self.column
+        corners = [(column.offset_x + sx * column.cx / 2, column.offset_y + sy * column.cy / 2) for sx, sy in _CORNER_SIGNS.values()]
+        if not all(_inside_convex(outline, point) for point in corners):
+            raise ValueError(f"la columna del cabezal '{self.id}' queda fuera de su contorno (esquinas recortadas)")
         if self.bottom_cover <= self.pile.embedment:
             raise ValueError(f"en el cabezal '{self.id}' bottom_cover debe ser mayor que el empotramiento de los pilotes: "
                              "la malla inferior va sobre su cabeza")
@@ -128,6 +156,39 @@ class PileCap(Footing):
                 raise ValueError(f"el pilote '{pile.id}' del cabezal '{self.id}' repite un caso de carga")
             if cases != first:
                 raise ValueError(f"los pilotes del cabezal '{self.id}' deben tener los mismos casos, con los mismos factores")
+
+    def _check_clips(self) -> None:
+        """Una esquina se recorta una vez; los recortes caben en sus bordes sin cruzarse."""
+        corners = [clip.corner for clip in self.clipped_corners]
+        if len(corners) != len(set(corners)):
+            raise ValueError(f"el cabezal '{self.id}' recorta dos veces la misma esquina")
+        taken = {"x": {1.0: 0.0, -1.0: 0.0}, "y": {1.0: 0.0, -1.0: 0.0}}  # lo recortado de cada borde: y = ±ly/2, x = ±lx/2
+        for clip in self.clipped_corners:
+            sx, sy = _CORNER_SIGNS[clip.corner]
+            taken["x"][sy] += clip.along_x
+            taken["y"][sx] += clip.along_y
+        if any(value >= self.lx for value in taken["x"].values()) or any(value >= self.ly for value in taken["y"].values()):
+            raise ValueError(f"los recortes de esquina del cabezal '{self.id}' no caben en sus bordes")
+
+    @property
+    def outline(self) -> tuple[tuple[float, float], ...]:
+        """Contorno del cabezal en sentido antihorario, con las esquinas recortadas (D-141), en mm."""
+        hx, hy = self.lx / 2, self.ly / 2
+        clips: dict[str, CornerClip] = {clip.corner: clip for clip in self.clipped_corners}
+        points: list[tuple[float, float]] = []
+        for corner, (sx, sy) in _CORNER_SIGNS.items():
+            clip = clips.get(corner)
+            if clip is None:
+                points.append((sx * hx, sy * hy))
+                continue
+            vertical, horizontal = (sx * hx, sy * (hy - clip.along_y)), (sx * (hx - clip.along_x), sy * hy)
+            points.extend((vertical, horizontal) if corner in ("-x-y", "+x+y") else (horizontal, vertical))
+        return tuple(points)
+
+    @property
+    def area(self) -> float:
+        """Área del cabezal: el rectángulo menos los triángulos de las esquinas recortadas, en mm²."""
+        return self.lx * self.ly - sum(clip.along_x * clip.along_y / 2 for clip in self.clipped_corners)
 
     @property
     def bottom_face_cover(self) -> float:

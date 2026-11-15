@@ -27,6 +27,7 @@ Tiene los campos de la zapata aislada ([zapatas](zapatas.md)): `id`, `lx`, `ly`,
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `cover` | mm | Recubrimiento libre de las caras laterales y la superior. |
+| `clipped_corners` | mm | Opcional (D-141): esquinas recortadas, cada una `{corner, along_x, along_y}` con `corner` = `+x+y`, `-x+y`, `-x-y` o `+x-y` y lo que el recorte quita de cada borde. El contorno es el rectángulo menos esos triángulos; la columna y los pilotes deben quedar dentro. |
 | `loads_from` | | Obligatorio: de dónde llegan las cargas, `column` (las de la columna, `loads`) o `piles` (las de cada pilote, `piles[].loads`; desde ETABS, el Unique Name de cada pilote y `etabs_station`). Lo demás debe ser coherente con él. |
 | `bottom_cover` | mm | Recubrimiento libre de la cara inferior a la malla inferior, mayor que el empotramiento: la malla va sobre la cabeza de los pilotes. |
 | `pile.shape` | | `circular` o `square`. |
@@ -77,6 +78,16 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
 - **Geometría:** d ≥ 300 mm (ACI 13.4.6.2; NSR-10 C.15.7, sobre el refuerzo inferior). En ACI también el empotramiento
   ≥ 75 mm y el borde ≥ 100 mm (13.4.6.3).
 - **Desarrollo, pasadores y aplastamiento:** los de la zapata aislada.
+
+## Esquinas recortadas (D-141)
+
+Con `clipped_corners` el cálculo usa el contorno real: el área y el peso (en el centroide del contorno, que entra en el
+reparto de las reacciones), el peso más allá de cada sección, el ancho de cada sección (la cuerda del contorno) con las
+barras que la cruzan en la flexión de las caras y en el cortante, el perímetro de punzonamiento recortado con el
+contorno, la distancia de los pilotes a los bordes y, en cada recorte, el cortante de esquina (P4) en la sección paralela
+al recorte a dp/2 + d (d ≤ 330 mm) del pilote más cercano; P3 solo en las esquinas sin recortar. El despiece da barras de
+largo variable (de borde a borde del contorno menos el recubrimiento, medido a lo largo de la barra) y el dibujo, el
+contorno real. El As mínimo, la separación y la franja central se revisan con las mallas completas.
 
 ## Plantilla de ETABS
 

@@ -56,6 +56,7 @@ class SectionRules:
     minimum: Callable[[str, BarRow, float], tuple[float, Values, str]]
     min_depth: tuple[float, str]
     plain_forbidden: str | None = None
+    row_at: Callable[[BarRow, float], BarRow] | None = None  # la fila en la sección de cada cara (contorno recortado, D-141)
 
 
 def footing_rules(profile: Profile, materials: Materials, footing: Footing) -> SectionRules:
@@ -171,6 +172,9 @@ def _strength_checks(basis: Basis, footing: Footing, rows: dict[str, dict[str, B
                         checks.append(plain)
                         continue
                 row = rows[mat][direction]
+                if rules.row_at is not None:
+                    plus_plane, minus_plane = column_faces(footing)[direction]
+                    row = rules.row_at(row, plus_plane if face == positive else minus_plane)
                 strength = _strength(profile, materials, footing, row)
                 if isinstance(strength, StructuredError):
                     checks.append(replace(check_from_errors(name, [strength]), clause=clause, member=member, case=load_case))

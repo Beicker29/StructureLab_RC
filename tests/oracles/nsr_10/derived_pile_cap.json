@@ -194,10 +194,10 @@
     {
      "case": "U2",
      "R": [
-      469434.5833333333,
-      885267.9166666667,
-      920580.4166666667,
-      504747.0833333333
+      469434.5833333334,
+      885267.9166666666,
+      920580.4166666666,
+      504747.0833333334
      ],
      "dR": [
       122861.12905637738,
@@ -248,13 +248,13 @@
      "case": "U2 (−ΔR)",
      "direction": "x",
      "plus": 659521081.968746,
-     "minus": 261062748.6354125
+     "minus": 261062748.63541257
     },
     {
      "case": "U2 (−ΔR)",
      "direction": "y",
-     "plus": 478112227.8020792,
-     "minus": 442471602.8020792
+     "plus": 478112227.80207926,
+     "minus": 442471602.80207926
     }
    ],
    "minimum": [
@@ -315,7 +315,7 @@
     {
      "name": "Cortante en una direccion (barras x)",
      "case": "U1",
-     "demand": 1094.0160000000021,
+     "demand": 1094.0159999999998,
      "capacity": 1002519.1589979006
     },
     {
@@ -333,7 +333,7 @@
     {
      "name": "Cortante en una direccion (barras y)",
      "case": "U1",
-     "demand": 3282.048000000006,
+     "demand": 3282.048000000023,
      "capacity": 974326.0330271961
     },
     {
@@ -441,14 +441,14 @@
     {
      "name": "Cortante en una direccion (barras x)",
      "case": "U2",
-     "demand": 1027.416000000002,
+     "demand": 1027.416,
      "capacity": 1002519.1589979006
     },
     {
      "name": "Cortante en la cara de la columna (barras x)",
      "case": "U2",
-     "demand": 1982150.5914460882,
-     "capacity": 3532488.7774975947
+     "demand": 1982150.591446088,
+     "capacity": 3532488.777497594
     },
     {
      "name": "Cortante en la cara de la columna (barras x)",
@@ -459,7 +459,7 @@
     {
      "name": "Cortante en una direccion (barras y)",
      "case": "U2",
-     "demand": 3082.248000000006,
+     "demand": 3082.2480000000214,
      "capacity": 974326.0330271961
     },
     {
@@ -489,13 +489,13 @@
     {
      "name": "Punzonamiento del pilote",
      "case": "U2",
-     "demand": 0.7358975612333868,
+     "demand": 0.7358975612333867,
      "capacity": 1.3096468989769725
     },
     {
      "name": "Punzonamiento del pilote",
      "case": "U2",
-     "demand": 0.7616744027412279,
+     "demand": 0.7616744027412278,
      "capacity": 1.3096468989769725
     },
     {
@@ -525,7 +525,7 @@
     {
      "name": "Punzonamiento de dos pilotes",
      "case": "U2",
-     "demand": 0.4743099535316404,
+     "demand": 0.47430995353164035,
      "capacity": 1.011999876482206
     },
     {
@@ -543,7 +543,7 @@
     {
      "name": "Cortante de esquina del pilote",
      "case": "U2",
-     "demand": 1043441.5457230441,
+     "demand": 1043441.545723044,
      "capacity": 1050694.1122605896
     },
     {
@@ -561,7 +561,7 @@
     {
      "name": "Cortante de esquina del pilote",
      "case": "U2",
-     "demand": 1008129.0457230441,
+     "demand": 1008129.045723044,
      "capacity": 1050694.1122605896
     },
     {
@@ -1537,6 +1537,698 @@
      "case": null,
      "demand": 5508.0,
      "capacity": 11687.0
+    }
+   ]
+  },
+  {
+   "id": "E",
+   "cap": {
+    "loads_from": "column",
+    "lx": 2200.0,
+    "ly": 2200.0,
+    "h": 1000.0,
+    "cover": 75.0,
+    "bottom_cover": 150.0,
+    "fill_height": 600.0,
+    "pedestal_height": 0.0,
+    "surcharge_dead_kNm2": 2.0,
+    "surcharge_live_kNm2": 5.0,
+    "column": {
+     "cx": 500.0,
+     "cy": 500.0,
+     "offset_x": 0.0,
+     "offset_y": -253.6,
+     "dowels": {
+      "designation": "#6",
+      "count": 8,
+      "end": "hook90"
+     }
+    },
+    "bottom": {
+     "first": "x",
+     "x": {
+      "designation": "#7",
+      "spacing": 150.0,
+      "end": "hook90"
+     },
+     "y": {
+      "designation": "#7",
+      "spacing": 150.0,
+      "end": "hook90"
+     }
+    },
+    "top": {
+     "first": "x",
+     "x": {
+      "designation": "#5",
+      "spacing": 250.0,
+      "end": "hook90"
+     },
+     "y": {
+      "designation": "#5",
+      "spacing": 250.0,
+      "end": "hook90"
+     }
+    },
+    "pile": {
+     "shape": "circular",
+     "size": 400.0,
+     "embedment": 75.0
+    },
+    "mislocation_mm": 75.0,
+    "piles": [
+     {
+      "id": "P1",
+      "x": 0.0,
+      "y": 439.2
+     },
+     {
+      "id": "P2",
+      "x": -600.0,
+      "y": -600.0
+     },
+     {
+      "id": "P3",
+      "x": 600.0,
+      "y": -600.0
+     }
+    ],
+    "loads": [
+     {
+      "case": "D+L",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "P_kN": 1500.0,
+      "Vx_kN": 6.0,
+      "Vy_kN": 4.0,
+      "Mx_kNm": -10.0,
+      "My_kNm": 15.0
+     },
+     {
+      "case": "D+L+0.7EX",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 1575.0,
+      "Vx_kN": 80.0,
+      "Vy_kN": 10.0,
+      "Mx_kNm": -20.0,
+      "My_kNm": 250.0
+     },
+     {
+      "case": "0.6D+0.7EX",
+      "kind": "service",
+      "dead_factor": 0.6,
+      "live_factor": 0.0,
+      "seismic": true,
+      "P_kN": 675.0,
+      "Vx_kN": 80.0,
+      "Vy_kN": 10.0,
+      "Mx_kNm": -20.0,
+      "My_kNm": 250.0
+     },
+     {
+      "case": "1.2D+1.6L",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.6,
+      "P_kN": 2175.0,
+      "Vx_kN": 9.0,
+      "Vy_kN": 6.0,
+      "Mx_kNm": -14.0,
+      "My_kNm": 22.0
+     },
+     {
+      "case": "1.2D+L+EX",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 1950.0,
+      "Vx_kN": 120.0,
+      "Vy_kN": 15.0,
+      "Mx_kNm": -30.0,
+      "My_kNm": 400.0
+     },
+     {
+      "case": "0.9D+EX",
+      "kind": "factored",
+      "dead_factor": 0.9,
+      "live_factor": 0.0,
+      "seismic": true,
+      "P_kN": 825.0,
+      "Vx_kN": 120.0,
+      "Vy_kN": 15.0,
+      "Mx_kNm": -30.0,
+      "My_kNm": 400.0
+     }
+    ],
+    "clipped_corners": [
+     {
+      "corner": "-x+y",
+      "along_x": 700.0,
+      "along_y": 1100.0
+     },
+     {
+      "corner": "+x+y",
+      "along_x": 700.0,
+      "along_y": 1100.0
+     }
+    ],
+    "id": "E"
+   },
+   "soil": {
+    "unit_weight_concrete_kNm3": 24.0,
+    "unit_weight_fill_kNm3": 18.0,
+    "pile_capacity_compression_kN": 850.0,
+    "pile_capacity_tension_kN": 250.0,
+    "pile_capacity_lateral_kN": 80.0,
+    "seismic_capacity_factor": 1.33,
+    "group_efficiency": 0.85,
+    "max_eccentricity_mm": 150.0
+   },
+   "reactions": [
+    {
+     "case": "D+L",
+     "R": [
+      587212.3299974339,
+      522106.8350012831,
+      556356.8350012831
+     ],
+     "dR": [
+      120213.33718244804,
+      120210.69245993775,
+      120210.69245993775
+     ]
+    },
+    {
+     "case": "D+L+0.7EX",
+     "R": [
+      627175.7634077496,
+      286750.11829612526,
+      826750.1182961253
+     ],
+     "dR": [
+      125626.15473441109,
+      125623.39092860473,
+      125623.39092860473
+     ]
+    },
+    {
+     "case": "0.6D+0.7EX",
+     "R": [
+      292394.56505003845,
+      -34724.482525019266,
+      505275.51747498073
+     ],
+     "dR": [
+      55062.47113163972,
+      55061.25974394941,
+      55061.25974394941
+     ]
+    },
+    {
+     "case": "1.2D+1.6L",
+     "R": [
+      836093.8516807802,
+      747407.8408262767,
+      797949.5074929434
+     ],
+     "dR": [
+      171871.47806004618,
+      171867.69684593505,
+      171867.69684593505
+     ]
+    },
+    {
+     "case": "1.2D+L+EX",
+     "R": [
+      779331.7269694639,
+      256996.4031819349,
+      1108663.0698486017
+     ],
+     "dR": [
+      154805.9468822171,
+      154802.54111392182,
+      154802.54111392182
+     ]
+    },
+    {
+     "case": "0.9D+EX",
+     "R": [
+      376091.84757505776,
+      -135420.0571208622,
+      716246.6095458044
+     ],
+     "dR": [
+      69061.66281755196,
+      69060.14344425668,
+      69060.14344425668
+     ]
+    }
+   ],
+   "moments": [
+    {
+     "case": "1.2D+1.6L (+ΔR)",
+     "direction": "x",
+     "plus": 384376805.17735666,
+     "minus": 360346596.8440233
+    },
+    {
+     "case": "1.2D+1.6L (+ΔR)",
+     "direction": "y",
+     "plus": 482491927.0801732,
+     "minus": 301682256.70774084
+    },
+    {
+     "case": "1.2D+1.6L (−ΔR)",
+     "direction": "x",
+     "plus": 238289262.8583119,
+     "minus": 214259054.52497852
+    },
+    {
+     "case": "1.2D+1.6L (−ΔR)",
+     "direction": "y",
+     "plus": 304501824.4011893,
+     "minus": 183849763.75016776
+    },
+    {
+     "case": "1.2D+L+EX (+ΔR)",
+     "direction": "x",
+     "plus": 526574377.99240583,
+     "minus": 130616044.65907246
+    },
+    {
+     "case": "1.2D+L+EX (+ΔR)",
+     "direction": "y",
+     "plus": 447855829.6287737,
+     "minus": 263655892.26632637
+    },
+    {
+     "case": "1.2D+L+EX (−ΔR)",
+     "direction": "x",
+     "plus": 394992218.0455723,
+     "minus": -966115.2877610996
+    },
+    {
+     "case": "1.2D+L+EX (−ΔR)",
+     "direction": "y",
+     "plus": 287538791.03754973,
+     "minus": 157523270.07862157
+    },
+    {
+     "case": "0.9D+EX (+ΔR)",
+     "direction": "x",
+     "plus": 332296490.020776,
+     "minus": -63661843.312557355
+    },
+    {
+     "case": "0.9D+EX (+ΔR)",
+     "direction": "y",
+     "plus": 207047322.7225733,
+     "minus": 106018882.33960629
+    },
+    {
+     "case": "0.9D+EX (−ΔR)",
+     "direction": "x",
+     "plus": 273595368.09315777,
+     "minus": -122362965.24017553
+    },
+    {
+     "case": "0.9D+EX (−ΔR)",
+     "direction": "y",
+     "plus": 135527064.70871648,
+     "minus": 58671247.9942239
+    }
+   ],
+   "minimum": [
+    {
+     "direction": "x",
+     "required": 3960.0,
+     "provided": 5418.0
+    },
+    {
+     "direction": "y",
+     "required": 3960.0,
+     "provided": 5418.0
+    }
+   ],
+   "checks": [
+    {
+     "name": "Presion admisible del pilote: compresion",
+     "case": "D+L",
+     "demand": 707425.667179882,
+     "capacity": 850000.0
+    },
+    {
+     "name": "Deslizamiento del pilote",
+     "case": "D+L",
+     "demand": 2403.700850309326,
+     "capacity": 80000.0
+    },
+    {
+     "name": "Capacidad del grupo de pilotes",
+     "case": "D+L",
+     "demand": 1665676.0,
+     "capacity": 2167500.0
+    },
+    {
+     "name": "Excentricidad en servicio",
+     "case": "D+L",
+     "demand": 23.462043055037707,
+     "capacity": 150.0
+    },
+    {
+     "name": "Presion admisible del pilote: compresion",
+     "case": "D+L+0.7EX",
+     "demand": 952373.5092247301,
+     "capacity": 1130500.0
+    },
+    {
+     "name": "Deslizamiento del pilote",
+     "case": "D+L+0.7EX",
+     "demand": 26874.1924943285,
+     "capacity": 106400.0
+    },
+    {
+     "name": "Capacidad del grupo de pilotes",
+     "case": "D+L+0.7EX",
+     "demand": 1740676.0000000002,
+     "capacity": 2882775.0
+    },
+    {
+     "name": "Presion admisible del pilote: compresion",
+     "case": "0.6D+0.7EX",
+     "demand": 560336.7772189302,
+     "capacity": 1130500.0
+    },
+    {
+     "name": "Deslizamiento del pilote",
+     "case": "0.6D+0.7EX",
+     "demand": 26874.1924943285,
+     "capacity": 106400.0
+    },
+    {
+     "name": "Capacidad del grupo de pilotes",
+     "case": "0.6D+0.7EX",
+     "demand": 762945.5999999999,
+     "capacity": 2882775.0
+    },
+    {
+     "name": "Cortante en una direccion (barras x)",
+     "case": "1.2D+1.6L",
+     "demand": 641.9230978285725,
+     "capacity": 632447.8472153536
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "1.2D+1.6L",
+     "demand": 892359.6043388785,
+     "capacity": 5571141.961455594
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "1.2D+1.6L",
+     "demand": 841817.9376722118,
+     "capacity": 5594510.706893186
+    },
+    {
+     "name": "Cortante en una direccion (barras y)",
+     "case": "1.2D+1.6L",
+     "demand": 14703.910022109092,
+     "capacity": 643704.9438140502
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "1.2D+1.6L",
+     "demand": 921488.2225408264,
+     "capacity": 3641136.6973257475
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "1.2D+1.6L",
+     "demand": 1820654.6492110903,
+     "capacity": 5918390.3772495305
+    },
+    {
+     "name": "Cortante en la cara de la columna (dos direcciones)",
+     "case": "1.2D+1.6L",
+     "demand": 2697806.8717519166,
+     "capacity": 5641608.394336593
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "1.2D+1.6L",
+     "demand": 0.3063955467826109,
+     "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "1.2D+1.6L",
+     "demand": 0.5088709577840602,
+     "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "1.2D+1.6L",
+     "demand": 0.5368486263618574,
+     "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "1.2D+1.6L",
+     "demand": 0.372075358036888,
+     "capacity": 1.0120054426345964
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "1.2D+1.6L",
+     "demand": 0.38183299084696004,
+     "capacity": 1.0120054426345964
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "1.2D+1.6L",
+     "demand": 0.3647073591446192,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "1.2D+1.6L",
+     "demand": 919275.5376722118,
+     "capacity": 1349307.6179509843
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "1.2D+1.6L",
+     "demand": 969817.2043388785,
+     "capacity": 1349307.6179509843
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "1.2D+1.6L",
+     "demand": 1007965.3297408264,
+     "capacity": 1092613.3932830133
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "1.2D+1.6L",
+     "demand": 1007965.3297408264,
+     "capacity": 1092613.3932830133
+    },
+    {
+     "name": "Cortante en una direccion (barras x)",
+     "case": "1.2D+L+EX",
+     "demand": 605.0026742571438,
+     "capacity": 632447.8472153536
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "1.2D+L+EX",
+     "demand": 1190463.0109625235,
+     "capacity": 5471001.892220575
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "1.2D+L+EX",
+     "demand": 338796.3442958568,
+     "capacity": 5974261.583361903
+    },
+    {
+     "name": "Cortante en una direccion (barras y)",
+     "case": "1.2D+L+EX",
+     "demand": 13858.209675745455,
+     "capacity": 643704.9438140502
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "1.2D+L+EX",
+     "demand": 852634.326651681,
+     "capacity": 3630510.1031928756
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "1.2D+L+EX",
+     "demand": 1610762.7024583803,
+     "capacity": 5918390.3772495305
+    },
+    {
+     "name": "Cortante en la cara de la columna (dos direcciones)",
+     "case": "1.2D+L+EX",
+     "demand": 2421611.029110061,
+     "capacity": 5641608.394336593
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "1.2D+L+EX",
+     "demand": 0.28395383740392677,
+     "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "1.2D+L+EX",
+     "demand": 0.22795398616711385,
+     "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "1.2D+L+EX",
+     "demand": 0.6993996133148245,
+     "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "1.2D+L+EX",
+     "demand": 0.25984808518741115,
+     "capacity": 1.0120054426345964
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "1.2D+L+EX",
+     "demand": 0.4242718400413859,
+     "capacity": 1.0120054426345964
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "1.2D+L+EX",
+     "demand": 0.32342578965521324,
+     "capacity": 1.011999876482206
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "1.2D+L+EX",
+     "demand": 411798.94429585675,
+     "capacity": 1349307.6179509843
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "1.2D+L+EX",
+     "demand": 1263465.6109625236,
+     "capacity": 1349307.6179509843
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "1.2D+L+EX",
+     "demand": 934137.673851681,
+     "capacity": 1092613.3932830133
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "1.2D+L+EX",
+     "demand": 934137.673851681,
+     "capacity": 1092613.3932830133
+    },
+    {
+     "name": "Cortante en una direccion (barras x)",
+     "case": "0.9D+EX",
+     "demand": 407.60147622857215,
+     "capacity": 632447.8472153536
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "0.9D+EX",
+     "demand": 736123.5529900612,
+     "capacity": 5393229.165441223
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras x)",
+     "case": "0.9D+EX",
+     "demand": 0.0,
+     "capacity": 6079267.402319862
+    },
+    {
+     "name": "Cortante en una direccion (barras y)",
+     "case": "0.9D+EX",
+     "demand": 9336.531823854548,
+     "capacity": 643704.9438140502
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "0.9D+EX",
+     "demand": 390243.19999260973,
+     "capacity": 3596671.0032096417
+    },
+    {
+     "name": "Cortante en la cara de la columna (barras y)",
+     "case": "0.9D+EX",
+     "demand": 675490.7497134556,
+     "capacity": 5918390.3772495305
+    },
+    {
+     "name": "Cortante en la cara de la columna (dos direcciones)",
+     "case": "0.9D+EX",
+     "demand": 1037581.9497060654,
+     "capacity": 5641608.394336593
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "0.9D+EX",
+     "demand": 0.13531522284998876,
+     "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento del pilote",
+     "case": "0.9D+EX",
+     "demand": 0.434711664970722,
+     "capacity": 1.3096468989769725
+    },
+    {
+     "name": "Punzonamiento de dos pilotes",
+     "case": "0.9D+EX",
+     "demand": 0.23755408614949838,
+     "capacity": 1.0120054426345964
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "0.9D+EX",
+     "demand": 785306.7529900612,
+     "capacity": 1349307.6179509843
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "0.9D+EX",
+     "demand": 445153.51039260975,
+     "capacity": 1092613.3932830133
+    },
+    {
+     "name": "Cortante de esquina del pilote",
+     "case": "0.9D+EX",
+     "demand": 445153.51039260975,
+     "capacity": 1092613.3932830133
+    },
+    {
+     "name": "Retraccion y temperatura: cuantia (barras x)",
+     "case": null,
+     "demand": 3960.0,
+     "capacity": 7209.0
+    },
+    {
+     "name": "Retraccion y temperatura: cuantia (barras y)",
+     "case": null,
+     "demand": 3960.0,
+     "capacity": 7209.0
     }
    ]
   }

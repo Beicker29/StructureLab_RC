@@ -20,6 +20,7 @@ from dataclasses import dataclass, replace
 from structurelab_rc.domain.footing.base import base_resultant
 from structurelab_rc.domain.footing.flexure import FaceMoments
 from structurelab_rc.domain.footing.loads import column_faces, uniform_load
+from structurelab_rc.domain.pile_cap.outline import beyond, centroid
 from structurelab_rc.model.footing import FootingLoad, UnitWeighted
 from structurelab_rc.model.pile_cap import PileCap
 
@@ -114,6 +115,11 @@ def _from_column(cap: PileCap, weights: UnitWeighted, load: FootingLoad, group: 
     # Momentos en el plano de la cabeza de los pilotes y respecto al centroide del grupo (N hacia abajo en el origen).
     mx = resultant.mx + embedment * load.vy + group.centre[1] * resultant.n
     my = resultant.my - embedment * load.vx - group.centre[0] * resultant.n
+    if cap.clipped_corners:  # D-141: el peso del cabezal, el relleno y las sobrecargas actúa en el centroide del contorno
+        area, xc, yc = centroid(cap)
+        spread_weight = uniform_load(cap, weights, load) * area
+        mx -= spread_weight * yc
+        my += spread_weight * xc
     (a, b), (c, d) = group.inverse
     slope_x, slope_y = a * my + b * -mx, c * my + d * -mx
     n = len(cap.piles)
@@ -191,6 +197,10 @@ class FactoredCap:
             moment += reaction * arm
             (vx, vy), (mx, my) = self.case.forces.shears[index], self.case.forces.moments[index]
             moment += -outward * (my + lever * vx) if axis == 0 else outward * (mx - lever * vy)
+        if cap.clipped_corners:  # D-141: el peso sobre la parte del contorno más allá del plano
+            area, xc, yc = beyond(cap, axis, plane, outward)
+            weight = self.load * area
+            return shear - weight, full - weight, moment - weight * outward * ((xc, yc)[axis] - plane)
         half, width = (cap.lx / 2, cap.ly) if axis == 0 else (cap.ly / 2, cap.lx)
         length = max(half - outward * plane, 0.0)
         weight = self.load * width * length
