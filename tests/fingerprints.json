@@ -25,10 +25,10 @@
     "cabezal_tres_pilotes_drawing.json": "58b1c1b323ca9a6965e5ac82dcb25fcb63fcc02af39954b812c2f6ecc3d0932f"
   },
   "examples/aci_318_25/cabezales/pruebas/diseno_cabezal_columna.json": {
-    "proyecto.json": "42df44f06719467321c4079c5ff9683750f28ba83ecc6c5c899d76ccf00e9e57",
-    "resultado.json": "0e44e339fe6d6c0976dab175ec6c4c4b5c6a2bc4a6b8dc8371977d774dda0228",
-    "memoria.txt": "144271059fee1280f1b6991e8899bbdd9b6f7f44a2e20307941b4b2a12460e77",
-    "diseno_cabezal_columna_drawing.json": "2ea18b2d9fab8564e314cd7459c3e50d908af1ba833fdc30c66d52f5ac2f6699"
+    "proyecto.json": "ea53ef462343f0fab379be493d553d3b891e18b543976539872f5d6492ffaca2",
+    "resultado.json": "a71f56d338eaa3ff055964c9f23b21d2b5613d45537fc3c224bb676b56573c6e",
+    "memoria.txt": "30c0f73e673bc38a4e47649dcdc18ac5fa23e692a1ea17bd0c85a752171382eb",
+    "diseno_cabezal_columna_drawing.json": "b34b4da071cba8e2a682a8ea9aeea01d0956409d94c1c77d29339708f1dee6fc"
   },
   "examples/aci_318_25/cabezales/pruebas/diseno_cabezal_pilotes.json": {
     "proyecto.json": "1c533c6e115edef1d0a2fdc98416d6979c34f917c832154724c2ba88f16ac58a",
@@ -125,10 +125,10 @@
     "cabezal_tres_pilotes_drawing.json": "58b1c1b323ca9a6965e5ac82dcb25fcb63fcc02af39954b812c2f6ecc3d0932f"
   },
   "examples/nsr_10/cabezales/pruebas/diseno_cabezal_columna.json": {
-    "proyecto.json": "dbd6c05fcf0d411348cf4620905268f65b4c1fb5e438f58d0bdace27afbdaf94",
-    "resultado.json": "6c29f41a62b627fd8b758c625abbdd768129b3844aa8840c40c1d4764fda4969",
-    "memoria.txt": "3e443eb63eea45d01a50cb0ca62e9adaae0c137bf333ef6ec059aff4e671e440",
-    "diseno_cabezal_columna_drawing.json": "2ea18b2d9fab8564e314cd7459c3e50d908af1ba833fdc30c66d52f5ac2f6699"
+    "proyecto.json": "21a28c6d6b74d97b1e30483a47d570969c7da85635fb6b2dd9f4a68d67c5fd36",
+    "resultado.json": "ca6e9fdb8331333501455f69652e3bb0cbbcee0fe481e8698fec90c1859efcbc",
+    "memoria.txt": "36b56a7a742cb52aaa44443b83df4b5796f740db221c2e509a582015b28207c2",
+    "diseno_cabezal_columna_drawing.json": "797a0bf4d4bf0104e7f2840f69f73081378f81c9e9af2326273a1b63f6727797"
   },
   "examples/nsr_10/cabezales/pruebas/diseno_cabezal_pilotes.json": {
     "proyecto.json": "9802d6eae2cc35c65a1c5bb77172719c06b656dcc225cc2f74c0de1fc0d6a043",

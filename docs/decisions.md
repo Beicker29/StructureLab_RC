@@ -2781,6 +2781,24 @@
   por triángulos semejantes, cota del número de pilotes y aritmética del costo); `diseno_cabezal_columna` (dos cabezales)
   y `diseno_cabezal_pilotes` en los dos perfiles, con su copia en `pruebas/` y su huella.
 
+### D-142: franja central que cubre todo el ancho útil
+
+- **Problema:** en una base casi cuadrada (el triángulo de tres pilotes del diseño, 2200 × 2040 mm) la franja central
+  de ancho igual al lado corto deja, a cada lado, menos espacio que el recubrimiento más media barra: no cabe ninguna
+  barra fuera de ella, y la revisión "Fuera de la franja central" exigía (1 − γs)·As que ningún armado puede dar.
+- **Referencia:** ACI 13.3.3.3(b) y NSR-10 C.15.4.4.2 piden γs·As uniforme en la franja y el resto uniforme fuera de
+  ella; no tratan el caso sin espacio fuera de la franja.
+- **Decisión del usuario (opción a):** si la franja cubre todo el rango útil de las barras (ancho/2 − recubrimiento −
+  db/2 a cada lado del centro), todo As va en ella con reparto uniforme: "Franja central" se revisa contra As y "Fuera de
+  la franja central" no se emite. Es el límite del caso cuadrado. Aplica a zapatas y cabezales.
+- **Implementación:** `domain/footing/flexure._band_checks`; en el diseño, `design/bars.band_options` propone barras
+  uniformes en ese caso.
+- **Oráculo:** caso `franja-sin-espacio` (2500 × 2400 mm) en `derive_footing_flexure.py`.
+- **Diferencias:** ningún ejemplo de verificación cambia. En `diseno_cabezal_columna` el diseño ahora elige el
+  triángulo de tres pilotes con esquinas recortadas: con ACI 318-25 en CP1 (h = 1300 mm) y CP2 (h = 1100 mm); con
+  NSR-10 en CP2 (h = 1100 mm), y CP1 sigue en malla 2 × 2 (antes, mallas 2 × 2 de cuatro pilotes en todos); f'c = 28 MPa. El motivo de un arreglo sin solución distingue "falta espesor y con más espesor el peso ya no cumple lo
+  geotécnico".
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

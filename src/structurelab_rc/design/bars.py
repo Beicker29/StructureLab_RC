@@ -70,7 +70,8 @@ def band_options(
     """Opciones de barras de la dirección corta de una base rectangular con franja central (D-059): band es (ancho de la
     franja, fracción γs que va en ella). Para cada designación, el As total (como en bar_options) se reparte γs·As en la
     franja (band_spacing) y el resto fuera (spacing), con la separación mayor que cabe y las menores de la franja hasta
-    cuatro pasos; ordenadas por peso por metro de barra. Una designación sin espacio fuera de la franja se omite."""
+    cuatro pasos; ordenadas por peso por metro de barra. Si fuera de la franja no cabe ninguna barra, las barras van
+    uniformes (D-142); si cabe alguna pero no a una separación útil, la designación se omite."""
     profile, materials, specs = given
     moment, min_area = demand
     width, gamma = band
@@ -81,6 +82,9 @@ def band_options(
             continue
         total = max(needed, min_area)
         zone = (spread.width - width) / 2 - spread.cover - spec.diameter_mm / 2  # ancho útil a cada lado de la franja
+        if zone <= 0:  # no cabe ninguna barra fuera de la franja: reparto uniforme (D-142)
+            options += bar_options((profile, materials, [spec]), spread, depth_of, demand, limit=4)
+            continue
         side = max(math.ceil((1 - gamma) * total / spec.area_mm2 / 2), 1)
         outside = min(math.floor(zone / side / spread.step) * spread.step, spread.max_spacing)
         if outside <= spec.diameter_mm + spread.step / 2:

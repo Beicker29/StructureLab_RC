@@ -34,6 +34,7 @@ PLAIN = "Flexion concreto simple"
 _FACES = {"x": ("+X", "-X"), "y": ("+Y", "-Y")}
 _AXES = {"x": 0, "y": 1}
 _NEGLIGIBLE = 1e-6  # N·mm
+_BAND_TOLERANCE = 1e-6  # mm
 
 
 @dataclass(frozen=True)
@@ -278,12 +279,21 @@ def required_mat_area(
     return max(needed, rules.minimum(mat, row, demand)[0])
 
 
+def _band_fills_width(footing: Footing, row: BarRow) -> bool:
+    """Si la franja central cubre todo el rango útil de las barras (ancho menos los recubrimientos y una barra): entre ella
+    y el borde no cabe ninguna barra (D-142)."""
+    assert row.band is not None
+    half = row.width / 2 - footing.cover - row.diameter / 2
+    return row.band[0] <= -half + _BAND_TOLERANCE and row.band[1] >= half - _BAND_TOLERANCE
+
+
 def _band_checks(
     profile: Profile, materials: Materials, footing: Footing, mat_row: tuple[str, BarRow],
     given: tuple[list[FaceMoments], SectionRules]
 ) -> list[Check]:
     """Franja central de la dirección corta (ACI 13.3.3.3(b), NSR-10 C.15.4.4.2): As en la franja ≥ γs·As y fuera de
-    ella ≥ (1 − γs)·As (D-087), con As el mayor entre el requerido y As,min."""
+    ella ≥ (1 − γs)·As (D-087), con As el mayor entre el requerido y As,min. Si fuera de la franja no cabe ninguna barra,
+    todo As va en ella con reparto uniforme (D-142)."""
     mat, row = mat_row
     total = required_mat_area(profile, materials, footing, mat_row, given)
     name = _name("Franja central", mat, row.direction)
@@ -292,6 +302,11 @@ def _band_checks(
     if total is None:
         error = invalid_input("Ninguna cuantia alcanza el momento de la direccion corta", member=footing.id)
         return [Check(name, Status.FAIL, (error,), clause, member=footing.id)]
+    if _band_fills_width(footing, row):
+        # D-142: fuera de la franja no cabe ninguna barra; todo el refuerzo va en ella, con reparto uniforme.
+        return [Check(name, Status.PASS if row.band_area >= total else Status.FAIL, clause=clause, demand=total,
+                      capacity=row.band_area, unit="mm2", values=(("As", total),), member=footing.id,
+                      note="Sin espacio para barras fuera de la franja: todo el refuerzo va en ella (D-142)")]
     beta = max(footing.lx, footing.ly) / min(footing.lx, footing.ly)
     gamma = profile.footing.band_fraction(beta)
     required, outside = gamma * total, (1 - gamma) * total

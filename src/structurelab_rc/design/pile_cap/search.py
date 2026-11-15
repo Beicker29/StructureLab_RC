@@ -367,7 +367,9 @@ def _lower_bound(ctx: Context, arrangement: Arrangement, fc: float, h: float) ->
 
 
 _REASONS = {"soil": "no cumple lo geotecnico (capacidad de los pilotes o del grupo, excentricidad)",
-            "h": "sin solucion hasta h_max", "declared": "falla un dato declarado (empotramiento, borde o tolerancia)",
+            "h": "sin solucion hasta h_max",
+            "h_soil": "falta espesor y, con mas espesor, el peso ya no cumple lo geotecnico",
+            "declared": "falla un dato declarado (empotramiento, borde o tolerancia)",
             "geometry": "la columna no cabe en el contorno"}
 
 
@@ -391,6 +393,9 @@ def _for_arrangement(ctx: Context, cap: DesignCap, arrangement: Arrangement, fc:
             continue
         if best is not None:
             continue
+        if result == "soil" and failure == "h" and h > ctx.design.h_min:
+            failure = "h_soil"  # los espesores menores no alcanzaron y con más ya no cumple lo geotécnico
+            break
         failure = result
         if result in ("soil", "declared"):
             break

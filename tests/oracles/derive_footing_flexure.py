@@ -8,7 +8,9 @@ No importa el paquete. Para cada caso mayorado:
    la carga uniforme w = fd·(γc·h + γf·hf + qD) + fl·qL sobre el voladizo completo, con brazo L/2.
 3. Resistencia con el bloque de Whitney: a = As·fy/(0.85·f'c·b), c = a/β1, εt = 0.003·(d − c)/c y
    Mn = As·fy·(d − a/2); φ por perfil (ACI: 0.90 si εt ≥ εty + 0.003; NSR-10: 0.90 si εt ≥ 0.005).
-4. Número de barras: n = ⌊(ancho − 2·recubrimiento − db)/s⌋ + 1; en la franja, las que caen en ella.
+4. Número de barras: n = ⌊(ancho − 2·recubrimiento − db)/s⌋ + 1; en la franja, las que caen en ella. Franja central:
+   γs·As en ella y (1 − γs)·As fuera; si la franja cubre todo el rango útil (ancho/2 − recubrimiento − db/2 a cada lado),
+   todo As en ella (D-142).
 5. As requerido de la franja: As = (0.85·f'c·b/fy)·(d − √(d² − 2·Mu/(φ·0.85·f'c·b))) con φ = 0.90.
 
 Uso: python tests/oracles/derive_footing_flexure.py
@@ -241,9 +243,16 @@ def _expected(f: dict, profile: dict, level: str) -> dict:
                 k = 0.85 * FC * row["width"]
                 needed = (k / FY) * (row["depth"] - math.sqrt(row["depth"] ** 2 - 2 * mu / (0.9 * k))) if mu > 0 else 0.0
                 total = max(needed, profile["min_ratio"] * row["width"] * f["h"])
+                band = _band_count(f, direction, row, spacing) * row["ab"]
+                band0, band1 = _band_limits(f, direction)
+                half = row["width"] / 2 - f["cover"] - row["db"] / 2
+                if band0 <= -half + 1e-6 and band1 >= half - 1e-6:
+                    # D-142: entre la franja y el borde no cabe ninguna barra; todo As va en la franja, uniforme.
+                    checks.append({"name": f"Franja central malla {label} (barras {direction})",
+                                   "status": "PASS" if band >= total else "FAIL", "demand": total, "capacity": band})
+                    continue
                 beta = max(f["lx"], f["ly"]) / min(f["lx"], f["ly"])
                 required = 2 / (beta + 1) * total
-                band = _band_count(f, direction, row, spacing) * row["ab"]
                 checks.append({"name": f"Franja central malla {label} (barras {direction})",
                                "status": "PASS" if band >= required else "FAIL", "demand": required, "capacity": band})
                 # Fuera de la franja, al menos (1 − γs)·As (ACI 13.3.3.3(b), NSR-10 C.15.4.4.2; D-087).
@@ -289,6 +298,8 @@ CASES = [
               bottom={"first": "x", "x": {"designation": "#5", "spacing": 150.0, "end": "straight"},
                       "y": {"designation": "#5", "spacing": 450.0, "band_spacing": 110.0, "end": "straight"}},
               loads=[_load("1.2D+1.6L", 1.2, 1.6, 1600.0)]), "bajo"),
+    ("franja-sin-espacio", "casi cuadrada: entre la franja central y el borde no cabe ninguna barra; todo As va en la franja "
+     "con reparto uniforme (D-142)", _footing(lx=2500.0, ly=2400.0), "alto"),
     ("sin-malla-superior", "momento negativo sin malla superior con nivel alto: el concreto simple no se permite, FAIL",
      _footing(loads=[_load("0.9D+E", 0.9, 0.0, 300.0, my=330.0)]), "alto"),
     ("concreto-simple-cumple", "momento negativo moderado sin malla superior y nivel bajo: lo resiste el concreto simple",
