@@ -192,17 +192,28 @@ def has_negative_moment(cases: list[FaceMoments], direction: str) -> bool:
     return any(min(case.moments[direction]) < -_NEGLIGIBLE for case in cases)
 
 
+def plain_resists(basis: Basis, width: float, h: float, demand: float) -> bool:
+    """Si el concreto simple resiste un momento negativo (D-140): el nivel sísmico lo permite (D-072) y φMn del concreto
+    simple en el ancho b y el espesor h (menos 50 mm contra el suelo) alcanza la demanda. Entonces las barras superiores
+    no se exigen."""
+    if demand <= _NEGLIGIBLE:
+        return True
+    if not basis.profile.plain.permitted_in_foundations(basis.seismic_level):
+        return False
+    strength = plain_rectangular_moment(basis.profile, basis.materials, width, h, cast_against_soil=True)
+    return not isinstance(strength, StructuredError) and strength.design >= demand
+
+
 def top_needed(basis: Basis, footing: Footing, given: tuple[list[FaceMoments], SectionRules], direction: str) -> bool:
     """Si la malla superior de una dirección se exige (D-140): hay momento negativo y el concreto simple no lo resiste,
     porque el elemento no lo admite (cabezal), el nivel sísmico no lo permite (D-072) o su φMn no alcanza."""
     cases, rules = given
     if not has_negative_moment(cases, direction):
         return False
-    if rules.plain_forbidden is not None or not basis.profile.plain.permitted_in_foundations(basis.seismic_level):
+    if rules.plain_forbidden is not None:
         return True
     width = footing.ly if direction == "x" else footing.lx
-    strength = plain_rectangular_moment(basis.profile, basis.materials, width, footing.h, cast_against_soil=True)
-    return isinstance(strength, StructuredError) or strength.design < design_moment(cases, "top", direction)
+    return not plain_resists(basis, width, footing.h, design_moment(cases, "top", direction))
 
 
 def _section_checks(basis: Basis, footing: Footing, rows: dict[str, dict[str, BarRow]],

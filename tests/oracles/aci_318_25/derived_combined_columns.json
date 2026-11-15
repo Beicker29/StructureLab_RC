@@ -13624,41 +13624,12 @@
           "face": "bottom"
         },
         {
-          "name": "Flexion: resistencia",
-          "status": "PASS",
-          "demand": 84563547.09167427,
-          "capacity": 439493358.7079138,
-          "clause": "9.5.1.1(a) y Tabla 21.2.2",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
           "case": "U1",
-          "z_mm": 1575.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
           "status": "PASS",
-          "capacity": 0.027812171045158474,
-          "case": "U1",
-          "z_mm": 1575.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "status": "PASS",
-          "capacity": 1592.0,
-          "case": "U1",
-          "z_mm": 1575.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "PASS",
-          "demand": 150.0,
-          "capacity": 192.5,
-          "clause": "24.3.2 y 24.3.2.1",
-          "case": "U1",
+          "demand_Nmm": 84563547.09167427,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
           "z_mm": 1575.0,
           "where": "Franja transversal de la columna C1",
           "face": "top"
@@ -14060,41 +14031,12 @@
           "face": "bottom"
         },
         {
-          "name": "Flexion: resistencia",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
+          "case": "U1",
           "status": "PASS",
-          "demand": 26496239.434266217,
-          "capacity": 350389999.3069314,
-          "clause": "9.5.1.1(a) y Tabla 21.2.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
-          "status": "PASS",
-          "capacity": 0.030116585042818986,
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "status": "PASS",
-          "capacity": 1194.0,
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "FAIL",
-          "demand": 200.0,
-          "capacity": 192.5,
-          "clause": "24.3.2 y 24.3.2.1",
-          "case": "U1",
+          "demand_Nmm": 26496239.434266217,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C2",
           "face": "top"
@@ -14162,41 +14104,12 @@
           "face": "bottom"
         },
         {
-          "name": "Flexion: resistencia",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
+          "case": "U1",
           "status": "PASS",
-          "demand": 62781026.61746799,
-          "capacity": 350389999.3069314,
-          "clause": "9.5.1.1(a) y Tabla 21.2.2",
-          "case": "U1",
-          "z_mm": 631.75,
-          "where": "Franja transversal de la columna C2",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
-          "status": "PASS",
-          "capacity": 0.030116585042818986,
-          "case": "U1",
-          "z_mm": 631.75,
-          "where": "Franja transversal de la columna C2",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "status": "PASS",
-          "capacity": 1194.0,
-          "case": "U1",
-          "z_mm": 631.75,
-          "where": "Franja transversal de la columna C2",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "FAIL",
-          "demand": 200.0,
-          "capacity": 192.5,
-          "clause": "24.3.2 y 24.3.2.1",
-          "case": "U1",
+          "demand_Nmm": 62781026.61746799,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
           "z_mm": 631.75,
           "where": "Franja transversal de la columna C2",
           "face": "top"
@@ -14264,41 +14177,12 @@
           "face": "bottom"
         },
         {
-          "name": "Flexion: resistencia",
+          "name": "Flexion concreto simple (cara superior, direccion secundaria)",
+          "case": "U1",
           "status": "PASS",
-          "demand": 63064537.40509236,
-          "capacity": 350389999.3069314,
-          "clause": "9.5.1.1(a) y Tabla 21.2.2",
-          "case": "U1",
-          "z_mm": 537.890625,
-          "where": "Franja transversal de la columna C2",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: deformacion neta de traccion (M3)",
-          "status": "PASS",
-          "capacity": 0.030116585042818986,
-          "case": "U1",
-          "z_mm": 537.890625,
-          "where": "Franja transversal de la columna C2",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: acero minimo (M3)",
-          "status": "PASS",
-          "capacity": 1194.0,
-          "case": "U1",
-          "z_mm": 537.890625,
-          "where": "Franja transversal de la columna C2",
-          "face": "top"
-        },
-        {
-          "name": "Flexion: separacion por fisuracion",
-          "status": "FAIL",
-          "demand": 200.0,
-          "capacity": 192.5,
-          "clause": "24.3.2 y 24.3.2.1",
-          "case": "U1",
+          "demand_Nmm": 63064537.40509236,
+          "capacity_Nmm": 119053967.27300733,
+          "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
           "z_mm": 537.890625,
           "where": "Franja transversal de la columna C2",
           "face": "top"
@@ -14444,14 +14328,6 @@
           "name": "Desarrollo barras inferiores, direccion secundaria (franja de la columna C2)",
           "status": "PASS",
           "demand": 441.02269126982117,
-          "capacity": 1200.0,
-          "clause": "25.4.2.1, 25.4.2.4 y 25.4.2.5",
-          "where": ""
-        },
-        {
-          "name": "Desarrollo band superior (columna C2)",
-          "status": "PASS",
-          "demand": 477.27429468833526,
           "capacity": 1200.0,
           "clause": "25.4.2.1, 25.4.2.4 y 25.4.2.5",
           "where": ""

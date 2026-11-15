@@ -35,7 +35,7 @@ from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.combined_beam import BeamCase, beam_case, extreme_moments, moment_sign
 from structurelab_rc.domain.footing.connection import Support, bar_anchorage, bearing_checks, dowel_checks
 from structurelab_rc.domain.footing.declared import DIRECTIONS, PRINCIPAL, SECONDARY
-from structurelab_rc.domain.footing.flexure import plain_strip_check
+from structurelab_rc.domain.footing.flexure import plain_resists, plain_strip_check
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows, uniform_positions
 from structurelab_rc.domain.footing.shear import PunchedColumn, punching_checks, transferred_load
@@ -359,7 +359,7 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
                 given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
                 flexure_values = _strip_values(physical, moment, (x1 - x0, twist))
                 shear_values = (("V flexion", shear), ("V torsion", torsion_shear))
-                if moment < 0 and not has_top:
+                if moment < 0 and (not has_top or plain_resists(basis, x1 - x0, footing.h, -moment)):  # D-140
                     # Momento negativo sin barras superiores transversales: concreto simple en el ancho de la franja (D-072,
                     # D-095) y el cortante de vigas. Con top.y lo revisa la flexión de vigas con esas barras (D-097).
                     note = section + "".join(f": {text}" for text in (shape, plate) if text)
@@ -512,7 +512,8 @@ def plate_secondary_checks(basis: Basis, footing: CombinedFooting, soil: Soil, c
         plate = (("mx", 0.0), ("my", 0.0), ("mxy", twist), ("my* inf", design.bottom.y), ("my* sup", design.top.y))
         lower = _plate_flexure(basis, footing, (PLATE_BOTTOM, bottom, footing.bottom.y.spacing), (demand, pressure.case, note["positivo"]))
         checks.append(replace(lower, values=(*lower.values, ("M flexion", 0.0), ("M torsion", demand), *plate)))
-        if top is not None and footing.top is not None and footing.top.y is not None:
+        if top is not None and footing.top is not None and footing.top.y is not None and not plain_resists(
+                basis, _PLATE_STRIP, footing.h, demand):  # D-140: el concreto simple primero
             upper = _plate_flexure(basis, footing, (PLATE_TOP, top, footing.top.y.spacing), (demand, pressure.case, note["negativo"]))
         else:
             plain = plain_strip_check(basis, footing, demand, ("fuera de las franjas", pressure.case, note["negativo"]), _PLATE_STRIP)
@@ -663,6 +664,8 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
         moment, x = moment_at
         if row is None or moment <= 0:
             continue
+        if label == "superiores" and footing.beam is None and plain_resists(basis, footing.ly, footing.h, moment):
+            continue  # D-140: el concreto simple resiste el momento negativo; las barras superiores no se exigen
         # En la T invertida la sección no es rectangular: sin reducción por As requerido / As provisto (D-093).
         excess = 1.0 if footing.beam is not None else steel_excess(basis, (footing.ly, footing.h, row.depth), row.area, moment,
                                                                     footing.min_steel_exception)
@@ -715,7 +718,7 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
                     else f"{DEVELOPMENT} barras inferiores, {SECONDARY} (franja de la columna {column.id})")
             checks.append(bar_development_check(basis, footing, bottom, (bar_set.end, spacing, "bottom", excess, available), (name, note)))
         top, top_spacing = strip_top(footing, column, row.depth, basis.bars)  # el band superior o top.y (D-119)
-        if top is None or top_spacing is None or negative <= _NEGLIGIBLE_MOMENT:
+        if top is None or top_spacing is None or negative <= _NEGLIGIBLE_MOMENT or plain_resists(basis, width, footing.h, negative):
             continue
         top_area = len(_inside(top, limits)) * top.bar_area
         if top_area > 0:

@@ -689,40 +689,12 @@
             "face": "top"
           },
           {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 116918421.82108831,
-            "capacity": 1992054846.3314555,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
-            "z_mm": 3037.7,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.024406100891915177,
-            "case": "U1",
-            "z_mm": 3037.7,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 7650.0,
-            "as_min": 5698.399999999999,
-            "status": "PASS",
-            "demand": 5698.399999999999,
-            "case": "U1",
-            "z_mm": 3037.7,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
+            "demand_Nmm": 116918421.82108831,
+            "capacity_Nmm": 300028198.6747246,
+            "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
             "z_mm": 3037.7,
             "face": "top"
           },
@@ -1234,40 +1206,12 @@
             "face": "bottom"
           },
           {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 186545352.890625,
-            "capacity": 1147103277.9330287,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
-            "z_mm": 4875.0,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.023410266142245038,
-            "case": "U1",
-            "z_mm": 4875.0,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 5031.0,
-            "as_min": 4092.666666666666,
-            "status": "PASS",
-            "demand": 4092.666666666666,
-            "case": "U1",
-            "z_mm": 4875.0,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
+            "demand_Nmm": 186545352.890625,
+            "capacity_Nmm": 187795428.05936465,
+            "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
             "z_mm": 4875.0,
             "face": "top"
           },
@@ -3955,41 +3899,12 @@
             "face": "bottom"
           },
           {
-            "name": "Flexion: resistencia",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
+            "case": "U1",
             "status": "PASS",
-            "demand": 67893473.27271113,
-            "capacity": 404336834.2588235,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 1592.05,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.05300736494974873,
-            "case": "U1",
-            "z_mm": 1592.05,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 1592.0,
-            "as_min": 4113.666666666666,
-            "status": "PASS",
-            "demand": 129.970271838424,
-            "analysis": 97.47770387881802,
-            "case": "U1",
-            "z_mm": 1592.05,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "FAIL",
-            "demand": 250.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
+            "demand_Nmm": 67893473.27271113,
+            "capacity_Nmm": 187795428.05936465,
+            "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
             "z_mm": 1592.05,
             "face": "top"
           },
@@ -4012,41 +3927,12 @@
             "face": "top"
           },
           {
-            "name": "Flexion: resistencia",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
+            "case": "U1",
             "status": "PASS",
-            "demand": 91320000.00000006,
-            "capacity": 404336834.2588235,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 2249.999973954012,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.05300736494974873,
-            "case": "U1",
-            "z_mm": 2249.999973954012,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 1592.0,
-            "as_min": 4113.666666666666,
-            "status": "PASS",
-            "demand": 267.30588921518785,
-            "analysis": 200.4794169113909,
-            "case": "U1",
-            "z_mm": 2249.999973954012,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "FAIL",
-            "demand": 250.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
+            "demand_Nmm": 91320000.00000006,
+            "capacity_Nmm": 187795428.05936465,
+            "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
             "z_mm": 2249.999973954012,
             "face": "top"
           },
@@ -4069,41 +3955,12 @@
             "face": "top"
           },
           {
-            "name": "Flexion: resistencia",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
+            "case": "U1",
             "status": "PASS",
-            "demand": 67893473.27271098,
-            "capacity": 404336834.2588235,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
-            "case": "U1",
-            "z_mm": 2907.95,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
-            "status": "PASS",
-            "capacity": 0.05300736494974873,
-            "case": "U1",
-            "z_mm": 2907.95,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 1592.0,
-            "as_min": 4113.666666666666,
-            "status": "PASS",
-            "demand": 129.97027183842314,
-            "analysis": 97.47770387881737,
-            "case": "U1",
-            "z_mm": 2907.95,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "FAIL",
-            "demand": 250.0,
-            "capacity": 192.5,
-            "clause": "C.10.6.4",
-            "case": "U1",
+            "demand_Nmm": 67893473.27271098,
+            "capacity_Nmm": 187795428.05936465,
+            "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
             "z_mm": 2907.95,
             "face": "top"
           },
@@ -4723,40 +4580,12 @@
             "face": "bottom"
           },
           {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 12358953.320000295,
-            "capacity": 885423347.6440698,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
-            "z_mm": 277.0,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.017157446266077847,
-            "case": "U1",
-            "z_mm": 277.0,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 4644.0,
-            "as_min": 3319.9999999999995,
-            "status": "PASS",
-            "demand": 3319.9999999999995,
-            "case": "U1",
-            "z_mm": 277.0,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 152.75,
-            "clause": "C.10.6.4",
-            "case": "U1",
+            "demand_Nmm": 12358953.320000295,
+            "capacity_Nmm": 134457081.62830248,
+            "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
             "z_mm": 277.0,
             "face": "top"
           },
@@ -5117,40 +4946,12 @@
             "face": "bottom"
           },
           {
-            "name": "Flexion: resistencia",
-            "status": "PASS",
-            "demand": 12358953.319999814,
-            "capacity": 885423347.6440698,
-            "clause": "C.9.3.2.1 y C.9.3.2.2",
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
-            "z_mm": 5723.0,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
-            "capacity": 0.017157446266077847,
-            "case": "U1",
-            "z_mm": 5723.0,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: acero minimo (M3)",
-            "capacity": 4644.0,
-            "as_min": 3319.9999999999995,
-            "status": "PASS",
-            "demand": 3319.9999999999995,
-            "case": "U1",
-            "z_mm": 5723.0,
-            "face": "top"
-          },
-          {
-            "name": "Flexion: separacion por fisuracion",
-            "status": "PASS",
-            "demand": 150.0,
-            "capacity": 152.75,
-            "clause": "C.10.6.4",
-            "case": "U1",
+            "demand_Nmm": 12358953.319999814,
+            "capacity_Nmm": 134457081.62830248,
+            "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
             "z_mm": 5723.0,
             "face": "top"
           },

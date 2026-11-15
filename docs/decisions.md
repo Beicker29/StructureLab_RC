@@ -2722,8 +2722,14 @@
   apoya en pilotes, no de forma continua), así que el momento negativo lo toma la malla superior. Su acero mínimo es
   solo el de flexión, máx(As, mín(ηbd, 4/3·As)); la retracción ρt·b·h se revisa con las dos mallas sumadas en cada
   dirección (ACI R24.4.3.2, NSR-10 CR7.12.2; opción a, decisión del usuario).
-- **Pendiente:** aplicar el criterio del concreto simple primero a la zapata combinada y a la T invertida, cuyo momento
-  negativo se revisa por la flexión de vigas por estaciones.
+- **Zapata combinada y T invertida (decisión del usuario):** el mismo criterio con `plain_resists` (una sola función): la
+  viga de la combinada rectangular (ancho ly), cada franja transversal (su ancho), la torsión de placa fuera de las
+  franjas (por metro) y las aletas de la T (por metro); si el concreto simple alcanza, se muestra su revisión y no se
+  exigen las barras superiores ni su desarrollo. La viga de la T invertida queda fuera: su sección es la del alma y sus
+  barras superiores son de la viga. Oráculos actualizados con la misma regla (`derive_combined_beam.py`,
+  `derive_combined_columns.py`, `derive_inverted_t.py`); los ejemplos no cambian (usan DES o special).
+- **Niveles sísmicos:** el concreto simple solo entra donde la norma lo permite (D-072): ACI none, ordinary e
+  intermediate (14.1.3; special se toma como categorías D a F) y NSR-10 DMI y DMO (C.22.10.1); nunca en cabezales.
 
 ## Consultas abiertas
 

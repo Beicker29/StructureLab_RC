@@ -433,7 +433,9 @@ def _expected(folder: str, f: dict, level: str) -> dict:
             moments = [moment for moment in plate_moments(beam, x) if moment != 0] or [_shear_moment(beam, x)[1]]
             for index, moment in enumerate(moments):
                 shear_part = _shear_checks(folder, f, rows, (shear, moment)) if index == 0 else []
-                if moment < 0 and not top_x(f):
+                # D-140: el concreto simple primero; con barras superiores, solo si no alcanza se revisan.
+                plain_ok = moment < 0 and _F._plain(f, "x", -moment, case, profile, level)["status"] == "PASS"
+                if moment < 0 and (not top_x(f) or plain_ok):
                     station = [{**_F._plain(f, "x", -moment, case, profile, level),
                                 "name": "Flexion concreto simple (cara superior, direccion principal)"}, *shear_part]
                 else:

@@ -46,7 +46,7 @@ from structurelab_rc.domain.beam.station import checks_for, flexure_station_chec
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import column_vertical, stem_line_load
-from structurelab_rc.domain.footing.flexure import plain_principal_check
+from structurelab_rc.domain.footing.flexure import plain_principal_check, plain_resists
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows
 from structurelab_rc.domain.status import Status
@@ -466,7 +466,8 @@ def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member
         given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
         plate = f"; {_plate_note(beam, section.x)}" if twisted else ""
         values = _plate_values(beam, section.x, moment)
-        if moment < 0 and not has_top:  # sin barras superiores: concreto simple (D-072), con la sección ya en la nota
+        # Sin barras superiores, o si el concreto simple resiste (D-140): concreto simple (D-072), con la sección en la nota.
+        if moment < 0 and (not has_top or plain_resists(basis, footing.ly, footing.h, -moment)):
             plain = plain_principal_check(basis, footing, -moment, (label, beam.case, _sentence(label) + plate))
             rest = (*shear_and_torsion_checks(given_station), *(deep_beam_checks(given_station) if footing.deep_beam else ()))
             others = [replace(check, member=footing.id, z=z, case=beam.case) for check in rest] if index == 0 else []

@@ -1885,10 +1885,10 @@
             "case": "U1"
           },
           {
-            "name": "Aleta: flexion, barras superiores (direccion secundaria)",
+            "name": "Aleta: concreto simple (cara superior)",
             "status": "PASS",
             "demand": 14867194.789835727,
-            "capacity": 115943650.94117647,
+            "capacity": 27224780.990854636,
             "case": "U1"
           },
           {

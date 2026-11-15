@@ -41,6 +41,7 @@ from structurelab_rc.domain.footing.combined_columns import (
     x_development,
 )
 from structurelab_rc.domain.footing.connection import Support, bearing_checks, dowel_checks
+from structurelab_rc.domain.footing.flexure import plain_resists
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows
 from structurelab_rc.domain.plain_strength import plain_rectangular_moment
@@ -180,7 +181,7 @@ def _flexure(basis: Basis, footing: CombinedFooting, rows: tuple[BarRow, BarRow 
                                       (moment * STRIP, case, note)))
     x, negative, side = flanges.governing("negative")
     if negative > _NEGLIGIBLE:
-        if top is None or footing.top is None or footing.top.y is None:
+        if top is None or footing.top is None or footing.top.y is None or plain_resists(basis, STRIP, footing.h, negative * STRIP):
             checks.append(_plain(basis, footing, negative * STRIP, (case, f"Aleta {_side(side)}, cara de la viga en x = {x:.0f} mm")))
         else:
             note = f"Aleta {_side(side)}, cara de la viga en x = {x:.0f} mm, por metro, momento negativo"
@@ -278,7 +279,8 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
     checks.append(bar_development_check(basis, footing, row, (footing.bottom.y.end, footing.bottom.y.spacing, "bottom", excess,
                                                               cantilever - footing.cover),
                                         (DEVELOPMENT, "Desde la cara de la viga hasta el borde de la zarpa")))
-    if top is not None and footing.top is not None and footing.top.y is not None and negative > _NEGLIGIBLE:
+    if (top is not None and footing.top is not None and footing.top.y is not None and negative > _NEGLIGIBLE
+            and not plain_resists(basis, STRIP, footing.h, negative * STRIP)):  # D-140
         # Las barras superiores de la aleta, a tracción con el momento negativo, desde la cara de la viga (D-114).
         top_metre = _per_metre(top, footing.top.y.spacing)
         excess = steel_excess(basis, (STRIP, footing.h, top.depth), top_metre, negative * STRIP)

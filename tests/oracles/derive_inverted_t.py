@@ -270,7 +270,11 @@ def _flange_checks(folder: str, f: dict, beam: dict) -> list[dict]:
             "demand": vu, "capacity": PHI_SHEAR * vc}]
     top = f.get("top") or {}
     negative = max(_maximum(lambda x, s=s: -_flange_load(beam, f, x, s, 0.0)[1], -half, half)[1] for s in (1.0, -1.0))
-    if top.get("y") and negative > 1.0:
+    plain = _F._plain({**f, "lx": 1000.0}, "y", negative * 1000.0, "", profile, profile["levels"]["bajo"])
+    if top.get("y") and negative > 1.0 and plain["status"] == "PASS":  # D-140: el concreto simple primero
+        out.append({"name": "Aleta: concreto simple (cara superior)", "status": "PASS", "demand": negative * 1000.0,
+                    "capacity": plain["capacity_Nmm"]})
+    elif top.get("y") and negative > 1.0:
         # D-114: momento negativo de la aleta con las barras superiores y de la zarpa (sin estribo en la zarpa de la T);
         # la cara comprimida es la inferior y las barras quedan a h − (recubrimiento + barras x si van primero + db/2).
         dt, at = BARS[top["y"]["designation"]]

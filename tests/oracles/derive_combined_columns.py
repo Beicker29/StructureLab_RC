@@ -519,7 +519,9 @@ def _strip_station(folder: str, f: dict, given: tuple[dict, int, str], section: 
     strip = _strip(f, index)
     layers = strip["layers"]
     shear_items = _beam_shear(_B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None))) if order == 0 else []
-    if moment < 0 and not strip["top"]:
+    plain_ok = moment < 0 and _F._plain({**f, "lx": strip["width"]}, "y", -moment, case, _F.PROFILES[folder],
+                                        LEVEL[folder])["status"] == "PASS"
+    if moment < 0 and (not strip["top"] or plain_ok):  # D-140: el concreto simple primero
         # Sin barras superiores transversales: concreto simple en el ancho de la franja (D-072, D-095) y el cortante.
         plain = {**_F._plain({**f, "lx": strip["width"]}, "y", -moment, case, _F.PROFILES[folder], LEVEL[folder]),
                  "name": "Flexion concreto simple (cara superior, direccion secundaria)"}
@@ -580,7 +582,8 @@ def _plate_outside(folder: str, f: dict, beam: dict, case: str) -> list[dict]:
         vc = _S._one_way_vc(folder, 1000.0, d, rho, vu, abs(_B._torque(beam, xs)) / f["ly"] * 1000.0)
         out.append({"name": f"{name}, cortante", "status": "PASS" if vu <= PHI * vc else "FAIL", "demand": vu,
                     "capacity": PHI * vc})
-    if top is not None:
+    plain = _F._plain({**f, "lx": 1000.0}, "y", demand, case, profile, LEVEL[folder])
+    if top is not None and plain["status"] != "PASS":  # D-140: el concreto simple primero
         out.append(strength(f"{name} (barras superiores)", f["h"] - top["from_top"], top["ab"], top["spacing"]))
     else:
         out.append({**_F._plain({**f, "lx": 1000.0}, "y", demand, case, profile, LEVEL[folder]),
@@ -655,7 +658,8 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
     half = f["lx"] / 2
     x_rows = [(positive, rows["x"], "inferiores", "bottom")]
     top_x = _B.top_x(f)
-    if top_x:
+    # D-140: si el concreto simple resiste el mayor momento negativo, las barras superiores x no se exigen.
+    if top_x and _F._plain(f, "x", negative[0], "", _F.PROFILES[folder], level)["status"] != "PASS":
         db, ab = BARS[top_x["designation"]]
         n = _F._count(f["ly"], f["cover"], db, top_x["spacing"])
         x_rows.append((negative, {"depth": f["h"] - f["cover"] - top_x["above"] - db / 2, "db": db, "ab": ab,
@@ -686,7 +690,8 @@ def _development(folder: str, f: dict, beams: list[dict], cases: list[str], leve
             name = (f"Desarrollo refuerzo band (columna {c['id']})" if strip["band"]
                     else f"Desarrollo barras inferiores, direccion secundaria (franja de la columna {c['id']})")
             out.append(_develop(folder, f, (strip["db"], strip["spacing"], strip["depth"], "bottom"), (ratio, available, name, ""), level))
-        if top is not None and negative_y > 1e3 and strip["top_area"] > 0:
+        plain_ok = _F._plain({**f, "lx": strip["width"]}, "y", negative_y, "", _F.PROFILES[folder], level)["status"] == "PASS"
+        if top is not None and negative_y > 1e3 and strip["top_area"] > 0 and not plain_ok:  # D-140
             depth = f["h"] - top["from_top"]
             ratio = _ratio(strip["width"], depth, strip["top_area"], negative_y, f["min_steel_exception"])
             name = (f"Desarrollo band superior (columna {c['id']})" if c.get("band_top")
