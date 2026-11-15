@@ -18,7 +18,7 @@ from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.pile_cap.loads import AXES, CapAnalysis, FactoredCap
 from structurelab_rc.domain.shear_strength import TransferredLoad, TwoWayShear, concrete_lambda, two_way_shear
 from structurelab_rc.domain.status import Status
-from structurelab_rc.errors import StructuredError
+from structurelab_rc.errors import StructuredError, blocked
 from structurelab_rc.mechanics.perimeter import Perimeter, critical_perimeter
 from structurelab_rc.model.pile_cap import PileCap
 
@@ -28,6 +28,8 @@ FACE_TWO_WAY = "Cortante en la cara de la columna (dos direcciones)"
 PUNCHING = "Punzonamiento"
 PILE_PUNCHING = "Punzonamiento del pilote"
 PAIR_PUNCHING = "Punzonamiento de dos pilotes"
+GROUP_PUNCHING = "Punzonamiento de un grupo de pilotes"
+_MAX_GROUP_PILES = 16  # con más pilotes, los grupos no se enumeran (BLOCKED)
 CORNER_ONE_WAY = "Cortante de esquina del pilote"
 SHEAR = "Cabezal: cortante"
 _FACES = {"x": ("+X", "-X"), "y": ("+Y", "-Y")}
@@ -269,6 +271,142 @@ def _pair_punching(basis: Basis, item: FactoredCap, strength: _Strength) -> list
     return checks
 
 
+def _hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Envolvente convexa (cadena monótona), en orden antihorario; dos puntos si son colineales."""
+    ordered = sorted(set(points))
+    if len(ordered) <= 2:  # noqa: PLR2004 - un segmento
+        return ordered
+
+    def cross(o: tuple[float, float], a: tuple[float, float], b: tuple[float, float]) -> float:
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower: list[tuple[float, float]] = []
+    upper: list[tuple[float, float]] = []
+    for point in ordered:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], point) <= 0:  # noqa: PLR2004
+            lower.pop()
+        lower.append(point)
+    for point in reversed(ordered):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], point) <= 0:  # noqa: PLR2004
+            upper.pop()
+        upper.append(point)
+    return lower[:-1] + upper[:-1]
+
+
+def _perimeter_length(hull: list[tuple[float, float]]) -> float:
+    if len(hull) == 2:  # noqa: PLR2004 - un segmento: ida y vuelta
+        return 2 * math.dist(*hull)
+    return sum(math.dist(hull[i], hull[(i + 1) % len(hull)]) for i in range(len(hull)))
+
+
+def _segment_box_distance(a: tuple[float, float], b: tuple[float, float], box: tuple[float, float, float, float]) -> float:
+    """Distancia de un segmento a un rectángulo (x0, y0, x1, y1); 0 si se tocan. Muestrea el segmento con la proyección
+    exacta de cada punto: la distancia a un rectángulo es convexa a lo largo del segmento (búsqueda ternaria)."""
+    x0, y0, x1, y1 = box
+
+    def at(t: float) -> float:
+        x, y = a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])
+        return math.hypot(max(x0 - x, 0.0, x - x1), max(y0 - y, 0.0, y - y1))
+
+    low, high = 0.0, 1.0
+    for _ in range(60):
+        left, right = low + (high - low) / 3, high - (high - low) / 3
+        if at(left) <= at(right):
+            high = right
+        else:
+            low = left
+    return at((low + high) / 2)
+
+
+def _inside(hull: list[tuple[float, float]], point: tuple[float, float]) -> bool:
+    if len(hull) < 3:  # noqa: PLR2004
+        return False
+    signs = [(hull[(i + 1) % len(hull)][0] - hull[i][0]) * (point[1] - hull[i][1])
+             - (hull[(i + 1) % len(hull)][1] - hull[i][1]) * (point[0] - hull[i][0]) for i in range(len(hull))]
+    return all(sign >= 0 for sign in signs)
+
+
+@dataclass(frozen=True)
+class _Group:
+    """Un grupo de pilotes que punzona en conjunto: sus índices, b0 y β."""
+
+    members: tuple[int, ...]
+    b0: float
+    beta: float
+
+
+def _groups(cap: PileCap, depth: float) -> list[_Group] | None:
+    """Los grupos de 3 o más pilotes que pueden punzonar en conjunto (decisión del usuario, D-138): cada pilote se
+    traslapa con otro del grupo (L < π(dp + d)/2), su perímetro, la envolvente convexa de los centros desplazada
+    (dp + d)/2, b0 = perímetro de la envolvente + π(dp + d), es más corto que el de los pilotes aislados, y no alcanza el
+    perímetro crítico de la columna (ahí rige su punzonamiento). None con más de 16 pilotes."""
+    piles, dp = cap.piles, _round_size(cap)
+    count = len(piles)
+    if count > _MAX_GROUP_PILES:
+        return None
+    radius, single = (dp + depth) / 2, math.pi * (dp + depth)
+    near = [sum(1 << j for j in range(count) if j != i and math.hypot(piles[i].x - piles[j].x, piles[i].y - piles[j].y) < single / 2)
+            for i in range(count)]
+    column = cap.column
+    box = (column.offset_x - (column.cx + depth) / 2, column.offset_y - (column.cy + depth) / 2,
+           column.offset_x + (column.cx + depth) / 2, column.offset_y + (column.cy + depth) / 2)
+    groups = []
+    for mask in range(1, 1 << count):
+        members = tuple(i for i in range(count) if mask >> i & 1)
+        if len(members) < 3:  # noqa: PLR2004 - los pares son P2
+            continue
+        reached, frontier = 1 << members[0], 1 << members[0]
+        while frontier:
+            index = (frontier & -frontier).bit_length() - 1
+            frontier &= frontier - 1
+            new = near[index] & mask & ~reached
+            reached |= new
+            frontier |= new
+        if reached != mask:
+            continue
+        hull = _hull([(piles[i].x, piles[i].y) for i in members])
+        b0 = _perimeter_length(hull) + single
+        if b0 >= len(members) * single:
+            continue
+        centre = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
+        edges = list(zip(hull, hull[1:] + hull[:1], strict=True)) if len(hull) > 2 else [(hull[0], hull[-1])]  # noqa: PLR2004
+        if _inside(hull, centre) or min(_segment_box_distance(a, b, box) for a, b in edges) < radius:
+            continue
+        xs, ys = [piles[i].x for i in members], [piles[i].y for i in members]
+        sides = sorted((max(xs) - min(xs) + dp, max(ys) - min(ys) + dp))
+        groups.append(_Group(members, b0, sides[1] / sides[0]))
+    return groups
+
+
+def _group_punching(basis: Basis, item: FactoredCap, given: tuple[_Strength, list[_Group] | None]) -> list[Check]:
+    """El grupo de más de dos pilotes que gobierna en el caso: la suma de sus reacciones mayoradas sobre b0·d frente al vc
+    de la norma con su β y αs = 40 (decisión del usuario, D-138)."""
+    strength, groups = given
+    profile, materials, cap = basis.profile, basis.materials, item.cap
+    clause = profile.pile_cap.clauses()["adjacent_piles_punching"]
+    if groups is None:
+        error = blocked(f"Grupos de pilotes con mas de {_MAX_GROUP_PILES} pilotes: falta implementacion", member=cap.id)
+        return [Check(GROUP_PUNCHING, Status.BLOCKED, (error,), clause, member=cap.id, case=item.case.case)]
+    phi, d = profile.shear.strength_reduction(), strength.depth
+    worst: tuple[float, Check] | None = None
+    for group in groups:
+        reactions = [item.reaction(index) for index in group.members]
+        if min(reactions) <= _NEGLIGIBLE_FORCE:
+            continue
+        force = sum(reactions)
+        vc = profile.shear.punching_concrete_stress(fc=materials.fc, lam=strength.lam, lam_s=strength.lam_s, beta=group.beta,
+                                                    alpha_s=40.0, d=d, b0=group.b0)
+        demand, capacity = force / (group.b0 * d), phi * vc
+        names = ", ".join(cap.piles[index].id for index in group.members)
+        check = Check(GROUP_PUNCHING, Status.PASS if demand <= capacity else Status.FAIL, clause=clause, member=cap.id,
+                      case=item.case.case, demand=demand, capacity=capacity, unit="MPa",
+                      values=(("Vu", force), ("b0", group.b0), ("d", d), ("pilotes", float(len(group.members)))),
+                      note=f"Pilotes {names}")
+        if worst is None or demand / capacity > worst[0]:
+            worst = (demand / capacity, check)
+    return [] if worst is None else [worst[1]]
+
+
 def _corner_piles(cap: PileCap) -> list[int]:
     """El pilote más cercano a cada esquina del cabezal, si queda en el cuadrante de esa esquina."""
     hx, hy = cap.lx / 2, cap.ly / 2
@@ -318,6 +456,7 @@ def shear_checks(basis: Basis, cap: PileCap, analysis: CapAnalysis) -> list[Chec
     depth = (bottom["x"].depth + bottom["y"].depth) / 2
     closely = _closely_spaced(basis, cap)
     strength = _Strength(lam, closely, basis.profile.pile_cap.punching_size_factor(depth, closely), depth)
+    groups = _groups(cap, depth)  # la geometría de los grupos, una vez por cabezal
     checks: list[Check] = []
     for item in analysis.factored:
         for direction in ("x", "y"):
@@ -326,5 +465,5 @@ def shear_checks(basis: Basis, cap: PileCap, analysis: CapAnalysis) -> list[Chec
             checks.extend(_face_one_way(basis, item, bottom[direction], strength))
         checks.extend([*_column_punching(basis, item, strength), *_face_two_way(basis, item, strength),
                        *_pile_punching(basis, item, strength), *_pair_punching(basis, item, strength),
-                       *_corner_one_way(basis, item, strength)])
+                       *_group_punching(basis, item, (strength, groups)), *_corner_one_way(basis, item, strength)])
     return checks

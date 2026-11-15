@@ -2660,8 +2660,13 @@
   22.5; en dos direcciones, λs = 1 (13.4.6.8(b)). NSR-10 C.15.5.3 permite el método por
   secciones en todos los cabezales (C.11.11 con C.15.5.4). Un perímetro de pilote que pierde más de dos lados (cabezal
   angosto) no se revisa: ahí gobierna el cortante a todo el ancho.
-- **No incluido:** puntal-tensor, cabezales de varias columnas, requisitos sísmicos de los pilotes, punzonamiento de
-  grupos de más de dos pilotes y el diseño.
+- **No incluido:** puntal-tensor, cabezales de varias columnas, requisitos sísmicos de los pilotes y el diseño.
+- **Grupos de más de dos pilotes (decisiones del usuario, 2026-11-14):** la guía no da fórmula; se generaliza P2 sin
+  cambiarlo: b0 = perímetro de la envolvente convexa de los centros + π(dp + d) (con dos pilotes, 2L + π(dp + d)), la suma
+  de las reacciones mayoradas y el vc de la norma con αs = 40 y β del rectángulo que encierra el grupo; los bordes no
+  recortan el perímetro. Se revisan los grupos de 3 o más pilotes conexos (L < π(dp + d)/2) cuyo perímetro es más corto
+  que el de los aislados y no alcanza el perímetro crítico de la columna; se reporta el que gobierna en cada caso. La
+  geometría se calcula una vez por cabezal; hasta 16 pilotes (con más, BLOQUEADO). Oráculo: caso D (dos filas de tres).
 - **P2 y P4 de la guía CRSI (decisiones del usuario, 2026-11-14):** P2, el punzonamiento de dos pilotes vecinos cuando
   la falla conjunta es más corta, L < π(dp + d)/2, con b0 = π(dp + d) + 2L, la suma de sus reacciones mayoradas y el vc
   de la norma (ACI 22.6.5.2, NSR-10 C.11.11.2.1) con β = (L + dp)/dp y αs = 40; P4, el cortante en una dirección en la

@@ -41,7 +41,10 @@ FC, FY, PHI_V, PHI_M = 28.0, 420.0, 0.75, 0.9
 GAMMA_C, GAMMA_F = 24e-6, 18e-6
 BARS = {"#5": (15.9, 199.0), "#6": (19.1, 284.0), "#7": (22.2, 387.0), "#8": (25.4, 510.0)}
 SQRT_FC = min(math.sqrt(FC), 8.3)
-SOIL = {"C": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 850.0,
+SOIL = {"D": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 1500.0,
+              "pile_capacity_tension_kN": 300.0, "pile_capacity_lateral_kN": 80.0, "seismic_capacity_factor": 1.0,
+              "group_efficiency": 0.9, "max_eccentricity_mm": 150.0},
+        "C": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 850.0,
               "pile_capacity_tension_kN": 250.0, "pile_capacity_lateral_kN": 80.0, "seismic_capacity_factor": 1.0,
               "group_efficiency": 0.9, "max_eccentricity_mm": 150.0},
         "A": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 850.0,
@@ -107,6 +110,20 @@ CAP_C = {"id": "C", "loads_from": "column", "symmetric": True,
                                                                                      (-550.0, 550.0)))],
          "loads": [_load("S1", "service", 1.0, 1.0, (2400.0, 0.0, 0.0, 0.0, 0.0)),
                    _load("U1", "factored", 1.2, 1.6, (3400.0, 0.0, 0.0, 0.0, 0.0))]}
+
+
+# Seis pilotes en dos filas de tres, lejos de la columna: cada fila punzona en conjunto (grupo de tres, D-138).
+CAP_D = {"id": "D", "loads_from": "column",
+         "lx": 3600.0, "ly": 3800.0, "h": 850.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 0.0,
+         "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
+         "column": {"cx": 500.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0},
+         "bottom": {"first": "x", "x": _mat("#7", 150.0), "y": _mat("#7", 150.0)},
+         "top": {"first": "x", "x": _mat("#5", 250.0), "y": _mat("#5", 250.0)},
+         "pile": {"shape": "circular", "size": 500.0, "embedment": 75.0}, "mislocation_mm": 75.0,
+         "piles": [{"id": f"P{i + 1}", "x": x, "y": y} for i, (x, y) in enumerate(
+             [(x, y) for y in (-1500.0, 1500.0) for x in (-1200.0, 0.0, 1200.0)])],
+         "loads": [_load("S1", "service", 1.0, 1.0, (3000.0, 0.0, 0.0, 0.0, 0.0)),
+                   _load("U1", "factored", 1.2, 1.6, (4200.0, 0.0, 0.0, 0.0, 0.0))]}
 
 
 def _uniform(cap: dict, load: dict) -> float:
@@ -380,6 +397,87 @@ def _two_way(folder: str, cap: dict, case: dict) -> list[dict]:
     return out
 
 
+def _gift_wrap(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Envolvente convexa por envoltura de regalo (otro algoritmo que el del programa)."""
+    unique = sorted(set(points))
+    if len(unique) <= 2:
+        return unique
+    hull, start = [], unique[0]
+    current = start
+    while True:
+        hull.append(current)
+        candidate = unique[0] if unique[0] != current else unique[1]
+        for point in unique:
+            turn = (candidate[0] - current[0]) * (point[1] - current[1]) - (candidate[1] - current[1]) * (point[0] - current[0])
+            if turn < 0 or (turn == 0 and math.dist(current, point) > math.dist(current, candidate)):
+                candidate = point
+        current = candidate
+        if current == start:
+            return hull
+
+
+def _segment_to_box(a: tuple[float, float], b: tuple[float, float], box: tuple[float, float, float, float]) -> float:
+    """Distancia exacta segmento–rectángulo: 0 si el segmento cruza el rectángulo (Liang–Barsky); si no, la menor entre
+    los extremos al rectángulo y las esquinas al segmento."""
+    x0, y0, x1, y1 = box
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    low, high = 0.0, 1.0
+    for p, q in ((-dx, a[0] - x0), (dx, x1 - a[0]), (-dy, a[1] - y0), (dy, y1 - a[1])):
+        if p == 0:
+            if q < 0:
+                low, high = 1.0, 0.0
+        else:
+            t = q / p
+            low, high = (max(low, t), high) if p < 0 else (low, min(high, t))
+    if low <= high:
+        return 0.0
+    def to_box(x: float, y: float) -> float:
+        return math.hypot(max(x0 - x, 0.0, x - x1), max(y0 - y, 0.0, y - y1))
+    def to_segment(x: float, y: float) -> float:
+        length = dx * dx + dy * dy
+        t = 0.0 if length == 0 else min(max(((x - a[0]) * dx + (y - a[1]) * dy) / length, 0.0), 1.0)
+        return math.hypot(x - a[0] - t * dx, y - a[1] - t * dy)
+    return min(to_box(*a), to_box(*b), *(to_segment(x, y) for x in (x0, x1) for y in (y0, y1)))
+
+
+def _groups(folder: str, cap: dict, case: dict, given: tuple[float, float, float]) -> list[dict]:
+    """Grupos de 3 o más pilotes conexos (L < π(dp + d)/2), con b0 = perímetro de la envolvente convexa + π(dp + d) menor
+    que el de los aislados y sin alcanzar el perímetro crítico de la columna: el que gobierna en el caso."""
+    import itertools
+    d, lam_s, sense = given
+    piles, dp, name = cap["piles"], cap["pile"]["size"], case["load"]["case"]
+    single, radius = math.pi * (dp + d), (dp + d) / 2
+    column = cap["column"]
+    box = (-(column["cx"] + d) / 2, -(column["cy"] + d) / 2, (column["cx"] + d) / 2, (column["cy"] + d) / 2)
+    reaction = [case["R"][i] + sense * case["dR"][i] for i in range(len(piles))]
+    best = None
+    for size in range(3, len(piles) + 1):
+        for members in itertools.combinations(range(len(piles)), size):
+            linked, todo = {members[0]}, [members[0]]
+            while todo:
+                i = todo.pop()
+                for j in members:
+                    if j not in linked and math.dist((piles[i]["x"], piles[i]["y"]), (piles[j]["x"], piles[j]["y"])) < single / 2:
+                        linked.add(j)
+                        todo.append(j)
+            if len(linked) != size or min(reaction[i] for i in members) <= 1.0:
+                continue
+            hull = _gift_wrap([(piles[i]["x"], piles[i]["y"]) for i in members])
+            edges = list(zip(hull, hull[1:] + hull[:1], strict=True)) if len(hull) > 2 else [(hull[0], hull[-1])]
+            length = sum(math.dist(a, b) for a, b in edges) if len(hull) > 2 else 2 * math.dist(hull[0], hull[-1])
+            b0 = length + single
+            if b0 >= size * single or min(_segment_to_box(a, b, box) for a, b in edges) < radius:
+                continue
+            xs, ys = [piles[i]["x"] for i in members], [piles[i]["y"] for i in members]
+            sides = sorted((max(xs) - min(xs) + dp, max(ys) - min(ys) + dp))
+            vc = _vc_two_way(folder, (sides[1] / sides[0], 40.0, d / b0, lam_s))
+            demand = sum(reaction[i] for i in members) / (b0 * d)
+            if best is None or demand / (PHI_V * vc) > best[0]:
+                best = (demand / (PHI_V * vc), demand, PHI_V * vc)
+    return [] if best is None else [{"name": "Punzonamiento de un grupo de pilotes", "case": name, "demand": best[1],
+                                     "capacity": best[2]}]
+
+
 def _pairs_and_corners(folder: str, cap: dict, case: dict, given: tuple[float, float, float]) -> list[dict]:
     """Guía CRSI P2 (dos pilotes vecinos con L < π(dp + d)/2: b0 = π(dp + d) + 2L, vc de la norma con β = (L + dp)/dp y
     αs = 40) y P4 (esquina: b = 2·((Ex + Ey)/√2 + dp/2 + mín(d, 330)), φ·0.166√f'c·b·d), con las reacciones mayoradas."""
@@ -396,6 +494,7 @@ def _pairs_and_corners(folder: str, cap: dict, case: dict, given: tuple[float, f
             vc = _vc_two_way(folder, ((spacing + dp) / dp, 40.0, d / b0, lam_s))
             out.append({"name": "Punzonamiento de dos pilotes", "case": name, "demand": (reaction[i] + reaction[j]) / (b0 * d),
                         "capacity": PHI_V * vc})
+    out += _groups(folder, cap, case, given)
     hx, hy = cap["lx"] / 2, cap["ly"] / 2
     corners = []
     for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
@@ -445,7 +544,7 @@ def main() -> None:
         data = {"description": "Oraculo de cabezales (D-138), derivado por tests/oracles/derive_pile_cap.py",
                 "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight", "coating": "uncoated", "max_aggregate": 19.0},
                 "tolerance_rel": 1e-6,
-                "cases": [_derive(folder, cap) for cap in (CAP_A, CAP_B, CAP_C)]}
+                "cases": [_derive(folder, cap) for cap in (CAP_A, CAP_B, CAP_C, CAP_D)]}
         (HERE / folder / "derived_pile_cap.json").write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8",
                                                              newline="\n")
     print("ok")

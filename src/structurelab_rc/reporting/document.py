@@ -164,8 +164,7 @@ _CAP_CONVENTIONS = (
 )
 _CAP_LIMITATIONS = (
     "Puntal-tensor, cabezales de varias columnas y requisitos sísmicos de los pilotes: falta implementación.",
-    "Punzonamiento de grupos de más de dos pilotes con perímetros traslapados: falta implementación (se revisan los pares, "
-    "guía CRSI P2).",
+    "Grupos de pilotes que punzonan en conjunto: se enumeran en cabezales de hasta 16 pilotes; con más, BLOQUEADO.",
 )
 
 

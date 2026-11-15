@@ -70,7 +70,10 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
   pasadas a SI con 0.083). Además, el punzonamiento de cada pilote, aislado (P1) o de esquina (P3), el de dos pilotes
   vecinos cuya falla conjunta es más corta (P2: L < π(dp + d)/2, b0 = π(dp + d) + 2L, vc de la norma con
   β = (L + dp)/dp) y el cortante en una dirección en la esquina (P4: b = 2·((Ex + Ey)/√2 + dp/2 + d), d ≤ 330 mm solo
-  en b, vc = 0.166λ√f'c), todos con las reacciones mayoradas.
+  en b, vc = 0.166λ√f'c), todos con las reacciones mayoradas. Los grupos de 3 o más pilotes conexos (cada uno a
+  L < π(dp + d)/2 de otro) punzonan en conjunto con b0 = perímetro de la envolvente convexa de sus centros + π(dp + d),
+  si es más corto que el de los pilotes aislados y no alcanza el perímetro crítico de la columna; en cada caso se
+  reporta el que gobierna (hasta 16 pilotes; con más, BLOQUEADO).
 - **Geometría:** d ≥ 300 mm (ACI 13.4.6.2; NSR-10 C.15.7, sobre el refuerzo inferior). En ACI también el empotramiento
   ≥ 75 mm y el borde ≥ 100 mm (13.4.6.3).
 - **Desarrollo, pasadores y aplastamiento:** los de la zapata aislada.

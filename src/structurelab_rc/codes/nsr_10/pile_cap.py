@@ -36,7 +36,7 @@ def clauses() -> dict[str, str]:
         "column_face_two_way": "Guia CRSI, estado limite 4",
         "column_face_one_way": "Guia CRSI, estados limite 5 y 6",
         "pile_punching": "C.11.11.2.1 (guia CRSI, estados limite P1 y P3)",
-        "adjacent_piles_punching": "C.11.11.2.1 (guia CRSI, estado limite P2)",
+        "adjacent_piles_punching": "C.11.11.2.1 (guia CRSI, estado limite P2, y su extension a grupos)",
         "corner_one_way": "Guia CRSI, estado limite P4",
     }
 
