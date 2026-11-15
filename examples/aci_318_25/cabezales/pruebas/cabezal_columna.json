@@ -28,6 +28,7 @@
   "pile_caps": [
     {
       "id": "CP1",
+      "loads_from": "column",
       "lx": 2000.0,
       "ly": 2000.0,
       "h": 900.0,

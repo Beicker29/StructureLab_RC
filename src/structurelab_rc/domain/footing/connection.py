@@ -19,8 +19,9 @@ from structurelab_rc.domain.footing.flexure import (
     FaceMoments,
     SectionRules,
     face_moments,
-    has_negative_moment,
+    footing_rules,
     required_mat_area,
+    top_needed,
 )
 from structurelab_rc.domain.footing.loads import FactoredCase, column_faces
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
@@ -28,7 +29,7 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete
 from structurelab_rc.model.footing import Dowels, Footing, FootingBase
 
-BEARING = "Aplastamiento en la zapata"
+BEARING = "Aplastamiento"
 DOWELS_AREA = "Pasadores: area minima"
 DOWELS_ANCHORAGE = "Pasadores: anclaje a compresion"
 DOWELS_EXCESS = "Pasadores: compresion sobre el aplastamiento"
@@ -68,12 +69,12 @@ def _anchorage(basis: Basis, footing: Footing, mat_row: tuple[str, BarRow],
 def _development_checks(
     basis: Basis, footing: Footing, rows: dict[str, dict[str, BarRow]], given: tuple[list[FaceMoments], SectionRules | None]
 ) -> list[Check]:
-    cases = given[0]
+    cases, rules = given[0], given[1] or footing_rules(basis.profile, basis.materials, footing)
     checks = []
     for mat, mat_rows_ in rows.items():
         spec = getattr(footing, mat)
         for direction, row in mat_rows_.items():
-            if mat == "top" and not has_negative_moment(cases, direction):
+            if mat == "top" and not top_needed(basis, footing, (cases, rules), direction):  # D-140
                 continue
             bar = _anchorage(basis, footing, (mat, row), given)
             required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)

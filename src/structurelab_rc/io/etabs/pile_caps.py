@@ -75,12 +75,7 @@ def build_pile_cap_project(
     """Proyecto de cabezales en el formato de entrada JSON: cada cabezal de la plantilla con las cargas de su columna o
     las de cada uno de sus pilotes y, con la tabla de coordenadas (Joint Location), la ubicación de su columna y su tipo
     (su id) para la planta de localización (D-130)."""
-    if coordinates is not None:
-        missing = [cap.id for cap in template.pile_caps if cap.column_joint is None]
-        if missing:
-            raise EtabsImportError(tuple(invalid_input(f"El cabezal '{name}' necesita column_unique_name: la plantilla declara la "
-                                                       "tabla de coordenadas") for name in missing))
-    locations = locations_by_joint(coordinates, [joint for cap in template.pile_caps if (joint := cap.column_joint)])
+    locations = locations_by_joint(coordinates, [cap.column_unique_name for cap in template.pile_caps])
     service, factored = tables
     if template.from_piles:
         stations = {pile.etabs_unique_name: cap.etabs_station for cap in template.pile_caps for pile in cap.piles
@@ -91,18 +86,17 @@ def build_pile_cap_project(
         given = {"service": _at_station(service, stations), "factored": _at_station(factored, stations)}
         joints, skipped, ignored = joint_loads(combinations, given, groups, _pile_spec(angles))
     else:
-        groups = [(cap.id, (cap.etabs_unique_name,), BOTH) for cap in template.pile_caps if cap.etabs_unique_name]
+        groups = [(cap.id, (cap.column_unique_name,), BOTH) for cap in template.pile_caps]
         joints, skipped, ignored = joint_loads(combinations, {"service": service, "factored": factored}, groups)
     loads = {(joint.group, joint.unique_name): joint.loads for joint in joints}
     caps = []
     for cap in template.pile_caps:
-        body = cap.model_dump(mode="json", exclude={"etabs_unique_name", "etabs_station", "column_unique_name", "piles"},
-                              exclude_none=True)
-        if cap.column_joint in locations:
-            body.update(location=locations[cap.column_joint], typology=cap.id)
+        body = cap.model_dump(mode="json", exclude={"etabs_station", "column_unique_name", "piles"}, exclude_none=True)
+        if cap.column_unique_name in locations:
+            body.update(location=locations[cap.column_unique_name], typology=cap.id)
         piles = [{"id": pile.id, "x": pile.x, "y": pile.y,
                   **({"loads": loads[(cap.id, pile.etabs_unique_name)]} if pile.etabs_unique_name else {})} for pile in cap.piles]
-        column = {"loads": loads[(cap.id, cap.etabs_unique_name)]} if cap.etabs_unique_name else {}
+        column = {} if cap.from_piles else {"loads": loads[(cap.id, cap.column_unique_name)]}
         caps.append({**body, "piles": piles, **column})
     project = template.model_dump(mode="json", exclude={"pile_caps", "etabs_files"}, exclude_none=True)
     project["pile_caps"] = caps

@@ -168,7 +168,7 @@ def test_columns_match_the_handbook_example_5(profile: str) -> None:
     assert punching.capacity is not None
     assert punching.capacity / MPA_PER_PSI == pytest.approx(expected["punching_phi_vc_interior_psi"],
                                                            rel=tolerance["punching_phi_vc_interior_psi"])
-    bearing = _at_column(checks, "interior", "Aplastamiento en la zapata")
+    bearing = _at_column(checks, "interior", "Aplastamiento")
     assert bearing.capacity is not None
     assert bearing.capacity / N_PER_KIP == pytest.approx(expected["bearing_phi_Bn_interior_kips"],
                                                          rel=tolerance["bearing_phi_Bn_interior_kips"])

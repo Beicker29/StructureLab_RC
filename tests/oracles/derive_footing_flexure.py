@@ -176,11 +176,9 @@ def _band_count(f: dict, direction: str, row: dict, spacing: float) -> int:
     return sum(1 for position in row["positions"] if band0 - 1e-6 <= position <= band1 + 1e-6)
 
 
-def _expected(f: dict, profile: dict, level: str) -> dict:
+def _strength_checks(f: dict, rows: dict, profile: dict, level: str) -> tuple[list[dict], list[dict]]:
+    """Resistencia de cada caso y los momentos de cara de los casos en equilibrio."""
     checks: list[dict] = []
-    rows = {"bottom": _rows(f, f["bottom"])}
-    if f["top"] is not None:
-        rows["top"] = _rows(f, f["top"])
     moments = []
     for load in f["loads"]:
         faces = _face_moments(f, load)
@@ -197,16 +195,32 @@ def _expected(f: dict, profile: dict, level: str) -> dict:
                 if mat not in rows:
                     checks.append(_plain(f, direction, demand, load["case"], profile, level))
                     continue
+                if mat == "top":  # D-140: el concreto simple primero; si resiste, la malla superior no se exige
+                    plain = _plain(f, direction, demand, load["case"], profile, level)
+                    if plain["status"] == "PASS":
+                        checks.append(plain)
+                        continue
                 row = rows[mat][direction]
                 nominal, phi, _ = _strength(row["area"], row["width"], row["depth"], profile)
                 checks.append({"name": name, "case": load["case"], "status": "PASS" if phi * nominal >= demand else "FAIL",
                                "demand_Nmm": max(demand, 0.0), "capacity_Nmm": phi * nominal})
+    return checks, moments
+
+
+def _expected(f: dict, profile: dict, level: str) -> dict:
+    rows = {"bottom": _rows(f, f["bottom"])}
+    if f["top"] is not None:
+        rows["top"] = _rows(f, f["top"])
+    checks, moments = _strength_checks(f, rows, profile, level)
     for mat, label in (("bottom", "inferior"), ("top", "superior")):
         if mat not in rows:
             continue
         for direction, row in rows[mat].items():
-            negative = any(min(m["+X" if direction == "x" else "+Y"], m["-X" if direction == "x" else "-Y"]) < -1e-6
-                           for m in moments)
+            keys = ("+X", "-X") if direction == "x" else ("+Y", "-Y")
+            negative = any(min(m[keys[0]], m[keys[1]]) < -1e-6 for m in moments)
+            if negative:  # D-140: la malla superior se exige solo si el concreto simple no resiste el mayor momento negativo
+                worst = max(-m[key] for m in moments for key in keys)
+                negative = _plain(f, direction, worst, "", profile, level)["status"] != "PASS"
             _, _, strain = _strength(row["area"], row["width"], row["depth"], profile)
             checks.append({"name": f"Deformacion neta de traccion malla {label} (barras {direction})",
                            "status": "PASS" if strain >= profile["strain_min"] else "FAIL", "capacity": strain})
@@ -239,7 +253,7 @@ def _expected(f: dict, profile: dict, level: str) -> dict:
     bottom = rows["bottom"]
     first, second = bottom[f["bottom"]["first"]], bottom["y" if f["bottom"]["first"] == "x" else "x"]
     measured = profile["depth"](f["h"], f["cover"], first["db"], second["db"])
-    checks.append({"name": "Altura minima de la zapata", "status": "PASS" if measured >= 150 else "FAIL",
+    checks.append({"name": "Altura minima", "status": "PASS" if measured >= 150 else "FAIL",
                    "demand": 150.0, "capacity": measured})
     return {"checks": checks}
 
@@ -281,6 +295,14 @@ CASES = [
      _footing(lx=2800.0, ly=2000.0, h=600.0, loads=[_load("0.9D+E", 0.9, 0.0, 450.0, my=330.0)]), "bajo"),
     ("concreto-simple-no-cumple", "zapata delgada con momento negativo sin malla superior y nivel bajo: no alcanza el concreto "
      "simple", _footing(h=250.0, loads=[_load("0.9D+E", 0.9, 0.0, 300.0, my=330.0)]), "bajo"),
+    ("malla-superior-concreto-simple", "con malla superior y nivel bajo: el concreto simple resiste el momento negativo y la "
+     "malla superior no se exige (D-140)",
+     _footing(lx=3200.0, ly=2200.0, h=600.0, column={"cx": 400.0, "cy": 500.0, "offset_x": 350.0, "offset_y": 0.0},
+              bottom=_mat("y", ("#6", 200.0), ("#5", 180.0)), top=_mat("x", ("#4", 250.0), ("#4", 250.0)),
+              loads=[_load("1.2D+1.6L", 1.2, 1.6, 1400.0, my=60.0), _load("0.9D+E", 0.9, 0.0, 450.0, my=420.0, vx=90.0)]), "bajo"),
+    ("malla-superior-necesaria", "con malla superior y nivel bajo en una zapata delgada: el concreto simple no alcanza y se "
+     "revisa la malla superior (D-140)",
+     _footing(h=250.0, top=_mat("x", ("#4", 200.0), ("#4", 200.0)), loads=[_load("0.9D+E", 0.9, 0.0, 300.0, my=330.0)]), "bajo"),
     ("sin-equilibrio", "resultante mayorada fuera de la base", _footing(loads=[_load("0.9D+E", 0.9, 0.0, 100.0, my=900.0)]), "alto"),
     ("separacion-excesiva", "separación mayor que la permitida y acero bajo el mínimo",
      _footing(h=200.0, bottom=_mat("x", ("#4", 420.0), ("#4", 420.0)), loads=[_load("1.2D", 1.2, 0.0, 200.0)]), "alto"),

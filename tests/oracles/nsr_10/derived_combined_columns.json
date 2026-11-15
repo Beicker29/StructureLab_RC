@@ -872,7 +872,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -895,7 +895,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -1787,7 +1787,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -1810,7 +1810,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -2660,7 +2660,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -2683,7 +2683,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -4322,7 +4322,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -4331,7 +4331,7 @@
           "clause": "C.10.14.1 y C.9.3.2.4"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U2",
           "where": "Columna C1",
           "status": "PASS",
@@ -4354,7 +4354,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -4363,7 +4363,7 @@
           "clause": "C.10.14.1 y C.9.3.2.4"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U2",
           "where": "Columna C2",
           "status": "PASS",
@@ -5201,7 +5201,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -5215,7 +5215,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -6019,7 +6019,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -6033,7 +6033,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -6850,7 +6850,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -6864,7 +6864,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -7779,7 +7779,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -7802,7 +7802,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -8642,7 +8642,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -8665,7 +8665,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -9574,7 +9574,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -9597,7 +9597,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -10680,7 +10680,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -10703,7 +10703,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -11800,7 +11800,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -11823,7 +11823,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -12965,7 +12965,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -12988,7 +12988,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",
@@ -14327,7 +14327,7 @@
           "where": "Columna C1"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C1",
           "status": "PASS",
@@ -14350,7 +14350,7 @@
           "where": "Columna C2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "U1",
           "where": "Columna C2",
           "status": "PASS",

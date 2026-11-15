@@ -165,7 +165,7 @@ def _bearing(folder: str, f: dict, dowel_area: float | None) -> list[dict]:
         pu = load["P_kN"] * 1e3
         if pu <= 0:
             continue
-        out.append({"name": "Aplastamiento en la zapata", "case": load["case"], "status": "PASS" if pu <= capacity else "FAIL",
+        out.append({"name": "Aplastamiento", "case": load["case"], "status": "PASS" if pu <= capacity else "FAIL",
                     "demand": pu, "capacity": capacity, "clause": CLAUSES[folder]["bearing"]})
         if pu > capacity:
             if dowel_area is None:

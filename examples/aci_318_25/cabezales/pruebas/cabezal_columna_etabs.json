@@ -34,7 +34,8 @@
   "pile_caps": [
     {
       "id": "CP-1600",
-      "etabs_unique_name": "1600",
+      "loads_from": "column",
+      "column_unique_name": "1600",
       "lx": 2600.0,
       "ly": 2600.0,
       "h": 1100.0,

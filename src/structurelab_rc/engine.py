@@ -24,8 +24,9 @@ from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
 from structurelab_rc.domain.footing.detailing import combined_runs, face_envelope, footing_runs, moment_envelope
 from structurelab_rc.domain.footing.drawing import combined_views, footing_views, location_views
 from structurelab_rc.domain.footing.loads import combined_factored_cases
-from structurelab_rc.domain.pile_cap.checks import cap_face_moments, pile_cap_checks
+from structurelab_rc.domain.pile_cap.checks import cap_analysis, pile_cap_checks
 from structurelab_rc.domain.pile_cap.drawing import pile_cap_views
+from structurelab_rc.domain.pile_cap.loads import CapAnalysis
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.drawing.dxf import write_dxf
@@ -114,7 +115,8 @@ def _footing_template(data: dict[str, Any]) -> bool:
         items += cap.get("piles") or [] if isinstance(cap, dict) else []
     for footing in data.get("combined_footings") or []:
         items += footing.get("columns") or [] if isinstance(footing, dict) else []
-    return any(isinstance(item, dict) and ("etabs_unique_names" in item or "etabs_unique_name" in item) for item in items)
+    keys = ("etabs_unique_names", "etabs_unique_name", "column_unique_name")
+    return any(isinstance(item, dict) and any(key in item for key in keys) for item in items)
 
 
 def run_plan(path: Path, output: Path | None = None) -> RunPlan:
@@ -163,16 +165,26 @@ def validate_file(path: Path) -> Check:
     return validate_project(project, load_engine().bars)
 
 
+Analyses = dict[str, CapAnalysis]  # id del cabezal → su análisis (D-138), calculado una vez
+
+
 def run_project(path: Path) -> tuple[Project | None, tuple[Check, ...]]:
     """Proyecto cargado y sus verificaciones: primero la validación; si la entrada es inválida, solo ella."""
+    project, checks, _ = _run(path)
+    return project, checks
+
+
+def _run(path: Path) -> tuple[Project | None, tuple[Check, ...], Analyses]:
+    """run_project con el análisis de cada cabezal, que el resultado y el despiece reutilizan."""
+    analyses: Analyses = {}
     try:
         project = load_project(path)
     except ProjectLoadError as error:
-        return None, (check_from_errors(CHECK_NAME, error.errors),)
+        return None, (check_from_errors(CHECK_NAME, error.errors),), analyses
     bars = load_engine().bars
     validation = validate_project(project, bars)
     if validation.status is Status.FAIL:
-        return project, (validation,)
+        return project, (validation,), analyses
     profile = PROFILES[project.profile]
     checks = [validation]
     for member in project.members:
@@ -185,9 +197,11 @@ def run_project(path: Path) -> tuple[Project | None, tuple[Check, ...]]:
             checks.extend(combined_footing_checks(Basis(profile, project.materials, bars, project.seismic.level), combined,
                                                   project.soil))
     if project.pile_soil is not None:
+        basis = Basis(profile, project.materials, bars, project.seismic.level)
         for cap in project.pile_caps:
-            checks.extend(pile_cap_checks(Basis(profile, project.materials, bars, project.seismic.level), cap, project.pile_soil))
-    return project, tuple(checks)
+            analyses[cap.id] = cap_analysis(basis, cap, project.pile_soil)
+            checks.extend(pile_cap_checks(basis, cap, project.pile_soil, analyses[cap.id]))
+    return project, tuple(checks), analyses
 
 
 def verify_file(path: Path) -> tuple[Check, ...]:
@@ -217,9 +231,12 @@ def _combined_diagrams(project: Project | None, checks: tuple[Check, ...]) -> Di
     return diagrams
 
 
-def _detailing(project: Project | None, results: dict[str, Any], name: str) -> tuple[dict[str, list[ScheduleRow]], Drawing | None]:
+def _detailing(
+    project: Project | None, results: dict[str, Any], given: tuple[str, Analyses]
+) -> tuple[dict[str, list[ScheduleRow]], Drawing | None]:
     """Agrega la cartilla de cada zapata a su entrada del resultado (D-125) si el proyecto pide despiece y la entrada es
     válida: (la cartilla de cada elemento, vacía si no se despieza; el dibujo del refuerzo si el proyecto lo pide, D-126)."""
+    name, analyses = given
     schedules: dict[str, list[ScheduleRow]] = {}
     if project is None or project.detailing is None:
         return schedules, None
@@ -230,15 +247,15 @@ def _detailing(project: Project | None, results: dict[str, Any], name: str) -> t
     stock = project.detailing.stock_length
     drawing = None if project.drawing is None else Drawing(name, project.drawing.scale)
     entries = {entry["id"]: entry for key in ("footings", "combined_footings", "pile_caps") for entry in results.get(key, [])}
-    weights = project.pile_soil
-    for cap in project.pile_caps if weights is not None else ():  # cabezales (D-138)
-        assert weights is not None
-        concrete = sum(cap.weights(weights)[:2]) / weights.unit_weight_concrete / 1e9
-        runs = footing_runs(basis, cap, moment_envelope(cap_face_moments(basis, cap, weights)))
-        rows = schedules[cap.id] = schedule(cap.id, runs, stock)
-        entries[cap.id]["detailing"] = detailing_data(rows, concrete, stock)
-        if drawing is not None:
-            drawing.views[cap.id] = pile_cap_views(drawing, cap, runs, (rows, stock))
+    pile_soil = project.pile_soil
+    if pile_soil is not None:  # cabezales (D-138), con su análisis
+        for cap in project.pile_caps:
+            concrete = sum(cap.weights(pile_soil)[:2]) / pile_soil.unit_weight_concrete / 1e9
+            runs = footing_runs(basis, cap, moment_envelope(list(analyses[cap.id].moments)))
+            rows = schedules[cap.id] = schedule(cap.id, runs, stock)
+            entries[cap.id]["detailing"] = detailing_data(rows, concrete, stock)
+            if drawing is not None:
+                drawing.views[cap.id] = pile_cap_views(drawing, cap, runs, (rows, stock))
     soil = project.soil
     for footing in project.footings if soil is not None else ():
         assert soil is not None
@@ -302,10 +319,10 @@ def _drawing_files(drawing: Drawing, output: Path) -> tuple[list[Path], dict[str
 def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050), con
     las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
-    project, checks = run_project(path)
-    results = build_results(project, checks, __version__, _combined_diagrams(project, checks))
+    project, checks, analyses = _run(path)
+    results = build_results(project, checks, __version__, (_combined_diagrams(project, checks), analyses))
     # El dibujo y el DXF llevan el nombre del caso (la carpeta de salida), como el .dli.
-    schedules, drawing = ({}, None) if checks[0].status is Status.FAIL else _detailing(project, results, output.name)
+    schedules, drawing = ({}, None) if checks[0].status is Status.FAIL else _detailing(project, results, (output.name, analyses))
     output.mkdir(parents=True, exist_ok=True)
     figures = pressure_figures(results, output)
     diagram_files = diagram_figures(results, output)

@@ -314,7 +314,7 @@ def _expected(folder: str, f: dict) -> dict:
             a1 = column["cx"] * column["cy"]
             a2 = (column["cx"] + 2 * spread) * (column["cy"] + 2 * spread)
             capacity = 0.65 * 0.85 * FC * a1 * min(math.sqrt(a2 / a1), 2.0)
-            checks.append({"name": "Aplastamiento en la zapata", "status": "PASS" if pu <= capacity else "FAIL", "demand": pu,
+            checks.append({"name": "Aplastamiento", "status": "PASS" if pu <= capacity else "FAIL", "demand": pu,
                            "capacity": capacity, "case": case, "note_prefix": f"Columna {column['id']}"})
     flange = _flange(f)
     if flange:

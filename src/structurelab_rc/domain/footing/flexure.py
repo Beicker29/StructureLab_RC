@@ -159,9 +159,17 @@ def _strength_checks(basis: Basis, footing: Footing, rows: dict[str, dict[str, B
                     checks.append(Check(name, Status.FAIL, (error,), rules.plain_forbidden, demand=demand, unit="N*mm",
                                         member=member, case=load_case, note=f"Cara {face} de la columna"))
                     continue
+                where = (face, load_case, f"Cara {face} de la columna")
                 if mat not in rows:
-                    checks.append(plain_check(basis, footing, direction, demand, (face, load_case, f"Cara {face} de la columna")))
+                    checks.append(plain_check(basis, footing, direction, demand, where))
                     continue
+                if mat == "top" and rules.plain_forbidden is None:
+                    # Concreto simple primero (decisión del usuario, D-140): si resiste el momento negativo, la malla superior
+                    # no se exige; si no alcanza (o el nivel sísmico no lo permite), se revisa la malla.
+                    plain = plain_check(basis, footing, direction, demand, where)
+                    if plain.status is Status.PASS:
+                        checks.append(plain)
+                        continue
                 row = rows[mat][direction]
                 strength = _strength(profile, materials, footing, row)
                 if isinstance(strength, StructuredError):
@@ -184,11 +192,24 @@ def has_negative_moment(cases: list[FaceMoments], direction: str) -> bool:
     return any(min(case.moments[direction]) < -_NEGLIGIBLE for case in cases)
 
 
-def _section_checks(
-    profile: Profile, materials: Materials, footing: Footing, rows: dict[str, dict[str, BarRow]],
-    given: tuple[list[FaceMoments], SectionRules]
-) -> list[Check]:
-    """Verificaciones que no dependen del caso: εt, As,min, separación, franja γs y altura mínima."""
+def top_needed(basis: Basis, footing: Footing, given: tuple[list[FaceMoments], SectionRules], direction: str) -> bool:
+    """Si la malla superior de una dirección se exige (D-140): hay momento negativo y el concreto simple no lo resiste,
+    porque el elemento no lo admite (cabezal), el nivel sísmico no lo permite (D-072) o su φMn no alcanza."""
+    cases, rules = given
+    if not has_negative_moment(cases, direction):
+        return False
+    if rules.plain_forbidden is not None or not basis.profile.plain.permitted_in_foundations(basis.seismic_level):
+        return True
+    width = footing.ly if direction == "x" else footing.lx
+    strength = plain_rectangular_moment(basis.profile, basis.materials, width, footing.h, cast_against_soil=True)
+    return isinstance(strength, StructuredError) or strength.design < design_moment(cases, "top", direction)
+
+
+def _section_checks(basis: Basis, footing: Footing, rows: dict[str, dict[str, BarRow]],
+                    given: tuple[list[FaceMoments], SectionRules]) -> list[Check]:
+    """Verificaciones que no dependen del caso: εt, As,min, separación, franja γs y altura mínima. Las de la malla superior
+    que dependen del momento negativo, solo si se exige (D-140)."""
+    profile, materials = basis.profile, basis.materials
     cases, rules = given
     clauses = profile.footing.clauses()
     checks = []
@@ -202,7 +223,8 @@ def _section_checks(
                 checks.append(replace(net_tensile_strain_check(_name("Deformacion neta de traccion", mat, direction),
                                                                clauses["net_tensile_strain"], profile, materials,
                                                                strength.state.extreme_strain), member=member))
-            if mat == "bottom" or has_negative_moment(cases, direction):
+            needed = mat == "bottom" or top_needed(basis, footing, given, direction)
+            if needed:
                 required, values, clause = rules.minimum(mat, row, design_moment(cases, mat, direction))
                 checks.append(Check(_name("Acero minimo", mat, direction), Status.PASS if row.area >= required else Status.FAIL,
                                     clause=clause, demand=required, capacity=row.area, unit="mm2", values=values, member=member))
@@ -212,14 +234,14 @@ def _section_checks(
             largest = max(spacings)
             checks.append(Check(_name("Separacion maxima", mat, direction), Status.PASS if largest <= max_spacing else Status.FAIL,
                                 clause=clauses["spacing"], demand=largest, capacity=max_spacing, unit="mm", member=member))
-            if row.band is not None and (mat == "bottom" or has_negative_moment(cases, direction)):
+            if row.band is not None and needed:
                 checks.extend(_band_checks(profile, materials, footing, (mat, row), (cases, rules)))
     bottom = rows["bottom"]
     first = bottom[footing.bottom.first]
     second = bottom["y" if footing.bottom.first == "x" else "x"]
     measured = profile.footing.footing_depth(footing.h, footing.bottom_face_cover, first.diameter, second.diameter)
     minimum, clause = rules.min_depth
-    checks.append(Check("Altura minima de la zapata", Status.PASS if measured >= minimum else Status.FAIL,
+    checks.append(Check("Altura minima", Status.PASS if measured >= minimum else Status.FAIL,
                         clause=clause, demand=minimum, capacity=measured, unit="mm", member=member))
     return checks
 
@@ -277,4 +299,4 @@ def mat_flexure_checks(basis: Basis, footing: Footing, cases: list[FaceMoments],
     if footing.top is not None:
         rows["top"] = mat_rows(footing, footing.top, basis.bars)
     return [*_strength_checks(basis, footing, rows, cases, rules),
-            *_section_checks(basis.profile, basis.materials, footing, rows, (cases, rules))]
+            *_section_checks(basis, footing, rows, (cases, rules))]

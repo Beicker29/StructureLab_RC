@@ -348,7 +348,7 @@
             "case": "U1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1000000.0,
             "capacity": 4640999.999999999,
@@ -356,7 +356,7 @@
             "note_prefix": "Columna C1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1150000.0,
             "capacity": 4640999.999999999,
@@ -656,7 +656,7 @@
             "case": "U1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1000000.0,
             "capacity": 4640999.999999999,
@@ -664,7 +664,7 @@
             "note_prefix": "Columna C1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1150000.0,
             "capacity": 4640999.999999999,
@@ -1004,7 +1004,7 @@
             "case": "U1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1000000.0,
             "capacity": 4640999.999999999,
@@ -1012,7 +1012,7 @@
             "note_prefix": "Columna C1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1150000.0,
             "capacity": 4640999.999999999,
@@ -1328,7 +1328,7 @@
             "case": "U1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1500000.0,
             "capacity": 4640999.999999999,
@@ -1336,7 +1336,7 @@
             "note_prefix": "Columna C1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1800000.0,
             "capacity": 4640999.999999999,
@@ -1649,7 +1649,7 @@
             "case": "U1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1000000.0,
             "capacity": 4640999.999999999,
@@ -1657,7 +1657,7 @@
             "note_prefix": "Columna C1"
           },
           {
-            "name": "Aplastamiento en la zapata",
+            "name": "Aplastamiento",
             "status": "PASS",
             "demand": 1150000.0,
             "capacity": 4640999.999999999,

@@ -1,22 +1,22 @@
 {
   "examples/aci_318_25/cabezales/pruebas/cabezal_columna.json": {
-    "resultado.json": "b9cc5ad0e5f99adf7a3bf188401e4d404922351c07a6d1d80d5f17889bb48cb2",
-    "memoria.txt": "e6a81ff30660399029acf4bbe626d037f4e24affd4a97779503da24f022d94d5",
+    "resultado.json": "5f8fbb4af4dbd463d53eeb116c88b3f268e424b0b4b0a3e99e103884eeedc525",
+    "memoria.txt": "e6873e3f478921799d9b44e6f32fbb1732909151c3846c13f896e567c20791f0",
     "cabezal_columna_drawing.json": "6dc959a3878fc116925a3f72ae17d51f1d2c4e42657887d1a1dff3d3dbe96ede"
   },
   "examples/aci_318_25/cabezales/pruebas/cabezal_columna_etabs.json": {
-    "resultado.json": "d9699cb38a934b9feddf62e3d6977399ba36c58fb0001e2b1d97d96fb315591c",
-    "memoria.txt": "d53cc2db84d8efa69fcbe108d497db4a61c9541ec680fce44112063b2ff60752",
+    "resultado.json": "76736f08a9f953d63b82dc1c692d21b485e92708996516b2cedfd302b90fc27c",
+    "memoria.txt": "eb55490b3cc3b3e7a97aec56e8904fc1cee62a801c5d573af6424e3d7710d4c3",
     "cabezal_columna_etabs_drawing.json": "5a30653a5cd097bcd8e5028095321dfd1ff3e4c955fcb65ae1e29ba7d8a4546d"
   },
   "examples/aci_318_25/cabezales/pruebas/cabezal_pilotes.json": {
-    "resultado.json": "4e97cbe5bc1fb3fc56ece24db108344fb394b75aa742a35eb7f3cd75a41ee139",
-    "memoria.txt": "023f8189041154823d02880e28103df940d243bfba20ca66d92b2095727c9c3c",
+    "resultado.json": "85aac1898102473ea5f83281ab95ced2df50128874e54ee4e72ee7b15e1f03ea",
+    "memoria.txt": "21bb0f78b097eba032a6c0f5e366f4eca6ce9d826e0f5607ac3ff3942b2f92bb",
     "cabezal_pilotes_drawing.json": "da1754548a40c766b7d5e101ae4269285d3d7937bbc0dba0f2e42fe64d2ae28c"
   },
   "examples/aci_318_25/cabezales/pruebas/cabezal_pilotes_etabs.json": {
-    "resultado.json": "a79130ae65e2f232435a216c4157b1cc0998f1a8fb448cc1c67926e68e0e5f13",
-    "memoria.txt": "6c5e32936bef07b25548e222eaad8a9302f3371e5602bf3c9bcb7d6279376cd2",
+    "resultado.json": "142f008da9a84b99ad2f2582d78db346c7bf277dee7fe46b8e55b3f1473df314",
+    "memoria.txt": "209b64289a11c5c45073f4b1c0f780efb05a04aa2826eb0103ee99fd5abf0b18",
     "cabezal_pilotes_etabs_drawing.json": "98ade2afb1bed2c5d9e57df8a32460cdbba8d7f0b4764be7e23850cc4107c834"
   },
   "examples/aci_318_25/vigas/pruebas/viga_alta.json": {
@@ -37,69 +37,69 @@
   },
   "examples/aci_318_25/zapatas/pruebas/diseno_combinada.json": {
     "proyecto.json": "111af2c11888bf6b267be2cf5c5995c86e5fbbbfa15bcbea22dd251a103f085f",
-    "resultado.json": "bcb323d76c06a53a18aaca9aeb2b30c2d868fccefb6e37f8980c137dcfc605b2",
-    "memoria.txt": "7965d29aea283f5aabe73a23de6b2c5b4802ee2b4b80ccc5c2ed24a1a10890aa"
+    "resultado.json": "22a442f8ba0c0cb4873ad7495e3226257feb8b2fd9a48cde07472520fc3f9978",
+    "memoria.txt": "667b6731aaeab3529d93443d340efcf060e5a3564a2c85f74e13eb21518b9387"
   },
   "examples/aci_318_25/zapatas/pruebas/diseno_combinada_etabs.json": {
-    "resultado.json": "3d4bd6f6c87cda712b279b438fb6e17f1142b74cb57334dc8e21f7d6245ee0b8",
-    "memoria.txt": "9fefc4eb7fd19e1df81056e5561e937343392e6db34bb27c9ee52dd14ed9fe41"
+    "resultado.json": "4daefa8dc457dd52b88129ce46f9932fa3ca59b07cb5c1ac0092575b01369f6f",
+    "memoria.txt": "606dc7a6a850369f3cb8f49530932a363ae3cb9a83dc8c1d8121dee2230bb329"
   },
   "examples/aci_318_25/zapatas/pruebas/diseno_t_invertida.json": {
     "proyecto.json": "d385a6fc7c213862cdaf49e5dec13753e770371a3fe75acbd6072cc73ab1a950",
-    "resultado.json": "ccdb0b38a61c4afd877cecd1b0f7939a56bac08a04d96e0a769512125916f3b0",
-    "memoria.txt": "10895cdd266921e54e1fc62e3c01a170af019c5101185635d19f3fd11d1a164c"
+    "resultado.json": "460a5567ad527f2d4da990dcf2f6e658269b0619a4271d9af491a417cc162bd0",
+    "memoria.txt": "b149780a952e5424aa691d2f481198b5c347f1fbd893f957873a5465706fd18a"
   },
   "examples/aci_318_25/zapatas/pruebas/diseno_t_invertida_etabs.json": {
-    "resultado.json": "fcfd4f7e95d1c441f3e98b7fdc6fffe6fecb856ac4be77a7e8ab17fe05ac3f81",
-    "memoria.txt": "f44ca5a35d10ebc50bf88a73cab977803ee7a54783376a72692a43b61129c0c2"
+    "resultado.json": "86ef8a66ad43abccb0dd53f6678e0098482938b4ace0bc79b2a5b7647b2ad85c",
+    "memoria.txt": "aa797944e273f0a7cf2b6cc7b2d9afee5fb22d04b8838634e649e817b6a48e8c"
   },
   "examples/aci_318_25/zapatas/pruebas/diseno_tipologias.json": {
     "proyecto.json": "e750fbb25bc14b209532eed437e22ebaeac5b9c891d01259e9dc4b8057df9c0d",
-    "resultado.json": "987b080d85a0aea147443103bbcd144ee087d3f277ade33c32ebeedf41e11e8a",
-    "memoria.txt": "41e48fc28d905511a489da888985c064162220f7371b62b63711a0d5c76c9605"
+    "resultado.json": "b42468798d98121247be9bf8a07f9c5f02d0b041652d136de9f17b182a8af140",
+    "memoria.txt": "a07cb8dc8896759c042a69d8fb421ddd97510601d25ecab53ea16d7c9b8ab046"
   },
   "examples/aci_318_25/zapatas/pruebas/zapata_centrica.json": {
-    "resultado.json": "9ba81d2434b87d1de891c95ff06b71a9ecd51e7074cd5a27bb069e6b4e44f1ba",
-    "memoria.txt": "df4917dbbcc509d4430292b2d9c0f7b981e383db3e6017d138055f8f2274aa12",
+    "resultado.json": "a835dfb62a2c209e14ae0e2b4086ad4782f0303d70cc3c0d37c440b6ac261e31",
+    "memoria.txt": "7f02a1982c51626cd743c90cac0136f2bf02b9a324225843886e7d752be45d6d",
     "zapata_centrica_drawing.json": "f0a702648a8bf4ed93cc164a2ea590a4b7278ec5b7d7bb18343caad6457ad017"
   },
   "examples/aci_318_25/zapatas/pruebas/zapata_centrica_etabs.json": {
-    "resultado.json": "af001b1d0de5651f330d433f1cf1db1e6504f3cfccad99a8bbb9fec3c8f13a80",
-    "memoria.txt": "c04d8102a88ee52aa1f00418f67982c10896c7ff2943b1389e11d895df7ca986",
+    "resultado.json": "c441f386d0ad39400386d126044de4a685fa1c0e4f1c80ead395b5ac9c9dcf5c",
+    "memoria.txt": "1baf19dae3dc9cb2627837a9bcea5724093e33c92a8e6f329d71d85a9aa8fc74",
     "zapata_centrica_etabs_drawing.json": "d6f68aaf653abec0b0a8012e3a2fc0dacb8e6625eea6e7a48192edf7333c6975"
   },
   "examples/aci_318_25/zapatas/pruebas/zapata_combinada.json": {
-    "resultado.json": "c7ab9d8cb95b653340b6a6ef524d66901afeb15d1da6fb84cba43f75f2cf24f1",
-    "memoria.txt": "2364a5238288fc8bef60ff50ee4a2cc435c4e5c185abdb24a2206b0294b1968b",
+    "resultado.json": "a0d97be25efa496b08a59c9b79e4ddb9a49d0a36b17257077424a6a973d313c1",
+    "memoria.txt": "b4985a3e7c13f419291cab2b45be60f49c02c754d677a0deaff3ce81563b2f65",
     "zapata_combinada_drawing.json": "7ab602ace39e5fcf7f9a56808df2532f7584456b9009346ce43e9962240fbe0e"
   },
   "examples/aci_318_25/zapatas/pruebas/zapata_combinada_etabs.json": {
-    "resultado.json": "70fa3cd0412ef0c100d62a0e24e890bcc920427d174ba287f04d903a9211223b",
-    "memoria.txt": "0889b08963dbca2febb85c9955520a4098832a7110ccc60b8ac717ef93906037"
+    "resultado.json": "28af9475e730566a95c68d7874ce26fd606440ac742b656d64a04386d7e15edd",
+    "memoria.txt": "4fa6efe42d057af7cc9f8ad4b967ca332b2b2d0a9c5385de7f9c3256876da220"
   },
   "examples/aci_318_25/zapatas/pruebas/zapata_t_invertida_etabs.json": {
-    "resultado.json": "2e8ef733e905f61aaf3c4748086e503bba58d81eeaedd6bb9b460296d80dd903",
-    "memoria.txt": "60d1077270b7464d5792b1a4d44ea045a261dcb08f9e5ebddc87ee2b1ffbcb2d",
+    "resultado.json": "ad77b885726f81762bdbbfbfe70e85ef62d21be74f1ff89a3afaacb148fa1b5d",
+    "memoria.txt": "c0562dcbbd592a055d829581cd5f1cfa8253fc6d9cf5afca31be17829ade4b71",
     "zapata_t_invertida_etabs_drawing.json": "490d258187fb0660a8cbb26f0210b84af34cb734b217c10874883e562105f0bf"
   },
   "examples/nsr_10/cabezales/pruebas/cabezal_columna.json": {
-    "resultado.json": "e19708dc5ed96b15bf4d1cda8af9ef4804350172c825fee8b18c95d5196e572d",
-    "memoria.txt": "8b12c735309942de9530e13d6da8f1a6941d7a0069c6d1088cec8dc23cc63e6e",
+    "resultado.json": "72904b25de001ec04d11c8c6c6e71cc2de424380b5f15cfa9fecc7226717cb5e",
+    "memoria.txt": "b84918538256c4301abad32d150e34a3a12a13b333eb565b8a476e0b9457b791",
     "cabezal_columna_drawing.json": "6dc959a3878fc116925a3f72ae17d51f1d2c4e42657887d1a1dff3d3dbe96ede"
   },
   "examples/nsr_10/cabezales/pruebas/cabezal_columna_etabs.json": {
-    "resultado.json": "f4cfa5a7aa10e0014d7fdf63b3d07d78473c28987bb05ee1ab3f16ba1e072b70",
-    "memoria.txt": "5a194ec718aca76468cbc0ef7245a7ef6006ac0abfaa057756d9371e947f8a45",
+    "resultado.json": "3ff4bdc953f9841a5d87d4d001f0726664d9e258b772fb08fb2d369a278e5e36",
+    "memoria.txt": "889463acbd54a94767a2a47eef81c89c5557ad81632116d2702af7f8e11c81f3",
     "cabezal_columna_etabs_drawing.json": "5a30653a5cd097bcd8e5028095321dfd1ff3e4c955fcb65ae1e29ba7d8a4546d"
   },
   "examples/nsr_10/cabezales/pruebas/cabezal_pilotes.json": {
-    "resultado.json": "c1c42003c4334c0b92b13b2e9c5e840b5ab7cc633c9843d1b01a74bf1e19d61f",
-    "memoria.txt": "0834d760fbbfdca8ab0e0b9f200a9169879dbcd0968b261f6bb9636b1a76ab60",
+    "resultado.json": "9577634cdded2f4a1ba6e20c02bbadaa842ce10ab9dcb9fd7aa9e5d64857acaf",
+    "memoria.txt": "0f4b23c7c21ce61775d8410dd4435efd0558610d0e4f3a31402d6d4a6164256c",
     "cabezal_pilotes_drawing.json": "da1754548a40c766b7d5e101ae4269285d3d7937bbc0dba0f2e42fe64d2ae28c"
   },
   "examples/nsr_10/cabezales/pruebas/cabezal_pilotes_etabs.json": {
-    "resultado.json": "0fd66f85387832189771882cfa197cfdcab58870bccf5cf63ff9e1f818ec58ca",
-    "memoria.txt": "c0fdeca0da4d17c070c0ba9ccaecd9132962c762a8c5fbc46950f88551ee3530",
+    "resultado.json": "d85123449a0b9e0155ceb8b7d9ffd13e50d310c46ddde2bcc460654e39462f7f",
+    "memoria.txt": "192876b684dbc68bfc3468bc307742521d55a4d8e04fdd3b7bfedfbdacdfa83c",
     "cabezal_pilotes_etabs_drawing.json": "98ade2afb1bed2c5d9e57df8a32460cdbba8d7f0b4764be7e23850cc4107c834"
   },
   "examples/nsr_10/vigas/pruebas/viga_alta.json": {
@@ -120,49 +120,49 @@
   },
   "examples/nsr_10/zapatas/pruebas/diseno_combinada.json": {
     "proyecto.json": "b857019613ae8acb4c1c9e3aacf41d32601f483131f6340410d90da8c5887c5c",
-    "resultado.json": "04e8f60fff85f3f93a5a4b1aa987ed6542ac95122fa66cee8954cf18b43338eb",
-    "memoria.txt": "4ba75218d87a275e1ac62792e0baa1caeec5afe09da3bc67d3e22bc6ea48a067"
+    "resultado.json": "c413f72c25bb4285f7afeb974d3a060e33e8f1be41f57a6b2fd4601f35daa09e",
+    "memoria.txt": "1c163772782fc477abb6e7c765af7dcdc491d8dba1aa72848fb00fb02e8afa6a"
   },
   "examples/nsr_10/zapatas/pruebas/diseno_combinada_etabs.json": {
-    "resultado.json": "643e3ec629026b766ed795262e1667c198063bfb265ed9c0e38a2fdba9d64a7c",
-    "memoria.txt": "214dc1dc78a00833972d92ddc1b0462d59dab46fc57786f11ed2478b27ffbb39"
+    "resultado.json": "8cf76b7314d5f9b8c05b6dbe7e1ce653eb82061032a70c98a8df2a3dbaf757a9",
+    "memoria.txt": "5c513e0e2cf558f9f5d382f6bdc30c1c3b9922af193b25044533061ed52203c2"
   },
   "examples/nsr_10/zapatas/pruebas/diseno_t_invertida.json": {
     "proyecto.json": "ff513b798c254852d4d49a4c8f7b454aa73bcdbcd5335f0d30e764352d932160",
-    "resultado.json": "1f5514bbe0301427c764ab0bf27be509e10e80ae9622aa91511d30d73e2238ac",
-    "memoria.txt": "447021615d180d2ea95f9787f4690a45e8a1d207242da95cd58d0e83e4ff5b7c"
+    "resultado.json": "503b9a6709d6ed1bd3a04a11380ed7db7f2d40a58b8dc5ac845160c58281bfed",
+    "memoria.txt": "84e437cbe6527ce02a910c9fa9c55d0e3798d3e992016227ed008173e900334b"
   },
   "examples/nsr_10/zapatas/pruebas/diseno_t_invertida_etabs.json": {
-    "resultado.json": "d5dfb56476d9e7833aa4aa12d5d0e30c8b9143d1f1eb34275d16dd78f2824aed",
-    "memoria.txt": "474d122054629ae6e9fb5316a391f6ecf438902abe2a104656702ae1ecff118a"
+    "resultado.json": "37b064b0bad683a6ea7d69305a1d168417f467f27269eb0df3176085a07a996f",
+    "memoria.txt": "271b0e5d15df2920c8373d3c631e7b89a802e2336c255e31af28361bc0ee29f8"
   },
   "examples/nsr_10/zapatas/pruebas/diseno_tipologias.json": {
     "proyecto.json": "c3e7271f0f89c3858c7a0201c2ad693e21d23a8e2ebe4bbeb32bb33eb813edce",
-    "resultado.json": "8608c53003beacbed10b68fccb9cae8e52131f160c79e298e1ff2b912b5549d7",
-    "memoria.txt": "7749c291b8281cfd87c3288ddb7ad49cc9f4444f4ca683938a8683885644c2c9"
+    "resultado.json": "bea277de79d276d5ba419bf209aebdd05b409a0d696c6ee4542e8690579a43fa",
+    "memoria.txt": "9257988886b72abf154b8d5459094305a27da5316c474ee6b01816e7a3d26595"
   },
   "examples/nsr_10/zapatas/pruebas/zapata_centrica.json": {
-    "resultado.json": "4633c05d62c363509658c6eca62ffdf144ff3544c66a9f61a55a2a185cb9fbee",
-    "memoria.txt": "68f85b1a81a47ba437394fa0535256abdb66cd2ee2cf341d33e4f39f06379d0b",
+    "resultado.json": "2a01670b8f9550d1dc830b7dbc4e034f9072cac40762ead57a745b9b23792af5",
+    "memoria.txt": "8d641e5e10e006a981f34cd2d02cb4d7bcae8426f7a1b238b3e6aa84b56de29e",
     "zapata_centrica_drawing.json": "f0a702648a8bf4ed93cc164a2ea590a4b7278ec5b7d7bb18343caad6457ad017"
   },
   "examples/nsr_10/zapatas/pruebas/zapata_centrica_etabs.json": {
-    "resultado.json": "cf7e9dc6523146e8b6a20115fd65b3e9bef8d23bd051ae9ebadc30ed27ea743e",
-    "memoria.txt": "6af1c78ea6665bde9f9b345c879b225846515d7b133f91740b64c54480ba90c3",
+    "resultado.json": "615736e2f201a9af02541f79c72530b0b1194a304fafa0d7e24dfa88af9818bd",
+    "memoria.txt": "9d525ca0302939e95b530938549c380d82e9f3c23f3818f15d9c206ea3b9a30e",
     "zapata_centrica_etabs_drawing.json": "d6f68aaf653abec0b0a8012e3a2fc0dacb8e6625eea6e7a48192edf7333c6975"
   },
   "examples/nsr_10/zapatas/pruebas/zapata_combinada.json": {
-    "resultado.json": "a362a8e51c8bf42042fb379ecdfd7f4ae833a79d7c2a436fd3e93d0d73d011e9",
-    "memoria.txt": "dc67b7677226809aadd4ef536e8cb2afae38f671b6b91f44df32171d997eead1",
+    "resultado.json": "27986dbfee5ebc0ca72db00592b97f6ed2e6facadf32900bf159240f165a2de9",
+    "memoria.txt": "74dafee583af15ff5ecef913709931387e6e5445e97bf8c60aea9dfe7020b42c",
     "zapata_combinada_drawing.json": "7ab602ace39e5fcf7f9a56808df2532f7584456b9009346ce43e9962240fbe0e"
   },
   "examples/nsr_10/zapatas/pruebas/zapata_combinada_etabs.json": {
-    "resultado.json": "c86714bf6e03fe2cd92eefff28921a6128f1d6854e264d76f8fd22228b39c508",
-    "memoria.txt": "3f6e90790f047f87e71efd6422afe5b9028fef126bf70a5995ad0f758444b090"
+    "resultado.json": "2a04f83c2677bfa4d56d0b2cce83fe57d2f495edbaf1c4916d59d4d35eab50dc",
+    "memoria.txt": "5ad2ee1ffa3c3f3f1fce9ad2add15aa1e7fa3d1b8ac46df54c4f4ec78aee6072"
   },
   "examples/nsr_10/zapatas/pruebas/zapata_t_invertida_etabs.json": {
-    "resultado.json": "9e05c8d7d8478718e17e074c2a1b74089fc1d5b8718dd52a4a00f3053ace6251",
-    "memoria.txt": "c5acfc51e04cc269a0be3084e6ddadc3902dd7783ee253c8237a7dcdc1a125ad",
+    "resultado.json": "dd5f0150abff4b4c44ae5387fc78a5905c791bb444f258f21b78491449495460",
+    "memoria.txt": "d606260bc20b45ba6f31f5ba0b280a91ca0cbbbf65ad6e09d49a193c51582785",
     "zapata_t_invertida_etabs_drawing.json": "490d258187fb0660a8cbb26f0210b84af34cb734b217c10874883e562105f0bf"
   }
 }

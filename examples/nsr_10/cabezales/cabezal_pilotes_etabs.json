@@ -33,7 +33,9 @@
   "pile_caps": [
     {
       "id": "CP-1725",
+      "loads_from": "piles",
       "etabs_station": 0.002,
+      "column_unique_name": "277",
       "lx": 1800.0,
       "ly": 3000.0,
       "h": 1500.0,

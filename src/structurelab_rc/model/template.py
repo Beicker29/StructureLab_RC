@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFlo
 
 from structurelab_rc.model.footing import Column, Dowels, Mat
 from structurelab_rc.model.layout import internal
+from structurelab_rc.model.pile_cap import PileType
 from structurelab_rc.model.project import Materials, Section, SeismicFacts
 from structurelab_rc.model.reinforcement import ReinforcementLayout
 
@@ -332,40 +333,49 @@ class TemplatePile(_Input):
     angle: float = 0.0
 
 
-class TemplatePileCap(BaseModel):
-    """Un cabezal de la plantilla (D-138): el cuerpo del cabezal del proyecto sin cargas (se valida al armar el proyecto)
-    y de dónde salen: etabs_unique_name, el nudo de la columna en "Joint Reactions"; o los pilotes con su Unique Name y
-    etabs_station, la estación (en m, como la escribe ETABS) de la que se toman sus fuerzas en "Element Forces - Columns".
-    Con las de los pilotes, column_unique_name es el nudo de la columna del cabezal en la tabla de coordenadas (Joint
-    Location), obligatorio si la plantilla la declara: ubica el cabezal en la planta de localización."""
-
-    model_config = ConfigDict(frozen=True, extra="allow")
+class TemplatePileCap(_Input):
+    """Un cabezal de la plantilla (D-138): el cuerpo del cabezal del proyecto sin cargas (se valida al armar el proyecto),
+    column_unique_name (obligatorio), el Unique Name declarado de su columna, y loads_from (obligatorio), de dónde salen
+    las cargas: de la columna (column),
+    con ese Unique Name en "Joint Reactions"; o de los pilotes (piles), con el Unique Name de cada uno y etabs_station, la
+    estación (en m, como la escribe ETABS) de la que se toman sus fuerzas en "Element Forces - Columns". Con la tabla de
+    coordenadas (Joint Location), column_unique_name ubica el cabezal en la planta de localización. Declara todos sus
+    campos (extra = forbid, como el resto de la entrada): un campo mal escrito se rechaza al leer la plantilla."""
 
     id: str = Field(min_length=1)
-    etabs_unique_name: str | None = Field(default=None, min_length=1)
+    loads_from: Literal["column", "piles"]
+    column_unique_name: str = Field(min_length=1)
     etabs_station: float | None = None
-    column_unique_name: str | None = Field(default=None, min_length=1)
+    lx: PositiveFloat
+    ly: PositiveFloat
+    h: PositiveFloat
+    cover: PositiveFloat
+    bottom_cover: PositiveFloat
+    fill_height: NonNegativeFloat
+    pedestal_height: NonNegativeFloat
+    surcharge_dead_kNm2: NonNegativeFloat
+    surcharge_live_kNm2: NonNegativeFloat
+    column: Column
+    bottom: Mat
+    top: Mat | None
+    pile: PileType
+    mislocation_mm: NonNegativeFloat
+    reactions_include_weight: bool | None = None
     piles: tuple[TemplatePile, ...] = Field(min_length=1)
 
     @property
     def from_piles(self) -> bool:
-        return self.etabs_unique_name is None
-
-    @property
-    def column_joint(self) -> str | None:
-        """El nudo de la columna del cabezal en la tabla de coordenadas: el de sus cargas o el declarado (D-138)."""
-        return self.etabs_unique_name or self.column_unique_name
+        return self.loads_from == "piles"
 
     @model_validator(mode="after")
     def _check_source(self) -> Self:
-        named = [pile.etabs_unique_name is not None for pile in self.piles]
-        if self.etabs_unique_name is not None:
-            if any(named) or self.etabs_station is not None or self.column_unique_name is not None:
-                raise ValueError(f"el cabezal '{self.id}' toma las cargas de la columna: sus pilotes no llevan etabs_unique_name "
-                                 "ni el cabezal etabs_station ni column_unique_name (la columna es etabs_unique_name)")
+        if not self.from_piles:
+            if self.etabs_station is not None or any(pile.etabs_unique_name is not None for pile in self.piles):
+                raise ValueError(f"el cabezal '{self.id}' declara loads_from = column: sus pilotes no llevan etabs_unique_name ni "
+                                 "el cabezal etabs_station")
             return self
-        if not all(named):
-            raise ValueError(f"el cabezal '{self.id}' necesita etabs_unique_name (columna) o el de cada uno de sus pilotes")
+        if not all(pile.etabs_unique_name is not None for pile in self.piles):
+            raise ValueError(f"el cabezal '{self.id}' toma las cargas de los pilotes: todos llevan etabs_unique_name")
         if self.etabs_station is None:
             raise ValueError(f"el cabezal '{self.id}' toma las cargas de los pilotes: declara etabs_station (m)")
         return self

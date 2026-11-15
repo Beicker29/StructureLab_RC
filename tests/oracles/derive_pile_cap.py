@@ -14,8 +14,9 @@ Para cada caso:
 3. Momento en cada cara de la columna con los casos mayorados: Σ R·(distancia + t) de los pilotes con brazo positivo,
    más la acción de la cabeza de los pilotes cuyo centro queda más allá (su momento y el de su fuerza horizontal a
    e − h/2 del eje), menos el peso q·b·L²/2.
-4. As mínimo (guía CRSI 4.5): As = máx(As análisis, mín(ηbd, 4/3·As análisis), mín(ηbd, ρt·b·h)), η = máx(0.25√f'c,
-   1.4)/fy, ρt = 0.0018 (fy = 420), As análisis de la ecuación cuadrática con φ = 0.9.
+4. As mínimo de la malla inferior (guía CRSI 4.5): As = máx(As análisis, mín(ηbd, 4/3·As análisis), mín(ηbd, ρt·b·h)),
+   η = máx(0.25√f'c, 1.4)/fy, ρt = 0.0018 (fy = 420), As análisis de la ecuación cuadrática con φ = 0.9; la retracción
+   ρt·b·h se revisa además con las dos mallas sumadas (D-140).
 5. Cortante en una dirección a d de la cara con la reacción interpolada (0.5 + (dist + t)/dpile, entre 0 y 1). ACI 22.5
    sin Av,min: Vc = 0.66λs·λ·ρw^(1/3)·√f'c·b·d (λs = √(2/(1 + d/250)) ≤ 1), entre 0.083 y 0.42 λ√f'c·b·d; con pilotes a
    4D o menos, el mayor entre ese y 0.17λ√f'c·b·d (13.4.6.8(a), decisión del usuario). NSR-10: el
@@ -39,7 +40,10 @@ FC, FY, PHI_V, PHI_M = 28.0, 420.0, 0.75, 0.9
 GAMMA_C, GAMMA_F = 24e-6, 18e-6
 BARS = {"#5": (15.9, 199.0), "#6": (19.1, 284.0), "#7": (22.2, 387.0), "#8": (25.4, 510.0)}
 SQRT_FC = min(math.sqrt(FC), 8.3)
-SOIL = {"A": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 850.0,
+SOIL = {"C": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 850.0,
+              "pile_capacity_tension_kN": 250.0, "pile_capacity_lateral_kN": 80.0, "seismic_capacity_factor": 1.0,
+              "group_efficiency": 0.9, "max_eccentricity_mm": 150.0},
+        "A": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 850.0,
               "pile_capacity_tension_kN": 250.0, "pile_capacity_lateral_kN": 80.0, "seismic_capacity_factor": 1.33,
               "group_efficiency": 0.85, "max_eccentricity_mm": 150.0},
         "B": {"unit_weight_concrete_kNm3": 24.0, "unit_weight_fill_kNm3": 18.0, "pile_capacity_compression_kN": 1300.0,
@@ -61,7 +65,8 @@ COLUMN = [_load("S1", "service", 1.0, 1.0, (2000.0, 6.0, 4.0, -10.0, 15.0)),
           _load("S2", "service", 1.0, 1.0, (2100.0, 80.0, 10.0, -20.0, 250.0), True),
           _load("U1", "factored", 1.2, 1.6, (2900.0, 9.0, 6.0, -14.0, 22.0)),
           _load("U2", "factored", 1.2, 1.0, (2600.0, 120.0, 15.0, -30.0, 400.0), True)]
-CAP_A = {"id": "A", "lx": 2000.0, "ly": 2000.0, "h": 900.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 600.0,
+CAP_A = {"id": "A", "loads_from": "column",
+         "lx": 2000.0, "ly": 2000.0, "h": 900.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 600.0,
          "pedestal_height": 0.0, "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0,
          "column": {"cx": 500.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0},
          "bottom": {"first": "x", "x": _mat("#7", 150.0), "y": _mat("#7", 150.0)},
@@ -75,7 +80,7 @@ CAP_A = {"id": "A", "lx": 2000.0, "ly": 2000.0, "h": 900.0, "cover": 75.0, "bott
 PILE_CASES = [("S1", "service", 1.0, 1.0, False, (1100.0, 1150.0), 10.0, 20.0),
               ("U1", "factored", 1.2, 1.6, False, (1500.0, 1600.0), 15.0, 30.0),
               ("U2", "factored", 1.2, 1.0, True, (1200.0, 1900.0), 60.0, 120.0)]
-CAP_B = {"id": "B", "lx": 1200.0, "ly": 3600.0, "h": 800.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 0.0,
+CAP_B = {"id": "B", "loads_from": "piles", "lx": 1200.0, "ly": 3600.0, "h": 800.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 0.0,
          "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
          "column": {"cx": 500.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0},
          "bottom": {"first": "y", "x": _mat("#6", 150.0), "y": _mat("#8", 100.0)},
@@ -86,6 +91,21 @@ CAP_B = {"id": "B", "lx": 1200.0, "ly": 3600.0, "h": 800.0, "cover": 75.0, "bott
                     "loads": [_load(case, kind, fd, fl, (reactions[index], 0.0, vy, mx, 0.0), seismic)
                               for case, kind, fd, fl, seismic, reactions, vy, mx in PILE_CASES]}
                    for index, (name, y) in enumerate((("P1", -1200.0), ("P2", 1200.0)))]}
+
+
+# Simétrico, sin momentos: reacciones parcialmente interpoladas a d de las caras y a d/2 de la columna, y pilotes de
+# esquina (P3).
+CAP_C = {"id": "C", "loads_from": "column", "symmetric": True,
+         "lx": 2000.0, "ly": 2000.0, "h": 700.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 0.0,
+         "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
+         "column": {"cx": 500.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0},
+         "bottom": {"first": "x", "x": _mat("#7", 150.0), "y": _mat("#7", 150.0)},
+         "top": {"first": "x", "x": _mat("#5", 250.0), "y": _mat("#5", 250.0)},
+         "pile": {"shape": "circular", "size": 400.0, "embedment": 75.0}, "mislocation_mm": 75.0,
+         "piles": [{"id": f"P{i + 1}", "x": x, "y": y} for i, (x, y) in enumerate(((-550.0, -550.0), (550.0, -550.0), (550.0, 550.0),
+                                                                                     (-550.0, 550.0)))],
+         "loads": [_load("S1", "service", 1.0, 1.0, (2400.0, 0.0, 0.0, 0.0, 0.0)),
+                   _load("U1", "factored", 1.2, 1.6, (3400.0, 0.0, 0.0, 0.0, 0.0))]}
 
 
 def _uniform(cap: dict, load: dict) -> float:
@@ -140,9 +160,9 @@ def _depths(cap: dict) -> dict[str, float]:
     return {first: cap["h"] - cap["bottom_cover"] - d1 / 2, second: cap["h"] - cap["bottom_cover"] - d1 - d2 / 2}
 
 
-def _rows(cap: dict, direction: str) -> tuple[float, float]:
-    """(ancho, As) de las barras inferiores de una dirección: centradas en el ancho menos recubrimiento y medio diámetro."""
-    bar = cap["bottom"][direction]
+def _rows(cap: dict, direction: str, mat: str = "bottom") -> tuple[float, float]:
+    """(ancho, As) de las barras de una malla en una dirección: centradas en el ancho menos recubrimiento y medio diámetro."""
+    bar = cap[mat][direction]
     db, area = BARS[bar["designation"]]
     width = cap["ly"] if direction == "x" else cap["lx"]
     span = width - 2 * cap["cover"] - db
@@ -150,25 +170,54 @@ def _rows(cap: dict, direction: str) -> tuple[float, float]:
     return width, count * area
 
 
-def _beyond(cap: dict, case: dict, axis: int, plane: float, outward: float) -> tuple[float, float, float]:
-    """(V interpolado, V completo, M) más allá del plano."""
+def _beyond(cap: dict, case: dict, axis: int, plane: float, outward: float, sense: float) -> tuple[float, float, float]:
+    """(V interpolado, V completo, M) más allá del plano, con R + sense·ΔR. Un pilote cuenta si su distancia más la
+    tolerancia queda más allá: reacción completa, brazo y acción de la cabeza."""
     tolerance, size, lever = cap["mislocation_mm"], cap["pile"]["size"], cap["pile"]["embedment"] - cap["h"] / 2
     q = _uniform(cap, case["load"])
     shear = full = moment = 0.0
     for i, pile in enumerate(cap["piles"]):
-        r = case["R"][i] + (case["dR"][i] if case["spread_on_cap"] else 0.0)
-        dist = outward * ((pile["x"], pile["y"])[axis] - plane)
-        if dist + tolerance > 0:
-            moment += r * (dist + tolerance)
-        if dist > 0:
-            full += r
-            vx, vy, mx, my = case["heads"][i]
-            moment += -outward * (my + lever * vx) if axis == 0 else outward * (mx - lever * vy)
-        shear += min(max(0.5 + (dist + tolerance) / size, 0.0), 1.0) * r
+        r = case["R"][i] + sense * case["dR"][i]
+        arm = outward * ((pile["x"], pile["y"])[axis] - plane) + tolerance
+        shear += min(max(0.5 + arm / size, 0.0), 1.0) * r
+        if arm <= 0:
+            continue
+        full += r
+        moment += r * arm
+        vx, vy, mx, my = case["heads"][i]
+        moment += -outward * (my + lever * vx) if axis == 0 else outward * (mx - lever * vy)
     half, width = (cap["lx"] / 2, cap["ly"]) if axis == 0 else (cap["ly"] / 2, cap["lx"])
     length = max(half - outward * plane, 0.0)
     w = q * width * length
     return shear - w, full - w, moment - w * length / 2
+
+
+def _sense(case: dict) -> float:
+    """+1 si la mala ubicación aumenta las reacciones (cargas de la columna), 0 si no."""
+    return 1.0 if case["spread_on_cap"] else 0.0
+
+
+def _perimeter(centre: tuple[float, float], size: tuple[float, float], d: float, bounds: tuple[float, float]) -> tuple[float, int] | None:
+    """Longitud b0 y lados perdidos del perímetro a d/2 de un rectángulo c1 × c2 recortado con el cabezal (|x| ≤ hx,
+    |y| ≤ hy); None si pierde más de dos lados."""
+    (x, y), (c1, c2), (hx, hy) = centre, size, bounds
+    left, right, bottom, top = x - (c1 + d) / 2, x + (c1 + d) / 2, y - (c2 + d) / 2, y + (c2 + d) / 2
+    inside = {"left": left > -hx, "right": right < hx, "bottom": bottom > -hy, "top": top < hy}
+    lost = sum(1 for value in inside.values() if not value)
+    if lost > 2:
+        return None
+    width = min(right, hx) - max(left, -hx)
+    height = min(top, hy) - max(bottom, -hy)
+    b0 = (inside["bottom"] + inside["top"]) * width + (inside["left"] + inside["right"]) * height
+    return b0, lost
+
+
+def _vc_two_way(folder: str, given: tuple[float, float, float, float]) -> float:
+    """vc de dos direcciones (MPa) con (β, αs, d/b0, λs)."""
+    beta, alpha, ratio, lam_s = given
+    if folder == "aci_318_25":
+        return min(0.33, 0.17 + 0.33 / beta, 0.17 + 0.083 * alpha * ratio) * lam_s * SQRT_FC
+    return min(0.17 * (1 + 2 / beta), 0.083 * (alpha * ratio + 2), 0.33) * SQRT_FC
 
 
 def _required_area(b: float, d: float, mu: float) -> float:
@@ -207,8 +256,9 @@ def _service(folder: str, cap: dict, cases: list[dict]) -> list[dict]:
         expected.append({"name": "Presion admisible del pilote: compresion", "case": name, "demand": demand,
                          "capacity": mislocation * fs * qa})
         lateral = max(math.hypot(h[0], h[1]) for h in case["heads"])
-        expected.append({"name": "Deslizamiento del pilote", "case": name, "demand": lateral,
-                         "capacity": fs * soil["pile_capacity_lateral_kN"] * 1e3})
+        if lateral > 1.0:
+            expected.append({"name": "Deslizamiento del pilote", "case": name, "demand": lateral,
+                             "capacity": fs * soil["pile_capacity_lateral_kN"] * 1e3})
         expected.append({"name": "Capacidad del grupo de pilotes", "case": name, "demand": sum(case["R"]),
                          "capacity": soil["group_efficiency"] * n * fs * qa})
         if not seismic:
@@ -252,18 +302,19 @@ def _one_way(folder: str, cap: dict, case: dict) -> list[dict]:
         for plane, outward in ((plus + d, 1.0), (minus - d, -1.0)):
             if abs(plane) >= half:
                 continue
-            v, _, m = _beyond(cap, case, axis, plane, outward)
+            v, _, m = _beyond(cap, case, axis, plane, outward, _sense(case))
             capacity = PHI_V * _vc_one_way(folder, (b, d, area / (b * d)), abs(v), abs(m), _spaced(cap))
             if worst is None or abs(v) / capacity > worst[0]:
                 worst = (abs(v) / capacity, abs(v), capacity)
         if worst is not None:
             out.append({"name": f"Cortante en una direccion (barras {direction})", "case": name, "demand": worst[1], "capacity": worst[2]})
         for plane, outward in ((plus, 1.0), (minus, -1.0)):
-            near = [value for value in (outward * ((p["x"], p["y"])[axis] - plane) for p in cap["piles"]) if value > 0]
+            t = cap["mislocation_mm"]
+            near = [value for value in (outward * ((p["x"], p["y"])[axis] - plane) for p in cap["piles"]) if value + t > 0]
             if not near or min(near) >= d:
                 continue
-            w = min(near) + cap["mislocation_mm"]
-            _, v, m = _beyond(cap, case, axis, plane, outward)
+            w = min([value for value in near if value > 0], default=0.0) + t
+            _, v, m = _beyond(cap, case, axis, plane, outward, _sense(case))
             ratio = min(m / (v * d), 1.0)
             stress = min(d / w * (3.5 - 2.5 * ratio) * (1.9 * 0.083 + 0.1 * 0.083 / ratio), 10 * 0.083) * SQRT_FC
             out.append({"name": f"Cortante en la cara de la columna (barras {direction})", "case": name, "demand": v,
@@ -276,26 +327,54 @@ def _two_way(folder: str, cap: dict, case: dict) -> list[dict]:
     depths, column, pile, out = _depths(cap), cap["column"], cap["pile"], []
     davg = (depths["x"] + depths["y"]) / 2
     name = case["load"]["case"]
+    t, sense = cap["mislocation_mm"], _sense(case)
     outside = [(max(abs(p["x"]) - column["cx"] / 2, abs(p["y"]) - column["cy"] / 2), i) for i, p in enumerate(cap["piles"])]
-    outside = [item for item in outside if item[0] > 0]
+    outside = [item for item in outside if item[0] + t > 0]
     if outside and min(outside)[0] < davg / 2:
-        w = min(outside)[0] + cap["mislocation_mm"]
+        w = min([distance for distance, _ in outside if distance > 0], default=0.0) + t
         c, bs = (column["cx"] + column["cy"]) / 2, 2 * (column["cx"] + column["cy"])
-        v = sum(case["R"][i] + (case["dR"][i] if case["spread_on_cap"] else 0.0) for _, i in outside)
+        v = sum(case["R"][i] + sense * case["dR"][i] for _, i in outside)
         v -= _uniform(cap, case["load"]) * (cap["lx"] * cap["ly"] - column["cx"] * column["cy"])
         stress = min(davg / w * (1 + davg / c) * 2 * 0.083, 32 * 0.083) * SQRT_FC
         out.append({"name": "Cortante en la cara de la columna (dos direcciones)", "case": name, "demand": v,
                     "capacity": PHI_V * stress * bs * davg})
     side = math.sqrt(math.pi) * pile["size"] / 2
     lam_s = 1.0 if folder == "nsr_10" or _spaced(cap) else min(math.sqrt(2 / (1 + davg / 250)), 1.0)
+    bounds = (cap["lx"] / 2, cap["ly"] / 2)
+    alpha = {0: 40.0, 1: 30.0, 2: 20.0}
     for i, p in enumerate(cap["piles"]):
-        if min(cap["lx"] / 2 - abs(p["x"]), cap["ly"] / 2 - abs(p["y"])) < (side + davg) / 2:
-            continue  # el oráculo solo cubre el perímetro P1 completo
-        r = case["R"][i] + (case["dR"][i] if case["spread_on_cap"] else 0.0)
-        b0 = 4 * (side + davg)
-        factor_vc = (min(0.33, 0.17 + 0.33, 0.17 + 0.083 * 40 * davg / b0) * lam_s if folder == "aci_318_25"
-                     else min(0.17 * 3, 0.083 * (40 * davg / b0 + 2), 0.33))
-        out.append({"name": "Punzonamiento del pilote", "case": name, "demand": r / (b0 * davg), "capacity": PHI_V * factor_vc * SQRT_FC})
+        r = case["R"][i] + sense * case["dR"][i]
+        if r <= 1.0:
+            continue
+        shapes = [((p["x"], p["y"]), (side, side))]
+        if p["x"] and p["y"]:
+            c1, c2 = bounds[0] - abs(p["x"]) + side / 2, bounds[1] - abs(p["y"]) + side / 2
+            shapes.append(((math.copysign(bounds[0] - c1 / 2, p["x"]), math.copysign(bounds[1] - c2 / 2, p["y"])), (c1, c2)))
+        best = None
+        for centre, size in shapes:
+            found = _perimeter(centre, size, davg, bounds)
+            if found is None:
+                continue
+            b0, lost = found
+            beta = max(size) / min(size)
+            demand, capacity = r / (b0 * davg), PHI_V * _vc_two_way(folder, (beta, alpha[lost], davg / b0, lam_s))
+            if best is None or demand / capacity > best[0]:
+                best = (demand / capacity, demand, capacity)
+        if best is not None:
+            out.append({"name": "Punzonamiento del pilote", "case": name, "demand": best[1], "capacity": best[2]})
+    if cap.get("symmetric"):  # punzonamiento de la columna sin momento transferido (oráculo del caso simétrico)
+        found = _perimeter((0.0, 0.0), (column["cx"], column["cy"]), davg, bounds)
+        assert found is not None
+        b0, lost = found
+        hx, hy = (column["cx"] + davg) / 2, (column["cy"] + davg) / 2
+        region = (2 * min(hx, bounds[0])) * (2 * min(hy, bounds[1]))
+        force = -_uniform(cap, case["load"]) * (cap["lx"] * cap["ly"] - region)
+        for i, p in enumerate(cap["piles"]):
+            share = min(max(0.5 + (max(abs(p["x"]) - hx, abs(p["y"]) - hy) + t) / pile["size"], 0.0), 1.0)
+            force += share * (case["R"][i] + sense * case["dR"][i])
+        beta = max(column["cx"], column["cy"]) / min(column["cx"], column["cy"])
+        out.append({"name": "Punzonamiento", "case": name, "demand": force / (b0 * davg),
+                    "capacity": PHI_V * _vc_two_way(folder, (beta, alpha[lost], davg / b0, lam_s))})
     return out
 
 
@@ -305,13 +384,21 @@ def _derive(folder: str, cap: dict) -> dict:
     factored = [case for case in cases if case["load"]["kind"] == "factored"]
     moments = {}
     for case in factored:
-        for direction, axis in (("x", 0), ("y", 1)):
-            plus, minus = faces[direction]
-            moments[(case["load"]["case"], direction)] = (_beyond(cap, case, axis, plus, 1.0)[2], _beyond(cap, case, axis, minus, -1.0)[2])
+        variants = [("", 0.0)] if not case["spread_on_cap"] else [(" (+ΔR)", 1.0), (" (−ΔR)", -1.0)]
+        for suffix, sense in variants:
+            for direction, axis in (("x", 0), ("y", 1)):
+                plus, minus = faces[direction]
+                moments[(case["load"]["case"] + suffix, direction)] = (_beyond(cap, case, axis, plus, 1.0, sense)[2],
+                                                                       _beyond(cap, case, axis, minus, -1.0, sense)[2])
     checks = _service(folder, cap, cases)
     for case in factored:
         checks += [*_one_way(folder, cap, case), *_two_way(folder, cap, case)]
-    return {"id": cap["id"], "cap": cap, "soil": SOIL[cap["id"]],
+    for direction in ("x", "y"):  # retracción con las dos mallas sumadas (D-140)
+        b, bottom = _rows(cap, direction)
+        top = _rows(cap, direction, "top")[1] if cap["top"] is not None else 0.0
+        checks.append({"name": f"Retraccion y temperatura: cuantia (barras {direction})", "case": None,
+                       "demand": 0.0018 * b * cap["h"], "capacity": bottom + top})
+    return {"id": cap["id"], "cap": {key: value for key, value in cap.items() if key != "symmetric"}, "soil": SOIL[cap["id"]],
             "reactions": [{"case": c["load"]["case"], "R": c["R"], "dR": c["dR"]} for c in cases],
             "moments": [{"case": key[0], "direction": key[1], "plus": value[0], "minus": value[1]} for key, value in moments.items()],
             "minimum": _minimum(cap, moments), "checks": checks}
@@ -322,7 +409,7 @@ def main() -> None:
         data = {"description": "Oraculo de cabezales (D-138), derivado por tests/oracles/derive_pile_cap.py",
                 "materials": {"fc": FC, "fy": FY, "fyt": FY, "concrete": "normalweight", "coating": "uncoated", "max_aggregate": 19.0},
                 "tolerance_rel": 1e-6,
-                "cases": [_derive(folder, cap) for cap in (CAP_A, CAP_B)]}
+                "cases": [_derive(folder, cap) for cap in (CAP_A, CAP_B, CAP_C)]}
         (HERE / folder / "derived_pile_cap.json").write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8",
                                                              newline="\n")
     print("ok")

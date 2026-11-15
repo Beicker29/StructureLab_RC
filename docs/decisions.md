@@ -2641,6 +2641,8 @@
   Con cargas de los pilotes se declara por cabezal si sus reacciones incluyen el peso (si no, se suma repartido). Desde
   ETABS, los pilotes salen de "Element Forces - Columns" en la estación declarada (`etabs_station`); entran P, V y M
   (decisión del usuario), opuestos a la fuerza interna, con el eje local 2 a un ángulo declarado de X (0 por omisión).
+- **Fuente de las cargas (decisión del usuario):** cada cabezal declara `loads_from` (`column` o `piles`), obligatorio, en
+  el proyecto y en la plantilla, para que no haya ambigüedad; las cargas y los Unique Name deben ser coherentes con él.
 - **Mala ubicación (decisión del usuario):** tolerancia obligatoria en los dos perfiles; con ACI, menor que 75 mm no
   cumple (13.4.1.4). Siempre aumenta los brazos del lado desfavorable. Con cargas de la columna, la excentricidad
   accidental (la tolerancia, en la dirección más desfavorable para cada pilote) aumenta además las reacciones, y con
@@ -2667,13 +2669,29 @@
   compresión y a tracción, deslizamiento (carga lateral), capacidad del grupo y, en las combinaciones de servicio sin
   sismo (D+L), la excentricidad de la resultante respecto al centroide del grupo (|e| = √(ex² + ey²)).
 - **Ubicación (decisión del usuario):** los Excel "Joint Location" (en `columna/` y en `pilotes/`, que reemplaza a
-  "Column Location") dan la ubicación de las columnas. Cada cabezal declara su columna (con cargas de la columna, la de
-  sus cargas; con las de los pilotes, `column_unique_name`) y recibe su ubicación para la planta de localización. Los
+  "Column Location") dan la ubicación de las columnas. Cada cabezal declara siempre el Unique Name de su columna (`column_unique_name`,
+  obligatorio): con cargas de la columna, de él salen sus reacciones; y, con la tabla de
+  coordenadas, recibe su ubicación para la planta de localización y el DXF (su uso completo queda para después). Los
   pilotes del cabezal se declaran con sus coordenadas y su Unique Name.
 - **Ejemplos:** `cabezal_columna`, `cabezal_pilotes` y sus `_etabs` en los dos perfiles, con `pruebas/`; los Excel en
   `examples/etabs/cabezales/columna/` y `pilotes/`, cada uno con su Excel de combinaciones. Los factores de las 16
   combinaciones de pilotes son supuestos por el nombre (aprobados para revisar). El oráculo es
   `tests/oracles/derive_pile_cap.py`. Las huellas existentes no cambian.
+- **Revisión del código (pedida por el usuario, 2026-11-14):**
+  1. La mala ubicación se aplica del lado de cada revisión: +ΔR para la compresión y −ΔR para la tracción y el momento
+     negativo. Con cargas de la columna, cada caso mayorado da dos juegos de momentos de cara, «(+ΔR)» y «(−ΔR)»;
+     antes el momento negativo con pilotes en tracción quedaba subestimado.
+  2. Un mismo criterio para la tolerancia: un pilote cuenta si, mal ubicado, queda más allá de la sección o la cara (su
+     distancia más la tolerancia), en la flexión y en los límites CRSI. La w de la guía se mide desde los pilotes que ya
+     están afuera, así la tolerancia solo la aumenta.
+  3. Se mantiene la franja central γs en los cabezales rectangulares (decisión del usuario).
+  4. Nombres neutros: "Altura minima" y "Aplastamiento" (antes "… de la zapata" / "… en la zapata") en todos los
+     elementos; en las zapatas solo cambian esos nombres y el ancho de las tablas de la memoria.
+  5. `domain/pile_cap/` sigue la organización de `domain/footing/`: `loads.py` (reacciones, solicitaciones y el
+     análisis), `service.py` (geotécnicas), `flexure.py`, `shear.py`, `checks.py` (geometría y orquestación) y
+     `drawing.py`. El análisis de cada cabezal se calcula una vez y el motor lo reutiliza en el resultado y el despiece.
+  6. El oráculo agrega un caso simétrico con reacciones parcialmente interpoladas, el punzonamiento de la columna y el
+     de esquina (P3).
 - **Riesgo:** la convención de signos de M2 y M3 de ETABS (momento sobre la cara positiva, regla de la mano derecha) se
   validará con el modelo del usuario.
 
@@ -2691,6 +2709,21 @@
   (error claro). Se convirtieron todos los ejemplos (de iterar y de `pruebas/`, cambio registrado) y las pruebas.
 - **Huellas:** `resultado.json` y la memoria no cambian; solo el `proyecto.json` de los 6 diseños, que sale en el
   formato nuevo.
+
+### D-140: momento negativo de las mallas superiores (concreto simple primero) y retracción repartida en cabezales
+
+- **Zapata aislada (decisión del usuario):** el momento negativo lo resiste primero el concreto simple, si el nivel
+  sísmico lo permite (D-072). Con malla superior declarada, si φMn del concreto simple alcanza, la malla superior de esa
+  dirección no se exige (ni resistencia, ni acero mínimo, ni franja, ni desarrollo) y la memoria muestra la revisión de
+  concreto simple; si no alcanza, se revisa la malla como antes. Antes, con malla superior, se exigían resistencia y
+  acero mínimo completo ante cualquier momento negativo. Oráculo: dos casos nuevos en `derive_footing_flexure.py`
+  (el concreto simple alcanza y no alcanza con malla superior y nivel bajo). Los ejemplos de zapatas no cambian.
+- **Cabezales:** la norma no admite concreto simple (ACI 14.1.4, literal; NSR-10 C.22.2.1, por alcance: el cabezal se
+  apoya en pilotes, no de forma continua), así que el momento negativo lo toma la malla superior. Su acero mínimo es
+  solo el de flexión, máx(As, mín(ηbd, 4/3·As)); la retracción ρt·b·h se revisa con las dos mallas sumadas en cada
+  dirección (ACI R24.4.3.2, NSR-10 CR7.12.2; opción a, decisión del usuario).
+- **Pendiente:** aplicar el criterio del concreto simple primero a la zapata combinada y a la T invertida, cuyo momento
+  negativo se revisa por la flexión de vigas por estaciones.
 
 ## Consultas abiertas
 

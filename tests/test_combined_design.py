@@ -136,7 +136,7 @@ def test_design_input_is_validated() -> None:
     ("Transferencia de momento por flexion (direccion secundaria)", "Columna C2: malla inferior dentro de bslab", "band:C2", "area"),
     ("Transferencia de momento: parte negativa (direccion principal)", "Columna C1: la resiste la malla superior", "top_x", "area"),
     ("Pasadores: anclaje a compresion", "Columna C2", "dowels:C2", "development"),
-    ("Aplastamiento en la zapata", "Columna C1", "dowels:C1", "area"),
+    ("Aplastamiento", "Columna C1", "dowels:C1", "area"),
 ])
 def test_each_failure_goes_to_the_group_that_fixes_it(name: str, note: str, group: str, kind: str) -> None:
     assert design.classify(Check(name, Status.FAIL, note=note)) == (group, kind)

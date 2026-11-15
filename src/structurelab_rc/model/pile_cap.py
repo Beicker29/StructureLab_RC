@@ -78,8 +78,10 @@ class PileCap(Footing):
     perfiles; con ACI 318-25, menor que 75 mm no cumple, 13.4.1.4): con las cargas de la columna aumenta los brazos y las
     reacciones (excentricidad accidental); con las de los pilotes, solo los brazos (decisión del usuario, D-138).
     reactions_include_weight dice, con las cargas de los pilotes, si sus reacciones ya incluyen el
-    peso del cabezal, el relleno y las sobrecargas; si no, se suman repartidos por igual."""
+    peso del cabezal, el relleno y las sobrecargas; si no, se suman repartidos por igual. loads_from declara, sin
+    ambigüedad, de dónde llegan las cargas: column (loads del cabezal) o piles (loads de cada pilote)."""
 
+    loads_from: Literal["column", "piles"]
     bottom_cover: PositiveFloat
     pile: PileType
     piles: tuple[Pile, ...] = Field(min_length=1)
@@ -105,11 +107,14 @@ class PileCap(Footing):
 
     def _check_loads(self) -> None:
         """Una sola fuente de cargas; con las de los pilotes, reactions_include_weight y los mismos casos en todos."""
-        from_piles = [bool(pile.loads) for pile in self.piles]
-        if self.loads and any(from_piles):
-            raise ValueError(f"el cabezal '{self.id}' declara cargas de la columna y de los pilotes: solo una fuente")
-        if not self.loads and not all(from_piles):
-            raise ValueError(f"el cabezal '{self.id}' necesita las cargas de la columna (loads) o las de todos sus pilotes")
+        with_loads = [bool(pile.loads) for pile in self.piles]
+        if self.loads_from == "column":
+            if not self.loads or any(with_loads):
+                raise ValueError(f"el cabezal '{self.id}' declara loads_from = column: lleva las cargas de la columna (loads) y "
+                                 "sus pilotes no llevan cargas")
+        elif self.loads or not all(with_loads):
+            raise ValueError(f"el cabezal '{self.id}' declara loads_from = piles: cada pilote lleva sus cargas y el cabezal no "
+                             "lleva loads")
         if self.loads:
             if self.reactions_include_weight is not None:
                 raise ValueError(f"reactions_include_weight del cabezal '{self.id}' solo se declara con las cargas de los pilotes")
@@ -131,7 +136,7 @@ class PileCap(Footing):
     @property
     def from_piles(self) -> bool:
         """Si las cargas llegan de los pilotes (no de la columna)."""
-        return not self.loads
+        return self.loads_from == "piles"
 
     def case_loads(self) -> list[tuple[FootingLoad, tuple[FootingLoad, ...]]]:
         """Cada caso: su carga de referencia (la de la columna, o la del primer pilote para el nombre, el tipo y los

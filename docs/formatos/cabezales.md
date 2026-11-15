@@ -27,6 +27,7 @@ Tiene los campos de la zapata aislada ([zapatas](zapatas.md)): `id`, `lx`, `ly`,
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `cover` | mm | Recubrimiento libre de las caras laterales y la superior. |
+| `loads_from` | | Obligatorio: de dónde llegan las cargas, `column` (las de la columna, `loads`) o `piles` (las de cada pilote, `piles[].loads`; desde ETABS, el Unique Name de cada pilote y `etabs_station`). Lo demás debe ser coherente con él. |
 | `bottom_cover` | mm | Recubrimiento libre de la cara inferior a la malla inferior, mayor que el empotramiento: la malla va sobre la cabeza de los pilotes. |
 | `pile.shape` | | `circular` o `square`. |
 | `pile.size` | mm | Diámetro o lado. El punzonamiento usa el cuadrado de igual área. |
@@ -59,8 +60,9 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
     máxima declarada.
 - **Flexión** en las caras de la columna con las reacciones concentradas en el centro de cada pilote, la acción de su
   cabeza y el peso hacia abajo. As mínimo con la interpretación de la guía CRSI (4.5):
-  máx(As, mín(ηbd, 4/3·As), mín(ηbd, ρt·b·h)), con η = máx(0.25√f'c, 1.4)/fy. No se admite concreto simple
-  (ACI 14.1.4, NSR-10 C.22.2.1).
+  máx(As, mín(ηbd, 4/3·As), mín(ηbd, ρt·b·h)) en la malla inferior, con η = máx(0.25√f'c, 1.4)/fy; en la superior,
+  solo máx(As, mín(ηbd, 4/3·As)), y la retracción ρt·b·h se revisa con las dos mallas sumadas (D-140). No se admite
+  concreto simple (ACI 14.1.4, NSR-10 C.22.2.1).
 - **Cortante** por secciones con la reacción interpolada entre dpile/2 afuera y dpile/2 adentro (ACI 13.4.6.7, NSR-10
   C.15.5.4): una dirección a d de las caras (ACI 22.5 con λs y, con pilotes a 4 diámetros o menos, el mayor entre ese y
   0.17λ√f'c·bw·d de 13.4.6.8(a); NSR-10 C.11.2) y dos direcciones a d/2 de la columna. Con
@@ -73,15 +75,14 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
 ## Plantilla de ETABS
 
 Como la de zapatas ([etabs](etabs.md)), con `pile_caps` y `etabs_files` (`service`, `factored` y `combinations`). Todos
-los cabezales de una plantilla toman las cargas de la misma fuente:
+los cabezales de una plantilla toman las cargas de la misma fuente, la que declara `loads_from`:
 
 | Campo | Descripción |
 | --- | --- |
-| `pile_caps[].etabs_unique_name` | Cargas de la columna: el nudo de "Joint Reactions" (P = FZ, Vx = −FX, Vy = −FY, Mx = −MX, My = −MY). |
+| `pile_caps[].column_unique_name` | Obligatorio: el Unique Name declarado de la columna del cabezal. Con cargas de la columna, de él se leen sus reacciones en "Joint Reactions" (P = FZ, Vx = −FX, Vy = −FY, Mx = −MX, My = −MY). Con `etabs_files.locations` se busca en esa tabla ("Joint Location", la ubicación de las columnas) para la planta de localización. |
 | `pile_caps[].etabs_station` | Cargas de los pilotes: la estación (m, como la escribe ETABS) de "Element Forces - Columns" de la que se toman. Debe existir en la tabla para cada pilote. |
 | `pile_caps[].piles[].etabs_unique_name` | Unique Name del elemento que modela el pilote. |
 | `pile_caps[].piles[].angle` | Ángulo del eje local 2 respecto a X global, en grados (por omisión 0: eje 2 = X, eje 3 = Y). |
-| `pile_caps[].column_unique_name` | Con cargas de los pilotes: el nudo de la columna del cabezal en la tabla de coordenadas. Obligatorio si la plantilla declara `etabs_files.locations`. Con cargas de la columna, la columna es `etabs_unique_name`. |
 | `etabs_files.locations` | Opcional: la tabla "Point Object Connectivity" de ETABS (`Joint Location.xlsx`) con la ubicación de las columnas. Cada cabezal recibe la ubicación de su columna y sale en la planta de localización (D-130). |
 
 De los pilotes se leen `P`, `V2`, `V3`, `M2` y `M3` (kN, kN-m) y se toma la acción opuesta sobre el cabezal:

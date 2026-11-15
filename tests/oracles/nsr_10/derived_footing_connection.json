@@ -113,7 +113,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D+1.6L",
           "status": "PASS",
           "demand": 1500000.0,
@@ -235,7 +235,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "0.9D+E",
           "status": "PASS",
           "demand": 250000.0,
@@ -333,7 +333,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D",
           "status": "PASS",
           "demand": 600000.0,
@@ -442,7 +442,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D+1.6L",
           "status": "FAIL",
           "demand": 2600000.0,
@@ -457,7 +457,7 @@
           "capacity": 2322.0
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.4D",
           "status": "FAIL",
           "demand": 2200000.0,
@@ -548,7 +548,7 @@
           "status": "INCOMPLETE"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D+1.6L",
           "status": "FAIL",
           "demand": 2600000.0,
@@ -651,7 +651,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D",
           "status": "PASS",
           "demand": 700000.0,
@@ -749,7 +749,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D+1.6L",
           "status": "PASS",
           "demand": 2600000.0,
@@ -847,7 +847,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D+1.6L",
           "status": "PASS",
           "demand": 1500000.0,
@@ -967,7 +967,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "0.9D+E",
           "status": "PASS",
           "demand": 200000.0,
@@ -1065,7 +1065,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D",
           "status": "PASS",
           "demand": 1000000.0,
@@ -1163,7 +1163,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D",
           "status": "PASS",
           "demand": 1000000.0,
@@ -1261,7 +1261,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D",
           "status": "PASS",
           "demand": 1000000.0,
@@ -1361,7 +1361,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D",
           "status": "PASS",
           "demand": 500000.0,
@@ -1461,7 +1461,7 @@
           "clause": "C.12.3.1 y C.12.3.2"
         },
         {
-          "name": "Aplastamiento en la zapata",
+          "name": "Aplastamiento",
           "case": "1.2D+1.6L",
           "status": "PASS",
           "demand": 1500000.0,

@@ -15,7 +15,7 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.combined_beam import two_way_warning
 from structurelab_rc.domain.footing.combined_columns import BEAM_SHEAR
 from structurelab_rc.domain.footing.combined_diagrams import Envelope
-from structurelab_rc.domain.pile_cap.reactions import cap_cases
+from structurelab_rc.domain.pile_cap.loads import CapAnalysis
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting, beam_to_global
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingLoad, RectangularBase, Soil
@@ -161,10 +161,10 @@ def _optional_kn(value: float | None) -> float | None:
     return None if value is None else significant(kN(value))
 
 
-def pile_cap_data(cap: PileCap, weights: PileCapSoil, checks: list[Check]) -> dict[str, Any]:
+def pile_cap_data(cap: PileCap, soil: PileCapSoil, checks: list[Check], analysis: CapAnalysis) -> dict[str, Any]:
     """Cabezal (D-138): geometría, pilote y pilotes, pesos, armado, cargas (de la columna o de cada pilote), la reacción de
     cada pilote en cada caso y las verificaciones con su caso."""
-    cap_weight, pedestal, fill = cap.weights(weights)
+    cap_weight, pedestal, fill = cap.weights(soil)
     dead, live = cap.surcharges()
     pile = cap.pile
     loads = ([_load_data(load) for load in cap.loads] if not cap.from_piles
@@ -172,7 +172,7 @@ def pile_cap_data(cap: PileCap, weights: PileCapSoil, checks: list[Check]) -> di
     reactions = [{"case": case.case, "kind": case.load.kind, "N [kN]": significant(kN(case.total)),
                   "R [kN]": {item.id: significant(kN(value)) for item, value in zip(cap.piles, case.forces.reactions, strict=True)},
                   "delta R [kN]": {item.id: significant(kN(value)) for item, value in zip(cap.piles, case.forces.spread, strict=True)}}
-                 for case in cap_cases(cap, weights)]
+                 for case in analysis.cases]
     return {
         "id": cap.id,
         "geometry [mm]": _geometry(cap, {"column", "bottom_cover", "mislocation"}),
@@ -356,9 +356,11 @@ def envelope_data(envelope: Envelope) -> dict[str, Any]:
                          for section in envelope.sections]}
 
 
-def build_results(project: Project | None, checks: tuple[Check, ...], version: str, diagrams: Diagrams | None = None) -> dict[str, Any]:
-    """Resultado completo; si la entrada no cargó, solo la validación. diagrams: los diagramas envolventes de las zapatas
-    combinadas (D-095), que calcula el dominio."""
+def build_results(project: Project | None, checks: tuple[Check, ...], version: str,
+                  computed: tuple[Diagrams, dict[str, CapAnalysis]] | None = None) -> dict[str, Any]:
+    """Resultado completo; si la entrada no cargó, solo la validación. computed: lo que el motor ya calculó con el
+    dominio, los diagramas envolventes de las zapatas combinadas (D-095) y el análisis de cada cabezal (D-138)."""
+    diagrams, analyses = computed or ({}, {})
     validation, station_checks = checks[0], checks[1:]
     results: dict[str, Any] = {
         "software": {"name": "structurelab-rc", "version": version},
@@ -418,15 +420,16 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
                                       (diagrams or {}).get(footing.id))
                 for footing in project.combined_footings]
     if project.pile_caps and project.pile_soil is not None:
-        weights = project.pile_soil
-        results["soil"] = {"gamma concreto [kN/m3]": significant(weights.unit_weight_concrete / N_MM3_PER_KN_M3),
-                           "gamma relleno [kN/m3]": significant(weights.unit_weight_fill / N_MM3_PER_KN_M3),
-                           "Qa compresion [kN]": significant(kN(weights.pile_capacity_compression)),
-                           "Qa traccion [kN]": _optional_kn(weights.pile_capacity_tension),
-                           "Qa lateral [kN]": _optional_kn(weights.pile_capacity_lateral),
-                           "factor sismo [-]": weights.seismic_capacity_factor, "eficiencia grupo [-]": weights.group_efficiency,
-                           "excentricidad maxima [mm]": weights.max_eccentricity}
-        results["pile_caps"] = [pile_cap_data(cap, weights, [check for check in station_checks if check.member == cap.id])
+        pile_soil = project.pile_soil
+        results["soil"] = {"gamma concreto [kN/m3]": significant(pile_soil.unit_weight_concrete / N_MM3_PER_KN_M3),
+                           "gamma relleno [kN/m3]": significant(pile_soil.unit_weight_fill / N_MM3_PER_KN_M3),
+                           "Qa compresion [kN]": significant(kN(pile_soil.pile_capacity_compression)),
+                           "Qa traccion [kN]": _optional_kn(pile_soil.pile_capacity_tension),
+                           "Qa lateral [kN]": _optional_kn(pile_soil.pile_capacity_lateral),
+                           "factor sismo [-]": pile_soil.seismic_capacity_factor, "eficiencia grupo [-]": pile_soil.group_efficiency,
+                           "excentricidad maxima [mm]": pile_soil.max_eccentricity}
+        results["pile_caps"] = [pile_cap_data(cap, pile_soil, [check for check in station_checks if check.member == cap.id],
+                                              analyses[cap.id])
                                 for cap in project.pile_caps]
     return results
 

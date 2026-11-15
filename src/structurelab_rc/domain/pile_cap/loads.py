@@ -14,9 +14,12 @@ brazos (decisión del usuario, D-138).
 """
 
 import math
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, replace
 
 from structurelab_rc.domain.footing.base import base_resultant
+from structurelab_rc.domain.footing.flexure import FaceMoments
+from structurelab_rc.domain.footing.loads import column_faces, uniform_load
 from structurelab_rc.model.footing import FootingLoad, UnitWeighted
 from structurelab_rc.model.pile_cap import PileCap
 
@@ -51,9 +54,10 @@ class CapCase:
     def case(self) -> str:
         return self.load.case
 
-    def adverse(self, index: int, spread: bool) -> float:
-        """La reacción de un pilote, aumentada por la mala ubicación si spread."""
-        return self.forces.reactions[index] + (self.forces.spread[index] if spread else 0.0)
+    def reaction(self, index: int, sense: float = 0.0) -> float:
+        """La reacción de un pilote con la mala ubicación del lado que pide la revisión: sense = +1 la aumenta (compresión
+        desfavorable), −1 la reduce (tracción o momento negativo desfavorables) y 0 no la aplica."""
+        return self.forces.reactions[index] + sense * self.forces.spread[index]
 
 
 def _pinv(sxx: float, sxy: float, syy: float) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float] | None]:
@@ -82,9 +86,14 @@ class _Group:
     weak: tuple[float, float] | None
 
 
-def _group(cap: PileCap) -> _Group:
+def group_centre(cap: PileCap) -> tuple[float, float]:
+    """Centroide del grupo de pilotes, en mm."""
     n = len(cap.piles)
-    xc, yc = sum(pile.x for pile in cap.piles) / n, sum(pile.y for pile in cap.piles) / n
+    return sum(pile.x for pile in cap.piles) / n, sum(pile.y for pile in cap.piles) / n
+
+
+def _group(cap: PileCap) -> _Group:
+    xc, yc = group_centre(cap)
     offsets = tuple((pile.x - xc, pile.y - yc) for pile in cap.piles)
     sxx = sum(dx * dx for dx, _ in offsets)
     syy = sum(dy * dy for _, dy in offsets)
@@ -141,5 +150,81 @@ def cap_cases(cap: PileCap, weights: UnitWeighted) -> list[CapCase]:
 
 
 def spread_on_cap(cap: PileCap) -> bool:
-    """Si la mala ubicación cambia también las solicitaciones del cabezal: solo con las cargas de la columna."""
+    """Si la mala ubicación cambia también las reacciones: solo con las cargas de la columna (D-138)."""
     return not cap.from_piles
+
+
+AXES = {"x": 0, "y": 1}
+
+
+@dataclass(frozen=True)
+class FactoredCap:
+    """Un caso mayorado del cabezal: el caso, la carga uniforme hacia abajo (N/mm²), el sentido de la mala ubicación en
+    las reacciones (+1, −1 o 0, ver CapCase.reaction) y la fracción de la reacción que produce cortante en una sección
+    (la del perfil: ACI 13.4.6.7, NSR-10 C.15.5.4)."""
+
+    cap: PileCap
+    case: CapCase
+    load: float
+    sense: float
+    share: Callable[[float, float], float]
+
+    def reaction(self, index: int) -> float:
+        return self.case.reaction(index, self.sense)
+
+    def beyond(self, axis: int, plane: float, outward: float) -> tuple[float, float, float]:
+        """Más allá de un plano vertical normal a x (axis = 0) o a y (axis = 1), del lado outward (+1 o −1): el cortante
+        con la reacción interpolada, el cortante con la reacción completa y el momento respecto al plano (positivo
+        tracciona la cara inferior), en N y N·mm. Un pilote cuenta si, mal ubicado del lado desfavorable (su distancia más
+        la tolerancia), queda más allá: con su reacción completa, su brazo y la acción de su cabeza (su momento y el de su
+        fuerza horizontal respecto al eje de la sección). El peso del cabezal, hacia abajo."""
+        cap = self.cap
+        tolerance, size, lever = cap.mislocation, cap.pile.size, cap.pile.embedment - cap.h / 2
+        shear = full = moment = 0.0
+        for index, pile in enumerate(cap.piles):
+            reaction = self.reaction(index)
+            arm = outward * ((pile.x, pile.y)[axis] - plane) + tolerance
+            shear += self.share(arm, size) * reaction
+            if arm <= 0:
+                continue
+            full += reaction
+            moment += reaction * arm
+            (vx, vy), (mx, my) = self.case.forces.shears[index], self.case.forces.moments[index]
+            moment += -outward * (my + lever * vx) if axis == 0 else outward * (mx - lever * vy)
+        half, width = (cap.lx / 2, cap.ly) if axis == 0 else (cap.ly / 2, cap.lx)
+        length = max(half - outward * plane, 0.0)
+        weight = self.load * width * length
+        return shear - weight, full - weight, moment - weight * length / 2
+
+    def face_moments(self) -> FaceMoments:
+        """Momento en cada cara de la columna (ACI 13.2.6.6 y 13.4.6.4, NSR-10 C.15.4.1)."""
+        faces = column_faces(self.cap)
+        return FaceMoments(self.case.case, {direction: (self.beyond(AXES[direction], plus, 1.0)[2],
+                                                        self.beyond(AXES[direction], minus, -1.0)[2])
+                                            for direction, (plus, minus) in faces.items()})
+
+
+@dataclass(frozen=True)
+class CapAnalysis:
+    """El análisis de un cabezal, calculado una vez (D-138): todos los casos con las reacciones de los pilotes, los casos
+    mayorados con la mala ubicación del lado de la compresión (cortante y punzonamiento) y los momentos de cara de cada
+    caso mayorado; con las cargas de la columna, cada caso da dos, con +ΔR (malla inferior) y −ΔR (momento negativo)."""
+
+    cases: tuple[CapCase, ...]
+    factored: tuple[FactoredCap, ...]
+    moments: tuple[FaceMoments, ...]
+
+
+def analyze(cap: PileCap, weights: UnitWeighted, share: Callable[[float, float], float]) -> CapAnalysis:
+    """Las reacciones, los casos mayorados y sus momentos de cara; share es la interpolación del perfil."""
+    cases = tuple(cap_cases(cap, weights))
+    spread = spread_on_cap(cap)
+    factored = tuple(FactoredCap(cap, case, uniform_load(cap, weights, case.load), 1.0 if spread else 0.0, share)
+                     for case in cases if case.load.kind == "factored")
+    if not spread:
+        return CapAnalysis(cases, factored, tuple(item.face_moments() for item in factored))
+    moments = []
+    for item in factored:
+        moments.append(replace(item.face_moments(), case=f"{item.case.case} (+ΔR)"))
+        moments.append(replace(replace(item, sense=-1.0).face_moments(), case=f"{item.case.case} (−ΔR)"))
+    return CapAnalysis(cases, factored, tuple(moments))

@@ -336,7 +336,7 @@ def test_project_with_a_combined_footing_runs_every_structural_check(tmp_path: P
     checks = _project(tmp_path, footing)
     by_name = {check.name: check for check in checks}
     assert by_name["Validacion de entrada"].status is Status.PASS
-    assert {"Flexion: resistencia", "Punzonamiento", "Aplastamiento en la zapata", "Desarrollo barras inferiores, direccion principal",
+    assert {"Flexion: resistencia", "Punzonamiento", "Aplastamiento", "Desarrollo barras inferiores, direccion principal",
             "Retraccion y temperatura: cuantia (direccion secundaria, en todo el largo)"} <= set(by_name)
     assert not any(check.status is Status.BLOCKED for check in checks)
     assert by_name["Pasadores: area minima"].status is Status.INCOMPLETE

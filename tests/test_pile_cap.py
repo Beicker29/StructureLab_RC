@@ -9,8 +9,7 @@ from pydantic import ValidationError
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.basis import Basis
-from structurelab_rc.domain.pile_cap.checks import cap_face_moments, pile_cap_checks
-from structurelab_rc.domain.pile_cap.reactions import cap_cases
+from structurelab_rc.domain.pile_cap.checks import cap_analysis, pile_cap_checks
 from structurelab_rc.domain.status import Status
 from structurelab_rc.model.pile_cap import PileCap, PileCapSoil
 from structurelab_rc.model.project import Materials
@@ -41,12 +40,13 @@ def _setup(profile: str, index: int) -> tuple[dict[str, Any], dict[str, Any], Ba
 def test_reactions_and_face_moments_match_oracle(profile: str, index: int) -> None:
     oracle, case, basis, cap, weights = _setup(profile, index)
     tolerance = oracle["tolerance_rel"]
-    got = {item.case: item for item in cap_cases(cap, weights)}
+    analysis = cap_analysis(basis, cap, weights)
+    got = {item.case: item for item in analysis.cases}
     for expected in case["reactions"]:
         forces = got[expected["case"]].forces
         assert forces.reactions == pytest.approx(expected["R"], rel=tolerance), expected["case"]
         assert forces.spread == pytest.approx(expected["dR"], rel=tolerance, abs=1e-9), expected["case"]
-    moments = {(item.case, direction): pair for item in cap_face_moments(basis, cap, weights) for direction, pair in item.moments.items()}
+    moments = {(item.case, direction): pair for item in analysis.moments for direction, pair in item.moments.items()}
     for expected in case["moments"]:
         pair = moments[(expected["case"], expected["direction"])]
         assert pair == pytest.approx((expected["plus"], expected["minus"]), rel=tolerance, abs=1.0), expected
@@ -110,7 +110,8 @@ def test_negative_moment_without_top_mat_fails() -> None:
 
 @pytest.mark.parametrize(("changes", "message"), [
     ({"bottom_cover": 75.0}, "bottom_cover debe ser mayor que el empotramiento"),
-    ({"loads": []}, "necesita las cargas de la columna"),
+    ({"loads": []}, "lleva las cargas de la columna"),
+    ({"loads_from": "piles"}, "cada pilote lleva sus cargas"),
     ({"reactions_include_weight": True}, "solo se declara con las cargas de los pilotes"),
     ({"piles": [{"id": "P1", "x": 1000.0, "y": 0.0}]}, "queda fuera del cabezal"),
 ])

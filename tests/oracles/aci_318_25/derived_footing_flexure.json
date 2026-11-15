@@ -129,7 +129,7 @@
             "capacity": 450.0
           },
           {
-            "name": "Altura minima de la zapata",
+            "name": "Altura minima",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 451.15000000000003
@@ -320,7 +320,7 @@
             "capacity": 450.0
           },
           {
-            "name": "Altura minima de la zapata",
+            "name": "Altura minima",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 499.55
@@ -440,7 +440,7 @@
             "capacity": 398.0
           },
           {
-            "name": "Altura minima de la zapata",
+            "name": "Altura minima",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 501.15000000000003
@@ -554,7 +554,7 @@
             "capacity": 450.0
           },
           {
-            "name": "Altura minima de la zapata",
+            "name": "Altura minima",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 451.15000000000003
@@ -681,7 +681,7 @@
             "capacity": 796.0
           },
           {
-            "name": "Altura minima de la zapata",
+            "name": "Altura minima",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 501.15000000000003
@@ -796,7 +796,347 @@
             "capacity": 450.0
           },
           {
-            "name": "Altura minima de la zapata",
+            "name": "Altura minima",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 151.15
+          }
+        ]
+      }
+    },
+    {
+      "id": "malla-superior-concreto-simple",
+      "description": "con malla superior y nivel bajo: el concreto simple resiste el momento negativo y la malla superior no se exige (D-140)",
+      "footing": {
+        "id": "Z",
+        "lx": 3200.0,
+        "ly": 2200.0,
+        "h": 600.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 400.0,
+          "cy": 500.0,
+          "offset_x": 350.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "y",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0,
+            "end": "straight"
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 180.0,
+            "end": "straight"
+          }
+        },
+        "top": {
+          "first": "x",
+          "x": {
+            "designation": "#4",
+            "spacing": 250.0,
+            "end": "straight"
+          },
+          "y": {
+            "designation": "#4",
+            "spacing": 250.0,
+            "end": "straight"
+          }
+        },
+        "loads": [
+          {
+            "case": "1.2D+1.6L",
+            "kind": "factored",
+            "dead_factor": 1.2,
+            "live_factor": 1.6,
+            "P_kN": 1400.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 60.0
+          },
+          {
+            "case": "0.9D+E",
+            "kind": "factored",
+            "dead_factor": 0.9,
+            "live_factor": 0.0,
+            "P_kN": 450.0,
+            "Vx_kN": 90.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 420.0
+          }
+        ]
+      },
+      "seismic_level": "intermediate",
+      "expected": {
+        "checks": [
+          {
+            "name": "Flexion malla inferior (barras x)",
+            "case": "1.2D+1.6L",
+            "status": "PASS",
+            "demand_Nmm": 378292351.6845702,
+            "capacity_Nmm": 575108976.0705882
+          },
+          {
+            "name": "Flexion malla inferior (barras y)",
+            "case": "1.2D+1.6L",
+            "status": "PASS",
+            "demand_Nmm": 228835454.5454545,
+            "capacity_Nmm": 649261532.9812499
+          },
+          {
+            "name": "Flexion malla inferior (barras x)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 270151324.3268012,
+            "capacity_Nmm": 575108976.0705882
+          },
+          {
+            "name": "Flexion concreto simple (cara superior, barras x)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 96868610.32624638,
+            "capacity_Nmm": 147902789.79113275,
+            "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)"
+          },
+          {
+            "name": "Flexion malla inferior (barras y)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 73300909.09090912,
+            "capacity_Nmm": 649261532.9812499
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras y)",
+            "status": "PASS",
+            "capacity": 0.0676721608040201
+          },
+          {
+            "name": "Acero minimo malla inferior (barras y)",
+            "status": "FAIL",
+            "demand": 3456.0,
+            "capacity": 3383.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 180.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Franja central malla inferior (barras y)",
+            "status": "FAIL",
+            "demand": 2816.0,
+            "capacity": 2587.0
+          },
+          {
+            "name": "Fuera de la franja central malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 640.0,
+            "capacity": 796.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras x)",
+            "status": "PASS",
+            "capacity": 0.04783448943661972
+          },
+          {
+            "name": "Acero minimo malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 2376.0,
+            "capacity": 3124.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 200.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla superior (barras x)",
+            "status": "PASS",
+            "capacity": 0.1390145004306632
+          },
+          {
+            "name": "Separacion maxima malla superior (barras x)",
+            "status": "PASS",
+            "demand": 250.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla superior (barras y)",
+            "status": "PASS",
+            "capacity": 0.136505831842576
+          },
+          {
+            "name": "Separacion maxima malla superior (barras y)",
+            "status": "PASS",
+            "demand": 250.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Altura minima",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 499.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "malla-superior-necesaria",
+      "description": "con malla superior y nivel bajo en una zapata delgada: el concreto simple no alcanza y se revisa la malla superior (D-140)",
+      "footing": {
+        "id": "Z",
+        "lx": 2400.0,
+        "ly": 2400.0,
+        "h": 250.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "column": {
+          "cx": 450.0,
+          "cy": 450.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0
+        },
+        "bottom": {
+          "first": "x",
+          "x": {
+            "designation": "#5",
+            "spacing": 150.0,
+            "end": "straight"
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 150.0,
+            "end": "straight"
+          }
+        },
+        "top": {
+          "first": "x",
+          "x": {
+            "designation": "#4",
+            "spacing": 200.0,
+            "end": "straight"
+          },
+          "y": {
+            "designation": "#4",
+            "spacing": 200.0,
+            "end": "straight"
+          }
+        },
+        "loads": [
+          {
+            "case": "0.9D+E",
+            "kind": "factored",
+            "dead_factor": 0.9,
+            "live_factor": 0.0,
+            "P_kN": 300.0,
+            "Vx_kN": 0.0,
+            "Vy_kN": 0.0,
+            "Mx_kNm": 0.0,
+            "My_kNm": 330.0
+          }
+        ]
+      },
+      "seismic_level": "intermediate",
+      "expected": {
+        "checks": [
+          {
+            "name": "Flexion malla inferior (barras x)",
+            "case": "0.9D+E",
+            "status": "FAIL",
+            "demand_Nmm": 209304362.90197906,
+            "capacity_Nmm": 176104934.4044118
+          },
+          {
+            "name": "Flexion malla superior (barras x)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 26693550.000000007,
+            "capacity_Nmm": 95354377.83529413
+          },
+          {
+            "name": "Flexion malla inferior (barras y)",
+            "case": "0.9D+E",
+            "status": "PASS",
+            "demand_Nmm": 58692181.64062502,
+            "capacity_Nmm": 158164487.40441173
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras x)",
+            "status": "PASS",
+            "capacity": 0.01640802010050251
+          },
+          {
+            "name": "Acero minimo malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 1080.0,
+            "capacity": 2985.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras x)",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla inferior (barras y)",
+            "status": "PASS",
+            "capacity": 0.014560743718592962
+          },
+          {
+            "name": "Acero minimo malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 1080.0,
+            "capacity": 2985.0
+          },
+          {
+            "name": "Separacion maxima malla inferior (barras y)",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla superior (barras x)",
+            "status": "PASS",
+            "capacity": 0.03478282945736434
+          },
+          {
+            "name": "Acero minimo malla superior (barras x)",
+            "status": "PASS",
+            "demand": 1080.0,
+            "capacity": 1548.0
+          },
+          {
+            "name": "Separacion maxima malla superior (barras x)",
+            "status": "PASS",
+            "demand": 200.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Deformacion neta de traccion malla superior (barras y)",
+            "status": "PASS",
+            "capacity": 0.03193763565891472
+          },
+          {
+            "name": "Separacion maxima malla superior (barras y)",
+            "status": "PASS",
+            "demand": 200.0,
+            "capacity": 450.0
+          },
+          {
+            "name": "Altura minima",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 151.15
@@ -894,7 +1234,7 @@
             "capacity": 450.0
           },
           {
-            "name": "Altura minima de la zapata",
+            "name": "Altura minima",
             "status": "PASS",
             "demand": 150.0,
             "capacity": 451.15000000000003
@@ -1001,7 +1341,7 @@
             "capacity": 400.0
           },
           {
-            "name": "Altura minima de la zapata",
+            "name": "Altura minima",
             "status": "FAIL",
             "demand": 150.0,
             "capacity": 105.95

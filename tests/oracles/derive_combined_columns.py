@@ -752,7 +752,7 @@ def _connection(folder: str, f: dict, cases: list[str]) -> list[dict]:
             pu = next(load for load in c["loads"] if load["case"] == case)["P_kN"] * 1e3
             if pu <= 0:
                 continue
-            out.append({"name": "Aplastamiento en la zapata", "case": case, "where": where, "status": "PASS" if pu <= capacity else "FAIL",
+            out.append({"name": "Aplastamiento", "case": case, "where": where, "status": "PASS" if pu <= capacity else "FAIL",
                         "demand": pu, "capacity": capacity, "clause": _K.CLAUSES[folder]["bearing"]})
             if pu > capacity:
                 if area is None:
