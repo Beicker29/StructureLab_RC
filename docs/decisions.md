@@ -2703,7 +2703,7 @@
   6. El oráculo agrega un caso simétrico con reacciones parcialmente interpoladas, el punzonamiento de la columna y el
      de esquina (P3).
 - **Riesgo:** la convención de signos de M2 y M3 de ETABS (momento sobre la cara positiva, regla de la mano derecha) se
-  validará con el modelo del usuario.
+  validará con el modelo del usuario. Validada en D-144.
 
 ### D-139: bloques concrete, reinforcement_steel y soil en los JSON de entrada
 
@@ -2840,6 +2840,18 @@
 - **Diferencias:** los ejemplos de una columna dan las mismas verificaciones, reacciones y cartilla (comparadas contra
   el código anterior); cambian el formato de entrada y de `resultado.json` y dos líneas de la memoria (convenciones y
   limitaciones), y por eso sus huellas.
+
+### D-144: convención de ejes y signos de "Element Forces - Columns" de ETABS (validada por el usuario)
+
+- **Convención del modelo (dato del usuario):** en pilotes y columnas el eje local 2 es paralelo a X global y con su
+  sentido, el 3 paralelo a Y y con su sentido, y el 1 = 2 × 3 (regla de la mano derecha), hacia arriba. V2 y V3 son los
+  cortantes en la dirección y el sentido de los ejes 2 y 3; M2 y M3, los momentos alrededor de ellos.
+- **Validación:** en un pilote vertical empotrado abajo con FX = +10 kN en el nudo de arriba, ETABS da V2 = +10 en la
+  cabeza (y la reacción de la base, negativa). Las fuerzas internas se reportan sobre la cara positiva del corte (la del
+  tramo de abajo): la conversión de D-138 (pilotes, la acción opuesta) y de D-143 (columnas con `column_station`, la
+  misma) es correcta; el código no cambia.
+- **Decisión del usuario:** se conserva `angle` en pilotes y columnas de la plantilla, para elementos con los ejes locales
+  rotados.
 
 ## Consultas abiertas
 

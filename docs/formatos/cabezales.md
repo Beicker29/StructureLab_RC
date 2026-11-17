@@ -163,15 +163,22 @@ los cabezales de una plantilla toman las cargas de la misma fuente, la que decla
 | --- | --- |
 | `pile_caps[].columns[]` | Las columnas como en el cabezal, sin `loads`, con `column_unique_name` (obligatorio) y `angle` (eje local 2 respecto a X, grados; 0 por omisión). |
 | `pile_caps[].columns[].column_unique_name` | Obligatorio: el Unique Name declarado de cada columna. Con cargas de las columnas, de él se leen sus reacciones en "Joint Reactions" (P = FZ, Vx = −FX, Vy = −FY, Mx = −MX, My = −MY). Con `etabs_files.locations`, la primera columna se busca en esa tabla ("Joint Location", la ubicación de las columnas) para la planta de localización. |
-| `pile_caps[].column_station` | Opcional, con cargas de los pilotes (D-143): la estación (m) de la base de las columnas en "Element Forces - Columns"; sus fuerzas mayoradas pasan a `columns[].loads` (P = −P; V y M, las de ETABS en la cara positiva, la del cabezal, sin cambiar el signo). Los signos de V y M están pendientes de validar con ETABS. |
+| `pile_caps[].column_station` | Opcional, con cargas de los pilotes (D-143): la estación (m) de la base de las columnas en "Element Forces - Columns"; sus fuerzas mayoradas pasan a `columns[].loads` (P = −P; V y M, las de ETABS en la cara positiva, la del cabezal, sin cambiar el signo). Convención validada por el usuario (D-144). |
 | `pile_caps[].etabs_station` | Cargas de los pilotes: la estación (m, como la escribe ETABS) de "Element Forces - Columns" de la que se toman. Debe existir en la tabla para cada pilote. |
 | `pile_caps[].piles[].etabs_unique_name` | Unique Name del elemento que modela el pilote. |
 | `pile_caps[].piles[].angle` | Ángulo del eje local 2 respecto a X global, en grados (por omisión 0: eje 2 = X, eje 3 = Y). |
 | `etabs_files.locations` | Opcional: la tabla "Point Object Connectivity" de ETABS (`Joint Location.xlsx`) con la ubicación de las columnas. Cada cabezal recibe la ubicación de su columna y sale en la planta de localización (D-130). |
 
+Ejes locales de ETABS (D-144): el eje 2 paralelo a X global y con su sentido, el 3 paralelo a Y y con su sentido, y el 1
+= 2 × 3, hacia arriba; si un elemento tiene los ejes rotados, se declara su `angle`. V2 y V3 son los cortantes en la
+dirección y el sentido de los ejes 2 y 3; M2 y M3, los momentos alrededor de ellos (regla de la mano derecha). ETABS
+reporta las fuerzas internas sobre la cara positiva del corte (la del tramo de abajo): en la cabeza de un pilote, la acción
+del cabezal sobre el pilote; en la base de una columna, la de la columna sobre el cabezal.
+
 De los pilotes se leen `P`, `V2`, `V3`, `M2` y `M3` (kN, kN-m) y se toma la acción opuesta sobre el cabezal:
-P = −P, Vx = −V2·cos θ + V3·sen θ, Vy = −V2·sen θ − V3·cos θ, Mx = −M2·cos θ + M3·sen θ y My = −M2·sen θ − M3·cos θ.
-Las filas Max y Min son dos casos.
+P = −P, Vx = −V2·cos θ + V3·sen θ, Vy = −V2·sen θ − V3·cos θ, Mx = −M2·cos θ + M3·sen θ y My = −M2·sen θ − M3·cos θ
+(con θ = 0: Vx = −V2, Vy = −V3, Mx = −M2, My = −M3). De las columnas (`column_station`), la misma sin cambiar el signo
+de V y M. Las filas Max y Min son dos casos.
 
 ### Plantilla de diseño de ETABS (D-141)
 
