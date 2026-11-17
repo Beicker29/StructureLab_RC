@@ -33,7 +33,7 @@ from structurelab_rc.drawing.views import (
     titled,
 )
 from structurelab_rc.model.combined import CombinedFooting, beam_to_global
-from structurelab_rc.model.footing import Footing, Mat
+from structurelab_rc.model.footing import FootingBody, Mat
 
 _STUB = 0.6  # altura del arranque de columna dibujado, en lados de la columna
 _MISMATCH = 10.0  # mm: diferencia entre la base que ubica cada columna de una combinada a partir de la cual se avisa
@@ -54,24 +54,34 @@ def _stub(centre: float, size: float, top: float, pedestal: float) -> list[Polyl
                               dashed=True)]
 
 
-def footing_views(drawing: Drawing, footing: Footing, runs: list[BarRun], rows: tuple[list[ScheduleRow], float]) -> list[View]:
-    """Zapata aislada: planta, cortes X-X e Y-Y por la columna y cartilla; rows = (cartilla, longitud comercial)."""
+def footing_views(drawing: Drawing, footing: FootingBody, runs: list[BarRun], rows: tuple[list[ScheduleRow], float]) -> list[View]:
+    """Zapata aislada o cabezal: planta, cortes X-X e Y-Y por las columnas (por el eje medio si hay varias, D-143) y
+    cartilla; rows = (cartilla, longitud comercial)."""
     schedule, stock = rows
     marked = _marked(footing.id, runs, stock)
-    column, h, pedestal = footing.column, footing.h, footing.pedestal_height
+    h, pedestal = footing.h, footing.pedestal_height
+    all_columns = footing.all_columns
+    names = [footing.id] if len(all_columns) == 1 else [str(getattr(column, "id", footing.id)) for column in all_columns]
     lx, ly = footing.lx, footing.ly
     outline = rectangle("CONCRETO", (-lx / 2, -ly / 2), (lx / 2, ly / 2))
-    columns = [(footing.id, rectangle("COLUMNAS", (column.offset_x - column.cx / 2, column.offset_y - column.cy / 2),
-                                      (column.offset_x + column.cx / 2, column.offset_y + column.cy / 2)))]
+    columns = [(name, rectangle("COLUMNAS", (column.offset_x - column.cx / 2, column.offset_y - column.cy / 2),
+                                (column.offset_x + column.cx / 2, column.offset_y + column.cy / 2)))
+               for name, column in zip(names, all_columns, strict=True)]
+    cut_y = sum(column.offset_y for column in all_columns) / len(all_columns)
+    cut_x = sum(column.offset_x for column in all_columns) / len(all_columns)
+    stubs_x = [shape for column in all_columns if abs(column.offset_y - cut_y) <= column.cy / 2
+               for shape in _stub(column.offset_x, column.cx, h, pedestal)]
+    stubs_y = [shape for column in all_columns if abs(column.offset_x - cut_x) <= column.cx / 2
+               for shape in _stub(column.offset_y, column.cy, h, pedestal)]
+    labels = [(name, (column.offset_x, column.offset_y), (column.cx, column.cy)) for name, column in zip(names, all_columns, strict=True)]
     return [
-        geometry_view(drawing, ("geometria", f"Planta de geometria {footing.id}"), (outline, []),
-                      [(footing.id, (column.offset_x, column.offset_y), (column.cx, column.cy))],
+        geometry_view(drawing, ("geometria", f"Planta de geometria {footing.id}"), (outline, []), labels,
                       (footing.cover, f"Espesor h = {h:.0f} mm; pedestal {pedestal:.0f} mm.")),
         *_plans(drawing, (footing.id, ""), ([outline], columns), marked, h / 2),
-        section_view(drawing, ("corte_x", "Corte X-X"), ("x", column.offset_y),
-                     [rectangle("CONCRETO", (-lx / 2, 0.0), (lx / 2, h)), *_stub(column.offset_x, column.cx, h, pedestal)], marked),
-        section_view(drawing, ("corte_y", "Corte Y-Y"), ("y", column.offset_x),
-                     [rectangle("CONCRETO", (-ly / 2, 0.0), (ly / 2, h)), *_stub(column.offset_y, column.cy, h, pedestal)], marked),
+        section_view(drawing, ("corte_x", "Corte X-X"), ("x", cut_y),
+                     [rectangle("CONCRETO", (-lx / 2, 0.0), (lx / 2, h)), *stubs_x], marked),
+        section_view(drawing, ("corte_y", "Corte Y-Y"), ("y", cut_x),
+                     [rectangle("CONCRETO", (-ly / 2, 0.0), (ly / 2, h)), *stubs_y], marked),
         cartilla_view(drawing, footing.id, schedule),
     ]
 
@@ -154,13 +164,17 @@ def _outline(drawing: Drawing, centre: tuple[float, float], size: tuple[float, f
     return entities
 
 
-def _isolated_place(drawing: Drawing, footing: Footing) -> _Placed:
-    location, column = footing.location, footing.column
+def _isolated_place(drawing: Drawing, footing: FootingBody) -> _Placed:
+    """Zapata aislada o cabezal: location es la de su (primera) columna; las demás columnas de un cabezal se dibujan con
+    sus desplazamientos (D-143)."""
+    location, first = footing.location, footing.all_columns[0]
     assert location is not None
-    centre = (location.x - column.offset_x, location.y - column.offset_y)
+    centre = (location.x - first.offset_x, location.y - first.offset_y)
     typology = footing.typology or footing.id
-    entities = _outline(drawing, centre, (footing.lx, footing.ly), [((location.x, location.y), (column.cx, column.cy), location.joint)],
-                        typology)
+    columns = [((centre[0] + column.offset_x, centre[1] + column.offset_y), (column.cx, column.cy),
+                location.joint if column is first else str(getattr(column, "id", "")))
+               for column in footing.all_columns]
+    entities = _outline(drawing, centre, (footing.lx, footing.ly), columns, typology)
     row = [typology, f"{footing.lx:.0f} x {footing.ly:.0f} x {footing.h:.0f}", _mat_text(footing.bottom), _mat_text(footing.top)]
     return _Placed(location.story, typology, row, entities)
 
@@ -202,7 +216,7 @@ def _file_name(story: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", story).strip("_")
 
 
-def location_views(drawing: Drawing, footings: Sequence[Footing], combined: Sequence[CombinedFooting]) -> list[View]:
+def location_views(drawing: Drawing, footings: Sequence[FootingBody], combined: Sequence[CombinedFooting]) -> list[View]:
     """Plantas de localización por nivel y cuadro de tipologías (D-130), con las zapatas que tienen ubicación; [] si
     ninguna la tiene. Una combinada entra si sus dos columnas la tienen."""
     placed = [_isolated_place(drawing, footing) for footing in footings if footing.location is not None]

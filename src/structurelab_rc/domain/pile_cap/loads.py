@@ -17,12 +17,12 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 
-from structurelab_rc.domain.footing.base import base_resultant
-from structurelab_rc.domain.footing.flexure import FaceMoments
-from structurelab_rc.domain.footing.loads import column_faces, uniform_load
+from structurelab_rc.domain.footing.base import BaseResultant
+from structurelab_rc.domain.footing.flexure import FaceMoments, Section
+from structurelab_rc.domain.footing.loads import uniform_load
 from structurelab_rc.domain.pile_cap.outline import beyond, centroid
 from structurelab_rc.model.footing import FootingLoad, UnitWeighted
-from structurelab_rc.model.pile_cap import PileCap
+from structurelab_rc.model.pile_cap import CapColumn, PileCap
 
 _SINGULAR = 1e-9
 
@@ -41,13 +41,16 @@ class PileForces:
 
 @dataclass(frozen=True)
 class CapCase:
-    """Un caso: su carga de referencia (nombre, tipo, factores), las fuerzas de los pilotes, la fuerza vertical de la
-    columna (N, para el aplastamiento), la vertical total sobre los pilotes y el momento que el grupo no resiste (N·mm,
-    con las cargas de la columna y pilotes alineados)."""
+    """Un caso: su carga de referencia (nombre, tipo, factores), las fuerzas de los pilotes, la carga de cada columna (None
+    si no se conoce: cargas de los pilotes sin la de esa columna, D-143), la fuerza vertical de cada columna para el
+    aplastamiento (N; con las cargas de los pilotes y una sola columna sin cargas, la que da el equilibrio), la vertical
+    total sobre los pilotes y el momento que el grupo no resiste (N·mm, con las cargas de las columnas y pilotes
+    alineados)."""
 
     load: FootingLoad
     forces: PileForces
-    column: float
+    columns: tuple[FootingLoad | None, ...]
+    bearing: tuple[float | None, ...]
     total: float
     unresisted: float = 0.0
 
@@ -109,15 +112,51 @@ def _spread(group: _Group, total: float, tolerance: float) -> tuple[float, ...]:
     return tuple(abs(total) * tolerance * math.hypot(a * dx + b * dy, c * dx + d * dy) for dx, dy in group.offsets)
 
 
-def _from_column(cap: PileCap, weights: UnitWeighted, load: FootingLoad, group: _Group) -> CapCase:
-    resultant = base_resultant(cap, weights, load)
+def column_vertical(cap: PileCap, weights: UnitWeighted, column: CapColumn, load: FootingLoad) -> float:
+    """Fuerza vertical hacia abajo en el eje de una columna, en N: P más su pedestal, menos el relleno y las sobrecargas
+    que la columna desplaza (la carga uniforme los cuenta en toda la base)."""
+    return load.p + _at_column(cap, weights, column, load)
+
+
+def _at_column(cap: PileCap, weights: UnitWeighted, column: CapColumn, load: FootingLoad) -> float:
+    """El pedestal menos el relleno y las sobrecargas que desplaza la columna, con los factores del caso, en N."""
+    area = column.area
+    dead_per_area = weights.unit_weight_fill * cap.fill_height + cap.surcharge_dead
+    at_column = load.dead_factor * (weights.unit_weight_concrete * area * cap.pedestal_height - dead_per_area * area)
+    at_column -= load.live_factor * cap.surcharge_live * area
+    return at_column
+
+
+def cap_resultant(cap: PileCap, weights: UnitWeighted, loads: tuple[FootingLoad, ...]) -> BaseResultant:
+    """Resultante en el centroide de la base de las cargas de todas las columnas, en su eje a la altura h + pedestal, con
+    su pedestal y el área que ocupan, y del cabezal, el relleno y las sobrecargas en el centroide; los factores son los del
+    caso (iguales en todas las columnas). Con una columna, la de domain/footing/base.py."""
+    case = loads[0]
+    height = cap.h + cap.pedestal_height
+    footing_weight = weights.unit_weight_concrete * cap.area * cap.h
+    dead_per_area = weights.unit_weight_fill * cap.fill_height + cap.surcharge_dead
+    centred = case.dead_factor * (footing_weight + dead_per_area * cap.area) + case.live_factor * cap.surcharge_live * cap.area
+    p = mx = my = at = 0.0
+    for column, load in zip(cap.columns, loads, strict=True):
+        at_column = _at_column(cap, weights, column, load)
+        vertical = load.p + at_column
+        at += at_column
+        p += load.p
+        mx += load.mx - vertical * column.offset_y - height * load.vy
+        my += load.my + vertical * column.offset_x + height * load.vx
+    return BaseResultant(p + centred + at, mx, my, centred + at)
+
+
+def _from_columns(cap: PileCap, weights: UnitWeighted, loads: tuple[FootingLoad, ...], group: _Group) -> CapCase:
+    resultant = cap_resultant(cap, weights, loads)
     embedment = cap.pile.embedment
+    vx, vy = sum(load.vx for load in loads), sum(load.vy for load in loads)
     # Momentos en el plano de la cabeza de los pilotes y respecto al centroide del grupo (N hacia abajo en el origen).
-    mx = resultant.mx + embedment * load.vy + group.centre[1] * resultant.n
-    my = resultant.my - embedment * load.vx - group.centre[0] * resultant.n
+    mx = resultant.mx + embedment * vy + group.centre[1] * resultant.n
+    my = resultant.my - embedment * vx - group.centre[0] * resultant.n
     if cap.clipped_corners:  # D-141: el peso del cabezal, el relleno y las sobrecargas actúa en el centroide del contorno
         area, xc, yc = centroid(cap)
-        spread_weight = uniform_load(cap, weights, load) * area
+        spread_weight = uniform_load(cap, weights, loads[0]) * area
         mx -= spread_weight * yc
         my += spread_weight * xc
     (a, b), (c, d) = group.inverse
@@ -125,34 +164,43 @@ def _from_column(cap: PileCap, weights: UnitWeighted, load: FootingLoad, group: 
     n = len(cap.piles)
     reactions = tuple(resultant.n / n + slope_x * dx + slope_y * dy for dx, dy in group.offsets)
     unresisted = 0.0 if group.weak is None else abs(group.weak[0] * my + group.weak[1] * -mx)
-    forces = PileForces(reactions, ((load.vx / n, load.vy / n),) * n, ((0.0, 0.0),) * n,
-                        _spread(group, resultant.n, cap.mislocation))
-    return CapCase(load, forces, load.p, resultant.n, unresisted)
+    forces = PileForces(reactions, ((vx / n, vy / n),) * n, ((0.0, 0.0),) * n, _spread(group, resultant.n, cap.mislocation))
+    return CapCase(loads[0], forces, loads, tuple(load.p for load in loads), resultant.n, unresisted)
 
 
 def _weight(cap: PileCap, weights: UnitWeighted, load: FootingLoad) -> float:
-    """Peso del cabezal, el pedestal, el relleno y las sobrecargas con los factores del caso, en N."""
+    """Peso del cabezal, los pedestales, el relleno y las sobrecargas con los factores del caso, en N."""
     footing, pedestal, fill = cap.weights(weights)
     dead, live = cap.surcharges()
     return load.dead_factor * (footing + pedestal + fill + dead) + load.live_factor * live
 
 
-def _from_piles(cap: PileCap, weights: UnitWeighted, given: tuple[FootingLoad, tuple[FootingLoad, ...]]) -> CapCase:
-    load, piles = given
+def _from_piles(cap: PileCap, weights: UnitWeighted,
+                given: tuple[FootingLoad, tuple[FootingLoad, ...], tuple[FootingLoad | None, ...]]) -> CapCase:
+    load, piles, columns = given
     weight = _weight(cap, weights, load)
     share = 0.0 if cap.reactions_include_weight else weight / len(piles)
     reactions = tuple(pile.p + share for pile in piles)
     total = sum(reactions)
     forces = PileForces(reactions, tuple((pile.vx, pile.vy) for pile in piles), tuple((pile.mx, pile.my) for pile in piles),
                         (0.0,) * len(piles))
-    return CapCase(load, forces, total - weight, total)
+    # Con una sola columna sin cargas, su fuerza sale del equilibrio (D-138); con varias, no se reparte (D-143).
+    bearing = tuple(None if item is None else item.p for item in columns)
+    if len(columns) == 1 and columns[0] is None:
+        bearing = (total - weight,)
+    return CapCase(load, forces, columns, bearing, total)
 
 
 def cap_cases(cap: PileCap, weights: UnitWeighted) -> list[CapCase]:
     """Cada caso, de servicio y mayorado, con la acción de cada pilote sobre el cabezal."""
     group = _group(cap)
-    return [_from_piles(cap, weights, (load, piles)) if piles else _from_column(cap, weights, load, group)
-            for load, piles in cap.case_loads()]
+    cases = []
+    for load, piles, columns in cap.case_loads():
+        if cap.from_piles:
+            cases.append(_from_piles(cap, weights, (load, piles, columns)))
+        else:
+            cases.append(_from_columns(cap, weights, tuple(item for item in columns if item is not None), group))
+    return cases
 
 
 def spread_on_cap(cap: PileCap) -> bool:
@@ -163,27 +211,44 @@ def spread_on_cap(cap: PileCap) -> bool:
 AXES = {"x": 0, "y": 1}
 
 
+_SCAN_STEP = 50.0  # mm: separación de las secciones de flexión entre columnas (D-143)
+_ON_PLANE = 1e-6  # mm
+
+
 @dataclass(frozen=True)
 class FactoredCap:
     """Un caso mayorado del cabezal: el caso, la carga uniforme hacia abajo (N/mm²), el sentido de la mala ubicación en
-    las reacciones (+1, −1 o 0, ver CapCase.reaction) y la fracción de la reacción que produce cortante en una sección
-    (la del perfil: ACI 13.4.6.7, NSR-10 C.15.5.4)."""
+    las reacciones (+1, −1 o 0, ver CapCase.reaction), la fracción de la reacción que produce cortante en una sección
+    (la del perfil: ACI 13.4.6.7, NSR-10 C.15.5.4) y la fuerza vertical de cada columna en su eje (column_vertical; None
+    si su carga no se conoce)."""
 
     cap: PileCap
     case: CapCase
     load: float
     sense: float
     share: Callable[[float, float], float]
+    verticals: tuple[float | None, ...]
 
     def reaction(self, index: int) -> float:
         return self.case.reaction(index, self.sense)
+
+    def columns_beyond(self, axis: int, plane: float, outward: float) -> list[int]:
+        """Las columnas cuyo eje queda más allá del plano, del lado outward."""
+        return [index for index, column in enumerate(self.cap.columns)
+                if outward * ((column.offset_x, column.offset_y)[axis] - plane) > 0]
+
+    def missing(self, axis: int, plane: float, outward: float) -> list[str]:
+        """Las columnas más allá del plano sin carga conocida en el caso (cargas de los pilotes, D-143)."""
+        return [self.cap.columns[index].id for index in self.columns_beyond(axis, plane, outward) if self.verticals[index] is None]
 
     def beyond(self, axis: int, plane: float, outward: float) -> tuple[float, float, float]:
         """Más allá de un plano vertical normal a x (axis = 0) o a y (axis = 1), del lado outward (+1 o −1): el cortante
         con la reacción interpolada, el cortante con la reacción completa y el momento respecto al plano (positivo
         tracciona la cara inferior), en N y N·mm. Un pilote cuenta si, mal ubicado del lado desfavorable (su distancia más
         la tolerancia), queda más allá: con su reacción completa, su brazo y la acción de su cabeza (su momento y el de su
-        fuerza horizontal respecto al eje de la sección). El peso del cabezal, hacia abajo."""
+        fuerza horizontal respecto al eje de la sección). Las columnas más allá (D-143), hacia abajo con su fuerza vertical
+        y la acción de su base a h/2 + pedestal del eje de la sección; las de carga desconocida no cuentan (ver missing).
+        El peso del cabezal, hacia abajo."""
         cap = self.cap
         tolerance, size, lever = cap.mislocation, cap.pile.size, cap.pile.embedment - cap.h / 2
         shear = full = moment = 0.0
@@ -197,6 +262,16 @@ class FactoredCap:
             moment += reaction * arm
             (vx, vy), (mx, my) = self.case.forces.shears[index], self.case.forces.moments[index]
             moment += -outward * (my + lever * vx) if axis == 0 else outward * (mx - lever * vy)
+        top = cap.h / 2 + cap.pedestal_height
+        for index in self.columns_beyond(axis, plane, outward):
+            vertical, load = self.verticals[index], self.case.columns[index]
+            if vertical is None or load is None:
+                continue
+            column = cap.columns[index]
+            shear -= vertical
+            full -= vertical
+            moment -= vertical * outward * ((column.offset_x, column.offset_y)[axis] - plane)
+            moment += -outward * (load.my + top * load.vx) if axis == 0 else outward * (load.mx - top * load.vy)
         if cap.clipped_corners:  # D-141: el peso sobre la parte del contorno más allá del plano
             area, xc, yc = beyond(cap, axis, plane, outward)
             weight = self.load * area
@@ -207,34 +282,100 @@ class FactoredCap:
         return shear - weight, full - weight, moment - weight * length / 2
 
     def face_moments(self) -> FaceMoments:
-        """Momento en cada cara de la columna (ACI 13.2.6.6 y 13.4.6.4, NSR-10 C.15.4.1)."""
-        faces = column_faces(self.cap)
-        return FaceMoments(self.case.case, {direction: (self.beyond(AXES[direction], plus, 1.0)[2],
-                                                        self.beyond(AXES[direction], minus, -1.0)[2])
-                                            for direction, (plus, minus) in faces.items()})
+        """Momento en las secciones de flexión de cada dirección (section_planes): las caras de la columna (ACI 13.2.6.6 y
+        13.4.6.4, NSR-10 C.15.4.1) y, con varias columnas, las secciones entre ellas (D-143). Un lado cuya columna no
+        tiene carga conocida no se calcula."""
+        moments: dict[str, tuple[float, ...]] = {}
+        sections: dict[str, tuple[Section, ...]] = {}
+        for direction, axis in AXES.items():
+            values, found = [], []
+            for section, outwards in section_planes(self.cap, direction):
+                for outward in outwards:
+                    if self.missing(axis, section.plane, outward):
+                        continue
+                    values.append(self.beyond(axis, section.plane, outward)[2])
+                    found.append(section)
+            moments[direction], sections[direction] = tuple(values), tuple(found)
+        return FaceMoments(self.case.case, moments, sections)
+
+    def unresolved(self) -> list[str]:
+        """Las secciones de flexión sin ningún lado calculable (cargas de columnas desconocidas, D-143)."""
+        found = []
+        for direction, axis in AXES.items():
+            for section, outwards in section_planes(self.cap, direction):
+                if all(self.missing(axis, section.plane, outward) for outward in outwards):
+                    found.append(section.note)
+        return found
+
+
+def section_planes(cap: PileCap, direction: str) -> list[tuple[Section, tuple[float, ...]]]:
+    """Las secciones de flexión normales a la dirección de las barras, cada una con los lados de su cuerpo libre: con una
+    columna, sus dos caras, hacia afuera (D-138); con varias (D-143), las caras de cada columna y secciones cada 50 mm
+    fuera de las columnas, con el lado que tiene menos columnas (los dos si empatan)."""
+    axis = AXES[direction]
+    plus, minus = ("+X", "-X") if axis == 0 else ("+Y", "-Y")
+    name = "x" if axis == 0 else "y"
+    columns = cap.columns
+    if len(columns) == 1:
+        column = columns[0]
+        centre, size = (column.offset_x, column.cx) if axis == 0 else (column.offset_y, column.cy)
+        return [(Section(centre + size / 2, plus, f"Cara {plus} de la columna"), (1.0,)),
+                (Section(centre - size / 2, minus, f"Cara {minus} de la columna"), (-1.0,))]
+    spans = [((c.offset_x, c.cx) if axis == 0 else (c.offset_y, c.cy)) for c in columns]
+    planes: list[Section] = []
+    for column, (centre, size) in zip(columns, spans, strict=True):
+        planes += [Section(centre + size / 2, f"{plus} {column.id}", f"Cara {plus} de la columna {column.id}"),
+                   Section(centre - size / 2, f"{minus} {column.id}", f"Cara {minus} de la columna {column.id}")]
+    half = (cap.lx if axis == 0 else cap.ly) / 2
+    count = int(2 * half // _SCAN_STEP)
+    for step in range(1, count + 1):
+        plane = -half + step * _SCAN_STEP
+        if plane >= half - _ON_PLANE:
+            break
+        if any(centre - size / 2 - _ON_PLANE <= plane <= centre + size / 2 + _ON_PLANE for centre, size in spans):
+            continue
+        planes.append(Section(plane, f"{name} = {plane:g}", f"Seccion {name} = {plane:.0f} mm"))
+    return [(section, free_sides(cap, axis, section.plane)) for section in planes]
+
+
+def free_sides(cap: PileCap, axis: int, plane: float) -> tuple[float, ...]:
+    """Los lados del cuerpo libre de un plano normal a x (axis = 0) o a y (axis = 1): el que tiene menos columnas más
+    allá (los dos si empatan, D-143); con una columna, el que no la tiene."""
+    counts = {outward: sum(1 for column in cap.columns if outward * ((column.offset_x, column.offset_y)[axis] - plane) > 0)
+              for outward in (1.0, -1.0)}
+    fewest = min(counts.values())
+    return tuple(outward for outward in (1.0, -1.0) if counts[outward] == fewest)
 
 
 @dataclass(frozen=True)
 class CapAnalysis:
     """El análisis de un cabezal, calculado una vez (D-138): todos los casos con las reacciones de los pilotes, los casos
-    mayorados con la mala ubicación del lado de la compresión (cortante y punzonamiento) y los momentos de cara de cada
-    caso mayorado; con las cargas de la columna, cada caso da dos, con +ΔR (malla inferior) y −ΔR (momento negativo)."""
+    mayorados con la mala ubicación del lado de la compresión (cortante y punzonamiento) y los momentos de sus secciones
+    de cada caso mayorado; con las cargas de las columnas, cada caso da dos, con +ΔR (malla inferior) y −ΔR (momento
+    negativo). unresolved: (caso, sección) sin ningún lado calculable (D-143)."""
 
     cases: tuple[CapCase, ...]
     factored: tuple[FactoredCap, ...]
     moments: tuple[FaceMoments, ...]
+    unresolved: tuple[tuple[str, str], ...] = ()
 
 
 def analyze(cap: PileCap, weights: UnitWeighted, share: Callable[[float, float], float]) -> CapAnalysis:
-    """Las reacciones, los casos mayorados y sus momentos de cara; share es la interpolación del perfil."""
+    """Las reacciones, los casos mayorados y sus momentos de sección; share es la interpolación del perfil."""
     cases = tuple(cap_cases(cap, weights))
     spread = spread_on_cap(cap)
-    factored = tuple(FactoredCap(cap, case, uniform_load(cap, weights, case.load), 1.0 if spread else 0.0, share)
-                     for case in cases if case.load.kind == "factored")
+    factored = []
+    for case in cases:
+        if case.load.kind != "factored":
+            continue
+        verticals = tuple(None if load is None else column_vertical(cap, weights, column, load)
+                          for column, load in zip(cap.columns, case.columns, strict=True))
+        factored.append(FactoredCap(cap, case, uniform_load(cap, weights, case.load), 1.0 if spread else 0.0, share, verticals))
+    unresolved = tuple((item.case.case, note) for item in factored for note in item.unresolved())
     if not spread:
-        return CapAnalysis(cases, factored, tuple(item.face_moments() for item in factored))
+        return CapAnalysis(cases, tuple(factored), tuple(item.face_moments() for item in factored), unresolved)
     moments = []
     for item in factored:
         moments.append(replace(item.face_moments(), case=f"{item.case.case} (+ΔR)"))
         moments.append(replace(replace(item, sense=-1.0).face_moments(), case=f"{item.case.case} (−ΔR)"))
-    return CapAnalysis(cases, factored, tuple(moments))
+    return CapAnalysis(cases, tuple(factored), tuple(moments), unresolved)

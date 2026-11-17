@@ -47,7 +47,7 @@ from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows
 from structurelab_rc.errors import StructuredError
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting
-from structurelab_rc.model.footing import Column, Dowels, Footing, Soil
+from structurelab_rc.model.footing import Column, Dowels, Footing, FootingBody, Soil
 from structurelab_rc.model.project import Section
 from structurelab_rc.model.reinforcement import ReinforcementLayout, Stirrups
 
@@ -194,8 +194,9 @@ def moment_envelope(moments: list[FaceMoments]) -> Envelope | None:
     columna en todos los casos, el de la verificación de flexión; None sin casos (D-129)."""
     if not moments:
         return None
-    return {direction: (max(max(case.moments[direction]) for case in moments),
-                        max(-min(case.moments[direction]) for case in moments)) for direction in ("x", "y")}
+    return {direction: (max((moment for case in moments for moment in case.moments[direction]), default=0.0),
+                        max((-moment for case in moments for moment in case.moments[direction]), default=0.0))
+            for direction in ("x", "y")}
 
 
 def face_envelope(footing: Footing, soil: Soil) -> Envelope | None:
@@ -222,7 +223,7 @@ def _span_groups(row: BarRow, spans: Spans | None, length: float) -> list[tuple[
     return [(replace(row, positions=tuple(positions), band_positions=()), span, span[1] - span[0]) for span, positions in groups.items()]
 
 
-def footing_runs(basis: Basis, footing: Footing, envelope: Envelope | None, spans: Spans | None = None) -> list[BarRun]:
+def footing_runs(basis: Basis, footing: FootingBody, envelope: Envelope | None, spans: Spans | None = None) -> list[BarRun]:
     """Zapata aislada (o cabezal, D-138): malla inferior, malla superior si la hay y pasadores, con la envolvente de los
     momentos de cara para la clase de los empalmes (D-129). spans da el tramo de cada barra en un cabezal con esquinas
     recortadas (D-141): las barras de largo distinto van en grupos aparte."""
@@ -248,9 +249,12 @@ def footing_runs(basis: Basis, footing: Footing, envelope: Envelope | None, span
                     runs.append(run)
     rows = mat_rows(footing, footing.bottom, basis.bars)
     embed = h - footing.bottom_face_cover - rows["x"].diameter - rows["y"].diameter
-    dowels = _placed_dowels(_dowel_run(basis, footing.column.dowels, embed, footing.pedestal_height, footing.id),
-                            footing.column, (h, embed), cover)
-    return [*runs, *([] if dowels is None else [dowels])]
+    columns = footing.all_columns
+    for column in columns:  # los pasadores de cada columna (D-143); con una, rotulados con el elemento
+        name = footing.id if len(columns) == 1 else str(getattr(column, "id", footing.id))
+        dowels = _placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, name), column, (h, embed), cover)
+        runs += [] if dowels is None else [dowels]
+    return runs
 
 
 def _inside_count(row: BarRow, limits: tuple[float, float]) -> int:

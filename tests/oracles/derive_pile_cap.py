@@ -774,6 +774,13 @@ def _chord_parallel(outline: list[tuple[float, float]], edge: tuple[tuple[float,
     return max(ts) - min(ts) if len(ts) >= 2 else 0.0
 
 
+def _as_input(cap: dict) -> dict:
+    """El cabezal en el formato de entrada (D-143): la columna, con sus cargas si las hay, en columns."""
+    out = {key: value for key, value in cap.items() if key not in ("symmetric", "column", "loads")}
+    column = {"id": "C1", **cap["column"], **({"loads": cap["loads"]} if cap.get("loads") else {})}
+    return {**out, "columns": [column]}
+
+
 def _derive(folder: str, cap: dict) -> dict:
     cases = _cases(cap)
     faces = _faces(cap)
@@ -794,7 +801,7 @@ def _derive(folder: str, cap: dict) -> dict:
         top = _rows(cap, direction, "top")[1] if cap["top"] is not None else 0.0
         checks.append({"name": f"Retraccion y temperatura: cuantia (barras {direction})", "case": None,
                        "demand": 0.0018 * b * cap["h"], "capacity": bottom + top})
-    return {"id": cap["id"], "cap": {key: value for key, value in cap.items() if key != "symmetric"}, "soil": SOIL[cap["id"]],
+    return {"id": cap["id"], "cap": _as_input(cap), "soil": SOIL[cap["id"]],
             "reactions": [{"case": c["load"]["case"], "R": c["R"], "dR": c["dR"]} for c in cases],
             "moments": [{"case": key[0], "direction": key[1], "plus": value[0], "minus": value[1]} for key, value in moments.items()],
             "minimum": _minimum(cap, moments), "checks": checks}

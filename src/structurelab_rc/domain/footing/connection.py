@@ -9,6 +9,7 @@ anclaje a compresión hasta la malla inferior y la compresión que excede el apl
 domain/development.py; el aplastamiento y los mínimos, de codes.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
 from structurelab_rc.domain.basis import Basis
@@ -23,11 +24,11 @@ from structurelab_rc.domain.footing.flexure import (
     required_mat_area,
     top_needed,
 )
-from structurelab_rc.domain.footing.loads import FactoredCase, column_faces
+from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete
-from structurelab_rc.model.footing import Dowels, Footing, FootingBase
+from structurelab_rc.model.footing import Dowels, Footing, FootingBase, FootingBody
 
 BEARING = "Aplastamiento"
 DOWELS_AREA = "Pasadores: area minima"
@@ -35,11 +36,16 @@ DOWELS_ANCHORAGE = "Pasadores: anclaje a compresion"
 DOWELS_EXCESS = "Pasadores: compresion sobre el aplastamiento"
 
 
-def _available(footing: Footing, direction: str) -> float:
-    """Menor distancia de una cara de la columna al borde de la zapata, menos el recubrimiento del extremo."""
-    plus, minus = column_faces(footing)[direction]
+def _available(footing: FootingBody, direction: str, supports: Sequence["Support"]) -> float:
+    """Menor distancia de una cara de las columnas al borde, menos el recubrimiento del extremo (con varias columnas, la
+    de cualquiera de ellas, D-143)."""
     half = (footing.lx if direction == "x" else footing.ly) / 2
-    return min(half - plus, minus + half) - footing.cover
+    gaps = []
+    for support in supports:
+        centre, size = (support.x, support.cx) if direction == "x" else (support.y, support.cy)
+        plus, minus = centre + size / 2, centre - size / 2
+        gaps.append(min(half - plus, minus + half))
+    return min(gaps) - footing.cover
 
 
 def bar_anchorage(row: BarRow, layout: tuple[str, float, bool], footing: tuple[float, float], excess: float) -> BarAnchorage:
@@ -55,7 +61,7 @@ def bar_anchorage(row: BarRow, layout: tuple[str, float, bool], footing: tuple[f
                         clear_spacing=spacing - row.diameter, side_cover=cover, extension_cover=cover, excess=excess)
 
 
-def _anchorage(basis: Basis, footing: Footing, mat_row: tuple[str, BarRow],
+def _anchorage(basis: Basis, footing: FootingBody, mat_row: tuple[str, BarRow],
                cases: tuple[list[FaceMoments], SectionRules | None]) -> BarAnchorage:
     mat, row = mat_row
     spec = getattr(footing, mat)
@@ -67,7 +73,8 @@ def _anchorage(basis: Basis, footing: Footing, mat_row: tuple[str, BarRow],
 
 
 def _development_checks(
-    basis: Basis, footing: Footing, rows: dict[str, dict[str, BarRow]], given: tuple[list[FaceMoments], SectionRules | None]
+    basis: Basis, footing: FootingBody, rows: dict[str, dict[str, BarRow]], given: tuple[list[FaceMoments], SectionRules | None],
+    supports: Sequence["Support"],
 ) -> list[Check]:
     cases, rules = given[0], given[1] or footing_rules(basis.profile, basis.materials, footing)
     checks = []
@@ -80,7 +87,7 @@ def _development_checks(
             required = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
             end = END_TEXT[getattr(spec, direction).end]
             name = f"Desarrollo malla {MAT_NAMES[mat]} (barras {direction})"
-            checks.append(replace(development_check(name, required, _available(footing, direction), f"Barras {end}"),
+            checks.append(replace(development_check(name, required, _available(footing, direction, supports), f"Barras {end}"),
                                   member=footing.id))
     return checks
 
@@ -161,7 +168,7 @@ def dowel_checks(basis: Basis, footing: FootingBase, support: Support, bottom: t
     # Los pasadores bajan hasta la malla inferior y se apoyan en ella; su gancho no cuenta a compresión (D-065).
     first, second = bottom
     depth = footing.h if support.surface is None else support.surface[2]
-    face = footing.bottom_face_cover if isinstance(footing, Footing) else footing.cover  # sobre los pilotes en el cabezal
+    face = footing.bottom_face_cover if isinstance(footing, FootingBody) else footing.cover  # sobre los pilotes en el cabezal
     available = depth - face - first.diameter - second.diameter
     required_ldc = required_length(profile, materials, BarAnchorage(spec.diameter_mm, "compression"), basis.seismic_level)
     checks.append(replace(development_check(DOWELS_ANCHORAGE, required_ldc, available), member=footing.id, note=support.note))
@@ -176,20 +183,22 @@ def footing_support(footing: Footing) -> Support:
 
 def connection_checks(basis: Basis, footing: Footing, cases: list[FactoredCase]) -> list[Check]:
     moments = [face_moments(footing, case) for case in cases]
-    return column_connection_checks(basis, footing, (moments, None), [(case.case, case.load.p) for case in cases])
+    loads = [(case.case, case.load.p) for case in cases]
+    return column_connection_checks(basis, footing, (moments, None), [(footing_support(footing), loads)])
 
 
-def column_connection_checks(basis: Basis, footing: Footing, given: tuple[list[FaceMoments], SectionRules | None],
-                             loads: list[tuple[str, float]]) -> list[Check]:
-    """Desarrollo de las mallas con los momentos de cara ya calculados (y las reglas de su As mínimo, las de la zapata si
-    son None), pasadores y aplastamiento con la carga de la columna en cada caso, (caso, Pu): también el cabezal
-    (D-138)."""
+def column_connection_checks(basis: Basis, footing: FootingBody, given: tuple[list[FaceMoments], SectionRules | None],
+                             columns: Sequence[tuple[Support, list[tuple[str, float]]]]) -> list[Check]:
+    """Desarrollo de las mallas con los momentos ya calculados (y las reglas de su As mínimo, las de la zapata si son
+    None) desde las caras de las columnas; pasadores y aplastamiento de cada columna con su carga en cada caso, (caso,
+    Pu): también el cabezal de una o varias columnas (D-138, D-143)."""
     rows = {"bottom": mat_rows(footing, footing.bottom, basis.bars)}
     if footing.top is not None:
         rows["top"] = mat_rows(footing, footing.top, basis.bars)
-    support = footing_support(footing)
     bottom = rows["bottom"]
     first = footing.bottom.first
-    dowels, dowel_area = dowel_checks(basis, footing, support, (bottom[first], bottom["y" if first == "x" else "x"]))
-    return [*_development_checks(basis, footing, rows, given), *dowels, *bearing_checks(basis, footing, support, (loads, dowel_area))]
-
+    checks = _development_checks(basis, footing, rows, given, [support for support, _ in columns])
+    for support, loads in columns:
+        dowels, dowel_area = dowel_checks(basis, footing, support, (bottom[first], bottom["y" if first == "x" else "x"]))
+        checks += [*dowels, *bearing_checks(basis, footing, support, (loads, dowel_area))]
+    return checks

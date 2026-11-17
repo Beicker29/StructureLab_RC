@@ -127,7 +127,7 @@ def test_designed_project_loads_and_keeps_declared_piles(designed: tuple[str, di
     for cap, declared in zip(loaded.pile_caps, source.caps, strict=True):
         if declared.loads_from != "piles":
             continue
-        column = (cap.column.offset_x, cap.column.offset_y)
+        column = (cap.columns[0].offset_x, cap.columns[0].offset_y)
         for pile, given in zip(cap.piles, declared.piles, strict=True):
             assert pile.id == given.id
             assert (pile.x - column[0], pile.y - column[1]) == pytest.approx((given.x, given.y))

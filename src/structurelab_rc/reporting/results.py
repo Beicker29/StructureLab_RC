@@ -18,7 +18,7 @@ from structurelab_rc.domain.footing.combined_diagrams import Envelope
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting, beam_to_global
-from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingLoad, RectangularBase, Soil
+from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingBody, FootingLoad, RectangularBase, Soil
 from structurelab_rc.model.pile_cap import PileCap, PileCapSoil
 from structurelab_rc.model.project import Demands, Project
 from structurelab_rc.reporting.units import kN, kNm, kPa
@@ -135,7 +135,7 @@ def _base_properties(footing: RectangularBase, soil: Soil) -> dict[str, float]:
     return {key: significant(value) for key, value in properties.items()}
 
 
-def _geometry(footing: Footing | CombinedFooting, include: set[str]) -> dict[str, Any]:
+def _geometry(footing: FootingBody | CombinedFooting, include: set[str]) -> dict[str, Any]:
     geometry = footing.model_dump(mode="json", include={"lx", "ly", "h", "cover", "fill_height", "pedestal_height", *include})
     geometry["surcharge_dead [kN/m2]"] = significant(footing.surcharge_dead / MPA_PER_KPA)
     geometry["surcharge_live [kN/m2]"] = significant(footing.surcharge_live / MPA_PER_KPA)
@@ -163,20 +163,23 @@ def _optional_kn(value: float | None) -> float | None:
 
 
 def pile_cap_data(cap: PileCap, soil: PileCapSoil, checks: list[Check], analysis: CapAnalysis) -> dict[str, Any]:
-    """Cabezal (D-138): geometría, pilote y pilotes, pesos, armado, cargas (de la columna o de cada pilote), la reacción de
-    cada pilote en cada caso y las verificaciones con su caso."""
+    """Cabezal (D-138, D-143): geometría con sus columnas, pilote y pilotes, pesos, armado, cargas (de cada columna o de
+    cada pilote, y las de las columnas que las declaran con las de los pilotes), la reacción de cada pilote en cada caso y
+    las verificaciones con su caso."""
     cap_weight, pedestal, fill = cap.weights(soil)
     dead, live = cap.surcharges()
     pile = cap.pile
-    loads = ([_load_data(load) for load in cap.loads] if not cap.from_piles
-             else [{"pile": item.id, **_load_data(load)} for item in cap.piles for load in item.loads])
+    loads = [{"pile": item.id, **_load_data(load)} for item in cap.piles for load in item.loads]
+    loads += [{"column": column.id, **_load_data(load)} for column in cap.columns for load in column.loads]
+    geometry = _geometry(cap, {"bottom_cover", "mislocation", *(["clipped_corners"] if cap.clipped_corners else [])})
+    geometry["columns"] = [column.model_dump(mode="json", exclude={"loads"}) for column in cap.columns]
     reactions = [{"case": case.case, "kind": case.load.kind, "N [kN]": significant(kN(case.total)),
                   "R [kN]": {item.id: significant(kN(value)) for item, value in zip(cap.piles, case.forces.reactions, strict=True)},
                   "delta R [kN]": {item.id: significant(kN(value)) for item, value in zip(cap.piles, case.forces.spread, strict=True)}}
                  for case in analysis.cases]
     return {
         "id": cap.id,
-        "geometry [mm]": _geometry(cap, {"column", "bottom_cover", "mislocation", *(["clipped_corners"] if cap.clipped_corners else [])}),
+        "geometry [mm]": geometry,
         "pile": {"shape": pile.shape, "size [mm]": pile.size, "embedment [mm]": pile.embedment},
         "piles": [{"id": item.id, "x [mm]": item.x, "y [mm]": item.y} for item in cap.piles],
         "options": {"loads_from": "piles" if cap.from_piles else "column", "reactions_include_weight": cap.reactions_include_weight},

@@ -4,20 +4,22 @@
 - Geometría: empotramiento, borde y tolerancia de mala ubicación mínimos del perfil (ACI 13.4.6.3 y 13.4.1.4; NSR-10 no
   los fija).
 - Geotécnicas con los casos de servicio (service.py).
-- Flexión de las mallas (flexure.py), con la separación mínima de la zapata.
+- Flexión de las mallas (flexure.py), con la separación mínima de la zapata; con varias columnas, en las secciones entre
+  ellas y en la franja de cada columna (strips.py, D-143).
 - Cortante y punzonamiento (shear.py).
 - Desarrollo, pasadores y aplastamiento: los de la zapata (domain/footing/connection.py).
 """
 
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.footing.connection import column_connection_checks
+from structurelab_rc.domain.footing.connection import BEARING, Support, column_connection_checks
 from structurelab_rc.domain.footing.spacing import footing_min_spacing_checks
 from structurelab_rc.domain.pile_cap.flexure import cap_rules, flexure_checks
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis, analyze
 from structurelab_rc.domain.pile_cap.outline import edge_distance
 from structurelab_rc.domain.pile_cap.service import service_checks
 from structurelab_rc.domain.pile_cap.shear import shear_checks
+from structurelab_rc.domain.pile_cap.strips import strip_checks, unresolved_checks
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete
 from structurelab_rc.model.pile_cap import PileCap, PileCapSoil
@@ -66,6 +68,23 @@ def pile_cap_checks(basis: Basis, cap: PileCap, soil: PileCapSoil, analysis: Cap
     if not analysis.factored:
         error = incomplete("El cabezal no tiene casos mayorados", member=cap.id)
         return [*checks, Check(STRUCTURAL, Status.INCOMPLETE, (error,), member=cap.id)]
-    loads = [(item.case.case, item.case.column) for item in analysis.factored]
-    return [*checks, *flexure_checks(basis, cap, analysis), *footing_min_spacing_checks(basis, cap), *shear_checks(basis, cap, analysis),
-            *column_connection_checks(basis, cap, (list(analysis.moments), cap_rules(basis, cap)), loads)]
+    return [*checks, *flexure_checks(basis, cap, analysis), *unresolved_checks(cap, analysis), *strip_checks(basis, cap, analysis),
+            *footing_min_spacing_checks(basis, cap), *shear_checks(basis, cap, analysis), *_connection_checks(basis, cap, analysis)]
+
+
+def _connection_checks(basis: Basis, cap: PileCap, analysis: CapAnalysis) -> list[Check]:
+    """Desarrollo desde las caras de las columnas, y pasadores y aplastamiento de cada columna con su carga en cada caso;
+    con las cargas de los pilotes y varias columnas, el aplastamiento de una columna sin cargas queda INCOMPLETE (D-143)."""
+    single = len(cap.columns) == 1
+    supports, checks = [], []
+    for index, column in enumerate(cap.columns):
+        note = "" if single else f"Columna {column.id}"
+        supports.append((Support(column.cx, column.cy, column.offset_x, column.offset_y, column.dowels, note),
+                         [(item.case.case, pu) for item in analysis.factored if (pu := item.case.bearing[index]) is not None]))
+        missing = [item.case.case for item in analysis.factored if item.case.bearing[index] is None]
+        if missing:
+            error = incomplete(f"La columna {column.id} no declara sus cargas mayoradas ({', '.join(missing)}): el aplastamiento y "
+                               "la compresion sobre los pasadores no se revisan en esos casos (D-143)", member=cap.id)
+            checks.append(Check(BEARING, Status.INCOMPLETE, (error,), basis.profile.bearing.clauses()["bearing"], member=cap.id,
+                                note=note))
+    return [*column_connection_checks(basis, cap, (list(analysis.moments), cap_rules(basis, cap)), supports), *checks]

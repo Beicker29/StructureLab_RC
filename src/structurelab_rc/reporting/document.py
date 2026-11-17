@@ -161,9 +161,12 @@ _CAP_CONVENTIONS = (
     "Mala ubicación: el brazo de cada pilote crece con la tolerancia del lado desfavorable en la flexión y en el cortante; "
     "con las cargas de la columna, la excentricidad accidental aumenta además las reacciones (ΔR, D-138).",
     "El cortante de cada sección toma la reacción de los pilotes interpolada entre dpile/2 afuera y dpile/2 adentro.",
+    "Con varias columnas (D-143), la flexión se revisa en las caras de cada columna y en secciones cada 50 mm entre ellas, "
+    "con el cuerpo libre del lado con menos columnas, y la franja de cada columna en la dirección transversal, como viga en "
+    "voladizo; el punzonamiento, por columna y en el perímetro común de las que se traslapan.",
 )
 _CAP_LIMITATIONS = (
-    "Puntal-tensor, cabezales de varias columnas y requisitos sísmicos de los pilotes: falta implementación.",
+    "Puntal-tensor y requisitos sísmicos de los pilotes: falta implementación.",
     "Grupos de pilotes que punzonan en conjunto: se enumeran en cabezales de hasta 16 pilotes; con más, BLOQUEADO.",
 )
 
@@ -1207,12 +1210,19 @@ def _detailing_chapter(footing: dict[str, Any], drawings: list[DrawingFigure] | 
 
 def _cap_geometry(results: dict[str, Any], cap: dict[str, Any]) -> list[Block]:
     g, pile = cap["geometry [mm]"], cap["pile"]
-    column = g["column"]
+    columns = g["columns"]
+    single = len(columns) == 1
+    column_rows = []
+    for column in columns:
+        name = "la columna" if single else f"la columna {column['id']}"
+        column_rows += [[f"{'Columna' if single else 'Columna ' + column['id']} cx × cy",
+                         f"{number(column['cx'], 'mm')} × {number(column['cy'], 'mm')}", "mm"],
+                        [f"Desplazamiento de {name} (X, Y)",
+                         f"{number(column['offset_x'], 'mm')}, {number(column['offset_y'], 'mm')}", "mm"]]
     rows = [["Largo a lo largo de X (lx)", number(g["lx"], "mm"), "mm"], ["Ancho a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
             ["Espesor (h)", number(g["h"], "mm"), "mm"], ["Recubrimiento libre lateral y superior", number(g["cover"], "mm"), "mm"],
             ["Recubrimiento libre inferior (sobre la cabeza de los pilotes)", number(g["bottom_cover"], "mm"), "mm"],
-            ["Columna cx × cy", f"{number(column['cx'], 'mm')} × {number(column['cy'], 'mm')}", "mm"],
-            ["Desplazamiento de la columna (X, Y)", f"{number(column['offset_x'], 'mm')}, {number(column['offset_y'], 'mm')}", "mm"],
+            *column_rows,
             ["Altura del pedestal", number(g["pedestal_height"], "mm"), "mm"], ["Altura del relleno", number(g["fill_height"], "mm"), "mm"],
             ["Sobrecarga muerta (qD)", number(g["surcharge_dead [kN/m2]"], "kN/m²"), "kN/m²"],
             ["Sobrecarga viva (qL)", number(g["surcharge_live [kN/m2]"], "kN/m²"), "kN/m²"],
@@ -1233,7 +1243,7 @@ def _cap_geometry(results: dict[str, Any], cap: dict[str, Any]) -> list[Block]:
                     ["Peso unitario del concreto (γc)", f"{number(soil['gamma concreto [kN/m3]'], 'kN/m³')} kN/m³"],
                     ["Peso unitario del relleno (γf)", f"{number(soil['gamma relleno [kN/m3]'], 'kN/m³')} kN/m³"]]
     options = cap["options"]
-    source = "de cada pilote" if options["loads_from"] == "piles" else "de la columna"
+    source = "de cada pilote" if options["loads_from"] == "piles" else ("de la columna" if single else "de cada columna")
     extra = ([["Las reacciones incluyen el peso del cabezal", "sí" if options["reactions_include_weight"] else "no (se suma repartido)"]]
              if options["loads_from"] == "piles" else [])
     return [{"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": rows},
@@ -1246,13 +1256,16 @@ def _cap_geometry(results: dict[str, Any], cap: dict[str, Any]) -> list[Block]:
             {"kind": "table", "headers": ["Propiedad", "Valor", "Unidad"], "rows": _properties_rows(cap)},
             {"kind": "table", "headers": ["Refuerzo", "Descripción"],
              "rows": [["Malla inferior", _mat_text(cap["reinforcement"]["bottom"])],
-                      ["Malla superior", _mat_text(cap["reinforcement"]["top"])], ["Pasadores", _dowel_text(column.get("dowels"))]]}]
+                      ["Malla superior", _mat_text(cap["reinforcement"]["top"])],
+                      *([("Pasadores" if single else f"Pasadores de la columna {column['id']}"), _dowel_text(column.get("dowels"))]
+                        for column in columns)]}]
 
 
 def _cap_demands(cap: dict[str, Any]) -> list[Block]:
     piles = cap["options"]["loads_from"] == "piles"
+    owner = "la columna" if len(cap["geometry [mm]"]["columns"]) == 1 else "cada columna"
     text = ("Acción de cada pilote sobre el cabezal en su cabeza; P > 0 en compresión del pilote." if piles else
-            "Fuerzas de la columna sobre el cabezal, en la base de la columna; P > 0 en compresión.")
+            f"Fuerzas de {owner} sobre el cabezal, en la base de la columna; P > 0 en compresión.")
     blocks: list[Block] = [{"kind": "p", "text": text}]
     for kind, title in (("service", "Casos de servicio"), ("factored", "Casos mayorados")):
         loads = [load for load in cap["loads"] if load["kind"] == kind]
@@ -1260,11 +1273,15 @@ def _cap_demands(cap: dict[str, Any]) -> list[Block]:
         if not loads:
             blocks.append({"kind": "p", "text": "No aplica: ningún caso de este tipo."})
             continue
-        if piles:
-            for pile in dict.fromkeys(load["pile"] for load in loads):
-                blocks.append(_loads_table([load for load in loads if load["pile"] == pile], f"Pilote {pile}"))
-        else:
-            blocks.append(_loads_table(loads))
+        for pile in dict.fromkeys(load["pile"] for load in loads if "pile" in load):
+            blocks.append(_loads_table([load for load in loads if load.get("pile") == pile], f"Pilote {pile}"))
+        owners = list(dict.fromkeys(load["column"] for load in loads if "column" in load))
+        for column in owners:
+            own = [load for load in loads if load.get("column") == column]
+            if piles:  # D-143: las de las columnas, solo para el aplastamiento, los pasadores y las secciones que las necesitan
+                blocks.append(_loads_table(own, f"Columna {column} (aplastamiento, pasadores y secciones)"))
+            else:
+                blocks.append(_loads_table(own) if len(owners) == 1 else _loads_table(own, f"Columna {column}"))
     ids = [item["id"] for item in cap["piles"]]
     rows = [[reaction["case"], "servicio" if reaction["kind"] == "service" else "mayorado", number(reaction["N [kN]"], "kN"),
              *(number(reaction["R [kN]"][pile], "kN") + (f" (±{number(reaction['delta R [kN]'][pile], 'kN')})"

@@ -13,7 +13,7 @@ from structurelab_rc.domain.footing.declared import PRINCIPAL, SECONDARY
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete
 from structurelab_rc.model.combined import CombinedFooting
-from structurelab_rc.model.footing import Footing
+from structurelab_rc.model.footing import FootingBody
 from structurelab_rc.model.reinforcement import BarPosition, BarSpacing
 
 MIN_SPACING = "Separacion minima"
@@ -40,8 +40,8 @@ def min_spacing_check(basis: Basis, member: str, label: str, bars: tuple[str, fl
                  unit="mm", member=member, values=(("s", spacing), ("db", spec.diameter_mm), ("dagg", aggregate)))
 
 
-def footing_min_spacing_checks(basis: Basis, footing: Footing) -> list[Check]:
-    """Zapata aislada: cada dirección de la malla inferior y de la superior, y la separación de la franja central."""
+def footing_min_spacing_checks(basis: Basis, footing: FootingBody) -> list[Check]:
+    """Zapata aislada o cabezal: cada dirección de la malla inferior y de la superior, y la separación de la franja central."""
     checks = []
     for mat, name in ((footing.bottom, "inferior"), (footing.top, "superior")):
         if mat is None:

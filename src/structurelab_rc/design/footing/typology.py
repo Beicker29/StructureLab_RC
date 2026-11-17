@@ -23,7 +23,7 @@ from structurelab_rc.detailing.schedule import schedule
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.checks import footing_checks
-from structurelab_rc.domain.footing.connection import bearing_area, footing_support
+from structurelab_rc.domain.footing.connection import Support, bearing_area, footing_support
 from structurelab_rc.domain.footing.detailing import face_envelope, footing_runs
 from structurelab_rc.domain.footing.flexure import PLAIN, face_moments
 from structurelab_rc.domain.footing.loads import factored_cases
@@ -31,7 +31,7 @@ from structurelab_rc.domain.footing.service import service_checks
 from structurelab_rc.domain.status import Status
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.design import DesignColumn, FootingDesign, FootingDesignProject
-from structurelab_rc.model.footing import Footing, Soil
+from structurelab_rc.model.footing import Footing, FootingBody, Soil
 from structurelab_rc.model.project import Materials
 
 _MAT_PREFIXES = ("Flexion malla", "Deformacion neta de traccion malla", "Acero minimo malla", "Separacion maxima malla",
@@ -197,11 +197,12 @@ def _demands(ctx: Context, columns: Sequence[DesignColumn], typology: Typology, 
     return demands
 
 
-def dowel_choices(basis: Basis, footing: Footing, column_loads: Sequence[float], given: tuple[Sequence[str], str]) -> list[dict[str, Any]]:
-    """Pasadores candidatos de una zapata o un cabezal, de menor a mayor área: cubren 0.005Ag y la compresión mayorada de
-    la columna (column_loads, en N) que excede φBn (D-065), en número par, al menos 4; given es (designaciones, extremo).
-    El anclaje lo decide la verificación."""
-    a1, a2 = bearing_area(footing, footing_support(footing))
+def dowel_choices(basis: Basis, footing: FootingBody, support: Support, column_loads: Sequence[float],
+                  given: tuple[Sequence[str], str]) -> list[dict[str, Any]]:
+    """Pasadores candidatos de una columna (support) de una zapata o un cabezal, de menor a mayor área: cubren 0.005Ag y
+    la compresión mayorada de la columna (column_loads, en N) que excede φBn (D-065), en número par, al menos 4; given es
+    (designaciones, extremo). El anclaje lo decide la verificación."""
+    a1, a2 = bearing_area(footing, support)
     bearing = basis.profile.bearing
     phi = bearing.strength_reduction()
     capacity = phi * bearing.nominal_bearing(basis.materials.fc, a1, a2)
@@ -222,7 +223,7 @@ def _dowel_options(ctx: Context, typology: Typology, column: DesignColumn) -> li
     footing = footing_for(ctx, typology, column, None)
     basis = Basis(ctx.profile, ctx.materials(typology.fc), ctx.bars, ctx.project.seismic.level)
     loads = [load.p for load in column.loads if load.kind == "factored"]
-    return dowel_choices(basis, footing, loads, (ctx.design.dowel_bars, ctx.design.ends.dowels))
+    return dowel_choices(basis, footing, footing_support(footing), loads, (ctx.design.dowel_bars, ctx.design.ends.dowels))
 
 
 def column_checks(ctx: Context, typology: Typology, column: DesignColumn) -> tuple[list[Check], dict[str, Any]]:

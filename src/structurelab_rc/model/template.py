@@ -351,19 +351,30 @@ def _check_one_source(caps: tuple[Any, ...]) -> None:
         raise ValueError("todos los cabezales de la plantilla toman las cargas de la misma fuente: la columna o los pilotes")
 
 
+class TemplateCapColumn(Column):
+    """Una columna del cabezal en la plantilla (D-143): id, sección y ubicación como en el cabezal, column_unique_name
+    (obligatorio), el Unique Name declarado de la columna en ETABS, y angle, el del eje local 2 respecto a X global
+    (grados; con las cargas de los pilotes, para leer sus fuerzas en "Element Forces - Columns")."""
+
+    id: str = Field(min_length=1)
+    column_unique_name: str = Field(min_length=1)
+    angle: float = 0.0
+
+
 class TemplatePileCap(_Input):
-    """Un cabezal de la plantilla (D-138): el cuerpo del cabezal del proyecto sin cargas (se valida al armar el proyecto),
-    column_unique_name (obligatorio), el Unique Name declarado de su columna, y loads_from (obligatorio), de dónde salen
-    las cargas: de la columna (column),
-    con ese Unique Name en "Joint Reactions"; o de los pilotes (piles), con el Unique Name de cada uno y etabs_station, la
-    estación (en m, como la escribe ETABS) de la que se toman sus fuerzas en "Element Forces - Columns". Con la tabla de
-    coordenadas (Joint Location), column_unique_name ubica el cabezal en la planta de localización. Declara todos sus
+    """Un cabezal de la plantilla (D-138, D-143): el cuerpo del cabezal del proyecto sin cargas (se valida al armar el
+    proyecto), sus columnas con su Unique Name, y loads_from (obligatorio), de dónde salen las cargas: de las columnas
+    (column), con esos Unique Name en "Joint Reactions"; o de los pilotes (piles), con el Unique Name de cada uno y
+    etabs_station, la estación (en m, como la escribe ETABS) de la que se toman sus fuerzas en "Element Forces - Columns".
+    Con las cargas de los pilotes, column_station (opcional) toma de esa misma tabla las fuerzas de cada columna en esa
+    estación (su base), solo mayoradas, para el aplastamiento y las secciones que las necesitan. Con la tabla de
+    coordenadas (Joint Location), la primera columna ubica el cabezal en la planta de localización. Declara todos sus
     campos (extra = forbid, como el resto de la entrada): un campo mal escrito se rechaza al leer la plantilla."""
 
     id: str = Field(min_length=1)
     loads_from: Literal["column", "piles"]
-    column_unique_name: str = Field(min_length=1)
     etabs_station: float | None = None
+    column_station: float | None = None
     lx: PositiveFloat
     ly: PositiveFloat
     h: PositiveFloat
@@ -373,13 +384,14 @@ class TemplatePileCap(_Input):
     pedestal_height: NonNegativeFloat
     surcharge_dead_kNm2: NonNegativeFloat
     surcharge_live_kNm2: NonNegativeFloat
-    column: Column
+    columns: tuple[TemplateCapColumn, ...] = Field(min_length=1)
     bottom: Mat
     top: Mat | None
     pile: PileType
     mislocation_mm: NonNegativeFloat
     reactions_include_weight: bool | None = None
     piles: tuple[TemplatePile, ...] = Field(min_length=1)
+    clipped_corners: tuple[dict[str, Any], ...] = ()
 
     @property
     def from_piles(self) -> bool:
@@ -388,6 +400,12 @@ class TemplatePileCap(_Input):
     @model_validator(mode="after")
     def _check_source(self) -> Self:
         _check_cap_source(self.id, self.from_piles, self.etabs_station, self.piles)
+        if not self.from_piles and self.column_station is not None:
+            raise ValueError(f"el cabezal '{self.id}' declara loads_from = column: column_station solo va con las cargas de los "
+                             "pilotes")
+        names = [column.column_unique_name for column in self.columns]
+        if len(names) != len(set(names)):
+            raise ValueError(f"el cabezal '{self.id}' repite un column_unique_name")
         return self
 
 

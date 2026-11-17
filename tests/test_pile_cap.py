@@ -90,8 +90,9 @@ def test_aci_mislocation_below_75_mm_fails_and_nsr_does_not_check_it() -> None:
 
 def test_missing_tension_capacity_is_incomplete() -> None:
     oracle = _oracle("nsr_10")
-    loads = [{**load, "P_kN": 50.0, "My_kNm": 600.0} for load in _cap()["loads"]]
-    cap = PileCap.model_validate(_cap(loads=loads))
+    column = _cap()["columns"][0]
+    loads = [{**load, "P_kN": 50.0, "My_kNm": 600.0} for load in column["loads"]]
+    cap = PileCap.model_validate(_cap(columns=[{**column, "loads": loads}]))
     basis = Basis(PROFILES["nsr-10"], Materials.model_validate(oracle["materials"]), BARS, "")
     soil = PileCapSoil.model_validate({**oracle["cases"][0]["soil"], "pile_capacity_tension_kN": None})
     tension = [check for check in pile_cap_checks(basis, cap, soil) if check.name == "Presion admisible del pilote: traccion"]
@@ -110,7 +111,7 @@ def test_negative_moment_without_top_mat_fails() -> None:
 
 @pytest.mark.parametrize(("changes", "message"), [
     ({"bottom_cover": 75.0}, "bottom_cover debe ser mayor que el empotramiento"),
-    ({"loads": []}, "lleva las cargas de la columna"),
+    ({"columns": [{"id": "C1", "cx": 500.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0}]}, "cada columna lleva sus cargas"),
     ({"loads_from": "piles"}, "cada pilote lleva sus cargas"),
     ({"reactions_include_weight": True}, "solo se declara con las cargas de los pilotes"),
     ({"piles": [{"id": "P1", "x": 1000.0, "y": 0.0}]}, "queda fuera del cabezal"),

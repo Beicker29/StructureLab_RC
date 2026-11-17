@@ -15,7 +15,7 @@ from structurelab_rc.mechanics.materials import NoEquilibrium
 from structurelab_rc.mechanics.polygon import Point, area_centroid
 from structurelab_rc.mechanics.soil_pressure import SoilPressure, footing_pressure
 from structurelab_rc.model.combined import CombinedFooting
-from structurelab_rc.model.footing import Footing, FootingLoad, Soil, UnitWeighted
+from structurelab_rc.model.footing import Footing, FootingBody, FootingLoad, Soil, UnitWeighted
 
 EQUILIBRIUM = "Zapata: equilibrio con cargas mayoradas"
 
@@ -56,7 +56,7 @@ class FactoredCase:
         return force, outward * ((sx if axis == 0 else sy) - plane * force)
 
 
-def uniform_load(footing: Footing | CombinedFooting, soil: UnitWeighted, load: FootingLoad) -> float:
+def uniform_load(footing: FootingBody | CombinedFooting, soil: UnitWeighted, load: FootingLoad) -> float:
     """Carga uniforme hacia abajo sobre la base fuera de las columnas, en N/mm²: fd·(γc·h + γf·hf + qD) + fl·qL."""
     dead = soil.unit_weight_concrete * footing.h + soil.unit_weight_fill * footing.fill_height + footing.surcharge_dead
     return load.dead_factor * dead + load.live_factor * footing.surcharge_live

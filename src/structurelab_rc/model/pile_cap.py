@@ -1,11 +1,13 @@
-"""Cabezal de una columna sobre un grupo de pilotes (D-138). Geometría en mm y fuerzas en kN y kN·m al declarar,
-convertidas a N y N·mm al cargar.
+"""Cabezal de una o varias columnas sobre un grupo de pilotes (D-138, D-143). Geometría en mm y fuerzas en kN y kN·m al
+declarar, convertidas a N y N·mm al cargar.
 
-El cabezal es una zapata aislada (model/footing.py) apoyada en pilotes: hereda su planta, espesor, columna, mallas,
-relleno, pedestal y sobrecargas. cover es el recubrimiento libre de las caras laterales y la superior; bottom_cover,
-el de la cara inferior a la malla inferior, que queda sobre la cabeza de los pilotes (mayor que su empotramiento).
+El cabezal comparte con la zapata aislada (model/footing.py, FootingBody) su planta, espesor, mallas, relleno, pedestal y
+sobrecargas; sus columnas van en columns. cover es el recubrimiento libre de las caras laterales y la superior;
+bottom_cover, el de la cara inferior a la malla inferior, que queda sobre la cabeza de los pilotes (mayor que su
+empotramiento).
 
-Las cargas llegan de la columna (loads, como en la zapata, D-052) o de cada pilote (piles[].loads), nunca de ambos.
+Las cargas llegan de las columnas (columns[].loads, como en la zapata, D-052) o de cada pilote (piles[].loads), según
+loads_from.
 Las de un pilote son la acción del pilote sobre el cabezal en su cabeza, en ejes globales: P positiva en compresión del
 pilote (empuja el cabezal hacia arriba), Vx y Vy la fuerza horizontal y Mx, My el momento (regla de la mano derecha).
 """
@@ -15,7 +17,7 @@ from typing import Literal, Self
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
 
-from structurelab_rc.model.footing import N_MM3_PER_KN_M3, N_PER_KN, Footing, FootingLoad, _Input
+from structurelab_rc.model.footing import N_MM3_PER_KN_M3, N_PER_KN, Column, FootingBody, FootingLoad, _Input
 
 
 class PileCapSoil(_Input):
@@ -94,21 +96,39 @@ def _inside_convex(outline: tuple[tuple[float, float], ...], point: tuple[float,
                - (outline[(i + 1) % count][1] - outline[i][1]) * (point[0] - outline[i][0]) >= -_ON_EDGE for i in range(count))
 
 
-class PileCap(Footing):
-    """Cabezal (D-138). mislocation es la tolerancia de mala ubicación de los pilotes, en mm (obligatoria en los dos
-    perfiles; con ACI 318-25, menor que 75 mm no cumple, 13.4.1.4): con las cargas de la columna aumenta los brazos y las
-    reacciones (excentricidad accidental); con las de los pilotes, solo los brazos (decisión del usuario, D-138).
-    reactions_include_weight dice, con las cargas de los pilotes, si sus reacciones ya incluyen el
-    peso del cabezal, el relleno y las sobrecargas; si no, se suman repartidos por igual. loads_from declara, sin
-    ambigüedad, de dónde llegan las cargas: column (loads del cabezal) o piles (loads de cada pilote)."""
+class CapColumn(Column):
+    """Una columna del cabezal (D-143): id, sección cx × cy centrada en (offset_x, offset_y) respecto al centroide del
+    cabezal, sus pasadores y sus cargas (loads). Con loads_from = column son las fuerzas de la columna en su base; con
+    loads_from = piles son opcionales y solo mayoradas: dan la carga de la columna para el aplastamiento, los pasadores y
+    las secciones que la necesitan (si faltan, esas revisiones quedan INCOMPLETE)."""
+
+    id: str = Field(min_length=1)
+    loads: tuple[FootingLoad, ...] = ()
+
+    @property
+    def area(self) -> float:
+        return self.cx * self.cy
+
+
+def _case_key(load: FootingLoad) -> tuple[float, float, bool]:
+    return load.dead_factor, load.live_factor, load.seismic
+
+
+class PileCap(FootingBody):
+    """Cabezal (D-138) de una o varias columnas (columns, D-143). mislocation es la tolerancia de mala ubicación de los
+    pilotes, en mm (obligatoria en los dos perfiles; con ACI 318-25, menor que 75 mm no cumple, 13.4.1.4): con las cargas
+    de las columnas aumenta los brazos y las reacciones (excentricidad accidental); con las de los pilotes, solo los brazos
+    (decisión del usuario, D-138). reactions_include_weight dice, con las cargas de los pilotes, si sus reacciones ya
+    incluyen el peso del cabezal, el relleno y las sobrecargas; si no, se suman repartidos por igual. loads_from declara,
+    sin ambigüedad, de dónde llegan las cargas: column (loads de cada columna) o piles (loads de cada pilote)."""
 
     loads_from: Literal["column", "piles"]
     bottom_cover: PositiveFloat
     pile: PileType
     piles: tuple[Pile, ...] = Field(min_length=1)
+    columns: tuple[CapColumn, ...] = Field(min_length=1)
     mislocation: NonNegativeFloat = Field(validation_alias="mislocation_mm")
     reactions_include_weight: bool | None = None
-    loads: tuple[FootingLoad, ...] = ()
     clipped_corners: tuple[CornerClip, ...] = ()
 
     @model_validator(mode="after")
@@ -121,10 +141,7 @@ class PileCap(Footing):
         for pile in self.piles:
             if not _inside_convex(outline, (pile.x, pile.y)) or abs(pile.x) >= self.lx / 2 or abs(pile.y) >= self.ly / 2:
                 raise ValueError(f"el pilote '{pile.id}' del cabezal '{self.id}' queda fuera del cabezal")
-        column = self.column
-        corners = [(column.offset_x + sx * column.cx / 2, column.offset_y + sy * column.cy / 2) for sx, sy in _CORNER_SIGNS.values()]
-        if not all(_inside_convex(outline, point) for point in corners):
-            raise ValueError(f"la columna del cabezal '{self.id}' queda fuera de su contorno (esquinas recortadas)")
+        self._check_columns()
         if self.bottom_cover <= self.pile.embedment:
             raise ValueError(f"en el cabezal '{self.id}' bottom_cover debe ser mayor que el empotramiento de los pilotes: "
                              "la malla inferior va sobre su cabeza")
@@ -133,29 +150,58 @@ class PileCap(Footing):
         self._check_loads()
         return self
 
+    def _check_columns(self) -> None:
+        """Ids únicos, cada columna dentro del contorno y sin traslaparse con otra."""
+        ids = [column.id for column in self.columns]
+        if len(ids) != len(set(ids)):
+            raise ValueError(f"el cabezal '{self.id}' repite una columna")
+        outline = self.outline
+        for column in self.columns:
+            corners = [(column.offset_x + sx * column.cx / 2, column.offset_y + sy * column.cy / 2) for sx, sy in _CORNER_SIGNS.values()]
+            if not all(_inside_convex(outline, point) and abs(point[0]) <= self.lx / 2 and abs(point[1]) <= self.ly / 2
+                       for point in corners):
+                raise ValueError(f"la columna '{column.id}' del cabezal '{self.id}' queda fuera de su contorno")
+        for index, a in enumerate(self.columns):
+            for b in self.columns[index + 1 :]:
+                if (abs(a.offset_x - b.offset_x) < (a.cx + b.cx) / 2 and abs(a.offset_y - b.offset_y) < (a.cy + b.cy) / 2):
+                    raise ValueError(f"las columnas '{a.id}' y '{b.id}' del cabezal '{self.id}' se traslapan")
+
     def _check_loads(self) -> None:
-        """Una sola fuente de cargas; con las de los pilotes, reactions_include_weight y los mismos casos en todos."""
+        """Una sola fuente de cargas, con los mismos casos y factores en todas las columnas o en todos los pilotes; con las
+        de los pilotes, reactions_include_weight, y las cargas de las columnas (opcionales) solo mayoradas y de casos de
+        los pilotes."""
         with_loads = [bool(pile.loads) for pile in self.piles]
         if self.loads_from == "column":
-            if not self.loads or any(with_loads):
-                raise ValueError(f"el cabezal '{self.id}' declara loads_from = column: lleva las cargas de la columna (loads) y "
+            if not all(column.loads for column in self.columns) or any(with_loads):
+                raise ValueError(f"el cabezal '{self.id}' declara loads_from = column: cada columna lleva sus cargas (loads) y "
                                  "sus pilotes no llevan cargas")
-        elif self.loads or not all(with_loads):
-            raise ValueError(f"el cabezal '{self.id}' declara loads_from = piles: cada pilote lleva sus cargas y el cabezal no "
-                             "lleva loads")
-        if self.loads:
             if self.reactions_include_weight is not None:
                 raise ValueError(f"reactions_include_weight del cabezal '{self.id}' solo se declara con las cargas de los pilotes")
+            self._same_cases([(f"la columna '{column.id}'", column.loads) for column in self.columns], "columnas")
             return
+        if not all(with_loads):
+            raise ValueError(f"el cabezal '{self.id}' declara loads_from = piles: cada pilote lleva sus cargas")
         if self.reactions_include_weight is None:
             raise ValueError(f"el cabezal '{self.id}' toma las cargas de los pilotes: declara reactions_include_weight")
-        first = {(load.kind, load.case): (load.dead_factor, load.live_factor, load.seismic) for load in self.piles[0].loads}
-        for pile in self.piles:
-            cases = {(load.kind, load.case): (load.dead_factor, load.live_factor, load.seismic) for load in pile.loads}
-            if len(cases) != len(pile.loads):
-                raise ValueError(f"el pilote '{pile.id}' del cabezal '{self.id}' repite un caso de carga")
+        self._same_cases([(f"el pilote '{pile.id}'", pile.loads) for pile in self.piles], "pilotes")
+        factored = {(load.case): _case_key(load) for load in self.piles[0].loads if load.kind == "factored"}
+        for column in self.columns:
+            names = [load.case for load in column.loads]
+            if len(names) != len(set(names)):
+                raise ValueError(f"la columna '{column.id}' del cabezal '{self.id}' repite un caso de carga")
+            for load in column.loads:
+                if load.kind != "factored" or factored.get(load.case) != _case_key(load):
+                    raise ValueError(f"con las cargas de los pilotes, la columna '{column.id}' del cabezal '{self.id}' solo lleva "
+                                     "casos mayorados de los pilotes, con sus mismos factores (D-143)")
+
+    def _same_cases(self, owners: list[tuple[str, tuple[FootingLoad, ...]]], plural: str) -> None:
+        first = {(load.kind, load.case): _case_key(load) for load in owners[0][1]}
+        for name, loads in owners:
+            cases = {(load.kind, load.case): _case_key(load) for load in loads}
+            if len(cases) != len(loads):
+                raise ValueError(f"{name} del cabezal '{self.id}' repite un caso de carga")
             if cases != first:
-                raise ValueError(f"los pilotes del cabezal '{self.id}' deben tener los mismos casos, con los mismos factores")
+                raise ValueError(f"los {plural} del cabezal '{self.id}' deben tener los mismos casos, con los mismos factores")
 
     def _check_clips(self) -> None:
         """Una esquina se recorta una vez; los recortes caben en sus bordes sin cruzarse."""
@@ -195,17 +241,35 @@ class PileCap(Footing):
         return self.bottom_cover
 
     @property
+    def column_area(self) -> float:
+        """Área de las columnas (o pedestales), donde no hay relleno ni sobrecarga, en mm²."""
+        return sum(column.area for column in self.columns)
+
+    @property
+    def all_columns(self) -> tuple[Column, ...]:
+        return self.columns
+
+    @property
+    def band_centre(self) -> tuple[float, float] | None:
+        """La franja central γs solo con una columna (D-138); con varias, la franja de cada columna (D-143)."""
+        if len(self.columns) != 1:
+            return None
+        return self.columns[0].offset_x, self.columns[0].offset_y
+
+    @property
     def from_piles(self) -> bool:
-        """Si las cargas llegan de los pilotes (no de la columna)."""
+        """Si las cargas llegan de los pilotes (no de las columnas)."""
         return self.loads_from == "piles"
 
-    def case_loads(self) -> list[tuple[FootingLoad, tuple[FootingLoad, ...]]]:
-        """Cada caso: su carga de referencia (la de la columna, o la del primer pilote para el nombre, el tipo y los
-        factores) y la de cada pilote (vacía con las cargas de la columna)."""
-        if not self.from_piles:
-            return [(load, ()) for load in self.loads]
+    def case_loads(self) -> list[tuple[FootingLoad, tuple[FootingLoad, ...], tuple[FootingLoad | None, ...]]]:
+        """Cada caso: su carga de referencia (la de la primera columna, o la del primer pilote, para el nombre, el tipo y los
+        factores), la de cada pilote (vacía con las cargas de las columnas) y la de cada columna (None si no la declara)."""
+        def own(loads: tuple[FootingLoad, ...], load: FootingLoad) -> FootingLoad | None:
+            return next((item for item in loads if (item.kind, item.case) == (load.kind, load.case)), None)
+
+        source = self.piles[0].loads if self.from_piles else self.columns[0].loads
         cases = []
-        for index, load in enumerate(self.piles[0].loads):
-            own = tuple(next(item for item in pile.loads if (item.kind, item.case) == (load.kind, load.case)) for pile in self.piles)
-            cases.append((self.piles[0].loads[index], own))
+        for load in source:
+            piles = tuple(item for pile in self.piles if (item := own(pile.loads, load)) is not None) if self.from_piles else ()
+            cases.append((load, piles, tuple(own(column.loads, load) for column in self.columns)))
         return cases

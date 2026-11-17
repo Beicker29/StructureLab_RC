@@ -23,7 +23,7 @@ def _plan_piles(drawing: Drawing, cap: PileCap) -> list[Circle | Text]:
 
 
 def pile_cap_views(drawing: Drawing, cap: PileCap, runs: list[BarRun], rows: tuple[list[ScheduleRow], float]) -> list[View]:
-    """Planta de geometría, plantas del refuerzo, cortes X-X e Y-Y por la columna y cartilla, con los pilotes."""
+    """Planta de geometría, plantas del refuerzo, cortes X-X e Y-Y por las columnas y cartilla, con los pilotes."""
     views = footing_views(drawing, cap, runs, rows)
     if cap.clipped_corners:  # D-141: el contorno real en lugar del rectángulo
         rectangle_outline = rectangle("CONCRETO", (-cap.lx / 2, -cap.ly / 2), (cap.lx / 2, cap.ly / 2))
@@ -38,7 +38,8 @@ def pile_cap_views(drawing: Drawing, cap: PileCap, runs: list[BarRun], rows: tup
                 view.entities.extend(rectangle(LAYER, (pile.x - size / 2, pile.y - size / 2), (pile.x + size / 2, pile.y + size / 2),
                                                dashed=True) for pile in cap.piles)
         elif view.name in ("corte_x", "corte_y"):
-            along, across, cut = (0, 1, cap.column.offset_y) if view.name == "corte_x" else (1, 0, cap.column.offset_x)
+            middle = (sum(c.offset_x for c in cap.columns) / len(cap.columns), sum(c.offset_y for c in cap.columns) / len(cap.columns))
+            along, across, cut = (0, 1, middle[1]) if view.name == "corte_x" else (1, 0, middle[0])
             for pile in cap.piles:
                 position = (pile.x, pile.y)
                 if abs(position[across] - cut) <= size / 2:

@@ -248,13 +248,12 @@ class RectangularBase:
         return self.surcharge_dead * area, self.surcharge_live * area
 
 
-class Footing(RectangularBase, _Input):
-    """Zapata aislada de espesor h. fill_height es la altura del relleno sobre la zapata y pedestal_height la del
-    pedestal, que tiene la sección de la columna; cover es el recubrimiento libre de las mallas. top es la malla
-    superior, o None si no la hay. surcharge_dead y surcharge_live son las sobrecargas superimpuestas muerta y viva
-    sobre el relleno, repartidas en el área de la base menos la de la columna (D-057). location y typology (opcionales,
-    D-130) ubican la columna en el proyecto y dan el tipo que rotula la planta de localización.
-    """
+class FootingBody(RectangularBase, _Input):
+    """Lo común a la zapata aislada y al cabezal (D-143): planta lx × ly, espesor h, recubrimiento libre de las mallas
+    (cover), relleno (fill_height), pedestal de la sección de cada columna (pedestal_height), sobrecargas muerta y viva
+    sobre el relleno (repartidas en la base menos las columnas, D-057), malla inferior y superior (top None si no la hay).
+    location y typology (opcionales, D-130) ubican el elemento en el proyecto y dan el tipo que rotula la planta de
+    localización. Las columnas y las cargas las declara cada elemento."""
 
     id: str = Field(min_length=1)
     location: Location | None = None
@@ -267,10 +266,8 @@ class Footing(RectangularBase, _Input):
     pedestal_height: NonNegativeFloat
     surcharge_dead: NonNegativeFloat = Field(validation_alias="surcharge_dead_kNm2")
     surcharge_live: NonNegativeFloat = Field(validation_alias="surcharge_live_kNm2")
-    column: Column
     bottom: Mat
     top: Mat | None
-    loads: tuple[FootingLoad, ...] = Field(min_length=1)
 
     @field_validator("surcharge_dead", "surcharge_live")
     @classmethod
@@ -278,21 +275,16 @@ class Footing(RectangularBase, _Input):
         return value * MPA_PER_KPA
 
     @model_validator(mode="after")
-    def _check_geometry(self) -> Self:
-        column = self.column
-        if abs(column.offset_x) + column.cx / 2 > self.lx / 2 or abs(column.offset_y) + column.cy / 2 > self.ly / 2:
-            raise ValueError(f"la columna de la zapata '{self.id}' se sale de la base")
+    def _check_body(self) -> Self:
         if 2 * self.cover >= self.h:
-            raise ValueError(f"el recubrimiento de la zapata '{self.id}' no deja espacio para las mallas")
+            raise ValueError(f"el recubrimiento de '{self.id}' no deja espacio para las mallas")
         for mat in (self.bottom, self.top):
             if mat is None:
                 continue
             for direction, bar_set in (("x", mat.x), ("y", mat.y)):
-                if bar_set.band_spacing is not None and direction != self.short_direction:
-                    raise ValueError(f"en la zapata '{self.id}' solo las barras de la direccion corta admiten band_spacing")
-        names = [(load.kind, load.case) for load in self.loads]
-        if len(names) != len(set(names)):
-            raise ValueError(f"la zapata '{self.id}' repite un caso de carga")
+                if bar_set.band_spacing is not None and (direction != self.short_direction or self.band_centre is None):
+                    raise ValueError(f"en '{self.id}' solo las barras de la direccion corta admiten band_spacing, y solo con una "
+                                     "columna")
         return self
 
     @property
@@ -307,6 +299,41 @@ class Footing(RectangularBase, _Input):
         if self.lx == self.ly:
             return None
         return "y" if self.lx > self.ly else "x"
+
+    @property
+    def band_centre(self) -> tuple[float, float] | None:
+        """Centro de la franja central de la dirección corta (el eje de la única columna); None si no hay franja γs."""
+        raise NotImplementedError
+
+    @property
+    def all_columns(self) -> tuple[Column, ...]:
+        """Las columnas del elemento: la de la zapata o las del cabezal."""
+        raise NotImplementedError
+
+
+class Footing(FootingBody):
+    """Zapata aislada de una columna (column), con las cargas de la columna (loads)."""
+
+    column: Column
+    loads: tuple[FootingLoad, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _check_geometry(self) -> Self:
+        column = self.column
+        if abs(column.offset_x) + column.cx / 2 > self.lx / 2 or abs(column.offset_y) + column.cy / 2 > self.ly / 2:
+            raise ValueError(f"la columna de la zapata '{self.id}' se sale de la base")
+        names = [(load.kind, load.case) for load in self.loads]
+        if len(names) != len(set(names)):
+            raise ValueError(f"la zapata '{self.id}' repite un caso de carga")
+        return self
+
+    @property
+    def band_centre(self) -> tuple[float, float] | None:
+        return self.column.offset_x, self.column.offset_y
+
+    @property
+    def all_columns(self) -> tuple[Column, ...]:
+        return (self.column,)
 
     @property
     def column_area(self) -> float:

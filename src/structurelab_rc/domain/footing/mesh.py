@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
-from structurelab_rc.model.footing import BarSet, Footing, Mat
+from structurelab_rc.model.footing import BarSet, FootingBody, Mat
 
 _TOLERANCE = 1e-6
 
@@ -72,23 +72,25 @@ def _positions(low: float, high: float, bar_set: BarSet, band: tuple[float, floa
     return [*reversed(left), *inner, *right], inner
 
 
-def band_limits(footing: Footing, direction: str) -> tuple[float, float] | None:
-    """Franja central de la dirección corta: ancho igual al lado corto, centrada en el eje de la columna."""
-    if direction != footing.short_direction:
+def band_limits(footing: FootingBody, direction: str) -> tuple[float, float] | None:
+    """Franja central de la dirección corta: ancho igual al lado corto, centrada en el eje de la columna; None si no la
+    hay (base cuadrada o cabezal de varias columnas, D-143)."""
+    centre = footing.band_centre
+    if direction != footing.short_direction or centre is None:
         return None
     short = min(footing.lx, footing.ly)
-    centre = footing.column.offset_x if direction == "y" else footing.column.offset_y
-    return centre - short / 2, centre + short / 2
+    middle = centre[0] if direction == "y" else centre[1]
+    return middle - short / 2, middle + short / 2
 
 
-def stirrup_diameter(footing: Footing | CombinedFooting, bars: Sequence[RebarSpec]) -> float:
+def stirrup_diameter(footing: FootingBody | CombinedFooting, bars: Sequence[RebarSpec]) -> float:
     """Diámetro de los estribos de la zapata combinada (0 si no los tiene o es una zapata aislada)."""
     if not isinstance(footing, CombinedFooting) or footing.stirrups is None:
         return 0.0
     return next(bar.diameter_mm for bar in bars if bar.designation == footing.stirrups.designation)
 
 
-def _row(footing: Footing | CombinedFooting, direction: str, bar: tuple[BarSet, RebarSpec],
+def _row(footing: FootingBody | CombinedFooting, direction: str, bar: tuple[BarSet, RebarSpec],
          faces: tuple[float, float], section: tuple[float, float] | None = None) -> BarRow:
     """bar = (barras declaradas, su especificación); faces = (distancia del centro de la barra a su cara, diámetro del
     estribo que la encierra lateralmente); section = (ancho, altura) donde van las barras, si no son la base y su espesor
@@ -98,13 +100,13 @@ def _row(footing: Footing | CombinedFooting, direction: str, bar: tuple[BarSet, 
     width, thickness = section or ((footing.ly if direction == "x" else footing.lx), footing.h)
     # Los estribos de la combinada encierran las barras x por los lados ±Y; a lo largo de X no hay estribo en los extremos.
     half = width / 2 - footing.cover - (stirrup if direction == "x" else 0.0) - spec.diameter_mm / 2
-    band = band_limits(footing, direction) if isinstance(footing, Footing) else None
+    band = band_limits(footing, direction) if isinstance(footing, FootingBody) else None
     positions, inner = _positions(-half, half, bar_set, band)
     return BarRow(direction, bar_set.designation, spec.diameter_mm, spec.area_mm2, thickness - from_face, width,
                   tuple(positions), band, tuple(inner))
 
 
-def mat_rows(footing: Footing | CombinedFooting, mat: Mat, bars: Sequence[RebarSpec]) -> dict[str, BarRow]:
+def mat_rows(footing: FootingBody | CombinedFooting, mat: Mat, bars: Sequence[RebarSpec]) -> dict[str, BarRow]:
     """Las dos direcciones de una malla; la de `first` va más cerca de la cara. Las barras deben estar en el catálogo.
     La zapata combinada no tiene franja central (su refuerzo bajo cada columna va aparte, D-080)."""
     specs = {bar.designation: bar for bar in bars}
@@ -112,7 +114,7 @@ def mat_rows(footing: Footing | CombinedFooting, mat: Mat, bars: Sequence[RebarS
     first_diameter = specs[getattr(mat, mat.first).designation].diameter_mm
     stirrup = stirrup_diameter(footing, bars)
     # La malla inferior del cabezal va sobre la cabeza de los pilotes (D-138); en la zapata, bottom_face_cover es cover.
-    face = footing.bottom_face_cover if isinstance(footing, Footing) and mat is footing.bottom else footing.cover
+    face = footing.bottom_face_cover if isinstance(footing, FootingBody) and mat is footing.bottom else footing.cover
     cover = face + stirrup
     # En la T invertida los estribos van en el alma: no encierran por los lados las barras de la zarpa (D-093).
     lateral = 0.0 if isinstance(footing, CombinedFooting) and footing.beam is not None else stirrup

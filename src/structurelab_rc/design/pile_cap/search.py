@@ -33,6 +33,7 @@ from structurelab_rc.design.pile_cap.patterns import Arrangement, arrangements, 
 from structurelab_rc.detailing.schedule import schedule
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
+from structurelab_rc.domain.footing.connection import Support
 from structurelab_rc.domain.footing.detailing import footing_runs, moment_envelope
 from structurelab_rc.domain.footing.flexure import PLAIN
 from structurelab_rc.domain.footing.mesh import mat_rows
@@ -137,19 +138,19 @@ def cap_data(ctx: Context, candidate: _Candidate, mats: Mats, dowels: dict[str, 
     """El cabezal en el formato de entrada del proyecto de verificación (D-138)."""
     design, cap, arrangement = ctx.design, candidate.cap, candidate.arrangement
     bottom, top = mats
-    column = {"cx": cap.column.cx, "cy": cap.column.cy, "offset_x": arrangement.column[0], "offset_y": arrangement.column[1],
-              "dowels": dowels}
+    column = {"id": "C1", "cx": cap.column.cx, "cy": cap.column.cy, "offset_x": arrangement.column[0],
+              "offset_y": arrangement.column[1], "dowels": dowels}
     data: dict[str, Any] = {
         "id": cap.id, "loads_from": cap.loads_from, "lx": arrangement.lx, "ly": arrangement.ly, "h": candidate.h,
         "cover": design.cover, "bottom_cover": design.bottom_cover, "fill_height": design.fill_height,
         "pedestal_height": design.pedestal_height, "surcharge_dead_kNm2": design.surcharge_dead,
-        "surcharge_live_kNm2": design.surcharge_live, "column": column, "bottom": bottom, "top": top,
+        "surcharge_live_kNm2": design.surcharge_live, "columns": [column], "bottom": bottom, "top": top,
         "pile": design.pile.model_dump(), "mislocation_mm": design.mislocation, "piles": _pile_entries(cap, arrangement),
     }
     if cap.loads_from == "piles":
         data["reactions_include_weight"] = cap.reactions_include_weight
     else:
-        data["loads"] = [load_input(load) for load in cap.loads]
+        column["loads"] = [load_input(load) for load in cap.loads]
     if arrangement.clips:
         data["clipped_corners"] = [clip.model_dump() for clip in arrangement.clips]
     if cap.location is not None:  # D-130: la planta de localización, con el cabezal como su tipo
@@ -232,7 +233,9 @@ def _verify(ctx: Context, candidate: _Candidate, mats: Mats,
     basis = ctx.basis(candidate.fc)
     first: tuple[list[Check], dict[str, Any], PileCap] | None = None
     provisional = _build(ctx, candidate, mats, None)
-    for dowels in dowel_choices(basis, provisional, loads, (ctx.design.dowel_bars, ctx.design.ends.dowels)):
+    column = provisional.columns[0]
+    support = Support(column.cx, column.cy, column.offset_x, column.offset_y, None, "")
+    for dowels in dowel_choices(basis, provisional, support, loads, (ctx.design.dowel_bars, ctx.design.ends.dowels)):
         data = cap_data(ctx, candidate, mats, dowels)
         cap = PileCap.model_validate(data)
         failures = _failures(pile_cap_checks(basis, cap, ctx.project.soil))
@@ -257,13 +260,13 @@ def _mat_mass(ctx: Context, cap: PileCap, mat: Mat | None) -> float:
 
 
 def _dowel_mass(ctx: Context, cap: PileCap) -> float:
-    dowels = cap.column.dowels
-    return 0.0 if dowels is None else dowels.count * ctx.spec(dowels.designation).mass_kg_m * (cap.h - ctx.design.cover) / 1000
+    return sum(dowels.count * ctx.spec(dowels.designation).mass_kg_m * (cap.h - ctx.design.cover) / 1000
+               for column in cap.columns if (dowels := column.dowels) is not None)
 
 
 def _concrete(ctx: Context, cap: PileCap) -> float:
     """Volumen del cabezal y el pedestal, en m³."""
-    return (cap.area * cap.h + cap.column.cx * cap.column.cy * ctx.design.pedestal_height) / _MM3_PER_M3
+    return (cap.area * cap.h + cap.column_area * ctx.design.pedestal_height) / _MM3_PER_M3
 
 
 def _spans(cap: PileCap) -> Callable[[str, float], tuple[float, float] | None] | None:
@@ -303,7 +306,7 @@ def _at_height(ctx: Context, candidate: _Candidate) -> CapSolution | str:
     if any(_starts(check, _GEOTECHNICAL) for check in first):
         return "soil"
     envelope = moment_envelope(list(analysis.moments)) or {"x": (0.0, 0.0), "y": (0.0, 0.0)}
-    loads = [item.case.column for item in analysis.factored]
+    loads = [pu for item in analysis.factored if (pu := item.case.bearing[0]) is not None]
     positive = {direction: values[0] for direction, values in envelope.items()}
     negative = {direction: values[1] for direction, values in envelope.items()}
     bottoms = _mat_candidates(ctx, (provisional, basis), _needs(basis, provisional, positive, "bottom", {}), top=False)

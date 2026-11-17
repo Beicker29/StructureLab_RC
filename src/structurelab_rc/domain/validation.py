@@ -9,7 +9,7 @@ from structurelab_rc.domain.footing.combined_beam import covered_width, long_bea
 from structurelab_rc.errors import StructuredError, incomplete, invalid_input
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
-from structurelab_rc.model.footing import BarSet, Dowels, Footing
+from structurelab_rc.model.footing import BarSet, Dowels, FootingBody
 from structurelab_rc.model.project import Member, Project, Station
 from structurelab_rc.model.reinforcement import BarPosition, BarSpacing, Stirrups
 
@@ -115,18 +115,20 @@ def _hook_errors(groups: list[tuple[str, str, str]], stirrups: list[tuple[str, S
                                 **where)
 
 
-def _footing_errors(footing: Footing, specs: dict[str, RebarSpec], profile: Profile) -> Iterator[StructuredError]:
-    """Barras del catálogo, separación libre positiva, mallas dentro del espesor y ganchos que el perfil define."""
+def _footing_errors(footing: FootingBody, specs: dict[str, RebarSpec], profile: Profile) -> Iterator[StructuredError]:
+    """Barras del catálogo, separación libre positiva, mallas dentro del espesor y ganchos que el perfil define (zapata
+    aislada o cabezal, con los pasadores de cada columna)."""
     where = {"member": footing.id}
     layers = [("inferior", [("x", footing.bottom.x), ("y", footing.bottom.y)])]
     if footing.top is not None:
         layers.append(("superior", [("x", footing.top.x), ("y", footing.top.y)]))
     yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
-    yield from _dowel_errors(footing.column.dowels, specs, where)
     groups: list[tuple[str, str, str]] = [(f"la malla {name} {direction}", bars.designation, bars.end)
                                           for name, sets in layers for direction, bars in sets]
-    dowels = footing.column.dowels
-    groups += [] if dowels is None else [("los pasadores", dowels.designation, dowels.end)]
+    for column in footing.all_columns:
+        yield from _dowel_errors(column.dowels, specs, where)
+        dowels = column.dowels
+        groups += [] if dowels is None else [("los pasadores", dowels.designation, dowels.end)]
     yield from _hook_errors(groups, [], specs, (profile, where))
 
 
