@@ -2806,6 +2806,41 @@
   NSR-10 en CP2 (h = 1100 mm), y CP1 sigue en malla 2 × 2 (antes, mallas 2 × 2 de cuatro pilotes en todos); f'c = 28 MPa. El motivo de un arreglo sin solución distingue "falta espesor y con más espesor el peso ya no cumple lo
   geotécnico".
 
+### D-143: cabezales de varias columnas (verificación)
+
+- **Decisiones del usuario:**
+  - alcance: primero la verificación (despiece, dibujo y ETABS); el diseño de varias columnas, después;
+  - formato: todo cabezal lleva la lista `columns` (una o varias), cada una con `id`, sección, ubicación, pasadores y
+    cargas; se eliminan `column` y `loads` del cabezal;
+  - flexión por secciones de cuerpo libre;
+  - con cargas de los pilotes, la carga de cada columna se declara (o se lee de ETABS con `column_station`) para el
+    aplastamiento y lo que la necesita; si falta, INCOMPLETE (no se reparte);
+  - franja de cada columna en vez de la franja central γs, definida como las franjas transversales de la zapata
+    combinada y revisada como viga en voladizo, cargada con la reacción de los pilotes que caen en ella (fracción de
+    13.4.6.7 según la distancia al borde de la franja) menos el peso;
+  - estados límite CRSI 4 a 6 por columna; `column_station` en el cabezal de la plantilla.
+- **Criterio de cuerpo libre (una sola regla):** en cada sección, el lado con menos columnas; si empatan, los dos y
+  gobierna el mayor. Con una columna coincide con lo anterior (el lado sin la columna).
+- **Implementación:**
+  - `model/footing.FootingBody` reúne lo común a la zapata aislada y al cabezal; `Footing` agrega su columna y sus cargas
+    y `PileCap` sus `columns` (`CapColumn`);
+  - las revisiones compartidas (mallas, flexión, conexión, despiece, dibujo, validación) reciben el cuerpo y la lista de
+    columnas (`all_columns`); `FaceMoments` lleva sus secciones (plano, rótulo, nota);
+  - `domain/pile_cap/loads.py`: resultante de todas las columnas, columnas más allá de cada plano y secciones cada 50 mm;
+  - `domain/pile_cap/shear.py`: cortante y CRSI por columna, punzonamiento por columna y perímetro común;
+  - `domain/pile_cap/strips.py`: la franja de cada columna. De la viga se toman la resistencia y εt; el As mínimo es el
+    del cabezal (D-140) en el ancho de la franja; la separación por fisuración (24.3.2) no aplica (con el recubrimiento
+    inferior sobre los pilotes no puede cumplirse; la separación es la de las mallas, 3h y 450 mm); el cortante usa el
+    Vc del cabezal (13.4.6.5 y 13.4.6.8), no el de cimentaciones superficiales (13.2.6.2 no aplica a cabezales);
+  - plantilla de ETABS con `columns[].column_unique_name` y `column_station`; el diseño (D-141) sigue siendo de una
+    columna y escribe el formato nuevo.
+- **Oráculo y ejemplos:** `derive_pile_cap_columns.py` (caso F: dos columnas sobre seis pilotes, con reacciones,
+  momentos en las caras y entre columnas, cortante a d, franjas y punzonamiento); `cabezal_dos_columnas` en los dos
+  perfiles, con su copia en `pruebas/` y su huella.
+- **Diferencias:** los ejemplos de una columna dan las mismas verificaciones, reacciones y cartilla (comparadas contra
+  el código anterior); cambian el formato de entrada y de `resultado.json` y dos líneas de la memoria (convenciones y
+  limitaciones), y por eso sus huellas.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

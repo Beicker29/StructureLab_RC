@@ -1,49 +1,54 @@
 {
   "examples/aci_318_25/cabezales/pruebas/cabezal_columna.json": {
-    "resultado.json": "86ff34c6ac946b5d2cb90df80c6c5d9e17120c52c9aa0c254a492220d80233fa",
-    "memoria.txt": "d1eeeec72f6ec1c1574a78a0a1deb02152ba7a9e5170d0976e5ce4b311c1ac35",
+    "resultado.json": "7c3d6df101d3244adbfe7e90516028604f9551b4361ec86e1c00bd242b3e27d0",
+    "memoria.txt": "e912be7ae707e429cced8598a74a25cd257f4b499f5ed68d030e1ff0a5074146",
     "cabezal_columna_drawing.json": "6dc959a3878fc116925a3f72ae17d51f1d2c4e42657887d1a1dff3d3dbe96ede"
   },
   "examples/aci_318_25/cabezales/pruebas/cabezal_columna_etabs.json": {
-    "resultado.json": "f1beee2c7c0aba2ea37a0e1405a82eb49a4d61d527f6451cb90aeb369fcf973c",
-    "memoria.txt": "0bab01885f0b1b235d52a1718e2b16bebf3101669f09b0bc0534343fde43bff8",
+    "resultado.json": "0fb979639e249075091bbd413efc26c59f168445db5022955d73b07a36808a22",
+    "memoria.txt": "65b396b13f2106eb7314744c7d2eb9b9f781bb8e7f1cad2bfbe5efb461fc73ec",
     "cabezal_columna_etabs_drawing.json": "5a30653a5cd097bcd8e5028095321dfd1ff3e4c955fcb65ae1e29ba7d8a4546d"
   },
+  "examples/aci_318_25/cabezales/pruebas/cabezal_dos_columnas.json": {
+    "resultado.json": "8e527d176a0d7e4c99eeed1cac8ae444394fc22347a5d46b06411b61370e89d8",
+    "memoria.txt": "529f0a5923aaeadf111f363b09f5d62aecde92284502f3b172eef9e3ab418a12",
+    "cabezal_dos_columnas_drawing.json": "13326b3acae9eeaf00d066dd3d5f2281ff25d22f8ae5a9719e22d560fbf0b567"
+  },
   "examples/aci_318_25/cabezales/pruebas/cabezal_pilotes.json": {
-    "resultado.json": "62266dbe47ac2bbf13b270b55ba7ed2148de930d3cf40ea1c017de1ec02b95e0",
-    "memoria.txt": "75df03e55d4bb1d00ba658d1bcfb1872e6873975038c743a28e59b2ecd6786c4",
+    "resultado.json": "13043f32209b75941f5b098e960596b4d44b7e1a1c323045043279a1882d669b",
+    "memoria.txt": "de334ed1352ed22fdef4115ac3f400fe05034c79766cdc58e2fc82d599213431",
     "cabezal_pilotes_drawing.json": "da1754548a40c766b7d5e101ae4269285d3d7937bbc0dba0f2e42fe64d2ae28c"
   },
   "examples/aci_318_25/cabezales/pruebas/cabezal_pilotes_etabs.json": {
-    "resultado.json": "7a9f995cd4ada3073f56dcebbcb72a0b526c34abe0b735023d8b5798caac30a0",
-    "memoria.txt": "d84797c53feb68fbc1d47d81f6997759bacc6242555214b8e2ac524a3cb9ace7",
+    "resultado.json": "9a968c1752baddc396e47488b15da2fa56ad847a1c8f37e68197881a8055ac42",
+    "memoria.txt": "99fe12ff9e1d30a2c02e85da88a48ed7c11b09175c0ee4bd27e3857033d03042",
     "cabezal_pilotes_etabs_drawing.json": "98ade2afb1bed2c5d9e57df8a32460cdbba8d7f0b4764be7e23850cc4107c834"
   },
   "examples/aci_318_25/cabezales/pruebas/cabezal_tres_pilotes.json": {
-    "resultado.json": "70d9c7722191734283b61d41f41a8ee19f24e5ff182887f993e91288e6564275",
-    "memoria.txt": "8e6d034189581ed122bf6077d4417d11560ba868a4af77f4b93f52a3737fa004",
+    "resultado.json": "f747204a88e8d4435c56c5d81bc3d86d2cb2bbdec1d09794dcb39198a4f5d51e",
+    "memoria.txt": "ea6bf5d7c44c7266bc55f70f56399899c18cd1744d189d18d64a7d342e380acc",
     "cabezal_tres_pilotes_drawing.json": "58b1c1b323ca9a6965e5ac82dcb25fcb63fcc02af39954b812c2f6ecc3d0932f"
   },
   "examples/aci_318_25/cabezales/pruebas/diseno_cabezal_columna.json": {
-    "proyecto.json": "ea53ef462343f0fab379be493d553d3b891e18b543976539872f5d6492ffaca2",
-    "resultado.json": "a71f56d338eaa3ff055964c9f23b21d2b5613d45537fc3c224bb676b56573c6e",
-    "memoria.txt": "30c0f73e673bc38a4e47649dcdc18ac5fa23e692a1ea17bd0c85a752171382eb",
+    "proyecto.json": "125efe50288329daee1c32a9facc1b5dd9598e77e1f38df86a86eee74b862c37",
+    "resultado.json": "094afcb4ff2fd29348a538689e513a48412aff1d526a2274dc48805864225a5f",
+    "memoria.txt": "3f85d81f5c137d00eec47bdbb3a7729c3abc62c3f7ab738ee11f8e4c9cb22742",
     "diseno_cabezal_columna_drawing.json": "b34b4da071cba8e2a682a8ea9aeea01d0956409d94c1c77d29339708f1dee6fc"
   },
   "examples/aci_318_25/cabezales/pruebas/diseno_cabezal_columna_etabs.json": {
-    "resultado.json": "2194c57eee99dd1dad137f97424459f58cd3b2dad8f6809cf8e6ad5ec2f1a388",
-    "memoria.txt": "1f74e44f37b6616a5a2b6dc69c4778316f6c6f0e73c462d0529ab6ffb43534d4",
+    "resultado.json": "e590ade1998df206c6224be8149211be219c61d165631018561f9d2ed8b4313a",
+    "memoria.txt": "a658e7fe4d98de7a5a8bfda91f387139608f28c30b726c3c63c72490165cf9e2",
     "diseno_cabezal_columna_etabs_drawing.json": "4f2545418d9e68db813d1dbdbfbb03506a4377f2366065f62124332be7354ef2"
   },
   "examples/aci_318_25/cabezales/pruebas/diseno_cabezal_pilotes.json": {
-    "proyecto.json": "1c533c6e115edef1d0a2fdc98416d6979c34f917c832154724c2ba88f16ac58a",
-    "resultado.json": "ec0e266367a4950f7333c722d5b782fe8b6345ff07f143e2184a1b0fd8b61807",
-    "memoria.txt": "ed415482c48cee39ee095df54ee86c44e46c03e2c03a7d72ff6db3320e114bfd",
+    "proyecto.json": "98536a4e468b89dba3346144ecce4552bbb41e0cec43af95e2e0c47c17dfe973",
+    "resultado.json": "19ec9c8b44f0aec9967d0adfc9a0802f4d32e25dfdd845b1d09eabeebf4ba63d",
+    "memoria.txt": "24403146445d665c884feb05b4c10c8583b436ecd4b3f20f6949e28eed08aff3",
     "diseno_cabezal_pilotes_drawing.json": "013d626278a1fb59d6cda142e1fd9e4ba816e2789a437962d90b8955d500335f"
   },
   "examples/aci_318_25/cabezales/pruebas/diseno_cabezal_pilotes_etabs.json": {
-    "resultado.json": "b61bcafaab299be5f19c7a71f790bdb73ffc6bbae0d1a5b7b0e44282250ecd8c",
-    "memoria.txt": "09bb59dcdedf795e5ad50bdee95732e4df01c408ec217c4a642362ad8c952e6f",
+    "resultado.json": "13f9fe19c86473cca38cd36ffe944a49e60a9a9f48613982ee8973505eac1f60",
+    "memoria.txt": "0ac93ab34457821dc7c1a1a1aa2593a8a9d958d4c85340e47d581dcb144db6a0",
     "diseno_cabezal_pilotes_etabs_drawing.json": "c958b7badbba0663c5fb0b99ca38e86d9239c424684ab3557a7682cd4f867940"
   },
   "examples/aci_318_25/vigas/pruebas/viga_alta.json": {
@@ -110,50 +115,55 @@
     "zapata_t_invertida_etabs_drawing.json": "490d258187fb0660a8cbb26f0210b84af34cb734b217c10874883e562105f0bf"
   },
   "examples/nsr_10/cabezales/pruebas/cabezal_columna.json": {
-    "resultado.json": "0a51fd63ffd4aef4f75833e4dba7db6704646cfb58d6047999d2b3d349e9bd39",
-    "memoria.txt": "bd4b23c9de4a424687a183839ef351af6309c7ab945b74f1500ab021f0c3a9d8",
+    "resultado.json": "c750ff587c47581468b9c2fdc84c40708a368417ef1c577c2281b679e7d64eb3",
+    "memoria.txt": "cfe1c3cc7ab155c12ffbadf2776334d656b4c33da94fed9da10c20b615261014",
     "cabezal_columna_drawing.json": "6dc959a3878fc116925a3f72ae17d51f1d2c4e42657887d1a1dff3d3dbe96ede"
   },
   "examples/nsr_10/cabezales/pruebas/cabezal_columna_etabs.json": {
-    "resultado.json": "b4f2efb880ecf5d465592f7d9cc68e9a96be2c3fb13041d110e2cda1bde258c1",
-    "memoria.txt": "22ac7723aae76ed1b3e02800517e2784e3786ebd7558b959cb71029225058655",
+    "resultado.json": "e52fa1cff6b0b394656c7efae2c82cfe90b1502b2fa4fb94df8db0a7a53241f7",
+    "memoria.txt": "aa45f6fd57432e433ad645b279a39614308c2f16e4949f42be2a0c759c1e8ca5",
     "cabezal_columna_etabs_drawing.json": "5a30653a5cd097bcd8e5028095321dfd1ff3e4c955fcb65ae1e29ba7d8a4546d"
   },
+  "examples/nsr_10/cabezales/pruebas/cabezal_dos_columnas.json": {
+    "resultado.json": "861698a025ebad71cff4aa9d41d193d961bc0f6f5d14d1b46cbb42cb13dfbb36",
+    "memoria.txt": "b0f731a8e2d226d821f738b25387bbc830cbdc2b270fcedc8cf6a68521e09784",
+    "cabezal_dos_columnas_drawing.json": "13326b3acae9eeaf00d066dd3d5f2281ff25d22f8ae5a9719e22d560fbf0b567"
+  },
   "examples/nsr_10/cabezales/pruebas/cabezal_pilotes.json": {
-    "resultado.json": "5cb64727228915980c9e22dcb898fc28767825ac99d3477f4bf48dddf36da0d5",
-    "memoria.txt": "05ef324686ded7c93257c5e04e6ca3d8aefef20527399dc971320f2ad3dac0b0",
+    "resultado.json": "cd0d18e6e0610aca7ccd2e766cb04d2fd2ce2359328813a7d9020b0d96f4aa14",
+    "memoria.txt": "eb4c634b813c026a3e1aa1ef68ece9b6bbe6ce2f595ffe2975c15a656fdb6e58",
     "cabezal_pilotes_drawing.json": "da1754548a40c766b7d5e101ae4269285d3d7937bbc0dba0f2e42fe64d2ae28c"
   },
   "examples/nsr_10/cabezales/pruebas/cabezal_pilotes_etabs.json": {
-    "resultado.json": "89b38c13a2245b2f951b7da54f3ec6c5a6742131d0446801ab8273fa0f8b5295",
-    "memoria.txt": "9a3ad973b5e6a70af38640af66daa190d3d3cffeebcfb4b6194eadaefa67de50",
+    "resultado.json": "0f3d989fb51ac863e471a9215a15857f9591a8f95978d01cf56ea2db0fffa4dd",
+    "memoria.txt": "eda1dd64671a191bef312d84a0e289c586370b1b5235a400054967f52ab27000",
     "cabezal_pilotes_etabs_drawing.json": "98ade2afb1bed2c5d9e57df8a32460cdbba8d7f0b4764be7e23850cc4107c834"
   },
   "examples/nsr_10/cabezales/pruebas/cabezal_tres_pilotes.json": {
-    "resultado.json": "375d2a1064e12ce0b32164cd458758d055b90df467aa172aba26a429f2b64f18",
-    "memoria.txt": "9e3ec859fce591ee02415f1b1ea1231c5c23c57331dea239de913677d3bf9845",
+    "resultado.json": "ece4911f1cf3b3619c67e1f554ec37d59e5dd2b7a6e045b7ac886002db7898b3",
+    "memoria.txt": "f35d675ee414a6a6234f58c9a4fb884a2ecee9039a46107a910625c3c71116d1",
     "cabezal_tres_pilotes_drawing.json": "58b1c1b323ca9a6965e5ac82dcb25fcb63fcc02af39954b812c2f6ecc3d0932f"
   },
   "examples/nsr_10/cabezales/pruebas/diseno_cabezal_columna.json": {
-    "proyecto.json": "21a28c6d6b74d97b1e30483a47d570969c7da85635fb6b2dd9f4a68d67c5fd36",
-    "resultado.json": "ca6e9fdb8331333501455f69652e3bb0cbbcee0fe481e8698fec90c1859efcbc",
-    "memoria.txt": "36b56a7a742cb52aaa44443b83df4b5796f740db221c2e509a582015b28207c2",
+    "proyecto.json": "ab305bf33ce0201aad63fe567a87e39ed310a143c3cede1ee6b6ddeaba40ad3c",
+    "resultado.json": "db5ded5f3032b67c2a47879148927c37a3190a0d06c48a32a8e68481d1901658",
+    "memoria.txt": "8b8e1c4010d7f24d89cb9644be1b34361e32b23dd26d1b3c1627fc801cf1bab5",
     "diseno_cabezal_columna_drawing.json": "797a0bf4d4bf0104e7f2840f69f73081378f81c9e9af2326273a1b63f6727797"
   },
   "examples/nsr_10/cabezales/pruebas/diseno_cabezal_columna_etabs.json": {
-    "resultado.json": "13d0e1e40e2362fd0b0d34979269e3d4873e69a02bbdf2dbba462eaf222faae8",
-    "memoria.txt": "7844821c270b541b3cac4c705ee6ddd4f58c53e02265105e7daa31e7185d173e",
+    "resultado.json": "e701538b82e1e5cc86008c25a7bdac539bd0eccb9e9da7a331c16ebf7f13c1c6",
+    "memoria.txt": "909169066c96eb8cc58bf208d40273487e4d65719b103935481ec086f17a8ace",
     "diseno_cabezal_columna_etabs_drawing.json": "4f2545418d9e68db813d1dbdbfbb03506a4377f2366065f62124332be7354ef2"
   },
   "examples/nsr_10/cabezales/pruebas/diseno_cabezal_pilotes.json": {
-    "proyecto.json": "9802d6eae2cc35c65a1c5bb77172719c06b656dcc225cc2f74c0de1fc0d6a043",
-    "resultado.json": "e3dc290ada4a3022d7a80523225c8df2d4cc892387d2a5f7b502bf850def69a7",
-    "memoria.txt": "944eda08be18c1d2360a29e5b2a3ed414ba81f360a8567e8a7023dc34c262a08",
+    "proyecto.json": "cee217254b9b465475c586de12ccf107c90b2bcd5da826dc6829abc5e62f17ed",
+    "resultado.json": "9b977aa001c8d73a8cd66329ed235b703dbdc098e9227f775548424fac1a0e08",
+    "memoria.txt": "8b5a6f9334b76b43c6ccf45bf2eb775558cabac2de221412a2d8401fd91d8940",
     "diseno_cabezal_pilotes_drawing.json": "013d626278a1fb59d6cda142e1fd9e4ba816e2789a437962d90b8955d500335f"
   },
   "examples/nsr_10/cabezales/pruebas/diseno_cabezal_pilotes_etabs.json": {
-    "resultado.json": "6e7948f41d0dd1dd235d3b0f5173e3620bde2cb97a3eafda3f014df52f65cdd8",
-    "memoria.txt": "b79f20ca4e8b1e734ad4a1dd9cd233ffebe78d97388feb987695c45d90426dff",
+    "resultado.json": "9e5a23c39388d0f27f13940b9eae65272f92182ea892daeed70c12e6acd6e994",
+    "memoria.txt": "c732f514886e95cd48458fdc221bba720a0947038bf32ed94a0247456d169a96",
     "diseno_cabezal_pilotes_etabs_drawing.json": "c958b7badbba0663c5fb0b99ca38e86d9239c424684ab3557a7682cd4f867940"
   },
   "examples/nsr_10/vigas/pruebas/viga_alta.json": {

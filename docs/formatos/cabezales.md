@@ -1,6 +1,6 @@
 # Formato de cabezales sobre pilotes (D-138)
 
-Un cabezal de una columna sobre un grupo de pilotes declarados por coordenadas, en los dos perfiles: verificación y
+Un cabezal de una o varias columnas (D-143) sobre un grupo de pilotes declarados por coordenadas, en los dos perfiles: verificación y
 diseño ([Diseño](#diseño-d-141)). Unidades de entrada: mm, MPa, kN, kN·m, kN/m² y kN/m³.
 
 ## Proyecto
@@ -22,23 +22,24 @@ los pilotes. Un proyecto no mezcla zapatas y cabezales.
 ## Cabezal
 
 Tiene los campos de la zapata aislada ([zapatas](zapatas.md)): `id`, `lx`, `ly`, `h`, `cover`, `fill_height`,
-`pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2`, `column` (con `dowels`), `bottom` y `top`. Además:
+`pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2`, `bottom` y `top`; las columnas van en `columns` (D-143). Además:
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `cover` | mm | Recubrimiento libre de las caras laterales y la superior. |
 | `clipped_corners` | mm | Opcional (D-141): esquinas recortadas, cada una `{corner, along_x, along_y}` con `corner` = `+x+y`, `-x+y`, `-x-y` o `+x-y` y lo que el recorte quita de cada borde. El contorno es el rectángulo menos esos triángulos; la columna y los pilotes deben quedar dentro. |
-| `loads_from` | | Obligatorio: de dónde llegan las cargas, `column` (las de la columna, `loads`) o `piles` (las de cada pilote, `piles[].loads`; desde ETABS, el Unique Name de cada pilote y `etabs_station`). Lo demás debe ser coherente con él. |
+| `columns[]` | | Una o varias columnas: `id`, `cx`, `cy`, `offset_x`, `offset_y` (mm, respecto al centroide del cabezal), `dowels` y `loads`. Dentro del contorno y sin traslaparse. `pedestal_height` vale para todas. |
+| `loads_from` | | Obligatorio: de dónde llegan las cargas, `column` (las de cada columna, `columns[].loads`) o `piles` (las de cada pilote, `piles[].loads`; desde ETABS, el Unique Name de cada pilote y `etabs_station`). Lo demás debe ser coherente con él. |
 | `bottom_cover` | mm | Recubrimiento libre de la cara inferior a la malla inferior, mayor que el empotramiento: la malla va sobre la cabeza de los pilotes. |
 | `pile.shape` | | `circular` o `square`. |
 | `pile.size` | mm | Diámetro o lado. El punzonamiento usa el cuadrado de igual área. |
 | `pile.embedment` | mm | Empotramiento del pilote en el cabezal. |
 | `piles[]` | | `id`, `x`, `y` (mm, respecto al centroide del cabezal) y, con cargas de los pilotes, `loads`. |
 | `mislocation_mm` | mm | Tolerancia de mala ubicación de los pilotes, obligatoria. Con ACI 318-25, menor que 75 mm no cumple (13.4.1.4). |
-| `loads` | | Cargas de la columna, como en la zapata aislada. |
+| `columns[].loads` | | Con `loads_from: column`, las cargas de la columna, como en la zapata aislada; todas las columnas con los mismos casos y factores. Con `loads_from: piles`, opcionales y solo mayoradas (casos de los pilotes): dan la carga de la columna para el aplastamiento, los pasadores y las secciones que la necesitan; si faltan, esas revisiones quedan INCOMPLETO (con una sola columna, su carga sale del equilibrio, D-138). |
 | `reactions_include_weight` | | Obligatorio con cargas de los pilotes: si sus reacciones ya incluyen el peso del cabezal, el relleno y las sobrecargas. Si no, se suman repartidos por igual. |
 
-Las cargas llegan de la columna (`loads`) o de todos los pilotes (`piles[].loads`), nunca de ambos. Las de un pilote son
+Las cargas llegan de las columnas (`columns[].loads`) o de todos los pilotes (`piles[].loads`), según `loads_from`. Las de un pilote son
 su acción sobre el cabezal en la cabeza, en ejes globales: `P_kN` positiva en compresión del pilote, `Vx_kN`, `Vy_kN`
 la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mismos casos con los mismos factores.
 
@@ -78,6 +79,27 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
 - **Geometría:** d ≥ 300 mm (ACI 13.4.6.2; NSR-10 C.15.7, sobre el refuerzo inferior). En ACI también el empotramiento
   ≥ 75 mm y el borde ≥ 100 mm (13.4.6.3).
 - **Desarrollo, pasadores y aplastamiento:** los de la zapata aislada.
+
+## Varias columnas (D-143)
+
+- **Reacciones:** con las cargas de las columnas, la resultante de todas (con su pedestal y el relleno que desplazan) y
+  de los pesos se reparte como con una columna; la mala ubicación usa la carga total.
+- **Flexión:** en cada dirección, en las caras de cada columna y en secciones cada 50 mm fuera de las columnas, con el
+  cuerpo libre del lado que tiene menos columnas (los dos si empatan): las reacciones de los pilotes con su brazo y su
+  cabeza, las columnas de ese lado (su fuerza vertical, su momento y su cortante a h/2 + pedestal) y el peso. Así sale
+  el momento negativo entre columnas. Sin la carga de una columna de ese lado (cargas de los pilotes), la sección no se
+  calcula de ese lado; si no se puede de ninguno, "Flexion: secciones" queda INCOMPLETO.
+- **Franja de cada columna:** en la dirección de menor separación entre columnas (la secundaria), de ancho igual al
+  lado de la columna más d/2 a cada lado, en voladizo desde sus dos caras hasta el borde, con la reacción de los
+  pilotes que caen en ella (fracción de 13.4.6.7 según la distancia al borde de la franja) menos el peso. Resistencia y
+  εt con el código de vigas en modo cimentación, As mínimo del cabezal en el ancho de la franja y cortante a d con el Vc
+  del cabezal. Si otra columna queda en la franja más allá de una cara, ese voladizo queda BLOQUEADO. La franja central
+  γs no aplica con varias columnas.
+- **Cortante y punzonamiento:** cortante en una dirección a d de las caras de cada columna (sin las secciones que caen en
+  otra columna) y límites CRSI por columna; punzonamiento de cada columna y, si los perímetros a d/2 de varias se
+  traslapan, del perímetro común (la caja que las contiene), con el mismo criterio de cuerpo libre.
+- **Desarrollo, pasadores y aplastamiento:** desarrollo desde la cara de cualquier columna más cercana al borde;
+  pasadores y aplastamiento por columna, con su carga.
 
 ## Esquinas recortadas (D-141)
 
@@ -139,7 +161,9 @@ los cabezales de una plantilla toman las cargas de la misma fuente, la que decla
 
 | Campo | Descripción |
 | --- | --- |
-| `pile_caps[].column_unique_name` | Obligatorio: el Unique Name declarado de la columna del cabezal. Con cargas de la columna, de él se leen sus reacciones en "Joint Reactions" (P = FZ, Vx = −FX, Vy = −FY, Mx = −MX, My = −MY). Con `etabs_files.locations` se busca en esa tabla ("Joint Location", la ubicación de las columnas) para la planta de localización. |
+| `pile_caps[].columns[]` | Las columnas como en el cabezal, sin `loads`, con `column_unique_name` (obligatorio) y `angle` (eje local 2 respecto a X, grados; 0 por omisión). |
+| `pile_caps[].columns[].column_unique_name` | Obligatorio: el Unique Name declarado de cada columna. Con cargas de las columnas, de él se leen sus reacciones en "Joint Reactions" (P = FZ, Vx = −FX, Vy = −FY, Mx = −MX, My = −MY). Con `etabs_files.locations`, la primera columna se busca en esa tabla ("Joint Location", la ubicación de las columnas) para la planta de localización. |
+| `pile_caps[].column_station` | Opcional, con cargas de los pilotes (D-143): la estación (m) de la base de las columnas en "Element Forces - Columns"; sus fuerzas mayoradas pasan a `columns[].loads` (P = −P; V y M, las de ETABS en la cara positiva, la del cabezal, sin cambiar el signo). Los signos de V y M están pendientes de validar con ETABS. |
 | `pile_caps[].etabs_station` | Cargas de los pilotes: la estación (m, como la escribe ETABS) de "Element Forces - Columns" de la que se toman. Debe existir en la tabla para cada pilote. |
 | `pile_caps[].piles[].etabs_unique_name` | Unique Name del elemento que modela el pilote. |
 | `pile_caps[].piles[].angle` | Ángulo del eje local 2 respecto a X global, en grados (por omisión 0: eje 2 = X, eje 3 = Y). |
@@ -161,5 +185,5 @@ verifica.
 
 ## Salida
 
-`pile_caps[]` en `resultado.json`: geometría, pilote y pilotes, pesos, armado, cargas, la reacción de cada pilote en
+`pile_caps[]` en `resultado.json`: geometría (con `columns`, sin sus cargas), pilote y pilotes, pesos, armado, cargas, la reacción de cada pilote en
 cada caso (`reactions`, con ΔR) y las verificaciones con su caso.

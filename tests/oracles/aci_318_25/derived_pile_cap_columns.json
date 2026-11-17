@@ -1,0 +1,510 @@
+{
+ "description": "Oraculo del cabezal de dos columnas (D-143), derivado por tests/oracles/derive_pile_cap_columns.py",
+ "materials": {
+  "fc": 28.0,
+  "fy": 420.0,
+  "fyt": 420.0,
+  "concrete": "normalweight",
+  "coating": "uncoated",
+  "max_aggregate": 19.0
+ },
+ "seismic_level": "special",
+ "tolerance_rel": 1e-06,
+ "cap": {
+  "id": "F",
+  "loads_from": "column",
+  "lx": 3400.0,
+  "ly": 2200.0,
+  "h": 1000.0,
+  "cover": 75.0,
+  "bottom_cover": 150.0,
+  "fill_height": 600.0,
+  "pedestal_height": 0.0,
+  "surcharge_dead_kNm2": 2.0,
+  "surcharge_live_kNm2": 5.0,
+  "columns": [
+   {
+    "id": "C1",
+    "cx": 500.0,
+    "cy": 500.0,
+    "offset_x": -700.0,
+    "offset_y": 0.0,
+    "dowels": {
+     "designation": "#6",
+     "count": 8,
+     "end": "hook90"
+    },
+    "loads": [
+     {
+      "case": "S1",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "seismic": false,
+      "P_kN": 1700.0,
+      "Vx_kN": 6.0,
+      "Vy_kN": 4.0,
+      "Mx_kNm": -10.0,
+      "My_kNm": 9.0
+     },
+     {
+      "case": "U1",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.6,
+      "seismic": false,
+      "P_kN": 2465.0,
+      "Vx_kN": 9.0,
+      "Vy_kN": 6.0,
+      "Mx_kNm": -14.0,
+      "My_kNm": 13.2
+     },
+     {
+      "case": "U2",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 2210.0,
+      "Vx_kN": 120.0,
+      "Vy_kN": 15.0,
+      "Mx_kNm": -30.0,
+      "My_kNm": 240.0
+     }
+    ]
+   },
+   {
+    "id": "C2",
+    "cx": 500.0,
+    "cy": 500.0,
+    "offset_x": 700.0,
+    "offset_y": 0.0,
+    "dowels": {
+     "designation": "#6",
+     "count": 8,
+     "end": "hook90"
+    },
+    "loads": [
+     {
+      "case": "S1",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "seismic": false,
+      "P_kN": 2000.0,
+      "Vx_kN": 6.0,
+      "Vy_kN": 4.0,
+      "Mx_kNm": -10.0,
+      "My_kNm": 9.0
+     },
+     {
+      "case": "U1",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.6,
+      "seismic": false,
+      "P_kN": 2900.0,
+      "Vx_kN": 9.0,
+      "Vy_kN": 6.0,
+      "Mx_kNm": -14.0,
+      "My_kNm": 13.2
+     },
+     {
+      "case": "U2",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 2600.0,
+      "Vx_kN": 120.0,
+      "Vy_kN": 15.0,
+      "Mx_kNm": -30.0,
+      "My_kNm": 240.0
+     }
+    ]
+   }
+  ],
+  "bottom": {
+   "first": "x",
+   "x": {
+    "designation": "#8",
+    "spacing": 130.0,
+    "end": "hook90"
+   },
+   "y": {
+    "designation": "#7",
+    "spacing": 150.0,
+    "end": "hook90"
+   }
+  },
+  "top": {
+   "first": "x",
+   "x": {
+    "designation": "#5",
+    "spacing": 250.0,
+    "end": "hook90"
+   },
+   "y": {
+    "designation": "#5",
+    "spacing": 250.0,
+    "end": "hook90"
+   }
+  },
+  "pile": {
+   "shape": "circular",
+   "size": 400.0,
+   "embedment": 75.0
+  },
+  "mislocation_mm": 75.0,
+  "piles": [
+   {
+    "id": "P1",
+    "x": -1200.0,
+    "y": -600.0
+   },
+   {
+    "id": "P2",
+    "x": 0.0,
+    "y": -600.0
+   },
+   {
+    "id": "P3",
+    "x": 1200.0,
+    "y": -600.0
+   },
+   {
+    "id": "P4",
+    "x": -1200.0,
+    "y": 600.0
+   },
+   {
+    "id": "P5",
+    "x": 0.0,
+    "y": 600.0
+   },
+   {
+    "id": "P6",
+    "x": 1200.0,
+    "y": 600.0
+   }
+  ]
+ },
+ "soil": {
+  "unit_weight_concrete_kNm3": 24.0,
+  "unit_weight_fill_kNm3": 18.0,
+  "pile_capacity_compression_kN": 1500.0,
+  "pile_capacity_tension_kN": 300.0,
+  "pile_capacity_lateral_kN": 120.0,
+  "seismic_capacity_factor": 1.33,
+  "group_efficiency": 0.85,
+  "max_eccentricity_mm": 150.0
+ },
+ "cases": [
+  {
+   "case": "S1",
+   "kind": "service",
+   "R": [
+    609870.3888888889,
+    659682.8888888889,
+    709495.3888888889,
+    625092.6111111111,
+    674905.1111111111,
+    724717.6111111111
+   ],
+   "dR": [
+    104264.6875,
+    83411.75,
+    104264.6875,
+    104264.6875,
+    83411.75,
+    104264.6875
+   ]
+  },
+  {
+   "case": "U1",
+   "kind": "factored",
+   "R": [
+    873978.7722222222,
+    946385.0222222222,
+    1018791.2722222222,
+    895700.9944444444,
+    968107.2444444444,
+    1040513.4944444444
+   ],
+   "dR": [
+    149569.70833333334,
+    119655.76666666666,
+    149569.70833333334,
+    149569.70833333334,
+    119655.76666666666,
+    149569.70833333334
+   ],
+   "sections": [
+    {
+     "case": "U1 (+ΔR)",
+     "plane": -950.0,
+     "moments": [
+      637542234.5833334
+     ]
+    },
+    {
+     "case": "U1 (−ΔR)",
+     "plane": -950.0,
+     "moments": [
+      443101613.75
+     ]
+    },
+    {
+     "case": "U1 (+ΔR)",
+     "plane": -450.0,
+     "moments": [
+      1017485826.25,
+      1592958651.25
+     ]
+    },
+    {
+     "case": "U1 (−ΔR)",
+     "plane": -450.0,
+     "moments": [
+      309650553.75,
+      523905788.75
+     ]
+    },
+    {
+     "case": "U1 (+ΔR)",
+     "plane": 0.0,
+     "moments": [
+      924651103.7500005,
+      964222978.75
+     ]
+    },
+    {
+     "case": "U1 (−ΔR)",
+     "plane": 0.0,
+     "moments": [
+      125948861.24999976,
+      165520736.25
+     ]
+    },
+    {
+     "case": "U1 (+ΔR)",
+     "plane": 450.0,
+     "moments": [
+      1117376451.25,
+      1618805526.25
+     ]
+    },
+    {
+     "case": "U1 (−ΔR)",
+     "plane": 450.0,
+     "moments": [
+      335497428.75,
+      623796413.75
+     ]
+    },
+    {
+     "case": "U1 (+ΔR)",
+     "plane": 950.0,
+     "moments": [
+      736770359.5833334
+     ]
+    },
+    {
+     "case": "U1 (−ΔR)",
+     "plane": 950.0,
+     "moments": [
+      542329738.75
+     ]
+    }
+   ],
+   "one_way": {
+    "name": "Cortante en una direccion (barras x)",
+    "demand": 1523941.1337333333,
+    "capacity": 1242776.3283152082
+   },
+   "strips": [
+    {
+     "column": "C1",
+     "moments": [
+      400466844.25316834,
+      553711293.3581164
+     ],
+     "shears": [
+      2500.69384,
+      2500.69384
+     ]
+    },
+    {
+     "column": "C2",
+     "moments": [
+      455357569.83910584,
+      608602018.9440539
+     ],
+     "shears": [
+      2500.69384,
+      2500.69384
+     ]
+    }
+   ],
+   "punching": [
+    {
+     "area": "C1",
+     "forces": [
+      1945364.1796830986,
+      1107773.8130164326
+     ]
+    },
+    {
+     "area": "C2",
+     "forces": [
+      2244457.6484330986,
+      1406867.2817664323
+     ]
+    }
+   ]
+  },
+  {
+   "case": "U2",
+   "kind": "factored",
+   "R": [
+    633756.1333333333,
+    836881.1333333333,
+    1040006.1333333333,
+    682506.1333333333,
+    885631.1333333333,
+    1088756.1333333333
+   ],
+   "dR": [
+    134571.27083333334,
+    107657.01666666666,
+    134571.27083333334,
+    134571.27083333334,
+    107657.01666666666,
+    134571.27083333334
+   ],
+   "sections": [
+    {
+     "case": "U2 (+ΔR)",
+     "plane": -950.0,
+     "moments": [
+      450838812.7083333
+     ]
+    },
+    {
+     "case": "U2 (−ΔR)",
+     "plane": -950.0,
+     "moments": [
+      275896160.62499994
+     ]
+    },
+    {
+     "case": "U2 (+ΔR)",
+     "plane": -450.0,
+     "moments": [
+      938237716.875,
+      1687631791.874999
+     ]
+    },
+    {
+     "case": "U2 (−ΔR)",
+     "plane": -450.0,
+     "moments": [
+      494152523.1249999,
+      533010288.125
+     ]
+    },
+    {
+     "case": "U2 (+ΔR)",
+     "plane": 0.0,
+     "moments": [
+      699011463.125,
+      997948963.1249995
+     ]
+    },
+    {
+     "case": "U2 (−ΔR)",
+     "plane": 0.0,
+     "moments": [
+      -19599123.12500021,
+      279338376.875
+     ]
+    },
+    {
+     "case": "U2 (+ΔR)",
+     "plane": 450.0,
+     "moments": [
+      979050216.8749998,
+      1198569291.875
+     ]
+    },
+    {
+     "case": "U2 (−ΔR)",
+     "plane": 450.0,
+     "moments": [
+      43947788.12500003,
+      534965023.125
+     ]
+    },
+    {
+     "case": "U2 (+ΔR)",
+     "plane": 950.0,
+     "moments": [
+      782901312.7083333
+     ]
+    },
+    {
+     "case": "U2 (−ΔR)",
+     "plane": 950.0,
+     "moments": [
+      607958660.625
+     ]
+    }
+   ],
+   "one_way": {
+    "name": "Cortante en una direccion (barras x)",
+    "demand": 1515075.4387333326,
+    "capacity": 1242776.3283152082
+   },
+   "strips": [
+    {
+     "column": "C1",
+     "moments": [
+      316663611.87089837,
+      454541130.6145182
+     ],
+     "shears": [
+      2356.86559,
+      2356.86559
+     ]
+    },
+    {
+     "column": "C2",
+     "moments": [
+      470651404.83964837,
+      608528923.5832682
+     ],
+     "shears": [
+      2356.86559,
+      2356.86559
+     ]
+    }
+   ],
+   "punching": [
+    {
+     "area": "C1",
+     "forces": [
+      1876048.1365468493,
+      1122449.0198801826
+     ]
+    },
+    {
+     "area": "C2",
+     "forces": [
+      1884782.5115468493,
+      1131183.3948801826
+     ]
+    }
+   ]
+  }
+ ]
+}

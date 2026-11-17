@@ -8,21 +8,26 @@ mayorado, es la reacción de los pilotes cuyo centro queda más allá de la cara
 C.15.5.4) según la distancia de su centro al borde de la franja (completa a dpile/2 adentro, nula a dpile/2 afuera),
 con su brazo más la tolerancia de mala ubicación y la acción de su cabeza, menos el peso sobre la franja. Resisten las
 barras de la dirección secundaria que caen en la franja:
-- flexión en la cara con el código de vigas en modo cimentación (resistencia, εt, As mínimo y separación; sin refuerzo
-  superficial: las caras de la franja quedan dentro del concreto, D-083); con momento negativo y sin barras superiores en
-  la franja, no cumple: el cabezal no admite concreto simple;
+- flexión en la cara con el código de vigas en modo cimentación (resistencia y εt) y el As mínimo del cabezal (D-140) en el
+  ancho de la franja; la separación es la de las mallas del cabezal (3h y 450 mm) y no hay refuerzo superficial (las caras
+  de la franja quedan dentro del concreto, D-083); con momento negativo y sin barras superiores en la franja, no cumple:
+  el cabezal no admite concreto simple;
 - cortante a d de la cara con la reacción interpolada también a lo largo, con el Vc del cabezal (ACI 13.4.6.5 y
   13.4.6.8, NSR-10 C.11.11).
 Si otra columna queda en la franja más allá de una cara, ese voladizo no se revisa (BLOCKED, falta implementación).
 """
 
 from dataclasses import replace
+from dataclasses import replace as dataclass_replace
 
 from structurelab_rc.domain.basis import Basis
+from structurelab_rc.domain.beam.flexure import NET_TENSILE_STRAIN
+from structurelab_rc.domain.beam.flexure import STRENGTH as FLEXURE_STRENGTH
 from structurelab_rc.domain.beam.station import flexure_station_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
+from structurelab_rc.domain.pile_cap.flexure import cap_rules
 from structurelab_rc.domain.pile_cap.loads import AXES, CapAnalysis, FactoredCap
 from structurelab_rc.domain.pile_cap.shear import closely_spaced
 from structurelab_rc.domain.shear_strength import concrete_lambda
@@ -34,6 +39,7 @@ from structurelab_rc.model.reinforcement import BarLayer, BarPosition, Reinforce
 
 STRIP = "Franja de la columna"
 STRIP_SHEAR = "Franja de la columna: cortante"
+_BEAM_CHECKS = (FLEXURE_STRENGTH, NET_TENSILE_STRAIN)
 _TOLERANCE = 1e-6  # mm
 _NEGLIGIBLE_MOMENT = 1e3  # N·mm
 
@@ -146,10 +152,30 @@ def _face_checks(basis: Basis, item: FactoredCap, column: CapColumn, given: tupl
         station = Station.model_construct(z=0.0, layout=member.stations[0].layout, case=item.case.case,
                                           demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=0.0, v3=0.0, tu=0.0))
         given_input = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
+        # De la viga, la resistencia y εt; el As mínimo es el del cabezal (D-140) y la separación, la de sus mallas (D-143).
         checks += [replace(check, note=f"{note}: {check.note}" if check.note else note, member=cap.id, case=item.case.case, z=None)
-                   for check in flexure_station_checks(given_input)]
+                   for check in flexure_station_checks(given_input) if check.name in _BEAM_CHECKS]
+        checks += _minimum_check(basis, item, (moment, limits), (rows, note))
     checks.append(_shear_check(basis, item, (shear, moment), (width, bottom, limits), note))
     return checks
+
+
+def _minimum_check(basis: Basis, item: FactoredCap, given: tuple[float, tuple[float, float]],
+                   context: tuple[tuple[BarRow, BarRow | None], str]) -> list[Check]:
+    """As mínimo del cabezal (cap_rules, D-140) en el ancho de la franja, con las barras que caen en ella: la malla
+    inferior con momento positivo, la superior con negativo."""
+    moment, limits = given
+    (bottom, top), note = context
+    cap = item.cap
+    mat, row = ("bottom", bottom) if moment >= 0 else ("top", top)
+    if row is None or abs(moment) <= _NEGLIGIBLE_MOMENT:
+        return []
+    inside = tuple(position for position in row.positions if limits[0] - _TOLERANCE <= position <= limits[1] + _TOLERANCE)
+    strip = dataclass_replace(row, width=limits[1] - limits[0], positions=inside, band=None, band_positions=())
+    required, values, clause = cap_rules(basis, cap).minimum(mat, strip, abs(moment))
+    return [Check(f"{STRIP}: acero minimo", Status.PASS if strip.area >= required else Status.FAIL, clause=clause, member=cap.id,
+                  case=item.case.case, demand=required, capacity=strip.area, unit="mm2", values=(*values, ("b", strip.width)),
+                  note=note)]
 
 
 def _shear_check(basis: Basis, item: FactoredCap, demand: tuple[float, float], section: tuple[float, BarRow, tuple[float, float]],
