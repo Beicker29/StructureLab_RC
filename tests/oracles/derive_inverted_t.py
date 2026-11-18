@@ -163,7 +163,7 @@ def _section(f: dict, rows: dict, moment: float) -> tuple[list[tuple[float, floa
     return list(rows["layers"]), (bw, bw, f["h"])
 
 
-def _beam_checks(folder: str, f: dict, rows: dict, given: tuple[float, float]) -> list[dict]:
+def _beam_checks(folder: str, f: dict, rows: dict, given: tuple[float, float], at_d: bool = True) -> list[dict]:
     shear, moment = given
     profile = _F.PROFILES[folder]
     big, bw = f["beam"]["height"], f["beam"]["width"]
@@ -189,7 +189,7 @@ def _beam_checks(folder: str, f: dict, rows: dict, given: tuple[float, float]) -
         assert not f["min_steel_exception"], "el oráculo de la T solo cubre la excepción no declarada"
         checks.append({"name": "Flexion: acero minimo (M3)", "capacity": provided, "demand": as_min,
                        "status": "PASS" if provided >= as_min else "FAIL"})
-    if pulled:
+    if pulled and at_d:
         area = sum(a for _, a, _ in pulled)
         d = max(_B.force_centroid(pulled), 0.8 * big)  # D-131
         vc = _S._one_way_vc(folder, bw, d, area / (bw * d), abs(shear), abs(moment))
@@ -300,14 +300,11 @@ def _expected(folder: str, f: dict) -> dict:
         assert beam is not None
         depth = rows["bottom_depth"]
         for x in _B._stations(beam, depth):
-            moment = _B._shear_moment(beam, x)[1]
-            shear_at = x
-            for face, side in _B._faces(beam):
-                at_d = face + side * depth
-                if abs(face - x) <= 1e-6 * f["lx"] and any(low < at_d < high and low <= face <= high for low, high in _B._regions(beam)):
-                    shear_at = at_d
-            shear = _B._shear_moment(beam, shear_at)[0]
-            checks += [{**item, "case": case, "z_mm": x + f["lx"] / 2} for item in _beam_checks(folder, f, rows, (shear, moment))]
+            # El cortante solo en las secciones a d de las caras, con su Vu y su Mu; las demás, solo flexión (D-149).
+            shear, moment = _B._shear_moment(beam, x)
+            at_d = _B.sheared(beam, depth, x, f["lx"])
+            checks += [{**item, "case": case, "z_mm": x + f["lx"] / 2}
+                       for item in _beam_checks(folder, f, rows, (shear, moment), at_d)]
         checks += [{**item, "case": case} for item in _flange_checks(folder, f, beam)]
         for column in f["columns"]:
             pu = next(item for item in column["loads"] if item["case"] == case)["P_kN"] * 1e3

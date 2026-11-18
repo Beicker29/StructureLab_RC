@@ -297,9 +297,9 @@ def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: Comb
         inside = -half < at_d < half
         if not -half < face < half:
             continue
-        # En la cara, el cortante es el de la sección a d (ACI 9.4.3.2 y 13.2.7.2, NSR-10 C.11.1.3; D-082).
+        # La cara es sección de flexión; el cortante se revisa a d de ella (D-148).
         moment, shear = strip_cantilever(footing, load, face, side)
-        result.append((face, moment, abs(strip_cantilever(footing, load, at_d, side)[1] if inside else shear), f"cara {name}"))
+        result.append((face, moment, abs(shear), f"cara {name}"))
         if inside:
             moment, shear = strip_cantilever(footing, load, at_d, side)
             result.append((at_d, moment, abs(shear), f"a d de la cara {name}"))
@@ -344,6 +344,9 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
                  f"{torsion_shear / 1e3:.1f} kN (D-119)" if twist > _NEGLIGIBLE_TWIST else "")
         for y, physical, shear, label in demands:
             z = y + footing.ly / 2
+            # El cortante se revisa en la sección crítica a d de la cara y más allá, con su Vu y su Mu (C.11.1.3.1, ACI
+            # 9.4.3.2); en la cara solo la flexión (decisión del usuario, D-148).
+            sheared = not label.startswith("cara")
             for order, moment in enumerate(strip_moments(physical, x1 - x0, twist)):
                 section = f"{title}, {label}, {moment_sign(moment)}"
                 # Vu = V por flexión + V por la torsión de placa (decisión del usuario, D-119).
@@ -360,9 +363,9 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
                     note = section + "".join(f": {text}" for text in (shape, plate) if text)
                     plain = plain_strip_check(basis, footing, -moment, (label, pressure.case, note), x1 - x0)
                     checks.append(replace(plain, z=z, values=(*plain.values, *flexure_values)))
-                    selected = list(shear_and_torsion_checks(given)) if order == 0 else []
+                    selected = list(shear_and_torsion_checks(given)) if order == 0 and sheared else []
                 else:
-                    selected = list(checks_for(given) if order == 0 else flexure_station_checks(given))
+                    selected = list(checks_for(given) if order == 0 and sheared else flexure_station_checks(given))
                 for check in selected:
                     extra = plate if check.name.startswith(("Flexion", "Cortante")) else ""
                     note = section + "".join(f": {text}" for text in (check.note, shape, extra) if text)

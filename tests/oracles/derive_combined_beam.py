@@ -175,6 +175,13 @@ def _stations(beam: dict, depth: float, plate: bool = False) -> list[float]:
     return unique
 
 
+def sheared(beam: dict, depth: float, x: float, length: float) -> bool:
+    """Si x es una sección a d de una cara hacia su tramo (dentro de él): las únicas con cortante (D-149)."""
+    return any(abs(x - (face + side * depth)) <= 1e-6 * length
+               and any(low < face + side * depth < high and low <= face <= high for low, high in _regions(beam))
+               for face, side in _faces(beam))
+
+
 def top_mat(designation: str, spacing: float, end: str = "straight", y: tuple[str, float] | None = None,
             first: str | None = None) -> dict:
     """Las barras superiores de la zapata combinada con la estructura de la malla inferior (D-099): x = (designación,
@@ -420,19 +427,15 @@ def _expected(folder: str, f: dict, level: str) -> dict:
             continue
         depth = rows[0]["depth"]
         for x in _stations(beam, depth, plate=True):
-            # En una cara de columna, el cortante es el de la sección a d hacia el tramo (ACI 9.4.3.2, 13.2.7.2).
-            shear_at = x
-            for face, side in _faces(beam):
-                at_d = face + side * depth
-                if abs(face - x) <= 1e-6 * f["lx"] and any(low < at_d < high and low <= face <= high for low, high in _regions(beam)):
-                    shear_at = at_d
-            shear = _shear_moment(beam, shear_at)[0]
+            # El cortante solo en las secciones a d de las caras, con su Vu y su Mu; las demás, solo flexión (D-149).
+            at_d = sheared(beam, depth, x, f["lx"])
+            shear = _shear_moment(beam, x)[0]
             z = x + f["lx"] / 2
             torques.append({"case": case, "x": x, "at": x, "tu_Nmm": _torque(beam, x)})
             # Torsión de placa (D-118): una estación por cara con momento de Wood-Armer; el cortante, con la primera.
             moments = [moment for moment in plate_moments(beam, x) if moment != 0] or [_shear_moment(beam, x)[1]]
             for index, moment in enumerate(moments):
-                shear_part = _shear_checks(folder, f, rows, (shear, moment)) if index == 0 else []
+                shear_part = _shear_checks(folder, f, rows, (shear, moment)) if index == 0 and at_d else []
                 # D-140: el concreto simple primero; con barras superiores, solo si no alcanza se revisan.
                 plain_ok = moment < 0 and _F._plain(f, "x", -moment, case, profile, level)["status"] == "PASS"
                 if moment < 0 and (not top_x(f) or plain_ok):

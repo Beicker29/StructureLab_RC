@@ -39,9 +39,12 @@ from dataclasses import dataclass, replace
 
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.basis import Basis
+from structurelab_rc.domain.beam.deep import SECTION as DEEP_SECTION
 from structurelab_rc.domain.beam.deep import deep_beam_checks
 from structurelab_rc.domain.beam.flexure import STRENGTH as FLEXURE_STRENGTH
 from structurelab_rc.domain.beam.geometry import placed_bars
+from structurelab_rc.domain.beam.shear import SECTION as SHEAR_SECTION
+from structurelab_rc.domain.beam.shear import shear_checks
 from structurelab_rc.domain.beam.station import checks_for, flexure_station_checks, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
@@ -81,12 +84,15 @@ class ColumnForce:
 
 @dataclass(frozen=True)
 class CriticalSection:
-    """Sección crítica en x; shear_x es donde se toma el cortante si no es en x: en una cara de columna, la sección a d
-    de ella (ACI 9.4.3.2 y 13.2.7.2, NSR-10 C.11.1.3 y C.15.5.2; D-082)."""
+    """Sección crítica en x. sheared: el cortante y la torsión se revisan aquí, solo en las secciones a d de las caras,
+    con el Vu, el Mu y la T de esa sección (ACI 9.4.3.2 y 13.2.7.2, NSR-10 C.11.1.3 y C.15.5.2; decisión del usuario,
+    D-149); las demás (caras y V = 0) son de flexión. face: es una cara de columna (en una viga alta, ahí se revisan los
+    límites de la sección con el Vu de la cara, D-149)."""
 
     x: float
     label: str
-    shear_x: float | None = None
+    sheared: bool = False
+    face: bool = False
 
 
 @dataclass(frozen=True)
@@ -159,7 +165,8 @@ def _regions(beam: BeamCase) -> list[tuple[float, float, str]]:
 
 def _faces(beam: BeamCase) -> list[tuple[CriticalSection, float]]:
     """Las cuatro caras con la dirección hacia su tramo (−1 a la izquierda, +1 a la derecha)."""
-    return [(CriticalSection(column.x + side * column.half, f"cara {'+' if side > 0 else '-'}X de la columna {column.id}"), side)
+    return [(CriticalSection(column.x + side * column.half, f"cara {'+' if side > 0 else '-'}X de la columna {column.id}",
+                             face=True), side)
             for column in beam.columns for side in (-1.0, 1.0)]
 
 
@@ -196,18 +203,8 @@ def shear_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
     for face, side in _faces(beam):
         x = face.x + side * depth
         if any(low < x < high and (low <= face.x <= high) for low, high, _ in regions):
-            sections.append(CriticalSection(x, f"a d de la {face.label}"))
+            sections.append(CriticalSection(x, f"a d de la {face.label}", sheared=True))
     return sections
-
-
-def _at_face_shear(beam: BeamCase, section: CriticalSection, depth: float) -> CriticalSection:
-    """En una cara de columna, el cortante se toma en la sección a d de ella, si queda dentro del tramo."""
-    for face, _ in _faces(beam):
-        if abs(face.x - section.x) <= _EDGE * beam.lx:
-            target = f"a d de la {face.label}"
-            match = next((other for other in shear_sections(beam, depth) if other.label == target), None)
-            return section if match is None else replace(section, shear_x=match.x)
-    return section
 
 
 def _skin_layers(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], bars: Sequence[RebarSpec]) -> list[BarLayer]:
@@ -404,8 +401,11 @@ def critical_sections(beam: BeamCase, depth: float, plate: bool = False) -> list
     largest = max(moments, key=lambda item: item[0][0])
     smallest = min(moments, key=lambda item: item[0][1])
     chosen = ([largest[1]] if largest[0][0] > 0 else []) + ([smallest[1]] if smallest[0][1] < 0 else [])
-    chosen = [_at_face_shear(beam, section, depth) for section in chosen]
-    unique = {section.x: section for section in [*shear_sections(beam, depth), *chosen]}
+    unique: dict[float, CriticalSection] = {}
+    for section in [*shear_sections(beam, depth), *chosen]:
+        previous = unique.get(section.x)
+        # Una sección de momento que cae justo a d de una cara conserva su cortante (D-149).
+        unique[section.x] = section if previous is None else replace(section, sheared=previous.sheared or section.sheared)
     return sorted(unique.values(), key=lambda section: section.x)
 
 
@@ -452,9 +452,9 @@ def _plate_note(beam: BeamCase, x: float) -> str:
 def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member,
                           given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
     """Combinada rectangular (D-118): la flexión con los momentos de Wood-Armer de cada cara (una estación por cara con
-    momento) y el cortante de vigas una sola vez, sin torsión de vigas (la toman los momentos de placa)."""
+    momento) y, si la sección es a d de una cara, el cortante de vigas una sola vez, sin torsión de vigas (la toman los
+    momentos de placa); en la cara de una viga alta, los límites de la sección (D-149)."""
     beam, section, has_top = given
-    at = section.x if section.shear_x is None else section.shear_x
     z = section.x + footing.lx / 2
     twisted = abs(beam.twist(section.x)) > _NEGLIGIBLE_TWIST
     moments = [moment for moment in beam.plate_moments(section.x) if moment != 0] or [beam.moment(section.x)]
@@ -462,18 +462,25 @@ def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member
     for index, moment in enumerate(moments):
         label = f"{section.label}, {moment_sign(moment)}"
         station = Station.model_construct(z=z, layout=member.stations[0].layout, case=beam.case,
-                                          demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(at), v3=0.0, tu=0.0))
+                                          demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(section.x), v3=0.0,
+                                                                          tu=0.0))
         given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
         plate = f"; {_plate_note(beam, section.x)}" if twisted else ""
         values = _plate_values(beam, section.x, moment)
+        first = index == 0
         # Sin barras superiores, o si el concreto simple resiste (D-140): concreto simple (D-072), con la sección en la nota.
         if moment < 0 and (not has_top or plain_resists(basis, footing.ly, footing.h, -moment)):
             plain = plain_principal_check(basis, footing, -moment, (label, beam.case, _sentence(label) + plate))
-            rest = (*shear_and_torsion_checks(given_station), *(deep_beam_checks(given_station) if footing.deep_beam else ()))
-            others = [replace(check, member=footing.id, z=z, case=beam.case) for check in rest] if index == 0 else []
+            rest = ((*shear_and_torsion_checks(given_station), *(deep_beam_checks(given_station) if footing.deep_beam else ()))
+                    if section.sheared else _face_limits(footing, section, given_station))
+            others = [replace(check, member=footing.id, z=z, case=beam.case) for check in rest] if first else []
             checks += [replace(plain, z=z, values=(*plain.values, *values)), *(_with_section(check, label) for check in others)]
             continue
-        every = checks_for(given_station) if index == 0 else flexure_station_checks(given_station)
+        if first and section.sheared:
+            every = checks_for(given_station)
+        else:
+            limits = _face_limits(footing, section, given_station) if first else ()
+            every = (*flexure_station_checks(given_station), *(replace(check, z=z, case=beam.case) for check in limits))
         for check in every:
             if plate and check.name.startswith("Flexion"):
                 check = replace(check, note=f"{check.note}{plate}" if check.note else plate[2:])
@@ -498,21 +505,36 @@ def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, give
     # La nota lleva el signo del momento físico (D-095); la T invertida va volteada: su momento cambia de signo (D-093).
     section = replace(section, label=f"{section.label}, {moment_sign(beam.moment(section.x))}")
     moment = beam.moment(section.x) * (-1.0 if footing.beam is not None else 1.0)
-    # El cortante y la torsión, a d de la cara si la sección es una cara de columna (ACI 9.4.3.2 y 9.4.4.3).
-    at = section.x if section.shear_x is None else section.shear_x
+    # El cortante y la torsión solo en las secciones a d de las caras, con su Vu, su Mu y su T (ACI 9.4.3.2 y 9.4.4.3,
+    # D-149).
     z = section.x + footing.lx / 2
     station = Station.model_construct(z=z, layout=member.stations[0].layout, case=beam.case,
-                                      demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(at), v3=0.0,
-                                                                      tu=beam.torque(at)))
+                                      demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(section.x), v3=0.0,
+                                                                      tu=beam.torque(section.x)))
+    given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
     if moment < 0 and not has_top:
         # Sin barras superiores: flexión de concreto simple (D-072) y el cortante (y la torsión) de vigas.
         flexure = plain_principal_check(basis, footing, -moment, (section.label, beam.case, _sentence(section.label)))
-        given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
         deep = deep_beam_checks(given_station) if footing.deep_beam else ()
-        shear_only = [replace(check, member=footing.id, z=z, case=beam.case) for check in (*shear_and_torsion_checks(given_station), *deep)]
+        rest = (*shear_and_torsion_checks(given_station), *deep) if section.sheared else _face_limits(footing, section, given_station)
+        shear_only = [replace(check, member=footing.id, z=z, case=beam.case) for check in rest]
         return [replace(flexure, z=z), *(_with_section(check, section.label) for check in shear_only)]
-    checks = checks_for(StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True))
+    if section.sheared:
+        checks = checks_for(given_station)
+    else:
+        checks = (*flexure_station_checks(given_station),
+                  *(replace(check, z=z, case=beam.case) for check in _face_limits(footing, section, given_station)))
     return [_with_section(replace(check, member=footing.id), section.label) for check in checks]
+
+
+def _face_limits(footing: CombinedFooting, section: CriticalSection, given: StationInput) -> tuple[Check, ...]:
+    """En la cara de una viga alta (decisión del usuario, D-149): los límites de la sección con el Vu de la cara, el de
+    vigas, Vu ≤ φ(Vc + 0.66√f'c·bw·d), y el de viga alta, Vu ≤ φ·0.83√f'c·bw·d (ACI 22.5.1.2 y 9.9.2.1; NSR-10
+    C.11.4.7.9 y C.11.7.3). Fuera de la cara o sin viga alta, ninguno."""
+    if not (footing.deep_beam and section.face):
+        return ()
+    return (*(check for check in shear_checks(given) if check.name == SHEAR_SECTION),
+            *(check for check in deep_beam_checks(given) if check.name == DEEP_SECTION))
 
 
 def _spacing_check(basis: Basis, footing: CombinedFooting, spacing: float, bars: str) -> Check:

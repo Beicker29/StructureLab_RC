@@ -256,24 +256,6 @@
             "face": "top"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.008664357475936413,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2999.9999799051634,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 2999.9999799051634,
-            "face": "top"
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 356116143.30013275,
@@ -363,24 +345,6 @@
             "demand": 150.0,
             "capacity": 192.5,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 5225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 69462.02399999974,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 5225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 5225.0,
             "face": "bottom"
@@ -671,24 +635,6 @@
             "face": "top"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.007839855155907571,
-            "capacity": 1036287.873517779,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 1748.0113898949357,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 1748.0113898949357,
-            "face": "top"
-          },
-          {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
@@ -750,24 +696,6 @@
             "demand": 150.0,
             "capacity": 192.5,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 4250.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 312507.18874806026,
-            "capacity": 1059119.1421845236,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 4250.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 4250.0,
             "face": "bottom"
@@ -1076,24 +1004,6 @@
             "face": "top"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.0008655071724206209,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2951.984376125853,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 2951.984376125853,
-            "face": "top"
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 623040598.8180712,
@@ -1183,24 +1093,6 @@
             "demand": 150.0,
             "capacity": 192.5,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 4875.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 567116.01014129,
-            "capacity": 839468.452414162,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 4875.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 4875.0,
             "face": "bottom"
@@ -1305,24 +1197,6 @@
             "demand": 150.0,
             "capacity": 192.5,
             "clause": "C.10.6.4",
-            "case": "U2",
-            "z_mm": 1025.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 535938.323072187,
-            "capacity": 804310.8769668329,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U2",
-            "z_mm": 1025.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U2",
             "z_mm": 1025.0,
             "face": "bottom"
@@ -1455,24 +1329,6 @@
             "demand": 150.0,
             "capacity": 192.5,
             "clause": "C.10.6.4",
-            "case": "U2",
-            "z_mm": 3589.235139041089,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.001861247350461781,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U2",
-            "z_mm": 3589.235139041089,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U2",
             "z_mm": 3589.235139041089,
             "face": "top"
@@ -1836,24 +1692,6 @@
             "face": "bottom"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 26502.024000000005,
-            "capacity": 828355.6322299016,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 775.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 775.0,
-            "face": "bottom"
-          },
-          {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
@@ -1888,24 +1726,6 @@
             "demand_Nmm": 246759999.99999988,
             "capacity_Nmm": 187795428.05936465,
             "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
-            "z_mm": 2999.9999798724484,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.0033111164811998606,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2999.9999798724484,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
             "z_mm": 2999.9999798724484,
             "face": "top"
           },
@@ -2272,24 +2092,6 @@
             "face": "top"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.006258728448301554,
-            "capacity": 485759.94071145885,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2999.999991440158,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 2999.999991440158,
-            "face": "top"
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 368802655.80013275,
@@ -2379,24 +2181,6 @@
             "demand": 150.0,
             "capacity": 192.5,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 5225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 300585.35733333323,
-            "capacity": 520408.2393319817,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 5225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 5225.0,
             "face": "bottom"
@@ -2750,24 +2534,6 @@
             "face": "top"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.006258728448301554,
-            "capacity": 1165847.3942028943,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2999.999991440158,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 2999.999991440158,
-            "face": "top"
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 456088947.488533,
@@ -2857,24 +2623,6 @@
             "demand": 150.0,
             "capacity": 160.75,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 5225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 236753.92533333367,
-            "capacity": 1207627.7924281629,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 5225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 5225.0,
             "face": "bottom"
@@ -3124,24 +2872,6 @@
             "face": "bottom"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 463326.0,
-            "capacity": 1144259.0034488027,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 775.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 775.0,
-            "face": "bottom"
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 675112849.6668007,
@@ -3251,24 +2981,6 @@
             "demand": 150.0,
             "capacity": 192.5,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 3000.000036087915,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.021574798971414566,
-            "capacity": 1079466.534914353,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 3000.000036087915,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 3000.000036087915,
             "face": "top"
@@ -3509,24 +3221,6 @@
             "face": "bottom"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 463326.0,
-            "capacity": 1144259.0034488027,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 775.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 775.0,
-            "face": "bottom"
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 675112849.6668007,
@@ -3632,24 +3326,6 @@
             "demand": 150.0,
             "capacity": 192.5,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 3000.000036087915,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.021574798971414566,
-            "capacity": 1079466.534914353,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 3000.000036087915,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 3000.000036087915,
             "face": "top"
@@ -3881,24 +3557,6 @@
             "face": "bottom"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 56821.33333333333,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 525.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 525.0,
-            "face": "bottom"
-          },
-          {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
@@ -3933,24 +3591,6 @@
             "demand_Nmm": 91320000.00000006,
             "capacity_Nmm": 187795428.05936465,
             "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
-            "z_mm": 2249.999973954012,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.002818986220518127,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2249.999973954012,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
             "z_mm": 2249.999973954012,
             "face": "top"
           },
@@ -4196,24 +3836,6 @@
             "demand": 350.0,
             "capacity": 152.75,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 2025.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 160504.27333333343,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2025.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 2025.0,
             "face": "bottom"
@@ -4628,24 +4250,6 @@
             "face": "bottom"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 635741.6799999999,
-            "capacity": 3079014.151510255,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 1225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 1225.0,
-            "face": "bottom"
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 504793624.99999976,
@@ -4811,24 +4415,6 @@
             "demand": 150.0,
             "capacity": 152.75,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 2999.9999739558343,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.01296582748182118,
-            "capacity": 3054783.920948612,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2999.9999739558343,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 2999.9999739558343,
             "face": "top"
@@ -5151,24 +4737,6 @@
             "face": "bottom"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 513961.95222222223,
-            "capacity": 4423228.131591064,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 1225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 1225.0,
-            "face": "bottom"
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 651845178.9351851,
@@ -5326,24 +4894,6 @@
             "demand": 150.0,
             "capacity": 152.75,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 2999.9999792810927,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.012041276087984443,
-            "capacity": 4422666.534914354,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2999.9999792810927,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 2999.9999792810927,
             "face": "top"
@@ -5625,24 +5175,6 @@
             "face": "bottom"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 345822.024,
-            "capacity": 828355.6322299016,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 1225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 1225.0,
-            "face": "bottom"
-          },
-          {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "FAIL",
@@ -5725,24 +5257,6 @@
             "demand_Nmm": 848843999.9999998,
             "capacity_Nmm": 187795428.05936465,
             "clause": "C.22.5.1, C.22.4.7 y C.9.3.5",
-            "z_mm": 2999.9999830281417,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.005054898094385862,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 2999.9999830281417,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
             "z_mm": 2999.9999830281417,
             "face": "top"
           },
@@ -6091,24 +5605,6 @@
             "face": "bottom"
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 669731.7244444444,
-            "capacity": 773380.9608612515,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 1225.0,
-            "face": "bottom"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
-            "case": "U1",
-            "z_mm": 1225.0,
-            "face": "bottom"
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 333287810.7452258,
@@ -6254,24 +5750,6 @@
             "demand": 150.0,
             "capacity": 192.5,
             "clause": "C.10.6.4",
-            "case": "U1",
-            "z_mm": 4769.139899421869,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.006568404845893383,
-            "capacity": 755626.5744400471,
-            "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-            "case": "U1",
-            "z_mm": 4769.139899421869,
-            "face": "top"
-          },
-          {
-            "name": "Cortante: refuerzo minimo",
-            "status": "PASS",
-            "clause": "C.11.4.6.1(a)",
             "case": "U1",
             "z_mm": 4769.139899421869,
             "face": "top"

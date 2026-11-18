@@ -292,26 +292,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 178802.19166666668,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 29658813.542708308,
@@ -410,26 +390,6 @@
           "demand": 120.0,
           "capacity": 140.875,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 178802.19166666668,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 975.0,
           "where": "Franja transversal de la columna C1",
@@ -540,26 +500,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 178802.19166666668,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 29658813.542708308,
@@ -658,26 +598,6 @@
           "demand": 120.0,
           "capacity": 140.875,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 178802.19166666668,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 975.0,
           "where": "Franja transversal de la columna C2",
@@ -1207,26 +1127,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 178802.19166666668,
-          "capacity": 510765.69218405895,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 29658813.542708308,
@@ -1325,26 +1225,6 @@
           "demand": 50.0,
           "capacity": 144.875,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 178802.19166666668,
-          "capacity": 510765.69218405895,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 975.0,
           "where": "Franja transversal de la columna C1",
@@ -1449,26 +1329,6 @@
           "demand": 120.0,
           "capacity": 140.875,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 178802.19166666668,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1425.0,
           "where": "Franja transversal de la columna C2",
@@ -1573,26 +1433,6 @@
           "demand": 120.0,
           "capacity": 140.875,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 178802.19166666668,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 975.0,
           "where": "Franja transversal de la columna C2",
@@ -2112,26 +1952,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 123510.525,
-          "capacity": 334869.262211478,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 20487308.33437498,
@@ -2236,26 +2056,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 123510.525,
-          "capacity": 334869.262211478,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 20487308.33437498,
@@ -2360,26 +2160,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 229040.00000000003,
-          "capacity": 496146.8122770416,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1450.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1450.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 35129010.00000003,
@@ -2478,26 +2258,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 950.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 229040.00000000003,
-          "capacity": 496146.8122770416,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 950.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 950.0,
           "where": "Franja transversal de la columna C2",
@@ -3124,26 +2884,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 134976.34989531417,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1625.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1625.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 85706236.34133577,
@@ -3253,26 +2993,6 @@
           "demand": 120.0,
           "capacity": 140.875,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1175.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 317848.984300111,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1175.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1175.0,
           "where": "Franja transversal de la columna C1",
@@ -3394,26 +3114,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 127180.09047733902,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U2",
-          "z_mm": 1625.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U2",
-          "z_mm": 1625.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 88403068.35994679,
@@ -3523,26 +3223,6 @@
           "demand": 120.0,
           "capacity": 140.875,
           "clause": "C.10.6.4",
-          "case": "U2",
-          "z_mm": 1175.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 243910.4841418977,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U2",
-          "z_mm": 1175.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U2",
           "z_mm": 1175.0,
           "where": "Franja transversal de la columna C1",
@@ -3664,26 +3344,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 355199.8104365032,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 149312801.526245,
@@ -3793,26 +3453,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 825.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 180608.42390918825,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 825.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 825.0,
           "where": "Franja transversal de la columna C2",
@@ -3934,26 +3574,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 273620.5205128663,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U2",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U2",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 124233529.01328607,
@@ -4063,26 +3683,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U2",
-          "z_mm": 825.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 138778.28621434767,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U2",
-          "z_mm": 825.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U2",
           "z_mm": 825.0,
           "where": "Franja transversal de la columna C2",
@@ -4653,26 +4253,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 414402.96,
-          "capacity": 435207.64750152663,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 79347806.76600009,
@@ -4771,26 +4351,6 @@
           "demand": 300.0,
           "capacity": 192.4999999999999,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 414402.96,
-          "capacity": 435207.64750152663,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1050.0,
           "where": "Franja transversal de la columna C1",
@@ -4901,26 +4461,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 414402.96,
-          "capacity": 435207.64750152663,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1350.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 79347806.76600009,
@@ -5019,26 +4559,6 @@
           "demand": 300.0,
           "capacity": 192.4999999999999,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 414402.96,
-          "capacity": 435207.64750152663,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1050.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1050.0,
           "where": "Franja transversal de la columna C2",
@@ -5462,26 +4982,6 @@
           "face": "top"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 17084.044516774677,
-          "capacity": 442547.54598566866,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "top"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "top"
-        },
-        {
           "name": "Flexion concreto simple (cara superior, direccion secundaria)",
           "case": "U1",
           "status": "PASS",
@@ -5549,26 +5049,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 386803.2446327318,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 975.0,
           "where": "Franja transversal de la columna C1",
@@ -5673,26 +5153,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 420687.0101258303,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1425.0,
           "where": "Franja transversal de la columna C2",
@@ -5808,27 +5268,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 469703.36977621424,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 104940.58796104178,
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 975.0,
           "where": "Franja transversal de la columna C2",
@@ -6311,26 +5750,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 40796.95625,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 6767195.1179687455,
@@ -6429,26 +5848,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 40796.95625,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 975.0,
           "where": "Franja transversal de la columna C1",
@@ -6559,26 +5958,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 344901.12291666714,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 57210473.763802655,
@@ -6677,26 +6056,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 344901.12291666673,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 975.0,
           "where": "Franja transversal de la columna C2",
@@ -7214,26 +6573,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 245945.73314603174,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1525.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1525.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 69102220.92365706,
@@ -7332,26 +6671,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1075.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 268763.2702727716,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1075.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1075.0,
           "where": "Franja transversal de la columna C1",
@@ -7462,26 +6781,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 305909.9787308221,
-          "capacity": 496146.8122770416,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1525.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1525.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 77722071.33757745,
@@ -7580,26 +6879,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1075.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 331502.209303366,
-          "capacity": 496146.8122770416,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1075.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1075.0,
           "where": "Franja transversal de la columna C2",
@@ -8090,27 +7369,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 190737.89111983555,
-          "capacity": 192664.53648468238,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 384733.9051819844,
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1425.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "FAIL",
           "demand": 182385732.76145828,
@@ -8216,27 +7474,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 190737.89111983555,
-          "capacity": 192664.53648468238,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 384733.9051819844,
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 975.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "FAIL",
           "demand": 182385732.76145828,
@@ -8342,26 +7579,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 322264.1666666667,
-          "capacity": 326248.5201803336,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1700.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1700.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 57483870.72916669,
@@ -8460,26 +7677,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 700.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 322264.1666666667,
-          "capacity": 326248.5201803336,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 700.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 700.0,
           "where": "Franja transversal de la columna C2",
@@ -8953,27 +8150,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 469703.36977621424,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 300506.49208169075,
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 349035759.72243845,
@@ -9073,26 +8249,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 264541.3495722223,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C1",
@@ -9225,27 +8381,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 469703.36977621424,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 300506.49208169075,
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 349035759.7224384,
@@ -9345,26 +8480,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 264541.3495722223,
-          "capacity": 474447.84825880226,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C2",
@@ -9896,27 +9011,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 445790.81651469483,
-          "capacity": 450293.7540552473,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 324660.5862852457,
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 349035759.72243845,
@@ -10016,26 +9110,6 @@
           "demand": 120.0,
           "capacity": 140.875,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 264541.3495722223,
-          "capacity": 476147.0873982763,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C1",
@@ -10226,27 +9300,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 438122.070525812,
-          "capacity": 442547.54598566866,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 332406.79435482435,
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 349035759.7224384,
@@ -10346,26 +9399,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 264541.3495722223,
-          "capacity": 457085.83739827643,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C2",
@@ -11016,27 +10049,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 447335.88623991964,
-          "capacity": 451854.43054537335,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 323099.90979511966,
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 349035759.72243845,
@@ -11136,26 +10148,6 @@
           "demand": 120.0,
           "capacity": 140.875,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 264541.3495722223,
-          "capacity": 477590.69102146727,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C1",
@@ -11346,27 +10338,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 438122.070525812,
-          "capacity": 442547.54598566866,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 332406.79435482435,
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 349035759.7224384,
@@ -11466,26 +10437,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 264541.3495722223,
-          "capacity": 457085.83739827643,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C2",
@@ -12141,27 +11092,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 453812.60368371033,
-          "capacity": 458396.5693774852,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 216248.77354697883,
-          "case": "U1",
-          "z_mm": 2025.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 2025.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 306421555.05243766,
@@ -12301,26 +11231,6 @@
           "demand": 120.0,
           "capacity": 140.875,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1575.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 360878.7294888888,
-          "capacity": 489891.58739827643,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1575.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1575.0,
           "where": "Franja transversal de la columna C1",
@@ -12511,27 +11421,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 438122.070525812,
-          "capacity": 442547.54598566866,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 393793.84409146395,
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 346406521.60511124,
@@ -12631,26 +11520,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 246409.06948888898,
-          "capacity": 457085.83739827643,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C2",
@@ -13300,26 +12169,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 438818.66335596575,
-          "capacity": 442547.54598566866,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 2025.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 2025.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 207505761.3011113,
@@ -13458,26 +12307,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1575.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 256332.2966755301,
-          "capacity": 444330.83241930255,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1575.0,
-          "where": "Franja transversal de la columna C1",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1575.0,
           "where": "Franja transversal de la columna C1",
@@ -13741,27 +12570,6 @@
           "face": "bottom"
         },
         {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 438122.070525812,
-          "capacity": 442547.54598566866,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "excess": 79251.47594403639,
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
-          "case": "U1",
-          "z_mm": 1725.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
           "name": "Flexion: resistencia",
           "status": "PASS",
           "demand": 195794503.0317229,
@@ -13861,26 +12669,6 @@
           "demand": 150.0,
           "capacity": 137.0,
           "clause": "C.10.6.4",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: resistencia",
-          "status": "PASS",
-          "demand": 116065.26733638486,
-          "capacity": 446939.52451478894,
-          "clause": "C.15.5.1, C.15.5.2 y C.11.2",
-          "case": "U1",
-          "z_mm": 1275.0,
-          "where": "Franja transversal de la columna C2",
-          "face": "bottom"
-        },
-        {
-          "name": "Cortante: refuerzo minimo",
-          "status": "PASS",
-          "clause": "C.11.4.6.1(a)",
           "case": "U1",
           "z_mm": 1275.0,
           "where": "Franja transversal de la columna C2",

@@ -171,10 +171,12 @@ _CAP_LIMITATIONS = (
 )
 
 
-def _severity(check: dict[str, Any]) -> tuple[int, float, float]:
-    """Estado, razón y, entre las que no tienen razón (por ejemplo un concreto simple no permitido), la mayor demanda."""
+def _severity(check: dict[str, Any]) -> tuple[int, float, float, float]:
+    """Estado, razón y, entre las que no tienen razón (por ejemplo un concreto simple no permitido), la mayor demanda; a
+    igual razón, el mayor cortante excedente para la viga de cimentación (todas se reportan con DCR = 0.99, D-114, D-148)."""
+    excess = next((value for key, value in check.get("values", {}).items() if key.startswith("excedente para la viga")), 0.0)
     return (_PRECEDENCE[check["status"]], check["ratio"] if check["ratio"] is not None else -1.0,
-            abs(check["demand"]) if check["ratio"] is None and check.get("demand") is not None else 0.0)
+            abs(check["demand"]) if check["ratio"] is None and check.get("demand") is not None else 0.0, excess)
 
 
 def governing(items: Iterable[Located]) -> dict[str, Located]:
@@ -780,16 +782,20 @@ def _beam_alert(footing: dict[str, Any]) -> list[Block]:
 
 def _beam_shear_alert(footing: dict[str, Any]) -> list[Block]:
     """Aviso al comienzo de la memoria si el refuerzo transversal de la viga de cimentación debe tomar cortante de las
-    franjas que excede φVc (D-103)."""
+    franjas que excede φVc (D-103): el mayor excedente de cada columna, con su caso y su sección (D-148)."""
     shears = footing.get("foundation_beam_shears", [])
     if not shears:
         return []
-    largest = max(item["V [kN]"] for item in shears)
+    largest: dict[str, dict[str, Any]] = {}
+    for item in shears:
+        if item["column"] not in largest or item["V [kN]"] > largest[item["column"]]["V [kN]"]:
+            largest[item["column"]] = item
+    parts = "; ".join(f"columna {column}: {number(item['V [kN]'], 'kN')} kN ({item['case']}, {item['section']})"
+                      for column, item in largest.items())
     return [{"kind": "alert", "tone": "danger",
-             "text": f"El cortante de las franjas de la dirección secundaria excede φVc (hasta {number(largest, 'kN')} kN): "
-                     "el excedente lo debe asumir el refuerzo transversal de la viga de cimentación; esas verificaciones se "
-                     "reportan con DCR = 0.99. Ver la tabla \"Cortante para el refuerzo transversal de la viga de cimentación\" "
-                     "(D-103)."}]
+             "text": f"El cortante de las franjas de la dirección secundaria excede φVc. Mayor excedente que debe suministrar "
+                     f"el refuerzo transversal de la viga de cimentación: {parts}. Esas verificaciones se reportan con "
+                     "DCR = 0.99. Ver la tabla \"Cortante para el refuerzo transversal de la viga de cimentación\" (D-103)."}]
 
 
 def _beam_shears(footing: dict[str, Any]) -> list[Block]:

@@ -10,12 +10,13 @@ vigas), del cortante de zapatas (Jc, carga neta) y de las conexiones (ld, ldh, l
    centroide del perímetro, de la acción de la columna menos la carga neta dentro del área crítica; vu = vuv + Σγv·M·c/J
    frente a φvc del perfil; As,min por punzonamiento (ACI 8.6.1.2).
 3. Franja: ancho columna + d/2 a cada lado dentro de la base; F repartida en el ancho B con la forma de la presión en la
-   x de la columna (integral exacta de la recta recortada); momentos en las caras ±Y y a d; en la cara, el cortante de
-   la sección a d. Reglas de vigas del oráculo de la viga larga, con el ancho de la franja; capa inferior: el band si lo
-   hay (único refuerzo inferior de su zona, D-097) o la malla y; capa superior: las barras superiores transversales que
-   caen en la franja (D-097). Momento negativo sin barras superiores: concreto simple. Torsión de placa (D-118): con
-   mxy = el mayor |T|/B en los bordes de la franja y mx = 0, Wood-Armer pide abajo M + b·|mxy| y arriba M − b·|mxy|
-   (0 si quedan del lado contrario): una estación por cara con momento, el cortante con la primera.
+   x de la columna (integral exacta de la recta recortada); momentos en las caras ±Y y a d; el cortante solo a d de la
+   cara y más allá, con su Vu y su Mu; en la cara, solo la flexión (D-148). Reglas de vigas del oráculo de la viga
+   larga, con el ancho de la franja; capa inferior: el band si lo hay (único refuerzo inferior de su zona, D-097) o
+   la malla y; capa superior: las barras superiores transversales que caen en la franja (D-097). Momento negativo sin
+   barras superiores: concreto simple. Torsión de placa (D-118): con mxy = el mayor |T|/B en los bordes de la franja y
+   mx = 0, Wood-Armer pide abajo M + b·|mxy| y arriba M − b·|mxy| (0 si quedan del lado contrario): una estación por
+   cara con momento, el cortante con la primera.
 4. Malla y fuera de las franjas: s ≤ min(3h, 450). Torsión de placa (D-118): con my = 0, ±|mxy| por metro en la malla
    y y en las superiores y (o concreto simple sin ellas), con el mayor |mxy| fuera de las franjas. Retracción y
    temperatura por zona (D-097): por metro, inferior más superior de cada dirección ≥ ρ·h (ACI 0.0018; NSR-10 por
@@ -425,7 +426,7 @@ def _strip_sections(f: dict, beam: dict, index: int, case: str, depth: float) ->
         at_d = face + side * depth
         inside = -half < at_d < half
         face_moment, shear = beyond(face, side)
-        out.append((face, face_moment, beyond(at_d, side)[1] if inside else shear, f"cara {name}"))
+        out.append((face, face_moment, shear, f"cara {name}"))  # la cara, solo para la flexión (D-148)
         if inside:
             moment, shear = beyond(at_d, side)
             out.append((at_d, moment, shear, f"a d de la cara {name}"))
@@ -503,11 +504,15 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
     twist = strip_twist(f, beam, strip)
     # Cortante por la torsión de placa en la franja (D-119): el salto de T entre sus bordes repartido en su ancho b, por b.
     torsion_shear = abs(_B._torque(beam, strip["x1"]) - _B._torque(beam, strip["x0"])) / f["ly"]
-    for y, physical, shear, _ in _strip_sections(f, beam, index, case, strip["depth"]):
+    for y, physical, shear, label in _strip_sections(f, beam, index, case, strip["depth"]):
+        # El cortante, a d de la cara y más allá; en la cara solo la flexión (D-148).
+        sheared = not label.startswith("cara")
         for order, moment in enumerate(strip_moments(physical, strip["width"], twist)):
-            # Una estación por cara con momento de Wood-Armer; el cortante (flexión + torsión) con la primera (D-118).
+            # Una estación por cara con momento de Wood-Armer; el cortante (flexión + torsión) con la primera (D-118), que
+            # en la cara no lleva cortante (order 1).
             out += [{**item, "face": "top" if moment < 0 else "bottom"}
-                    for item in _strip_station(folder, f, (beam, index, case), (y, moment, shear + torsion_shear, order), where)]
+                    for item in _strip_station(folder, f, (beam, index, case),
+                                               (y, moment, shear + torsion_shear, order if sheared else 1), where)]
     return out
 
 

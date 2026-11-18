@@ -264,14 +264,6 @@
             "z_mm": 3331.52689025597
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.004676051205024123,
-            "capacity": 1266695.9644268753,
-            "case": "U1",
-            "z_mm": 3331.52689025597
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 582673848.8235326,
@@ -322,14 +314,6 @@
             "capacity": 4260.0,
             "demand": 3261.7999999999997,
             "status": "PASS",
-            "case": "U1",
-            "z_mm": 6050.0
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 204325.0,
-            "capacity": 1469518.8435514974,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -572,14 +556,6 @@
             "z_mm": 3331.5078660723984
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.006220121053047478,
-            "capacity": 1406736.240494069,
-            "case": "U1",
-            "z_mm": 3331.5078660723984
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 583022597.1509228,
@@ -630,14 +606,6 @@
             "capacity": 1136.0,
             "demand": 1630.8999999999999,
             "status": "FAIL",
-            "case": "U1",
-            "z_mm": 6050.0
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 204433.0,
-            "capacity": 1303050.495931177,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -920,14 +888,6 @@
             "z_mm": 3331.52689025597
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.004676051205024123,
-            "capacity": 1266695.9644268753,
-            "case": "U1",
-            "z_mm": 3331.52689025597
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 582673848.8235326,
@@ -978,14 +938,6 @@
             "capacity": 4260.0,
             "demand": 3261.7999999999997,
             "status": "PASS",
-            "case": "U1",
-            "z_mm": 6050.0
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 204325.0,
-            "capacity": 1469518.8435514974,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -1244,14 +1196,6 @@
             "z_mm": 3363.705489012852
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.006211322732269764,
-            "capacity": 1266695.9644268753,
-            "case": "U1",
-            "z_mm": 3363.705489012852
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "FAIL",
             "demand": 1541672259.0413904,
@@ -1302,14 +1246,6 @@
             "capacity": 1032.0,
             "demand": 3274.5999999999995,
             "status": "FAIL",
-            "case": "U1",
-            "z_mm": 6050.0
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 329672.222222222,
-            "capacity": 1301724.495931177,
             "case": "U1",
             "z_mm": 6050.0
           },
@@ -1565,14 +1501,6 @@
             "z_mm": 3331.52689025597
           },
           {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 0.004676051205024123,
-            "capacity": 1266695.9644268753,
-            "case": "U1",
-            "z_mm": 3331.52689025597
-          },
-          {
             "name": "Flexion: resistencia",
             "status": "PASS",
             "demand": 582673848.8235326,
@@ -1623,14 +1551,6 @@
             "capacity": 3182.0,
             "demand": 3264.201508485229,
             "status": "FAIL",
-            "case": "U1",
-            "z_mm": 6050.0
-          },
-          {
-            "name": "Cortante: resistencia",
-            "status": "PASS",
-            "demand": 204325.0,
-            "capacity": 1456816.290954348,
             "case": "U1",
             "z_mm": 6050.0
           },

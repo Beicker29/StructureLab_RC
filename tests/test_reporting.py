@@ -234,6 +234,12 @@ def test_strip_shear_over_phi_vc_is_reported_with_dcr_099_and_a_danger_alert(tmp
     assert shears and all(check["ratio"] == pytest.approx(0.99) and check["status"] == "PASS" for check in shears)
     text = (tmp_path / "salida" / "memoria.txt").read_text(encoding="utf-8")
     assert "debe ser asumido por el refuerzo transversal de la viga de cimentación; esta revisión se reporta con DCR = 0.99" in text
+    # D-148: el aviso del comienzo da el mayor excedente de cada columna, con su caso y su sección.
+    footing = results["combined_footings"][0]
+    alert = next(line for line in text.splitlines() if "Mayor excedente que debe suministrar" in line)
+    for column in {item["column"] for item in footing["foundation_beam_shears"]}:
+        top = max((item for item in footing["foundation_beam_shears"] if item["column"] == column), key=lambda item: item["V [kN]"])
+        assert f"columna {column}: {top['V [kN]']:.1f} kN ({top['case']}, {top['section']})" in alert
 
 
 def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> None:

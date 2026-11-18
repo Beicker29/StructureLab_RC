@@ -2925,6 +2925,63 @@
 - **Consecuencias:** cambian la cartilla, los pesos y el costo de los diseños, sin cambiar la solución elegida de
   ninguno. El oráculo `derive_detailing.py` usa las fórmulas del usuario y agrega un gancho de 180°.
 
+### D-148: cortante de las franjas solo a d de la cara y revisión gobernante por el mayor excedente
+
+- **Fecha:** 2026-11-18
+- **Problema:**
+  - Las franjas de la combinada revisaban el cortante también en la cara de la columna, con el Vu de la sección a d
+    (D-082) pero con el Mu de la cara. En NSR-10 Vc depende de Vu·d/Mu (C.11.2.2.1), así que la cara daba un Vc menor
+    y un excedente para la viga de cimentación mayor que la sección a d, con el mismo Vu (173.0 frente a 144.8 kN en
+    un caso del usuario).
+  - Todas las secciones con excedente se reportan con DCR = 0.99 (D-114): en el empate, la memoria mostraba como
+    gobernante la primera, no la de mayor excedente (92.8 kN frente a 459.0 kN en la tabla).
+- **Decisión del usuario:** el cortante de las franjas se revisa solo en la sección crítica a d de la cara y en las
+  que están más allá (el mayor momento negativo hacia el borde), cada una con su Vu y su Mu (NSR-10 C.11.1.3.1, ACI
+  9.4.3.2). La cara queda solo para la flexión. Sustituye la regla de D-082 para el cortante en la cara.
+- **Presentación:** entre revisiones con el mismo estado y la misma razón, gobierna la de mayor excedente para la viga
+  (`reporting/document._severity`). Una sección sin excedente con razón real mayor que 0.99 sigue gobernando. El aviso
+  del comienzo de la memoria da el mayor excedente que debe suministrar la viga en cada columna, con su caso y su
+  sección (pedido del usuario), en lugar de un solo máximo de la zapata.
+- **Viga larga:** tenía el mismo patrón; lo resuelve D-149.
+- **Consecuencias:** las franjas pierden las revisiones de cortante en la cara y la tabla del excedente sus filas
+  "cara". En las copias de pruebas de la combinada (comparadas contra HEAD) ningún estado ni solución de diseño cambia.
+  Las revisiones bajan, por ejemplo de 427 a 379 en `zapata_combinada` NSR-10. En `diseno_combinada` desaparece todo
+  el excedente para la viga (221.7 kN en NSR-10 y 249.4 kN en ACI): sus cuatro filas eran de la cara. El oráculo
+  `derive_combined_columns.py` aplica la misma regla y solo pierde las revisiones de cortante en la cara.
+  En el ejemplo del usuario (`zapata_combinada_etabs_j`), el mayor excedente pasa de 459.0 kN (cara) a 409.3 kN (a d de
+  la cara, COMB4B Max, C_Int).
+
+### D-149: cortante en una dirección solo a d de la cara, también en la viga larga y en la viga de la T
+
+- **Fecha:** 2026-11-18
+- **Decisión del usuario:**
+  - El cortante en una dirección se revisa solo en la sección a d de la cara, con el Vu y el Mu de esa misma sección
+    (ACI 9.4.3.2 y 13.2.7.2, NSR-10 C.11.1.3.1 y C.15.5.2).
+  - La estación de la cara (y la de V = 0, la del mayor momento entre columnas) queda solo para la flexión.
+  - Excepción: si la viga larga es de gran altura (`deep_beam`), en la cara se revisan los dos límites de la sección
+    con el Vu de la cara:
+    - el de vigas, Vu ≤ φ(Vc + 0.66√f'c·bw·d): "Cortante: dimensiones de la seccion" (ACI 22.5.1.2, NSR-10
+      C.11.4.7.9);
+    - el de viga alta, Vu ≤ φ·0.83√f'c·bw·d: "Viga alta: limite de seccion" (ACI 9.9.2.1, NSR-10 C.11.7.3).
+  - Antes de implementar se le consultó si se refería al 0.66 o al 0.83, porque el límite de viga alta es el 0.83;
+    eligió los dos.
+- **Antes:** en la cara del mayor momento se revisaban el cortante y la torsión con el Vu y la T de la sección a d y el
+  Mu de la cara (`CriticalSection.shear_x`, D-082). Sustituye esa regla. Con D-148, la misma regla rige en las franjas.
+- **Código:**
+  - `combined_beam.CriticalSection` lleva `sheared` (las secciones a d) y `face`, en lugar de `shear_x`.
+  - Si una sección de momento cae justo a d de una cara, conserva el cortante.
+  - `_face_limits` arma los dos límites de la viga alta en la cara.
+  - Aplica a la combinada rectangular y a la viga de la T invertida. Las aisladas, las aletas de la T y los cabezales ya
+    revisaban el cortante a d de la cara.
+- **Oráculos:** `derive_combined_beam` (`sheared`) y `derive_inverted_t` aplican la misma regla. Solo pierden las
+  revisiones de cortante y torsión de las secciones de cara y de V = 0.
+- **Huellas** (comparadas contra HEAD junto con D-148): ningún estado ni solución de diseño cambia en las combinadas ni
+  en las T. Solo bajan las revisiones, por ejemplo de 427 a 355 en `zapata_combinada` NSR-10 y de 186 a 153 en
+  `diseno_t_invertida`.
+- **Control:** `test_long_beam_shear_only_at_d_and_deep_beam_limits_at_the_face`, en `tests/test_combined_footing.py`.
+  En las caras no hay cortante y en las secciones a d sí. Con `deep_beam`, en la cara salen los dos límites con el Vu
+  de la cara.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

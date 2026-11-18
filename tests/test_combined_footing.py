@@ -614,3 +614,30 @@ def test_strip_flexure_d_is_the_centroid_of_the_tension_forces() -> None:
         assert values["d"] == pytest.approx(expected, rel=1e-3), check.note
         checked += 1
     assert checked
+
+
+@pytest.mark.parametrize("profile", ["nsr-10", "aci-318-25"])
+def test_long_beam_shear_only_at_d_and_deep_beam_limits_at_the_face(profile: str) -> None:
+    """D-149: la viga larga revisa el cortante solo en las secciones a d de las caras, con su Vu; en las caras y en V = 0,
+    solo flexión. Declarada de gran altura, en la cara se revisan además los límites de la sección con el Vu de la cara:
+    φ(Vc + 0.66√f'c·bw·d) de vigas y φ·0.83√f'c·bw·d de viga alta."""
+    oracle = _oracle(FOLDERS[profile], "derived_combined_beam")
+    data = next(case for case in oracle["cases"] if case["id"] == "cortante-con-estribos")["footing"]
+    soil = Soil.model_validate(oracle["soil"])
+    shear_names = {"Cortante: resistencia", "Cortante: refuerzo minimo", "Cortante: separacion maxima"}
+    face_limits = {"Cortante: dimensiones de la seccion", "Viga alta: limite de seccion"}
+    for deep in (False, True):
+        footing = CombinedFooting.model_validate({**data, "deep_beam": deep})
+        checks = _beam_checks(profile, footing, oracle)
+        cases = {pressure.case: (pressure, loads) for pressure, loads in combined_factored_cases(footing, soil)[0]}
+        at_face = [check for check in checks if check.note.startswith("Cara")]
+        at_d = [check for check in checks if check.note.startswith("A d de la cara")]
+        assert at_face and at_d
+        assert not {check.name for check in at_face} & shear_names
+        assert shear_names & {check.name for check in at_d}
+        limits = [check for check in at_face if check.name in face_limits]
+        assert {check.name for check in limits} == (face_limits if deep else set())
+        for check in limits:  # con el Vu de la cara
+            assert check.case is not None and check.z is not None
+            beam = beam_case(footing, soil, *cases[check.case])
+            assert check.demand == pytest.approx(abs(beam.shear(check.z - footing.lx / 2)))
