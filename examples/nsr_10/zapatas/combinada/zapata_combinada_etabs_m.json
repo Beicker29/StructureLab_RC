@@ -93,17 +93,17 @@
           "dowels": {
             "designation": "#6",
             "count": 12,
-            "end": "hook90"
+            "end": "hook180"
           },
           "band": {
             "designation": "#7",
             "spacing": 150,
-            "end": "straight"
+            "end": "hook180"
           },
           "band_top": {
             "designation": "#4",
             "spacing": 150,
-            "end": "straight"
+            "end": "hook180"
           }
         }
       ],
