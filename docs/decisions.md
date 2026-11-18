@@ -598,7 +598,7 @@
   5. Si nada cumple dentro de los límites, el resultado es FAIL con el motivo; los límites no se amplían.
   6. Dentro de una tipología, cada columna se verifica con su propia sección, sus cargas y sus pasadores, que se diseñan por columna.
 - **Implementación (DRY):** el diseño no tiene fórmulas propias. `design/footing/typology.py` propone zapatas (planta, espesor, mallas a partir del As requerido de `domain/flexure_strength`, pasadores con el aplastamiento de `codes`) y las aprueba con `domain/footing/checks.footing_checks`; después de la primera planta viable explora dos más y se queda con la más barata, y elige los pasadores de menor área que aprueban área, anclaje y exceso de aplastamiento. `design/footing/grouping.py` parte la lista ordenada en N tramos continuos por programación dinámica (óptima para ese orden); `design/footing/typologies.py` diseña cada columna, las ordena por costo, agrupa y prueba cada f'c. El proyecto diseñado es un proyecto de verificación normal (`proyecto.json`), que `report` verifica y documenta.
-- **Rendimiento:** el As requerido se memoiza (una columna pasó de más de una hora a 0.6 s); un algoritmo genético se descartó porque necesitaría miles de verificaciones donde la búsqueda usa unas pocas y no garantiza el óptimo. Los diseños individuales, las coberturas y los diseños de tramo se reparten entre procesos (`design-footings --workers N`, por defecto los núcleos del equipo); el resultado es idéntico con cualquier número de procesos (ETABS, 65 columnas: 8 min con 32 hilos; referencia vigente desde la medición E0 del 2026-11-09, [docs/mediciones/E0.md](mediciones/E0.md): 73 columnas, 16 hilos, 35 min con NSR-10 y 39 min con ACI 318-25). Una partición perezosa con cota inferior del concreto se probó y se descartó: con la cota a ~30 % del costo real tuvo que diseñar el 75 % de los tramos.
+- **Rendimiento:** el As requerido se memoiza (una columna pasó de más de una hora a 0.6 s); un algoritmo genético se descartó porque necesitaría miles de verificaciones donde la búsqueda usa unas pocas y no garantiza el óptimo. Los diseños individuales, las coberturas y los diseños de tramo se reparten entre procesos (`design-footings --workers N`, por defecto los núcleos del equipo); el resultado es idéntico con cualquier número de procesos (ETABS, 65 columnas: 8 min con 32 hilos; medición E0 del 2026-11-09: 73 columnas, 16 hilos, 35 min con NSR-10 y 39 min con ACI 318-25, el 92 % en los rediseños de tramo; la referencia vigente es la de D-077, con −67 % y −69 % de tiempo; el informe de E0 queda en el historial de Git). Una partición perezosa con cota inferior del concreto se probó y se descartó: con la cota a ~30 % del costo real tuvo que diseñar el 75 % de los tramos.
 
 ### D-070: deslizamiento y volcamiento de zapatas
 
@@ -694,7 +694,7 @@
 ### D-074: tipologías repetidas y reasignación en el diseño por tipologías (E1)
 
 - **Fecha:** 2026-11-09
-- **Contexto:** la medición E0 ([docs/mediciones/E0.md](mediciones/E0.md)) encontró en NSR-10 una solución de N = 6
+- **Contexto:** la medición E0 (2026-11-09; su informe queda en el historial de Git) encontró en NSR-10 una solución de N = 6
   con dos tipologías idénticas (Z4 = Z5) y, en los dos perfiles, columnas que otra tipología elegida cubre más barato
   (2.2 % del costo en NSR-10, 7.9 a 8.3 % en ACI 318-25).
 - **Decisión del usuario:**
@@ -729,8 +729,8 @@
 ### D-075: segundo solucionador del diseño por tipologías: MILP sobre el catálogo de la DP (E2)
 
 - **Fecha:** 2026-11-09
-- **Decisión del usuario:** E2 con la matriz completa de cobertura (E0: ≈1 % del tiempo), tal como está en
-  [plan-tipologias](planes/plan-tipologias.md); el modo `dp` conserva la huella de E1.
+- **Decisión del usuario:** E2 con la matriz completa de cobertura (E0: ≈1 % del tiempo), tal como la planteó el plan de
+  tipologías (cerrado; en el historial de Git); el modo `dp` conserva la huella de E1.
 - **Implementación:**
   1. La tabla de tramos ya no depende de N: se diseñan todos los tramos de la lista ordenada (n(n+1)/2). La DP da el
      mismo resultado: los tramos que se agregan no entran en ninguna partición en N tramos.

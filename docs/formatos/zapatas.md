@@ -252,7 +252,7 @@ hay tipologías repetidas, su `description` termina con una advertencia que la m
 | `typologies` | lista | Por tipología: `name`, dimensiones, mallas, `columns`, `dowels`, concreto, acero y `cost`. |
 
 Si nada cumple dentro de los límites, el comando termina con FAIL y el motivo. `--workers N` fija los procesos en paralelo (por defecto, los núcleos del equipo; `--workers 1`, sin paralelo); no cambia el resultado.
-`--profile` escribe además `medicion.json` (etapa E0 de [plan-tipologias](../planes/plan-tipologias.md)): configuración
+`--profile` escribe además `medicion.json` (la medición E0 de D-074): configuración
 (SHA, máquina, procesos), número y tiempo de las tareas `single`, `covers`, `design`, `reassign` (coberturas de la
 reasignación) y `matrix` (matriz del MILP) por f'c, tramos cubiertos y rediseñados (la tabla tiene todos los tramos,
 n(n+1)/2, porque no depende de N), tiempo del proceso principal entre lotes (`main_s`), una

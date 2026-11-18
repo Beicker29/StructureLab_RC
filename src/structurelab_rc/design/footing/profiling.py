@@ -1,4 +1,4 @@
-"""Medición del diseño por tipologías (etapa E0 de docs/planes/plan-tipologias.md); no cambia el resultado.
+"""Medición del diseño por tipologías (la medición E0 de D-074 y D-075); no cambia el resultado.
 
 Corre el mismo `_design` de typologies con un ejecutor que cronometra cada tarea (también dentro de los procesos) y anota
 cuándo empieza y termina cada lote. Por cada f'c, `_for_fc` lanza tres lotes en orden (`single`, `covers`, `design`); el

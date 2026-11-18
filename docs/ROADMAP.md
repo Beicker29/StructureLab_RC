@@ -8,9 +8,10 @@ aprobado, oráculo, pruebas y huella antes de abrir la siguiente.
 cimentación nuevos), luego v3 fases 1, 2 y 4, luego v1 fases 2 a 5, luego v2. El diseño, el despiece y el dibujo se construyen en zapatas (v3 fases 3 y 4) con piezas
 neutras que después reutilizan las vigas (v1 fases 4 y 5).
 
-**Siguiente (2026-11-14, usuario):** el usuario valida en sus programas lo nuevo de la Fase 4 (el `.dli` en DL-NET:
-`U` como gancho de 180°, el campo `F0/90`, longitudes totales y grupos con más de dos elementos; el DXF en su CAD:
-capas por diámetro, leyendas y planta de geometría); después, un dibujo más profesional.
+**Siguiente (2026-11-17):** el usuario elige entre cerrar lo pendiente de cabezales (Fase 5, punto 6) y el siguiente
+tipo de la Fase 5. Además, el usuario valida en sus programas lo nuevo de la Fase 4 (el `.dli` en DL-NET: `U` como gancho
+de 180°, el campo `F0/90`, longitudes totales y grupos con más de dos elementos; el DXF en su CAD: capas por diámetro,
+leyendas y planta de geometría); después, un dibujo más profesional.
 
 **Pendiente sin fase:** correr de nuevo el diseño por tipologías desde ETABS con D-079 (N = 6 y curva costo–N); diferido
 por el usuario.
@@ -24,6 +25,8 @@ como mejora de la calidad del óptimo del diseño, no del tiempo.
 Hecho: zapata aislada (verificación, diseño por tipologías, estabilidad, concreto simple) y zapata combinada de dos
 columnas, rectangular y en T invertida (verificación y entrada desde ETABS, D-052 a D-087, D-093, D-106; diseño con
 estribos, torsión, cargas de ETABS y T, D-107 a D-113; torsión de placa, band superior y memoria por zona, D-114 a D-123).
+Cabezales sobre pilotes: verificación de una o varias columnas, con esquinas recortadas, despiece, dibujo y ETABS
+(D-138 a D-145), y diseño de cabezales de una columna (arreglos de pilotes y cabezal, también desde ETABS, D-141).
 
 ### Fase 1: zapatas combinadas completas
 
@@ -95,8 +98,16 @@ entrada desde ETABS si aplica); su diseño, despiece y dibujo se agregan con las
    con más de dos columnas. La T invertida de dos columnas está hecha (D-093).
 4. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
 5. Losas de cimentación.
-6. Pilotes y dados: la verificación del cabezal de una columna está hecha (D-138, con P1 a P4 de la guía CRSI);
-   siguen el diseño, la posición de la columna en la planta y el DXF, y los cabezales de varias columnas.
+6. Pilotes y dados (cabezales). Hecho: verificación de una o varias columnas (D-138, D-143, D-145, con P1 a P4 de la guía
+   CRSI y la franja de cada columna), esquinas recortadas (D-141, solo con una columna), diseño de una columna (D-141) y
+   convención de ETABS validada (D-144). Pendiente:
+   - diseño de cabezales de varias columnas;
+   - esquinas recortadas con varias columnas (hoy se rechazan: las franjas no usan el contorno, D-145);
+   - posición de la columna en la planta y en el DXF, y un dibujo más completo del cabezal;
+   - grupos de más de 16 pilotes en el punzonamiento de grupos (hoy BLOQUEADO);
+   - puntal-tensor y requisitos sísmicos de los pilotes (fuera del alcance actual);
+   - cobertura de oráculo: estados límite CRSI 4 a 6 con varias columnas, valor del perímetro común, importación con
+     `column_station` y desarrollo con varias columnas (pendiente de la auditoría de D-145).
 7. Muros.
 
 ## v1: vigas (pendientes)
