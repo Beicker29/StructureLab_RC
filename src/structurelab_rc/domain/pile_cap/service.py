@@ -114,7 +114,7 @@ def _eccentricity(cap: PileCap, case: CapCase, soil: PileCapSoil) -> Check:
 def _unresisted(cap: PileCap, case: CapCase) -> list[Check]:
     if case.unresisted <= _NEGLIGIBLE_MOMENT:
         return []
-    error = incomplete("Los pilotes estan alineados y no resisten el momento de la columna en la direccion normal a su eje: "
+    error = incomplete("Los pilotes estan alineados y no resisten el momento de las columnas en la direccion normal a su eje: "
                        "requiere vigas de amarre o pilotes que tomen momento (no se suponen)", member=cap.id, case=case.case)
     return [Check(UNRESISTED, Status.INCOMPLETE, (error,), "D-138", member=cap.id, case=case.case, demand=case.unresisted, unit="N*mm")]
 

@@ -45,12 +45,12 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
 
 ## Cálculo
 
-- **Reacciones con cargas de la columna:** el cabezal es rígido y los pilotes, articulados. La resultante (columna,
+- **Reacciones con cargas de las columnas:** el cabezal es rígido y los pilotes, articulados. La resultante (columnas,
   pesos y sobrecargas) y su momento en el plano de la cabeza de los pilotes se reparten como R = N/n ± momentos del
-  grupo. El cortante de la columna se reparte por igual. Si los pilotes están alineados, el momento normal a su eje
+  grupo. El cortante de las columnas se reparte por igual. Si los pilotes están alineados, el momento normal a su eje
   queda INCOMPLETO.
 - **Mala ubicación:** el brazo de cada pilote crece con la tolerancia del lado desfavorable, en la flexión y en el
-  cortante. Con cargas de la columna, además, una excentricidad accidental igual a la tolerancia, en la dirección más
+  cortante. Con cargas de las columnas, además, una excentricidad accidental igual a la tolerancia, en la dirección más
   desfavorable para cada pilote, cambia su reacción en ±ΔR, y con ACI la capacidad del pilote sube 10 % (13.4.1.4). Con
   cargas de los pilotes la tolerancia solo cambia los brazos.
 - **Revisiones geotécnicas** con los casos de servicio, como las de las zapatas (las capacidades se multiplican por
@@ -60,27 +60,27 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
   - capacidad del grupo: la carga vertical total frente a η·n·Qa;
   - sin sismo (D+L), la excentricidad de la resultante de las reacciones respecto al centroide del grupo frente a la
     máxima declarada.
-- **Flexión** en las caras de la columna con las reacciones concentradas en el centro de cada pilote, la acción de su
+- **Flexión** en las caras de las columnas (con varias, también entre ellas; ver [Varias columnas](#varias-columnas-d-143-d-145)) con las reacciones concentradas en el centro de cada pilote, la acción de su
   cabeza y el peso hacia abajo. As mínimo con la interpretación de la guía CRSI (4.5):
   máx(As, mín(ηbd, 4/3·As), mín(ηbd, ρt·b·h)) en la malla inferior, con η = máx(0.25√f'c, 1.4)/fy; en la superior,
   solo máx(As, mín(ηbd, 4/3·As)), y la retracción ρt·b·h se revisa con las dos mallas sumadas (D-140). No se admite
   concreto simple (ACI 14.1.4, NSR-10 C.22.2.1).
 - **Cortante** por secciones con la reacción interpolada entre dpile/2 afuera y dpile/2 adentro (ACI 13.4.6.7, NSR-10
   C.15.5.4): una dirección a d de las caras (ACI 22.5 con λs y, con pilotes a 4 diámetros o menos, el mayor entre ese y
-  0.17λ√f'c·bw·d de 13.4.6.8(a); NSR-10 C.11.2) y dos direcciones a d/2 de la columna. Con
-  pilotes dentro de d o d/2, los límites de la guía CRSI en la cara de la columna (estados límite 4 a 6, constantes
+  0.17λ√f'c·bw·d de 13.4.6.8(a); NSR-10 C.11.2) y dos direcciones a d/2 de cada columna. Con
+  pilotes dentro de d o d/2, los límites de la guía CRSI en la cara de cada columna (estados límite 4 a 6, constantes
   pasadas a SI con 0.083). Además, el punzonamiento de cada pilote, aislado (P1) o de esquina (P3), el de dos pilotes
   vecinos cuya falla conjunta es más corta (P2: L < π(dp + d)/2, b0 = π(dp + d) + 2L, vc de la norma con
   β = (L + dp)/dp) y el cortante en una dirección en la esquina (P4: b = 2·((Ex + Ey)/√2 + dp/2 + d), d ≤ 330 mm solo
   en b, vc = 0.166λ√f'c), todos con las reacciones mayoradas. Los grupos de 3 o más pilotes conexos (cada uno a
   L < π(dp + d)/2 de otro) punzonan en conjunto con b0 = perímetro de la envolvente convexa de sus centros + π(dp + d),
-  si es más corto que el de los pilotes aislados y no alcanza el perímetro crítico de la columna; en cada caso se
+  si es más corto que el de los pilotes aislados y no alcanza el perímetro crítico de ninguna columna; en cada caso se
   reporta el que gobierna (hasta 16 pilotes; con más, BLOQUEADO).
 - **Geometría:** d ≥ 300 mm (ACI 13.4.6.2; NSR-10 C.15.7, sobre el refuerzo inferior). En ACI también el empotramiento
   ≥ 75 mm y el borde ≥ 100 mm (13.4.6.3).
-- **Desarrollo, pasadores y aplastamiento:** los de la zapata aislada.
+- **Desarrollo, pasadores y aplastamiento:** los de la zapata aislada, por columna.
 
-## Varias columnas (D-143)
+## Varias columnas (D-143, D-145)
 
 - **Reacciones:** con las cargas de las columnas, la resultante de todas (con su pedestal y el relleno que desplazan) y
   de los pesos se reparte como con una columna; la mala ubicación usa la carga total.
@@ -89,17 +89,23 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
   cabeza, las columnas de ese lado (su fuerza vertical, su momento y su cortante a h/2 + pedestal) y el peso. Así sale
   el momento negativo entre columnas. Sin la carga de una columna de ese lado (cargas de los pilotes), la sección no se
   calcula de ese lado; si no se puede de ninguno, "Flexion: secciones" queda INCOMPLETO.
-- **Franja de cada columna:** en la dirección de menor separación entre columnas (la secundaria), de ancho igual al
-  lado de la columna más d/2 a cada lado, en voladizo desde sus dos caras hasta el borde, con la reacción de los
-  pilotes que caen en ella (fracción de 13.4.6.7 según la distancia al borde de la franja) menos el peso. Resistencia y
-  εt con el código de vigas en modo cimentación, As mínimo del cabezal en el ancho de la franja y cortante a d con el Vc
-  del cabezal. Si otra columna queda en la franja más allá de una cara, ese voladizo queda BLOQUEADO. La franja central
-  γs no aplica con varias columnas.
+- **Franja de cada columna (D-145):** con las columnas alineadas a lo largo de X (o de Y), en la otra dirección; si no
+  están alineadas, en las dos. Su ancho es el lado de la columna más d/2 a cada lado (recortado con el cabezal). Se
+  analiza por secciones dentro de su ancho, con el mismo cuerpo libre de la flexión a todo el ancho: las caras de las
+  columnas que tocan la franja y secciones cada 50 mm fuera de ellas, del lado con menos columnas de la franja (los dos
+  si empatan). Entran los pilotes con la fracción de 13.4.6.7 según la distancia de su centro al borde de la franja más
+  la tolerancia, las columnas que tocan la franja con toda su carga y el peso sobre ella. Se revisan la sección de mayor
+  momento positivo (malla inferior) y la de mayor negativo (superior): resistencia y εt con el código de vigas en modo
+  cimentación y As mínimo del cabezal en el ancho de la franja; y el cortante a d de las caras de sus columnas con +ΔR y
+  el Vc del cabezal. Las revisiones se llaman "Franja de la columna: …" y su nota dice la columna, la dirección de las
+  barras y la sección. Con columnas alineadas da los voladizos desde las caras. La franja central γs no aplica con varias
+  columnas.
 - **Cortante y punzonamiento:** cortante en una dirección a d de las caras de cada columna (sin las secciones que caen en
-  otra columna) y límites CRSI por columna; punzonamiento de cada columna y, si los perímetros a d/2 de varias se
+  otra columna) y límites CRSI por columna, con el mismo criterio de cuerpo libre (D-145); punzonamiento de cada columna y, si los perímetros a d/2 de varias se
   traslapan, del perímetro común (la caja que las contiene), con el mismo criterio de cuerpo libre.
 - **Desarrollo, pasadores y aplastamiento:** desarrollo desde la cara de cualquier columna más cercana al borde;
   pasadores y aplastamiento por columna, con su carga.
+- **Esquinas recortadas:** con varias columnas se rechazan por ahora (las franjas no usan el contorno recortado, D-145).
 
 ## Esquinas recortadas (D-141)
 
@@ -138,7 +144,7 @@ tienen solución).
 | --- | --- |
 | `id` | Identificador único. |
 | `loads_from` | `column`: `loads` de la columna; el diseño elige el número y el arreglo de los pilotes y el cabezal. `piles`: `piles[]` con `id`, `x`, `y` (mm, desde el eje de la columna) y `loads`, y `reactions_include_weight`; el arreglo queda declarado y se diseña solo el cabezal. |
-| `column` | `cx`, `cy` (mm). Con cargas de la columna va en el centroide del grupo. |
+| `column` | `cx`, `cy` (mm). Con cargas de la columna va en el centroide del grupo. El diseño es de una columna (D-141): por eso `column` y no `columns`; el cabezal diseñado sale con `columns` de una columna, `C1`. Los cabezales de varias columnas se verifican (D-143) y su diseño queda para una fase siguiente. |
 | `clipped_corners` | Solo con cargas de los pilotes: los recortes declarados (D-141). |
 
 Arreglos que se prueban con cargas de la columna (familias generadas con L y E; las distancias irracionales se redondean
@@ -182,7 +188,8 @@ de V y M. Las filas Max y Min son dos casos.
 
 ### Plantilla de diseño de ETABS (D-141)
 
-El proyecto de diseño con `etabs_files` y, en cada elemento de `caps`, `column_unique_name` (obligatorio). Con
+El proyecto de diseño con `etabs_files` y, en cada elemento de `caps`, `column_unique_name` (obligatorio, en el cabezal y
+no en `columns`, porque el diseño es de una columna). Con
 `loads_from: column` las cargas salen de las reacciones de esa columna en "Joint Reactions" y el cabezal no lleva
 pilotes (los elige el diseño). Con `loads_from: piles` cada pilote lleva `etabs_unique_name` (y `angle`, si aplica) y el
 cabezal `etabs_station`, como en la plantilla de verificación; sus coordenadas son desde el eje de la columna. Todos los

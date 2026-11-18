@@ -155,6 +155,9 @@ class PileCap(FootingBody):
         ids = [column.id for column in self.columns]
         if len(ids) != len(set(ids)):
             raise ValueError(f"el cabezal '{self.id}' repite una columna")
+        if self.clipped_corners and len(self.columns) > 1:
+            raise ValueError(f"el cabezal '{self.id}' tiene esquinas recortadas y varias columnas: falta implementacion (las "
+                             "franjas de las columnas no usan el contorno recortado, D-145)")
         outline = self.outline
         for column in self.columns:
             corners = [(column.offset_x + sx * column.cx / 2, column.offset_y + sy * column.cy / 2) for sx, sy in _CORNER_SIGNS.values()]

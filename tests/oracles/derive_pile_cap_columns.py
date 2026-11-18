@@ -14,9 +14,10 @@ cargas de las columnas (sin pedestal). Unidades de trabajo: N y mm.
 4. Cortante (barras x) a d de las caras, con la fracción 0.5 + brazo/dp (entre 0 y 1) de cada reacción, menos las
    columnas y el peso más allá; Vc del perfil (ACI con pilotes a 4D o menos: el mayor con 0.17√f'c·b·d). Gobierna el de
    mayor razón.
-5. Franja de cada columna (dirección Y, la secundaria): ancho cx + d (d de las barras y), en voladizo desde la cara +Y;
-   cada pilote más allá carga la fracción 0.5 + (distancia al borde de la franja)/dp de su reacción. M en la cara y V a d
-   (con la fracción también a lo largo), con +ΔR y −ΔR.
+5. Franja de cada columna (dirección Y; las columnas están alineadas en X): ancho cx + d (d de las barras y); la otra
+   columna no la toca. Cada pilote carga la fracción 0.5 + (distancia al borde de la franja + t)/dp de su reacción (D-145).
+   Momento en las caras ±Y y cada 50 mm fuera de la columna (el lado sin columna), con +ΔR y −ΔR: los gobernantes de cada
+   signo; cortante a d de las caras con +ΔR y la fracción también a lo largo, el de mayor razón.
 6. Punzonamiento: la fuerza que atraviesa el perímetro a d/2 (d promedio) de cada columna desde afuera (pilotes con la
    fracción de 13.4.6.7, menos el peso de afuera y la otra columna) y desde adentro (la columna más el peso de adentro
    menos el resto de las reacciones) y, si los dos perímetros se traslapan (luz entre caras menor que d), la del perímetro
@@ -167,24 +168,49 @@ def _one_way(folder: str, case: dict) -> dict:
     return {"name": "Cortante en una direccion (barras x)", "demand": worst[1], "capacity": worst[2]}
 
 
-def _strip(case: dict, x_column: float, sense: float) -> tuple[float, float]:
-    """(M en la cara +Y, V a d de ella) de la franja de la columna en x_column."""
+def _strip_section(case: dict, x_column: float, plane: float, outward: float, sense: float) -> tuple[float, float]:
+    """(M, V con la reacción interpolada a lo largo) más allá del plano y = plane, del lado outward, dentro de la franja de
+    la columna en x_column (ancho cx + d de las barras y; la otra columna no la toca). La tolerancia acerca el pilote a la
+    franja (D-145)."""
     x0, x1 = max(x_column - SIZE / 2 - DY / 2, -LX / 2), min(x_column + SIZE / 2 + DY / 2, LX / 2)
     _, vy = case["head"]
-    plane = SIZE / 2
     moment = shear = 0.0
     for (x, y), r, dr in zip(PILES, case["R"], case["dR"], strict=True):
-        portion = _share(min(x - x0, x1 - x))
+        portion = _share(min(x - x0, x1 - x) + TOL)
         if portion <= 0:
             continue
         reaction = portion * (r + sense * dr)
-        arm = (y - plane) + TOL
-        shear += _share(arm - DY) * reaction
+        arm = outward * (y - plane) + TOL
+        shear += _share(arm) * reaction
         if arm > 0:
-            moment += reaction * arm + portion * (-(EMBED - H / 2) * vy)
-    length = LY / 2 - plane
+            moment += reaction * arm + portion * outward * (-(EMBED - H / 2) * vy)
+    length = LY / 2 - outward * plane
     width = x1 - x0
-    return moment - case["q"] * width * length * length / 2, shear - case["q"] * width * max(length - DY, 0.0)
+    return moment - case["q"] * width * length * length / 2, shear - case["q"] * width * length
+
+
+def _strip(folder: str, case: dict, x_column: float) -> dict:
+    """Momentos gobernantes (el mayor positivo y el mayor negativo, |M| > 1 kN·m) con +ΔR y −ΔR en las caras ±Y de la
+    columna y en secciones cada 50 mm fuera de ella (el lado sin columna), y el cortante a d de las caras con +ΔR, el de
+    mayor razón."""
+    planes = [(SIZE / 2, 1.0), (-SIZE / 2, -1.0)]
+    planes += [(-LY / 2 + 50.0 * k, 1.0 if -LY / 2 + 50.0 * k > 0 else -1.0) for k in range(1, int(LY // 50.0))
+               if abs(-LY / 2 + 50.0 * k) > SIZE / 2 + 1e-6 and -LY / 2 + 50.0 * k < LY / 2 - 1e-6]
+    demands = []
+    for sense in (1.0, -1.0):
+        values = [_strip_section(case, x_column, plane, outward, sense)[0] for plane, outward in planes]
+        demands += [value for value in (max(values), min(values)) if abs(value) > 1e3]
+    x0, x1 = max(x_column - SIZE / 2 - DY / 2, -LX / 2), min(x_column + SIZE / 2 + DY / 2, LX / 2)
+    bars = sum(1 for position in _positions(LX, 22.2, 150.0) if x0 - 1e-6 <= position <= x1 + 1e-6)
+    rho = bars * 387.0 / ((x1 - x0) * DY)
+    worst = None
+    for face, outward in ((SIZE / 2, 1.0), (-SIZE / 2, -1.0)):
+        moment, shear = _strip_section(case, x_column, face + outward * DY, outward, 1.0)
+        capacity = 0.75 * _vc(folder, x1 - x0, DY, rho, abs(shear), abs(moment))
+        if worst is None or abs(shear) / capacity > worst[0]:
+            worst = (abs(shear) / capacity, abs(shear))
+    assert worst is not None
+    return {"moments": sorted(abs(value) for value in demands), "shear": worst[1]}
 
 
 def _punching(case: dict) -> list[dict]:
@@ -228,8 +254,7 @@ def main() -> None:
                         sections.append({"case": name + suffix, "plane": plane, "moments": values})
                 entry["sections"] = sections
                 entry["one_way"] = _one_way(folder, case)
-                entry["strips"] = [{"column": column, "moments": sorted(_strip(case, x, s)[0] for s in (1.0, -1.0)),
-                                    "shears": sorted(abs(_strip(case, x, s)[1]) for s in (1.0, -1.0))} for column, x, _ in COLUMNS]
+                entry["strips"] = [{"column": column, **_strip(folder, case, x)} for column, x, _ in COLUMNS]
                 entry["punching"] = _punching(case)
             cases.append(entry)
         data = {"description": "Oraculo del cabezal de dos columnas (D-143), derivado por tests/oracles/derive_pile_cap_columns.py",

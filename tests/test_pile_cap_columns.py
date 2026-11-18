@@ -57,13 +57,12 @@ def test_shear_strips_and_punching_match_oracle(profile: str) -> None:
         assert one_way[0].demand == pytest.approx(expected["one_way"]["demand"], rel=tolerance)
         assert one_way[0].capacity == pytest.approx(expected["one_way"]["capacity"], rel=tolerance)
         for strip in expected["strips"]:
-            note = f"Franja de la columna {strip['column']}, cara +Y"
-            strength = sorted(check.demand or 0.0 for check in checks
-                              if check.case == name and check.name == "Flexion: resistencia" and check.note.startswith(note))
+            title = f"Franja de la columna {strip['column']} (barras y)"
+            own = [check for check in checks if check.case == name and check.note.startswith(title)]
+            strength = sorted(abs(check.demand or 0.0) for check in own if check.name == "Franja de la columna: resistencia")
             assert strength == pytest.approx(strip["moments"], rel=tolerance), strip
-            shears = sorted(check.demand or 0.0 for check in checks
-                            if check.case == name and check.name == "Franja de la columna: cortante" and check.note.startswith(note))
-            assert shears == pytest.approx(strip["shears"], rel=tolerance), strip
+            shears = [check.demand for check in own if check.name == "Franja de la columna: cortante"]
+            assert shears == pytest.approx([strip["shear"]], rel=tolerance), strip
         punching = [check for check in checks if check.name == "Punzonamiento" and check.case == name]
         assert len(punching) == len(expected["punching"])  # sin perímetro común si no se traslapan
         for area in expected["punching"]:
@@ -128,3 +127,39 @@ def test_etabs_template_reads_each_column(tmp_path: Path) -> None:
     assert [column["id"] for column in columns] == ["C1", "C2"]
     assert columns[0]["loads"] and columns[1]["loads"]
     assert columns[0]["loads"] != columns[1]["loads"]
+
+
+def _grid(profile: str) -> tuple[dict[str, Any], Basis, PileCap, PileCapSoil]:
+    oracle: dict[str, Any] = json.loads((ORACLES / FOLDERS[profile] / "derived_pile_cap_grid.json").read_text(encoding="utf-8"))
+    basis = Basis(PROFILES[profile], Materials.model_validate(oracle["materials"]), BARS, oracle["seismic_level"])
+    return oracle, basis, PileCap.model_validate(oracle["cap"]), PileCapSoil.model_validate(oracle["soil"])
+
+
+@pytest.mark.parametrize("profile", FOLDERS)
+def test_grid_strips_match_oracle(profile: str) -> None:
+    """Cuatro columnas en cuadrícula (D-145): franjas en las dos direcciones, con la columna vecina dentro de la franja."""
+    oracle, basis, cap, soil = _grid(profile)
+    tolerance = oracle["tolerance_rel"]
+    analysis = cap_analysis(basis, cap, soil)
+    cases = {item.case: item for item in analysis.cases}
+    checks = pile_cap_checks(basis, cap, soil)
+    assert not [check for check in checks if check.status is Status.BLOCKED]
+    for expected in oracle["cases"]:
+        assert cases[expected["case"]].forces.reactions == pytest.approx(expected["R"], rel=tolerance)
+        for strip in expected.get("strips", []):
+            title = f"Franja de la columna {strip['column']} (barras {strip['along']})"
+            own = [check for check in checks if check.case == expected["case"] and check.note.startswith(title)]
+            strength = sorted(abs(check.demand or 0.0) for check in own if check.name == "Franja de la columna: resistencia")
+            assert strength == pytest.approx(strip["moments"], rel=tolerance), strip
+            shears = [check.demand for check in own if check.name == "Franja de la columna: cortante"]
+            assert shears == ([] if strip["shear"] is None else pytest.approx([strip["shear"]], rel=tolerance)), strip
+
+
+def test_clipped_corners_with_several_columns_are_rejected() -> None:
+    """Las franjas no usan el contorno recortado: esquinas recortadas con varias columnas se rechazan (D-145)."""
+    from pydantic import ValidationError
+
+    oracle, _, _, _ = _setup("aci-318-25")
+    data = {**oracle["cap"], "clipped_corners": [{"corner": "+x+y", "along_x": 200.0, "along_y": 200.0}]}
+    with pytest.raises(ValidationError, match="esquinas recortadas y varias columnas"):
+        PileCap.model_validate(data)

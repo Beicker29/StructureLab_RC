@@ -1,0 +1,641 @@
+{
+ "description": "Oraculo del cabezal de cuatro columnas (D-145), derivado por tests/oracles/derive_pile_cap_grid.py",
+ "materials": {
+  "fc": 28.0,
+  "fy": 420.0,
+  "fyt": 420.0,
+  "concrete": "normalweight",
+  "coating": "uncoated",
+  "max_aggregate": 19.0
+ },
+ "seismic_level": "special",
+ "tolerance_rel": 1e-06,
+ "cap": {
+  "id": "G",
+  "loads_from": "column",
+  "lx": 3400.0,
+  "ly": 3400.0,
+  "h": 1100.0,
+  "cover": 75.0,
+  "bottom_cover": 150.0,
+  "fill_height": 600.0,
+  "pedestal_height": 0.0,
+  "surcharge_dead_kNm2": 2.0,
+  "surcharge_live_kNm2": 5.0,
+  "columns": [
+   {
+    "id": "C1",
+    "cx": 500.0,
+    "cy": 500.0,
+    "offset_x": -700.0,
+    "offset_y": -700.0,
+    "dowels": {
+     "designation": "#6",
+     "count": 8,
+     "end": "hook90"
+    },
+    "loads": [
+     {
+      "case": "S1",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "seismic": false,
+      "P_kN": 1500.0,
+      "Vx_kN": 5.0,
+      "Vy_kN": 4.0,
+      "Mx_kNm": -8.0,
+      "My_kNm": 9.0
+     },
+     {
+      "case": "U1",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.6,
+      "seismic": false,
+      "P_kN": 2150.0,
+      "Vx_kN": 8.0,
+      "Vy_kN": 6.0,
+      "Mx_kNm": -12.0,
+      "My_kNm": 14.0
+     },
+     {
+      "case": "U2",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 1950.0,
+      "Vx_kN": 90.0,
+      "Vy_kN": 20.0,
+      "Mx_kNm": -25.0,
+      "My_kNm": 180.0
+     }
+    ]
+   },
+   {
+    "id": "C2",
+    "cx": 500.0,
+    "cy": 500.0,
+    "offset_x": 700.0,
+    "offset_y": -700.0,
+    "dowels": {
+     "designation": "#6",
+     "count": 8,
+     "end": "hook90"
+    },
+    "loads": [
+     {
+      "case": "S1",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "seismic": false,
+      "P_kN": 1350.0,
+      "Vx_kN": 5.0,
+      "Vy_kN": 4.0,
+      "Mx_kNm": -8.0,
+      "My_kNm": 9.0
+     },
+     {
+      "case": "U1",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.6,
+      "seismic": false,
+      "P_kN": 1935.0,
+      "Vx_kN": 8.0,
+      "Vy_kN": 6.0,
+      "Mx_kNm": -12.0,
+      "My_kNm": 14.0
+     },
+     {
+      "case": "U2",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 1755.0,
+      "Vx_kN": 90.0,
+      "Vy_kN": 20.0,
+      "Mx_kNm": -25.0,
+      "My_kNm": 180.0
+     }
+    ]
+   },
+   {
+    "id": "C3",
+    "cx": 500.0,
+    "cy": 500.0,
+    "offset_x": -700.0,
+    "offset_y": 700.0,
+    "dowels": {
+     "designation": "#6",
+     "count": 8,
+     "end": "hook90"
+    },
+    "loads": [
+     {
+      "case": "S1",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "seismic": false,
+      "P_kN": 1200.0,
+      "Vx_kN": 5.0,
+      "Vy_kN": 4.0,
+      "Mx_kNm": -8.0,
+      "My_kNm": 9.0
+     },
+     {
+      "case": "U1",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.6,
+      "seismic": false,
+      "P_kN": 1720.0,
+      "Vx_kN": 8.0,
+      "Vy_kN": 6.0,
+      "Mx_kNm": -12.0,
+      "My_kNm": 14.0
+     },
+     {
+      "case": "U2",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 1560.0,
+      "Vx_kN": 90.0,
+      "Vy_kN": 20.0,
+      "Mx_kNm": -25.0,
+      "My_kNm": 180.0
+     }
+    ]
+   },
+   {
+    "id": "C4",
+    "cx": 500.0,
+    "cy": 500.0,
+    "offset_x": 700.0,
+    "offset_y": 700.0,
+    "dowels": {
+     "designation": "#6",
+     "count": 8,
+     "end": "hook90"
+    },
+    "loads": [
+     {
+      "case": "S1",
+      "kind": "service",
+      "dead_factor": 1.0,
+      "live_factor": 1.0,
+      "seismic": false,
+      "P_kN": 1650.0000000000002,
+      "Vx_kN": 5.0,
+      "Vy_kN": 4.0,
+      "Mx_kNm": -8.0,
+      "My_kNm": 9.0
+     },
+     {
+      "case": "U1",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.6,
+      "seismic": false,
+      "P_kN": 2365.0,
+      "Vx_kN": 8.0,
+      "Vy_kN": 6.0,
+      "Mx_kNm": -12.0,
+      "My_kNm": 14.0
+     },
+     {
+      "case": "U2",
+      "kind": "factored",
+      "dead_factor": 1.2,
+      "live_factor": 1.0,
+      "seismic": true,
+      "P_kN": 2145.0,
+      "Vx_kN": 90.0,
+      "Vy_kN": 20.0,
+      "Mx_kNm": -25.0,
+      "My_kNm": 180.0
+     }
+    ]
+   }
+  ],
+  "bottom": {
+   "first": "x",
+   "x": {
+    "designation": "#8",
+    "spacing": 130.0,
+    "end": "hook90"
+   },
+   "y": {
+    "designation": "#8",
+    "spacing": 130.0,
+    "end": "hook90"
+   }
+  },
+  "top": {
+   "first": "x",
+   "x": {
+    "designation": "#5",
+    "spacing": 200.0,
+    "end": "hook90"
+   },
+   "y": {
+    "designation": "#5",
+    "spacing": 200.0,
+    "end": "hook90"
+   }
+  },
+  "pile": {
+   "shape": "circular",
+   "size": 400.0,
+   "embedment": 75.0
+  },
+  "mislocation_mm": 75.0,
+  "piles": [
+   {
+    "id": "P1",
+    "x": -1200.0,
+    "y": -1200.0
+   },
+   {
+    "id": "P2",
+    "x": 0.0,
+    "y": -1200.0
+   },
+   {
+    "id": "P3",
+    "x": 1200.0,
+    "y": -1200.0
+   },
+   {
+    "id": "P4",
+    "x": -1200.0,
+    "y": 0.0
+   },
+   {
+    "id": "P5",
+    "x": 0.0,
+    "y": 0.0
+   },
+   {
+    "id": "P6",
+    "x": 1200.0,
+    "y": 0.0
+   },
+   {
+    "id": "P7",
+    "x": -1200.0,
+    "y": 1200.0
+   },
+   {
+    "id": "P8",
+    "x": 0.0,
+    "y": 1200.0
+   },
+   {
+    "id": "P9",
+    "x": 1200.0,
+    "y": 1200.0
+   }
+  ]
+ },
+ "soil": {
+  "unit_weight_concrete_kNm3": 24.0,
+  "unit_weight_fill_kNm3": 18.0,
+  "pile_capacity_compression_kN": 1500.0,
+  "pile_capacity_tension_kN": 300.0,
+  "pile_capacity_lateral_kN": 120.0,
+  "seismic_capacity_factor": 1.33,
+  "group_efficiency": 0.85,
+  "max_eccentricity_mm": 150.0
+ },
+ "cases": [
+  {
+   "case": "S1",
+   "kind": "service",
+   "R": [
+    644391.8888888889,
+    681405.7777777778,
+    718419.6666666666,
+    651114.1111111111,
+    688128.0,
+    725141.8888888889,
+    657836.3333333334,
+    694850.2222222222,
+    731864.1111111111
+   ],
+   "dR": [
+    91233.7453358131,
+    64512.0,
+    91233.7453358131,
+    64512.0,
+    0.0,
+    64512.0,
+    91233.7453358131,
+    64512.0,
+    91233.7453358131
+   ]
+  },
+  {
+   "case": "U1",
+   "kind": "factored",
+   "R": [
+    911655.8222222222,
+    965794.7111111111,
+    1019933.6,
+    921739.1555555556,
+    975878.0444444445,
+    1030016.9333333333,
+    931822.488888889,
+    985961.3777777778,
+    1040100.2666666667
+   ],
+   "dR": [
+    129384.37178207506,
+    91488.56666666667,
+    129384.37178207506,
+    91488.56666666667,
+    0.0,
+    91488.56666666667,
+    129384.37178207506,
+    91488.56666666667,
+    129384.37178207506
+   ],
+   "strips": [
+    {
+     "along": "x",
+     "column": "C1",
+     "members": [
+      "C1",
+      "C2"
+     ],
+     "moments": [
+      6328719.360000001,
+      6328719.360000001,
+      1145929683.6955388,
+      1920084713.1580718
+     ],
+     "shear": null
+    },
+    {
+     "along": "x",
+     "column": "C2",
+     "members": [
+      "C1",
+      "C2"
+     ],
+     "moments": [
+      6328719.360000001,
+      6328719.360000001,
+      1145929683.6955388,
+      1920084713.1580718
+     ],
+     "shear": null
+    },
+    {
+     "along": "x",
+     "column": "C3",
+     "members": [
+      "C3",
+      "C4"
+     ],
+     "moments": [
+      6328719.360000001,
+      6328719.360000001,
+      1139741283.521928,
+      1913896312.984462
+     ],
+     "shear": null
+    },
+    {
+     "along": "x",
+     "column": "C4",
+     "members": [
+      "C3",
+      "C4"
+     ],
+     "moments": [
+      6328719.360000001,
+      6328719.360000001,
+      1139741283.521928,
+      1913896312.984462
+     ],
+     "shear": null
+    },
+    {
+     "along": "y",
+     "column": "C1",
+     "members": [
+      "C1",
+      "C3"
+     ],
+     "moments": [
+      6216878.08,
+      6216878.08,
+      1101798943.2139413,
+      1865932543.8052251
+     ],
+     "shear": null
+    },
+    {
+     "along": "y",
+     "column": "C2",
+     "members": [
+      "C2",
+      "C4"
+     ],
+     "moments": [
+      6216878.08,
+      6216878.08,
+      1060927206.2347748,
+      1825060806.8260581
+     ],
+     "shear": null
+    },
+    {
+     "along": "y",
+     "column": "C3",
+     "members": [
+      "C1",
+      "C3"
+     ],
+     "moments": [
+      6216878.08,
+      6216878.08,
+      1101798943.2139413,
+      1865932543.8052251
+     ],
+     "shear": null
+    },
+    {
+     "along": "y",
+     "column": "C4",
+     "members": [
+      "C2",
+      "C4"
+     ],
+     "moments": [
+      6216878.08,
+      6216878.08,
+      1060927206.2347748,
+      1825060806.8260581
+     ],
+     "shear": null
+    }
+   ]
+  },
+  {
+   "case": "U2",
+   "kind": "factored",
+   "R": [
+    673469.1555555557,
+    862635.8222222223,
+    1051802.488888889,
+    698746.9333333335,
+    887913.6000000001,
+    1077080.2666666668,
+    724024.7111111112,
+    913191.3777777778,
+    1102358.0444444446
+   ],
+   "dR": [
+    117721.82393770493,
+    83241.9,
+    117721.82393770493,
+    83241.9,
+    0.0,
+    83241.9,
+    117721.82393770493,
+    83241.9,
+    117721.82393770493
+   ],
+   "strips": [
+    {
+     "along": "x",
+     "column": "C1",
+     "members": [
+      "C1",
+      "C2"
+     ],
+     "moments": [
+      6389867.270897646,
+      15331456.459657896,
+      1272374946.7652724,
+      1976748595.7897294
+     ],
+     "shear": null
+    },
+    {
+     "along": "x",
+     "column": "C2",
+     "members": [
+      "C1",
+      "C2"
+     ],
+     "moments": [
+      6389867.270897646,
+      15331456.459657896,
+      1272374946.7652724,
+      1976748595.7897294
+     ],
+     "shear": null
+    },
+    {
+     "along": "x",
+     "column": "C3",
+     "members": [
+      "C3",
+      "C4"
+     ],
+     "moments": [
+      5983767.36,
+      14067567.570769008,
+      937624946.7652719,
+      1641998595.7897284
+     ],
+     "shear": null
+    },
+    {
+     "along": "x",
+     "column": "C4",
+     "members": [
+      "C3",
+      "C4"
+     ],
+     "moments": [
+      5983767.36,
+      14067567.570769008,
+      937624946.7652719,
+      1641998595.7897284
+     ],
+     "shear": null
+    },
+    {
+     "along": "y",
+     "column": "C1",
+     "members": [
+      "C1",
+      "C3"
+     ],
+     "moments": [
+      5878022.079999999,
+      5878022.079999999,
+      722401561.2836745,
+      1417657100.6868818
+     ],
+     "shear": null
+    },
+    {
+     "along": "y",
+     "column": "C2",
+     "members": [
+      "C2",
+      "C4"
+     ],
+     "moments": [
+      5878022.079999999,
+      5878022.079999999,
+      1244189052.6031187,
+      1939444592.0063264
+     ],
+     "shear": null
+    },
+    {
+     "along": "y",
+     "column": "C3",
+     "members": [
+      "C1",
+      "C3"
+     ],
+     "moments": [
+      5878022.079999999,
+      5878022.079999999,
+      722401561.2836745,
+      1417657100.6868818
+     ],
+     "shear": null
+    },
+    {
+     "along": "y",
+     "column": "C4",
+     "members": [
+      "C2",
+      "C4"
+     ],
+     "moments": [
+      5878022.079999999,
+      5878022.079999999,
+      1244189052.6031187,
+      1939444592.0063264
+     ],
+     "shear": null
+    }
+   ]
+  }
+ ]
+}

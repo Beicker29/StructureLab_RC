@@ -2853,6 +2853,41 @@
 - **Decisión del usuario:** se conserva `angle` en pilotes y columnas de la plantilla, para elementos con los ejes locales
   rotados.
 
+### D-145: franjas de columna por secciones y consistencia del bloque de cabezales
+
+- **Pedido del usuario:** resolver la franja con otra columna más allá de la cara (antes BLOQUEADO) y auditar la
+  consistencia de todo el bloque de cabezales, con la filosofía DRY del repositorio.
+- **Franjas (decisión del usuario):** se analizan por secciones de cuerpo libre dentro de su ancho, con el criterio de
+  D-143 (lado con menos columnas de la franja, los dos si empatan): caras de las columnas que tocan la franja y secciones
+  cada 50 mm fuera de ellas. Con las columnas alineadas, la franja va en la dirección perpendicular; si no, en las dos. Se
+  revisan la sección de mayor momento positivo y la de mayor negativo (resistencia y εt de vigas, As mínimo del cabezal)
+  y el cortante a d de las caras. Con columnas alineadas reproduce los voladizos de D-143.
+- **Decisiones del usuario sobre la auditoría:**
+  1. La fracción con que un pilote carga la franja suma la tolerancia de mala ubicación, como en las secciones y el
+     punzonamiento.
+  2. Esquinas recortadas con varias columnas: se rechazan hasta implementarlas en las franjas.
+  3. Una columna que toca la franja entra completa, aunque su eje quede afuera.
+  4. Los estados límite CRSI 5 y 6 usan la regla de cuerpo libre de D-143 (gobierna el mayor; INCOMPLETE solo si ningún
+     lado se puede calcular). Con una columna no cambian.
+- **Consistencia y DRY (sin cambio de resultados):** la acción de la cabeza de los pilotes y de las columnas en un cuerpo
+  libre (`FactoredCap.pile_head`, `column_head`, `column_action`), las caras de una columna (`column_faces_along`) y el
+  lado del cuerpo libre (`free_sides`, con `members`) tienen una sola fuente en `domain/pile_cap/loads.py`, usada por las
+  secciones, el cortante, el punzonamiento y las franjas; λ y la cercanía de los pilotes, en `shear.cap_strength`; la
+  razón que elige la revisión que gobierna, en `shear.check_ratio`; las barras dentro de un rango, en
+  `mesh.positions_within` (también para la zapata combinada y su despiece). El cortante de la franja se revisa con +ΔR,
+  como el del cabezal. Las revisiones de la franja llevan un solo prefijo ("Franja de la columna: resistencia",
+  "…: deformacion neta de traccion", "…: acero minimo", "…: cortante"); las INCOMPLETE de secciones llevan su numeral; el
+  INCOMPLETE del punzonamiento nombra solo las columnas sin carga. Textos y documentación en plural donde aplican a varias
+  columnas; el formato aclara que el diseño (D-141) es de una columna.
+- **Oráculo y ejemplos:** `derive_pile_cap_grid.py` (caso G: cuatro columnas en cuadrícula 2 × 2 sobre nueve pilotes, con
+  franjas en las dos direcciones y la columna vecina dentro de la franja); el caso F se ajusta a la tolerancia en la
+  franja y a la sección gobernante. Ejemplo `cabezal_cuatro_columnas` en los dos perfiles, con su copia en `pruebas/`.
+- **Diferencias:** los cabezales de una columna no cambian en sus verificaciones (sí dos líneas de las convenciones de la
+  memoria); `cabezal_dos_columnas` cambia en las franjas (tolerancia, una revisión por signo y sección gobernante, nombres
+  y cortante solo con +ΔR).
+- **Pendiente de la auditoría:** cobertura de oráculo para los estados límite CRSI 4 a 6 con varias columnas, el valor
+  del perímetro común, la importación con `column_station` y el desarrollo con varias columnas.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

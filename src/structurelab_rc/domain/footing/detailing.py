@@ -43,7 +43,7 @@ from structurelab_rc.domain.footing.connection import bar_anchorage
 from structurelab_rc.domain.footing.flexure import FaceMoments, face_moments
 from structurelab_rc.domain.footing.inverted_t import flange_envelope
 from structurelab_rc.domain.footing.loads import combined_factored_cases, factored_cases
-from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows
+from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, positions_within, top_rows
 from structurelab_rc.errors import StructuredError
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting
@@ -257,10 +257,6 @@ def footing_runs(basis: Basis, footing: FootingBody, envelope: Envelope | None, 
     return runs
 
 
-def _inside_count(row: BarRow, limits: tuple[float, float]) -> int:
-    return sum(1 for position in row.positions if limits[0] - 1e-6 <= position <= limits[1] + 1e-6)
-
-
 class _CombinedRatios:
     """As provisto / As requerido por análisis de cada grupo de barras de la combinada rectangular (D-129), con las
     envolventes de la verificación: viga larga (Wood-Armer) para las barras x, franja de cada columna para su band, band
@@ -288,7 +284,7 @@ class _CombinedRatios:
         if not self.valid:
             return None
         limits = strip_limits(self.footing, self.footing.columns[index], self.depth)
-        provided = _inside_count(row, limits) * row.bar_area
+        provided = len(positions_within(row, limits)) * row.bar_area
         if provided <= 0:
             return math.inf
         section = (limits[1] - limits[0], self.footing.h, row.depth)

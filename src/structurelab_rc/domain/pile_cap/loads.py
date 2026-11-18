@@ -1,16 +1,20 @@
-"""Acción de cada pilote sobre el cabezal en cada caso (D-138).
+"""Acción de cada pilote sobre el cabezal en cada caso (D-138) y cuerpos libres de sus secciones (D-143).
 
-Con las cargas de la columna, el cabezal es rígido y los pilotes, articulados (guía CRSI, cap. 3): la resultante N de la
-columna, los pesos y las sobrecargas (domain/footing/base.py) y su momento en el plano de la cabeza de los pilotes se
-reparten como R_i = N/n + b·dx_i + c·dy_i, con (dx, dy) respecto al centroide del grupo y (b, c) del equilibrio de
-momentos Σ R·dx = My y Σ R·dy = −Mx (pseudoinversa si los pilotes están alineados; el momento que el grupo no resiste se
-reporta). El cortante de la columna se reparte por igual. Con las cargas de los pilotes, sus fuerzas y momentos se toman
-tal cual, más el peso repartido por igual si sus reacciones no lo incluyen.
+Con las cargas de las columnas, el cabezal es rígido y los pilotes, articulados (guía CRSI, cap. 3): la resultante N de
+las columnas (con su pedestal y lo que desplazan), los pesos y las sobrecargas y su momento en el plano de la cabeza de
+los pilotes se reparten como R_i = N/n + b·dx_i + c·dy_i, con (dx, dy) respecto al centroide del grupo y (b, c) del
+equilibrio de momentos Σ R·dx = My y Σ R·dy = −Mx (pseudoinversa si los pilotes están alineados; el momento que el grupo
+no resiste se reporta). El cortante de las columnas se reparte por igual. Con las cargas de los pilotes, sus fuerzas y
+momentos se toman tal cual, más el peso repartido por igual si sus reacciones no lo incluyen.
 
 Mala ubicación (13.4.1.4, D-138): la excentricidad accidental de magnitud igual a la tolerancia, en la dirección más
-desfavorable para cada pilote, cambia su reacción en ±|N|·t·|K⁺·(dx, dy)|. Se aplica solo con las cargas de la columna
+desfavorable para cada pilote, cambia su reacción en ±|N|·t·|K⁺·(dx, dy)|. Se aplica solo con las cargas de las columnas
 (a la capacidad de los pilotes y a las solicitaciones del cabezal); con las de los pilotes la tolerancia solo cambia los
 brazos (decisión del usuario, D-138).
+
+Una sola fuente de la acción de los pilotes y de las columnas en un cuerpo libre (pile_head, column_head, column_action),
+de las caras de una columna (column_faces_along) y del lado del cuerpo libre (free_sides: el que tiene menos columnas,
+los dos si empatan, D-143), que usan las secciones, el cortante, el punzonamiento y las franjas.
 """
 
 import math
@@ -204,14 +208,14 @@ def cap_cases(cap: PileCap, weights: UnitWeighted) -> list[CapCase]:
 
 
 def spread_on_cap(cap: PileCap) -> bool:
-    """Si la mala ubicación cambia también las reacciones: solo con las cargas de la columna (D-138)."""
+    """Si la mala ubicación cambia también las reacciones: solo con las cargas de las columnas (D-138)."""
     return not cap.from_piles
 
 
 AXES = {"x": 0, "y": 1}
 
 
-_SCAN_STEP = 50.0  # mm: separación de las secciones de flexión entre columnas (D-143)
+SCAN_STEP = 50.0  # mm: separación de las secciones de flexión entre columnas y en las franjas (D-143, D-145)
 _ON_PLANE = 1e-6  # mm
 
 
@@ -232,6 +236,33 @@ class FactoredCap:
     def reaction(self, index: int) -> float:
         return self.case.reaction(index, self.sense)
 
+    def pile_head(self, index: int) -> tuple[float, float]:
+        """La acción de la cabeza de un pilote respecto al eje de la sección (a media altura): (alrededor de X,
+        alrededor de Y) = (Mx − (e − h/2)·Vy, −(My + (e − h/2)·Vx)), en N·mm."""
+        cap = self.cap
+        lever = cap.pile.embedment - cap.h / 2
+        (vx, vy), (mx, my) = self.case.forces.shears[index], self.case.forces.moments[index]
+        return mx - lever * vy, -(my + lever * vx)
+
+    def column_head(self, index: int) -> tuple[float, float, float] | None:
+        """La acción de una columna sobre el cabezal (D-143): (fuerza vertical hacia abajo, momento alrededor de X,
+        alrededor de Y) con su base a h/2 + pedestal del eje de la sección; None si su carga no se conoce."""
+        vertical, load = self.verticals[index], self.case.columns[index]
+        if vertical is None or load is None:
+            return None
+        top = self.cap.h / 2 + self.cap.pedestal_height
+        return vertical, load.mx - top * load.vy, -(load.my + top * load.vx)
+
+    def column_action(self, index: int, axis: int, plane: float, outward: float) -> tuple[float, float] | None:
+        """(momento respecto al plano, cortante) de una columna más allá del plano normal a x (axis = 0) o a y."""
+        head = self.column_head(index)
+        if head is None:
+            return None
+        vertical, about_x, about_y = head
+        column = self.cap.columns[index]
+        arm = outward * ((column.offset_x, column.offset_y)[axis] - plane)
+        return -vertical * arm + outward * (about_y if axis == 0 else about_x), -vertical
+
     def columns_beyond(self, axis: int, plane: float, outward: float) -> list[int]:
         """Las columnas cuyo eje queda más allá del plano, del lado outward."""
         return [index for index, column in enumerate(self.cap.columns)
@@ -250,7 +281,7 @@ class FactoredCap:
         y la acción de su base a h/2 + pedestal del eje de la sección; las de carga desconocida no cuentan (ver missing).
         El peso del cabezal, hacia abajo."""
         cap = self.cap
-        tolerance, size, lever = cap.mislocation, cap.pile.size, cap.pile.embedment - cap.h / 2
+        tolerance, size = cap.mislocation, cap.pile.size
         shear = full = moment = 0.0
         for index, pile in enumerate(cap.piles):
             reaction = self.reaction(index)
@@ -260,18 +291,15 @@ class FactoredCap:
                 continue
             full += reaction
             moment += reaction * arm
-            (vx, vy), (mx, my) = self.case.forces.shears[index], self.case.forces.moments[index]
-            moment += -outward * (my + lever * vx) if axis == 0 else outward * (mx - lever * vy)
-        top = cap.h / 2 + cap.pedestal_height
+            about_x, about_y = self.pile_head(index)
+            moment += outward * (about_y if axis == 0 else about_x)
         for index in self.columns_beyond(axis, plane, outward):
-            vertical, load = self.verticals[index], self.case.columns[index]
-            if vertical is None or load is None:
+            action = self.column_action(index, axis, plane, outward)
+            if action is None:
                 continue
-            column = cap.columns[index]
-            shear -= vertical
-            full -= vertical
-            moment -= vertical * outward * ((column.offset_x, column.offset_y)[axis] - plane)
-            moment += -outward * (load.my + top * load.vx) if axis == 0 else outward * (load.mx - top * load.vy)
+            moment += action[0]
+            shear += action[1]
+            full += action[1]
         if cap.clipped_corners:  # D-141: el peso sobre la parte del contorno más allá del plano
             area, xc, yc = beyond(cap, axis, plane, outward)
             weight = self.load * area
@@ -282,7 +310,7 @@ class FactoredCap:
         return shear - weight, full - weight, moment - weight * length / 2
 
     def face_moments(self) -> FaceMoments:
-        """Momento en las secciones de flexión de cada dirección (section_planes): las caras de la columna (ACI 13.2.6.6 y
+        """Momento en las secciones de flexión de cada dirección (section_planes): las caras de las columnas (ACI 13.2.6.6 y
         13.4.6.4, NSR-10 C.15.4.1) y, con varias columnas, las secciones entre ellas (D-143). Un lado cuya columna no
         tiene carga conocida no se calcula."""
         moments: dict[str, tuple[float, ...]] = {}
@@ -308,28 +336,30 @@ class FactoredCap:
         return found
 
 
+def column_faces_along(column: CapColumn, axis: int) -> tuple[tuple[float, float, str], tuple[float, float, str]]:
+    """Las dos caras de una columna normales a x (axis = 0) o a y (axis = 1): (plano, hacia afuera, rótulo)."""
+    centre, size = (column.offset_x, column.cx) if axis == 0 else (column.offset_y, column.cy)
+    plus, minus = ("+X", "-X") if axis == 0 else ("+Y", "-Y")
+    return (centre + size / 2, 1.0, plus), (centre - size / 2, -1.0, minus)
+
+
 def section_planes(cap: PileCap, direction: str) -> list[tuple[Section, tuple[float, ...]]]:
     """Las secciones de flexión normales a la dirección de las barras, cada una con los lados de su cuerpo libre: con una
     columna, sus dos caras, hacia afuera (D-138); con varias (D-143), las caras de cada columna y secciones cada 50 mm
     fuera de las columnas, con el lado que tiene menos columnas (los dos si empatan)."""
     axis = AXES[direction]
-    plus, minus = ("+X", "-X") if axis == 0 else ("+Y", "-Y")
     name = "x" if axis == 0 else "y"
     columns = cap.columns
     if len(columns) == 1:
-        column = columns[0]
-        centre, size = (column.offset_x, column.cx) if axis == 0 else (column.offset_y, column.cy)
-        return [(Section(centre + size / 2, plus, f"Cara {plus} de la columna"), (1.0,)),
-                (Section(centre - size / 2, minus, f"Cara {minus} de la columna"), (-1.0,))]
+        return [(Section(plane, label, f"Cara {label} de la columna"), (outward,))
+                for plane, outward, label in column_faces_along(columns[0], axis)]
     spans = [((c.offset_x, c.cx) if axis == 0 else (c.offset_y, c.cy)) for c in columns]
-    planes: list[Section] = []
-    for column, (centre, size) in zip(columns, spans, strict=True):
-        planes += [Section(centre + size / 2, f"{plus} {column.id}", f"Cara {plus} de la columna {column.id}"),
-                   Section(centre - size / 2, f"{minus} {column.id}", f"Cara {minus} de la columna {column.id}")]
+    planes = [Section(plane, f"{label} {column.id}", f"Cara {label} de la columna {column.id}")
+              for column in columns for plane, _, label in column_faces_along(column, axis)]
     half = (cap.lx if axis == 0 else cap.ly) / 2
-    count = int(2 * half // _SCAN_STEP)
+    count = int(2 * half // SCAN_STEP)
     for step in range(1, count + 1):
-        plane = -half + step * _SCAN_STEP
+        plane = -half + step * SCAN_STEP
         if plane >= half - _ON_PLANE:
             break
         if any(centre - size / 2 - _ON_PLANE <= plane <= centre + size / 2 + _ON_PLANE for centre, size in spans):
@@ -338,10 +368,11 @@ def section_planes(cap: PileCap, direction: str) -> list[tuple[Section, tuple[fl
     return [(section, free_sides(cap, axis, section.plane)) for section in planes]
 
 
-def free_sides(cap: PileCap, axis: int, plane: float) -> tuple[float, ...]:
-    """Los lados del cuerpo libre de un plano normal a x (axis = 0) o a y (axis = 1): el que tiene menos columnas más
-    allá (los dos si empatan, D-143); con una columna, el que no la tiene."""
-    counts = {outward: sum(1 for column in cap.columns if outward * ((column.offset_x, column.offset_y)[axis] - plane) > 0)
+def free_sides(cap: PileCap, axis: int, plane: float, members: tuple[int, ...] | None = None) -> tuple[float, ...]:
+    """Los lados del cuerpo libre de un plano normal a x (axis = 0) o a y (axis = 1): el que tiene menos columnas (de
+    members, todas si es None) más allá (los dos si empatan, D-143); con una columna, el que no la tiene."""
+    columns = cap.columns if members is None else tuple(cap.columns[index] for index in members)
+    counts = {outward: sum(1 for column in columns if outward * ((column.offset_x, column.offset_y)[axis] - plane) > 0)
               for outward in (1.0, -1.0)}
     fewest = min(counts.values())
     return tuple(outward for outward in (1.0, -1.0) if counts[outward] == fewest)

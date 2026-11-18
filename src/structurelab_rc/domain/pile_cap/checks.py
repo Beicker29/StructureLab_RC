@@ -68,7 +68,7 @@ def pile_cap_checks(basis: Basis, cap: PileCap, soil: PileCapSoil, analysis: Cap
     if not analysis.factored:
         error = incomplete("El cabezal no tiene casos mayorados", member=cap.id)
         return [*checks, Check(STRUCTURAL, Status.INCOMPLETE, (error,), member=cap.id)]
-    return [*checks, *flexure_checks(basis, cap, analysis), *unresolved_checks(cap, analysis), *strip_checks(basis, cap, analysis),
+    return [*checks, *flexure_checks(basis, cap, analysis), *unresolved_checks(basis, cap, analysis), *strip_checks(basis, cap, analysis),
             *footing_min_spacing_checks(basis, cap), *shear_checks(basis, cap, analysis), *_connection_checks(basis, cap, analysis)]
 
 

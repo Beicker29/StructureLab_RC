@@ -1,11 +1,13 @@
 """Cortante y punzonamiento del cabezal con los casos mayorados (D-138), como domain/footing/shear.py.
 
-Por secciones, con la reacción interpolada de ACI 13.4.6.7 (NSR-10 C.15.5.4): una dirección a d de las caras de la
-columna (ACI 13.4.6.5(a), 22.5 y 13.4.6.8(a); NSR-10 C.11.11) y dos direcciones a d/2 de la columna (ACI 13.4.6.5(b) y
-22.6; NSR-10 C.11.11.2), con la acción de la cabeza de los pilotes que cuentan. Con pilotes dentro de d o d/2 de la
-columna, los límites de la guía CRSI en la cara de la columna (estados límite 5 y 6, y 4). El punzonamiento de cada
-pilote, aislado (P1) o de esquina (P3). La mala ubicación cuenta del lado desfavorable: el pilote se acerca a la
-sección (o pasa más allá de la cara) en la tolerancia y, con las cargas de la columna, su reacción sube ΔR.
+Por secciones, con la reacción interpolada de ACI 13.4.6.7 (NSR-10 C.15.5.4): una dirección a d de las caras de cada
+columna (ACI 13.4.6.5(a), 22.5 y 13.4.6.8(a); NSR-10 C.11.11) y dos direcciones a d/2 de cada columna y del perímetro
+común de las que se traslapan (ACI 13.4.6.5(b) y 22.6; NSR-10 C.11.11.2), con la acción de la cabeza de los pilotes que
+cuentan. Con pilotes dentro de d o d/2 de una columna, los límites de la guía CRSI en su cara (estados límite 5 y 6, y 4).
+El punzonamiento de cada pilote, aislado (P1) o de esquina (P3), de dos pilotes (P2) y de grupos, y el cortante de esquina
+(P4). La mala ubicación cuenta del lado desfavorable: el pilote se acerca a la sección (o pasa más allá de la cara) en la
+tolerancia y, con las cargas de las columnas, su reacción sube ΔR. Con varias columnas, cada cuerpo libre es el del lado
+con menos columnas (los dos si empatan, gobierna el mayor; D-143, D-145).
 """
 
 import math
@@ -14,7 +16,7 @@ from dataclasses import dataclass
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
-from structurelab_rc.domain.pile_cap.loads import AXES, CapAnalysis, FactoredCap, free_sides
+from structurelab_rc.domain.pile_cap.loads import AXES, CapAnalysis, FactoredCap, column_faces_along, free_sides
 from structurelab_rc.domain.pile_cap.outline import centroid, parallel_chord, section_row
 from structurelab_rc.domain.pile_cap.outline import inside as region_inside
 from structurelab_rc.domain.shear_strength import TransferredLoad, TwoWayShear, concrete_lambda, two_way_shear
@@ -39,7 +41,7 @@ _CORNER_SIDES = 2  # una esquina pierde dos lados del perímetro
 
 
 @dataclass(frozen=True)
-class _Strength:
+class CapStrength:
     """Lo común a las resistencias a cortante del cabezal: λ, si los pilotes están cerca (ACI 13.4.6.8), λs de dos
     direcciones y la d promedio de la malla inferior."""
 
@@ -47,13 +49,6 @@ class _Strength:
     closely: bool
     lam_s: float
     depth: float
-
-
-def _faces(cap: PileCap, column: CapColumn, direction: str) -> list[tuple[float, float, str]]:
-    """Las caras de una columna normales a la dirección de las barras: (plano, hacia afuera, rótulo)."""
-    centre, size = (column.offset_x, column.cx) if direction == "x" else (column.offset_y, column.cy)
-    plus, minus = _FACES[direction]
-    return [(centre + size / 2, 1.0, plus), (centre - size / 2, -1.0, minus)]
 
 
 def _column_name(cap: PileCap, column: CapColumn) -> str:
@@ -75,7 +70,7 @@ def _incomplete(name: str, item: FactoredCap, missing: list[str], clause: str, n
     return Check(name, Status.INCOMPLETE, (error,), clause, member=item.cap.id, case=item.case.case, note=note)
 
 
-def _one_way(basis: Basis, item: FactoredCap, row: BarRow, strength: _Strength) -> list[Check]:
+def _one_way(basis: Basis, item: FactoredCap, row: BarRow, strength: CapStrength) -> list[Check]:
     """Cortante a d de las caras de cada columna con la reacción interpolada; gobierna la sección de mayor razón. La
     sección que cae fuera del cabezal o corta otra columna no se revisa; su cuerpo libre es el lado con menos columnas
     (D-143)."""
@@ -89,7 +84,7 @@ def _one_way(basis: Basis, item: FactoredCap, row: BarRow, strength: _Strength) 
     worst: tuple[float, float, float, str, float, float] | None = None
     missing: list[str] = []
     for column in cap.columns:
-        for face, outward_face, label in _faces(cap, column, row.direction):
+        for face, outward_face, label in column_faces_along(column, AXES[row.direction]):
             plane = face + outward_face * row.depth
             if abs(plane) >= half or _inside_column(cap, axis, plane):
                 continue
@@ -120,7 +115,7 @@ def _one_way(basis: Basis, item: FactoredCap, row: BarRow, strength: _Strength) 
                   note=f"Seccion a d de la cara {where}, reacciones interpoladas")]
 
 
-def _face_one_way(basis: Basis, item: FactoredCap, row: BarRow, strength: _Strength) -> list[Check]:
+def _face_one_way(basis: Basis, item: FactoredCap, row: BarRow, strength: CapStrength) -> list[Check]:
     """Guía CRSI, estados límite 5 y 6: en cada cara de cada columna con algún pilote a menos de d, cortante a todo el
     ancho con la reacción completa de los pilotes que, mal ubicados, quedan más allá de la cara (y las columnas de ese
     lado, D-143); w es la distancia del más cercano más la tolerancia."""
@@ -131,19 +126,21 @@ def _face_one_way(basis: Basis, item: FactoredCap, row: BarRow, strength: _Stren
     name = f"{FACE_ONE_WAY} (barras {row.direction})"
     checks = []
     for column in cap.columns:
-        for plane, outward, label in _faces(cap, column, row.direction):
+        for plane, outward, label in column_faces_along(column, AXES[row.direction]):
             distances = [outward * ((pile.x, pile.y)[axis] - plane) for pile in cap.piles]
             near = [distance for distance in distances if distance + cap.mislocation > 0]
             if not near or min(near) >= row.depth:
                 continue
             note = f"Cara {label} de {_column_name(cap, column)}"
-            lacking = item.missing(axis, plane, outward)
-            if lacking:
+            # La regla de cuerpo libre de D-143 (lado con menos columnas, el mayor si empatan; D-145).
+            sides = [side for side in free_sides(cap, axis, plane) if not item.missing(axis, plane, side)]
+            if not sides:
+                lacking = [name for side in free_sides(cap, axis, plane) for name in item.missing(axis, plane, side)]
                 checks.append(_incomplete(name, item, lacking, clause, note))
                 continue
             w = _clear_distance(near) + cap.mislocation
             section = section_row(cap, row, plane) if cap.clipped_corners else row  # D-141: el ancho real en la cara
-            _, shear, moment = item.beyond(axis, plane, outward)
+            _, shear, moment = max((item.beyond(axis, plane, side) for side in sides), key=lambda value: value[1])
             stress = profile.pile_cap.column_face_one_way_stress(fc=materials.fc, lam=strength.lam, d=row.depth, w=w,
                                                                  vu=max(shear, 0.0), mu=max(moment, 0.0))
             capacity = phi * stress * section.width * row.depth
@@ -168,7 +165,7 @@ def _outside(cap: PileCap, column: CapColumn, index: int) -> float:
     return max(abs(pile.x - column.offset_x) - column.cx / 2, abs(pile.y - column.offset_y) - column.cy / 2)
 
 
-def _face_two_way(basis: Basis, item: FactoredCap, strength: _Strength) -> list[Check]:
+def _face_two_way(basis: Basis, item: FactoredCap, strength: CapStrength) -> list[Check]:
     """Guía CRSI, estado límite 4: con algún pilote a menos de d/2 de una columna, cortante en el perímetro de su cara,
     bs = 2(cx + cy), c = (cx + cy)/2 (perímetro real, decisión del usuario, D-138). La fuerza que lo atraviesa es la de
     los pilotes de afuera menos el peso de afuera (y las otras columnas, D-143) o la de la columna más el peso bajo ella
@@ -301,7 +298,6 @@ def _add_piles(item: FactoredCap, area: _Loaded, depth: float, given: tuple[_Sum
     cap = item.cap
     (cx, cy), (sx, sy) = area.centre, area.size
     half_x, half_y = (sx + depth) / 2, (sy + depth) / 2
-    lever = cap.pile.embedment - cap.h / 2
     for index, pile in enumerate(cap.piles):
         offset = max(abs(pile.x - cx) - half_x, abs(pile.y - cy) - half_y) + cap.mislocation
         portion = item.share(offset, cap.pile.size)
@@ -309,28 +305,30 @@ def _add_piles(item: FactoredCap, area: _Loaded, depth: float, given: tuple[_Sum
         if portion <= 0:
             continue
         reaction = portion * item.reaction(index)
-        (vx, vy), (mx, my) = item.case.forces.shears[index], item.case.forces.moments[index]
+        about_x, about_y = item.pile_head(index)
         sums[0] += reaction
-        sums[1] += reaction * (pile.x - xc) - portion * (my + lever * vx)
-        sums[2] += reaction * (pile.y - yc) + portion * (mx - lever * vy)
+        sums[1] += reaction * (pile.x - xc) + portion * about_y
+        sums[2] += reaction * (pile.y - yc) + portion * about_x
 
 
-def _add_columns(item: FactoredCap, indices: list[int], sums: _Sums, centre: tuple[float, float]) -> bool:
-    """Resta las columnas (hacia abajo, con la acción de su base); False si falta la carga de alguna."""
+def _add_columns(item: FactoredCap, indices: list[int], sums: _Sums, centre: tuple[float, float]) -> list[str]:
+    """Resta las columnas (hacia abajo, con la acción de su base); devuelve las que no tienen carga (vacía si todas)."""
     cap, (xc, yc) = item.cap, centre
-    top = cap.h / 2 + cap.pedestal_height
+    missing = [cap.columns[index].id for index in indices if item.column_head(index) is None]
+    if missing:
+        return missing
     for index in indices:
-        vertical, load = item.verticals[index], item.case.columns[index]
-        if vertical is None or load is None:
-            return False
+        head = item.column_head(index)
+        assert head is not None
+        vertical, about_x, about_y = head
         column = cap.columns[index]
         sums[0] -= vertical
-        sums[1] += -vertical * (column.offset_x - xc) - (load.my + top * load.vx)
-        sums[2] += -vertical * (column.offset_y - yc) + (load.mx - top * load.vy)
-    return True
+        sums[1] += -vertical * (column.offset_x - xc) + about_y
+        sums[2] += -vertical * (column.offset_y - yc) + about_x
+    return []
 
 
-def _transferred(item: FactoredCap, area: _Loaded, perimeter: Perimeter, depth: float) -> list[TransferredLoad | None]:
+def _transferred(item: FactoredCap, area: _Loaded, perimeter: Perimeter, depth: float) -> tuple[list[TransferredLoad | None], list[str]]:
     """La carga que atraviesa el perímetro, desde el lado con menos columnas (los dos si empatan, D-143): afuera, los
     pilotes con la fracción de su reacción que produce cortante, el peso de afuera y las columnas de afuera; adentro, las
     columnas del área, el peso de adentro y el resto de las reacciones, con el signo cambiado. Momentos respecto al
@@ -349,22 +347,25 @@ def _transferred(item: FactoredCap, area: _Loaded, perimeter: Perimeter, depth: 
     within = list(area.columns)
     outer = [index for index in range(len(cap.columns)) if index not in within]
     results: list[TransferredLoad | None] = []
+    lacking: list[str] = []
     if len(outer) <= len(within):  # afuera
         force = -item.load * (total - inside)  # el peso fuera del área crítica
         sums = [force, -item.load * (total * total_x - inside * inside_x) - xc * force,
                 -item.load * (total * total_y - inside * inside_y) - yc * force]
         _add_piles(item, area, depth, (sums, (xc, yc), True))
-        known = _add_columns(item, outer, sums, (xc, yc))
-        results.append(TransferredLoad(sums[0], sums[1], sums[2]) if known else None)
+        missing = _add_columns(item, outer, sums, (xc, yc))
+        lacking += missing
+        results.append(None if missing else TransferredLoad(sums[0], sums[1], sums[2]))
     if len(within) <= len(outer):  # adentro, con el signo cambiado
         sums = [-item.load * inside, -item.load * inside * (inside_x - xc), -item.load * inside * (inside_y - yc)]
         _add_piles(item, area, depth, (sums, (xc, yc), False))
-        known = _add_columns(item, within, sums, (xc, yc))
-        results.append(TransferredLoad(-sums[0], -sums[1], -sums[2]) if known else None)
-    return results
+        missing = _add_columns(item, within, sums, (xc, yc))
+        lacking += missing
+        results.append(None if missing else TransferredLoad(-sums[0], -sums[1], -sums[2]))
+    return results, lacking
 
 
-def _column_punching(basis: Basis, item: FactoredCap, strength: _Strength) -> list[Check]:
+def _column_punching(basis: Basis, item: FactoredCap, strength: CapStrength) -> list[Check]:
     """Dos direcciones a d/2 de cada columna (y del perímetro común de las que se traslapan, D-143) con la reacción
     interpolada y la acción de la cabeza de los pilotes que cuentan; los momentos respecto al centroide del perímetro.
     Gobierna el lado de mayor razón si se revisan los dos."""
@@ -379,23 +380,24 @@ def _column_punching(basis: Basis, item: FactoredCap, strength: _Strength) -> li
             perimeter = critical_perimeter(area.centre, area.size[0], area.size[1], depth, bounds)
         if not perimeter.sides:
             continue
-        loads = _transferred(item, area, perimeter, depth)
+        loads, lacking = _transferred(item, area, perimeter, depth)
         known = [load for load in loads if load is not None]
         if not known:
-            checks.append(_incomplete(PUNCHING, item, [cap.columns[i].id for i in range(len(cap.columns))], clause, area.note))
+            checks.append(_incomplete(PUNCHING, item, lacking, clause, area.note))
             continue
         worst: Check | None = None
         for load in known:
             result = two_way_shear(basis.profile, basis.materials, perimeter, (area.size[0], area.size[1], strength.lam_s), load)
             check = _two_way_check(item, result, _TwoWay(PUNCHING, load.force, clause, area.note))
-            if worst is None or _ratio(check) > _ratio(worst):
+            if worst is None or check_ratio(check) > check_ratio(worst):
                 worst = check
         assert worst is not None
         checks.append(worst)
     return checks
 
 
-def _ratio(check: Check) -> float:
+def check_ratio(check: Check) -> float:
+    """La razón demanda/capacidad para elegir la revisión que gobierna (infinita sin capacidad si no cumple)."""
     if check.demand is None or not check.capacity:
         return math.inf if check.status is not Status.PASS else 0.0
     return check.demand / check.capacity
@@ -419,7 +421,7 @@ def _pile_perimeters(cap: PileCap, index: int, depth: float) -> list[tuple[str, 
     return shapes
 
 
-def _pile_punching(basis: Basis, item: FactoredCap, strength: _Strength) -> list[Check]:
+def _pile_punching(basis: Basis, item: FactoredCap, strength: CapStrength) -> list[Check]:
     """Punzonamiento de cada pilote a compresión con su reacción: gobierna el perímetro de mayor razón. Un perímetro que
     pierde más de dos lados contra los bordes (cabezal angosto) no forma el mecanismo y no se revisa: ahí gobierna el
     cortante a todo el ancho."""
@@ -436,7 +438,7 @@ def _pile_punching(basis: Basis, item: FactoredCap, strength: _Strength) -> list
                 continue
             result = two_way_shear(basis.profile, basis.materials, perimeter, (c1, c2, strength.lam_s), TransferredLoad(force, 0.0, 0.0))
             check = _two_way_check(item, result, _TwoWay(PILE_PUNCHING, force, clause, f"Pilote {pile.id} ({label})"))
-            ratio = math.inf if check.demand is None or not check.capacity else check.demand / check.capacity
+            ratio = check_ratio(check)
             if worst is None or ratio > worst[0]:
                 worst = (ratio, check)
         if worst is not None:
@@ -449,7 +451,7 @@ def _round_size(cap: PileCap) -> float:
     return cap.pile.size if cap.pile.shape == "circular" else cap.pile.size * 2 / math.sqrt(math.pi)
 
 
-def _pair_punching(basis: Basis, item: FactoredCap, strength: _Strength) -> list[Check]:
+def _pair_punching(basis: Basis, item: FactoredCap, strength: CapStrength) -> list[Check]:
     """Guía CRSI, estado límite P2: dos pilotes vecinos a compresión cuya falla conjunta es más corta que las dos aisladas,
     L < π(dp + d)/2: b0 = π(dp + d) + 2L con la suma de sus reacciones, frente al vc de la norma con β = (L + dp)/dp y
     αs = 40 (decisiones del usuario, D-138)."""
@@ -582,7 +584,7 @@ def _groups(cap: PileCap, depth: float) -> list[_Group] | None:
     return groups
 
 
-def _group_punching(basis: Basis, item: FactoredCap, given: tuple[_Strength, list[_Group] | None]) -> list[Check]:
+def _group_punching(basis: Basis, item: FactoredCap, given: tuple[CapStrength, list[_Group] | None]) -> list[Check]:
     """El grupo de más de dos pilotes que gobierna en el caso: la suma de sus reacciones mayoradas sobre b0·d frente al vc
     de la norma con su β y αs = 40 (decisión del usuario, D-138)."""
     strength, groups = given
@@ -630,7 +632,7 @@ def _corner_piles(cap: PileCap) -> list[int]:
     return found
 
 
-def _corner_one_way(basis: Basis, item: FactoredCap, strength: _Strength) -> list[Check]:
+def _corner_one_way(basis: Basis, item: FactoredCap, strength: CapStrength) -> list[Check]:
     """Guía CRSI, estado límite P4: sección a 45° que corta la esquina a d de la cara del pilote de esquina, con su
     reacción; su longitud b = 2s, s = (Ex + Ey)/√2 + dp/2 + d (d ≤ 330 mm solo aquí; proyección sobre la diagonal,
     decisión del usuario, D-138), frente a φ·0.166λ√f'c·b·d. Si la sección no cabe en la esquina, no se revisa."""
@@ -657,7 +659,7 @@ def _corner_one_way(basis: Basis, item: FactoredCap, strength: _Strength) -> lis
     return [*checks, *_clip_one_way(basis, item, strength)]
 
 
-def _clip_one_way(basis: Basis, item: FactoredCap, strength: _Strength) -> list[Check]:
+def _clip_one_way(basis: Basis, item: FactoredCap, strength: CapStrength) -> list[Check]:
     """Cortante de esquina (P4) en una esquina recortada (D-141): la sección paralela al recorte, a dp/2 + d (d ≤ 330 mm)
     del centro del pilote más cercano al recorte hacia adentro, con la longitud de esa recta dentro del contorno y su reacción."""
     profile, materials, cap = basis.profile, basis.materials, item.cap
@@ -691,16 +693,26 @@ def _clip_one_way(basis: Basis, item: FactoredCap, strength: _Strength) -> list[
     return checks
 
 
-def shear_checks(basis: Basis, cap: PileCap, analysis: CapAnalysis) -> list[Check]:
-    """Cortante en una dirección, límites CRSI en la cara de la columna y punzonamiento de la columna y de los pilotes de
-    cada caso mayorado."""
+def cap_strength(basis: Basis, cap: PileCap) -> CapStrength | StructuredError:
+    """λ, si los pilotes están cerca (13.4.6.8), λs de dos direcciones y la d promedio de la malla inferior: lo común a
+    los cortantes del cabezal y de sus franjas (una sola fuente)."""
     lam = concrete_lambda(basis.profile, basis.materials)
     if isinstance(lam, StructuredError):
-        return [Check(SHEAR, Status.BLOCKED, (lam,), member=cap.id)]
+        return lam
     bottom = mat_rows(cap, cap.bottom, basis.bars)
     depth = (bottom["x"].depth + bottom["y"].depth) / 2
     closely = closely_spaced(basis, cap)
-    strength = _Strength(lam, closely, basis.profile.pile_cap.punching_size_factor(depth, closely), depth)
+    return CapStrength(lam, closely, basis.profile.pile_cap.punching_size_factor(depth, closely), depth)
+
+
+def shear_checks(basis: Basis, cap: PileCap, analysis: CapAnalysis) -> list[Check]:
+    """Cortante en una dirección, límites CRSI en la cara de las columnas y punzonamiento de las columnas y de los pilotes
+    de cada caso mayorado."""
+    strength = cap_strength(basis, cap)
+    if isinstance(strength, StructuredError):
+        return [Check(SHEAR, Status.BLOCKED, (strength,), member=cap.id)]
+    bottom = mat_rows(cap, cap.bottom, basis.bars)
+    depth = strength.depth
     groups = _groups(cap, depth)  # la geometría de los grupos, una vez por cabezal
     checks: list[Check] = []
     for item in analysis.factored:

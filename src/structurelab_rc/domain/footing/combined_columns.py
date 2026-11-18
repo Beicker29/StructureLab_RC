@@ -37,7 +37,7 @@ from structurelab_rc.domain.footing.connection import Support, bar_anchorage, be
 from structurelab_rc.domain.footing.declared import DIRECTIONS, PRINCIPAL, SECONDARY
 from structurelab_rc.domain.footing.flexure import plain_resists, plain_strip_check
 from structurelab_rc.domain.footing.loads import FactoredCase
-from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows, uniform_positions
+from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, positions_within, stirrup_diameter, top_rows, uniform_positions
 from structurelab_rc.domain.footing.shear import PunchedColumn, punching_checks, transferred_load
 from structurelab_rc.domain.shear_strength import two_way_shear
 from structurelab_rc.domain.status import Status
@@ -214,11 +214,6 @@ def transverse_bottom(footing: CombinedFooting, row: BarRow) -> BarRow:
     return replace(row, positions=kept)
 
 
-def _inside(row: BarRow, limits: tuple[float, float]) -> list[float]:
-    x0, x1 = limits
-    return [position for position in row.positions if x0 - _TOLERANCE <= position <= x1 + _TOLERANCE]
-
-
 def strip_member(footing: CombinedFooting, column: CombinedColumn, rows: tuple[BarRow, BarRow | None, BarRow | None]) -> Member:
     """La franja como viga (D-082): ancho de franja × h, a lo largo de Y, con las barras inferiores que caen en ella (el
     band si lo hay, D-097; si no, la malla y) y las superiores transversales (D-097), con x desde el borde −X de la franja
@@ -229,7 +224,7 @@ def strip_member(footing: CombinedFooting, column: CombinedColumn, rows: tuple[B
     for source, depth in ((row, row.depth), (band, row.depth), (top, None if top is None else footing.h - top.depth)):
         if source is None or depth is None:
             continue
-        inside = _inside(source, (x0, x1))
+        inside = positions_within(source, (x0, x1))
         if inside:
             layers.append(BarLayer(depth=depth, role="flexure",
                                    bars=tuple(BarPosition(designation=source.designation, x=position - x0) for position in inside)))
@@ -336,7 +331,7 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     column = footing.columns[index]
     x0, x1 = strip_limits(footing, column, row.depth)
     top, _ = strip_top(footing, column, row.depth, basis.bars)  # el band superior o top.y (D-119)
-    has_top = top is not None and bool(_inside(top, (x0, x1)))
+    has_top = top is not None and bool(positions_within(top, (x0, x1)))
     member = strip_member(footing, column, (row, band_row(footing, column, row, basis), top))
     title = f"Franja transversal de la columna {column.id}"
     checks = []
@@ -709,7 +704,7 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
         available = min(half - (column.y + column.cy / 2), column.y - column.cy / 2 + half) - footing.cover
         note = f"Franja transversal de la columna {column.id}, desde la cara de la columna"
         bottom = band if band is not None else row
-        bottom_area = len(_inside(bottom, limits)) * bottom.bar_area
+        bottom_area = len(positions_within(bottom, limits)) * bottom.bar_area
         if positive > 0 and bottom_area > 0:
             bar_set = column.band if column.band is not None else footing.bottom.y
             spacing = bar_set.spacing
@@ -720,7 +715,7 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
         top, top_spacing = strip_top(footing, column, row.depth, basis.bars)  # el band superior o top.y (D-119)
         if top is None or top_spacing is None or negative <= _NEGLIGIBLE_MOMENT or plain_resists(basis, width, footing.h, negative):
             continue
-        top_area = len(_inside(top, limits)) * top.bar_area
+        top_area = len(positions_within(top, limits)) * top.bar_area
         if top_area > 0:
             excess = steel_excess(basis, (width, footing.h, top.depth), top_area, negative, footing.min_steel_exception)
             name = (f"{DEVELOPMENT} band superior (columna {column.id})" if column.band_top is not None

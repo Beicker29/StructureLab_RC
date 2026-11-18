@@ -72,6 +72,11 @@ def _positions(low: float, high: float, bar_set: BarSet, band: tuple[float, floa
     return [*reversed(left), *inner, *right], inner
 
 
+def positions_within(row: BarRow, limits: tuple[float, float]) -> tuple[float, ...]:
+    """Las posiciones de las barras de una fila que caen en un rango (con su tolerancia)."""
+    return tuple(position for position in row.positions if limits[0] - _TOLERANCE <= position <= limits[1] + _TOLERANCE)
+
+
 def band_limits(footing: FootingBody, direction: str) -> tuple[float, float] | None:
     """Franja central de la dirección corta: ancho igual al lado corto, centrada en el eje de la columna; None si no la
     hay (base cuadrada o cabezal de varias columnas, D-143)."""

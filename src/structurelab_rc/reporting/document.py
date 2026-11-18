@@ -152,18 +152,18 @@ _FOOTING_LIMITATIONS = (
 )
 _SOURCES = "Los factores φ, las capacidades y los numerales provienen del resultado de cada verificación."
 _CAP_CONVENTIONS = (
-    "Las cargas llegan mayoradas y de servicio, de la columna o de cada pilote, con los factores de carga muerta y viva "
+    "Las cargas llegan mayoradas y de servicio, de las columnas o de cada pilote, con los factores de carga muerta y viva "
     "de su combinación; la aplicación no genera combinaciones (D-052, D-138).",
     "Ejes globales con origen en el centroide del cabezal: X a lo largo de lx, Y a lo largo de ly, Z hacia arriba. La "
     "reacción de un pilote es positiva en compresión.",
-    "Con las cargas de la columna, el cabezal es rígido y los pilotes, articulados: R = N/n ± momentos del grupo, con el "
+    "Con las cargas de las columnas, el cabezal es rígido y los pilotes, articulados: R = N/n ± momentos del grupo, con el "
     "momento en el plano de la cabeza de los pilotes y el cortante repartido por igual (guía CRSI, cap. 3).",
     "Mala ubicación: el brazo de cada pilote crece con la tolerancia del lado desfavorable en la flexión y en el cortante; "
-    "con las cargas de la columna, la excentricidad accidental aumenta además las reacciones (ΔR, D-138).",
+    "con las cargas de las columnas, la excentricidad accidental aumenta además las reacciones (ΔR, D-138).",
     "El cortante de cada sección toma la reacción de los pilotes interpolada entre dpile/2 afuera y dpile/2 adentro.",
-    "Con varias columnas (D-143), la flexión se revisa en las caras de cada columna y en secciones cada 50 mm entre ellas, "
-    "con el cuerpo libre del lado con menos columnas, y la franja de cada columna en la dirección transversal, como viga en "
-    "voladizo; el punzonamiento, por columna y en el perímetro común de las que se traslapan.",
+    "Con varias columnas (D-143, D-145), la flexión se revisa en las caras de cada columna y en secciones cada 50 mm entre "
+    "ellas, con el cuerpo libre del lado con menos columnas (los dos si empatan), y en la franja de cada columna con el "
+    "mismo criterio dentro de su ancho; el punzonamiento, por columna y en el perímetro común de las que se traslapan.",
 )
 _CAP_LIMITATIONS = (
     "Puntal-tensor y requisitos sísmicos de los pilotes: falta implementación.",
