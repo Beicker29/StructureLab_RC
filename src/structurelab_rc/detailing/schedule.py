@@ -2,9 +2,12 @@
 (diámetro de doblado, extensión de los ganchos y longitud de empalme) y no contiene fórmulas normativas.
 
 Formas: recta (sin ganchos), L (gancho en un extremo), U (ganchos en los dos) y estribo cerrado con ganchos a 135° en
-una esquina. Las dimensiones de la cartilla son exteriores (de cara exterior a cara exterior de la barra); la longitud de
-corte se mide por el eje de la barra (tramos rectos más arcos de radio D/2 + db/2) y se redondea hacia arriba a
-ROUNDING (decisión del usuario). Una barra más larga que la longitud comercial se parte en tramos con su empalme por
+una esquina. Convención de DL-NET (decisión del usuario, D-147): la longitud total de una barra es su tramo horizontal
+exterior A (redondeado hacia arriba a 1 cm) más la longitud de cada gancho (hook_length, redondeada hacia arriba a
+50 mm): con 90°, L = extensión + π·(D + 0.5·db)/8; con 180°, U = extensión + 0.5·π·(D + 0.5·db) − 0.5·(D + 0.5·db), con D
+el diámetro interior de doblado. Así DL-NET reconstruye el tramo como Ltotal − 2L o Ltotal − 2U. El gancho de 135° de una
+barra (que DL-NET no fabrica) y los estribos siguen por el eje de la barra (tramos rectos más arcos de radio D/2 + db/2),
+con la longitud total redondeada a 1 cm. Una barra más larga que la longitud comercial se parte en tramos con su empalme por
 traslapo; en las barras vecinas los empalmes se escalonan (la mitad de las barras empieza con medio tramo comercial),
 para no empalmar más de la mitad del acero en una sección.
 """
@@ -12,7 +15,8 @@ para no empalmar más de la mitad del acero en una sección.
 import math
 from dataclasses import dataclass
 
-ROUNDING = 50.0  # mm: redondeo hacia arriba de las longitudes de corte (D-125)
+ROUNDING = 10.0  # mm: redondeo hacia arriba de la longitud total y del tramo de cada barra (D-147)
+HOOK_ROUNDING = 50.0  # mm: redondeo hacia arriba de la longitud de cada gancho, L o U (D-147)
 _MM_PER_M = 1000.0
 _HALF_TURN = 180  # °: un gancho de 180° vuelve paralelo a la barra
 
@@ -94,9 +98,9 @@ class ScheduleRow:
         return self.piece.count * self.piece.cut_length / _MM_PER_M * self.piece.mass_kg_m
 
 
-def round_up(length: float) -> float:
-    """Longitud redondeada hacia arriba a ROUNDING (con tolerancia para no subir un múltiplo exacto)."""
-    return math.ceil(length / ROUNDING - 1e-9) * ROUNDING
+def round_up(length: float, step: float = ROUNDING) -> float:
+    """Longitud redondeada hacia arriba a step (con tolerancia para no subir un múltiplo exacto)."""
+    return math.ceil(length / step - 1e-9) * step
 
 
 def _hook_parts(hook: Hook, db: float) -> tuple[float, float, float]:
@@ -107,20 +111,43 @@ def _hook_parts(hook: Hook, db: float) -> tuple[float, float, float]:
     return radius + db, arc, leg
 
 
+_QUARTER_TURN = 90  # °
+
+
+def hook_length(hook: Hook, db: float) -> float:
+    """Longitud de un gancho en la convención de DL-NET (decisión del usuario, D-147), la dimensión B o C de la cartilla:
+    la extensión más el doblez medido con D + 0.5·db, redondeada hacia arriba a 50 mm. Con 90°, L = extensión +
+    π·(D + 0.5·db)/8; con 180°, U = extensión + 0.5·π·(D + 0.5·db) − 0.5·(D + 0.5·db). Con 135° (no lo fabrica DL-NET), lo
+    que el gancho agrega por el eje a la dimensión exterior. En mm."""
+    base = hook.bend_diameter + 0.5 * db
+    if hook.angle == _QUARTER_TURN:
+        raw = hook.extension + math.pi * base / 8
+    elif hook.angle == _HALF_TURN:
+        raw = hook.extension + 0.5 * math.pi * base - 0.5 * base
+    else:
+        cut, arc, _ = _hook_parts(hook, db)
+        raw = arc + hook.extension - cut
+    return round_up(raw, HOOK_ROUNDING)
+
+
 def hook_leg(hook: Hook, db: float) -> float:
-    """Pata exterior de un gancho (la dimensión B o C de la cartilla), en mm."""
+    """Pata que se dibuja de un gancho, en mm: con 90°, su longitud L de la cartilla (hook_length); con 180°, el ancho
+    exterior de la U (D + 2·db); con 135°, la pata exterior (extensión + D/2 + db)."""
+    if hook.angle == _QUARTER_TURN:
+        return hook_length(hook, db)
     return _hook_parts(hook, db)[2]
 
 
 def _straight_length(run: BarRun, length: float, hooks: tuple[Hook | None, Hook | None]) -> tuple[float, list[tuple[str, float]]]:
-    """Longitud por el eje y dimensiones exteriores de una barra recta con ganchos opcionales, de largo exterior length."""
-    db = run.diameter
-    total, dimensions = length, [("A", length)]
+    """Longitud total y dimensiones de una barra de tramo exterior length con ganchos opcionales (D-147): el tramo A
+    redondeado hacia arriba a 1 cm más la longitud de cada gancho (hook_length)."""
+    straight = round_up(length)
+    total, dimensions = straight, [("A", straight)]
     for hook, name in zip(hooks, ("B", "C"), strict=True):
         if hook is None:
             continue
-        cut, arc, leg = _hook_parts(hook, db)
-        total += arc + hook.extension - cut
+        leg = hook_length(hook, run.diameter)
+        total += leg
         dimensions.append((name, leg))
     return total, dimensions
 
@@ -157,9 +184,9 @@ def pieces(run: BarRun, stock: float) -> list[Piece]:
         return [Piece(run.group, run.designation, "estribo", tuple(dimensions), round_up(length), run.mass_kg_m, run.count, run.note,
                       _angles(run.hooks))]
     total, dimensions = _straight_length(run, run.length, run.hooks)
-    if round_up(total) <= stock or run.lap is None:
-        note = run.note if round_up(total) <= stock else f"{run.note}; supera la longitud comercial y no se empalma".lstrip("; ")
-        return [Piece(run.group, run.designation, _shape(run.hooks), tuple(dimensions), round_up(total), run.mass_kg_m, run.count, note,
+    if total <= stock or run.lap is None:
+        note = run.note if total <= stock else f"{run.note}; supera la longitud comercial y no se empalma".lstrip("; ")
+        return [Piece(run.group, run.designation, _shape(run.hooks), tuple(dimensions), total, run.mass_kg_m, run.count, note,
                       _angles(run.hooks))]
     patterns = [(math.ceil(run.count / 2), stock), (run.count // 2, stock / 2)] if run.count > 1 else [(1, stock)]
     result: list[Piece] = []
@@ -187,12 +214,10 @@ def splice_spans(run: BarRun, stock: float) -> list[tuple[float, float]]:
     """Los tramos de las barras de una corrida que empiezan con un tramo comercial entero, para el dibujo (D-132): inicio y
     fin de cada uno a lo largo del tramo recto exterior (de 0 a run.length); uno solo si la barra no se empalma."""
     total, _ = _straight_length(run, run.length, run.hooks)
-    if run.lap is None or round_up(total) <= stock:
+    if run.lap is None or total <= stock:
         return [(0.0, run.length)]
-    hook, start_extra = run.hooks[0], 0.0  # lo que el gancho inicial agrega por el eje antes del tramo recto exterior
-    if hook is not None:
-        cut, arc, _ = _hook_parts(hook, run.diameter)
-        start_extra = arc + hook.extension - cut
+    hook = run.hooks[0]  # lo que el gancho inicial agrega antes del tramo recto exterior (D-147)
+    start_extra = 0.0 if hook is None else hook_length(hook, run.diameter)
     starts, ends = _cuts(total, run.lap, (stock, stock))
     return [(max(begin - start_extra, 0.0), min(end - start_extra, run.length)) for begin, end in zip(starts, ends, strict=True)]
 
@@ -206,13 +231,11 @@ def _spliced(run: BarRun, total_count: tuple[float, int], lengths: tuple[float, 
     result = []
     for index, (begin, end) in enumerate(zip(starts, ends, strict=True)):
         hooks = (run.hooks[0] if index == 0 else None, run.hooks[1] if index == len(starts) - 1 else None)
-        axis = end - begin
-        # La dimensión exterior A del tramo: su largo por el eje menos lo que agregan sus ganchos.
-        extra = sum(_hook_parts(hook, run.diameter)[1] + hook.extension - _hook_parts(hook, run.diameter)[0]
-                    for hook in hooks if hook is not None)
-        _, dimensions = _straight_length(run, axis - extra, hooks)
+        # El tramo A de la pieza: su longitud menos la de sus ganchos (D-147).
+        extra = sum(hook_length(hook, run.diameter) for hook in hooks if hook is not None)
+        length, dimensions = _straight_length(run, end - begin - extra, hooks)
         note = f"tramo {index + 1} de {len(starts)}, traslapo {run.lap:.0f} mm" + (f"; {run.note}" if run.note else "")
-        result.append(Piece(run.group, run.designation, _shape(hooks), tuple(dimensions), round_up(axis), run.mass_kg_m, count, note,
+        result.append(Piece(run.group, run.designation, _shape(hooks), tuple(dimensions), length, run.mass_kg_m, count, note,
                             _angles(hooks)))
     return result
 

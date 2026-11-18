@@ -2905,6 +2905,25 @@
   `frozen_all`, `profile_of`, `element_of`); `pyproject.toml` agrega `tests` a `pythonpath` de pytest y a `mypy_path`.
   Las claves de la huella cambian a las rutas nuevas con los mismos valores: ningún resultado cambia.
 
+### D-147: longitudes de las barras con la convención de DL-NET
+
+- **Problema:** DL-NET rechazó la línea `12 7/8'' 3.75 U.2 U.2` ("gancho de 0.2 < 0.250"). El `.dli` escribía en `U` el
+  ancho del gancho de 180° y una longitud de corte desarrollada por el eje, mientras que DL-NET entiende la longitud total
+  como tramo horizontal + L o U por gancho (tramo = Ltotal − 2L o Ltotal − 2U), con U = mitad del perímetro del doblez
+  + parte recta.
+- **Decisión del usuario:** adoptar la convención de DL-NET en todo el despiece: cartilla, peso, costo y `.dli`.
+  - Longitud total = tramo horizontal exterior + L o U por gancho, a 1 cm. El tramo va a 1 cm.
+  - L (90°) = 12db + π·(D + 0.5db)/8; U (180°) = parte recta + 0.5π·(D + 0.5db) − 0.5·(D + 0.5db). D es el diámetro
+    interior de doblado del perfil; las dos se redondean hacia arriba a 50 mm.
+  - El gancho de 135° de una barra y los estribos siguen midiéndose por el eje, con la longitud total a 1 cm.
+- **Cumplimiento:** la norma (ACI 318-25 25.3.1, NSR-10 C.7.1 y C.7.2) fija el diámetro de doblado y la extensión
+  recta, no una fórmula de la longitud de corte. Con la barra cortada a tramo + L o U y doblada conservando el tramo
+  exterior, la extensión resultante supera 12db (90°) y 4db ≥ 65 mm (180°) en las barras #3 a #10. Si el doblador
+  midiera L como la pata vertical exterior, la extensión de 90° quedaría corta (2 mm en #3 a unos 50 mm en #10):
+  pendiente de confirmar con el usuario.
+- **Consecuencias:** cambian la cartilla, los pesos y el costo de los diseños, sin cambiar la solución elegida de
+  ninguno. El oráculo `derive_detailing.py` usa las fórmulas del usuario y agrega un gancho de 180°.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

@@ -47,18 +47,20 @@ Deducido por ingeniería inversa de archivos guardados por DL-NET 2026 (el forma
 
 Longitudes en metros, sin cero inicial ni ceros sobrantes (`0.50` → `.5`, `6.00` → `6`). La barra va con su nombre de
 DL-NET, leído de la librería de la plantilla por su alias del catálogo (`#5` → `"5/8''"`). Las dimensiones son las de la
-cartilla: exteriores y redondeadas hacia arriba a 50 mm; la longitud es la de corte (total desarrollada, por el eje).
+cartilla (D-147): la longitud total es el tramo horizontal más la longitud de cada gancho (L con 90°, U con 180°), a
+1 cm, y DL-NET reconstruye el tramo como Ltotal − 2L o Ltotal − 2U; L y U, a 50 mm, con las fórmulas de
+[zapatas](zapatas.md) (despiece).
 
 | Forma de la cartilla | Línea DL-NET | Estado |
 | --- | --- | --- |
 | Recta | `2  "5/8''"  2.2` | Verificada (`PRUEBA_StructureLab.dli`, guardado por DL-NET) |
 | L (un gancho de 90°) | `3  "3/4''"  6.4   L.3` | Verificada (ídem) |
 | U (gancho de 90° en los dos extremos) | `1  "1-1/8''"  5.8   L.5   L.5` | Verificada (`n_12.dli`) |
-| Gancho de 180° | `1  "5/8''"  5.8   U.2   U.2` | El archivo abre en DL-NET; que `U` sea el gancho de 180° está por confirmar |
+| Gancho de 180° | `1  "5/8''"  5.8   U.2   U.2` | Verificada por el usuario (D-147): `U` es el gancho de 180° |
 | Estribo cerrado b × h, ganchos de 135° | `6  E  "1/2''"  .3*.5   G.15   F0/90` | Verificada; el significado de `F0/90` está por confirmar (se copia del ejemplo) |
 | Figura G | `6  G  "3/4''"  .5   G.2/.2   F360/0` | No implementada |
 
-Por confirmar en DL-NET (constantes con `TODO D-133` en `io/dlnet.py`): que la longitud sea la total desarrollada, que
-la pata del gancho y b × h del estribo sean dimensiones exteriores, el significado de `U` y de `F0/90`, y la
-pertenencia de los grupos. Una forma o un gancho que DL-NET no representa (figura G, gancho de 135° en una barra,
+Confirmado por el usuario (D-147): la longitud es la de corte, `U` es el gancho de 180° y la geometría de L y U es la de
+DL-NET (tramo = Ltotal − 2L o Ltotal − 2U). Por confirmar (constantes con `TODO D-133` en `io/dlnet.py`): b × h del
+estribo, el significado de `F0/90` y la pertenencia de los grupos. Una forma o un gancho que DL-NET no representa (figura G, gancho de 135° en una barra,
 estribo sin ganchos de 135°, una barra fuera de la librería) es un error con la marca, nunca una salida silenciosa.

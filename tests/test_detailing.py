@@ -77,6 +77,11 @@ def test_bar_geometry_matches_the_oracle(profile: str) -> None:
     piece = pieces(BarRun("u", u["designation"], db, MASS[u["designation"]], 1, u["A"], (hook, hook)), 12000.0)[0]
     assert piece.shape == "U" and piece.cut_length == u["cut"]
     assert dict(piece.dimensions)["B"] == pytest.approx(u["leg"])
+    u180 = oracle["u_bar_180"]  # D-147: gancho de 180° con la convención de DL-NET
+    db = DIAMETER[u180["designation"]]
+    hook = Hook(180, detailing.hook_bend_diameter(db), detailing.hook_extension(db, 180))
+    piece = pieces(BarRun("u", u180["designation"], db, MASS[u180["designation"]], 1, u180["A"], (hook, hook)), 12000.0)[0]
+    assert piece.cut_length == u180["cut"] and dict(piece.dimensions)["C"] == pytest.approx(u180["leg"])
     closed = oracle["closed_stirrup"]
     db = DIAMETER[closed["designation"]]
     extension = detailing.stirrup_hook_extension(db, 135)

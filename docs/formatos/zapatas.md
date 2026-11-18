@@ -407,8 +407,14 @@ si hay plantilla; ver [dlnet.md](dlnet.md), D-133), y la memoria lleva el capít
   La nota de la cartilla dice la clase y la razón ("empalme clase A (As/As req = 2.62)"). Las barras sin demanda por
   análisis (la malla x de la zarpa de la T fuera del ala, la piel) y las zapatas sin casos mayorados en equilibrio
   quedan en clase B ("sin As requerido por analisis en la zona del empalme").
-- **Longitudes:** dimensiones exteriores y longitud de corte por el eje de la barra, redondeadas hacia arriba a 50 mm; el
-  peso sale de la longitud de corte. Los empalmes de barras vecinas se escalonan: la mitad empieza con medio tramo
+- **Longitudes (convención de DL-NET, D-147):** la longitud total (de corte) de una barra es su tramo horizontal
+  exterior A, redondeado hacia arriba a 1 cm, más la longitud de cada gancho, redondeada hacia arriba a 50 mm, con D el
+  diámetro interior de doblado del perfil:
+  - 90°: L = extensión (12db) + π·(D + 0.5·db)/8;
+  - 180°: U = extensión (4db, no menos de 65 mm) + 0.5·π·(D + 0.5·db) − 0.5·(D + 0.5·db).
+
+  El gancho de 135° de una barra y los estribos se miden por el eje de la barra, con la longitud total a 1 cm. El peso
+  sale de la longitud total. Los empalmes de barras vecinas se escalonan: la mitad empieza con medio tramo
   comercial.
 - **Marcas:** `<elemento>-01`, `-02`, … Barras iguales (designación, forma, dimensiones y longitud de corte) comparten
   marca y la fila nombra los grupos que reúne.

@@ -7,13 +7,13 @@ Datos de la norma, leídos de los PDF:
 - NSR-10, C.7.1 y Tabla C.7.2: los mismos doblados y extensiones de ganchos estándar; estribos No. 5 y menores con
   doblado 4db; 135° con 6db, sin mínimo de 75 mm (C.7.1.3(c)). C.12.15.1 y C.12.16.1: los mismos empalmes.
 
-Geometría (independiente de detailing/schedule.py): longitud por el eje = tramos rectos + arcos de radio D/2 + db/2.
-- Barra con gancho de 90° en cada extremo y dimensión exterior A: recto = A − 2(D/2 + db); cada gancho agrega el arco
-  π/2·(D/2 + db/2) y la extensión. Pata exterior = extensión + D/2 + db.
-- Estribo cerrado de W × H exteriores con ganchos de 135°: 2(W − D − 2db) + 2(H − D − 2db) + 3 arcos de 90° + 2 arcos de
-  135° + 2 extensiones.
-- Barra recta de largo L > longitud comercial S con traslapo t: el patrón A corta S, S, …; el patrón B empieza con S/2.
-Todas las longitudes de corte se redondean hacia arriba a 50 mm.
+Geometría (independiente de detailing/schedule.py), convención de DL-NET (decisión del usuario, D-147):
+- Barra con ganchos y tramo horizontal exterior A: longitud total = A (hacia arriba a 10 mm) + la de cada gancho (hacia
+  arriba a 50 mm): L = extensión + π·(D + 0.5db)/8 con 90° y U = extensión + 0.5·π·(D + 0.5db) − 0.5·(D + 0.5db) con 180°.
+- Estribo cerrado de W × H exteriores con ganchos de 135°, por el eje (tramos rectos y arcos de radio D/2 + db/2):
+  2(W − D − 2db) + 2(H − D − 2db) + 3 arcos de 90° + 2 arcos de 135° + 2 extensiones, hacia arriba a 10 mm.
+- Barra recta de largo L > longitud comercial S con traslapo t: el patrón A corta S, S, …; el patrón B empieza con S/2;
+  cada pieza hacia arriba a 10 mm.
 
 Clase del empalme (D-129): ACI Tabla 25.5.2.1 y NSR-10 C.12.15.2, clase A si As provisto / As requerido por análisis
 ≥ 2 y se empalma la mitad o menos. As requerido de una sección rectangular b × h con una capa a d, bloque de Whitney
@@ -32,8 +32,8 @@ BARS = {"#4": 12.7, "#5": 15.9, "#6": 19.1, "#9": 28.7}  # mm
 FY, FC = 420.0, 28.0
 
 
-def round_up(x: float) -> float:
-    return math.ceil(x / 50.0 - 1e-9) * 50.0
+def round_up(x: float, step: float = 10.0) -> float:
+    return math.ceil(x / step - 1e-9) * step
 
 
 def hook(folder: str, db: float) -> dict:
@@ -47,12 +47,13 @@ def stirrup(folder: str, db: float) -> dict:
     return {"bend": bend, "ext135": ext135}
 
 
-def u_bar(folder: str, db: float, a: float) -> dict:
+def u_bar(folder: str, db: float, a: float, angle: int = 90) -> dict:
+    """Barra con el mismo gancho en los dos extremos (90° o 180°), convención de DL-NET (D-147)."""
     h = hook(folder, db)
-    r = h["bend"] / 2
-    arc = math.pi / 2 * (r + db / 2)
-    axis = a - 2 * (r + db) + 2 * (arc + h["ext90"])
-    return {"cut": round_up(axis), "leg": h["ext90"] + r + db}
+    base = h["bend"] + 0.5 * db
+    raw = h["ext90"] + math.pi * base / 8 if angle == 90 else h["ext180"] + 0.5 * math.pi * base - 0.5 * base
+    leg = round_up(raw, 50.0)
+    return {"cut": round_up(a) + 2 * leg, "leg": leg}
 
 
 def closed_stirrup(folder: str, db: float, w: float, h_: float) -> float:
@@ -108,6 +109,7 @@ def derive(folder: str) -> dict:
         "hooks": {name: hook(folder, db) for name, db in BARS.items()},
         "stirrups": {name: stirrup(folder, db) for name, db in BARS.items() if name in ("#4", "#5")},
         "u_bar": {"designation": "#6", "A": 2850.0, **u_bar(folder, BARS["#6"], 2850.0)},
+        "u_bar_180": {"designation": "#9", "A": 3127.0, **u_bar(folder, BARS["#9"], 3127.0, 180)},
         "closed_stirrup": {"designation": "#4", "W": 850.0, "H": 1550.0, "cut": closed_stirrup(folder, BARS["#4"], 850.0, 1550.0)},
         "spliced": {"length": 6850.0, "stock": 6000.0, "lap": 833.0,
                     "pattern_a": spliced(6850.0, 6000.0, 833.0, 6000.0), "pattern_b": spliced(6850.0, 6000.0, 833.0, 3000.0)},

@@ -18,7 +18,8 @@ El usuario elige entre:
 
 ## Validaciones del usuario
 
-- El `.dli` en DL-NET: `U` como gancho de 180°, el campo `F0/90`, longitudes totales y grupos con más de dos elementos.
+- El `.dli` en DL-NET: el campo `F0/90`, b × h del estribo y grupos con más de dos elementos (`U` y las longitudes, D-147).
+- Despiece: cómo medir el gancho de 135° de las barras y los estribos (hoy por el eje de la barra, D-147).
 - El DXF en su CAD: capas por diámetro, leyendas y planta de geometría. Después, un dibujo más profesional.
 
 ## Cimentaciones
