@@ -3,8 +3,8 @@
 ## Alcance
 
 - El repositorio verifica, diseña, despieza y dibuja elementos de concreto reforzado.
-  La v1 cubre solo vigas. Los demás elementos se incorporan en el orden de la
-  [hoja de ruta](docs/ROADMAP.md), uno por vez.
+  Lo implementado está en el [README](README.md#estado); los demás elementos se incorporan en el
+  orden de la [hoja de ruta](docs/ROADMAP.md), uno por vez.
 - Dos perfiles normativos: `aci-318-25` (ACI CODE-318-25) y `nsr-10` (NSR-10 Título C).
   Cada proyecto declara un solo perfil y todo su cálculo sale de él. Nunca se mezclan.
 - Fuente normativa: los PDF locales en `references/` (ignorada por Git; no versionar PDF).
