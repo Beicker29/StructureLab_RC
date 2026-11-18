@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from frozen_examples import frozen
 from pydantic import ValidationError
 
 from structurelab_rc.codes.registry import PROFILES
@@ -365,7 +366,7 @@ def test_strip_load_shape_falls_back_when_the_column_line_has_no_pressure(case_i
     assert second and not any(text in check.note for check in second)
 
 
-EXAMPLE = Path(__file__).parent.parent / "examples" / "nsr_10" / "zapatas" / "pruebas" / "zapata_combinada.json"
+EXAMPLE = frozen("nsr_10", "zapatas", "zapata_combinada.json")
 
 
 def _to_global_y(load: dict[str, Any]) -> dict[str, Any]:

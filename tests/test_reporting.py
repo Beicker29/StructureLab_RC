@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from frozen_examples import frozen
 
 from structurelab_rc.cli import main
 from structurelab_rc.domain.check import Check
@@ -14,7 +15,7 @@ from structurelab_rc.model.layout import public
 from structurelab_rc.reporting.pdf import latin1, write_pdf
 from structurelab_rc.reporting.results import check_data, significant
 
-EXAMPLE = Path(__file__).parent.parent / "examples" / "nsr_10" / "vigas" / "pruebas" / "viga_t.json"
+EXAMPLE = frozen("nsr_10", "vigas", "viga_t.json")
 
 
 def _report(tmp_path: Path, **options: Any) -> tuple[dict[str, Any], str]:
@@ -98,7 +99,7 @@ def test_invalid_input_produces_a_short_report(tmp_path: Path) -> None:
 
 
 def test_footing_memoir_has_its_fixed_chapters(tmp_path: Path) -> None:
-    footing = Path(__file__).parent.parent / "examples" / "nsr_10" / "zapatas" / "pruebas" / "zapata_centrica.json"
+    footing = frozen("nsr_10", "zapatas", "zapata_centrica.json")
     report_file(footing, tmp_path)
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     results = json.loads((tmp_path / "resultado.json").read_text(encoding="utf-8"))
@@ -154,7 +155,7 @@ def test_cli_report_writes_the_files(tmp_path: Path, capsys: pytest.CaptureFixtu
 def test_footing_report_draws_the_soil_pressure_in_plan(tmp_path: Path) -> None:
     """D-080: la memoria de cada zapata trae la planta con la presión en las esquinas del caso que gobierna y la tabla de
     las esquinas de todos los casos de servicio; el SVG queda en la carpeta del report."""
-    report = report_file(EXAMPLE.parents[2] / "zapatas" / "pruebas" / "zapata_centrica.json", tmp_path)
+    report = report_file(frozen("nsr_10", "zapatas", "zapata_centrica.json"), tmp_path)
     figure = tmp_path / "presion_Z1.svg"
     assert figure in report.files
     svg = figure.read_text(encoding="utf-8")
@@ -192,7 +193,7 @@ def test_requirements_are_grouped_and_spacings_show_the_maximum_as_required(tmp_
     las separaciones máximas lo exigido es "≤ máximo" y lo suministrado la separación dispuesta; cada requisito de flexión
     va por cara en tracción y dirección; solo las columnas requisito, exigido, suministrado, referencia y resultado; el
     capítulo DCR no repite los requisitos."""
-    example = EXAMPLE.parents[2] / "zapatas" / "pruebas" / "zapata_combinada.json"
+    example = frozen("nsr_10", "zapatas", "zapata_combinada.json")
     report_file(example, tmp_path)
     text = (tmp_path / "memoria.txt").read_text(encoding="utf-8")
     # D-104: los capítulos 3 (solicitaciones) y 4 (diagramas) se unieron; los requisitos quedan en el 5.
@@ -238,7 +239,7 @@ def test_strip_shear_over_phi_vc_is_reported_with_dcr_099_and_a_danger_alert(tmp
 def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> None:
     """V3J.4 (D-080 a D-083): la memoria de la zapata combinada separa la viga larga de las franjas, dibuja la planta con
     las dos columnas y trae los esfuerzos de punzonamiento en cada esquina; el resultado trae combined_footings."""
-    example = EXAMPLE.parents[2] / "zapatas" / "pruebas" / "zapata_combinada.json"
+    example = frozen("nsr_10", "zapatas", "zapata_combinada.json")
     report = report_file(example, tmp_path)
     results = json.loads((tmp_path / "resultado.json").read_text(encoding="utf-8"))
     footing = results["combined_footings"][0]

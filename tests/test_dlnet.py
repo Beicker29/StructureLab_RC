@@ -10,6 +10,7 @@ import struct
 from pathlib import Path
 
 import pytest
+from frozen_examples import frozen
 
 from structurelab_rc.detailing.schedule import Piece, ScheduleRow
 from structurelab_rc.engine import report_file
@@ -34,7 +35,6 @@ ROOT = Path(__file__).parent.parent
 FIXTURES = Path(__file__).parent / "fixtures" / "dlnet"
 REAL = FIXTURES / "n_12.dli"  # guardado por DL-NET 2026: barra con L.5 L.5 y estribo E
 SAVED = FIXTURES / "PRUEBA_StructureLab.dli"  # guardado por DL-NET: barra recta, un gancho, dos ganchos y estribo
-PRUEBAS = ROOT / "examples" / "nsr_10" / "zapatas" / "pruebas"
 
 
 def _real(path: Path) -> bytes:
@@ -173,7 +173,7 @@ def test_report_writes_the_dli_with_the_declared_template(tmp_path: Path, monkey
     template.write_bytes(_synthetic())
     monkeypatch.setenv(TEMPLATE_VARIABLE, str(template))
     output = tmp_path / "zapata_combinada"
-    report = report_file(PRUEBAS / "zapata_combinada.json", output)
+    report = report_file(frozen("nsr_10", "zapatas", "zapata_combinada.json"), output)
     path = output / "zapata_combinada.dli"
     assert path in report.files and not report.notes
     written = read_dli(path.read_bytes())
@@ -184,6 +184,6 @@ def test_report_writes_the_dli_with_the_declared_template(tmp_path: Path, monkey
 
 def test_report_without_template_says_so(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(TEMPLATE_VARIABLE, str(tmp_path / "no_existe.dli"))
-    report = report_file(PRUEBAS / "zapata_centrica.json", tmp_path / "salida")
+    report = report_file(frozen("nsr_10", "zapatas", "zapata_centrica.json"), tmp_path / "salida")
     assert not any(path.suffix == ".dli" for path in report.files)
     assert any("salida.dli no se genero" in note for note in report.notes)

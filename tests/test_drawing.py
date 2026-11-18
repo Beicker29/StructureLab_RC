@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
+from frozen_examples import frozen
 
 from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
@@ -39,15 +40,14 @@ from structurelab_rc.model.project import Project
 from structurelab_rc.setup import load_engine
 
 ROOT = Path(__file__).parent.parent
-PRUEBAS = ROOT / "examples" / "nsr_10" / "zapatas" / "pruebas"
-REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx",
-             ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Ultimas.xlsx")
+REACTIONS = (frozen("etabs", "zapatas", "Joint Reactions - Servicio.xlsx"),
+             frozen("etabs", "zapatas", "Joint Reactions - Ultimas.xlsx"))
 BARS = load_engine().bars
 SCALE = 50.0
 
 
 def _project(name: str, tmp_path: Path) -> Project:
-    path = PRUEBAS / name
+    path = frozen("nsr_10", "zapatas", name)
     if name.endswith("_etabs.json"):
         data = import_etabs_footings(*REACTIONS, path)[0]
         assert data is not None
@@ -199,7 +199,7 @@ def test_run_marks_match_the_schedule(tmp_path: Path) -> None:
 
 
 def test_drawing_requires_detailing() -> None:
-    data = json.loads((PRUEBAS / "zapata_centrica.json").read_text(encoding="utf-8"))
+    data = json.loads((frozen("nsr_10", "zapatas", "zapata_centrica.json")).read_text(encoding="utf-8"))
     del data["detailing"]
     with pytest.raises(ProjectLoadError, match="drawing requiere detailing"):
         validate_input(data, Project)
@@ -216,7 +216,7 @@ def test_svg_keeps_the_model_scale(tmp_path: Path) -> None:
 
 def test_report_writes_the_drawing(tmp_path: Path) -> None:
     output = tmp_path / "zapata_centrica"  # los archivos llevan el nombre del caso (la carpeta de salida)
-    report = report_file(PRUEBAS / "zapata_centrica.json", output)
+    report = report_file(frozen("nsr_10", "zapatas", "zapata_centrica.json"), output)
     names = {path.name for path in report.files}
     assert {"zapata_centrica_drawing.json", "Z1_geometria.svg", "Z1_planta_inferior.svg", "Z1_corte_x.svg", "Z1_cartilla.svg"} <= names
     model = json.loads((output / "zapata_centrica_drawing.json").read_text(encoding="utf-8"))
@@ -230,7 +230,7 @@ def test_report_writes_the_drawing(tmp_path: Path) -> None:
 
 def test_dxf_has_the_layers_and_views(tmp_path: Path) -> None:
     ezdxf = pytest.importorskip("ezdxf")
-    report_file(PRUEBAS / "zapata_combinada.json", tmp_path / "zapata_combinada")
+    report_file(frozen("nsr_10", "zapatas", "zapata_combinada.json"), tmp_path / "zapata_combinada")
     document = ezdxf.readfile(tmp_path / "zapata_combinada" / "zapata_combinada.dxf")
     names = {layer.dxf.name for layer in document.layers}
     assert set(LAYERS) <= names
@@ -245,12 +245,12 @@ def test_dxf_has_the_layers_and_views(tmp_path: Path) -> None:
     assert PAPER_TEXT * SCALE in heights and PAPER_SMALL * SCALE in heights
 
 
-LOCATIONS = ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Location.xlsx"
+LOCATIONS = frozen("etabs", "zapatas", "Joint Location.xlsx")
 
 
 def _located(tmp_path: Path) -> Project:
     """zapata_centrica_etabs de pruebas importada con la tabla de coordenadas (D-130)."""
-    data = import_etabs_footings(*REACTIONS, PRUEBAS / "zapata_centrica_etabs.json", LOCATIONS)[0]
+    data = import_etabs_footings(*REACTIONS, frozen("nsr_10", "zapatas", "zapata_centrica_etabs.json"), LOCATIONS)[0]
     assert data is not None
     path = tmp_path / "etabs.json"
     path.write_text(json.dumps(data), encoding="utf-8")
@@ -305,7 +305,7 @@ def test_location_plan_draws_every_footing_at_its_joint_by_story(tmp_path: Path)
 
 def test_combined_footing_is_placed_by_its_columns_and_warns_if_they_disagree(tmp_path: Path) -> None:
     """D-130: la combinada se ubica por sus dos columnas; si la distancia de ETABS no cuadra con la declarada, avisa."""
-    data = import_etabs_footings(*REACTIONS, PRUEBAS / "zapata_combinada_etabs.json", LOCATIONS)[0]
+    data = import_etabs_footings(*REACTIONS, frozen("nsr_10", "zapatas", "zapata_combinada_etabs.json"), LOCATIONS)[0]
     assert data is not None
     footing = data["combined_footings"][0]
     first, second = footing["columns"]
@@ -331,7 +331,7 @@ def test_run_writes_the_location_plan_outside_the_memoir(tmp_path: Path) -> None
     """D-130: run con etabs_files.locations escribe la planta por nivel y el cuadro (SVG y modelo de dibujo); la memoria
     no la lleva."""
     output = tmp_path / "zapata_centrica_etabs"
-    assert main(["run", str(PRUEBAS / "zapata_centrica_etabs.json"), "--output", str(output)]) in (0, 1)
+    assert main(["run", str(frozen("nsr_10", "zapatas", "zapata_centrica_etabs.json")), "--output", str(output)]) in (0, 1)
     model = json.loads((output / "zapata_centrica_etabs_drawing.json").read_text(encoding="utf-8"))  # con el nombre del caso
     names = [view["name"] for view in model["elements"]["localizacion"]]
     assert names[-1] == "cuadro_tipologias" and len(names) >= 2

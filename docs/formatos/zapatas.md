@@ -1,6 +1,13 @@
 # Formato de zapatas
 
-Referencia de la entrada y la salida de la verificación de zapatas aisladas (v3, en curso), común a los dos perfiles. Los ejemplos están en `examples/<perfil>/zapatas/`. La presión del suelo sigue la solución de Bellos y Bakas (2017) para una zapata rígida sin tracción en el contacto.
+Referencia de la entrada y la salida de las zapatas aisladas, combinadas y en T invertida, común a los dos perfiles. Los ejemplos están en `examples/<perfil>/zapatas/<tipología>/` (`aislada`, `combinada`, `t_invertida`).
+
+Supuestos:
+
+- La presión del suelo es lineal y sin tracción bajo la zapata rígida (Bellos y Bakas, 2017).
+- El empuje pasivo del deslizamiento actúa solo sobre el espesor de la zapata; el pedestal no aporta pasiva (D-092).
+- No hay nivel freático: la presión, el contacto, la estabilidad y la revisión estructural se calculan sin subpresión
+  ni pesos sumergidos. Su implementación está pendiente en la [hoja de ruta](../ROADMAP.md) (D-092).
 
 ## Convenciones
 

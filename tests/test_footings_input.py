@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from frozen_examples import frozen
 from pydantic import ValidationError
 
 from structurelab_rc.cli import main
@@ -22,9 +23,9 @@ from structurelab_rc.model.template import EtabsFootingTemplate, LoadFactors
 from structurelab_rc.setup import load_engine
 
 EXAMPLES = Path(__file__).parent.parent / "examples"
-SERVICE = EXAMPLES / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx"
-FACTORED = EXAMPLES / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Ultimas.xlsx"
-TEMPLATE = EXAMPLES / "nsr_10" / "zapatas" / "pruebas" / "zapata_centrica_etabs.json"
+SERVICE = frozen("etabs", "zapatas", "Joint Reactions - Servicio.xlsx")
+FACTORED = frozen("etabs", "zapatas", "Joint Reactions - Ultimas.xlsx")
+TEMPLATE = frozen("nsr_10", "zapatas", "zapata_centrica_etabs.json")
 HEADERS = ("Story", "Label", "Unique Name", "Output Case", "Case Type", "Step Type", "FX", "FY", "FZ", "MX", "MY", "MZ")
 UNITS = {"FX": "kN", "FY": "kN", "FZ": "kN", "MX": "kN-m", "MY": "kN-m", "MZ": "kN-m"}
 CONCRETE = {"fc": 28.0, "type": "normalweight", "unit_weight_kNm3": 24.0}
@@ -344,7 +345,7 @@ def test_cli_omits_an_excel_with_a_dash(tmp_path: Path, capsys: pytest.CaptureFi
     template.write_text(json.dumps(public(_combined_template({"service": "etabs", "factored": "json"}, loads).model_dump(mode="json"))),
                         encoding="utf-8")
     output = tmp_path / "proyecto.json"
-    combinations = EXAMPLES / "etabs" / "zapatas" / "pruebas" / "Combinaciones.xlsx"  # sin etabs_files, el explícito (D-137)
+    combinations = frozen("etabs", "zapatas", "Combinaciones.xlsx")  # sin etabs_files, el explícito (D-137)
     assert main(["import-etabs-footings", str(SERVICE), "-", str(template), "--output", str(output),
                  "--combinations", str(combinations)]) == 1  # nudos 10 y 11 no existen
     assert "no tiene combinaciones" in capsys.readouterr().out
@@ -352,7 +353,7 @@ def test_cli_omits_an_excel_with_a_dash(tmp_path: Path, capsys: pytest.CaptureFi
 
 def test_example_combined_template_imports() -> None:
     """La plantilla de ejemplo de zapatas combinadas (D-084): ZC-A con todo desde ETABS y ZC-B con las mayoradas escritas."""
-    template = EXAMPLES / "nsr_10" / "zapatas" / "pruebas" / "zapata_combinada_etabs.json"
+    template = frozen("nsr_10", "zapatas", "zapata_combinada_etabs.json")
     project, summary, check = import_etabs_footings(SERVICE, FACTORED, template)
     assert check.status is Status.PASS
     assert project is not None and summary is not None

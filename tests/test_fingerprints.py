@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 
 import pytest
+from frozen_examples import frozen_all
 
 from structurelab_rc.engine import (
     design_combined_file,
@@ -26,25 +27,26 @@ from structurelab_rc.engine import (
 
 ROOT = Path(__file__).parent.parent
 FINGERPRINTS = Path(__file__).parent / "fingerprints.json"
-# Las pruebas usan solo las copias congeladas de examples/<perfil>/<elemento>/pruebas/ (D-098): los ejemplos de afuera
+# Las pruebas usan solo las copias congeladas de pruebas/ (D-098; por tipología, D-146): los ejemplos de afuera
 # son para que el usuario itere. Los mismos ejemplos para los dos perfiles (D-073). Las plantillas de ETABS
 # (<tipo>_etabs.json, D-098) leen los Excel de examples/etabs/<elemento>/pruebas/; entran en la huella la de vigas,
 # las de zapatas combinadas (D-084), en T invertida (D-093) y del diseño de la combinada (D-112), que importan pocas
 # zapatas, y la verificación de zapatas aisladas (57 apoyos, con la planta de localización, D-130); el diseño por
 # tipologías desde ETABS (73 apoyos) tarda minutos y no entra.
 # La curva costo-N (curva_*.json, D-096) repite el diseño para cada N: tarda minutos con un proceso y no entra en la huella.
-EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/*/pruebas/*.json")
-                  if path.parts[-4] != "etabs" and not path.stem.endswith("_etabs") and not path.name.startswith("curva_"))
+EXAMPLES = sorted(str(path.relative_to(ROOT).as_posix()) for path in frozen_all()
+                  if not path.stem.endswith("_etabs") and not path.name.startswith("curva_"))
 ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                      for path in (ROOT / "examples").glob("*/vigas/pruebas/viga_rectangular_etabs.json")))
 COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                               for name in ("zapata_combinada_etabs.json", "zapata_t_invertida_etabs.json",
                                            "diseno_combinada_etabs.json", "diseno_t_invertida_etabs.json",
                                            "zapata_centrica_etabs.json")
-                              for path in (ROOT / "examples").glob(f"*/zapatas/pruebas/{name}")))
+                              for path in (ROOT / "examples").glob(f"*/zapatas/**/pruebas/{name}")))
 # Cabezales desde ETABS (D-138): cargas de la columna (Joint Reactions) o de los pilotes (Element Forces - Columns);
 # las plantillas de diseño (diseno_*, D-141) se diseñan después de importarlas.
-CAP_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix()) for path in (ROOT / "examples").glob("*/cabezales/pruebas/*_etabs.json")))
+CAP_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
+                         for path in (ROOT / "examples").glob("*/cabezales/**/pruebas/*_etabs.json")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "pruebas" / "Element Forces - Beams.xlsx"
 REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx",
              ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Ultimas.xlsx")

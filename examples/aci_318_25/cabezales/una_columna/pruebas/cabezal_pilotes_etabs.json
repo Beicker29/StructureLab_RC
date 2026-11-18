@@ -1,0 +1,117 @@
+{
+  "description": "Ejemplo de cabezal desde ETABS con las fuerzas de los pilotes 1799 y 1725 de ETABS (Element Forces - Columns) en la estación 0.002 m, la cabeza del pilote; sus reacciones no incluyen el peso del cabezal (supuesto). Geometría, pilote, suelo y armado supuestos. Unidades: mm, MPa, kN/m2, kN/m3, kN y kN-m.",
+  "etabs_files": {
+    "service": "../../../../etabs/cabezales/pilotes/pruebas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../../../etabs/cabezales/pilotes/pruebas/Joint Reactions - Ultimas.xlsx",
+    "combinations": "../../../../etabs/cabezales/pilotes/pruebas/Combinaciones.xlsx"
+  },
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "special",
+    "justification": "Pórtico especial (special) declarado por el ingeniero para este ejemplo."
+  },
+  "concrete": {
+    "fc": 28.0,
+    "type": "normalweight",
+    "max_aggregate": 19.0,
+    "unit_weight_kNm3": 24.0
+  },
+  "reinforcement_steel": {
+    "fy": 420.0,
+    "fyt": 420.0,
+    "coating": "uncoated"
+  },
+  "soil": {
+    "unit_weight_fill_kNm3": 18.0,
+    "pile_capacity_compression_kN": 3000.0,
+    "pile_capacity_tension_kN": 600.0,
+    "pile_capacity_lateral_kN": 250.0,
+    "seismic_capacity_factor": 1.33,
+    "group_efficiency": 0.85,
+    "max_eccentricity_mm": 150.0
+  },
+  "pile_caps": [
+    {
+      "id": "CP-1725",
+      "loads_from": "piles",
+      "etabs_station": 0.002,
+      "lx": 1800.0,
+      "ly": 3000.0,
+      "h": 1500.0,
+      "cover": 75.0,
+      "bottom_cover": 150.0,
+      "fill_height": 400.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "columns": [
+        {
+          "id": "C1",
+          "column_unique_name": "277",
+          "cx": 600.0,
+          "cy": 600.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0,
+          "dowels": {
+            "designation": "#7",
+            "count": 12,
+            "end": "hook90"
+          }
+        }
+      ],
+      "bottom": {
+        "first": "y",
+        "x": {
+          "designation": "#8",
+          "spacing": 125.0,
+          "end": "hook90"
+        },
+        "y": {
+          "designation": "#8",
+          "spacing": 110.0,
+          "end": "hook90"
+        }
+      },
+      "top": {
+        "first": "x",
+        "x": {
+          "designation": "#7",
+          "spacing": 110.0,
+          "end": "hook90"
+        },
+        "y": {
+          "designation": "#6",
+          "spacing": 200.0,
+          "end": "hook90"
+        }
+      },
+      "pile": {
+        "shape": "circular",
+        "size": 600.0,
+        "embedment": 75.0
+      },
+      "mislocation_mm": 75.0,
+      "reactions_include_weight": false,
+      "piles": [
+        {
+          "id": "P1",
+          "x": 0.0,
+          "y": -900.0,
+          "etabs_unique_name": "1799"
+        },
+        {
+          "id": "P2",
+          "x": 0.0,
+          "y": 900.0,
+          "etabs_unique_name": "1725"
+        }
+      ]
+    }
+  ],
+  "detailing": {
+    "stock_length_mm": 12000.0
+  },
+  "drawing": {
+    "scale": 50.0
+  }
+}

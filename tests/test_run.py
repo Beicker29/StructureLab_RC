@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from frozen_examples import element_of, frozen, frozen_all, profile_of
 from pydantic import ValidationError
 
 from structurelab_rc.cli import main
@@ -14,7 +15,7 @@ from structurelab_rc.model.project import Project
 
 ROOT = Path(__file__).parent.parent
 # Solo las copias congeladas de pruebas/ (D-098); las de afuera son para que el usuario itere.
-EXAMPLES = sorted(path for path in (ROOT / "examples").glob("*/*/pruebas/*.json"))
+EXAMPLES = frozen_all()
 
 
 _COMBINED_DESIGNS = {"diseno_combinada.json": "combined_design", "diseno_t_invertida.json": "combined_design",
@@ -27,21 +28,21 @@ def _expected_kind(path: Path) -> str:
         return _COMBINED_DESIGNS[name]
     if path.stem.endswith("_etabs"):
         if name.startswith("diseno_"):
-            return "etabs_pile_cap_design" if path.parts[-3] == "cabezales" else "etabs_design"
-        return "etabs_beams" if path.parts[-3] == "vigas" else "etabs_footings"
+            return "etabs_pile_cap_design" if element_of(path) == "cabezales" else "etabs_design"
+        return "etabs_beams" if element_of(path) == "vigas" else "etabs_footings"
     if name.startswith("diseno_"):
-        return "pile_cap_design" if path.parts[-3] == "cabezales" else "design"
+        return "pile_cap_design" if element_of(path) == "cabezales" else "design"
     if name.startswith("curva_"):
         return "curve"
     return "project"
 
 
-@pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: f"{path.parts[-4]}-{path.parts[-3]}-{path.stem}")
+@pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: f"{profile_of(path)}-{element_of(path)}-{path.stem}")
 def test_every_example_has_a_run_plan(path: Path) -> None:
     """Cada ejemplo del repositorio se corre con `run`: su tipo sale del contenido y las plantillas traen sus Excel."""
     plan = run_plan(path)
     assert plan.kind == _expected_kind(path)
-    assert plan.output == ROOT / "results" / path.parts[-4] / path.parts[-3] / "pruebas" / path.stem
+    assert plan.output == ROOT / "results" / path.parent.relative_to(ROOT / "examples") / path.stem
     for excel in (plan.workbook, plan.service, plan.factored):
         assert excel is None or excel.exists()
     if plan.kind.startswith("etabs"):
@@ -53,7 +54,7 @@ def test_default_output_outside_the_examples(tmp_path: Path) -> None:
 
 
 def test_a_template_without_its_excel_is_a_clear_error(tmp_path: Path) -> None:
-    template = json.loads((ROOT / "examples/nsr_10/zapatas/pruebas/zapata_t_invertida_etabs.json").read_text(encoding="utf-8"))
+    template = json.loads((frozen("nsr_10", "zapatas", "zapata_t_invertida_etabs.json")).read_text(encoding="utf-8"))
     template.pop("etabs_files")
     path = tmp_path / "plantilla.json"
     path.write_text(json.dumps(template), encoding="utf-8")
@@ -62,7 +63,7 @@ def test_a_template_without_its_excel_is_a_clear_error(tmp_path: Path) -> None:
 
 
 def test_the_imported_project_leaves_out_etabs_files() -> None:
-    template = ROOT / "examples/nsr_10/zapatas/pruebas/zapata_t_invertida_etabs.json"
+    template = frozen("nsr_10", "zapatas", "zapata_t_invertida_etabs.json")
     plan = run_plan(template)
     project, _, check = import_etabs_footings(plan.service, plan.factored, template)
     assert project is not None and "etabs_files" not in project
@@ -81,7 +82,7 @@ def test_curve_settings_reject_bad_text() -> None:
 
 def test_run_writes_the_results_memoirs_and_figures(tmp_path: Path) -> None:
     out = tmp_path / "salida"
-    assert main(["run", str(ROOT / "examples/nsr_10/zapatas/pruebas/zapata_combinada.json"), "--output", str(out)]) == 0
+    assert main(["run", str(frozen("nsr_10", "zapatas", "zapata_combinada.json")), "--output", str(out)]) == 0
     names = {path.name for path in out.iterdir()}
     assert {"resultado.json", "memoria.txt", "presion_ZC1.svg", "diagrama_ZC1_principal_cortante.svg",
             "diagrama_ZC1_principal_momento.svg", "diagrama_ZC1_franja_C1_cortante.svg"} <= names
@@ -90,8 +91,8 @@ def test_run_writes_the_results_memoirs_and_figures(tmp_path: Path) -> None:
 def test_run_a_folder_runs_each_example_in_its_own_folder(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     folder = tmp_path / "ejemplos"
     folder.mkdir()
-    for name in ("vigas/pruebas/viga_t.json", "zapatas/pruebas/zapata_centrica.json"):
-        shutil.copy(ROOT / "examples/nsr_10" / name, folder / Path(name).name)
+    for element, name in (("vigas", "viga_t.json"), ("zapatas", "zapata_centrica.json")):
+        shutil.copy(frozen("nsr_10", element, name), folder / name)
     assert main(["run", str(folder), "--output", str(tmp_path / "salida")]) == 0
     for stem in ("viga_t", "zapata_centrica"):
         assert (tmp_path / "salida" / stem / "memoria.txt").exists()
@@ -103,8 +104,8 @@ def test_run_a_folder_skips_the_frozen_test_copies(tmp_path: Path, capsys: pytes
     pruebas/ se corre si se pide ella misma."""
     folder = tmp_path / "zapatas"
     (folder / "pruebas").mkdir(parents=True)
-    shutil.copy(ROOT / "examples/nsr_10/zapatas/pruebas/zapata_centrica.json", folder / "mia.json")
-    shutil.copy(ROOT / "examples/nsr_10/zapatas/pruebas/zapata_centrica.json", folder / "pruebas" / "congelada.json")
+    shutil.copy(frozen("nsr_10", "zapatas", "zapata_centrica.json"), folder / "mia.json")
+    shutil.copy(frozen("nsr_10", "zapatas", "zapata_centrica.json"), folder / "pruebas" / "congelada.json")
     assert main(["run", str(folder), "--output", str(tmp_path / "salida")]) == 0
     assert (tmp_path / "salida" / "mia" / "memoria.txt").exists()
     assert not (tmp_path / "salida" / "pruebas").exists()

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from frozen_examples import element_of, frozen, frozen_all, profile_of
 from pydantic import ValidationError
 
 from structurelab_rc.codes.registry import PROFILES
@@ -24,8 +25,8 @@ from structurelab_rc.setup import load_engine
 ROOT = Path(__file__).parent.parent
 ORACLES = Path(__file__).parent / "oracles"
 FOLDERS = {"aci-318-25": "aci_318_25", "nsr-10": "nsr_10"}
-EXAMPLES = sorted(path for path in (ROOT / "examples").glob("*/cabezales/pruebas/diseno_*.json") if not path.stem.endswith("_etabs"))
-TEMPLATES = sorted((ROOT / "examples").glob("*/cabezales/pruebas/diseno_*_etabs.json"))
+EXAMPLES = [path for path in frozen_all("diseno_*.json") if element_of(path) == "cabezales" and not path.stem.endswith("_etabs")]
+TEMPLATES = [path for path in frozen_all("diseno_*_etabs.json") if element_of(path) == "cabezales"]
 
 
 def _oracle(folder: str) -> dict[str, Any]:
@@ -34,7 +35,7 @@ def _oracle(folder: str) -> dict[str, Any]:
 
 
 def _example(folder: str, name: str) -> dict[str, Any]:
-    data: dict[str, Any] = json.loads((ROOT / "examples" / folder / "cabezales" / "pruebas" / name).read_text(encoding="utf-8"))
+    data: dict[str, Any] = json.loads(frozen(folder, "cabezales", name).read_text(encoding="utf-8"))
     return data
 
 
@@ -170,7 +171,7 @@ def test_pile_cap_without_solution_reports_why(tmp_path: Path) -> None:
     assert "Sin solucion" in check.errors[0].message
 
 
-@pytest.mark.parametrize("path", TEMPLATES, ids=lambda path: f"{path.parts[-4]}-{path.stem}")
+@pytest.mark.parametrize("path", TEMPLATES, ids=lambda path: f"{profile_of(path)}-{path.stem}")
 def test_etabs_template_imports_and_designs(path: Path, tmp_path: Path) -> None:
     """Plantilla de diseño de ETABS (D-141): importa las cargas de la columna o de los pilotes, diseña y el proyecto
     diseñado pasa la verificación; con la tabla de coordenadas, la columna queda ubicada."""

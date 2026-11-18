@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from frozen_examples import frozen
 from pydantic import ValidationError
 
 from structurelab_rc.codes.registry import PROFILES
@@ -105,7 +106,7 @@ def test_inverted_t_input_is_validated() -> None:
 
 def test_bottom_layer_must_stay_within_its_covered_width() -> None:
     """D-106: la capa inferior de la viga solo puede salir del alma hasta bottom_width (o el ala efectiva)."""
-    data = json.loads((Path(__file__).parent.parent / "examples" / "nsr_10" / "zapatas" / "pruebas" / "zapata_combinada.json")
+    data = json.loads((frozen("nsr_10", "zapatas", "zapata_combinada.json"))
                       .read_text(encoding="utf-8"))
     footing = _oracle("nsr_10")["cases"][0]["footing"]
     narrow = {**footing, "beam": {**footing["beam"], "bottom_width": 1200.0}}

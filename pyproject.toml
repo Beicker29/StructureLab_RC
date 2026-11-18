@@ -39,6 +39,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib --basetemp=.tmp-pytest"
+pythonpath = ["tests"]  # tests/frozen_examples.py: las rutas de las copias congeladas, una sola fuente (D-146)
 
 [tool.ruff]
 line-length = 140
@@ -58,7 +59,7 @@ max-complexity = 15
 [tool.mypy]
 python_version = "3.12"
 files = ["src", "tests"]
-mypy_path = "src"
+mypy_path = ["src", "tests"]
 explicit_package_bases = true
 
 [[tool.mypy.overrides]]

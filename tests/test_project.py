@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from frozen_examples import element_of, frozen, frozen_all, profile_of
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.beam.flexure import nominal_flexure
@@ -25,16 +26,16 @@ from structurelab_rc.model.project import Demands, Materials, Project, Section
 from structurelab_rc.setup import load_engine
 
 _ROOT = Path(__file__).parent.parent / "examples"
-# Solo las copias congeladas de examples/<perfil>/<elemento>/pruebas/ (D-098); las de afuera son para iterar.
-_ALL = sorted(path for path in _ROOT.glob("*/*/pruebas/*.json") if path.parts[-4] != "etabs")
+# Solo las copias congeladas de pruebas/ (D-098, D-146); las de afuera son para iterar.
+_ALL = frozen_all()
 
 
 def _profile(path: Path) -> str:
-    return path.parts[-4]
+    return profile_of(path)
 
 
 def _element(path: Path) -> str:
-    return path.parts[-3]
+    return element_of(path)
 
 
 def _id(path: Path) -> str:
@@ -100,11 +101,14 @@ def test_etabs_templates_load(path: Path) -> None:
     assert loader(path).profile == ("aci-318-25" if _profile(path) == "aci_318_25" else "nsr-10")
 
 
-@pytest.mark.parametrize("path", sorted(_ROOT.glob("aci_318_25/*/pruebas/*.json")), ids=lambda path: f"{_element(path)}-{path.stem}")
+_ACI = [path for path in _ALL if _profile(path) == "aci_318_25"]
+
+
+@pytest.mark.parametrize("path", _ACI, ids=lambda path: f"{_element(path)}-{path.stem}")
 def test_examples_are_the_same_for_both_profiles(path: Path) -> None:
     """D-073: cada ejemplo de ACI 318-25 tiene su gemelo en NSR-10 con los mismos datos; solo cambian el perfil y el nivel
     sísmico equivalente (y su justificación)."""
-    twin = _ROOT / "nsr_10" / _element(path) / "pruebas" / path.name
+    twin = frozen("nsr_10", _element(path), path.name)
     aci, nsr = (json.loads(item.read_text(encoding="utf-8")) for item in (path, twin))
     assert (aci["profile"], nsr["profile"]) == ("aci-318-25", "nsr-10")
     assert _LEVELS[aci["seismic"]["level"]] == nsr["seismic"]["level"]

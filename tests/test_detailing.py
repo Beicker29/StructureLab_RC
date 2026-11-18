@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from frozen_examples import frozen
 
 from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
@@ -110,7 +111,7 @@ def test_identical_bars_share_a_mark_and_the_totals_add_up() -> None:
 def test_example_schedule_has_every_bar_once(profile: str) -> None:
     """Cartilla de la zapata combinada de pruebas: las barras de cada fila aparecen una sola vez (contando los tramos de
     las empalmadas como una) y el peso de la cartilla suma el de sus filas."""
-    project = load_project(ROOT / "examples" / FOLDERS[profile] / "zapatas" / "pruebas" / "zapata_combinada.json")
+    project = load_project(frozen(FOLDERS[profile], "zapatas", "zapata_combinada.json"))
     assert project.detailing is not None and project.soil is not None
     footing = project.combined_footings[0]
     basis = Basis(PROFILES[profile], project.materials, BARS, project.seismic.level)
@@ -121,7 +122,7 @@ def test_example_schedule_has_every_bar_once(profile: str) -> None:
     pieces_by_run = sum(len(pieces(run, project.detailing.stock_length)) for run in runs)
     assert sum(1 for _ in rows) <= pieces_by_run
     assert sum(row.mass for row in rows) == pytest.approx(sum(totals(rows).values()))
-    isolated = load_project(ROOT / "examples" / FOLDERS[profile] / "zapatas" / "pruebas" / "zapata_centrica.json")
+    isolated = load_project(frozen(FOLDERS[profile], "zapatas", "zapata_centrica.json"))
     assert isolated.soil is not None
     assert footing_runs(Basis(PROFILES[profile], isolated.materials, BARS, isolated.seismic.level), isolated.footings[0],
                         face_envelope(isolated.footings[0], isolated.soil))
@@ -150,7 +151,7 @@ def _note_ratio(note: str) -> float:
 def test_isolated_mesh_splice_uses_the_largest_face_moment_of_its_check(profile: str) -> None:
     """D-129: la razón de la malla inferior de la aislada sale del mayor Mu de su verificación de flexión en todos los
     casos, con el As requerido por análisis."""
-    project = load_project(ROOT / "examples" / FOLDERS[profile] / "zapatas" / "pruebas" / "zapata_centrica.json")
+    project = load_project(frozen(FOLDERS[profile], "zapatas", "zapata_centrica.json"))
     assert project.soil is not None
     footing = project.footings[0]
     basis = Basis(PROFILES[profile], project.materials, BARS, project.seismic.level)
@@ -167,7 +168,7 @@ def test_isolated_mesh_splice_uses_the_largest_face_moment_of_its_check(profile:
 def test_combined_band_splice_uses_the_largest_positive_moment_of_its_strip(profile: str) -> None:
     """D-129: la razón del band de cada columna sale del mayor Mu positivo (Wood-Armer) de la flexión de su franja, con
     las barras del band en el ancho de la franja."""
-    project = load_project(ROOT / "examples" / FOLDERS[profile] / "zapatas" / "pruebas" / "zapata_combinada.json")
+    project = load_project(frozen(FOLDERS[profile], "zapatas", "zapata_combinada.json"))
     assert project.soil is not None
     footing = project.combined_footings[0]
     basis = Basis(PROFILES[profile], project.materials, BARS, project.seismic.level)
@@ -189,14 +190,14 @@ def test_combined_band_splice_uses_the_largest_positive_moment_of_its_strip(prof
 
 def test_t_zarpa_bars_without_analysis_demand_keep_class_b(tmp_path: Path) -> None:
     """D-129: la malla x de la zarpa de la T fuera del ala no tiene demanda por análisis: queda en clase B y lo dice."""
-    main(["run", str(ROOT / "examples" / "nsr_10" / "zapatas" / "pruebas" / "zapata_t_invertida_etabs.json"), "--output", str(tmp_path)])
+    main(["run", str(frozen("nsr_10", "zapatas", "zapata_t_invertida_etabs.json")), "--output", str(tmp_path)])
     rows = next(tmp_path.rglob("cartilla.csv")).read_text(encoding="utf-8").splitlines()
     assert any("viga, capa" in line and "As/As req = " in line for line in rows)
     assert all("clase B: sin As requerido por analisis" in line for line in rows if "zarpa, malla inferior x" in line)
 
 
 def test_report_writes_the_schedule(tmp_path: Path) -> None:
-    report = report_file(ROOT / "examples" / "nsr_10" / "zapatas" / "pruebas" / "zapata_combinada.json", tmp_path)
+    report = report_file(frozen("nsr_10", "zapatas", "zapata_combinada.json"), tmp_path)
     assert (tmp_path / "cartilla.csv") in report.files
     results = json.loads((tmp_path / "resultado.json").read_text(encoding="utf-8"))
     data = results["combined_footings"][0]["detailing"]

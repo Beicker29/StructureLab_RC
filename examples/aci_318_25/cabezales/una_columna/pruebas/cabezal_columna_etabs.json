@@ -1,0 +1,124 @@
+{
+  "description": "Ejemplo de cabezal desde ETABS con las reacciones del nudo 1600 de ETABS (Joint Reactions) como fuerzas de la columna. Geometría, pilote, suelo y armado supuestos. Unidades: mm, MPa, kN/m2, kN/m3, kN y kN-m.",
+  "etabs_files": {
+    "service": "../../../../etabs/cabezales/columna/pruebas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../../../etabs/cabezales/columna/pruebas/Joint Reactions - Ultimas.xlsx",
+    "combinations": "../../../../etabs/cabezales/columna/pruebas/Combinaciones.xlsx",
+    "locations": "../../../../etabs/cabezales/columna/pruebas/Joint Location.xlsx"
+  },
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "special",
+    "justification": "Pórtico especial (special) declarado por el ingeniero para este ejemplo."
+  },
+  "concrete": {
+    "fc": 28.0,
+    "type": "normalweight",
+    "max_aggregate": 19.0,
+    "unit_weight_kNm3": 24.0
+  },
+  "reinforcement_steel": {
+    "fy": 420.0,
+    "fyt": 420.0,
+    "coating": "uncoated"
+  },
+  "soil": {
+    "unit_weight_fill_kNm3": 18.0,
+    "pile_capacity_compression_kN": 1500.0,
+    "pile_capacity_tension_kN": 300.0,
+    "pile_capacity_lateral_kN": 120.0,
+    "seismic_capacity_factor": 1.33,
+    "group_efficiency": 0.85,
+    "max_eccentricity_mm": 150.0
+  },
+  "pile_caps": [
+    {
+      "id": "CP-1600",
+      "loads_from": "column",
+      "lx": 2600.0,
+      "ly": 2600.0,
+      "h": 1100.0,
+      "cover": 75.0,
+      "bottom_cover": 150.0,
+      "fill_height": 400.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "columns": [
+        {
+          "id": "C1",
+          "column_unique_name": "1600",
+          "cx": 600.0,
+          "cy": 600.0,
+          "offset_x": 0.0,
+          "offset_y": 0.0,
+          "dowels": {
+            "designation": "#7",
+            "count": 12,
+            "end": "hook90"
+          }
+        }
+      ],
+      "bottom": {
+        "first": "x",
+        "x": {
+          "designation": "#8",
+          "spacing": 150.0,
+          "end": "hook90"
+        },
+        "y": {
+          "designation": "#8",
+          "spacing": 150.0,
+          "end": "hook90"
+        }
+      },
+      "top": {
+        "first": "x",
+        "x": {
+          "designation": "#6",
+          "spacing": 200.0,
+          "end": "hook90"
+        },
+        "y": {
+          "designation": "#6",
+          "spacing": 200.0,
+          "end": "hook90"
+        }
+      },
+      "pile": {
+        "shape": "circular",
+        "size": 500.0,
+        "embedment": 75.0
+      },
+      "mislocation_mm": 75.0,
+      "piles": [
+        {
+          "id": "P1",
+          "x": -750.0,
+          "y": -750.0
+        },
+        {
+          "id": "P2",
+          "x": 750.0,
+          "y": -750.0
+        },
+        {
+          "id": "P3",
+          "x": 750.0,
+          "y": 750.0
+        },
+        {
+          "id": "P4",
+          "x": -750.0,
+          "y": 750.0
+        }
+      ]
+    }
+  ],
+  "detailing": {
+    "stock_length_mm": 12000.0
+  },
+  "drawing": {
+    "scale": 50.0
+  }
+}

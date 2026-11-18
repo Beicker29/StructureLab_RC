@@ -1,0 +1,200 @@
+{
+  "description": "Plantilla de importación de una zapata combinada en T invertida (D-093) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx': ZT-1 toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos (Unique Name 15 y 1659). Viga de 1000 × 1700 mm sobre una zarpa de 3600 × 600 mm. DATOS DE EJEMPLO: dimensiones, posiciones, columnas, armado, suelo, relleno y sobrecargas son supuestos.",
+  "etabs_files": {
+    "service": "../../../etabs/zapatas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../../etabs/zapatas/Joint Reactions - Ultimas.xlsx",
+    "combinations": "../../../etabs/zapatas/Combinaciones.xlsx"
+  },
+  "profile": "nsr-10",
+  "seismic": {
+    "level": "DES",
+    "justification": "Capacidad especial de disipación de energía (DES) declarada por el ingeniero para este ejemplo."
+  },
+  "concrete": {
+    "fc": 24.5,
+    "type": "normalweight",
+    "max_aggregate": 19.1,
+    "unit_weight_kNm3": 24.0
+  },
+  "reinforcement_steel": {
+    "fy": 420.0,
+    "fyt": 420.0,
+    "coating": "uncoated"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 300.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.45,
+    "adhesion_kPa": 0.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "combined_footings": [
+    {
+      "id": "ZT-1",
+      "min_steel_exception": false,
+      "principal_direction": "y",
+      "lx": 4100,
+      "ly": 6100,
+      "h": 600,
+      "cover": 75.0,
+      "fill_height": 300.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "loads_source": {
+        "service": "etabs",
+        "factored": "etabs"
+      },
+      "beam": {
+        "width": 600,
+        "height": 800,
+        "layers": [
+          {
+            "depth": 103.6,
+            "role": "flexure",
+            "bars": [
+              "#8",
+              "#8",
+              "#8",
+              "#8"
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 243.2,
+            "role": "skin",
+            "bars": [
+              "#6",
+              "#6"
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 393.2,
+            "role": "skin",
+            "bars": [
+              "#6",
+              "#6"
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 543.2,
+            "role": "skin",
+            "bars": [
+              "#6",
+              "#6"
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 693.2,
+            "role": "flexure",
+            "bars": [
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8"
+            ],
+            "end": "straight"
+          }
+        ],
+        "stirrups": {
+          "designation": "#3",
+          "legs": 3,
+          "spacing": 170.0,
+          "closed": true,
+          "end": "hook135"
+        }
+      },
+      "bottom": {
+        "first": "y",
+        "x": {
+          "designation": "#7",
+          "spacing": 100.0,
+          "end": "straight"
+        },
+        "y": {
+          "designation": "#6",
+          "spacing": 150.0,
+          "end": "straight"
+        }
+      },
+      "top": {
+        "first": "y",
+        "x": {
+          "designation": "#4",
+          "spacing": 300.0,
+          "end": "straight"
+        },
+        "y": {
+          "designation": "#5",
+          "spacing": 200.0,
+          "end": "straight"
+        }
+      },
+      "columns": [
+        {
+          "id": "C_Ext",
+          "etabs_unique_name": "253",
+          "cx": 1100.0,
+          "cy": 500.0,
+          "x": 0.0,
+          "y": -2330.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 12,
+            "end": "hook90"
+          }
+        },
+        {
+          "id": "C_Int",
+          "etabs_unique_name": "202",
+          "cx": 450.0,
+          "cy": 800.0,
+          "x": 0.0,
+          "y": 1750.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 12,
+            "end": "hook90"
+          }
+        }
+      ]
+    }
+  ],
+  "detailing": {
+    "stock_length_mm": 12000.0
+  },
+  "drawing": {
+    "scale": 50.0
+  }
+}

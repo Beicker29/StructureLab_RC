@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from frozen_examples import frozen
 from pydantic import ValidationError
 
 from structurelab_rc.codes.registry import PROFILES
@@ -34,7 +35,7 @@ from structurelab_rc.setup import load_engine
 ROOT = Path(__file__).parent.parent
 ORACLES = Path(__file__).parent / "oracles"
 FOLDERS = {"aci-318-25": "aci_318_25", "nsr-10": "nsr_10"}
-EXAMPLE = ROOT / "examples" / "nsr_10" / "zapatas" / "pruebas" / "diseno_combinada.json"
+EXAMPLE = frozen("nsr_10", "zapatas", "diseno_combinada.json")
 BARS = load_engine().bars
 
 
@@ -278,7 +279,7 @@ def test_etabs_template_builds_the_combined_design_project() -> None:
 
 
 # T invertida (D-113).
-EXAMPLE_T = ROOT / "examples" / "nsr_10" / "zapatas" / "pruebas" / "diseno_t_invertida.json"
+EXAMPLE_T = frozen("nsr_10", "zapatas", "diseno_t_invertida.json")
 
 
 def test_inverted_t_input_is_validated() -> None:

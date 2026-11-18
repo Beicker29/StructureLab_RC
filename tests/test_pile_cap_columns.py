@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from frozen_examples import frozen
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.basis import Basis
@@ -110,7 +111,7 @@ def test_etabs_template_reads_each_column(tmp_path: Path) -> None:
     """La plantilla de verificación lee las reacciones de cada columna por su Unique Name (D-143)."""
     from structurelab_rc.engine import import_etabs_footings
 
-    root = Path(__file__).parent.parent / "examples" / "aci_318_25" / "cabezales" / "pruebas"
+    root = frozen("aci_318_25", "cabezales", "cabezal_columna_etabs.json").parent
     template = json.loads((root / "cabezal_columna_etabs.json").read_text(encoding="utf-8"))
     template["etabs_files"] = {key: str((root / value).resolve()) for key, value in template["etabs_files"].items()}
     cap = template["pile_caps"][0]

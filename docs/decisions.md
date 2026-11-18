@@ -2888,6 +2888,23 @@
 - **Pendiente de la auditoría:** cobertura de oráculo para los estados límite CRSI 4 a 6 con varias columnas, el valor
   del perímetro común, la importación con `column_station` y el desarrollo con varias columnas.
 
+### D-146: ejemplos por tipología y README enfocado en su propósito
+
+- **Pedido del usuario:** organizar las carpetas de ejemplos, que tenían muchos archivos, y dejar los comandos en el
+  `LEEME.md` de cada carpeta de ejemplos, con un README enfocado en su propósito y no como directorio de comandos.
+- **Organización (decisión del usuario):** `examples/<perfil>/<elemento>/<tipología>/`, con la verificación, la
+  plantilla de ETABS y el diseño de cada tipología juntos y su copia congelada en `pruebas/` dentro de ella. Un elemento
+  se divide solo si tiene más de una tipología: `zapatas/{aislada, combinada, t_invertida}` y
+  `cabezales/{una_columna, varias_columnas}`; `vigas/` queda plana. Los Excel compartidos de `examples/etabs/<elemento>/`
+  no cambian; las rutas `etabs_files` de las plantillas ganan un nivel. `results/` sigue la misma estructura.
+- **Documentación:** cada tipología tiene un `LEEME.md` con sus ejemplos y el `run` de cada uno, de la carpeta y de su
+  `pruebas/`; el `LEEME.md` de cada elemento queda como índice con los pasos por separado y lo propio del perfil. El
+  README dice qué es la herramienta, su estado, cómo instalarla, el comando `run` en general y dónde está cada cosa; los
+  supuestos de las zapatas pasan a `docs/formatos/zapatas.md`.
+- **Pruebas:** `tests/frozen_examples.py` es la única fuente de las rutas de las copias congeladas (`frozen`,
+  `frozen_all`, `profile_of`, `element_of`); `pyproject.toml` agrega `tests` a `pythonpath` de pytest y a `mypy_path`.
+  Las claves de la huella cambian a las rutas nuevas con los mismos valores: ningún resultado cambia.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

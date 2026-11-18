@@ -1,67 +1,41 @@
 # Zapatas, perfil aci-318-25
 
-Zapatas aisladas y combinadas según ACI CODE-318-25 (v3, en curso). Los campos de entrada y de salida están en
+Zapatas aisladas, combinadas y en T invertida según ACI CODE-318-25. Los campos de entrada y de salida están en
 [docs/formatos/zapatas.md](../../../docs/formatos/zapatas.md).
 
-| Ejemplo | Qué muestra |
+Los ejemplos van por tipología, cada una con su `LEEME.md` (ejemplos y comandos) y su copia congelada en `pruebas/`:
+
+| Carpeta | Contenido |
 | --- | --- |
-| `zapata_centrica.json` | Ejemplo de zapata aislada céntrica: Z1 de planta cuadrada centrada bajo una columna cuadrada con pedestal. Fuerzas en la base de la columna, ejes globales. Datos ilustrativos. |
-| `diseno_tipologias.json` | Diseño por tipologías (D-069): 6 columnas, 6 zapatas tipo, f'c de 21, 24.5 y 28 MPa con sus precios. |
-| `diseno_combinada.json` | Diseño de la zapata combinada (D-107): las columnas y cargas de `zapata_combinada.json` (posiciones con origen en C1); el diseño ubica la base en la resultante de D+L y elige dimensiones, f'c (21 o 28 MPa) y refuerzo de menor costo. |
-| `diseno_combinada_etabs.json` | Diseño de zapata combinada desde los Excel de `examples/etabs/zapatas/` (D-112): las dos columnas de ZC-A de `zapata_combinada_etabs.json` toman sus cargas de ETABS; la base se ubica con SERVICIO 1 (D+L) (`placement_case`). **Datos supuestos.** |
-| `diseno_t_invertida.json` | Diseño de zapata combinada en T invertida (D-113): las columnas y cargas de `diseno_combinada.json`, alma desde la columna más ancha más 50 mm a cada lado, viga de 700 a 1200 mm y zarpa de 250 a 400 mm. |
-| `diseno_t_invertida_etabs.json` | Diseño de zapata combinada en T invertida desde los Excel de `examples/etabs/zapatas/` (D-113, D-114): las columnas C15 y C1659 de ZT-1 toman sus cargas de ETABS; la base se ubica con SERVICIO 1 (D+L). **Datos supuestos.** |
-| `curva_tipologias.json` | Curva costo-N (D-078, D-096): el mismo proyecto de `diseno_tipologias.json`, diseñado para N = 1 a 6 (bloque `curve`). |
-| `diseno_tipologias_etabs.json` | Diseño por tipologías desde los Excel compartidos de `examples/etabs/zapatas/`: cada Unique Name es una columna de 500 × 800 mm (cx × cy) con la zapata centrada; 6 tipologías y f'c de 21, 24.5 y 28 MPa. **Datos supuestos.** El diseño de los 73 apoyos tarda varios minutos. |
-| `zapata_t_invertida_etabs.json` | Zapata combinada en T invertida desde los mismos Excel (D-093): ZT-1 toma de ETABS las cargas de servicio y mayoradas de los nudos 15 y 1659; viga de 1000 × 1700 mm sobre zarpa de 9.0 × 3.6 × 0.6 m. **Datos supuestos.** |
-| `zapata_combinada_etabs.json` | Zapatas combinadas desde los mismos Excel (D-084): ZC-A toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos y ZC-B solo las de servicio, con las mayoradas escritas en la plantilla; las dos con barras superiores transversales (top.y, D-097, D-099). **Datos supuestos.** |
-| `zapata_centrica_etabs.json` | Verificación desde los mismos Excel con tres tipos de zapata; cubre 57 de los 73 apoyos. **Dimensiones, columnas, mallas, suelo, relleno y sobrecargas supuestos.** Las combinaciones que entran, con sus factores y si incluyen sismo, salen de `etabs/zapatas/Combinaciones.xlsx` (D-137). La copia de `pruebas/` declara además `etabs_files.locations`, `detailing` y `drawing`, y dibuja la planta de localización (D-130). Para tenerla aquí, agrega esos campos. |
-| `zapata_combinada.json` | Ejemplo de zapata combinada: ZC1 rectangular de 7.0 × 2.6 m bajo dos columnas (C1 de 500 × 500 mm cerca del borde −X y C2 de 550 × 550 mm desplazada 150 mm en Y), con cargas de servicio y mayoradas, sismo en X, refuerzo transversal (band) bajo cada columna y barras superiores transversales #5 c/300 (top.y, D-097, D-099). La torsión de la viga larga queda bajo φTth (D-088). Datos ilustrativos (D-080 a D-083). |
-
-Estado actual: se verifican la presión admisible y el contacto con el suelo (V3C) y toda la parte estructural
-(V3D): flexión con las mallas, As,min, separación, franja central, altura mínima, cortante en una dirección,
-punzonamiento, desarrollo de las barras, aplastamiento y pasadores. Zapatas combinadas (V3J, solo verificación): la
-revisión geotécnica, la viga en la dirección larga y las franjas transversales con el código de vigas, el punzonamiento
-por columna, el desarrollo, el aplastamiento y los pasadores.
-
-Estos archivos son **para iterar**: se pueden cambiar libremente para probar parámetros. Las pruebas, las huellas y la CI
-leen solo la copia congelada de [`pruebas/`](pruebas/LEEME.md) (D-098). Nombres: `<tipo>.json` con las cargas
-declaradas y `<tipo>_etabs.json` con las cargas de los Excel de ETABS.
+| [`aislada/`](aislada/LEEME.md) | Zapatas aisladas: verificación con las cargas declaradas y desde ETABS, diseño por tipologías (D-069) y curva costo-N (D-078). |
+| [`combinada/`](combinada/LEEME.md) | Zapatas combinadas rectangulares de dos columnas: verificación (D-080 a D-083) y diseño (D-107), con las cargas declaradas y desde ETABS. |
+| [`t_invertida/`](t_invertida/LEEME.md) | Zapatas combinadas en T invertida de dos columnas: verificación (D-093, D-106) y diseño (D-113), desde ETABS y con las cargas declaradas. |
 
 ## Cómo correrlos
 
-Un solo comando por ejemplo (D-096). Cada uno deja en `results/aci_318_25/zapatas/<ejemplo>/` el `resultado.json`, las
-memorias `memoria.txt` y `memoria.pdf` y las figuras (presión del suelo y, en las combinadas y en T invertida, diagramas
-de momento y cortante). Las plantillas de ETABS leen sus Excel de `etabs_files` (rutas relativas a la plantilla) y se
-importan solas; los diseños dejan además `proyecto.json` y `tipologias.json` (o `resumen.json` el de la combinada), y la curva costo-N `curva.csv` y
-`curva.svg`.
-
-```console
-structurelab-rc run examples/aci_318_25/zapatas/curva_tipologias.json
-structurelab-rc run examples/aci_318_25/zapatas/diseno_combinada.json
-structurelab-rc run examples/aci_318_25/zapatas/diseno_combinada_etabs.json
-structurelab-rc run examples/aci_318_25/zapatas/diseno_t_invertida.json
-structurelab-rc run examples/aci_318_25/zapatas/diseno_t_invertida_etabs.json
-structurelab-rc run examples/aci_318_25/zapatas/diseno_tipologias.json
-structurelab-rc run examples/aci_318_25/zapatas/zapata_combinada_etabs.json
-structurelab-rc run examples/aci_318_25/zapatas/diseno_tipologias_etabs.json
-structurelab-rc run examples/aci_318_25/zapatas/zapata_t_invertida_etabs.json
-structurelab-rc run examples/aci_318_25/zapatas/zapata_centrica_etabs.json
-structurelab-rc run examples/aci_318_25/zapatas/zapata_centrica.json
-structurelab-rc run examples/aci_318_25/zapatas/zapata_combinada.json
-```
-
-Todos los ejemplos de esta carpeta, o los de todo el repositorio (cada uno en su carpeta de salida):
+Todos los ejemplos para iterar de este elemento (salta las carpetas `pruebas/`):
 
 ```console
 structurelab-rc run examples/aci_318_25/zapatas
-structurelab-rc run examples
 ```
 
-El diseño desde ETABS (`diseno_tipologias_etabs.json`, 73 apoyos) tarda bastante y también entra en `run` de la
-carpeta. El diseño usa por defecto el método `milp_iter` (D-077); `milp_iter` y `milp` requieren `pip install
-structurelab-rc[opt]`. Los comandos de cada paso (`import-etabs-footings`, `design-footings`, `design-combined`, `typology-curve`,
-`report`) siguen disponibles.
+Las copias congeladas de las pruebas, en orden:
+
+```console
+structurelab-rc run examples/aci_318_25/zapatas/aislada/pruebas
+structurelab-rc run examples/aci_318_25/zapatas/combinada/pruebas
+structurelab-rc run examples/aci_318_25/zapatas/t_invertida/pruebas
+```
+
+Los mismos pasos que hace `run`, por separado (importar de ETABS, verificar y diseñar):
+
+```console
+structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/aci_318_25/zapatas/aislada/zapata_centrica_etabs.json --output results/aci_318_25/zapatas/etabs.json
+structurelab-rc report results/aci_318_25/zapatas/etabs.json --output results/aci_318_25/zapatas/etabs
+structurelab-rc design-footings examples/aci_318_25/zapatas/aislada/diseno_tipologias.json --output results/aci_318_25/zapatas/diseno_tipologias
+structurelab-rc typology-curve examples/aci_318_25/zapatas/aislada/diseno_tipologias.json --output results/aci_318_25/zapatas/diseno_tipologias_curva
+structurelab-rc design-combined examples/aci_318_25/zapatas/combinada/diseno_combinada.json --output results/aci_318_25/zapatas/diseno_combinada
+```
 
 ## Propio de este perfil
 

@@ -5,13 +5,14 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 import pytest
+from frozen_examples import frozen
 
 from structurelab_rc.engine import import_etabs_footings
 from structurelab_rc.io.etabs.combinations import read_combinations
 from structurelab_rc.io.etabs.importer import EtabsImportError
 
 ROOT = Path(__file__).parent.parent
-EXAMPLE = ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Combinaciones.xlsx"
+EXAMPLE = frozen("etabs", "zapatas", "Combinaciones.xlsx")
 HEADERS = ("Combinacion", "Tipo", "Factor D", "Factor L", "Sismo", "Usar")
 
 
@@ -79,7 +80,7 @@ def test_missing_columns_are_reported(tmp_path: Path) -> None:
 def test_template_uses_its_combinations_excel_and_an_explicit_one_overrides_it(tmp_path: Path) -> None:
     """D-137: la importación toma el Excel de etabs_files.combinations; uno explícito lo reemplaza (aquí, sin las
     combinaciones de sismo: los casos mayorados con sismo dejan de entrar y el resumen los nombra)."""
-    template = ROOT / "examples" / "nsr_10" / "zapatas" / "pruebas" / "zapata_centrica_etabs.json"
+    template = frozen("nsr_10", "zapatas", "zapata_centrica_etabs.json")
     reactions = ROOT / "examples" / "etabs" / "zapatas" / "pruebas"
     service, factored = reactions / "Joint Reactions - Servicio.xlsx", reactions / "Joint Reactions - Ultimas.xlsx"
     project, summary, check = import_etabs_footings(service, factored, template)
