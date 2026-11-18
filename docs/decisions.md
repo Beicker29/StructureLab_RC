@@ -2918,9 +2918,10 @@
   - El gancho de 135° de una barra y los estribos siguen midiéndose por el eje, con la longitud total a 1 cm.
 - **Cumplimiento:** la norma (ACI 318-25 25.3.1, NSR-10 C.7.1 y C.7.2) fija el diámetro de doblado y la extensión
   recta, no una fórmula de la longitud de corte. Con la barra cortada a tramo + L o U y doblada conservando el tramo
-  exterior, la extensión resultante supera 12db (90°) y 4db ≥ 65 mm (180°) en las barras #3 a #10. Si el doblador
-  midiera L como la pata vertical exterior, la extensión de 90° quedaría corta (2 mm en #3 a unos 50 mm en #10):
-  pendiente de confirmar con el usuario.
+  exterior, la extensión resultante supera 12db (90°) y 4db ≥ 65 mm (180°) en las barras #3 a #10. El usuario confirmó
+  que en obra se corta a la longitud total y se dobla conservando el tramo (la pata exterior resulta mayor que L; para
+  #7, unos 406 mm con L = 350). Medir la pata exterior hasta L dejaría corta la extensión de 90° (de 2 mm en #3 a unos
+  50 mm en #10); no es la práctica declarada.
 - **Consecuencias:** cambian la cartilla, los pesos y el costo de los diseños, sin cambiar la solución elegida de
   ninguno. El oráculo `derive_detailing.py` usa las fórmulas del usuario y agrega un gancho de 180°.
 

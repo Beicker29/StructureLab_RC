@@ -18,9 +18,15 @@ El usuario elige entre:
 
 ## Validaciones del usuario
 
-- El `.dli` en DL-NET: el campo `F0/90`, b × h del estribo y grupos con más de dos elementos (`U` y las longitudes, D-147).
-- Despiece: cómo medir el gancho de 135° de las barras y los estribos (hoy por el eje de la barra, D-147).
-- El DXF en su CAD: capas por diámetro, leyendas y planta de geometría. Después, un dibujo más profesional.
+Ya confirmado: el gancho `U` de 180° y la longitud total del `.dli` (D-147).
+
+1. El `.dli` en DL-NET (constantes con `TODO D-133` en `io/dlnet.py`). Se prueba abriendo un `.dli` con estribos y con
+   un grupo de tres o más tipos de barra:
+   - el campo `F0/90` de la línea del estribo, copiado del ejemplo real sin conocer su significado;
+   - que b × h del estribo sean sus dimensiones exteriores;
+   - la marca de los grupos de más de dos elementos (deducida de `" 1  1 "` con dos).
+2. Despiece: cómo medir el gancho de 135° de las barras y los estribos (hoy por el eje de la barra, D-147).
+3. El DXF en su CAD: capas por diámetro, leyendas y planta de geometría. Después, un dibujo más profesional.
 
 ## Cimentaciones
 
