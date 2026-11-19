@@ -4,7 +4,7 @@ corta el plano."""
 
 from structurelab_rc.detailing.schedule import BarRun, ScheduleRow
 from structurelab_rc.domain.footing.drawing import footing_views
-from structurelab_rc.drawing.model import Circle, Drawing, Polyline, Text, View
+from structurelab_rc.drawing.model import OUTLINE, Circle, Drawing, Polyline, Text, View
 from structurelab_rc.drawing.views import rectangle
 from structurelab_rc.model.pile_cap import PileCap
 
@@ -26,8 +26,8 @@ def pile_cap_views(drawing: Drawing, cap: PileCap, runs: list[BarRun], rows: tup
     """Planta de geometría, plantas del refuerzo, cortes X-X e Y-Y por las columnas y cartilla, con los pilotes."""
     views = footing_views(drawing, cap, runs, rows)
     if cap.clipped_corners:  # D-141: el contorno real en lugar del rectángulo
-        rectangle_outline = rectangle("CONCRETO", (-cap.lx / 2, -cap.ly / 2), (cap.lx / 2, cap.ly / 2))
-        polygon = Polyline("CONCRETO", cap.outline, closed=True)
+        rectangle_outline = rectangle(OUTLINE, (-cap.lx / 2, -cap.ly / 2), (cap.lx / 2, cap.ly / 2))
+        polygon = Polyline(OUTLINE, cap.outline, closed=True)
         for view in views:
             view.entities[:] = [polygon if entity == rectangle_outline else entity for entity in view.entities]
     size, stub = cap.pile.size, cap.pile.size / 2

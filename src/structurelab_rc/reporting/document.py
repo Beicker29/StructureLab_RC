@@ -1200,9 +1200,12 @@ def _detailing_chapter(footing: dict[str, Any], drawings: list[DrawingFigure] | 
         totals = [[designation, f"{mass:.1f}"] for designation, mass in data["steel_by_designation [kg]"].items()]
         notes = sorted({row["note"] for row in data["rows"] if row["note"]})
         return [
-            {"kind": "p", "text": f"Barras con dimensiones exteriores en mm y longitud de corte por el eje, redondeadas hacia arriba "
-                                  f"a 50 mm; longitud comercial {data['stock_length [mm]']:.0f} mm (las barras más largas se "
-                                  "empalman por traslapo, escalonado). Ganchos, doblados y empalmes del perfil."},
+            {"kind": "p", "text": "Convención de DL-NET (D-147): la longitud de corte es el tramo exterior A, redondeado hacia "
+                                  "arriba a 10 mm, más cada gancho (L con 90°, U con 180°), redondeado hacia arriba a 50 mm; el "
+                                  "gancho de 135° de una barra y los estribos, por el eje, a 10 mm. Forma por sus extremos "
+                                  "(recta, L, U, 135 o E, D-150); dimensiones en mm. Longitud comercial "
+                                  f"{data['stock_length [mm]']:.0f} mm (las barras más largas se empalman por traslapo, "
+                                  "escalonado). Ganchos, doblados y empalmes del perfil."},
             {"kind": "table", "headers": ["Marca", "Grupo", "Barra", "Forma", "Cant.", "Dimensiones (mm)", "L corte (mm)", "Peso (kg)"],
              "rows": rows},
             {"kind": "table", "headers": ["Barra", "Peso (kg)"],

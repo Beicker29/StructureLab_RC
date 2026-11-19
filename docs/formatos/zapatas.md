@@ -416,24 +416,27 @@ si hay plantilla; ver [dlnet.md](dlnet.md), D-133), y la memoria lleva el capít
   El gancho de 135° de una barra y los estribos se miden por el eje de la barra, con la longitud total a 1 cm. El peso
   sale de la longitud total. Los empalmes de barras vecinas se escalonan: la mitad empieza con medio tramo
   comercial.
+- **Forma (D-150):** se nombra por sus extremos con la notación de DL-NET: `recta` sin ganchos; un código por gancho,
+  `L` (90°), `U` (180°) o `135` (135°), unidos por un guion en el orden de los extremos (`L`, `L-L`, `U-U`, `L-U`, …); y
+  `E`, el estribo cerrado. Así la cartilla, el plano y el `.dli` usan el mismo vocabulario.
 - **Marcas:** `<elemento>-01`, `-02`, … Barras iguales (designación, forma, dimensiones y longitud de corte) comparten
   marca y la fila nombra los grupos que reúne.
 
 | Campo de `detailing` en el resultado | Unidad | Descripción |
 | --- | --- | --- |
 | `stock_length [mm]` | mm | Longitud comercial declarada. |
-| `rows` | lista | Una por marca: `mark`, `group`, `designation`, `shape` (recta, L, U, estribo), `count`, `dimensions [mm]` (A, B, C), `cut_length [mm]`, `mass [kg/m]`, `mass [kg]` y `note` (tramo y traslapo, clase del empalme). |
+| `rows` | lista | Una por marca: `mark`, `group`, `designation`, `shape` (`recta`, `L`, `L-L`, `U-U`, `L-U`, `135`, …, `E`; D-150), `count`, `dimensions [mm]` (A, B, C), `cut_length [mm]`, `mass [kg/m]`, `mass [kg]` y `note` (tramo y traslapo, clase del empalme). |
 | `steel_by_designation [kg]`, `steel [kg]` | kg | Acero por designación y total. |
 | `concrete [m3]` | m³ | Volumen de concreto de la zapata y los pedestales (en la T, con el alma). |
 
-## Dibujo del refuerzo (`drawing`, D-126, D-132)
+## Dibujo del refuerzo (`drawing`, D-126, D-132, D-150)
 
 Bloque opcional del proyecto de verificación (y de las plantillas de ETABS de zapatas, que lo pasan al proyecto); requiere
 `detailing`, porque el dibujo rotula las marcas de la cartilla. Sin él no se dibuja.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
-| `drawing.scale` | - | Escala de impresión (50 para 1:50). El modelo va a escala 1:1 en mm; los textos miden 2.5 mm × escala (títulos) y 2.0 mm × escala (rótulos, cotas y cartilla), para que impresos a esa escala midan 2.5 y 2.0 mm. |
+| `drawing.scale` | - | Escala de impresión (50 para 1:50). El modelo va a escala 1:1 en mm; los textos miden en papel 6 mm (título del elemento, en el DXF), 3 mm (título de cada vista), 2.5 mm (escala) y 2.0 mm (rótulos, cotas y cartilla), por la escala. |
 
 Con el bloque, `report` y `run` escriben:
 
@@ -441,30 +444,50 @@ Con el bloque, `report` y `run` escriben:
   textos y cotas en mm, redondeados a 0.1 mm). Entra en la huella.
 - `<zapata>_<vista>.svg`: una vista previa por vista, que la memoria incrusta en "Despiece y cantidades" después de la
   cartilla.
-- `<caso>.dxf` si está instalado el extra `cad` (`pip install structurelab-rc[cad]`): todas las vistas en el espacio
-  modelo, una fila por elemento.
+- `<caso>.dxf` si está instalado el extra `cad` (`pip install structurelab-rc[cad]`), sobre la plantilla de los planos
+  de despiece (`src/structurelab_rc/data/plantilla.dxf`, D-150):
+  - en **metros** (`$INSUNITS` = 6), con las capas, los tipos de línea, los estilos de texto, de cota y de multileader
+    de la plantilla;
+  - cotas `DIMENSION` con el estilo de la escala (`DIM-50` a 1:50; si la plantilla no lo trae, uno igual a `DIM-50`
+    escalado), que miden con dos decimales (tres si la medida no es múltiplo de 1 cm);
+  - rótulos de los cortes como `MULTILEADER`, barras cortadas con el bloque `BARRA` en la capa de su diámetro, columnas
+    en planta con sombreado sólido;
+  - por elemento, la planta de geometría y las plantas del refuerzo en una fila, los cortes y la cartilla en otra, y
+    debajo el título (`ZC1 h=0.80`) y la escala (`ESC 1:50`); los elementos lado a lado dentro de un marco. Los cortes
+    transversales de la combinada y la T van solo en el SVG y la memoria.
 
-Vistas de cada zapata (la combinada en los ejes de la viga, X a lo largo de la viga, D-094):
+  La plantilla se arma con `python tools/make_dxf_template.py <plano de referencia>.dxf
+  src/structurelab_rc/data/plantilla.dxf`, que quita todo lo del proyecto (entidades, layouts, historia del archivo) y
+  agrega las capas y los colores del modelo de dibujo. `python tools/dxf_inspect.py objetivo.dxf salida.dxf -o carpeta`
+  compara dos DXF (capas, estilos, bloques y entidades por capa).
+
+Vistas de cada zapata (la combinada en los ejes de la viga, X a lo largo de la viga, D-094). Las cotas y los rótulos van
+en metros, como los planos de despiece: dos decimales (tres si no es múltiplo de 1 cm) y sin el cero inicial (`3.40`,
+`.15`, `.075`, D-150).
 
 - **Planta de geometría** (`<zapata>_geometria.svg`, D-132): contorno de la base (y el alma en la T), columnas con sus
   ejes, el recubrimiento (línea a trazos y su valor) y cotas en cadena: abajo, de los bordes a las caras de las columnas
   en x; a la izquierda, una cadena en y por cada columna (y otra por el alma); y los totales. Una nota da el espesor, el
   pedestal y, en la T, la viga.
 - **Plantas del refuerzo inferior y, si lo hay, superior** (D-132), al estilo de los planos de despiece:
-  - cada grupo de barras (grupo y designación del despiece) lleva un número en un círculo, el mismo en todas las vistas
-    del elemento, y la leyenda a la derecha dice por número la cantidad, la barra, la separación y sus marcas de la
-    cartilla: `① 17 #7 c/150 (ZC1-01, ZC1-02)`;
+  - cada barra representativa lleva su rótulo sobre ella (girado en las barras a lo largo de y): la cantidad de su zona,
+    la barra, la separación, la longitud de corte de cada marca, de la cartilla, y las marcas: `22#6 C/.15 L=6.65
+    (ZC1-01)`; un grupo empalmado nombra la longitud de cada marca (`L=6.00+3.25`), los pasadores dicen `pasadores` y
+    los estribos llevan `E` delante de la barra (D-150);
   - las barras de un grupo se parten en zonas donde el hueco entre dos barras vecinas supera 1.5 separaciones (la malla y
     de la combinada queda a los lados de los band); cada zona se dibuja con una barra representativa a su largo real, con
     los ganchos abatidos en el plano y una línea de distribución con marcas en la primera y la última barra;
-  - una barra empalmada se dibuja en sus tramos, desplazados y traslapados, con el rótulo `traslapo <mm>`;
+  - una barra empalmada se dibuja en sus tramos, desplazados y traslapados, con el rótulo `traslapo <m>`;
   - si una dirección tiene más de una zona, se acota cada una (de la primera a la última barra).
   - Las plantas de refuerzo no acotan la posición de las columnas: eso va en la planta de geometría.
 - **Cortes:** en la aislada, X-X e Y-Y por el eje de la columna; en la combinada y la T, alzado longitudinal por el eje de
   la viga (con los estribos) y un corte transversal por cada columna. Las barras paralelas al plano son líneas con sus
-  ganchos y las perpendiculares, puntos; cada grupo se rotula con su número y su leyenda. Los pasadores se dibujan en dos
+  ganchos y las perpendiculares, puntos de tamaño fijo en papel (radio 0.293 mm, D-150); cada grupo se rotula con una
+  línea de llamada a cada barra (los grupos con el mismo rótulo van juntos). Los pasadores se dibujan en dos
   caras de la columna, a un recubrimiento de ellas (esquemático: su disposición no está en la entrada).
-- **Cartilla** como tabla con el croquis de cada forma (recta, L, U, estribo) y sus dimensiones A, B y C.
+- **Cartilla** como tabla, con el nombre y el croquis de cada forma (cada gancho según su ángulo: 90° pata vertical, 180°
+  vuelta completa, 135° pata inclinada) y sus dimensiones A, B y C y la longitud de corte en metros (la memoria y
+  `cartilla.csv` siguen en mm).
 
 **Planta de localización (D-130).** Si alguna zapata tiene `location` (en la combinada, sus dos columnas), el dibujo
 agrega el elemento `localizacion`, que va en el SVG, el DXF y el modelo de dibujo pero no en la memoria:
@@ -477,17 +500,22 @@ agrega el elemento `localizacion`, que va en el SVG, el DXF y el modelo de dibuj
 - **El cuadro de tipologías** (`localizacion_cuadro_tipologias.svg`): tipo, lx × ly × h, mallas inferior y superior en
   ejes globales, y cantidad.
 
-Capas fijas por tipo de objeto y una por diámetro de barra (D-132):
+Capas de la plantilla y una por diámetro de barra (D-150; `drawing/model.py` es la fuente de los colores y una prueba la
+compara con la plantilla):
 
-| Capa | Color | Grosor (mm) | Contenido |
+| Capa | Color (ACI) | Grosor (mm) | Contenido |
 | --- | --- | --- | --- |
-| `CONCRETO` | 5 (azul) | 0.35 | Contorno de la zapata, el alma y los pedestales. |
-| `COLUMNAS` | 2 (amarillo) | 0.35 | Columnas en planta y su arranque en los cortes. |
-| `REFUERZO_<barra>` | uno por diámetro | 0.35 | Todas las barras de ese diámetro (`REFUERZO_#5`): en planta, paralelas al corte, cortadas (círculo relleno), estribos y pasadores. Color por el número de la barra: #3 azul (4), #4 rojo (1), #5 naranja (30), #6 verde (94), #7 rojo oscuro (14), #8 morado (200), #9 verde azulado (130), #10 azul oscuro (150), #11 ocre (50), #14 violeta (6), #18 turquesa (3); otra barra, gris (251). |
-| `COTAS` | 8 (gris) | 0.18 | Cotas, líneas de distribución y recubrimiento. |
-| `TEXTOS` | 7 (negro) | 0.18 | Títulos, números de los grupos, leyendas, rótulos y sus líneas. |
-| `EJES` | 9 (gris claro) | 0.13 | Ejes de las columnas en la planta de geometría. |
-| `CARTILLA` | 7 (negro) | 0.18 | Tabla y croquis de la cartilla. |
+| `0` | 7 | 0.35 | Contorno de la zapata, el alma, los pedestales y las columnas; arranque de las columnas en los cortes. |
+| `ACH ESTRUCTURA` | 252 | 0.18 | Relleno sólido de las columnas en planta. |
+| `Borde_<barra>` | uno por diámetro | 0.35 | Todas las barras de ese diámetro (`Borde_#5`): en planta, paralelas al corte, cortadas, estribos y pasadores. Color por el número de la barra: #4 (32), #5 (170), #6 (14), #7 (190) y #8 (220), los de la plantilla; #3 (4), #9 (130), #10 (150), #11 (50), #14 (6), #18 (3); otra barra, gris (251). |
+| `DIM` | 1 | 0.18 | Cotas y rótulos de los cortes con sus líneas de llamada. |
+| `PROYECCIONES` | 1, `HIDDEN2` | 0.18 | Líneas de distribución de las barras y recubrimiento. |
+| `TEXTO` | 2 | 0.18 | Rótulos de las barras en planta, nombres de las columnas, notas y traslapos. |
+| `TXT TITULO` | 161 | 0.35 | Título de cada elemento (DXF). |
+| `TXT ESCALA` | 1 | 0.25 | Título de cada vista y escala del elemento. |
+| `EJES` | 9 | 0.13 | Ejes de las columnas en la planta de geometría. |
+| `CARTILLA` | 7 | 0.18 | Tabla y croquis de la cartilla. |
+| `PILOTES` | 34 | 0.25 | Pilotes de los cabezales. |
 
 ## Salida
 

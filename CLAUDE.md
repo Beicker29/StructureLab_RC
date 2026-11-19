@@ -47,7 +47,9 @@ Una fuente de verdad por concepto ([arquitectura](docs/architecture.md)).
   solo al cargar (`model/`) y al presentar (`reporting/`, con `kN()` y `kNm()`).
 - Tablas (barras, ganchos, materiales) en `src/structurelab_rc/data/` como CSV o TOML,
   cargadas por `setup.load_engine()`. Nada de Excel versionado en `data/`; la excepción son
-  los ejemplos reales de ETABS en `examples/etabs/`.
+  los ejemplos reales de ETABS en `examples/etabs/`. Otra excepción es `data/plantilla.dxf`, la plantilla del DXF,
+  sin datos de ningún proyecto: se carga con `setup.dxf_template()` y se rehace con `tools/make_dxf_template.py`
+  (D-150).
 - No añadir clases, servicios, registros o dependencias sin necesidad demostrada.
 - Eliminar el código sustituido en la misma tarea; sin fachadas sin consumidores.
 

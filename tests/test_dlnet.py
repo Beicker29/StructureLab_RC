@@ -59,14 +59,14 @@ def _row(mark: str, piece: Piece) -> ScheduleRow:
 
 
 def _bar(count: int, designation: str, cut: float, legs: dict[str, float], angles: tuple[int | None, int | None]) -> ScheduleRow:
-    shape = {0: "recta", 1: "L", 2: "U"}[len(legs)]
+    shape = "-".join({90: "L", 180: "U", 135: "135"}[angle] for angle in angles if angle is not None) or "recta"
     dimensions = (("A", cut), *legs.items())
     return _row("Z-01", Piece("g", designation, shape, dimensions, cut, 1.0, count, "", angles))
 
 
 def _stirrup(count: int, designation: str, size: tuple[float, float], hook: float, angle: int = 135) -> ScheduleRow:
     dimensions = (("A", size[0]), ("B", size[1]), ("C", hook))
-    return _row("Z-02", Piece("estribos", designation, "estribo", dimensions, 2000.0, 1.0, count, "", (angle, angle)))
+    return _row("Z-02", Piece("estribos", designation, "E", dimensions, 2000.0, 1.0, count, "", (angle, angle)))
 
 
 NAMES = {"#3": "3/8''", "#4": "1/2''", "#5": "5/8''", "#6": "3/4''", "#9": "1-1/8''"}

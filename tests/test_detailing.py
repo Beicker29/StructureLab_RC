@@ -75,13 +75,13 @@ def test_bar_geometry_matches_the_oracle(profile: str) -> None:
     db = DIAMETER[u["designation"]]
     hook = Hook(90, detailing.hook_bend_diameter(db), detailing.hook_extension(db, 90))
     piece = pieces(BarRun("u", u["designation"], db, MASS[u["designation"]], 1, u["A"], (hook, hook)), 12000.0)[0]
-    assert piece.shape == "U" and piece.cut_length == u["cut"]
+    assert piece.shape == "L-L" and piece.cut_length == u["cut"]
     assert dict(piece.dimensions)["B"] == pytest.approx(u["leg"])
     u180 = oracle["u_bar_180"]  # D-147: gancho de 180° con la convención de DL-NET
     db = DIAMETER[u180["designation"]]
     hook = Hook(180, detailing.hook_bend_diameter(db), detailing.hook_extension(db, 180))
     piece = pieces(BarRun("u", u180["designation"], db, MASS[u180["designation"]], 1, u180["A"], (hook, hook)), 12000.0)[0]
-    assert piece.cut_length == u180["cut"] and dict(piece.dimensions)["C"] == pytest.approx(u180["leg"])
+    assert piece.shape == "U-U" and piece.cut_length == u180["cut"] and dict(piece.dimensions)["C"] == pytest.approx(u180["leg"])
     closed = oracle["closed_stirrup"]
     db = DIAMETER[closed["designation"]]
     extension = detailing.stirrup_hook_extension(db, 135)
@@ -208,3 +208,15 @@ def test_report_writes_the_schedule(tmp_path: Path) -> None:
     data = results["combined_footings"][0]["detailing"]
     assert data["stock_length [mm]"] == 6000.0 and data["steel [kg]"] > 0 and data["concrete [m3]"] > 0
     assert "Despiece y cantidades" in (tmp_path / "memoria.txt").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize(("angles", "shape"), [
+    ((None, None), "recta"), ((None, 90), "L"), ((90, 90), "L-L"), ((180, 180), "U-U"), ((90, 180), "L-U"), ((135, None), "135"),
+])
+def test_shape_is_named_by_its_ends(angles: tuple[int | None, int | None], shape: str) -> None:
+    """D-150: la forma se nombra por sus extremos con la notación de DL-NET (L 90°, U 180°, 135) y el estribo es E."""
+    hooks = tuple(None if angle is None else Hook(angle, 100.0, 200.0) for angle in angles)
+    run = BarRun("g", "#5", 15.9, 1.552, 2, 2000.0, (hooks[0], hooks[1]))
+    assert pieces(run, 12000.0)[0].shape == shape
+    stirrup = BarRun("e", "#3", 9.5, 0.56, 4, 0.0, (Hook(135, 38.0, 75.0), Hook(135, 38.0, 75.0)), stirrup=(300.0, 500.0))
+    assert pieces(stirrup, 12000.0)[0].shape == "E"

@@ -72,7 +72,7 @@ from structurelab_rc.reporting.figures import diagram_figures, pressure_figures
 from structurelab_rc.reporting.pdf import write_pdf
 from structurelab_rc.reporting.results import Diagrams, build_results, detailing_csv, detailing_data
 from structurelab_rc.reporting.text import render_text
-from structurelab_rc.setup import load_engine
+from structurelab_rc.setup import dxf_template, load_engine
 
 
 class RunError(Exception):
@@ -328,7 +328,7 @@ def _drawing_files(drawing: Drawing, output: Path) -> tuple[list[Path], dict[str
             files.append(path)
             figures[element].append((path, aspect, view.title))
     dxf_path = output / f"{drawing.name}.dxf"
-    if write_dxf(drawing, dxf_path):
+    if write_dxf(drawing, dxf_path, dxf_template()):
         files.append(dxf_path)
     return files, figures
 

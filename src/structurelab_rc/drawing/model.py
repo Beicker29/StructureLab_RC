@@ -1,7 +1,9 @@
-"""Modelo de dibujo neutro (v3 Fase 4B, D-126, D-132): vistas con entidades en mm reales (modelo 1:1), en capas fijas por
-tipo de objeto y una capa por diámetro de barra (REFUERZO_<designación>, con un color fijo por diámetro). Los textos, las
-cotas y los símbolos se dimensionan para la escala de impresión declarada (un texto de PAPER_TEXT mm en papel mide
-PAPER_TEXT × escala en el modelo). Sin fórmulas normativas: solo geometría y rótulos.
+"""Modelo de dibujo neutro (v3 Fase 4B, D-126, D-132, D-150): vistas con entidades en mm reales (modelo 1:1), en las capas
+de la plantilla DXF (data/dxf/plantilla.dxf): la capa dice el papel de cada entidad (contorno, relleno de columnas, cotas,
+textos, títulos, líneas de distribución) y hay una por diámetro de barra (Borde_<designación>). Los textos, las cotas y
+los símbolos se dimensionan para la escala de impresión declarada (un texto de PAPER_TEXT mm en papel mide PAPER_TEXT ×
+escala en el modelo). Los rótulos y las cotas van en metros (metres, D-150). Sin fórmulas normativas: solo geometría y
+rótulos.
 
 Se guarda como JSON (`<nombre>_drawing.json`, que entra en la huella) y se escribe como SVG (drawing/svg.py) y DXF
 (drawing/dxf.py, extra `cad`).
@@ -12,30 +14,44 @@ from typing import Any
 
 Point = tuple[float, float]
 
-# Capa: (color RGB para SVG, color ACI para DXF, grosor de línea en mm de papel).
+# Capas de la plantilla (D-150): (color RGB para SVG, color ACI para DXF, grosor de línea en mm de papel). El ACI es el de
+# la plantilla (una prueba lo compara); el RGB es el del SVG, legible sobre fondo blanco.
+OUTLINE = "0"  # contornos del concreto y de las columnas
+COLUMN_FILL = "ACH ESTRUCTURA"  # relleno sólido de las columnas en planta
+DIMENSIONS = "DIM"  # cotas y llamadas de los cortes
+LABELS = "TEXTO"  # rótulos de las barras, nombres de las columnas y notas
+TITLE = "TXT TITULO"  # título de cada elemento
+SUBTITLE = "TXT ESCALA"  # título de cada vista y escala del elemento
+DISTRIBUTION = "PROYECCIONES"  # líneas de distribución de las barras y arranques de columna
+AXES = "EJES"
+TABLE = "CARTILLA"
 LAYERS: dict[str, tuple[str, int, float]] = {
-    "CONCRETO": ("#1f3864", 5, 0.35),
-    "COLUMNAS": ("#d4a017", 2, 0.35),
-    "COTAS": ("#555555", 8, 0.18),
-    "TEXTOS": ("#000000", 7, 0.18),
-    "EJES": ("#7f8c8d", 9, 0.13),
-    "CARTILLA": ("#000000", 7, 0.18),
+    OUTLINE: ("#000000", 7, 0.35),
+    COLUMN_FILL: ("#666666", 252, 0.18),
+    DIMENSIONS: ("#cc0000", 1, 0.18),
+    LABELS: ("#7d6608", 2, 0.18),
+    TITLE: ("#1f4e9c", 161, 0.35),
+    SUBTITLE: ("#cc0000", 1, 0.25),
+    DISTRIBUTION: ("#cc0000", 1, 0.18),
+    AXES: ("#7f8c8d", 9, 0.13),
+    TABLE: ("#000000", 7, 0.18),
 }
 # Capas que solo aparecen si el dibujo las usa: los pilotes de los cabezales (D-138).
 OPTIONAL_LAYERS: dict[str, tuple[str, int, float]] = {"PILOTES": ("#5d4037", 34, 0.25)}
-BAR_PREFIX = "REFUERZO_"
-# Colores de las capas de barras (D-132), por el número de la designación (#5 -> 5): (RGB, ACI), uno distinto por barra
-# del catálogo y sin el amarillo de las columnas; una barra fuera de la tabla, gris.
+BAR_PREFIX = "Borde_"
+# Colores de las capas de barras, por el número de la designación (#5 -> 5): (RGB, ACI), uno distinto por barra. De #4 a #8,
+# los de la plantilla (D-150); las demás conservan los de D-132. Una barra fuera de la tabla, gris.
 _BAR_COLORS: dict[int, tuple[str, int]] = {
-    3: ("#2471a3", 4), 4: ("#c0392b", 1), 5: ("#d35400", 30), 6: ("#1e8449", 94), 7: ("#b03a2e", 14), 8: ("#6c3483", 200),
+    3: ("#2471a3", 4), 4: ("#a55200", 32), 5: ("#0000ff", 170), 6: ("#7f0000", 14), 7: ("#7f00ff", 190), 8: ("#ff00bf", 220),
     9: ("#117a65", 130), 10: ("#1a5276", 150), 11: ("#7d6608", 50), 14: ("#8e44ad", 6), 18: ("#16a085", 3),
 }
+BAR_DESIGNATIONS = tuple(f"#{number}" for number in _BAR_COLORS)
 _OTHER_BAR = ("#616a6b", 251)
 _BAR_WEIGHT = 0.35
 
 
 def bar_layer(designation: str) -> str:
-    """La capa de las barras de una designación: REFUERZO_#5."""
+    """La capa de las barras de una designación: Borde_#5."""
     return f"{BAR_PREFIX}{designation}"
 
 
@@ -48,9 +64,21 @@ def layer_style(name: str) -> tuple[str, int, float]:
     digits = "".join(character for character in name.removeprefix(BAR_PREFIX) if character.isdigit())
     color, aci = _BAR_COLORS.get(int(digits or 0), _OTHER_BAR)
     return color, aci, _BAR_WEIGHT
-PAPER_TEXT = 2.5  # mm de papel: altura de los textos
-PAPER_SMALL = 2.0  # mm de papel: textos de cotas y tablas
+PAPER_TEXT = 2.5  # mm de papel: altura de los textos (la escala del elemento)
+PAPER_SMALL = 2.0  # mm de papel: textos de cotas, rótulos y tablas
+PAPER_SUBTITLE = 3.0  # mm de papel: título de cada vista
+PAPER_TITLE = 6.0  # mm de papel: título de cada elemento
 PAPER_GAP = 8.0  # mm de papel: separación de cotas y llamadas
+_CM = 10.0  # mm: una longitud múltiplo de 1 cm se escribe con dos decimales; si no, con tres
+_ROUND_OFF = 0.05  # mm: diferencia con el múltiplo de 1 cm que se toma como redondeo
+
+
+def metres(length: float) -> str:
+    """Una longitud en mm como texto en metros, como los planos de despiece (D-150): dos decimales (tres si no es múltiplo
+    de 1 cm) y sin el cero inicial: 3400 -> "3.40", 150 -> ".15", 75 -> ".075"."""
+    value = length / 1000.0
+    text = f"{value:.2f}" if abs(length - round(length / _CM) * _CM) < _ROUND_OFF else f"{value:.3f}"
+    return text[1:] if text.startswith("0.") else text.replace("-0.", "-.")
 
 
 @dataclass(frozen=True)
@@ -66,6 +94,7 @@ class Polyline:
     points: tuple[Point, ...]
     closed: bool = False
     dashed: bool = False
+    filled: bool = False  # cerrada y rellena (las columnas en planta): el DXF la sombrea y dibuja el contorno en OUTLINE
 
 
 @dataclass(frozen=True)
@@ -83,6 +112,19 @@ class Text:
     text: str
     height: float
     align: str = "left"  # left, center o right
+    rotation: float = 0.0  # grados, antihorario: 90 en los rótulos de las barras a lo largo de y
+
+
+@dataclass(frozen=True)
+class Leader:
+    """Rótulo con líneas de llamada a varios puntos (las barras de un grupo en un corte): el texto empieza en at y cada
+    línea va del comienzo del texto a un punto de targets."""
+
+    layer: str
+    at: Point
+    text: str
+    height: float
+    targets: tuple[Point, ...]
 
 
 @dataclass(frozen=True)
@@ -97,7 +139,7 @@ class Dimension:
     height: float
 
 
-Entity = Line | Polyline | Circle | Text | Dimension
+Entity = Line | Polyline | Circle | Text | Leader | Dimension
 
 
 @dataclass
@@ -107,6 +149,7 @@ class View:
     name: str
     title: str
     entities: list[Entity] = field(default_factory=list)
+    dxf: bool = True  # False: solo en el SVG y la memoria (los cortes transversales de la combinada, D-150)
 
     def bounds(self) -> tuple[float, float, float, float]:
         """(x mínimo, y mínimo, x máximo, y máximo) de las entidades."""
@@ -122,14 +165,25 @@ class View:
                 (x, y), r = entity.center, entity.radius
                 points = [(x - r, y - r), (x + r, y + r)]
             elif isinstance(entity, Text):
+                points = _text_box(entity)
+            elif isinstance(entity, Leader):
                 width = 0.6 * entity.height * len(entity.text)
-                shift = {"left": 0.0, "center": width / 2, "right": width}[entity.align]
-                points = [(entity.at[0] - shift, entity.at[1]), (entity.at[0] - shift + width, entity.at[1] + entity.height)]
+                points = [*entity.targets, entity.at, (entity.at[0] + width, entity.at[1] + entity.height)]
             else:
                 points = [entity.start, entity.end, *_dimension_points(entity)]
             xs += [p[0] for p in points]
             ys += [p[1] for p in points]
         return (min(xs), min(ys), max(xs), max(ys)) if xs else (0.0, 0.0, 1.0, 1.0)
+
+
+def _text_box(text: Text) -> list[Point]:
+    """Las esquinas aproximadas de un texto (ancho 0.6 de la altura por carácter), girado si lo está."""
+    width = 0.6 * text.height * len(text.text)
+    shift = {"left": 0.0, "center": width / 2, "right": width}[text.align]
+    corners = [(-shift, 0.0), (width - shift, text.height)]
+    if text.rotation % 180:  # vertical: 90 o 270
+        corners = [(-y, x) for x, y in corners]
+    return [(text.at[0] + x, text.at[1] + y) for x, y in corners]
 
 
 def _dimension_points(dimension: Dimension) -> list[Point]:
@@ -152,6 +206,7 @@ class Drawing:
     name: str
     scale: float
     views: dict[str, list[View]] = field(default_factory=dict)
+    titles: dict[str, str] = field(default_factory=dict)  # título de cada elemento en el DXF ("ZC_m h=0.80", D-150)
 
     def layers(self) -> list[str]:
         """Las capas fijas y las de barras que usa el dibujo, estas en orden de diámetro."""
@@ -163,6 +218,10 @@ class Drawing:
     def text_height(self, small: bool = False) -> float:
         return (PAPER_SMALL if small else PAPER_TEXT) * self.scale
 
+    def paper(self, size: float) -> float:
+        """Una medida en mm de papel, en mm del modelo."""
+        return size * self.scale
+
     def gap(self) -> float:
         return PAPER_GAP * self.scale
 
@@ -173,7 +232,9 @@ class Drawing:
             return {"type": type(item).__name__.lower(), **_rounded(data)}
         return {"name": self.name, "scale": self.scale, "units": "mm",
                 "layers": {name: dict(zip(("color", "aci", "lineweight [mm]"), layer_style(name), strict=True)) for name in self.layers()},
-                "elements": {element: [{"name": view.name, "title": view.title, "entities": [entity(item) for item in view.entities]}
+                "titles": self.titles,
+                "elements": {element: [{"name": view.name, "title": view.title, "dxf": view.dxf,
+                                        "entities": [entity(item) for item in view.entities]}
                                        for view in views] for element, views in self.views.items()}}
 
 

@@ -34,7 +34,7 @@ version = { attr = "structurelab_rc.__version__" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-"structurelab_rc.data" = ["*.csv", "*.toml"]
+"structurelab_rc.data" = ["*.csv", "*.toml", "*.dxf"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

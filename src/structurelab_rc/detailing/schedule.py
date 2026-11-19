@@ -1,9 +1,12 @@
 """Despiece de barras y cartilla (v3 Fase 4A, D-125). Neutro: recibe las barras con los límites que ya calculó el perfil
 (diámetro de doblado, extensión de los ganchos y longitud de empalme) y no contiene fórmulas normativas.
 
-Formas: recta (sin ganchos), L (gancho en un extremo), U (ganchos en los dos) y estribo cerrado con ganchos a 135° en
-una esquina. Convención de DL-NET (decisión del usuario, D-147): la longitud total de una barra es su tramo horizontal
-exterior A (redondeado hacia arriba a 1 cm) más la longitud de cada gancho (hook_length, redondeada hacia arriba a
+Formas, nombradas por sus extremos con la notación de DL-NET (D-150): "recta" sin ganchos; un código por gancho, L (90°),
+U (180°) o 135 (135°), unidos por un guion en el orden de los extremos ("L", "L-L", "U-U", "L-U", …); y "E", el estribo
+cerrado con ganchos a 135° en una esquina.
+
+Convención de DL-NET (decisión del usuario, D-147): la longitud total de una barra es su tramo horizontal exterior A
+(redondeado hacia arriba a 1 cm) más la longitud de cada gancho (hook_length, redondeada hacia arriba a
 50 mm): con 90°, L = extensión + π·(D + 0.5·db)/8; con 180°, U = extensión + 0.5·π·(D + 0.5·db) − 0.5·(D + 0.5·db), con D
 el diámetro interior de doblado. Así DL-NET reconstruye el tramo como Ltotal − 2L o Ltotal − 2U. El gancho de 135° de una
 barra (que DL-NET no fabrica) y los estribos siguen por el eje de la barra (tramos rectos más arcos de radio D/2 + db/2),
@@ -171,9 +174,14 @@ def _angles(hooks: tuple[Hook | None, Hook | None]) -> tuple[int | None, int | N
     return None if start is None else start.angle, None if end is None else end.angle
 
 
+HOOK_SHAPE = {90: "L", 180: "U", 135: "135"}  # código de cada gancho en el nombre de la forma (D-150)
+STIRRUP_SHAPE = "E"
+STRAIGHT_SHAPE = "recta"
+
+
 def _shape(hooks: tuple[Hook | None, Hook | None]) -> str:
-    count = sum(hook is not None for hook in hooks)
-    return ("recta", "L", "U")[count]
+    """El nombre de la forma por sus extremos (D-150): "recta" o los códigos de sus ganchos en orden ("L-L")."""
+    return "-".join(HOOK_SHAPE[hook.angle] for hook in hooks if hook is not None) or STRAIGHT_SHAPE
 
 
 def pieces(run: BarRun, stock: float) -> list[Piece]:
@@ -181,7 +189,7 @@ def pieces(run: BarRun, stock: float) -> list[Piece]:
     traslapo, con los empalmes de la mitad de las barras corridos medio tramo comercial."""
     if run.stirrup is not None:
         length, dimensions = _stirrup_length(run)
-        return [Piece(run.group, run.designation, "estribo", tuple(dimensions), round_up(length), run.mass_kg_m, run.count, run.note,
+        return [Piece(run.group, run.designation, STIRRUP_SHAPE, tuple(dimensions), round_up(length), run.mass_kg_m, run.count, run.note,
                       _angles(run.hooks))]
     total, dimensions = _straight_length(run, run.length, run.hooks)
     if total <= stock or run.lap is None:

@@ -3,7 +3,7 @@ invierte para el SVG y el grosor de línea es el de la capa en papel, por la esc
 
 from html import escape
 
-from structurelab_rc.drawing.model import Circle, Dimension, Line, Polyline, Text, View, dimension_line, layer_style
+from structurelab_rc.drawing.model import Circle, Dimension, Leader, Line, Polyline, Text, View, dimension_line, layer_style
 
 _WIDTH = 800.0  # px de ancho del SVG
 _MARGIN = 0.04  # fracción del tamaño de la vista
@@ -29,14 +29,23 @@ def view_svg(view: View, scale: float) -> tuple[str, float]:
             points = " ".join(f"{x:.1f},{-y:.1f}" for x, y in entity.points)
             tag = "polygon" if entity.closed else "polyline"
             dash = f' stroke-dasharray="{6 * scale:.0f} {3 * scale:.0f}"' if entity.dashed else ""
-            parts.append(f'<{tag} points="{points}" {stroke}{dash}/>')
+            paint = f'fill="{color}" stroke="none"' if entity.filled else stroke
+            parts.append(f'<{tag} points="{points}" {paint}{dash}/>')
         elif isinstance(entity, Circle):
             paint = f'fill="{color}"' if entity.filled else stroke
             parts.append(f'<circle cx="{entity.center[0]:.1f}" cy="{-entity.center[1]:.1f}" r="{entity.radius:.1f}" {paint}/>')
         elif isinstance(entity, Text):
             anchor = {"left": "start", "center": "middle", "right": "end"}[entity.align]
-            parts.append(f'<text x="{entity.at[0]:.1f}" y="{-entity.at[1]:.1f}" font-size="{entity.height:.1f}" fill="{color}" '
-                         f'text-anchor="{anchor}">{escape(entity.text)}</text>')
+            (x, y), rotate = entity.at, ""
+            if entity.rotation:  # SVG gira en sentido horario con y hacia abajo
+                rotate = f' transform="rotate({-entity.rotation:.1f} {x:.1f} {-y:.1f})"'
+            parts.append(f'<text x="{x:.1f}" y="{-y:.1f}" font-size="{entity.height:.1f}" fill="{color}" '
+                         f'text-anchor="{anchor}"{rotate}>{escape(entity.text)}</text>')
+        elif isinstance(entity, Leader):
+            (x, y) = entity.at
+            parts += [f'<line x1="{tx:.1f}" y1="{-ty:.1f}" x2="{x:.1f}" y2="{-y:.1f}" {stroke}/>' for tx, ty in entity.targets]
+            parts.append(f'<text x="{x + entity.height * 0.3:.1f}" y="{-y + entity.height * 0.35:.1f}" font-size="{entity.height:.1f}" '
+                         f'fill="{color}">{escape(entity.text)}</text>')
         elif isinstance(entity, Dimension):
             parts += _dimension_svg(entity, stroke, color)
     parts.append("</svg>")

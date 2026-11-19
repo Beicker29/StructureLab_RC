@@ -53,11 +53,11 @@ cartilla (D-147): la longitud total es el tramo horizontal más la longitud de c
 
 | Forma de la cartilla | Línea DL-NET | Estado |
 | --- | --- | --- |
-| Recta | `2  "5/8''"  2.2` | Verificada (`PRUEBA_StructureLab.dli`, guardado por DL-NET) |
-| L (un gancho de 90°) | `3  "3/4''"  6.4   L.3` | Verificada (ídem) |
-| U (gancho de 90° en los dos extremos) | `1  "1-1/8''"  5.8   L.5   L.5` | Verificada (`n_12.dli`) |
-| Gancho de 180° | `1  "5/8''"  5.8   U.2   U.2` | Verificada por el usuario (D-147): `U` es el gancho de 180° |
-| Estribo cerrado b × h, ganchos de 135° | `6  E  "1/2''"  .3*.5   G.15   F0/90` | Verificada; el significado de `F0/90` está por confirmar (se copia del ejemplo) |
+| `recta` | `2  "5/8''"  2.2` | Verificada (`PRUEBA_StructureLab.dli`, guardado por DL-NET) |
+| `L` (un gancho de 90°) | `3  "3/4''"  6.4   L.3` | Verificada (ídem) |
+| `L-L` (gancho de 90° en los dos extremos) | `1  "1-1/8''"  5.8   L.5   L.5` | Verificada (`n_12.dli`) |
+| `U-U` (gancho de 180°; también `U` y `L-U`) | `1  "5/8''"  5.8   U.2   U.2` | Verificada por el usuario (D-147): `U` es el gancho de 180° |
+| `E`, estribo cerrado b × h, ganchos de 135° | `6  E  "1/2''"  .3*.5   G.15   F0/90` | Verificada; el significado de `F0/90` está por confirmar (se copia del ejemplo) |
 | Figura G | `6  G  "3/4''"  .5   G.2/.2   F360/0` | No implementada |
 
 Confirmado por el usuario (D-147): la longitud es la de corte, `U` es el gancho de 180° y la geometría de L y U es la de

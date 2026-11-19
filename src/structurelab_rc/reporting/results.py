@@ -439,8 +439,8 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
 
 
 def detailing_data(rows: list[ScheduleRow], concrete: float, stock: float) -> dict[str, Any]:
-    """Cartilla de un elemento (D-125): una fila por marca con sus dimensiones exteriores redondeadas hacia arriba, la
-    longitud de corte y el peso; el acero por designación, el total y el volumen de concreto (m³)."""
+    """Cartilla de un elemento (D-125): una fila por marca con su forma (D-150), sus dimensiones (el tramo A y la longitud
+    de cada gancho, D-147), la longitud de corte y el peso; el acero por designación, el total y el volumen de concreto (m³)."""
     by_designation = totals(rows)
     return {
         "stock_length [mm]": stock,

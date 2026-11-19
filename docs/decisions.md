@@ -2982,6 +2982,55 @@
   En las caras no hay cortante y en las secciones a d sí. Con `deep_beam`, en la cara salen los dos límites con el Vu
   de la cara.
 
+### D-150: DXF sobre la plantilla de los planos de despiece, rótulos con la longitud de la cartilla y forma por sus extremos
+
+- **Fecha:** 2026-11-19
+- **Pedido del usuario:** validación 3 de la hoja de ruta: el plano objetivo del DXF (`references/zapatas.dxf`, local) y
+  una herramienta que extraiga a JSON sus capas, estilos de texto y de cota, bloques y entidades por capa, para comparar
+  con la salida y usar una plantilla con los estilos del objetivo.
+- **Hallazgos** (`tools/dxf_inspect.py`): el objetivo está dibujado en metros aunque declare mm; trae capas por papel
+  (`0`, `DIM`, `TEXTO`, `TXT TITULO`, `TXT ESCALA`, `PROYECCIONES`, `ACH ESTRUCTURA`, `Borde_#n`), estilos de cota
+  por escala (`DIM-20` a `DIM-125`), cotas `DIMENSION` reales, rótulos `MULTILEADER` con el formato `#5c/.15 L=3.75`,
+  barras cortadas como un bloque de tamaño fijo y, por zapata, las plantas inferior y superior, el alzado y el título
+  `CIM COMB.5 h=0.85` con la escala. Sin cartilla, planta de geometría ni cortes transversales.
+- **Decisiones del usuario:**
+  1. El DXF en metros, con `$INSUNITS` en metros (el modelo interno sigue en mm).
+  2. La plantilla, un DXF limpio y versionado en `data/` (excepción registrada en CLAUDE.md).
+  3. En el DXF quedan la planta de geometría, las plantas del refuerzo, el alzado y la cartilla; los cortes
+     transversales de la combinada y la T, solo en el SVG y la memoria (en la aislada y los cabezales siguen los cortes
+     X-X e Y-Y, que son sus alzados).
+  4. Rótulo en el DXF, el SVG y la memoria: `22#6 C/.15 L=6.65 (ZC_m-01)`: sin número en círculo; la marca queda como
+     vínculo con la cartilla. Un grupo empalmado nombra la longitud de cada marca (`L=6.00+3.25`).
+  5. Las barras #4 a #8 toman los colores del objetivo; las demás conservan los de D-132.
+  6. La barra cortada, un punto de tamaño fijo en papel (radio 0.293 mm, los 14.7 mm del objetivo a 1:50).
+  7. Consistencia con la cartilla: el plano (cotas, rótulos y tabla de la cartilla) en metros; la memoria y
+     `cartilla.csv` en mm. La forma se nombra por sus extremos con la notación de DL-NET (`recta`, `L`, `L-L`, `U-U`,
+     `L-U`, `135`, `E`): antes "U" era cualquier barra con dos ganchos, y en DL-NET U es el gancho de 180°.
+- **Consistencia con las decisiones de la cartilla:** la L del rótulo es la longitud de corte de la fila de la cartilla
+  (D-147), la misma del `.dli`, del peso y del costo (D-127, D-133); no se recalcula en el dibujo. Las marcas siguen
+  D-125. De D-132 se reemplazan el número en círculo y la leyenda; siguen la barra representativa por zona, la línea de
+  distribución, la planta de geometría y la capa por diámetro.
+- **Corrección de D-147:** el texto del capítulo "Despiece y cantidades" de la memoria todavía decía "longitud de corte por
+  el eje, redondeadas hacia arriba a 50 mm"; ahora describe la convención de DL-NET.
+- **Código:**
+  - `tools/dxf_inspect.py` (inspección y comparación) y `tools/make_dxf_template.py` (arma la plantilla desde el plano:
+    quita entidades, layouts, bloques anónimos e historia del archivo, con rutas y usuario; agrega las capas del modelo
+    y el bloque `BARRA`; punto decimal y `dimrnd` de 0.1 mm, porque ezdxf toma `dimrnd = 0` como redondear al entero).
+  - `drawing/model.py`: capas de la plantilla (fuente de los colores), `Text.rotation`, `Polyline.filled`, `Leader`,
+    `View.dxf`, `Drawing.titles` y `metres`.
+  - `drawing/views.py`: `label_text` (rótulo), llamadas en los cortes, cotas y cartilla en metros, croquis por extremos y
+    punto de tamaño fijo. `numbered` recibe la cartilla.
+  - `drawing/dxf.py`: escribe sobre la plantilla (`setup.dxf_template()`), en metros, con `DIMENSION`, `MULTILEADER`,
+    el bloque `BARRA`, el sombreado de las columnas y la composición por elemento.
+  - `detailing/schedule.py`: `_shape` por extremos (`HOOK_SHAPE`, `STIRRUP_SHAPE`); `io/dlnet.py` usa esos nombres.
+- **Diferencias:** ningún cálculo cambia: los `resultado.json` de los 20 ejemplos congelados son iguales a los de HEAD salvo
+  `shape` (comparados). Cambian `resultado.json` (la forma), `memoria.txt` (la forma y el texto del despiece) y
+  `<nombre>_drawing.json` (capas, rótulos, metros, títulos). El DXF no entra en la huella.
+- **Control:** `tests/test_drawing.py` (rótulos por zona con la longitud de la cartilla, grupo empalmado, `metres`,
+  punto de tamaño fijo, DXF sobre la plantilla: unidades, capas, estilos, cotas que miden lo del modelo, `MULTILEADER`,
+  bloque `BARRA`, título y sin cortes transversales; capas de la plantilla iguales a las del modelo) y
+  `tests/test_detailing.py` (nombres de la forma).
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

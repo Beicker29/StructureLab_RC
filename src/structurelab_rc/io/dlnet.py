@@ -19,7 +19,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from structurelab_rc.detailing.schedule import HOOK_ROUNDING, ScheduleRow, round_up
+from structurelab_rc.detailing.schedule import HOOK_ROUNDING, HOOK_SHAPE, STIRRUP_SHAPE, STRAIGHT_SHAPE, ScheduleRow, round_up
 
 ENCODING = "latin-1"
 FINAL = b"FINALDEARCHIVORANDOM"
@@ -171,12 +171,12 @@ def row_line(row: ScheduleRow, names: dict[str, str]) -> str:
         raise DliError(f"la barra {piece.designation} de la marca {row.mark} no está en la librería de la plantilla DL-NET")
     bar = names[piece.designation]
     dimensions = {name: round_up(value) for name, value in piece.dimensions}
-    if piece.shape == "estribo":
+    if piece.shape == STIRRUP_SHAPE:
         if piece.angles != (STIRRUP_ANGLE, STIRRUP_ANGLE):
             raise DliError(f"marca {row.mark}: DL-NET solo representa estribos con ganchos de {STIRRUP_ANGLE}°")
         width, height, hook = (number(_metres(dimensions[name])) for name in ("A", "B", "C"))
         return f'{piece.count}  E  "{bar}"  {width}*{height}   G{hook}   {STIRRUP_FIELD}'
-    if piece.shape not in ("recta", "L", "U"):
+    if piece.shape != STRAIGHT_SHAPE and not set(piece.shape.split("-")) <= set(HOOK_SHAPE.values()):
         raise DliError(f"marca {row.mark}: la forma {piece.shape!r} no está soportada en la cartilla DL-NET")
     line = f'{piece.count}  "{bar}"  {number(_metres(piece.cut_length))}'
     legs = [name for name in ("B", "C") if name in dimensions]
