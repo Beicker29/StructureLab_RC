@@ -3031,6 +3031,49 @@
   bloque `BARRA`, título y sin cortes transversales; capas de la plantilla iguales a las del modelo) y
   `tests/test_detailing.py` (nombres de la forma).
 
+### D-151: cortante de las franjas con ancho efectivo columna + d, V de torsión con signo y sección a la d de D-131
+
+- **Fecha:** 2026-11-19
+- **Pedido del usuario:** revisar el Vu de las franjas en la dirección secundaria, que daba razones cercanas a 1.
+- **Auditoría:** el Vu reproduce el método de D-080, D-085, D-095 y D-119 (cálculo a mano: F·L/B = 659 kN uniforme, 742.5 kN
+  con la forma de la presión, más 23.3 kN de torsión, en C_Int de `zapata_combinada_etabs_m`), y la suma del cortante de
+  las dos franjas es el cortante de toda la sección a d en el largo de la zapata (equilibrio). Las razones altas venían de
+  que la franja (columna + d/2 a cada lado) resistía con ese ancho todo el cortante de su columna. Hallazgos menores: el V
+  de torsión se sumaba en valor absoluto en los dos voladizos, y la sección a d se ubicaba con la d geométrica de las
+  barras inferiores mientras Vc usaba la d de D-131 (699.55 frente a 643.7 mm).
+- **Discusión del modelo (consultada):** el usuario propuso cargar la franja solo con la presión de su ancho. Se le explicó
+  que la carga de la franja (la fuerza de la columna repartida en B) es la del equilibrio con la viga larga de ancho B: el
+  cortante de la viga entra por los costados de la franja y debe cruzar la sección a d para llegar a la columna (Wight
+  15-6, manual ACI). Decidió mantener la carga y el Vu como están.
+- **Decisiones del usuario:**
+  1. La flexión de la franja sigue con su ancho (columna + d/2 a cada lado, D-080).
+  2. El cortante de la franja sigue con el mismo Vu, pero Vc se calcula con un ancho efectivo de cortante: la columna más
+     d a cada lado, limitado por la geometría (el borde de la base y la mitad del espacio libre hasta la columna vecina,
+     y nunca menor que el de flexión), con las barras que caen en él: el band y el band superior en sus zonas y la malla
+     y y `top.y` fuera de ellas. La d del ancho es la de la malla y inferior, como el ancho de flexión.
+  3. El V de torsión de la franja va con su signo (Vu = |V flexión + V torsión|): la viga equilibra el salto
+     T(x1) − T(x0) con un par que alivia un voladizo y carga el otro; antes se sumaba en los dos.
+  4. La sección a d de la cara se ubica con la d del cortante de esa misma sección (D-131: centroide de fuerzas del acero
+     a tracción, no menor que 0.8h), la misma de Vc, en las franjas, la viga larga y la viga de la T (uniformidad de
+     criterios). Como esa d depende del momento de la sección, se busca por iteración desde la d de la cara.
+- **Decisión de ingeniería del usuario (robustez de la iteración):**
+  - Con |Mu| menor que 1 N·m en un paso, la d no se define (no hay estado de flexión) y queda la anterior; el paquete y
+    los oráculos aplican la misma regla.
+  - Si la iteración no converge (20 pasos, tolerancia de 0.5 mm), se usa la d geométrica de las barras, como antes de
+    D-151.
+  - Una prueba unitaria fija los tres comportamientos (convergencia, paso sin d y oscilación) y el caso
+    `momentos-sismo` del oráculo de la viga larga cubre una sección a d cerca del borde. En los ejemplos no cambia ningún
+    resultado.
+- **Código:** `domain/beam/shear.shear_depth` y `section_at_depth` (una sola fuente); `combined_columns.shear_limits`,
+  `strip_rows`, `strip_shear_member`, `strip_depth_at`, `torsion_side`; `combined_beam.beam_depth_at` y `shear_sections`
+  con `depth_at`; los diagramas (D-104) ubican la sección a d de cada caso con la misma función (reportan la posición del
+  caso del mayor V). La memoria escribe "|V flexión + V torsión|".
+- **Oráculos:** `derive_combined_columns.py` (ancho de cortante con sus barras, V de torsión con signo, sección a la d de
+  D-131), `derive_combined_beam.py` y `derive_inverted_t.py` (sección a la d de D-131, con su propio centroide de fuerzas).
+- **Efecto en el ejemplo del usuario** (`zapata_combinada_etabs_m`, C_Int, COMB4A Max, a d de la cara −X): la sección pasa
+  de 699.55 a 640 mm de la cara (d = 0.8h, D-043), Vu de 765.8 a 822.7 kN, φVc de 767.0 a 1045.4 kN (bw de 1799.6 a
+  2499.1 mm); razón de 1.00 a 0.79, y desaparece el excedente para la viga de cimentación.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

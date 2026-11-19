@@ -25,8 +25,8 @@ from dataclasses import replace
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.flexure import MIN_REINFORCEMENT as FLEXURE_MINIMUM
 from structurelab_rc.domain.beam.flexure import STRENGTH as FLEXURE_STRENGTH
-from structurelab_rc.domain.beam.shear import MIN_REINFORCEMENT, STRENGTH, concrete_lambda
-from structurelab_rc.domain.beam.station import checks_for, flexure_station_checks, shear_and_torsion_checks
+from structurelab_rc.domain.beam.shear import MIN_REINFORCEMENT, STRENGTH, concrete_lambda, section_at_depth, shear_depth
+from structurelab_rc.domain.beam.station import flexure_station_checks, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.development import END_TEXT, development_check, required_length
@@ -153,6 +153,20 @@ def strip_limits(footing: CombinedFooting, column: CombinedColumn, depth: float)
     return max(column.x - column.cx / 2 - depth / 2, -footing.lx / 2), min(column.x + column.cx / 2 + depth / 2, footing.lx / 2)
 
 
+def shear_limits(footing: CombinedFooting, column: CombinedColumn, depth: float) -> tuple[float, float]:
+    """Ancho efectivo de la franja para el cortante (decisión del usuario, D-151): la columna más d a cada lado, dentro de
+    la base y sin pasar la mitad del espacio libre hasta la columna vecina; nunca menor que el ancho de la franja de
+    flexión (strip_limits). La flexión sigue con la columna más d/2 a cada lado (D-080)."""
+    low, high = column.x - column.cx / 2 - depth, column.x + column.cx / 2 + depth
+    for other in footing.columns:
+        if other.x > column.x:
+            high = min(high, (column.x + column.cx / 2 + other.x - other.cx / 2) / 2)
+        elif other.x < column.x:
+            low = max(low, (column.x - column.cx / 2 + other.x + other.cx / 2) / 2)
+    flexure = strip_limits(footing, column, depth)
+    return max(min(low, flexure[0]), -footing.lx / 2), min(max(high, flexure[1]), footing.lx / 2)
+
+
 def band_row(footing: CombinedFooting, column: CombinedColumn, row: BarRow, basis: Basis) -> BarRow | None:
     """El refuerzo band de la columna como fila de barras y en el ancho de su franja, a la profundidad de la fila y."""
     if column.band is None:
@@ -214,14 +228,17 @@ def transverse_bottom(footing: CombinedFooting, row: BarRow) -> BarRow:
     return replace(row, positions=kept)
 
 
-def strip_member(footing: CombinedFooting, column: CombinedColumn, rows: tuple[BarRow, BarRow | None, BarRow | None]) -> Member:
-    """La franja como viga (D-082): ancho de franja × h, a lo largo de Y, con las barras inferiores que caen en ella (el
-    band si lo hay, D-097; si no, la malla y) y las superiores transversales (D-097), con x desde el borde −X de la franja
-    y la profundidad desde la cara superior."""
-    row, band, top = rows
-    x0, x1 = strip_limits(footing, column, row.depth)
+def strip_member(footing: CombinedFooting, column: CombinedColumn, rows: tuple[BarRow, BarRow | None, BarRow | None, BarRow | None],
+                 limits: tuple[float, float] | None = None) -> Member:
+    """La franja como viga (D-082): ancho × h, a lo largo de Y, con las barras que caen en él, con x desde su borde −X y
+    la profundidad desde la cara superior. rows = (malla y inferior fuera de las zonas de band, band, band superior,
+    top.y fuera de las zonas de band superior) (D-097, D-119). limits: el ancho de la franja de flexión
+    (strip_limits) o el de cortante (shear_limits, D-151)."""
+    row, band, band_top, top = rows
+    x0, x1 = strip_limits(footing, column, row.depth) if limits is None else limits
     layers = []
-    for source, depth in ((row, row.depth), (band, row.depth), (top, None if top is None else footing.h - top.depth)):
+    for source, depth in ((row, row.depth), (band, row.depth), *((upper, None if upper is None else footing.h - upper.depth)
+                                                                 for upper in (band_top, top))):
         if source is None or depth is None:
             continue
         inside = positions_within(source, (x0, x1))
@@ -284,30 +301,40 @@ def strip_cantilever(footing: CombinedFooting, load: Callable[[float, float], tu
     return side * (first - at * net), net
 
 
-def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: CombinedColumn,
-                  given: tuple[float, float]) -> tuple[list[tuple[float, float, float, str]], str]:
-    """(y, Mu, Vu, sección) en las caras ±Y de la columna, a d de ellas hacia el borde y, en cada voladizo, en el mayor
-    momento negativo si no está en la cara (D-095), y la nota de la forma de carga usada. given = (F, d)."""
+def _cantilever_depth(footing: CombinedFooting, load: Callable[[float, float], tuple[float, float]], side: float,
+                     depth_at: Callable[[float, float], float | None]) -> Callable[[float], float | None]:
+    """La d del cortante en y del voladizo side, con el momento de la franja en y."""
+    return lambda y: depth_at(y, strip_cantilever(footing, load, y, side)[0])
+
+
+def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: CombinedColumn, given: tuple[float, float],
+                  depth_at: Callable[[float, float], float | None] | None = None) -> tuple[list[tuple[float, float, float, str]], str]:
+    """(y, Mu, V, sección) en las caras ±Y de la columna, a d de ellas hacia el borde y, en cada voladizo, en el mayor
+    momento negativo si no está en la cara (D-095), y la nota de la forma de carga usada. given = (F, d). V es la carga
+    neta hacia arriba entre la sección y el borde, con signo (strip_cantilever): el cortante por flexión de la franja.
+    depth_at(y, M) da la d del cortante de la sección en y con el momento M de la franja (D-131): con ella la sección a d
+    de la cara queda a esa misma d (D-151); sin ella, a la d dada."""
     depth = given[1]
     half = footing.ly / 2
     load, note = strip_load(footing, pressure, column, given)
     result = []
     for side, face, name in ((1.0, column.y + column.cy / 2, "+Y"), (-1.0, column.y - column.cy / 2, "-Y")):
-        at_d = face + side * depth
+        at_d = face + side * depth if depth_at is None else section_at_depth(face, side, _cantilever_depth(footing, load, side, depth_at),
+                                                                              depth)
         inside = -half < at_d < half
         if not -half < face < half:
             continue
         # La cara es sección de flexión; el cortante se revisa a d de ella (D-148).
         moment, shear = strip_cantilever(footing, load, face, side)
-        result.append((face, moment, abs(shear), f"cara {name}"))
+        result.append((face, moment, shear, f"cara {name}"))
         if inside:
             moment, shear = strip_cantilever(footing, load, at_d, side)
-            result.append((at_d, moment, abs(shear), f"a d de la cara {name}"))
+            result.append((at_d, moment, shear, f"a d de la cara {name}"))
         points = [face + side * (half - side * face) * index / _SWEEP for index in range(1, _SWEEP)]
         y, moment = min(((point, strip_cantilever(footing, load, point, side)[0]) for point in points), key=lambda item: item[1])
         if moment < -_NEGLIGIBLE_MOMENT and moment < strip_cantilever(footing, load, face, side)[0]:
             shear = strip_cantilever(footing, load, y, side)[1]
-            result.append((y, moment, abs(shear), f"mayor M negativo hacia el borde {name}"))
+            result.append((y, moment, shear, f"mayor M negativo hacia el borde {name}"))
     return result, note
 
 
@@ -332,18 +359,23 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     x0, x1 = strip_limits(footing, column, row.depth)
     top, _ = strip_top(footing, column, row.depth, basis.bars)  # el band superior o top.y (D-119)
     has_top = top is not None and bool(positions_within(top, (x0, x1)))
-    member = strip_member(footing, column, (row, band_row(footing, column, row, basis), top))
+    member = strip_member(footing, column, strip_rows(basis, footing, column, row))
+    sheared_member = strip_shear_member(basis, footing, column, row)  # ancho de cortante: columna + d a cada lado (D-151)
+    width = sheared_member.section.bw
     title = f"Franja transversal de la columna {column.id}"
     checks = []
     for pressure, loads in cases:
         force = column_vertical(footing, soil, column, loads[index])
-        demands, shape = strip_demands(footing, pressure, column, (force, row.depth))
+        demands, shape = strip_demands(footing, pressure, column, (force, row.depth),
+                                       strip_depth_at(basis, footing, soil, (index, row), (pressure, loads)))
         twist = strip_twist(footing, soil, (pressure, loads), (x0, x1))
-        torsion_shear = strip_torsion_shear(footing, soil, (pressure, loads), (x0, x1))
-        plate = (f"Wood-Armer (D-118): M de la franja y mxy = {twist / 1e3:.2f} kN*m/m; V de torsion = |T(x1) - T(x0)|/B = "
-                 f"{torsion_shear / 1e3:.1f} kN (D-119)" if twist > _NEGLIGIBLE_TWIST else "")
+        jump = strip_torsion_shear(footing, soil, (pressure, loads), (x0, x1))
+        plate = (f"Wood-Armer (D-118): M de la franja y mxy = {twist / 1e3:.2f} kN*m/m; (T(x1) - T(x0))/B = "
+                 f"{jump / 1e3:.1f} kN: alivia el voladizo de un lado y carga el del otro (D-119, D-151)"
+                 if twist > _NEGLIGIBLE_TWIST else "")
         for y, physical, shear, label in demands:
             z = y + footing.ly / 2
+            torsion_shear = torsion_side(jump, label)
             # El cortante se revisa en la sección crítica a d de la cara y más allá, con su Vu y su Mu (C.11.1.3.1, ACI
             # 9.4.3.2); en la cara solo la flexión (decisión del usuario, D-148).
             sheared = not label.startswith("cara")
@@ -351,10 +383,13 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
                 section = f"{title}, {label}, {moment_sign(moment)}"
                 # Vu = V por flexión + V por la torsión de placa (decisión del usuario, D-119).
                 station = Station.model_construct(z=z, layout=member.stations[0].layout, case=pressure.case,
-                                                  demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=shear + torsion_shear,
-                                                                                  v3=0.0, tu=0.0))
-                # Las caras laterales de la franja quedan dentro del concreto: sin refuerzo superficial (D-083).
+                                                  demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0,
+                                                                                  vu=abs(shear + torsion_shear), v3=0.0, tu=0.0))
+                # Las caras laterales de la franja quedan dentro del concreto: sin refuerzo superficial (D-083). El
+                # cortante, con el ancho efectivo de cortante (D-151).
                 given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
+                sheared_given = replace(given, member=sheared_member,
+                                        station=station.model_copy(update={"layout": sheared_member.stations[0].layout}))
                 flexure_values = _strip_values(physical, moment, (x1 - x0, twist))
                 shear_values = (("V flexion", shear), ("V torsion", torsion_shear))
                 if moment < 0 and (not has_top or plain_resists(basis, x1 - x0, footing.h, -moment)):  # D-140
@@ -363,11 +398,15 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
                     note = section + "".join(f": {text}" for text in (shape, plate) if text)
                     plain = plain_strip_check(basis, footing, -moment, (label, pressure.case, note), x1 - x0)
                     checks.append(replace(plain, z=z, values=(*plain.values, *flexure_values)))
-                    selected = list(shear_and_torsion_checks(given)) if order == 0 and sheared else []
+                    selected = list(shear_and_torsion_checks(sheared_given)) if order == 0 and sheared else []
                 else:
-                    selected = list(checks_for(given) if order == 0 and sheared else flexure_station_checks(given))
+                    selected = [*flexure_station_checks(given),
+                                *(shear_and_torsion_checks(sheared_given) if order == 0 and sheared else ())]
                 for check in selected:
-                    extra = plate if check.name.startswith(("Flexion", "Cortante")) else ""
+                    extra = plate if check.name.startswith("Flexion") else ""
+                    if check.name.startswith("Cortante"):
+                        extra = "; ".join(text for text in (plate, f"ancho de cortante {width:.0f} mm (columna + d a cada lado, D-151)")
+                                          if text)
                     note = section + "".join(f": {text}" for text in (check.note, shape, extra) if text)
                     added = flexure_values if check.name == FLEXURE_STRENGTH else (shear_values if check.name == STRENGTH else ())
                     check = replace(check, note=note, member=footing.id, case=pressure.case, z=z, values=(*check.values, *added))
@@ -375,13 +414,53 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     return checks
 
 
+def strip_rows(basis: Basis, footing: CombinedFooting, column: CombinedColumn,
+               row: BarRow) -> tuple[BarRow, BarRow | None, BarRow | None, BarRow | None]:
+    """Las filas de barras de la franja: la malla y inferior fuera de las zonas de band (row), el band, el band superior y
+    top.y fuera de las zonas de band superior (D-097, D-119)."""
+    return (row, band_row(footing, column, row, basis), band_top_row(footing, column, row.depth, basis.bars),
+            transverse_top(footing, top_rows(footing, basis.bars).get("y"), row.depth))
+
+
+def strip_shear_member(basis: Basis, footing: CombinedFooting, column: CombinedColumn, row: BarRow) -> Member:
+    """La franja para el cortante (D-151): el ancho efectivo shear_limits con todas las barras que caen en él."""
+    return strip_member(footing, column, strip_rows(basis, footing, column, row), shear_limits(footing, column, row.depth))
+
+
+def strip_depth_at(basis: Basis, footing: CombinedFooting, soil: Soil, column_row: tuple[int, BarRow],
+                   given: tuple[FactoredCase, tuple[FootingLoad, ...]]) -> Callable[[float, float], float | None]:
+    """La d del cortante de la franja en y con el momento físico M (D-131, D-151): la de la franja de cortante con el
+    momento de diseño con que se revisa el cortante (el primero de Wood-Armer, D-118)."""
+    index, row = column_row
+    column = footing.columns[index]
+    member = strip_shear_member(basis, footing, column, row)
+    limits = strip_limits(footing, column, row.depth)
+    twist = strip_twist(footing, soil, given, limits)
+
+    def depth_at(y: float, physical: float) -> float | None:
+        moment = strip_moments(physical, limits[1] - limits[0], twist)[0]
+        station = Station.model_construct(z=y + footing.ly / 2, layout=member.stations[0].layout, case=given[0].case,
+                                          demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=0.0, v3=0.0, tu=0.0))
+        return shear_depth(StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False))
+
+    return depth_at
+
+
 def strip_torsion_shear(footing: CombinedFooting, soil: Soil, given: tuple[FactoredCase, tuple[FootingLoad, ...]],
                         limits: tuple[float, float]) -> float:
-    """Cortante de la franja por la torsión de placa (decisión del usuario, D-119): qy = ∂mxy/∂x con el salto de T entre
-    los bordes de la franja repartido en su ancho b, (T(x1) − T(x0))/(b·B), por b: |T(x1) − T(x0)|/B (N). El salto
-    incluye el par de la columna, que la flexión de la franja no toma (D-088)."""
+    """El salto de la torsión de placa en la franja, (T(x1) − T(x0))/B (N), con signo (D-119, D-151): qy = ∂mxy/∂x con
+    mxy = T/B, integrado en el ancho b. El salto es el momento respecto al eje X de las cargas de la franja (la presión en
+    todo el ancho menos el par de la columna, que la flexión de la franja no toma, D-088)."""
     beam = beam_case(footing, soil, *given)
-    return abs(beam.torque(limits[1]) - beam.torque(limits[0])) / footing.ly
+    return (beam.torque(limits[1]) - beam.torque(limits[0])) / footing.ly
+
+
+def torsion_side(jump: float, label: str) -> float:
+    """El cortante por torsión de placa en el voladizo del lado de la sección (D-151), para sumarlo con su signo al de
+    flexión (la carga neta hacia arriba más allá de la sección). Con T(x1) − T(x0) > 0 sobra momento de carga hacia +Y en la
+    franja y la viga lo equilibra con un par que empuja hacia abajo el lado +Y y hacia arriba el −Y: alivia el voladizo
+    +Y y carga el −Y. Así, en +Y es −(T(x1) − T(x0))/B y en −Y, +(T(x1) − T(x0))/B."""
+    return -jump if label.endswith("+Y") else jump
 
 
 def _strip_values(physical: float, moment: float, plate: tuple[float, float]) -> tuple[tuple[str, float], ...]:

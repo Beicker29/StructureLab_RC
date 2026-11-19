@@ -31,6 +31,7 @@ Uso: python tests/oracles/derive_combined_beam.py
 import importlib.util
 import json
 import math
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 
@@ -154,7 +155,33 @@ def plate_moments(beam: dict, x: float) -> tuple[float, float]:
     return max(moment + torque, 0.0), min(moment - torque, 0.0)
 
 
-def _stations(beam: dict, depth: float, plate: bool = False) -> list[float]:
+def section_at_d(face: float, side: float, depth: float, depth_at: Callable[[float], float | None]) -> float:
+    """La sección a d de la cara con la d de esa misma sección (D-151): x = cara + lado·d(x), por sustitución sucesiva
+    desde la d de la cara (o depth si allí no hay d) hasta que d cambie menos de 0.5 mm. Sin d en un paso (momento
+    despreciable), la anterior; sin convergencia en 20 pasos, la d geométrica depth."""
+    start = depth_at(face)
+    d = depth if start is None else start
+    for _ in range(20):
+        found = depth_at(face + side * d)
+        if found is None:
+            return face + side * d
+        if abs(found - d) < 0.5:
+            return face + side * found
+        d = found
+    return face + side * depth
+
+
+def _at_d(beam: dict, depth: float, depth_at: Callable[[float], float | None] | None) -> list[float]:
+    """Las secciones a d de cada cara hacia su tramo, dentro de él; con depth_at, a la d de cada sección (D-151)."""
+    out = []
+    for face, side in _faces(beam):
+        x = face + side * depth if depth_at is None else section_at_d(face, side, depth, depth_at)
+        if any(low < x < high and low <= face <= high for low, high in _regions(beam)):
+            out.append(x)
+    return out
+
+
+def _stations(beam: dict, depth: float, plate: bool = False, depth_at: Callable[[float], float | None] | None = None) -> list[float]:
     """Las x de las estaciones: el mayor momento de las barras inferiores y el mayor de las superiores, si los hay (caras
     y extremos interiores de M; con plate, los de Wood-Armer en esas secciones, D-118), y las secciones a d."""
     candidates = [(x, _shear_moment(beam, x)[1]) for x, _ in _faces(beam)]
@@ -163,11 +190,7 @@ def _stations(beam: dict, depth: float, plate: bool = False) -> list[float]:
     design = [(x, plate_moments(beam, x) if plate else (max(moment, 0.0), min(moment, 0.0))) for x, moment in candidates]
     largest = max(design, key=lambda item: item[1][0])
     smallest = min(design, key=lambda item: item[1][1])
-    xs = ([largest[0]] if largest[1][0] > 0 else []) + ([smallest[0]] if smallest[1][1] < 0 else [])
-    for face, side in _faces(beam):
-        x = face + side * depth
-        if any(low < x < high and low <= face <= high for low, high in _regions(beam)):
-            xs.append(x)
+    xs = ([largest[0]] if largest[1][0] > 0 else []) + ([smallest[0]] if smallest[1][1] < 0 else []) + _at_d(beam, depth, depth_at)
     unique: list[float] = []
     for x in sorted(xs):
         if not unique or abs(x - unique[-1]) > 1e-6:
@@ -175,11 +198,9 @@ def _stations(beam: dict, depth: float, plate: bool = False) -> list[float]:
     return unique
 
 
-def sheared(beam: dict, depth: float, x: float, length: float) -> bool:
+def sheared(beam: dict, depth: float, x: float, length: float, depth_at: Callable[[float], float | None] | None = None) -> bool:
     """Si x es una sección a d de una cara hacia su tramo (dentro de él): las únicas con cortante (D-149)."""
-    return any(abs(x - (face + side * depth)) <= 1e-6 * length
-               and any(low < face + side * depth < high and low <= face <= high for low, high in _regions(beam))
-               for face, side in _faces(beam))
+    return any(abs(x - at) <= 1e-6 * length for at in _at_d(beam, depth, depth_at))
 
 
 def top_mat(designation: str, spacing: float, end: str = "straight", y: tuple[str, float] | None = None,
@@ -426,9 +447,17 @@ def _expected(folder: str, f: dict, level: str) -> dict:
             failures.append(case)
             continue
         depth = rows[0]["depth"]
-        for x in _stations(beam, depth, plate=True):
-            # El cortante solo en las secciones a d de las caras, con su Vu y su Mu; las demás, solo flexión (D-149).
-            at_d = sheared(beam, depth, x, f["lx"])
+
+        def depth_at(x: float, beam: dict = beam) -> float | None:
+            """La d del cortante en x (D-131) con el momento con que se revisa (el primero de Wood-Armer, D-118)."""
+            moment = next((m for m in plate_moments(beam, x) if m != 0), _shear_moment(beam, x)[1])
+            terms = _vc_d(folder, f, rows, (0.0, moment), f["ly"]) if abs(moment) >= 1e3 else None  # D-151: sin momento, sin d
+            return None if terms is None else terms[1]
+
+        for x in _stations(beam, depth, True, depth_at):
+            # El cortante solo en las secciones a d de las caras, con su Vu y su Mu; las demás, solo flexión (D-149). La
+            # sección a d, a la d del cortante de esa misma sección (D-151).
+            at_d = sheared(beam, depth, x, f["lx"], depth_at)
             shear = _shear_moment(beam, x)[0]
             z = x + f["lx"] / 2
             torques.append({"case": case, "x": x, "at": x, "tu_Nmm": _torque(beam, x)})

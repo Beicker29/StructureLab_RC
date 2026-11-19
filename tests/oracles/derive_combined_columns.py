@@ -33,6 +33,7 @@ Uso: python tests/oracles/derive_combined_columns.py
 import importlib.util
 import json
 import math
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 
@@ -94,6 +95,40 @@ def _shrinkage_ratio(folder: str) -> float:
 
 def _limits(f: dict, c: dict, d: float) -> tuple[float, float]:
     return max(c["x"] - c["cx"] / 2 - d / 2, -f["lx"] / 2), min(c["x"] + c["cx"] / 2 + d / 2, f["lx"] / 2)
+
+
+def _shear_limits(f: dict, c: dict, d: float) -> tuple[float, float]:
+    """Ancho de cortante de la franja (D-151): columna + d a cada lado, sin pasar la mitad del espacio libre hasta la
+    columna vecina ni el borde, y no menor que el de flexión."""
+    low, high = c["x"] - c["cx"] / 2 - d, c["x"] + c["cx"] / 2 + d
+    for other in f["columns"]:
+        if other["x"] > c["x"]:
+            high = min(high, (c["x"] + c["cx"] / 2 + other["x"] - other["cx"] / 2) / 2)
+        elif other["x"] < c["x"]:
+            low = max(low, (c["x"] - c["cx"] / 2 + other["x"] + other["cx"] / 2) / 2)
+    x0, x1 = _limits(f, c, d)
+    return max(min(low, x0), -f["lx"] / 2), min(max(high, x1), f["lx"] / 2)
+
+
+def _shear_strip(f: dict, index: int) -> dict:
+    """La franja de cortante (D-151): su ancho y sus capas con todas las barras que caen en él, abajo el band (en su
+    zona) y la malla y fuera de las zonas de band, arriba el band superior y top.y fuera de sus zonas."""
+    c = f["columns"][index]
+    d = _bottom_rows(f)["y"]["depth"]
+    x0, x1 = _shear_limits(f, c, d)
+
+    def inside(positions: list[float]) -> int:
+        return sum(1 for p in positions if x0 - 1e-6 <= p <= x1 + 1e-6)
+
+    row = _bottom_rows(f)["y"]
+    area = inside(_mesh_y(f)) * row["ab"]
+    if c.get("band"):
+        area += len(_band_positions(f, c, d)) * BARS[c["band"]["designation"]][1]
+    layers = [{"face": "bottom", "depth": d, "area": area}]
+    for top in (_band_top(f, c), _top_y_outside(f)):
+        if top is not None and inside(top["positions"]):
+            layers.append({"face": "top", "depth": top["from_top"], "area": inside(top["positions"]) * top["ab"]})
+    return {"width": x1 - x0, "layers": layers}
 
 
 def _band_positions(f: dict, c: dict, d: float) -> list[float]:
@@ -403,7 +438,8 @@ def _shape(f: dict, beam: dict, index: int, depth: float):  # noqa: ANN202
     return (lambda y0, y1: (y1 - y0, (y1**2 - y0**2) / 2)), "uniforme"
 
 
-def _strip_sections(f: dict, beam: dict, index: int, case: str, depth: float) -> list[tuple[float, float, float, str]]:
+def _strip_sections(f: dict, beam: dict, index: int, case: str, depth: float,
+                    depth_at: Callable[[float, float], float | None] | None = None) -> list[tuple[float, float, float, str]]:
     """Secciones de la franja con su carga neta (D-095): q(y) = s·forma(y) − w·b, con b el ancho de la franja, w la carga
     uniforme mayorada (zapata, relleno y sobrecargas) y s tal que ∫q dy = F de la columna. Caras, a d de ellas y el mayor
     momento negativo de cada voladizo (64 puntos entre la cara y el borde) si no está en la cara."""
@@ -419,11 +455,13 @@ def _strip_sections(f: dict, beam: dict, index: int, case: str, depth: float) ->
         load, first = shape(y0, y1)
         net = scale * load - uniform * (y1 - y0)
         net_first = scale * first - uniform * (y1**2 - y0**2) / 2
-        return side * (net_first - at * net), abs(net)
+        return side * (net_first - at * net), net  # la carga neta hacia arriba más allá de la sección, con signo
 
     out = []
     for side, face, name in ((1.0, c["y"] + c["cy"] / 2, "+Y"), (-1.0, c["y"] - c["cy"] / 2, "-Y")):
-        at_d = face + side * depth
+        # La sección a d, a la d del cortante de esa misma sección (D-151), con el momento de la franja allí.
+        at_d = face + side * depth if depth_at is None else _B.section_at_d(
+            face, side, depth, lambda y, side=side, depth_at=depth_at: depth_at(y, beyond(y, side)[0]))
         inside = -half < at_d < half
         face_moment, shear = beyond(face, side)
         out.append((face, face_moment, shear, f"cara {name}"))  # la cara, solo para la flexión (D-148)
@@ -502,9 +540,20 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
     where = f"Franja transversal de la columna {f['columns'][index]['id']}"
     out = []
     twist = strip_twist(f, beam, strip)
-    # Cortante por la torsión de placa en la franja (D-119): el salto de T entre sus bordes repartido en su ancho b, por b.
-    torsion_shear = abs(_B._torque(beam, strip["x1"]) - _B._torque(beam, strip["x0"])) / f["ly"]
-    for y, physical, shear, label in _strip_sections(f, beam, index, case, strip["depth"]):
+    # Cortante por la torsión de placa en la franja (D-119): el salto de T entre sus bordes repartido en su ancho b, por b,
+    # con signo (D-151): el par con que la viga equilibra la franja alivia el voladizo +Y si el salto es positivo y carga
+    # el −Y.
+    jump = (_B._torque(beam, strip["x1"]) - _B._torque(beam, strip["x0"])) / f["ly"]
+    wide = _shear_strip(f, index)
+
+    def depth_at(y: float, physical: float) -> float | None:
+        """La d del cortante (D-131) de la franja de cortante con el momento con que se revisa (el primero de Wood-Armer)."""
+        moment = strip_moments(physical, strip["width"], twist)[0]
+        terms = _B._vc_d(folder, f, wide["layers"], (0.0, moment), wide["width"]) if abs(moment) >= 1e3 else None  # D-151
+        return None if terms is None else terms[1]
+
+    for y, physical, shear, label in _strip_sections(f, beam, index, case, strip["depth"], depth_at):
+        torsion_shear = -jump if label.endswith("+Y") else jump
         # El cortante, a d de la cara y más allá; en la cara solo la flexión (D-148).
         sheared = not label.startswith("cara")
         for order, moment in enumerate(strip_moments(physical, strip["width"], twist)):
@@ -512,7 +561,7 @@ def _strip_checks(folder: str, f: dict, beam: dict, index: int, case: str) -> li
             # en la cara no lleva cortante (order 1).
             out += [{**item, "face": "top" if moment < 0 else "bottom"}
                     for item in _strip_station(folder, f, (beam, index, case),
-                                               (y, moment, shear + torsion_shear, order if sheared else 1), where)]
+                                               (y, moment, abs(shear + torsion_shear), order if sheared else 1), where)]
     return out
 
 
@@ -523,7 +572,9 @@ def _strip_station(folder: str, f: dict, given: tuple[dict, int, str], section: 
     y, moment, shear, order = section
     strip = _strip(f, index)
     layers = strip["layers"]
-    shear_items = _beam_shear(_B._shear_checks(folder, f, layers, (shear, moment), (strip["width"], None))) if order == 0 else []
+    # El cortante con el ancho de cortante y sus barras (D-151).
+    wide = _shear_strip(f, index)
+    shear_items = _beam_shear(_B._shear_checks(folder, f, wide["layers"], (shear, moment), (wide["width"], None))) if order == 0 else []
     plain_ok = moment < 0 and _F._plain({**f, "lx": strip["width"]}, "y", -moment, case, _F.PROFILES[folder],
                                         LEVEL[folder])["status"] == "PASS"
     if moment < 0 and (not strip["top"] or plain_ok):  # D-140: el concreto simple primero

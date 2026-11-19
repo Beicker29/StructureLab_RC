@@ -299,10 +299,24 @@ def _expected(folder: str, f: dict) -> dict:
         beam = _beam(f, case)
         assert beam is not None
         depth = rows["bottom_depth"]
-        for x in _B._stations(beam, depth):
-            # El cortante solo en las secciones a d de las caras, con su Vu y su Mu; las demás, solo flexión (D-149).
+
+        def depth_at(x: float, beam: dict = beam) -> float | None:
+            """La d del cortante en x (D-131): el centroide de fuerzas del acero a tracción con el momento de la sección."""
+            moment = _B._shear_moment(beam, x)[1]
+            if abs(moment) < 1e3:  # D-151: sin momento, sin d
+                return None
+            layers, section = _section(f, rows, moment)
+            state = _state(layers, section, f["beam"]["height"])
+            if state is None:
+                return None
+            pulled = [(d, a, e) for (d, a), e in zip(layers, state["strains"], strict=True) if e > 0]
+            return max(_B.force_centroid(pulled), 0.8 * f["beam"]["height"]) if pulled else None
+
+        for x in _B._stations(beam, depth, False, depth_at):
+            # El cortante solo en las secciones a d de las caras, con su Vu y su Mu; las demás, solo flexión (D-149). La
+            # sección a d, a la d del cortante de esa misma sección (D-151).
             shear, moment = _B._shear_moment(beam, x)
-            at_d = _B.sheared(beam, depth, x, f["lx"])
+            at_d = _B.sheared(beam, depth, x, f["lx"], depth_at)
             checks += [{**item, "case": case, "z_mm": x + f["lx"] / 2}
                        for item in _beam_checks(folder, f, rows, (shear, moment), at_d)]
         checks += [{**item, "case": case} for item in _flange_checks(folder, f, beam)]

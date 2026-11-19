@@ -13,15 +13,30 @@ internas: posición en mm, M en N·mm y V en N (por metro en las aletas).
 
 Cada envolvente trae además sus secciones críticas (D-104): las caras de las columnas (o de la viga) y las secciones a d
 de ellas, y en la dirección principal las posiciones de los extremos de momento; las secciones son puntos de muestreo,
-así que su máximo y su mínimo, con el caso de cada uno, son exactos.
+así que su máximo y su mínimo, con el caso de cada uno, son exactos. La sección a d de una cara queda a la d del cortante
+de esa sección en cada caso (D-131, D-151), la misma de las verificaciones: su posición puede cambiar de un caso a otro.
 """
 
 from dataclasses import dataclass
 
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.footing.base import column_vertical
-from structurelab_rc.domain.footing.combined_beam import beam_case, beam_depth, moment_sections, shear_sections
-from structurelab_rc.domain.footing.combined_columns import Cases, strip_cantilever, strip_load
+from structurelab_rc.domain.footing.combined_beam import (
+    beam_case,
+    beam_depth,
+    beam_depth_at,
+    long_beam_member,
+    moment_sections,
+    shear_sections,
+)
+from structurelab_rc.domain.footing.combined_columns import (
+    Cases,
+    strip_cantilever,
+    strip_demands,
+    strip_depth_at,
+    strip_load,
+    transverse_bottom,
+)
 from structurelab_rc.domain.footing.declared import declared_envelope
 from structurelab_rc.domain.footing.inverted_t import STRIP, Flanges
 from structurelab_rc.domain.footing.mesh import mat_rows
@@ -64,24 +79,33 @@ class Envelope:
 
 
 Layout = tuple[list[tuple[float, str]], list[tuple[int, int]], bool]  # marcas, tramos y si es por metro
+Section = tuple[tuple[float, ...], str]  # la posición de la sección en cada caso y su nombre
 
 
-def _critical(samples: list[list[tuple[float, float, float]]], cases: list[str], section: tuple[float, str]) -> CriticalValues:
-    """Máximo y mínimo de M y de V en una sección, que es una de las posiciones muestreadas."""
-    position, label = section
-    index = next(i for i, point in enumerate(samples[0]) if point[0] == position)
-    values = [(own[index], case) for own, case in zip(samples, cases, strict=True)]
+def _fixed(position: float, count: int) -> tuple[float, ...]:
+    """La misma posición en los count casos (una cara, o un extremo de momento)."""
+    return (position,) * count
+
+
+def _critical(samples: list[list[tuple[float, float, float]]], cases: list[str], section: Section) -> CriticalValues:
+    """Máximo y mínimo de M y de V en una sección, cada caso en su posición (que es una de las posiciones muestreadas). La
+    posición reportada es la del caso del mayor V."""
+    positions, label = section
+    values = [(next(point for point in own if point[0] == position), case)
+              for own, case, position in zip(samples, cases, positions, strict=True)]
 
     def pick(key: int, largest: bool) -> tuple[float, str]:
         # Con empate gobierna el primer caso, como en los extremos de la envolvente.
         point, case = (max if largest else min)(values, key=lambda item: item[0][key])
         return point[key], case
 
-    return CriticalValues(label, position, pick(1, True), pick(1, False), pick(2, True), pick(2, False))
+    shear_max = pick(2, True)
+    position = next(point[0] for point, case in values if case == shear_max[1])
+    return CriticalValues(label, position, pick(1, True), pick(1, False), shear_max, pick(2, False))
 
 
 def _envelope(title: str, samples: list[list[tuple[float, float, float]]], cases: list[str], layout: Layout,
-              sections: list[tuple[float, str]] | None = None) -> Envelope:
+              sections: list[Section] | None = None) -> Envelope:
     """samples[c] = [(posición, M, V)] del caso c, con las mismas posiciones en todos los casos; sections, las secciones
     críticas (posición, nombre), que deben estar entre las posiciones."""
     marks, segments, per_metre = layout
@@ -105,24 +129,29 @@ def long_beam_envelope(basis: Basis, footing: CombinedFooting, soil: Soil, cases
     las caras de las columnas, las secciones a d hacia cada tramo y los extremos de momento (D-104)."""
     half = footing.lx / 2
     depth = beam_depth(footing, basis.bars)
-    first = beam_case(footing, soil, *cases[0])
-    sections = [(section.x, section.label) for section in moment_sections(first) if section.label.startswith("cara")]
-    sections += [(section.x, section.label) for section in shear_sections(first, depth)]
+    member = long_beam_member(footing, basis.bars, basis.profile)
+    beams = [beam_case(footing, soil, pressure, loads) for pressure, loads in cases]
+    count = len(beams)
+    sections = [(_fixed(section.x, count), section.label) for section in moment_sections(beams[0]) if section.label.startswith("cara")]
+    # Las secciones a d de cada caso, a la d del cortante de esa sección (D-151); una que no exista en todos los casos se omite.
+    sheared = [{section.label: section.x for section in shear_sections(beam, depth, beam_depth_at(basis, footing, member, beam))}
+               for beam in beams]
+    sections += [(tuple(own[label] for own in sheared), label) for label in sheared[0] if all(label in own for own in sheared)]
     points = [-half + footing.lx * index / _SAMPLES for index in range(_SAMPLES + 1)]
     for column in footing.columns:
         points += [column.x - _JUMP, column.x + _JUMP]
-    points = sorted({*points, *(x for x, _ in sections)})
+    points = sorted({*points, *(x for positions, _ in sections for x in positions)})
     samples, names = [], []
-    for pressure, loads in cases:
-        beam = beam_case(footing, soil, pressure, loads)
+    for (pressure, _), beam in zip(cases, beams, strict=True):
         samples.append([(x, beam.moment(x), beam.shear(x)) for x in points])
         names.append(pressure.case)
     marks = [(column.x, column.id) for column in footing.columns]
     layout: Layout = (marks, [(0, len(points) - 1)], False)
     envelope = _envelope("Dirección principal", samples, names, layout)
     extremes = {name: position for name, _, position, _ in envelope.extremes}
-    sections += [(extremes["M+"], "momento positivo máximo"), (extremes["M-"], "momento negativo máximo")]
-    sections = sorted(dict.fromkeys(sections), key=lambda item: item[0])
+    sections += [(_fixed(extremes["M+"], count), "momento positivo máximo"),
+                 (_fixed(extremes["M-"], count), "momento negativo máximo")]
+    sections = sorted(dict.fromkeys(sections), key=lambda item: item[0][0])
     return _envelope("Dirección principal", samples, names, layout, sections)
 
 
@@ -133,18 +162,30 @@ def _cantilever_points(start: float, end: float) -> list[float]:
 def strip_envelopes(basis: Basis, footing: CombinedFooting, soil: Soil, cases: Cases) -> list[Envelope]:
     """Los voladizos de la franja de cada columna (zapata combinada sin viga), del borde −Y a la cara −Y y de la cara +Y
     al borde +Y."""
-    depth = mat_rows(footing, footing.bottom, basis.bars)["y"].depth
+    row = transverse_bottom(footing, mat_rows(footing, footing.bottom, basis.bars)["y"])  # la de las verificaciones (D-097)
+    depth = row.depth
     half = footing.ly / 2
+    count = len(cases)
     envelopes = []
     for index, column in enumerate(footing.columns):
         low, high = column.y - column.cy / 2, column.y + column.cy / 2
-        # Secciones críticas de la franja (D-104): las caras de la columna y las secciones a d hacia cada borde.
-        sections = [(low, f"cara -Y de {column.id}"), (high, f"cara +Y de {column.id}")]
-        sections += [(at, f"a d de la cara {name} de {column.id}") for at, name in ((low - depth, "-Y"), (high + depth, "+Y"))
-                     if -half < at < half]
-        left = sorted({*_cantilever_points(-half, low), *(at for at, _ in sections if at < low)}) if low > -half else []
-        right = sorted({*_cantilever_points(high, half), *(at for at, _ in sections if at > high)}) if high < half else []
-        sections = [section for section in sections if section[0] in left or section[0] in right]
+        # Secciones críticas de la franja (D-104): las caras de la columna y las secciones a d hacia cada borde, en cada caso
+        # a la d del cortante de esa sección (D-151), como en las verificaciones.
+        sections: list[Section] = [(_fixed(low, count), f"cara -Y de {column.id}"), (_fixed(high, count), f"cara +Y de {column.id}")]
+        at_d: dict[str, list[float]] = {}
+        for pressure, loads in cases:
+            force = column_vertical(footing, soil, column, loads[index])
+            demands, _ = strip_demands(footing, pressure, column, (force, depth),
+                                       strip_depth_at(basis, footing, soil, (index, row), (pressure, loads)))
+            for y, _, _, label in demands:
+                if label.startswith("a d de la cara"):
+                    at_d.setdefault(f"{label} de {column.id}", []).append(y)
+        sections += [(tuple(positions), label) for label, positions in at_d.items() if len(positions) == count]
+        extra = [at for positions, _ in sections for at in positions]
+        left = sorted({*_cantilever_points(-half, low), *(at for at in extra if at < low)}) if low > -half else []
+        right = sorted({*_cantilever_points(high, half), *(at for at in extra if at > high)}) if high < half else []
+        sampled = {*left, *right}
+        sections = [section for section in sections if all(at in sampled for at in section[0])]
         samples, names = [], []
         for pressure, loads in cases:
             force = column_vertical(footing, soil, column, loads[index])
@@ -157,7 +198,7 @@ def strip_envelopes(basis: Basis, footing: CombinedFooting, soil: Soil, cases: C
         segments = [segment for segment in ((0, len(left) - 1), (len(left), len(left) + len(right) - 1)) if segment[1] >= segment[0]]
         marks = [(low, f"cara -Y de {column.id}"), (high, f"cara +Y de {column.id}")]  # ASCII: la fuente del PDF no tiene "−"
         envelopes.append(_envelope(f"Franja transversal de la columna {column.id}", samples, names, (marks, segments, False),
-                                   sorted(sections)))
+                                   sorted(sections, key=lambda item: item[0][0])))
     return envelopes
 
 
@@ -184,10 +225,13 @@ def flange_envelope(basis: Basis, footing: CombinedFooting, cases: Cases) -> Env
         names.append(pressure.case)
     segments = [(0, len(left) - 1), (len(left), len(left) + len(right) - 1)]
     marks = [(-face, "cara -Y de la viga"), (face, "cara +Y de la viga")]
-    sections = [(-face, "cara -Y de la viga"), (face, "cara +Y de la viga")]
+    count = len(cases)
+    sections = [(_fixed(-face, count), "cara -Y de la viga"), (_fixed(face, count), "cara +Y de la viga")]
     if depth < edge - face:
-        sections += [(-(face + depth), "a d de la cara -Y de la viga"), (face + depth, "a d de la cara +Y de la viga")]
-    return _envelope("Aletas de la zarpa (por metro)", samples, names, (marks, segments, True), sorted(sections))
+        sections += [(_fixed(-(face + depth), count), "a d de la cara -Y de la viga"),
+                     (_fixed(face + depth, count), "a d de la cara +Y de la viga")]
+    return _envelope("Aletas de la zarpa (por metro)", samples, names, (marks, segments, True),
+                     sorted(sections, key=lambda item: item[0][0]))
 
 
 def combined_diagrams(basis: Basis, footing: CombinedFooting, soil: Soil, cases: Cases) -> tuple[Envelope, list[Envelope]]:

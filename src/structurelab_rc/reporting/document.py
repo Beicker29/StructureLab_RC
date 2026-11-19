@@ -303,7 +303,7 @@ def _values_table(check: dict[str, Any]) -> Block | None:
 
 def _composition_lines(check: dict[str, Any]) -> list[tuple[str, str]]:
     """La demanda como suma de la flexión y la torsión de placa (D-118, D-119), con los valores que trae la verificación:
-    Mu = |M flexión + M torsión| o Vu = V flexión + V torsión."""
+    Mu = |M flexión + M torsión| o Vu = |V flexión + V torsión|, cada término con su signo (D-151)."""
     values = check["values"]
     lines = []
     for kind, unit, symbol in (("M", "kN-m", "Mu"), ("V", "kN", "Vu")):
@@ -312,8 +312,8 @@ def _composition_lines(check: dict[str, Any]) -> list[tuple[str, str]]:
             continue
         shown = unit_of(f"x [{unit}]")[1]
         total = _quantity(check["demand"], check["unit"])
-        lines.append((f"Composición de {symbol}", f"{kind} flexión + {kind} torsión = {number(bending, shown)} + "
-                      f"{number(torsion, shown)} → {symbol} = {total}"))
+        lines.append((f"Composición de {symbol}", f"|{kind} flexión + {kind} torsión| = |{number(bending, shown)} + "
+                      f"({number(torsion, shown)})| → {symbol} = {total}"))
     return lines
 
 

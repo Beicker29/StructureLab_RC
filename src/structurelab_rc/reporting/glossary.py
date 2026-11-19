@@ -162,8 +162,9 @@ VALUES = {
     "A minima": ("Área mínima en contacto (fracción mínima × A)", "Ac,mín"),
     "M flexion": ("Momento por flexión de la sección (sin la torsión de placa)", "M flexión"),
     "M torsion": ("Momento por la torsión de placa (Wood-Armer, D-118)", "M torsión"),
-    "V flexion": ("Cortante por flexión de la sección", "V flexión"),
-    "V torsion": ("Cortante por la torsión de placa, (dT/dx)/B por el ancho (D-119)", "V torsión"),
+    "V flexion": ("Cortante por flexión de la sección: la carga neta hacia arriba entre la sección y el borde, con signo", "V flexión"),
+    "V torsion": ("Cortante por la torsión de placa, (dT/dx)/B por el ancho, con signo (en la franja alivia un voladizo y "
+                  "carga el otro, D-119, D-151)", "V torsión"),
     "mx": ("Momento flector por unidad de ancho de las barras x", "mx"),
     "my": ("Momento flector por unidad de ancho de las barras y", "my"),
     "mxy": ("Momento torsor de placa por unidad de ancho (T/B)", "mxy"),

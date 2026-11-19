@@ -304,4 +304,4 @@ def test_combined_footing_report_has_its_chapters_and_figure(tmp_path: Path) -> 
     # D-119: un subcapítulo por franja de columna y la demanda como suma de la flexión y la torsión de placa.
     assert "Franja transversal de la columna C1" in text and "Franja transversal de la columna C2" in text
     assert re.search(r"^### \d+\.1 Franja transversal de la columna C1$", text, flags=re.M)
-    assert "Composición de Mu: M flexión + M torsión" in text and "Composición de Vu: V flexión + V torsión" in text
+    assert "Composición de Mu: |M flexión + M torsión|" in text and "Composición de Vu: |V flexión + V torsión|" in text  # D-151

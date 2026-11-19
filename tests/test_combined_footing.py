@@ -17,12 +17,11 @@ from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.checks import COMBINED_STRUCTURAL
 from structurelab_rc.domain.footing.combined_beam import beam_case, long_beam_checks, two_way_warning
 from structurelab_rc.domain.footing.combined_columns import (
-    band_row,
     column_checks,
     strip_demands,
     strip_limits,
     strip_member,
-    strip_top,
+    strip_rows,
     transverse_bottom,
 )
 from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
@@ -600,8 +599,7 @@ def test_strip_flexure_d_is_the_centroid_of_the_tension_forces() -> None:
         if check.name != "Flexion: resistencia" or not check.note.startswith("Franja") or "momento positivo" not in check.note:
             continue
         column = next(column for column in footing.columns if f"columna {column.id}" in check.note)
-        top, _ = strip_top(footing, column, row.depth, BARS)
-        member = strip_member(footing, column, (transverse_bottom(footing, row), band_row(footing, column, row, basis), top))
+        member = strip_member(footing, column, strip_rows(basis, footing, column, transverse_bottom(footing, row)))
         values = dict(check.values)
         c = values["c"]
         forces = []
@@ -641,3 +639,19 @@ def test_long_beam_shear_only_at_d_and_deep_beam_limits_at_the_face(profile: str
             assert check.case is not None and check.z is not None
             beam = beam_case(footing, soil, *cases[check.case])
             assert check.demand == pytest.approx(abs(beam.shear(check.z - footing.lx / 2)))
+
+
+def test_section_at_depth_converges_keeps_the_last_depth_or_falls_back_to_geometry() -> None:
+    """D-151: la sección a d queda a la d de esa misma sección (punto fijo); si en un paso la d no se define (momento
+    despreciable) queda la anterior; si no converge, la d geométrica."""
+    from structurelab_rc.domain.beam.shear import section_at_depth
+
+    def linear(y: float) -> float:  # d que crece con la distancia a la cara: punto fijo en d = 600 / 0.9
+        return 600.0 + 0.1 * (y - 1000.0)
+
+    at = section_at_depth(1000.0, 1.0, linear, 700.0)
+    assert at - 1000.0 == pytest.approx(linear(at), abs=0.5)
+    steps = iter([650.0, None])
+    assert section_at_depth(1000.0, -1.0, lambda _: next(steps), 700.0) == pytest.approx(350.0)  # cara: 650; luego sin d
+    swing = iter([500.0, *([600.0, 500.0] * 20)])
+    assert section_at_depth(1000.0, 1.0, lambda _: next(swing), 700.0) == pytest.approx(1700.0)  # oscila: la geométrica

@@ -212,17 +212,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 568733823.4297254,
+            "demand": 523537506.1607816,
             "capacity": 973943691.723105,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.04069318541220283,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -230,15 +230,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 459133.0366007702,
-            "capacity": 1303799.4355986794,
+            "demand": 487858.74906085664,
+            "capacity": 1312169.6210704749,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: resistencia",
@@ -266,17 +266,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 582673848.8235326,
+            "demand": 536146212.0210376,
             "capacity": 973943691.723105,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.04069318541220283,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -284,15 +284,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 470890.07552044187,
-            "capacity": 1303857.4906187395,
+            "demand": 504044.8873027796,
+            "capacity": 1312725.693490719,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: resistencia",
@@ -504,17 +504,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 569082571.7571161,
+            "demand": 561762937.4233027,
             "capacity": 873013095.645806,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1849.6
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.021448245749225194,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1849.6
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -522,15 +522,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1849.6
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 459414.73005531554,
-            "capacity": 1412880.8959989646,
+            "demand": 464197.77972251433,
+            "capacity": 1413474.6616341458,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1849.6
           },
           {
             "name": "Flexion: resistencia",
@@ -558,17 +558,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 583022597.1509228,
+            "demand": 575510951.9901276,
             "capacity": 873013095.645806,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4750.4
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.021448245749225194,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4750.4
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -576,15 +576,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4750.4
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 471171.76897498756,
-            "capacity": 1412907.8316409336,
+            "demand": 476670.54706536443,
+            "capacity": 1413534.964291289,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4750.4
           },
           {
             "name": "Flexion: resistencia",
@@ -836,17 +836,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 568733823.4297254,
+            "demand": 523537506.1607816,
             "capacity": 973943691.723105,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.04069318541220283,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -854,15 +854,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 459133.0366007702,
-            "capacity": 1303799.4355986794,
+            "demand": 487858.74906085664,
+            "capacity": 1312169.6210704749,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: resistencia",
@@ -890,17 +890,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 582673848.8235326,
+            "demand": 536146212.0210376,
             "capacity": 973943691.723105,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.04069318541220283,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -908,15 +908,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 470890.07552044187,
-            "capacity": 1303857.4906187395,
+            "demand": 504044.8873027796,
+            "capacity": 1312725.693490719,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: resistencia",
@@ -1144,17 +1144,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "FAIL",
-            "demand": 1483226766.9689891,
+            "demand": 1410900527.3854246,
             "capacity": 933345757.482353,
             "case": "U1",
-            "z_mm": 1868.65
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0647666862170088,
             "case": "U1",
-            "z_mm": 1868.65
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -1162,15 +1162,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 1868.65
+            "z_mm": 1770.0
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 710988.4395901159,
-            "capacity": 1267558.1611917205,
+            "demand": 755277.5131480088,
+            "capacity": 1269660.4029083932,
             "case": "U1",
-            "z_mm": 1868.65
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: resistencia",
@@ -1198,17 +1198,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "FAIL",
-            "demand": 1541672259.0413904,
+            "demand": 1468399099.8873024,
             "capacity": 933345757.482353,
             "case": "U1",
-            "z_mm": 4731.35
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.0647666862170088,
             "case": "U1",
-            "z_mm": 4731.35
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -1216,15 +1216,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 4731.35
+            "z_mm": 4830.0
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 715763.890712914,
-            "capacity": 1266991.879554112,
+            "demand": 769807.9413974457,
+            "capacity": 1269244.70917635,
             "case": "U1",
-            "z_mm": 4731.35
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: resistencia",
@@ -1449,17 +1449,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 568733823.4297254,
+            "demand": 523537506.1607816,
             "capacity": 967264737.718458,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.04368049004268508,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -1467,15 +1467,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 459133.0366007702,
-            "capacity": 1295810.4630629462,
+            "demand": 487858.74906085664,
+            "capacity": 1302947.9900731845,
             "case": "U1",
-            "z_mm": 1865.45
+            "z_mm": 1770.0
           },
           {
             "name": "Flexion: resistencia",
@@ -1503,17 +1503,17 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 582673848.8235326,
+            "demand": 536146212.0210376,
             "capacity": 967264737.718458,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: deformacion neta de traccion (M3)",
             "status": "PASS",
             "capacity": 0.04368049004268508,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: acero minimo (M3)",
@@ -1521,15 +1521,15 @@
             "demand": 1599.1999999999998,
             "status": "PASS",
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 470890.07552044187,
-            "capacity": 1295859.9684502706,
+            "demand": 504044.8873027796,
+            "capacity": 1303422.1709539448,
             "case": "U1",
-            "z_mm": 4734.55
+            "z_mm": 4830.0
           },
           {
             "name": "Flexion: resistencia",

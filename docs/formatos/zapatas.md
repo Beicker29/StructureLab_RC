@@ -124,13 +124,17 @@ geotécnica con la resultante de las dos columnas (V3J.1) y, con los casos mayor
 
 - la viga de la dirección principal con las verificaciones de vigas en sus secciones críticas (V3J.2, D-081): cada
   check lleva `z`, la posición a lo largo de la viga desde su borde negativo (−X o −Y global), y en `note` la sección
-  ("cara +X de la columna …"); Vc y Av,min de cimentación; separación de 3h y 450 mm;
+  ("cara +X de la columna …"); Vc y Av,min de cimentación; separación de 3h y 450 mm. El cortante, solo a d de las caras
+  (D-149), con la d del cortante de esa misma sección (el centroide de fuerzas del acero a tracción, D-131), que se
+  encuentra por iteración (D-151);
 - por columna (V3J.3, D-082): el punzonamiento (y el del perímetro común si los de las dos columnas se traslapan,
   D-086), la franja transversal de la dirección secundaria (también con las verificaciones de vigas, con `z` desde el
   borde negativo de la dirección secundaria y `note` "Franja transversal de la columna …, cara ±Y", "a d de la cara ±Y"
-  o "mayor M negativo hacia el borde ±Y", con el eje de la dirección secundaria; en una cara de columna, Vu es el
-  de la sección a d; su carga es la neta: la fuerza de la columna con la forma de la presión menos los pesos y las
-  sobrecargas, D-095; abajo lleva el band si lo hay o, si no, la malla de la dirección secundaria, y arriba las barras de
+  o "mayor M negativo hacia el borde ±Y", con el eje de la dirección secundaria; el cortante solo a d de la cara (D-148),
+  a la d del cortante de esa sección (D-131, D-151); su carga es la neta: la fuerza de la columna con la forma de la
+  presión menos los pesos y las sobrecargas, D-095; la flexión con el ancho de franja (columna + d/2 a cada lado) y Vc
+  con el ancho de cortante (columna + d a cada lado, sin pasar el borde ni la mitad del espacio libre hasta la columna
+  vecina, D-151) y las barras que caen en él; abajo lleva el band si lo hay o, si no, la malla de la dirección secundaria, y arriba las barras de
   `top` de esa dirección que caen en ella; el momento negativo, sin esas barras, es de concreto simple, D-072, D-097), el
   aplastamiento y los pasadores (`note` "Columna …"); la separación de la malla de la dirección secundaria (3h y
   450 mm); retracción y temperatura por zona (D-097): por metro, inferior más superior de cada dirección ≥ ρ·h y cada
@@ -185,8 +189,10 @@ rectangular. Se diseña como de placa, por Wood-Armer, con mxy = T/B uniforme en
 - **Cortante fuera de las franjas (D-119):** qy = ∂mxy/∂x = (dT/dx)/B, con dT/dx = ∫y·p dy de la presión en la sección,
   por metro, frente a φVc de cimentación con la malla y inferior ("Direccion secundaria: torsion de placa, cortante").
 
-- **Cortante en las franjas (D-119):** Vu = V por flexión + |T(x1) − T(x0)|/B, el salto de T entre los bordes de la
-  franja.
+- **Cortante en las franjas (D-119, D-151):** Vu = |V por flexión + V por torsión|. V por flexión es la carga neta hacia
+  arriba entre la sección y el borde; V por torsión, ±(T(x1) − T(x0))/B, el salto de T entre los bordes de la franja, con
+  signo: la viga equilibra ese momento con un par que alivia el voladizo de un lado (−, en +Y si el salto es positivo) y
+  carga el del otro (+). Vc, con el ancho de cortante (columna + d a cada lado).
 
 La memoria de la combinada rectangular (D-119) trae:
 

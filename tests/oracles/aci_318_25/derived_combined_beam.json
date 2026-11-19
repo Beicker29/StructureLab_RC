@@ -108,11 +108,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 5595166.033199996,
+            "demand": 9965493.666666448,
             "capacity": 1147103277.9330285,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
@@ -120,7 +120,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
@@ -130,7 +130,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
@@ -140,17 +140,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 69462.02400000002,
+            "demand": 92702.26666666668,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
@@ -158,17 +158,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 356116143.3001332,
+            "demand": 328505572.9999999,
             "capacity": 1147103277.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "top"
           },
           {
@@ -176,7 +176,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "top"
           },
           {
@@ -186,7 +186,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "top"
           },
           {
@@ -196,17 +196,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 500635.35733333323,
+            "demand": 523875.59999999986,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "top"
           },
           {
@@ -214,7 +214,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "top"
           },
           {
@@ -258,11 +258,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 356116143.30013275,
+            "demand": 328505572.99999905,
             "capacity": 1147103277.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -270,7 +270,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -280,7 +280,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -290,17 +290,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 500635.3573333337,
+            "demand": 523875.6000000003,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -308,7 +308,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -352,11 +352,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 5595166.033200264,
+            "demand": 9965493.666666985,
             "capacity": 1147103277.9330285,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -364,7 +364,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -374,7 +374,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -384,17 +384,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 69462.02399999974,
+            "demand": 92702.2666666666,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -402,7 +402,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -424,14 +424,14 @@
         "torques": [
           {
             "case": "U1",
-            "x": -2838.9,
-            "at": -2838.9,
+            "x": -2785.0,
+            "at": -2785.0,
             "tu_Nmm": 0.0
           },
           {
             "case": "U1",
-            "x": -1161.1,
-            "at": -1161.1,
+            "x": -1215.0,
+            "at": -1215.0,
             "tu_Nmm": 0.0
           },
           {
@@ -442,8 +442,8 @@
           },
           {
             "case": "U1",
-            "x": 1161.1,
-            "at": 1161.1,
+            "x": 1215.0,
+            "at": 1215.0,
             "tu_Nmm": 0.0
           },
           {
@@ -454,8 +454,8 @@
           },
           {
             "case": "U1",
-            "x": 2838.9,
-            "at": 2838.9,
+            "x": 2785.0,
+            "at": 2785.0,
             "tu_Nmm": 0.0
           }
         ]
@@ -543,11 +543,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 430117875.9780836,
+            "demand": 410989134.6308427,
             "capacity": 1992054846.3314555,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 1237.3,
+            "z_mm": 1165.0,
             "face": "top"
           },
           {
@@ -555,7 +555,7 @@
             "status": "PASS",
             "capacity": 0.024406100891915177,
             "case": "U1",
-            "z_mm": 1237.3,
+            "z_mm": 1165.0,
             "face": "top"
           },
           {
@@ -565,7 +565,7 @@
             "status": "PASS",
             "demand": 5698.399999999999,
             "case": "U1",
-            "z_mm": 1237.3,
+            "z_mm": 1165.0,
             "face": "top"
           },
           {
@@ -575,17 +575,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 1237.3,
+            "z_mm": 1165.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 246654.9407191712,
+            "demand": 282533.9105944445,
             "capacity": 1036287.873517779,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 1237.3,
+            "z_mm": 1165.0,
             "face": "top"
           },
           {
@@ -593,7 +593,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 1237.3,
+            "z_mm": 1165.0,
             "face": "top"
           },
           {
@@ -638,20 +638,20 @@
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
-            "demand_Nmm": 116918421.82108831,
+            "demand_Nmm": 74635619.28540802,
             "capacity_Nmm": 300028198.6747246,
             "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
-            "z_mm": 3037.7,
+            "z_mm": 3110.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 569950.9569408288,
+            "demand": 599658.0861555552,
             "capacity": 1036287.873517779,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 3037.7,
+            "z_mm": 3110.0,
             "face": "top"
           },
           {
@@ -659,7 +659,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 3037.7,
+            "z_mm": 3110.0,
             "face": "top"
           },
           {
@@ -703,11 +703,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 157899699.8376932,
+            "demand": 181345765.07800007,
             "capacity": 1992054846.3314552,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 4962.3,
+            "z_mm": 4890.0,
             "face": "bottom"
           },
           {
@@ -715,7 +715,7 @@
             "status": "PASS",
             "capacity": 0.024406100891915177,
             "case": "U1",
-            "z_mm": 4962.3,
+            "z_mm": 4890.0,
             "face": "bottom"
           },
           {
@@ -725,7 +725,7 @@
             "status": "PASS",
             "demand": 5698.399999999999,
             "case": "U1",
-            "z_mm": 4962.3,
+            "z_mm": 4890.0,
             "face": "bottom"
           },
           {
@@ -735,17 +735,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 4962.3,
+            "z_mm": 4890.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 312507.18874806026,
+            "demand": 336109.70940000005,
             "capacity": 1036287.873517779,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 4962.3,
+            "z_mm": 4890.0,
             "face": "bottom"
           },
           {
@@ -753,7 +753,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 4962.3,
+            "z_mm": 4890.0,
             "face": "bottom"
           },
           {
@@ -775,8 +775,8 @@
         "torques": [
           {
             "case": "U1",
-            "x": -1762.7,
-            "at": -1762.7,
+            "x": -1835.0,
+            "at": -1835.0,
             "tu_Nmm": 0.0
           },
           {
@@ -787,8 +787,8 @@
           },
           {
             "case": "U1",
-            "x": 37.700000000000045,
-            "at": 37.700000000000045,
+            "x": 110.0,
+            "at": 110.0,
             "tu_Nmm": 0.0
           },
           {
@@ -799,8 +799,8 @@
           },
           {
             "case": "U1",
-            "x": 1962.3,
-            "at": 1962.3,
+            "x": 1890.0,
+            "at": 1890.0,
             "tu_Nmm": 0.0
           }
         ]
@@ -912,11 +912,77 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 651275876.858964,
+            "demand": 86651.29031500182,
+            "capacity": 1147103277.9330285,
+            "clause": "9.5.1.1(a) y Tabla 21.2.2",
+            "case": "U1",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U1",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "status": "PASS",
+            "demand": 4092.666666666666,
+            "case": "U1",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "24.3.2 y 24.3.2.1",
+            "case": "U1",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 4937.602663,
+            "capacity": 755626.5744400471,
+            "clause": "13.2.6.2(a) y 13.2.7.2",
+            "case": "U1",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "13.3.2.1 y 7.6.3.1",
+            "case": "U1",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
+            "case": "U1",
+            "status": "PASS",
+            "demand_Nmm": 12603.509684998171,
+            "capacity_Nmm": 187795428.05936465,
+            "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
+            "z_mm": 15.0,
+            "face": "top"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 622930313.571367,
             "capacity": 1147103277.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -924,7 +990,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -934,7 +1000,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -944,17 +1010,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 519072.1118682211,
+            "demand": 539314.3031325554,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -962,7 +1028,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -1006,11 +1072,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 623040598.8180712,
+            "demand": 591637203.599303,
             "capacity": 1147103277.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
@@ -1018,7 +1084,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
@@ -1028,7 +1094,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
@@ -1038,17 +1104,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 567116.01014129,
+            "demand": 591527.5750941113,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
@@ -1056,7 +1122,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
@@ -1110,11 +1176,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 1138812.6489139944,
+            "demand": 3695199.7999036163,
             "capacity": 1147103277.9330285,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
@@ -1122,7 +1188,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
@@ -1132,7 +1198,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
@@ -1142,17 +1208,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 30642.038099243306,
+            "demand": 57583.64525255514,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
@@ -1160,8 +1226,74 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
+          },
+          {
+            "name": "Flexion: resistencia",
+            "status": "PASS",
+            "demand": 36953.82653203048,
+            "capacity": 1147103277.9330285,
+            "clause": "9.5.1.1(a) y Tabla 21.2.2",
+            "case": "U2",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: deformacion neta de traccion (M3)",
+            "status": "PASS",
+            "capacity": 0.023410266142245038,
+            "case": "U2",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: acero minimo (M3)",
+            "capacity": 5031.0,
+            "as_min": 4092.666666666666,
+            "status": "PASS",
+            "demand": 4092.666666666666,
+            "case": "U2",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion: separacion por fisuracion",
+            "status": "PASS",
+            "demand": 150.0,
+            "capacity": 192.5,
+            "clause": "24.3.2 y 24.3.2.1",
+            "case": "U2",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: resistencia",
+            "status": "PASS",
+            "demand": 1623.5772126562501,
+            "capacity": 755626.5744400471,
+            "clause": "13.2.6.2(a) y 13.2.7.2",
+            "case": "U2",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Cortante: refuerzo minimo",
+            "status": "PASS",
+            "clause": "13.3.2.1 y 7.6.3.1",
+            "case": "U2",
+            "z_mm": 15.0,
+            "face": "bottom"
+          },
+          {
+            "name": "Flexion concreto simple (cara superior, direccion principal)",
+            "case": "U2",
+            "status": "PASS",
+            "demand_Nmm": 12636.110967969522,
+            "capacity_Nmm": 187795428.05936465,
+            "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
+            "z_mm": 15.0,
+            "face": "top"
           },
           {
             "name": "Flexion: resistencia",
@@ -1204,11 +1336,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 45819783.40721515,
+            "demand": 75102939.91967866,
             "capacity": 1147103277.9330285,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "bottom"
           },
           {
@@ -1216,7 +1348,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "bottom"
           },
           {
@@ -1226,7 +1358,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "bottom"
           },
           {
@@ -1236,17 +1368,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 535938.323072187,
+            "demand": 547298.267084566,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "bottom"
           },
           {
@@ -1254,17 +1386,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 268105920.02153483,
+            "demand": 239000956.68448803,
             "capacity": 1147103277.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -1272,7 +1404,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -1282,7 +1414,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -1292,7 +1424,7 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U2",
-            "z_mm": 1638.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -1336,11 +1468,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 746589766.5839264,
+            "demand": 732961895.2245439,
             "capacity": 1147103277.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U2",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
@@ -1348,7 +1480,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U2",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
@@ -1358,7 +1490,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U2",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
@@ -1368,17 +1500,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U2",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 240910.32211571583,
+            "demand": 261487.02822585055,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U2",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
@@ -1386,17 +1518,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U2",
-            "z_mm": 4261.1,
+            "z_mm": 4315.0,
             "face": "top"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 1015346.9133079648,
+            "demand": 3421609.166450184,
             "capacity": 1147103277.9330285,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U2",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
@@ -1404,7 +1536,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U2",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
@@ -1414,7 +1546,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U2",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
@@ -1424,17 +1556,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U2",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 29889.82490070071,
+            "demand": 56059.40869498253,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U2",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
@@ -1442,7 +1574,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U2",
-            "z_mm": 5938.9,
+            "z_mm": 5885.0,
             "face": "bottom"
           },
           {
@@ -1464,9 +1596,15 @@
         "torques": [
           {
             "case": "U1",
-            "x": -1361.1,
-            "at": -1361.1,
-            "tu_Nmm": -193981550.276
+            "x": -2985.0,
+            "at": -2985.0,
+            "tu_Nmm": 49627.4
+          },
+          {
+            "case": "U1",
+            "x": -1415.0,
+            "at": -1415.0,
+            "tu_Nmm": -194159878.06666666
           },
           {
             "case": "U1",
@@ -1476,9 +1614,9 @@
           },
           {
             "case": "U1",
-            "x": 1261.1,
-            "at": 1261.1,
-            "tu_Nmm": -185306019.05733335
+            "x": 1315.0,
+            "at": 1315.0,
+            "tu_Nmm": -185127691.26666665
           },
           {
             "case": "U1",
@@ -1488,9 +1626,15 @@
           },
           {
             "case": "U1",
-            "x": 2938.9,
-            "at": 2938.9,
-            "tu_Nmm": -202148.94266666472
+            "x": 2885.0,
+            "at": 2885.0,
+            "tu_Nmm": -380476.7333333343
+          },
+          {
+            "case": "U2",
+            "x": -2985.0,
+            "at": -2985.0,
+            "tu_Nmm": 24794.96875
           },
           {
             "case": "U2",
@@ -1500,9 +1644,9 @@
           },
           {
             "case": "U2",
-            "x": -1361.1,
-            "at": -1361.1,
-            "tu_Nmm": -156962851.714375
+            "x": -1415.0,
+            "at": -1415.0,
+            "tu_Nmm": -157051948.30208334
           },
           {
             "case": "U2",
@@ -1512,15 +1656,15 @@
           },
           {
             "case": "U2",
-            "x": 1261.1,
-            "at": 1261.1,
-            "tu_Nmm": -152628360.57729167
+            "x": 1315.0,
+            "at": 1315.0,
+            "tu_Nmm": -152539263.98958334
           },
           {
             "case": "U2",
-            "x": 2938.9,
-            "at": 2938.9,
-            "tu_Nmm": -100998.17270833254
+            "x": 2885.0,
+            "at": 2885.0,
+            "tu_Nmm": -190094.7604166679
           }
         ]
       }
@@ -1695,20 +1839,20 @@
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
-            "demand_Nmm": 135869904.6334666,
+            "demand_Nmm": 125335573.0,
             "capacity_Nmm": 187795428.05936465,
             "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 191008.69066666672,
+            "demand": 199875.59999999998,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "top"
           },
           {
@@ -1716,7 +1860,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "top"
           },
           {
@@ -1733,20 +1877,20 @@
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
-            "demand_Nmm": 135869904.63346696,
+            "demand_Nmm": 125335573.0,
             "capacity_Nmm": 187795428.05936465,
             "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 191008.6906666665,
+            "demand": 199875.59999999986,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -1754,7 +1898,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -1837,8 +1981,8 @@
           },
           {
             "case": "U1",
-            "x": -1161.1,
-            "at": -1161.1,
+            "x": -1215.0,
+            "at": -1215.0,
             "tu_Nmm": 0.0
           },
           {
@@ -1849,8 +1993,8 @@
           },
           {
             "case": "U1",
-            "x": 1161.1,
-            "at": 1161.1,
+            "x": 1215.0,
+            "at": 1215.0,
             "tu_Nmm": 0.0
           },
           {
@@ -1944,11 +2088,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 61785320.19986677,
+            "demand": 62963163.66666663,
             "capacity": 671673777.9330283,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 411.0999999999999,
+            "z_mm": 415.0,
             "face": "bottom"
           },
           {
@@ -1956,7 +2100,7 @@
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 411.0999999999999,
+            "z_mm": 415.0,
             "face": "bottom"
           },
           {
@@ -1966,7 +2110,7 @@
             "status": "PASS",
             "demand": 2425.9999999999995,
             "case": "U1",
-            "z_mm": 411.0999999999999,
+            "z_mm": 415.0,
             "face": "bottom"
           },
           {
@@ -1976,17 +2120,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 411.0999999999999,
+            "z_mm": 415.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 300585.35733333335,
+            "demand": 303436.93333333335,
             "capacity": 485759.94071145885,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 411.0999999999999,
+            "z_mm": 415.0,
             "face": "bottom"
           },
           {
@@ -1994,17 +2138,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 411.0999999999999,
+            "z_mm": 415.0,
             "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 368802655.80013347,
+            "demand": 364773236.33333325,
             "capacity": 671673777.9330286,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 1588.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -2012,7 +2156,7 @@
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 1588.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -2022,7 +2166,7 @@
             "status": "PASS",
             "demand": 2425.9999999999995,
             "case": "U1",
-            "z_mm": 1588.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -2032,17 +2176,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 1588.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "FAIL",
-            "demand": 1031758.6906666667,
+            "demand": 1034610.2666666666,
             "capacity": 485759.94071145885,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 1588.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -2052,7 +2196,7 @@
             "capacity": 0.0,
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 1588.9,
+            "z_mm": 1585.0,
             "face": "top"
           },
           {
@@ -2096,11 +2240,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 368802655.80013275,
+            "demand": 364773236.33333397,
             "capacity": 671673777.9330286,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 4411.1,
+            "z_mm": 4415.0,
             "face": "top"
           },
           {
@@ -2108,7 +2252,7 @@
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 4411.1,
+            "z_mm": 4415.0,
             "face": "top"
           },
           {
@@ -2118,7 +2262,7 @@
             "status": "PASS",
             "demand": 2425.9999999999995,
             "case": "U1",
-            "z_mm": 4411.1,
+            "z_mm": 4415.0,
             "face": "top"
           },
           {
@@ -2128,17 +2272,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 4411.1,
+            "z_mm": 4415.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "FAIL",
-            "demand": 1031758.6906666667,
+            "demand": 1034610.2666666666,
             "capacity": 485759.94071145885,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 4411.1,
+            "z_mm": 4415.0,
             "face": "top"
           },
           {
@@ -2148,7 +2292,7 @@
             "capacity": 0.0,
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 4411.1,
+            "z_mm": 4415.0,
             "face": "top"
           },
           {
@@ -2192,11 +2336,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 61785320.19986701,
+            "demand": 62963163.66666603,
             "capacity": 671673777.9330283,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 5588.9,
+            "z_mm": 5585.0,
             "face": "bottom"
           },
           {
@@ -2204,7 +2348,7 @@
             "status": "PASS",
             "capacity": 0.01265514880137314,
             "case": "U1",
-            "z_mm": 5588.9,
+            "z_mm": 5585.0,
             "face": "bottom"
           },
           {
@@ -2214,7 +2358,7 @@
             "status": "PASS",
             "demand": 2425.9999999999995,
             "case": "U1",
-            "z_mm": 5588.9,
+            "z_mm": 5585.0,
             "face": "bottom"
           },
           {
@@ -2224,17 +2368,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 5588.9,
+            "z_mm": 5585.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 300585.35733333323,
+            "demand": 303436.9333333336,
             "capacity": 485759.94071145885,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 5588.9,
+            "z_mm": 5585.0,
             "face": "bottom"
           },
           {
@@ -2242,7 +2386,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 5588.9,
+            "z_mm": 5585.0,
             "face": "bottom"
           },
           {
@@ -2264,14 +2408,14 @@
         "torques": [
           {
             "case": "U1",
-            "x": -2588.9,
-            "at": -2588.9,
+            "x": -2585.0,
+            "at": -2585.0,
             "tu_Nmm": 0.0
           },
           {
             "case": "U1",
-            "x": -1411.1,
-            "at": -1411.1,
+            "x": -1415.0,
+            "at": -1415.0,
             "tu_Nmm": 0.0
           },
           {
@@ -2282,8 +2426,8 @@
           },
           {
             "case": "U1",
-            "x": 1411.1,
-            "at": 1411.1,
+            "x": 1415.0,
+            "at": 1415.0,
             "tu_Nmm": 0.0
           },
           {
@@ -2294,8 +2438,8 @@
           },
           {
             "case": "U1",
-            "x": 2588.9,
-            "at": 2588.9,
+            "x": 2585.0,
+            "at": 2585.0,
             "tu_Nmm": 0.0
           }
         ]
@@ -2390,11 +2534,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 38330460.51146686,
+            "demand": 41027963.66666663,
             "capacity": 861042376.6864097,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 323.8000000000002,
+            "z_mm": 335.0,
             "face": "bottom"
           },
           {
@@ -2402,7 +2546,7 @@
             "status": "PASS",
             "capacity": 0.013832397600704961,
             "case": "U1",
-            "z_mm": 323.8000000000002,
+            "z_mm": 335.0,
             "face": "bottom"
           },
           {
@@ -2412,7 +2556,7 @@
             "status": "PASS",
             "demand": 3007.9999999999995,
             "case": "U1",
-            "z_mm": 323.8000000000002,
+            "z_mm": 335.0,
             "face": "bottom"
           },
           {
@@ -2422,17 +2566,17 @@
             "capacity": 160.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 323.8000000000002,
+            "z_mm": 335.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 236753.92533333332,
+            "demand": 244943.06666666662,
             "capacity": 1165847.3942028943,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 323.8000000000002,
+            "z_mm": 335.0,
             "face": "bottom"
           },
           {
@@ -2440,17 +2584,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 323.8000000000002,
+            "z_mm": 335.0,
             "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 456088947.488533,
+            "demand": 445202303.00000024,
             "capacity": 1211413935.7796557,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 1676.2,
+            "z_mm": 1665.0,
             "face": "top"
           },
           {
@@ -2458,7 +2602,7 @@
             "status": "PASS",
             "capacity": 0.012276666028934931,
             "case": "U1",
-            "z_mm": 1676.2,
+            "z_mm": 1665.0,
             "face": "top"
           },
           {
@@ -2468,7 +2612,7 @@
             "status": "PASS",
             "demand": 2997.333333333333,
             "case": "U1",
-            "z_mm": 1676.2,
+            "z_mm": 1665.0,
             "face": "top"
           },
           {
@@ -2478,17 +2622,17 @@
             "capacity": 160.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 1676.2,
+            "z_mm": 1665.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 967927.2586666667,
+            "demand": 976116.3999999999,
             "capacity": 1165847.3942028943,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 1676.2,
+            "z_mm": 1665.0,
             "face": "top"
           },
           {
@@ -2498,7 +2642,7 @@
             "capacity": 4.128,
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 1676.2,
+            "z_mm": 1665.0,
             "face": "top"
           },
           {
@@ -2542,11 +2686,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 456088947.488533,
+            "demand": 445202303.0,
             "capacity": 1211413935.7796557,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 4323.8,
+            "z_mm": 4335.0,
             "face": "top"
           },
           {
@@ -2554,7 +2698,7 @@
             "status": "PASS",
             "capacity": 0.012276666028934931,
             "case": "U1",
-            "z_mm": 4323.8,
+            "z_mm": 4335.0,
             "face": "top"
           },
           {
@@ -2564,7 +2708,7 @@
             "status": "PASS",
             "demand": 2997.333333333333,
             "case": "U1",
-            "z_mm": 4323.8,
+            "z_mm": 4335.0,
             "face": "top"
           },
           {
@@ -2574,17 +2718,17 @@
             "capacity": 160.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 4323.8,
+            "z_mm": 4335.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 967927.2586666667,
+            "demand": 976116.4000000004,
             "capacity": 1165847.3942028943,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 4323.8,
+            "z_mm": 4335.0,
             "face": "top"
           },
           {
@@ -2594,7 +2738,7 @@
             "capacity": 4.128,
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 4323.8,
+            "z_mm": 4335.0,
             "face": "top"
           },
           {
@@ -2638,11 +2782,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 38330460.51146555,
+            "demand": 41027963.66666794,
             "capacity": 861042376.6864097,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 5676.2,
+            "z_mm": 5665.0,
             "face": "bottom"
           },
           {
@@ -2650,7 +2794,7 @@
             "status": "PASS",
             "capacity": 0.013832397600704961,
             "case": "U1",
-            "z_mm": 5676.2,
+            "z_mm": 5665.0,
             "face": "bottom"
           },
           {
@@ -2660,7 +2804,7 @@
             "status": "PASS",
             "demand": 3007.9999999999995,
             "case": "U1",
-            "z_mm": 5676.2,
+            "z_mm": 5665.0,
             "face": "bottom"
           },
           {
@@ -2670,17 +2814,17 @@
             "capacity": 160.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 5676.2,
+            "z_mm": 5665.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 236753.92533333367,
+            "demand": 244943.06666666642,
             "capacity": 1165847.3942028943,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 5676.2,
+            "z_mm": 5665.0,
             "face": "bottom"
           },
           {
@@ -2688,7 +2832,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 5676.2,
+            "z_mm": 5665.0,
             "face": "bottom"
           },
           {
@@ -2710,14 +2854,14 @@
         "torques": [
           {
             "case": "U1",
-            "x": -2676.2,
-            "at": -2676.2,
+            "x": -2665.0,
+            "at": -2665.0,
             "tu_Nmm": 0.0
           },
           {
             "case": "U1",
-            "x": -1323.8,
-            "at": -1323.8,
+            "x": -1335.0,
+            "at": -1335.0,
             "tu_Nmm": 0.0
           },
           {
@@ -2728,8 +2872,8 @@
           },
           {
             "case": "U1",
-            "x": 1323.8,
-            "at": 1323.8,
+            "x": 1335.0,
+            "at": 1335.0,
             "tu_Nmm": 0.0
           },
           {
@@ -2740,8 +2884,8 @@
           },
           {
             "case": "U1",
-            "x": 2676.2,
-            "at": 2676.2,
+            "x": 2665.0,
+            "at": 2665.0,
             "tu_Nmm": 0.0
           }
         ]
@@ -2882,11 +3026,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 675112849.6668007,
+            "demand": 612599175.0,
             "capacity": 1717618677.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -2894,7 +3038,7 @@
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -2904,7 +3048,7 @@
             "status": "FAIL",
             "demand": 6092.666666666666,
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -2914,7 +3058,7 @@
             "capacity": 192.5,
             "clause": "9.7.2.3",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -2924,17 +3068,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 514800.024,
+            "demand": 582894.0,
             "capacity": 1079466.534914353,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -2942,7 +3086,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -2996,11 +3140,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 675112849.6668005,
+            "demand": 612599175.0,
             "capacity": 1717618677.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3008,7 +3152,7 @@
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3018,7 +3162,7 @@
             "status": "FAIL",
             "demand": 6092.666666666666,
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3028,7 +3172,7 @@
             "capacity": 192.5,
             "clause": "9.7.2.3",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3038,17 +3182,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 514800.02399999974,
+            "demand": 582894.0,
             "capacity": 1079466.534914353,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3056,7 +3200,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3084,8 +3228,8 @@
           },
           {
             "case": "U1",
-            "x": -861.1,
-            "at": -861.1,
+            "x": -975.0,
+            "at": -975.0,
             "tu_Nmm": 0.0
           },
           {
@@ -3096,8 +3240,8 @@
           },
           {
             "case": "U1",
-            "x": 861.1,
-            "at": 861.1,
+            "x": 975.0,
+            "at": 975.0,
             "tu_Nmm": 0.0
           }
         ]
@@ -3231,11 +3375,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 675112849.6668007,
+            "demand": 612599175.0,
             "capacity": 1717618677.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -3243,7 +3387,7 @@
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -3253,7 +3397,7 @@
             "status": "FAIL",
             "demand": 6092.666666666666,
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -3261,7 +3405,7 @@
             "status": "FAIL",
             "clause": "9.7.2.3",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -3271,17 +3415,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 514800.024,
+            "demand": 582894.0,
             "capacity": 1079466.534914353,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -3289,7 +3433,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 2138.9,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -3341,11 +3485,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 675112849.6668005,
+            "demand": 612599175.0,
             "capacity": 1717618677.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3353,7 +3497,7 @@
             "status": "PASS",
             "capacity": 0.03631640695129132,
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3363,7 +3507,7 @@
             "status": "FAIL",
             "demand": 6092.666666666666,
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3371,7 +3515,7 @@
             "status": "FAIL",
             "clause": "9.7.2.3",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3381,17 +3525,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 514800.02399999974,
+            "demand": 582894.0,
             "capacity": 1079466.534914353,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3399,7 +3543,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 3861.1,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -3427,8 +3571,8 @@
           },
           {
             "case": "U1",
-            "x": -861.1,
-            "at": -861.1,
+            "x": -975.0,
+            "at": -975.0,
             "tu_Nmm": 0.0
           },
           {
@@ -3439,8 +3583,8 @@
           },
           {
             "case": "U1",
-            "x": 861.1,
-            "at": 861.1,
+            "x": 975.0,
+            "at": 975.0,
             "tu_Nmm": 0.0
           }
         ]
@@ -3568,20 +3712,20 @@
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
-            "demand_Nmm": 67893473.27271113,
+            "demand_Nmm": 63654775.111111075,
             "capacity_Nmm": 187795428.05936465,
             "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
-            "z_mm": 1592.05,
+            "z_mm": 1535.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 71210.65955555553,
+            "demand": 77385.24444444446,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 1592.05,
+            "z_mm": 1535.0,
             "face": "top"
           },
           {
@@ -3589,7 +3733,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 1592.05,
+            "z_mm": 1535.0,
             "face": "top"
           },
           {
@@ -3606,20 +3750,20 @@
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
-            "demand_Nmm": 67893473.27271098,
+            "demand_Nmm": 63654775.111111045,
             "capacity_Nmm": 187795428.05936465,
             "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
-            "z_mm": 2907.95,
+            "z_mm": 2965.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 71210.65955555561,
+            "demand": 77385.24444444448,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 2907.95,
+            "z_mm": 2965.0,
             "face": "top"
           },
           {
@@ -3627,7 +3771,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 2907.95,
+            "z_mm": 2965.0,
             "face": "top"
           },
           {
@@ -3655,8 +3799,8 @@
           },
           {
             "case": "U1",
-            "x": -657.95,
-            "at": -657.95,
+            "x": -715.0,
+            "at": -715.0,
             "tu_Nmm": 0.0
           },
           {
@@ -3667,8 +3811,8 @@
           },
           {
             "case": "U1",
-            "x": 657.95,
-            "at": 657.95,
+            "x": 715.0,
+            "at": 715.0,
             "tu_Nmm": 0.0
           }
         ]
@@ -3756,11 +3900,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 203787621.87416673,
+            "demand": 222102773.66666663,
             "capacity": 287907369.43424714,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 972.25,
+            "z_mm": 1015.0,
             "face": "bottom"
           },
           {
@@ -3768,7 +3912,7 @@
             "status": "PASS",
             "capacity": 0.026643370039019402,
             "case": "U1",
-            "z_mm": 972.25,
+            "z_mm": 1015.0,
             "face": "bottom"
           },
           {
@@ -3776,10 +3920,10 @@
             "capacity": 774.0,
             "as_min": 4018.333333333333,
             "status": "PASS",
-            "demand": 466.1225205362217,
-            "analysis": 349.5918904021663,
+            "demand": 589.33069964988,
+            "analysis": 441.99802473741005,
             "case": "U1",
-            "z_mm": 972.25,
+            "z_mm": 1015.0,
             "face": "bottom"
           },
           {
@@ -3789,17 +3933,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 972.25,
+            "z_mm": 1015.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 419208.2733333334,
+            "demand": 437640.9333333334,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 972.25,
+            "z_mm": 1015.0,
             "face": "bottom"
           },
           {
@@ -3807,7 +3951,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 972.25,
+            "z_mm": 1015.0,
             "face": "bottom"
           },
           {
@@ -3851,11 +3995,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "FAIL",
-            "demand": 417929857.87416697,
+            "demand": 425185413.66666675,
             "capacity": 287907369.43424714,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 2627.75,
+            "z_mm": 2585.0,
             "face": "bottom"
           },
           {
@@ -3863,7 +4007,7 @@
             "status": "PASS",
             "capacity": 0.026643370039019402,
             "case": "U1",
-            "z_mm": 2627.75,
+            "z_mm": 2585.0,
             "face": "bottom"
           },
           {
@@ -3873,7 +4017,7 @@
             "status": "FAIL",
             "demand": 4018.333333333333,
             "case": "U1",
-            "z_mm": 2627.75,
+            "z_mm": 2585.0,
             "face": "bottom"
           },
           {
@@ -3883,17 +4027,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 2627.75,
+            "z_mm": 2585.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 160504.27333333343,
+            "demand": 178936.93333333312,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 2627.75,
+            "z_mm": 2585.0,
             "face": "bottom"
           },
           {
@@ -3901,17 +4045,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 2627.75,
+            "z_mm": 2585.0,
             "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "FAIL",
-            "demand": 417929857.87416697,
+            "demand": 425185413.666667,
             "capacity": 287907369.43424714,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 3372.25,
+            "z_mm": 3415.0,
             "face": "bottom"
           },
           {
@@ -3919,7 +4063,7 @@
             "status": "PASS",
             "capacity": 0.026643370039019402,
             "case": "U1",
-            "z_mm": 3372.25,
+            "z_mm": 3415.0,
             "face": "bottom"
           },
           {
@@ -3929,7 +4073,7 @@
             "status": "FAIL",
             "demand": 4018.333333333333,
             "case": "U1",
-            "z_mm": 3372.25,
+            "z_mm": 3415.0,
             "face": "bottom"
           },
           {
@@ -3939,17 +4083,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 3372.25,
+            "z_mm": 3415.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 160504.27333333343,
+            "demand": 178936.93333333335,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 3372.25,
+            "z_mm": 3415.0,
             "face": "bottom"
           },
           {
@@ -3957,17 +4101,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 3372.25,
+            "z_mm": 3415.0,
             "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 203787621.87416744,
+            "demand": 222102773.66666794,
             "capacity": 287907369.43424714,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 5027.75,
+            "z_mm": 4985.0,
             "face": "bottom"
           },
           {
@@ -3975,7 +4119,7 @@
             "status": "PASS",
             "capacity": 0.026643370039019402,
             "case": "U1",
-            "z_mm": 5027.75,
+            "z_mm": 4985.0,
             "face": "bottom"
           },
           {
@@ -3983,10 +4127,10 @@
             "capacity": 774.0,
             "as_min": 4018.333333333333,
             "status": "PASS",
-            "demand": 466.1225205362258,
-            "analysis": 349.5918904021694,
+            "demand": 589.3306996498885,
+            "analysis": 441.9980247374164,
             "case": "U1",
-            "z_mm": 5027.75,
+            "z_mm": 4985.0,
             "face": "bottom"
           },
           {
@@ -3996,17 +4140,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 5027.75,
+            "z_mm": 4985.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 419208.27333333297,
+            "demand": 437640.93333333265,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 5027.75,
+            "z_mm": 4985.0,
             "face": "bottom"
           },
           {
@@ -4014,7 +4158,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 5027.75,
+            "z_mm": 4985.0,
             "face": "bottom"
           },
           {
@@ -4036,8 +4180,8 @@
         "torques": [
           {
             "case": "U1",
-            "x": -2027.75,
-            "at": -2027.75,
+            "x": -1985.0,
+            "at": -1985.0,
             "tu_Nmm": 0.0
           },
           {
@@ -4048,20 +4192,20 @@
           },
           {
             "case": "U1",
-            "x": -372.25,
-            "at": -372.25,
+            "x": -415.0,
+            "at": -415.0,
             "tu_Nmm": 0.0
           },
           {
             "case": "U1",
-            "x": 372.25,
-            "at": 372.25,
+            "x": 415.0,
+            "at": 415.0,
             "tu_Nmm": 0.0
           },
           {
             "case": "U1",
-            "x": 2027.75,
-            "at": 2027.75,
+            "x": 1985.0,
+            "at": 1985.0,
             "tu_Nmm": 0.0
           }
         ]
@@ -4156,11 +4300,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 50557718.67999971,
+            "demand": 55164822.99999982,
             "capacity": 885423347.6440698,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 277.0,
+            "z_mm": 295.0,
             "face": "bottom"
           },
           {
@@ -4168,7 +4312,7 @@
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 277.0,
+            "z_mm": 295.0,
             "face": "bottom"
           },
           {
@@ -4178,7 +4322,7 @@
             "status": "PASS",
             "demand": 3319.9999999999995,
             "case": "U1",
-            "z_mm": 277.0,
+            "z_mm": 295.0,
             "face": "bottom"
           },
           {
@@ -4188,17 +4332,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 277.0,
+            "z_mm": 295.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 137901.68000000002,
+            "demand": 146862.8,
             "capacity": 3054783.920948612,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 277.0,
+            "z_mm": 295.0,
             "face": "bottom"
           },
           {
@@ -4206,17 +4350,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 277.0,
+            "z_mm": 295.0,
             "face": "bottom"
           },
           {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
-            "demand_Nmm": 12358953.320000295,
+            "demand_Nmm": 11840297.000000183,
             "capacity_Nmm": 134457081.62830248,
             "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
-            "z_mm": 277.0,
+            "z_mm": 295.0,
             "face": "top"
           },
           {
@@ -4298,11 +4442,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 144891398.68000007,
+            "demand": 158459622.99999976,
             "capacity": 885423347.6440698,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "bottom"
           },
           {
@@ -4310,7 +4454,7 @@
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "bottom"
           },
           {
@@ -4320,7 +4464,7 @@
             "status": "PASS",
             "demand": 3319.9999999999995,
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "bottom"
           },
           {
@@ -4330,17 +4474,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 635741.6799999999,
+            "demand": 644702.7999999998,
             "capacity": 3054783.920948612,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "bottom"
           },
           {
@@ -4348,17 +4492,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 826569273.3199999,
+            "demand": 817089497.0000002,
             "capacity": 885423347.6440698,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "top"
           },
           {
@@ -4366,7 +4510,7 @@
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "top"
           },
           {
@@ -4376,7 +4520,7 @@
             "status": "PASS",
             "demand": 3319.9999999999995,
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "top"
           },
           {
@@ -4386,7 +4530,7 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 1723.0,
+            "z_mm": 1705.0,
             "face": "top"
           },
           {
@@ -4430,11 +4574,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 536516601.31999975,
+            "demand": 522948377.00000006,
             "capacity": 885423347.6440698,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 4277.0,
+            "z_mm": 4295.0,
             "face": "top"
           },
           {
@@ -4442,7 +4586,7 @@
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 4277.0,
+            "z_mm": 4295.0,
             "face": "top"
           },
           {
@@ -4452,7 +4596,7 @@
             "status": "PASS",
             "demand": 3319.9999999999995,
             "case": "U1",
-            "z_mm": 4277.0,
+            "z_mm": 4295.0,
             "face": "top"
           },
           {
@@ -4462,17 +4606,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 4277.0,
+            "z_mm": 4295.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 635741.6800000002,
+            "demand": 644702.7999999998,
             "capacity": 3054783.920948612,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 4277.0,
+            "z_mm": 4295.0,
             "face": "top"
           },
           {
@@ -4480,17 +4624,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 4277.0,
+            "z_mm": 4295.0,
             "face": "top"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 50557718.680000424,
+            "demand": 55164823.00000203,
             "capacity": 885423347.6440698,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 5723.0,
+            "z_mm": 5705.0,
             "face": "bottom"
           },
           {
@@ -4498,7 +4642,7 @@
             "status": "PASS",
             "capacity": 0.017157446266077847,
             "case": "U1",
-            "z_mm": 5723.0,
+            "z_mm": 5705.0,
             "face": "bottom"
           },
           {
@@ -4508,7 +4652,7 @@
             "status": "PASS",
             "demand": 3319.9999999999995,
             "case": "U1",
-            "z_mm": 5723.0,
+            "z_mm": 5705.0,
             "face": "bottom"
           },
           {
@@ -4518,17 +4662,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 5723.0,
+            "z_mm": 5705.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 137901.6799999997,
+            "demand": 146862.79999999935,
             "capacity": 3054783.920948612,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 5723.0,
+            "z_mm": 5705.0,
             "face": "bottom"
           },
           {
@@ -4536,17 +4680,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 5723.0,
+            "z_mm": 5705.0,
             "face": "bottom"
           },
           {
             "name": "Flexion concreto simple (cara superior, direccion principal)",
             "case": "U1",
             "status": "PASS",
-            "demand_Nmm": 12358953.319999814,
+            "demand_Nmm": 11840296.999998212,
             "capacity_Nmm": 134457081.62830248,
             "clause": "14.5.2.1, 14.5.1.7 y Tabla 21.2.1(f)",
-            "z_mm": 5723.0,
+            "z_mm": 5705.0,
             "face": "top"
           },
           {
@@ -4568,9 +4712,9 @@
         "torques": [
           {
             "case": "U1",
-            "x": -2723.0,
-            "at": -2723.0,
-            "tu_Nmm": 31458336.000000004
+            "x": -2705.0,
+            "at": -2705.0,
+            "tu_Nmm": 33502560.000000004
           },
           {
             "case": "U1",
@@ -4580,9 +4724,9 @@
           },
           {
             "case": "U1",
-            "x": -1277.0,
-            "at": -1277.0,
-            "tu_Nmm": -485730336.0
+            "x": -1295.0,
+            "at": -1295.0,
+            "tu_Nmm": -487774560.0
           },
           {
             "case": "U1",
@@ -4592,15 +4736,15 @@
           },
           {
             "case": "U1",
-            "x": 1277.0,
-            "at": 1277.0,
-            "tu_Nmm": -195677664.00000006
+            "x": 1295.0,
+            "at": 1295.0,
+            "tu_Nmm": -193633440.00000006
           },
           {
             "case": "U1",
-            "x": 2723.0,
-            "at": 2723.0,
-            "tu_Nmm": -31458336.00000012
+            "x": 2705.0,
+            "at": 2705.0,
+            "tu_Nmm": -33502560.00000012
           }
         ]
       }
@@ -4795,11 +4939,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 1220216356.5181482,
+            "demand": 1181497793.75,
             "capacity": 1587596147.64407,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 2123.0,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -4807,7 +4951,7 @@
             "status": "PASS",
             "capacity": 0.03334816615850986,
             "case": "U1",
-            "z_mm": 2123.0,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -4817,7 +4961,7 @@
             "status": "FAIL",
             "demand": 5986.666666666666,
             "case": "U1",
-            "z_mm": 2123.0,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -4827,7 +4971,7 @@
             "capacity": 152.75,
             "clause": "9.7.2.3",
             "case": "U1",
-            "z_mm": 2123.0,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -4837,17 +4981,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 2123.0,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 513961.95222222223,
+            "demand": 571925.25,
             "capacity": 4422666.534914354,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 2123.0,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -4855,7 +4999,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 2123.0,
+            "z_mm": 2025.0,
             "face": "top"
           },
           {
@@ -4909,11 +5053,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 963390378.7885185,
+            "demand": 896628306.25,
             "capacity": 1587596147.64407,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 3877.0,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -4921,7 +5065,7 @@
             "status": "PASS",
             "capacity": 0.03334816615850986,
             "case": "U1",
-            "z_mm": 3877.0,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -4931,7 +5075,7 @@
             "status": "FAIL",
             "demand": 5986.666666666666,
             "case": "U1",
-            "z_mm": 3877.0,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -4941,7 +5085,7 @@
             "capacity": 152.75,
             "clause": "9.7.2.3",
             "case": "U1",
-            "z_mm": 3877.0,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -4951,17 +5095,17 @@
             "capacity": 152.75,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 3877.0,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 505416.0744444444,
+            "demand": 561362.75,
             "capacity": 4422666.534914354,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 3877.0,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -4969,7 +5113,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 3877.0,
+            "z_mm": 3975.0,
             "face": "top"
           },
           {
@@ -4997,9 +5141,9 @@
           },
           {
             "case": "U1",
-            "x": -877.0,
-            "at": -877.0,
-            "tu_Nmm": -573204111.3333333
+            "x": -975.0,
+            "at": -975.0,
+            "tu_Nmm": -587693150.0
           },
           {
             "case": "U1",
@@ -5009,9 +5153,9 @@
           },
           {
             "case": "U1",
-            "x": 877.0,
-            "at": 877.0,
-            "tu_Nmm": -313879888.6666666
+            "x": 975.0,
+            "at": 975.0,
+            "tu_Nmm": -299390850.0
           }
         ]
       }
@@ -5521,11 +5665,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 1091332.48050005,
+            "demand": 1962217.0092590973,
             "capacity": 1147103277.9330285,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
@@ -5533,7 +5677,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
@@ -5543,7 +5687,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
@@ -5553,17 +5697,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 13740.756000000008,
+            "demand": 18595.588888888913,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
@@ -5571,7 +5715,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 161.0999999999999,
+            "z_mm": 215.0,
             "face": "bottom"
           },
           {
@@ -5615,11 +5759,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 333287810.7452258,
+            "demand": 369622607.75,
             "capacity": 1147103277.9330285,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "bottom"
           },
           {
@@ -5627,7 +5771,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "bottom"
           },
           {
@@ -5637,7 +5781,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "bottom"
           },
           {
@@ -5647,17 +5791,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 669731.7244444444,
+            "demand": 678476.7,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "bottom"
           },
           {
@@ -5665,17 +5809,17 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 1838.9,
+            "z_mm": 1785.0,
             "face": "bottom"
           },
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 688511956.7787595,
+            "demand": 697305342.25,
             "capacity": 1147103277.9330287,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -5683,7 +5827,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -5693,7 +5837,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -5703,17 +5847,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 170350.3551111112,
+            "demand": 155913.30000000005,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -5721,7 +5865,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 4161.1,
+            "z_mm": 4215.0,
             "face": "top"
           },
           {
@@ -5765,11 +5909,11 @@
           {
             "name": "Flexion: resistencia",
             "status": "PASS",
-            "demand": 4489818.819300175,
+            "demand": 7978315.157407761,
             "capacity": 1147103277.9330285,
             "clause": "9.5.1.1(a) y Tabla 21.2.2",
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -5777,7 +5921,7 @@
             "status": "PASS",
             "capacity": 0.023410266142245038,
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -5787,7 +5931,7 @@
             "status": "PASS",
             "demand": 4092.666666666666,
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -5797,17 +5941,17 @@
             "capacity": 192.5,
             "clause": "24.3.2 y 24.3.2.1",
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
             "name": "Cortante: resistencia",
             "status": "PASS",
-            "demand": 55547.28000000003,
+            "demand": 73874.4777777777,
             "capacity": 755626.5744400471,
             "clause": "13.2.6.2(a) y 13.2.7.2",
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -5815,7 +5959,7 @@
             "status": "PASS",
             "clause": "13.3.2.1 y 7.6.3.1",
             "case": "U1",
-            "z_mm": 5838.9,
+            "z_mm": 5785.0,
             "face": "bottom"
           },
           {
@@ -5837,8 +5981,8 @@
         "torques": [
           {
             "case": "U1",
-            "x": -2838.9,
-            "at": -2838.9,
+            "x": -2785.0,
+            "at": -2785.0,
             "tu_Nmm": 0.0
           },
           {
@@ -5849,14 +5993,14 @@
           },
           {
             "case": "U1",
-            "x": -1161.1,
-            "at": -1161.1,
+            "x": -1215.0,
+            "at": -1215.0,
             "tu_Nmm": 0.0
           },
           {
             "case": "U1",
-            "x": 1161.1,
-            "at": 1161.1,
+            "x": 1215.0,
+            "at": 1215.0,
             "tu_Nmm": 0.0
           },
           {
@@ -5867,8 +6011,8 @@
           },
           {
             "case": "U1",
-            "x": 2838.9,
-            "at": 2838.9,
+            "x": 2785.0,
+            "at": 2785.0,
             "tu_Nmm": 0.0
           }
         ]

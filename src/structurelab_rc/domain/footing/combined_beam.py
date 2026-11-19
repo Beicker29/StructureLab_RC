@@ -34,7 +34,7 @@ inferiores que caen dentro de ella y el miembro estáticamente determinado (As,m
 alma entra como carga lineal a lo largo de X.
 """
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 
 from structurelab_rc.codes.registry import Profile
@@ -44,7 +44,7 @@ from structurelab_rc.domain.beam.deep import deep_beam_checks
 from structurelab_rc.domain.beam.flexure import STRENGTH as FLEXURE_STRENGTH
 from structurelab_rc.domain.beam.geometry import placed_bars
 from structurelab_rc.domain.beam.shear import SECTION as SHEAR_SECTION
-from structurelab_rc.domain.beam.shear import shear_checks
+from structurelab_rc.domain.beam.shear import section_at_depth, shear_checks, shear_depth
 from structurelab_rc.domain.beam.station import checks_for, flexure_station_checks, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
@@ -196,12 +196,13 @@ def moment_sections(beam: BeamCase) -> list[CriticalSection]:
     return sections
 
 
-def shear_sections(beam: BeamCase, depth: float) -> list[CriticalSection]:
-    """A d de cada cara, hacia su tramo, si la sección queda dentro de ese tramo."""
+def shear_sections(beam: BeamCase, depth: float, depth_at: Callable[[float], float | None] | None = None) -> list[CriticalSection]:
+    """A d de cada cara, hacia su tramo, si la sección queda dentro de ese tramo. Con depth_at (la d del cortante de la
+    sección en x, D-131), la sección queda a esa misma d (D-151); sin ella, a la d dada."""
     regions = _regions(beam)
     sections = []
     for face, side in _faces(beam):
-        x = face.x + side * depth
+        x = face.x + side * depth if depth_at is None else section_at_depth(face.x, side, depth_at, depth)
         if any(low < x < high and (low <= face.x <= high) for low, high, _ in regions):
             sections.append(CriticalSection(x, f"a d de la {face.label}", sheared=True))
     return sections
@@ -394,15 +395,16 @@ def _design_moments(beam: BeamCase, x: float, plate: bool) -> tuple[float, float
     return max(moment, 0.0), min(moment, 0.0)
 
 
-def critical_sections(beam: BeamCase, depth: float, plate: bool = False) -> list[CriticalSection]:
+def critical_sections(beam: BeamCase, depth: float, plate: bool = False,
+                      depth_at: Callable[[float], float | None] | None = None) -> list[CriticalSection]:
     """Las secciones de un caso: la del mayor momento de las barras inferiores y la del mayor de las superiores (caras y
-    V = 0; con plate, los de Wood-Armer, D-118), si los hay, y las de cortante."""
+    V = 0; con plate, los de Wood-Armer, D-118), si los hay, y las de cortante (a la d de depth_at, D-151)."""
     moments = [(_design_moments(beam, section.x, plate), section) for section in moment_sections(beam)]
     largest = max(moments, key=lambda item: item[0][0])
     smallest = min(moments, key=lambda item: item[0][1])
     chosen = ([largest[1]] if largest[0][0] > 0 else []) + ([smallest[1]] if smallest[0][1] < 0 else [])
     unique: dict[float, CriticalSection] = {}
-    for section in [*shear_sections(beam, depth), *chosen]:
+    for section in [*shear_sections(beam, depth, depth_at), *chosen]:
         previous = unique.get(section.x)
         # Una sección de momento que cae justo a d de una cara conserva su cortante (D-149).
         unique[section.x] = section if previous is None else replace(section, sheared=previous.sheared or section.sheared)
@@ -544,6 +546,21 @@ def _spacing_check(basis: Basis, footing: CombinedFooting, spacing: float, bars:
                  member=footing.id)
 
 
+def beam_depth_at(basis: Basis, footing: CombinedFooting, member: Member, beam: BeamCase) -> Callable[[float], float | None]:
+    """La d del cortante de la viga larga (o de la viga de la T) en x, en un caso (D-131, D-151): la del estado con el
+    momento con que se revisa el cortante (en la combinada rectangular, el primero de Wood-Armer, D-118; en la T, el
+    momento volteado, D-093)."""
+
+    def depth_at(x: float) -> float | None:
+        plate = next((value for value in beam.plate_moments(x) if value != 0), beam.moment(x))
+        moment = plate if footing.beam is None else -beam.moment(x)
+        station = Station.model_construct(z=x + footing.lx / 2, layout=member.stations[0].layout, case=beam.case,
+                                          demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=0.0, v3=0.0, tu=0.0))
+        return shear_depth(StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True))
+
+    return depth_at
+
+
 def long_beam_checks(
     basis: Basis, footing: CombinedFooting, soil: Soil, cases: list[tuple[FactoredCase, tuple[FootingLoad, ...]]]
 ) -> list[Check]:
@@ -555,7 +572,7 @@ def long_beam_checks(
     checks = []
     for pressure, loads in cases:
         beam = beam_case(footing, soil, pressure, loads)
-        for critical in critical_sections(beam, depth, plate=footing.beam is None):
+        for critical in critical_sections(beam, depth, footing.beam is None, beam_depth_at(basis, footing, member, beam)):
             checks += _station_checks(basis, footing, member, (beam, critical, has_top))
     checks.append(_spacing_check(basis, footing, footing.bottom.x.spacing, BARS["bottom"]))
     # En la T invertida las barras superiores son de la viga: su separación la controla la fisuración de vigas (D-093).

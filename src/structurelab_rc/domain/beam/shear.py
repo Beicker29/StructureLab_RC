@@ -1,6 +1,6 @@
 """Verificación a cortante de vigas por estación cuando la torsión es despreciable (Tu < φTth)."""
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from structurelab_rc.codes.registry import Profile
@@ -25,6 +25,9 @@ MIN_REINFORCEMENT_V3 = "Cortante V3: refuerzo minimo"
 SPACING_V3 = "Cortante V3: separacion maxima"
 INTERACTION = "Cortante: interaccion V2-V3"
 _CLOSED_LEGS = 2
+_DEPTH_TOLERANCE = 0.5  # mm: la d de la sección a d de la cara converge cuando cambia menos que esto
+_DEPTH_ITERATIONS = 20
+_NO_MOMENT = 1e3  # N·mm: con |Mu| menor no hay estado de flexión que defina la d del cortante (D-151)
 
 
 @dataclass(frozen=True)
@@ -70,6 +73,33 @@ def _tension_steel(
     if centroid is None:
         return check_from_errors(STRENGTH, [blocked("No hay acero a traccion para definir d")])
     return area, max(centroid, MIN_DEPTH_RATIO * member.section.h)
+
+
+def shear_depth(given: StationInput) -> float | None:
+    """La d del cortante de la estación: el centroide de las fuerzas del acero a tracción de su estado nominal, no menor
+    que 0.8h (D-131, D-043); None si el estado no la define, también con |Mu| despreciable (D-151)."""
+    mu = given.station.demands.mu
+    if mu is None or abs(mu) < _NO_MOMENT:
+        return None
+    steel = _tension_steel(given.profile, given.materials, given.member, given.station, given.bars)
+    return None if isinstance(steel, Check) else steel[1]
+
+
+def section_at_depth(face: float, side: float, depth_at: Callable[[float], float | None], first: float) -> float:
+    """La posición de la sección crítica a d de una cara, hacia side (+1 o −1), con la d de esa misma sección (D-151):
+    el punto fijo y = cara + side·d(y). La d de una sección depende de su momento (D-131), así que se itera desde la d de
+    la cara (dentro del elemento; si allí no se define, first). Si en un paso la d no se define (momento despreciable),
+    queda la anterior; si no converge, la d geométrica first, como antes de D-151 (decisión de ingeniería del usuario)."""
+    start = depth_at(face)
+    depth = first if start is None else start
+    for _ in range(_DEPTH_ITERATIONS):
+        found = depth_at(face + side * depth)
+        if found is None:
+            return face + side * depth
+        if abs(found - depth) < _DEPTH_TOLERANCE:
+            return face + side * found
+        depth = found
+    return face + side * first
 
 
 def shear_terms(given: StationInput, minimum: float) -> ShearTerms | Check:
