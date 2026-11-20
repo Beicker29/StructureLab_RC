@@ -218,15 +218,16 @@ def _combined_place(drawing: Drawing, footing: CombinedFooting) -> _Placed:
         location = column.location
         assert location is not None
         columns.append(((location.x, location.y), (column.cy, column.cx) if rotated else (column.cx, column.cy), location.joint))
-    entities = _outline(drawing, centre, size, columns, footing.id)
+    typology = footing.typology or footing.id  # el tipo de combinada (D-157)
+    entities = _outline(drawing, centre, size, columns, typology)
     if mismatch > _MISMATCH:
         small = drawing.text_height(small=True)
         entities.append(Text(LABELS, (centre[0], centre[1] - size[1] / 2 - 3 * small),
                              f"ADVERTENCIA: las columnas de ETABS ubican la base a {_metres_text(mismatch)} entre si", small,
                              align="center"))
-    row = [footing.id, f"{metres(size[0])} x {metres(size[1])} x {metres(footing.total_height)}", _mat_text(footing.bottom, rotated),
+    row = [typology, f"{metres(size[0])} x {metres(size[1])} x {metres(footing.total_height)}", _mat_text(footing.bottom, rotated),
            "ver despiece"]
-    return _Placed(footprint.story, footing.id, row, entities, footprint)
+    return _Placed(footprint.story, typology, row, entities, footprint)
 
 
 def _warnings(drawing: Drawing, placed: list[_Placed], minimum: float | None) -> list[Entity]:

@@ -114,11 +114,13 @@ _COLUMN = re.compile(r"columna (\S+?)(?=[\s,):]|$)", re.IGNORECASE)
 
 @dataclass(frozen=True)
 class Context:
-    """Lo que no cambia durante la búsqueda."""
+    """Lo que no cambia durante la búsqueda. anchor fija el punto en que se centra la base (ejes globales, mm) en lugar de
+    la resultante: el de un tipo de combinadas (D-157)."""
 
     project: CombinedDesignProject
     profile: Profile
     bars: Sequence[RebarSpec]
+    anchor: tuple[float, float] | None = None
 
     @property
     def design(self) -> CombinedDesign:
@@ -409,6 +411,8 @@ def placement(ctx: Context, h: float, beam: tuple[float, float] | None = None) -
     """La resultante del caso que ubica la base (`placement_loads`), en ejes globales (mm): con el centroide en ella el
     momento de ese caso en la base se anula, como en `combined_resultant` (xr·Σv = Σ(v·x + My + H·Vx) y
     yr·Σv = Σ(v·y − Mx + H·Vy), con v la fuerza vertical de la columna y H = h + pedestal)."""
+    if ctx.anchor is not None:  # la posición del tipo de combinadas (D-157)
+        return ctx.anchor
     loads = placement_loads(ctx)
     span = sum(abs(column.x) + abs(column.y) + column.cx + column.cy for column in ctx.project.columns)
     big = 4 * span + 4 * ctx.design.plan_step
@@ -1004,6 +1008,29 @@ def _needs_width(groups: dict[str, Group]) -> bool:
                for name, group in groups.items() if name.startswith(("band:", "band_top:", "bottom_y", "top_y")))
 
 
+def ordered(ctx: Context) -> list[CombinedDesignColumn]:
+    """Las columnas en orden a lo largo de la dirección principal (y luego de la transversal)."""
+    principal, transverse = ctx.axes()
+    return sorted(ctx.project.columns, key=lambda column: (getattr(column, principal), getattr(column, transverse)))
+
+
+def transplanted(ctx: Context, solution: CombinedSolution, source: Context) -> CombinedSolution:
+    """La solución de un tipo (diseñada con las columnas de source) puesta bajo las columnas de ctx, de la misma familia
+    (D-157): la base con la misma posición respecto a las columnas y el refuerzo de cada columna con su par en orden."""
+    targets, origins = ordered(ctx), ordered(source)
+    names = {origin.id: target.id for origin, target in zip(origins, targets, strict=True)}
+    dx, dy = targets[0].x - origins[0].x, targets[0].y - origins[0].y
+    _, transverse = ctx.axes()
+    shift = dx if transverse == "x" else dy
+    geometry = replace(solution.geometry, center=(solution.geometry.center[0] + dx, solution.geometry.center[1] + dy),
+                       cross=None if solution.geometry.cross is None else solution.geometry.cross + shift)
+    reinforcement = dict(solution.reinforcement)
+    for key in ("dowels", "bands", "band_tops"):
+        if isinstance(reinforcement.get(key), dict):
+            reinforcement[key] = {names[column]: value for column, value in reinforcement[key].items()}
+    return priced(ctx, solution.fc, geometry, reinforcement)
+
+
 def priced(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[str, Any]) -> CombinedSolution:
     """Costo, concreto (m³) y acero (kg) de la zapata (en la T, con el alma). Con detailing, el acero es el de la cartilla
     (las barras del despiece, con ganchos y empalmes por la longitud comercial, D-127); sin él, el estimado de barras
@@ -1232,13 +1259,15 @@ _FAILURES = {"plan": "el largo necesario pasa de plan_max o la base no cabe entr
              "h": "ningun espesor hasta h_max aprueba la verificacion estructural"}
 
 
-def design_for_fc(ctx: Context, fc: float) -> FcOption:
-    """La zapata de menor costo con este f'c entre el largo mínimo con solución y los _EXTRA_LENGTHS siguientes."""
+def design_for_fc(ctx: Context, fc: float, bound: float = math.inf) -> FcOption:
+    """La zapata de menor costo con este f'c entre el largo mínimo con solución y los _EXTRA_LENGTHS siguientes. bound:
+    un costo ya alcanzado por otra búsqueda (otra posición del tipo, D-157); lo que no pueda bajarlo no se diseña."""
     best: CombinedSolution | None = None
     failure = "h"
     extra, remaining = 0, None
     while remaining is None or remaining > 0:
-        if best is not None and _length_floor(ctx, fc, extra) >= best.cost:
+        floor = _length_floor(ctx, fc, extra)
+        if floor >= min(bound, math.inf if best is None else best.cost):
             break  # ni el concreto mínimo de este largo (ni de los mayores) alcanza el mejor costo (D-136)
         result = _for_length(ctx, fc, extra)
         if result == "plan":

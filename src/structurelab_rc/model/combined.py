@@ -139,9 +139,11 @@ class CombinedFooting(RectangularBase, _Input):
     vigas (opcional, D-081; solo para el cortante: la torsión es de placa, D-118, y torsion_layers se rechaza);
     deep_beam declara que la viga larga es de gran altura (D-089); beam la vuelve una T invertida: h es el espesor de
     la zarpa y la viga, con las columnas encima, va centrada en Y (D-093). fill_height, pedestal_height, cover y las
-    sobrecargas, como en la zapata aislada (D-057)."""
+    sobrecargas, como en la zapata aislada (D-057). typology (opcional) es el tipo de combinada que rotula la planta de
+    localización y el cuadro de tipologías (D-157); sin él, el id."""
 
     id: str = Field(min_length=1)
+    typology: str | None = Field(default=None, min_length=1)
     lx: PositiveFloat
     ly: PositiveFloat
     h: PositiveFloat

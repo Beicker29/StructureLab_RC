@@ -118,6 +118,7 @@ class FootingDesign(DesignLimits):
     "ratio" fija lx/ly."""
 
     typologies: PositiveInt
+    combined_typologies: PositiveInt | None = None  # D-157: tipos de combinadas; sin él, una por par (D-153)
     shape: Literal["square", "equal_cantilevers", "ratio"] = "square"
     ratio: PositiveFloat | None = None
     method: Literal["dp", "milp", "milp_iter"] = "milp_iter"  # D-077: milp_iter (por defecto desde E3b) y milp exigen [opt]

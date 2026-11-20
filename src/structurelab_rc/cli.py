@@ -164,7 +164,8 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
     if close:
         summary["close_footings"] = close
     if result.combined:  # D-153: las combinadas de los pares, en el f'c elegido, y el costo de toda la cimentación
-        summary["combined_footings"] = [{"id": pair.pair.id, **_combined_summary(replace(pair.result, best=pair.solution),
+        summary["combined_footings"] = [{"id": pair.pair.id, **({"typology": pair.typology} if pair.typology else {}),
+                                         **_combined_summary(replace(pair.result, best=pair.solution),
                                                                                 pair.result.placement)} for pair in result.combined]
         summary["combined_cost"] = round(result.combined_cost, 2)
         summary["total_cost"] = round(result.cost + result.combined_cost, 2)
@@ -183,7 +184,8 @@ def _print_typologies(result: DesignResult, close: list[dict[str, Any]]) -> None
         print(f"  {item.name}: {t.lx:.0f} x {t.ly:.0f} x {t.h:.0f} mm; {len(item.columns)} columnas: {', '.join(item.columns)}")
     for pair in result.combined:  # D-153
         g = pair.solution.geometry
-        print(f"  {pair.pair.id} (combinada): {g.length:g} x {g.width:g} x {g.h:g} mm; columnas "
+        kind = f"combinada, tipo {pair.typology}" if pair.typology else "combinada"  # D-157
+        print(f"  {pair.pair.id} ({kind}): {g.length:g} x {g.width:g} x {g.h:g} mm; columnas "
               f"{', '.join(column.id for column in pair.pair.columns)}; costo {pair.solution.cost:.2f}")
     if result.combined:
         print(f"Costo de la cimentacion (aisladas y combinadas, un solo f'c): {result.cost + result.combined_cost:.2f}")

@@ -3213,6 +3213,25 @@
 - **Ejemplo de verificación:** la copia de pruebas de `zapata_centrica_etabs` declara `min_clear_spacing` = 500 mm
   (cambio registrado): su resultado lista los pares cercanos (entre ellos el traslapo de Z3-565 y Z3-566).
 
+### D-157: tipologías de zapatas combinadas (en curso)
+
+- **Fecha:** 2026-11-20
+- **Decisiones del usuario** (D-156 y la consulta anterior): `design.combined_typologies` = N tipos de combinadas (sin
+  él, una por par, D-153); comparten tipo los pares con la misma dirección principal, la misma separación entre columnas
+  (a 1 mm, en orden), las mismas secciones y linderos en ese orden y el mismo combined_design, sin volteo; error si hay más
+  familias que N; la base del tipo se busca en las dos direcciones y el tipo debe cumplir con todos sus pares.
+- **Implementado:** `design/footing/mixed.py` (familias, `merged_project` con los casos de todos los pares marcados con su
+  par, `anchors` en una rejilla cada plan_step entre las resultantes de los pares, `group_design`, programación dinámica
+  por familia y reparto de los N tipos, un solo f'c); `combined.Context.anchor`, `ordered`, `transplanted` (la solución
+  del tipo bajo las columnas de cada par, con el refuerzo de cada columna por orden) y `design_for_fc(bound=...)`;
+  `CombinedFooting.typology` (rotula la planta y el cuadro); el resumen y la pantalla dan el tipo de cada combinada.
+- **Prueba manual:** los pares 150-1599, 28-1604 y 6-19 de CIM_SOT1_N-3.53 (4.34 m en Y) con N = 1 comparten ZCT1
+  (6100 × 3700 × 900 mm, f'c = 28 MPa) y el proyecto diseñado verifica PASS con las cargas de cada par.
+- **Pendiente (siguiente sesión):** rendimiento (unos 6 minutos en esa prueba: cada posición de la base es un diseño
+  completo de la combinada con los casos de todos los pares; cerca de 100 s por f'c), pruebas automáticas (N = número de
+  pares igual a D-153, cada tipo PASS con todos sus pares, la partición contra una búsqueda exhaustiva, más familias que
+  N), ejemplo en `tipologias/` con huella, documentación del formato y hoja de ruta.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)
