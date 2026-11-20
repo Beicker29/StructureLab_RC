@@ -191,3 +191,13 @@ def test_etabs_template_imports_and_designs(path: Path, tmp_path: Path) -> None:
     designed = tmp_path / "proyecto.json"
     designed.write_text(json.dumps(project, ensure_ascii=False), encoding="utf-8")
     assert all(item.status is Status.PASS for item in verify_file(designed))
+
+
+def test_design_template_rejects_more_than_16_piles() -> None:
+    """D-152: el alcance es de hasta 16 pilotes por cabezal; max_piles no puede pasar de 16."""
+    from pydantic import ValidationError
+
+    data = _example("nsr_10", "diseno_cabezal_columna.json")
+    data["pile_cap_design"] = {**data["pile_cap_design"], "max_piles": 17}
+    with pytest.raises(ValidationError, match="less than or equal to 16"):
+        PileCapDesignProject.model_validate(data)

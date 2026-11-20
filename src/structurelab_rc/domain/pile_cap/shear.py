@@ -21,7 +21,7 @@ from structurelab_rc.domain.pile_cap.outline import centroid, parallel_chord, se
 from structurelab_rc.domain.pile_cap.outline import inside as region_inside
 from structurelab_rc.domain.shear_strength import TransferredLoad, TwoWayShear, concrete_lambda, two_way_shear
 from structurelab_rc.domain.status import Status
-from structurelab_rc.errors import StructuredError, blocked, incomplete
+from structurelab_rc.errors import StructuredError, incomplete
 from structurelab_rc.mechanics.perimeter import Perimeter, critical_perimeter, polygon_perimeter
 from structurelab_rc.model.pile_cap import CapColumn, PileCap
 
@@ -32,7 +32,6 @@ PUNCHING = "Punzonamiento"
 PILE_PUNCHING = "Punzonamiento del pilote"
 PAIR_PUNCHING = "Punzonamiento de dos pilotes"
 GROUP_PUNCHING = "Punzonamiento de un grupo de pilotes"
-_MAX_GROUP_PILES = 16  # con más pilotes, los grupos no se enumeran (BLOCKED)
 CORNER_ONE_WAY = "Cortante de esquina del pilote"
 SHEAR = "Cabezal: cortante"
 _FACES = {"x": ("+X", "-X"), "y": ("+Y", "-Y")}
@@ -542,15 +541,14 @@ class _Group:
     beta: float
 
 
-def _groups(cap: PileCap, depth: float) -> list[_Group] | None:
+def _groups(cap: PileCap, depth: float) -> list[_Group]:
     """Los grupos de 3 o más pilotes que pueden punzonar en conjunto (decisión del usuario, D-138): cada pilote se
     traslapa con otro del grupo (L < π(dp + d)/2), su perímetro, la envolvente convexa de los centros desplazada
     (dp + d)/2, b0 = perímetro de la envolvente + π(dp + d), es más corto que el de los pilotes aislados, y no alcanza el
-    perímetro crítico de ninguna columna (ahí rige su punzonamiento). None con más de 16 pilotes."""
+    perímetro crítico de ninguna columna (ahí rige su punzonamiento). El cabezal tiene a lo más 16 pilotes (D-152): los
+    subconjuntos se enumeran todos."""
     piles, dp = cap.piles, _round_size(cap)
     count = len(piles)
-    if count > _MAX_GROUP_PILES:
-        return None
     radius, single = (dp + depth) / 2, math.pi * (dp + depth)
     near = [sum(1 << j for j in range(count) if j != i and math.hypot(piles[i].x - piles[j].x, piles[i].y - piles[j].y) < single / 2)
             for i in range(count)]
@@ -584,15 +582,12 @@ def _groups(cap: PileCap, depth: float) -> list[_Group] | None:
     return groups
 
 
-def _group_punching(basis: Basis, item: FactoredCap, given: tuple[CapStrength, list[_Group] | None]) -> list[Check]:
+def _group_punching(basis: Basis, item: FactoredCap, given: tuple[CapStrength, list[_Group]]) -> list[Check]:
     """El grupo de más de dos pilotes que gobierna en el caso: la suma de sus reacciones mayoradas sobre b0·d frente al vc
     de la norma con su β y αs = 40 (decisión del usuario, D-138)."""
     strength, groups = given
     profile, materials, cap = basis.profile, basis.materials, item.cap
     clause = profile.pile_cap.clauses()["adjacent_piles_punching"]
-    if groups is None:
-        error = blocked(f"Grupos de pilotes con mas de {_MAX_GROUP_PILES} pilotes: falta implementacion", member=cap.id)
-        return [Check(GROUP_PUNCHING, Status.BLOCKED, (error,), clause, member=cap.id, case=item.case.case)]
     phi, d = profile.shear.strength_reduction(), strength.depth
     worst: tuple[float, Check] | None = None
     for group in groups:

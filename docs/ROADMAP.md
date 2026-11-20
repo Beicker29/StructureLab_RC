@@ -34,12 +34,11 @@ Ya confirmado: el gancho `U` de 180° y la longitud total del `.dli` (D-147).
 ### Cabezales sobre pilotes
 
 1. Diseño de cabezales de varias columnas.
-2. Esquinas recortadas con varias columnas (hoy se rechazan: las franjas no usan el contorno, D-145).
-3. Posición de la columna en la planta y en el DXF, y un dibujo más completo del cabezal.
-4. Punzonamiento de grupos de más de 16 pilotes (hoy BLOQUEADO).
-5. Cobertura de oráculo: estados límite CRSI 4 a 6 con varias columnas, valor del perímetro común, importación con
+2. Posición de la columna en la planta y en el DXF, y un dibujo más completo del cabezal.
+3. Cobertura de oráculo: estados límite CRSI 4 a 6 con varias columnas, valor del perímetro común, importación con
    `column_station` y desarrollo con varias columnas (pendiente de la auditoría de D-145).
-6. Fuera del alcance actual: puntal-tensor y requisitos sísmicos de los pilotes.
+4. Fuera del alcance (D-152): más de 16 pilotes por cabezal, esquinas recortadas con varias columnas, puntal-tensor y
+   requisitos sísmicos de los pilotes.
 
 ### Tipos nuevos, uno por vez (D-052, D-055)
 

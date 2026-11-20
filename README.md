@@ -24,7 +24,7 @@ criterio, en [decisions.md](docs/decisions.md). Todas las salidas incluyen `resu
 | Zapata aislada | Presión, contacto, estabilidad, flexión (con concreto simple), cortante, punzonamiento, desarrollo, pasadores y aplastamiento | Por tipologías (DP y MILP) y curva costo–N | Sí: cartilla, `.dli` de DL-NET, DXF, SVG y planta de localización | Sí, verificación y diseño | [zapatas](docs/formatos/zapatas.md) |
 | Zapata combinada de dos columnas, rectangular | Viga larga, franjas de columna, placa, punzonamiento y geotecnia | Sí, con estribos | Sí | Sí, verificación y diseño | [zapatas](docs/formatos/zapatas.md) |
 | T invertida de dos columnas | Viga con capas declaradas, aletas y geotecnia | Sí | Sí | Sí, verificación y diseño | [zapatas](docs/formatos/zapatas.md) |
-| Cabezal sobre pilotes | Una o varias columnas: geotecnia de los pilotes, flexión por secciones, franjas de columna, cortante, punzonamiento (guía CRSI, P1 a P4 y grupos), conexión; esquinas recortadas con una columna | Una columna: número y arreglo de pilotes, o solo el cabezal con los pilotes declarados | Sí | Sí, verificación y diseño | [cabezales](docs/formatos/cabezales.md) |
+| Cabezal sobre pilotes | Una o varias columnas: geotecnia de los pilotes, flexión por secciones, franjas de columna, cortante, punzonamiento (guía CRSI, P1 a P4 y grupos), conexión; esquinas recortadas con una columna; hasta 16 pilotes | Una columna: número y arreglo de pilotes, o solo el cabezal con los pilotes declarados | Sí | Sí, verificación y diseño | [cabezales](docs/formatos/cabezales.md) |
 | Columnas, losas y muros | Pendiente | Pendiente | Pendiente | — | — |
 
 ## Instalación

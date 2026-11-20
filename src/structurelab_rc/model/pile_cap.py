@@ -19,6 +19,8 @@ from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, mo
 
 from structurelab_rc.model.footing import N_MM3_PER_KN_M3, N_PER_KN, Column, FootingBody, FootingLoad, _Input
 
+MAX_PILES = 16  # alcance: cabezales de hasta 16 pilotes (decisión del usuario, D-152)
+
 
 class PileCapSoil(_Input):
     """Suelo de los cabezales (bloque soil del proyecto, como en las zapatas; D-138): pesos unitarios del concreto y del
@@ -134,6 +136,8 @@ class PileCap(FootingBody):
     @model_validator(mode="after")
     def _check_piles(self) -> Self:
         ids = [pile.id for pile in self.piles]
+        if len(ids) > MAX_PILES:
+            raise ValueError(f"el cabezal '{self.id}' tiene {len(ids)} pilotes: el alcance es de hasta {MAX_PILES} (D-152)")
         if len(ids) != len(set(ids)):
             raise ValueError(f"el cabezal '{self.id}' repite un pilote")
         self._check_clips()
@@ -156,8 +160,8 @@ class PileCap(FootingBody):
         if len(ids) != len(set(ids)):
             raise ValueError(f"el cabezal '{self.id}' repite una columna")
         if self.clipped_corners and len(self.columns) > 1:
-            raise ValueError(f"el cabezal '{self.id}' tiene esquinas recortadas y varias columnas: falta implementacion (las "
-                             "franjas de las columnas no usan el contorno recortado, D-145)")
+            raise ValueError(f"el cabezal '{self.id}' tiene esquinas recortadas y varias columnas: fuera del alcance (las "
+                             "esquinas recortadas aplican solo a cabezales de una columna, D-145, D-152)")
         outline = self.outline
         for column in self.columns:
             corners = [(column.offset_x + sx * column.cx / 2, column.offset_y + sy * column.cy / 2) for sx, sy in _CORNER_SIGNS.values()]

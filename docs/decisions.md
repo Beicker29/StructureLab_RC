@@ -3074,6 +3074,22 @@
   de 699.55 a 640 mm de la cara (d = 0.8h, D-043), Vu de 765.8 a 822.7 kN, φVc de 767.0 a 1045.4 kN (bw de 1799.6 a
   2499.1 mm); razón de 1.00 a 0.79, y desaparece el excedente para la viga de cimentación.
 
+### D-152: alcance de los cabezales: hasta 16 pilotes y esquinas recortadas solo con una columna
+
+- **Fecha:** 2026-11-19
+- **Decisiones del usuario:**
+  1. Las esquinas recortadas con varias columnas no son del alcance del repositorio (antes, "falta implementación",
+     D-145): el modelo las sigue rechazando, ahora como fuera del alcance.
+  2. El repositorio se limita a cabezales de hasta 16 pilotes: un cabezal con más se rechaza al cargar, y `max_piles`
+     del diseño no puede pasar de 16 (16 si no se declara; antes 30).
+- **Consecuencias:** el punzonamiento de grupos (D-138) enumera siempre todos los subconjuntos: desaparece la rama
+  BLOCKED para más de 16 pilotes (`domain/pile_cap/shear._groups`). El límite vive en `model/pile_cap.MAX_PILES`, que
+  usa también el modelo de diseño. Ningún ejemplo tiene más de 16 pilotes y las plantillas de diseño ya declaraban
+  `max_piles` = 16: no cambia ningún resultado; cambia la frase de los grupos en la memoria de los cabezales. La hoja de
+  ruta pasa los dos puntos a "fuera del alcance".
+- **Control:** `test_more_than_16_piles_are_out_of_scope`, `test_design_template_rejects_more_than_16_piles` y
+  `test_clipped_corners_with_several_columns_are_rejected`.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

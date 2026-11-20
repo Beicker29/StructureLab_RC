@@ -14,7 +14,7 @@ from pydantic import Field, NonNegativeFloat, PositiveFloat, PositiveInt, model_
 from structurelab_rc.model.design import DesignEnds, DesignMaterials, Prices, _check_drawing, check_options
 from structurelab_rc.model.footing import FootingLoad, Location, _Input
 from structurelab_rc.model.layout import internal
-from structurelab_rc.model.pile_cap import CornerClip, Pile, PileCapSoil, PileType
+from structurelab_rc.model.pile_cap import MAX_PILES, CornerClip, Pile, PileCapSoil, PileType
 from structurelab_rc.model.project import DetailingSettings, DrawingSettings, SeismicFacts
 
 
@@ -35,7 +35,7 @@ class PileCapDesign(_Input):
     pile: PileType
     pile_spacing: PositiveFloat
     edge_distance: PositiveFloat
-    max_piles: PositiveInt = 30
+    max_piles: PositiveInt = Field(default=MAX_PILES, le=MAX_PILES)  # alcance: hasta 16 pilotes (D-152)
     h_min: PositiveFloat
     h_step: PositiveFloat
     h_max: PositiveFloat

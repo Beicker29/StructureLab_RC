@@ -167,7 +167,7 @@ _CAP_CONVENTIONS = (
 )
 _CAP_LIMITATIONS = (
     "Puntal-tensor y requisitos sísmicos de los pilotes: falta implementación.",
-    "Grupos de pilotes que punzonan en conjunto: se enumeran en cabezales de hasta 16 pilotes; con más, BLOQUEADO.",
+    "Grupos de pilotes que punzonan en conjunto: se enumeran todos (el alcance es de hasta 16 pilotes por cabezal, D-152).",
 )
 
 

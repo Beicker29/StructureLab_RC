@@ -164,3 +164,17 @@ def test_clipped_corners_with_several_columns_are_rejected() -> None:
     data = {**oracle["cap"], "clipped_corners": [{"corner": "+x+y", "along_x": 200.0, "along_y": 200.0}]}
     with pytest.raises(ValidationError, match="esquinas recortadas y varias columnas"):
         PileCap.model_validate(data)
+
+
+def test_more_than_16_piles_are_out_of_scope() -> None:
+    """D-152: el repositorio cubre cabezales de hasta 16 pilotes."""
+    from pydantic import ValidationError
+
+    oracle, _, _, _ = _setup("aci-318-25")
+    cap = oracle["cap"]
+    template = cap["piles"][0]
+    lx, ly = cap["lx"], cap["ly"]
+    piles = [{**template, "id": f"P{index + 1}", "x": -lx / 3 + (index % 6) * lx / 9, "y": -ly / 3 + (index // 6) * ly / 3}
+             for index in range(17)]
+    with pytest.raises(ValidationError, match="tiene 17 pilotes: el alcance es de hasta 16"):
+        PileCap.model_validate({**cap, "piles": piles})

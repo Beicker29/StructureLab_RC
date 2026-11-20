@@ -1,6 +1,6 @@
 # Formato de cabezales sobre pilotes (D-138)
 
-Un cabezal de una o varias columnas (D-143) sobre un grupo de pilotes declarados por coordenadas, en los dos perfiles: verificación y
+Un cabezal de una o varias columnas (D-143) sobre un grupo de hasta 16 pilotes (D-152) declarados por coordenadas, en los dos perfiles: verificación y
 diseño ([Diseño](#diseño-d-141)). Unidades de entrada: mm, MPa, kN, kN·m, kN/m² y kN/m³.
 
 ## Proyecto
@@ -75,7 +75,7 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
   en b, vc = 0.166λ√f'c), todos con las reacciones mayoradas. Los grupos de 3 o más pilotes conexos (cada uno a
   L < π(dp + d)/2 de otro) punzonan en conjunto con b0 = perímetro de la envolvente convexa de sus centros + π(dp + d),
   si es más corto que el de los pilotes aislados y no alcanza el perímetro crítico de ninguna columna; en cada caso se
-  reporta el que gobierna (hasta 16 pilotes; con más, BLOQUEADO).
+  reporta el que gobierna (se enumeran todos: el alcance es de hasta 16 pilotes por cabezal, D-152).
 - **Geometría:** d ≥ 300 mm (ACI 13.4.6.2; NSR-10 C.15.7, sobre el refuerzo inferior). En ACI también el empotramiento
   ≥ 75 mm y el borde ≥ 100 mm (13.4.6.3).
 - **Desarrollo, pasadores y aplastamiento:** los de la zapata aislada, por columna.
@@ -105,7 +105,7 @@ la fuerza horizontal y `Mx_kNm`, `My_kNm` el momento. Los pilotes repiten los mi
   traslapan, del perímetro común (la caja que las contiene), con el mismo criterio de cuerpo libre.
 - **Desarrollo, pasadores y aplastamiento:** desarrollo desde la cara de cualquier columna más cercana al borde;
   pasadores y aplastamiento por columna, con su carga.
-- **Esquinas recortadas:** con varias columnas se rechazan por ahora (las franjas no usan el contorno recortado, D-145).
+- **Esquinas recortadas:** solo con una columna; con varias, fuera del alcance (D-145, D-152).
 
 ## Esquinas recortadas (D-141)
 
@@ -133,7 +133,7 @@ tienen solución).
 | `pile` | | `shape`, `size` y `embedment`, como en el cabezal. |
 | `pile_spacing` | mm | Separación mínima entre centros de pilotes, L (mayor que el tamaño del pilote). |
 | `edge_distance` | mm | Distancia del centro de los pilotes al borde del cabezal, E (mayor que medio pilote). |
-| `max_piles` | | Máximo de pilotes por cabezal (30 si no se declara). |
+| `max_piles` | | Máximo de pilotes por cabezal, hasta 16 (16 si no se declara; D-152). |
 | `h_min`, `h_step`, `h_max` | mm | Espesores que se prueban. |
 | `cover`, `bottom_cover`, `fill_height`, `pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2`, `mislocation_mm` | | Como en el cabezal. |
 | `bars`, `spacing_step` | | Barras de las mallas y paso de su separación (mm). |
