@@ -1,9 +1,10 @@
 {
-  "description": "Plantilla de diseño por tipologías (D-069) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (73 apoyos en 4 niveles de cimentación). DATOS DE EJEMPLO: secciones de columna, suelo, relleno, sobrecargas, precios y límites son supuestos; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3.",
+  "description": "Diseño por tipologías desde ETABS (D-069, D-153, D-156): los 6 apoyos del nivel CIM_ST1''_N-2.918 de los Excel de pruebas; el usuario declara los nudos de las zapatas aisladas (columns) y los pares de las combinadas (combined_pairs: aquí 12-20, dirección principal Y), cualquiera de los dos puede quedar vacío; un solo f'c; se avisan las zapatas a menos de 500 mm (min_clear_spacing). DATOS DE EJEMPLO: secciones, suelo, precios y límites son supuestos.",
   "etabs_files": {
     "service": "../../../../etabs/zapatas/pruebas/Joint Reactions - Servicio.xlsx",
     "factored": "../../../../etabs/zapatas/pruebas/Joint Reactions - Ultimas.xlsx",
-    "combinations": "../../../../etabs/zapatas/pruebas/Combinaciones.xlsx"
+    "combinations": "../../../../etabs/zapatas/pruebas/Combinaciones.xlsx",
+    "locations": "../../../../etabs/zapatas/pruebas/Joint Location.xlsx"
   },
   "profile": "aci-318-25",
   "seismic": {
@@ -36,10 +37,9 @@
     "seismic_bearing_factor": 1.33
   },
   "design": {
-    "typologies": 6,
+    "typologies": 2,
     "fc_options": [
       21.0,
-      24.5,
       28.0
     ],
     "prices": {
@@ -76,87 +76,72 @@
     "dowel_bars": [
       "#5",
       "#6"
-    ]
+    ],
+    "method": "dp"
   },
   "columns": [
     {
       "etabs_unique_names": [
-        "6",
-        "12",
         "15",
-        "17",
-        "18",
-        "19",
-        "20",
-        "21",
-        "22",
-        "28",
-        "150",
-        "157",
-        "161",
-        "198",
-        "199",
-        "201",
-        "202",
         "223",
         "224",
-        "228",
-        "233",
-        "234",
         "967",
-        "971",
-        "1225",
-        "1273",
-        "1599",
-        "1600",
-        "1601",
-        "1602",
-        "1603",
-        "1604",
-        "1605",
-        "1606",
-        "1607",
-        "1608",
-        "1609",
-        "1610",
-        "1611",
-        "1612",
-        "1613",
-        "1614",
-        "1615",
-        "1616",
-        "1617",
-        "1618",
-        "1619",
-        "1620",
-        "1621",
-        "1622",
-        "1623",
-        "1624",
-        "1625",
-        "1626",
-        "1627",
-        "1628",
-        "1629",
-        "1630",
-        "1631",
-        "1632",
-        "1633",
-        "1636",
-        "1637",
-        "1641",
-        "1642",
-        "1655",
-        "1656",
-        "1657",
-        "1658",
-        "1659",
-        "1670",
-        "1671",
-        "1672"
+        "12",
+        "20"
       ],
       "cx": 500.0,
       "cy": 800.0
     }
-  ]
+  ],
+  "combined_design": {
+    "min_steel_exception": false,
+    "plan_step": 100.0,
+    "plan_max": 9000.0,
+    "h_min": 500.0,
+    "h_step": 100.0,
+    "h_max": 1200.0,
+    "cover": 75.0,
+    "fill_height": 1500.0,
+    "pedestal_height": 0.0,
+    "surcharge_dead_kNm2": 2.0,
+    "surcharge_live_kNm2": 5.0,
+    "bars": [
+      "#4",
+      "#5",
+      "#6",
+      "#7",
+      "#8"
+    ],
+    "spacing_step": 10.0,
+    "ends": {
+      "bottom": "straight",
+      "top": "straight",
+      "dowels": "hook90",
+      "stirrups": "hook135",
+      "skin": "straight"
+    },
+    "dowel_bars": [
+      "#5",
+      "#6",
+      "#8"
+    ],
+    "stirrup_bars": [
+      "#3",
+      "#4"
+    ]
+  },
+  "combined_pairs": [
+    {
+      "id": "ZC1",
+      "etabs_unique_names": [
+        "12",
+        "20"
+      ],
+      "principal_direction": "y",
+      "design": {
+        "placement_case": "SERVICIO 1 (D+L)"
+      }
+    }
+  ],
+  "min_clear_spacing": 500.0
 }

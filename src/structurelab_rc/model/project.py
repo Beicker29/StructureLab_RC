@@ -165,6 +165,7 @@ class Project(_Input):
     pile_caps: tuple[PileCap, ...] = ()
     detailing: DetailingSettings | None = None  # D-125: sin él no se despieza
     drawing: DrawingSettings | None = None  # D-126: sin él no se dibuja; requiere detailing
+    min_clear_spacing: PositiveFloat | None = None  # D-156: separación libre mínima entre zapatas vecinas (mm); solo avisa
 
     @model_validator(mode="before")
     @classmethod

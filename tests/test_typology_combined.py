@@ -24,7 +24,7 @@ from structurelab_rc.model.loader import load_project
 from structurelab_rc.model.template import EtabsFootingDesignTemplate
 from structurelab_rc.setup import load_engine
 
-NAME = "diseno_tipologias_combinadas_etabs.json"
+NAME = "diseno_tipologias_etabs.json"  # la copia de pruebas: 6 apoyos, un par en combinada (D-153, D-156)
 
 
 def _template(profile: str = "nsr_10") -> tuple[Path, dict[str, Any]]:
@@ -136,4 +136,50 @@ def test_location_plan_warns_when_footings_overlap(tmp_path: Path) -> None:
     project = load_project(path)
     views = location_views(Drawing("prueba", 50.0), project.footings, project.combined_footings)
     texts = [entity.text for view in views for entity in view.entities if isinstance(entity, Text)]
-    assert f"ADVERTENCIA: se traslapan {first['id']} y {second['id']}" in texts
+    assert any(text.startswith(f"ADVERTENCIA: se traslapan {first['id']} (nudo") and second["id"] in text for text in texts)
+
+
+def test_clear_distance_between_footprints() -> None:
+    """D-156: separación libre entre bordes: en un eje, en diagonal y negativa si se traslapan."""
+    from structurelab_rc.domain.footing.neighbors import Footprint, clear_distance, close_neighbors
+
+    a = Footprint("A", "N1", ("1",), (0.0, 0.0), (2000.0, 2000.0))
+    side = Footprint("B", "N1", ("2",), (2500.0, 0.0), (2000.0, 2000.0))  # 500 mm en x
+    corner = Footprint("C", "N1", ("3",), (2300.0, 2400.0), (2000.0, 2000.0))  # 300 y 400 mm: 500 en diagonal
+    inside = Footprint("D", "N1", ("4",), (1800.0, 0.0), (2000.0, 2000.0))  # 200 mm de traslapo
+    other = Footprint("E", "N2", ("5",), (0.0, 0.0), (2000.0, 2000.0))  # otro nivel
+    assert clear_distance(a, side) == pytest.approx(500.0)
+    assert clear_distance(a, corner) == pytest.approx(500.0)
+    assert clear_distance(a, inside) == pytest.approx(-200.0)
+    names = {(item.first.name, item.second.name) for item in close_neighbors([a, side, corner, inside, other], 600.0)}
+    assert ("A", "B") in names and ("A", "C") in names and ("A", "D") in names and not any("E" in pair for pair in names)
+    assert {(item.first.name, item.second.name) for item in close_neighbors([a, side, inside], None)} == {("A", "D"), ("B", "D")}
+
+
+def test_close_footings_are_reported_with_their_joints(tmp_path: Path) -> None:
+    """D-156: run avisa los pares de zapatas a menos de min_clear_spacing, con sus nudos, en resultado.json y en las notas."""
+    from structurelab_rc.engine import report_file
+
+    etabs = frozen("etabs", "zapatas", "Joint Reactions - Servicio.xlsx").parent
+    template = frozen("nsr_10", "zapatas", "zapata_centrica_etabs.json")
+    data = import_etabs_footings(etabs / "Joint Reactions - Servicio.xlsx", etabs / "Joint Reactions - Ultimas.xlsx", template,
+                                 etabs / "Joint Location.xlsx")[0]
+    assert data is not None and data["min_clear_spacing"] == 500.0
+    path = tmp_path / "vecinas.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    report = report_file(path, tmp_path / "salida")
+    results = json.loads((tmp_path / "salida" / "resultado.json").read_text(encoding="utf-8"))
+    close = results["close_footings"]
+    assert close and all(item["clear [mm]"] < 500.0 and len(item["joints"]) == 2 for item in close)
+    assert any(note.startswith("Zapatas vecinas:") for note in report.notes)
+
+
+def test_design_with_only_combined_footings() -> None:
+    """D-156: sin columnas aisladas, el diseño elige el f'c de menor costo de las combinadas."""
+    project = _imported()
+    project["columns"] = []
+    ctx = _context(project)
+    result = design_with_pairs(ctx)
+    assert result.fc is not None and result.typologies == () and result.cost == 0.0 and len(result.combined) == 1
+    designed = designed_with_pairs(ctx, result)
+    assert designed["footings"] == [] and len(designed["combined_footings"]) == 1

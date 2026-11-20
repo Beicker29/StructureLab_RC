@@ -13,7 +13,7 @@ from typing import Any
 
 from structurelab_rc import __version__
 from structurelab_rc.design.footing.combined import CombinedDesignResult
-from structurelab_rc.design.footing.typologies import Iteration, MilpInfo
+from structurelab_rc.design.footing.typologies import DesignResult, Iteration, MilpInfo
 from structurelab_rc.design.pile_cap.search import summary as pile_cap_summary
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status, aggregate
@@ -21,6 +21,7 @@ from structurelab_rc.engine import (
     RUN_KINDS,
     RunError,
     RunPlan,
+    close_footings_of,
     design_combined_file,
     design_footings,
     design_pile_caps_file,
@@ -159,12 +160,23 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
          "h [mm]": item.design.typology.h, "bottom": item.design.typology.bottom, "top": item.design.typology.top,
          "columns": list(item.columns), "dowels": item.design.dowels, "concrete [m3]": round(item.design.concrete, 3),
          "steel [kg]": round(item.design.steel, 1), "cost": round(item.design.cost, 2)} for item in result.typologies]}
+    close = close_footings_of(project)  # D-156: zapatas a menos de min_clear_spacing o traslapadas, con sus nudos
+    if close:
+        summary["close_footings"] = close
     if result.combined:  # D-153: las combinadas de los pares, en el f'c elegido, y el costo de toda la cimentación
         summary["combined_footings"] = [{"id": pair.pair.id, **_combined_summary(replace(pair.result, best=pair.solution),
                                                                                 pair.result.placement)} for pair in result.combined]
         summary["combined_cost"] = round(result.combined_cost, 2)
         summary["total_cost"] = round(result.cost + result.combined_cost, 2)
     (output / "tipologias.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    _print_typologies(result, close)
+    print(f"Proyecto escrito en {output / 'proyecto.json'}; verifiquelo o genere su memoria con report")
+    return 0
+
+
+def _print_typologies(result: DesignResult, close: list[dict[str, Any]]) -> None:
+    """Lo que el diseño por tipologías escribe en pantalla: las tipologías, las combinadas (D-153), las zapatas
+    vecinas (D-156), la reasignación, el MILP, las iteraciones y las tipologías repetidas."""
     print(f"f'c = {result.fc:g} MPa; {len(result.typologies)} tipologias; costo total {result.cost:.2f} (acero: {result.cost_basis})")
     for item in result.typologies:
         t = item.design.typology
@@ -175,6 +187,8 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
               f"{', '.join(column.id for column in pair.pair.columns)}; costo {pair.solution.cost:.2f}")
     if result.combined:
         print(f"Costo de la cimentacion (aisladas y combinadas, un solo f'c): {result.cost + result.combined_cost:.2f}")
+    for warning in close:
+        print(f"ADVERTENCIA (zapatas vecinas, D-156): {warning['text']}")
     if result.reassigned:
         print(f"Reasignadas {len(result.reassigned)} columnas; costo antes de reasignar {result.cost_before_reassignment:.2f}")
     if result.milp is not None:
@@ -187,8 +201,6 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
         limit = f" (en el limite {', '.join(group.at_limit)})" if group.at_limit else ""
         print(f"ADVERTENCIA: tipologias repetidas {' = '.join(group.typologies)}{limit}; "
               f"{result.distinct_count} distintas de {len(result.typologies)}")
-    print(f"Proyecto escrito en {output / 'proyecto.json'}; verifiquelo o genere su memoria con report")
-    return 0
 
 
 def _combined_summary(result: CombinedDesignResult, placement: str) -> dict[str, Any]:

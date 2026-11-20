@@ -178,11 +178,12 @@ class FootingDesignProject(_Input):
     materials: DesignMaterials
     soil: Soil
     design: FootingDesign
-    columns: tuple[DesignColumn, ...] = Field(min_length=1)
+    columns: tuple[DesignColumn, ...] = ()  # las de las zapatas aisladas; puede quedar vacío con combined_footings (D-156)
     curve: CurveSettings | None = None  # solo el ejemplo de la curva costo–N (D-096)
     detailing: DetailingSettings | None = None  # D-127: con él, el costo sale de la cartilla y el proyecto diseñado lo lleva
     drawing: DrawingSettings | None = None  # D-127: pasa al proyecto diseñado; requiere detailing (D-126)
     combined_footings: tuple["DesignPair", ...] = ()  # D-153: pares de columnas en zapata combinada, una por par
+    min_clear_spacing: PositiveFloat | None = None  # D-156: separación libre mínima entre zapatas vecinas (mm); solo avisa
 
     @model_validator(mode="after")
     def _check(self) -> Self:
@@ -193,7 +194,9 @@ class FootingDesignProject(_Input):
         pairs = [pair.id for pair in self.combined_footings]
         if len(pairs) != len(set(pairs)):
             raise ValueError("los identificadores de las zapatas combinadas deben ser únicos")
-        if self.design.typologies > len(self.columns):
+        if not self.columns and not self.combined_footings:
+            raise ValueError("el diseño necesita columnas aisladas (columns) o zapatas combinadas (combined_footings)")
+        if self.columns and self.design.typologies > len(self.columns):
             raise ValueError("hay más tipologías que columnas")
         _check_drawing(self.detailing, self.drawing)
         for pair in self.combined_footings:

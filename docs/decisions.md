@@ -3185,6 +3185,34 @@
   - LEEME: `tipologias/` nuevo; `aislada/` queda con la verificación y el diseño de céntricas; índice de `zapatas/` y
     árbol de `examples/README.md` actualizados.
 
+### D-156: separación mínima entre zapatas, grupos de aisladas y combinadas declarados por el usuario y ejemplos unificados
+
+- **Fecha:** 2026-11-20
+- **Pedido del usuario:** antes de las tipologías de combinadas, un espacio para declarar la separación libre mínima entre
+  zapatas e informar los nudos de las que quedan más cerca; el usuario decide qué nodos unir con combinadas; un ejemplo
+  de tipologías por fuente de cargas con el espacio para los nudos aislados, los pares combinados y el número de tipos
+  de cada grupo, permitiendo cero de cualquiera de los dos.
+- **Decisiones del usuario:**
+  1. `min_clear_spacing` (mm, opcional) en el diseño y en la verificación (y en sus plantillas de ETABS); solo avisa,
+     no cambia el estado: `resultado.json` (`close_footings`), las notas de `run`, el resumen del diseño
+     (`tipologias.json`) y la planta de localización listan los pares del mismo nivel más cercanos (o traslapados, aun sin
+     mínimo; el aviso de D-153 pasa a ser este caso), con sus nudos.
+  2. Los nudos aislados (`columns`) y los pares (`combined_pairs`) los declara el usuario; cualquiera de los dos puede
+     quedar vacío. Sin aisladas, el diseño elige el f'c de menor costo de las combinadas.
+  3. Ejemplos de `tipologias/`: uno por fuente, `diseno_tipologias.json` (cargas declaradas, `combined_footings` vacío) y
+     `diseno_tipologias_etabs.json` (73 apoyos aislados y ningún par para iterar; la copia de pruebas, los 6 apoyos de
+     CIM_ST1''_N-2.918 con el par 12-20 y `min_clear_spacing` = 500 mm); sale `diseno_tipologias_combinadas_etabs.json`.
+     La curva costo-N se queda. El número de tipos de las combinadas (`combined_typologies`) entra con D-157.
+  4. La base de un tipo de combinada se busca en las dos direcciones y el tipo debe cumplir con todos sus pares (D-157).
+- **Separación libre:** entre los rectángulos de las plantas, alineados con los ejes globales: con huecos dx y dy,
+  √(dx² + dy²) si los dos son positivos, el positivo si solo uno lo es y el mayor (negativo, traslapo) si ninguno.
+- **Código:** `domain/footing/neighbors.py` (una sola fuente de la planta de cada zapata: `Footprint`,
+  `isolated_footprint`, `combined_footprint`, `clear_distance`, `close_neighbors`, `neighbor_text`), que usa también la
+  planta de localización; `min_clear_spacing` en `Project`, `FootingDesignProject` y las plantillas; el proyecto diseñado
+  lo lleva; `engine._close_footings` y `close_footings_of`; `mixed._only_pairs`; la CLI imprime los avisos.
+- **Ejemplo de verificación:** la copia de pruebas de `zapata_centrica_etabs` declara `min_clear_spacing` = 500 mm
+  (cambio registrado): su resultado lista los pares cercanos (entre ellos el traslapo de Z3-565 y Z3-566).
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

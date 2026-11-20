@@ -692,6 +692,8 @@ def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:
         "footings": footings,
         # D-127: el proyecto diseñado sale con su despiece y su dibujo, para que run genere la cartilla y los planos.
         **design_outputs(project.detailing, project.drawing),
+        # D-156: la separación mínima entre zapatas, para que la verificación avise los pares más cercanos.
+        **({} if project.min_clear_spacing is None else {"min_clear_spacing": project.min_clear_spacing}),
     })
 
 

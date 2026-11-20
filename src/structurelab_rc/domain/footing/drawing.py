@@ -21,6 +21,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from structurelab_rc.detailing.schedule import BarRun, ScheduleRow, run_marks
+from structurelab_rc.domain.footing.neighbors import (
+    Footprint,
+    close_neighbors,
+    combined_footprint,
+    isolated_footprint,
+    neighbor_text,
+)
 from structurelab_rc.drawing.model import LABELS, OUTLINE, Drawing, Entity, Polyline, Text, View, metres
 from structurelab_rc.drawing.views import (
     Marked,
@@ -34,7 +41,7 @@ from structurelab_rc.drawing.views import (
     table_view,
     titled,
 )
-from structurelab_rc.model.combined import CombinedFooting, beam_to_global
+from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import FootingBody, Mat
 
 _STUB = 0.6  # altura del arranque de columna dibujado, en lados de la columna
@@ -158,8 +165,7 @@ class _Placed:
     typology: str
     row: list[str]
     entities: list[Entity] = field(default_factory=list)
-    box: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)  # contorno de la base en ejes globales (x0, y0, x1, y1)
-    name: str = ""  # la zapata, para los avisos del plano
+    footprint: Footprint | None = None  # la planta de la zapata en ejes globales (D-156)
 
 
 def _mat_text(mat: Mat | None, swap: bool = False) -> str:
@@ -187,8 +193,9 @@ def _isolated_place(drawing: Drawing, footing: FootingBody) -> _Placed:
     """Zapata aislada o cabezal: location es la de su (primera) columna; las demás columnas de un cabezal se dibujan con
     sus desplazamientos (D-143)."""
     location, first = footing.location, footing.all_columns[0]
-    assert location is not None
-    centre = (location.x - first.offset_x, location.y - first.offset_y)
+    footprint = isolated_footprint(footing)
+    assert location is not None and footprint is not None
+    centre = footprint.centre
     typology = footing.typology or footing.id
     columns = [((centre[0] + column.offset_x, centre[1] + column.offset_y), (column.cx, column.cy),
                 location.joint if column is first else str(getattr(column, "id", "")))
@@ -196,54 +203,41 @@ def _isolated_place(drawing: Drawing, footing: FootingBody) -> _Placed:
     entities = _outline(drawing, centre, (footing.lx, footing.ly), columns, typology)
     row = [typology, f"{metres(footing.lx)} x {metres(footing.ly)} x {metres(footing.h)}", _mat_text(footing.bottom),
            _mat_text(footing.top)]
-    return _Placed(location.story, typology, row, entities, _box(centre, (footing.lx, footing.ly)), footing.id)
+    return _Placed(location.story, typology, row, entities, footprint)
 
 
 def _combined_place(drawing: Drawing, footing: CombinedFooting) -> _Placed:
     """La combinada en ejes globales: con la viga en la Y global, las dimensiones, las columnas y las barras vuelven de
     los ejes de la viga a los declarados (D-094, D-101)."""
     rotated = footing.principal_direction == "y"
-    size = (footing.ly, footing.lx) if rotated else (footing.lx, footing.ly)
-    estimates, columns = [], []
+    footprint = combined_footprint(footing)
+    assert footprint is not None
+    centre, size, mismatch = footprint.centre, footprint.size, footprint.mismatch
+    columns = []
     for column in footing.columns:
         location = column.location
         assert location is not None
-        offset = beam_to_global(column.x, column.y) if rotated else (column.x, column.y)
-        estimates.append((location.x - offset[0], location.y - offset[1]))
         columns.append(((location.x, location.y), (column.cy, column.cx) if rotated else (column.cx, column.cy), location.joint))
-    centre = (sum(x for x, _ in estimates) / len(estimates), sum(y for _, y in estimates) / len(estimates))
     entities = _outline(drawing, centre, size, columns, footing.id)
-    (x0, y0), (x1, y1) = estimates
-    mismatch = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
     if mismatch > _MISMATCH:
         small = drawing.text_height(small=True)
         entities.append(Text(LABELS, (centre[0], centre[1] - size[1] / 2 - 3 * small),
                              f"ADVERTENCIA: las columnas de ETABS ubican la base a {_metres_text(mismatch)} entre si", small,
                              align="center"))
-    first = footing.columns[0].location
-    assert first is not None
     row = [footing.id, f"{metres(size[0])} x {metres(size[1])} x {metres(footing.total_height)}", _mat_text(footing.bottom, rotated),
            "ver despiece"]
-    return _Placed(first.story, footing.id, row, entities, _box(centre, size), footing.id)
+    return _Placed(footprint.story, footing.id, row, entities, footprint)
 
 
-def _box(centre: tuple[float, float], size: tuple[float, float]) -> tuple[float, float, float, float]:
-    (x, y), (width, depth) = centre, size
-    return x - width / 2, y - depth / 2, x + width / 2, y + depth / 2
-
-
-def _overlaps(drawing: Drawing, placed: list[_Placed]) -> list[Entity]:
-    """Aviso en el plano de cada par de zapatas del mismo nivel cuyas bases se traslapan (D-153): el diseño no revisa la
-    interacción entre zapatas vecinas."""
+def _warnings(drawing: Drawing, placed: list[_Placed], minimum: float | None) -> list[Entity]:
+    """Aviso en el plano de cada par de zapatas del mismo nivel más cercanas que la separación mínima o traslapadas
+    (D-153, D-156), entre las dos: el diseño no revisa la interacción entre zapatas vecinas."""
     small = drawing.text_height(small=True)
     warnings: list[Entity] = []
-    for index, first in enumerate(placed):
-        for second in placed[index + 1:]:
-            a, b = first.box, second.box
-            if first.story == second.story and a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]:
-                x, y = (max(a[0], b[0]) + min(a[2], b[2])) / 2, (max(a[1], b[1]) + min(a[3], b[3])) / 2
-                warnings.append(Text(LABELS, (x, y), f"ADVERTENCIA: se traslapan {first.name} y {second.name}", small,
-                                     align="center"))
+    for item in close_neighbors([own.footprint for own in placed if own.footprint is not None], minimum):
+        a, b = item.first.box, item.second.box
+        x, y = (max(a[0], b[0]) + min(a[2], b[2])) / 2, (max(a[1], b[1]) + min(a[3], b[3])) / 2
+        warnings.append(Text(LABELS, (x, y), f"ADVERTENCIA: {neighbor_text(item, minimum)}", small, align="center"))
     return warnings
 
 
@@ -257,9 +251,11 @@ def _file_name(story: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", story).strip("_")
 
 
-def location_views(drawing: Drawing, footings: Sequence[FootingBody], combined: Sequence[CombinedFooting]) -> list[View]:
+def location_views(drawing: Drawing, footings: Sequence[FootingBody], combined: Sequence[CombinedFooting],
+                   minimum: float | None = None) -> list[View]:
     """Plantas de localización por nivel y cuadro de tipologías (D-130), con las zapatas que tienen ubicación; [] si
-    ninguna la tiene. Una combinada entra si sus dos columnas la tienen."""
+    ninguna la tiene. Una combinada entra si sus dos columnas la tienen. minimum: la separación libre mínima entre
+    zapatas (min_clear_spacing, D-156); el plano avisa los pares más cercanos y los traslapados."""
     placed = [_isolated_place(drawing, footing) for footing in footings if footing.location is not None]
     placed += [_combined_place(drawing, footing) for footing in combined if all(column.location is not None for column in footing.columns)]
     if not placed:
@@ -268,7 +264,7 @@ def location_views(drawing: Drawing, footings: Sequence[FootingBody], combined: 
     for story in sorted({item.story for item in placed}):
         own = [item for item in placed if item.story == story]
         view = View(_file_name(story), f"Planta de localizacion {story}",
-                    [*(entity for item in own for entity in item.entities), *_overlaps(drawing, own)])
+                    [*(entity for item in own for entity in item.entities), *_warnings(drawing, own, minimum)])
         views.append(titled(drawing, view))
     counts: dict[str, int] = {}
     rows: dict[str, list[str]] = {}

@@ -227,6 +227,7 @@ class EtabsFootingTemplate(_Input):
     soil: dict[str, float]
     footings: tuple[TemplateFooting, ...] = ()
     combined_footings: tuple[TemplateCombinedFooting, ...] = ()
+    min_clear_spacing: PositiveFloat | None = None  # D-156: pasa al proyecto
     detailing: dict[str, float] | None = None  # D-125: pasa al proyecto y se valida con él
     drawing: dict[str, float] | None = None  # D-126: pasa al proyecto y se valida con él
     etabs_files: FootingEtabsFiles | None = None
@@ -299,6 +300,7 @@ class EtabsFootingDesignTemplate(_Input):
     exclude_unique_names: tuple[str, ...] = ()
     combined_design: dict[str, Any] | None = None  # D-153: lo común de las combinadas (sin fc_options ni prices)
     combined_pairs: tuple[TemplateCombinedPair, ...] = ()  # D-153
+    min_clear_spacing: PositiveFloat | None = None  # D-156: pasa al proyecto de diseño
     etabs_files: FootingEtabsFiles | None = None
     detailing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
     drawing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
@@ -322,8 +324,6 @@ class EtabsFootingDesignTemplate(_Input):
             raise ValueError(f"combined_pairs nombra Unique Name excluidos: {', '.join(excluded)}")
         if set(names) <= set(self.exclude_unique_names):
             raise ValueError("exclude_unique_names quita todos los Unique Name de columns")
-        if set(names) <= set(self.exclude_unique_names) | set(paired):
-            raise ValueError("combined_pairs y exclude_unique_names no dejan ninguna columna para las tipologias aisladas")
         if self.combined_pairs and self.combined_design is None:
             raise ValueError("combined_pairs necesita el bloque combined_design (D-153)")
         if any(set(pair.design) & set(SHARED_DESIGN) for pair in self.combined_pairs) or (

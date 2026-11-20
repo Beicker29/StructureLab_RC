@@ -1,5 +1,5 @@
 {
-  "description": "Ejemplo de diseño por tipologías: 6 columnas con cargas de servicio y mayoradas, 6 zapatas tipo. Datos ilustrativos; precios en la moneda del usuario.",
+  "description": "Ejemplo de diseño por tipologías: 6 columnas con cargas de servicio y mayoradas, 6 zapatas tipo. Datos ilustrativos; precios en la moneda del usuario. Zapatas combinadas: combined_footings está vacío (todas las columnas van en zapatas aisladas); para unir un par, se declara allí con sus dos columnas (posición, sección y cargas) y su combined_design (D-153, D-156).",
   "profile": "aci-318-25",
   "seismic": {
     "level": "special",
@@ -470,5 +470,6 @@
   },
   "drawing": {
     "scale": 50.0
-  }
+  },
+  "combined_footings": []
 }

@@ -39,6 +39,7 @@ Supuestos:
 | `reinforcement_steel.coating` | texto | Recubrimiento de las barras: `uncoated` (sin recubrimiento), `galvanized`, `epoxy` o `zinc_epoxy` (dual de zinc y epóxico); cambia la longitud de desarrollo (ψe, D-071). |
 | `soil` | objeto | Datos del suelo y de los pesos propios (abajo). Obligatorio con zapatas. |
 | `footings` | lista | Zapatas del proyecto. |
+| `min_clear_spacing` | mm | Opcional (D-156): la separación libre mínima admisible entre los bordes de zapatas vecinas del mismo nivel (con `location`). Solo informa: `resultado.json` (`close_footings`), las notas de `run` y la planta de localización listan los pares más cercanos, y los traslapados aunque no se declare, con sus nudos de ETABS; el usuario decide si los une con una zapata combinada. También en el diseño por tipologías y en las plantillas de ETABS, que lo pasan al proyecto. |
 
 ### Suelo (`soil`); todos los campos son obligatorios salvo `passive_factor`
 
@@ -212,7 +213,7 @@ una variable del diseño. `soil` es igual que en la verificación.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
-| `columns[].id` | texto | Identificador de la columna. |
+| `columns[].id` | texto | Identificador de la columna de una zapata aislada. `columns` puede quedar vacío si hay `combined_footings` (D-156). |
 | `columns[].cx`, `columns[].cy` | mm | Sección de la columna (la zapata la centra). |
 | `columns[].loads` | lista | Casos de carga, iguales a los de una zapata. |
 | `design.typologies` | - | Número de zapatas tipo que deben cubrir todas las columnas. |
@@ -551,6 +552,7 @@ compara con la plantilla):
 | `memoria.txt` | Memoria de cálculo de cada elemento, una tras otra (D-068): resultado y DCR máximo, capítulos fijos con cada revisión en su ubicación gobernante, índices DCR y notas y limitaciones. |
 | `memoria.pdf` | Los mismos bloques en PDF, cada elemento desde una página nueva; requiere el extra `pdf` (`pip install structurelab-rc[pdf]`). |
 | `presion_<zapata>.svg` | Planta de cada zapata con la presión del suelo en cada esquina del caso de servicio que gobierna la presión admisible (D-080); el PDF la incrusta en el capítulo de solicitaciones, junto con la tabla de esquinas de todos los casos de servicio. Las presiones vienen en los valores de cada verificación de presión admisible (`p esquina -x-y`, `+x-y`, `+x+y` y `-x+y`, en kPa). |
+| `resultado.json` → `close_footings` | Solo si hay pares (D-156): por cada par de zapatas del mismo nivel más cercanas que `min_clear_spacing` o traslapadas, `first`, `second`, `story`, `joints` (los nudos de las dos), `clear [mm]` (negativa si se traslapan), `minimum [mm]` y el aviso en `text`. La separación es entre bordes: en diagonal, la distancia entre las esquinas. |
 | `diagrama_<zapata>_<elemento>_cortante.svg`, `diagrama_<zapata>_<elemento>_momento.svg` | Solo zapatas combinadas y en T invertida (D-095, D-104): un diagrama por magnitud y elemento (`principal`, `franja_<columna>` o `aletas`), envolvente de los casos mayorados (máximo en azul, mínimo en rojo). La memoria los muestra en 3.5 "Solicitaciones internas", cada uno con la tabla de sus secciones críticas; los datos vienen en `resultado.json`, en `combined_footings[].diagrams` (`principal` y `secondary`: `positions [mm]`, `M max [kN-m]`, `M min [kN-m]`, `V max [kN]`, `V min [kN]`, `segments`, `marks`, `extremes` con el valor, la posición y el caso de cada extremo, y `sections`: por sección crítica, `label`, `position [mm]` y el máximo y el mínimo de M y de V con su caso). M > 0 tracciona la cara inferior; V es el del cuerpo libre a la izquierda. |
 
 Cada verificación de `resultado.json` tiene:

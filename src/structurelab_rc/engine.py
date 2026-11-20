@@ -26,6 +26,7 @@ from structurelab_rc.domain.footing.combined_diagrams import combined_diagrams
 from structurelab_rc.domain.footing.detailing import combined_runs, face_envelope, footing_runs, moment_envelope
 from structurelab_rc.domain.footing.drawing import combined_views, footing_views, location_views
 from structurelab_rc.domain.footing.loads import combined_factored_cases
+from structurelab_rc.domain.footing.neighbors import close_neighbors, footprints, neighbor_text
 from structurelab_rc.domain.pile_cap.checks import cap_analysis, pile_cap_checks
 from structurelab_rc.domain.pile_cap.drawing import pile_cap_views
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis
@@ -292,7 +293,8 @@ def _detailing(
         if drawing is not None:
             drawing.views[combined.id] = combined_views(drawing, combined, runs, (rows, stock))
     if drawing is not None:
-        located = location_views(drawing, [*project.footings, *project.pile_caps], project.combined_footings)  # D-130, D-138
+        located = location_views(drawing, [*project.footings, *project.pile_caps], project.combined_footings,  # D-130, D-138
+                                 project.min_clear_spacing)  # D-156
         if located:
             drawing.views[LOCATION] = located
     return schedules, drawing
@@ -339,6 +341,9 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
     project, checks, analyses = _run(path)
     results = build_results(project, checks, __version__, (_combined_diagrams(project, checks), analyses))
+    close = _close_footings(project)  # D-156: zapatas más cercanas que la mínima o traslapadas
+    if close:
+        results["close_footings"] = close
     # El dibujo y el DXF llevan el nombre del caso (la carpeta de salida), como el .dli.
     schedules, drawing = ({}, None) if checks[0].status is Status.FAIL else _detailing(project, results, (output.name, analyses))
     output.mkdir(parents=True, exist_ok=True)
@@ -359,7 +364,25 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
         dli_paths, notes = _dli_file(schedules, output, path.parent)
         files = (*files, schedule_path, *dli_paths)
     files = (*files, *figures.values(), *(path for paths in diagram_files.values() for path in paths), *drawing_paths)
+    notes += [f"Zapatas vecinas: {item['text']}" for item in close]
     return Report(results["status"], files, pdf_written, tuple(notes))
+
+
+def close_footings_of(designed: dict[str, Any]) -> list[dict[str, Any]]:
+    """Los pares de zapatas cercanos (D-156) de un proyecto diseñado (formato de entrada), para el resumen del diseño."""
+    return _close_footings(validate_input(designed, Project))
+
+
+def _close_footings(project: Project | None) -> list[dict[str, Any]]:
+    """Los pares de zapatas del mismo nivel más cercanos que min_clear_spacing o traslapados (D-156), con sus nudos."""
+    if project is None:
+        return []
+    placed = footprints([*project.footings, *project.pile_caps], project.combined_footings)
+    minimum = project.min_clear_spacing
+    return [{"first": item.first.name, "second": item.second.name, "story": item.first.story,
+             "joints": [*item.first.joints, *item.second.joints], "clear [mm]": round(item.clear, 1),
+             **({"minimum [mm]": minimum} if minimum is not None else {}), "text": neighbor_text(item, minimum)}
+            for item in close_neighbors(placed, minimum)]
 
 
 def import_etabs(workbook: Path, template_path: Path) -> tuple[dict[str, Any] | None, ImportSummary | None, Check]:

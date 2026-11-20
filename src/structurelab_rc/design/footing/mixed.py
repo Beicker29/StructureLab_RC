@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from structurelab_rc.design.footing import combined
-from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project
+from structurelab_rc.design.footing.typologies import COST_BASIS, DesignResult, FcOption, design_typologies, designed_project
 from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.model.design import DesignPair, pair_project
 
@@ -53,12 +53,31 @@ def design_with_pairs(ctx: Context, workers: int = 1) -> DesignResult:
     pairs = design_pairs(ctx, workers)
     if not pairs:
         return design_typologies(ctx, workers)
-    result = design_typologies(ctx, workers, pair_costs(pairs, ctx.design.fc_options))
+    costs = pair_costs(pairs, ctx.design.fc_options)
+    if not ctx.project.columns:  # solo combinadas (D-156): el f'c de menor costo de las combinadas
+        return _only_pairs(ctx, pairs, costs)
+    result = design_typologies(ctx, workers, costs)
     if result.fc is None:
         return replace(result, combined=pairs)
     fc = result.fc
     chosen = tuple(replace(pair, solution=pair.at(fc)) for pair in pairs)
     return replace(result, combined=chosen, combined_cost=sum(pair.solution.cost for pair in chosen if pair.solution is not None))
+
+
+def _only_pairs(ctx: Context, pairs: tuple[PairDesign, ...], costs: dict[float, float]) -> DesignResult:
+    """El diseño sin zapatas aisladas: las combinadas en el f'c de menor costo (con empate, el menor f'c)."""
+    options = tuple(FcOption(fc, None if math.isinf(cost) else 0.0, None if math.isinf(cost) else 0,
+                             "alguna zapata combinada no tiene solucion" if math.isinf(cost) else "")
+                    for fc, cost in sorted(costs.items()))
+    feasible = sorted((cost, fc) for fc, cost in costs.items() if not math.isinf(cost))
+    basis = COST_BASIS[ctx.project.detailing is not None]
+    if not feasible:
+        return DesignResult(None, (), math.inf, "ninguna zapata combinada tiene solucion con un mismo f'c", options=options,
+                            method=ctx.design.method, cost_basis=basis, combined=pairs)
+    cost, fc = feasible[0]
+    chosen = tuple(replace(pair, solution=pair.at(fc)) for pair in pairs)
+    return DesignResult(fc, (), 0.0, options=options, method=ctx.design.method, cost_basis=basis, combined=chosen,
+                        combined_cost=cost)
 
 
 def designed_with_pairs(ctx: Context, result: DesignResult) -> dict[str, Any]:
