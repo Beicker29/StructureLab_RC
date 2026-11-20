@@ -1,0 +1,96 @@
+{
+  "description": "Diseño de zapatas céntricas desde ETABS: los 6 apoyos del nivel CIM_ST1''_N-2.918 de los Excel compartidos, una zapata por apoyo (design.typologies = 6), con la planta de localización de la tabla de coordenadas. DATOS DE EJEMPLO: secciones, suelo, precios y límites son supuestos.",
+  "etabs_files": {
+    "service": "../../../../etabs/zapatas/pruebas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../../../etabs/zapatas/pruebas/Joint Reactions - Ultimas.xlsx",
+    "combinations": "../../../../etabs/zapatas/pruebas/Combinaciones.xlsx",
+    "locations": "../../../../etabs/zapatas/pruebas/Joint Location.xlsx"
+  },
+  "profile": "nsr-10",
+  "seismic": {
+    "level": "DES",
+    "justification": "Capacidad especial de disipación de energía (DES) declarada por el ingeniero para este ejemplo."
+  },
+  "concrete": {
+    "type": "normalweight",
+    "max_aggregate": 19.0,
+    "unit_weight_kNm3": 24.0
+  },
+  "reinforcement_steel": {
+    "fy": 420.0,
+    "fyt": 420.0,
+    "coating": "uncoated"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 300.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.45,
+    "adhesion_kPa": 0.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "design": {
+    "typologies": 6,
+    "fc_options": [
+      21.0,
+      28.0
+    ],
+    "prices": {
+      "concrete_per_m3": {
+        "21": 711357.0,
+        "24.5": 729470.0,
+        "28": 747582.0,
+        "35": 779082.0
+      },
+      "steel_per_kg": 4385.0
+    },
+    "shape": "square",
+    "plan_step": 100.0,
+    "plan_max": 6000.0,
+    "h_min": 500.0,
+    "h_step": 50.0,
+    "h_max": 1500.0,
+    "cover": 75.0,
+    "fill_height": 1500.0,
+    "pedestal_height": 0.0,
+    "surcharge_dead_kNm2": 2.0,
+    "surcharge_live_kNm2": 5.0,
+    "bars": [
+      "#5",
+      "#6",
+      "#7"
+    ],
+    "spacing_step": 25.0,
+    "ends": {
+      "bottom": "straight",
+      "top": "straight",
+      "dowels": "hook90"
+    },
+    "dowel_bars": [
+      "#5",
+      "#6"
+    ],
+    "method": "dp"
+  },
+  "columns": [
+    {
+      "etabs_unique_names": [
+        "15",
+        "223",
+        "224",
+        "967",
+        "12",
+        "20"
+      ],
+      "cx": 500.0,
+      "cy": 800.0
+    }
+  ]
+}

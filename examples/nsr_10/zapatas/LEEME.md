@@ -7,7 +7,8 @@ Los ejemplos van por tipología, cada una con su `LEEME.md` (ejemplos y comandos
 
 | Carpeta | Contenido |
 | --- | --- |
-| [`aislada/`](aislada/LEEME.md) | Zapatas aisladas: verificación con las cargas declaradas y desde ETABS, diseño por tipologías (D-069) y curva costo-N (D-078). |
+| [`aislada/`](aislada/LEEME.md) | Zapatas aisladas: verificación y diseño de zapatas céntricas, una por columna, con las cargas declaradas y desde ETABS. |
+| [`tipologias/`](tipologias/LEEME.md) | Diseño por tipologías (D-069), con zapatas combinadas para los pares declarados (D-153), y curva costo-N (D-078) (D-155). |
 | [`combinada/`](combinada/LEEME.md) | Zapatas combinadas rectangulares de dos columnas: verificación (D-080 a D-083) y diseño (D-107), con las cargas declaradas y desde ETABS. |
 | [`t_invertida/`](t_invertida/LEEME.md) | Zapatas combinadas en T invertida de dos columnas: verificación (D-093, D-106) y diseño (D-113), desde ETABS y con las cargas declaradas. |
 
@@ -23,6 +24,7 @@ Las copias congeladas de las pruebas, en orden:
 
 ```console
 structurelab-rc run examples/nsr_10/zapatas/aislada/pruebas
+structurelab-rc run examples/nsr_10/zapatas/tipologias/pruebas
 structurelab-rc run examples/nsr_10/zapatas/combinada/pruebas
 structurelab-rc run examples/nsr_10/zapatas/t_invertida/pruebas
 ```
@@ -32,8 +34,8 @@ Los mismos pasos que hace `run`, por separado (importar de ETABS, verificar y di
 ```console
 structurelab-rc import-etabs-footings "examples/etabs/zapatas/Joint Reactions - Servicio.xlsx" "examples/etabs/zapatas/Joint Reactions - Ultimas.xlsx" examples/nsr_10/zapatas/aislada/zapata_centrica_etabs.json --output results/nsr_10/zapatas/etabs.json
 structurelab-rc report results/nsr_10/zapatas/etabs.json --output results/nsr_10/zapatas/etabs
-structurelab-rc design-footings examples/nsr_10/zapatas/aislada/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
-structurelab-rc typology-curve examples/nsr_10/zapatas/aislada/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias_curva
+structurelab-rc design-footings examples/nsr_10/zapatas/tipologias/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias
+structurelab-rc typology-curve examples/nsr_10/zapatas/tipologias/diseno_tipologias.json --output results/nsr_10/zapatas/diseno_tipologias_curva
 structurelab-rc design-combined examples/nsr_10/zapatas/combinada/diseno_combinada.json --output results/nsr_10/zapatas/diseno_combinada
 ```
 

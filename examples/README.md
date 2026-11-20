@@ -24,7 +24,8 @@ examples/
 │   │   ├── una_columna/       una columna: cargas de la columna o de los pilotes, tres pilotes, diseño, ETABS
 │   │   └── varias_columnas/   dos y cuatro columnas
 │   ├── zapatas/
-│   │   ├── aislada/           céntrica, diseño por tipologías y curva costo–N, ETABS
+│   │   ├── aislada/           céntrica: verificación y diseño (una por columna), ETABS
+│   │   ├── tipologias/        diseño por tipologías (con combinadas, D-153) y curva costo–N (D-155)
 │   │   ├── combinada/         combinada de dos columnas y su diseño, ETABS
 │   │   └── t_invertida/       T invertida y su diseño, ETABS
 │   └── vigas/                 rectangular, T, de gran altura, ETABS

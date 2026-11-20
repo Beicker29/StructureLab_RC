@@ -47,10 +47,11 @@ COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
 # las plantillas de diseño (diseno_*, D-141) se diseñan después de importarlas.
 CAP_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                          for path in (ROOT / "examples").glob("*/cabezales/**/pruebas/*_etabs.json")))
-# Diseño por tipologías con una zapata combinada (D-153): 6 apoyos de un nivel de los Excel de pruebas, con la tabla de
-# coordenadas; se importa, se diseña y se verifica.
+# Diseños por tipologías desde ETABS con 6 apoyos de un nivel de los Excel de pruebas y la tabla de coordenadas: con una
+# zapata combinada (D-153) y una zapata céntrica por apoyo (D-155); se importan, se diseñan y se verifican.
 TYPOLOGY_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
-                              for path in (ROOT / "examples").glob("*/zapatas/**/pruebas/diseno_tipologias_combinadas_etabs.json")))
+                              for name in ("diseno_tipologias_combinadas_etabs.json", "diseno_centrica_etabs.json")
+                              for path in (ROOT / "examples").glob(f"*/zapatas/**/pruebas/{name}")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "pruebas" / "Element Forces - Beams.xlsx"
 REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx",
              ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Ultimas.xlsx")

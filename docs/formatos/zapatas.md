@@ -1,6 +1,6 @@
 # Formato de zapatas
 
-Referencia de la entrada y la salida de las zapatas aisladas, combinadas y en T invertida, común a los dos perfiles. Los ejemplos están en `examples/<perfil>/zapatas/<tipología>/` (`aislada`, `combinada`, `t_invertida`).
+Referencia de la entrada y la salida de las zapatas aisladas, combinadas y en T invertida, común a los dos perfiles. Los ejemplos están en `examples/<perfil>/zapatas/<carpeta>/` (`aislada`, `combinada`, `t_invertida` y `tipologias`, este con el diseño por tipologías y la curva costo–N, D-155).
 
 Supuestos:
 

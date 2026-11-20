@@ -72,15 +72,15 @@
     "resultado.json": "0f917a8b0a07443b3724dc11aaf2c7303f1e9347667119b581a8d653bc635d35",
     "memoria.txt": "472b1afa497572e069521a69f59b4328987866a220daab00e911e8b7be0fe0e2"
   },
-  "examples/aci_318_25/zapatas/aislada/pruebas/diseno_tipologias.json": {
-    "proyecto.json": "e750fbb25bc14b209532eed437e22ebaeac5b9c891d01259e9dc4b8057df9c0d",
-    "resultado.json": "b42468798d98121247be9bf8a07f9c5f02d0b041652d136de9f17b182a8af140",
-    "memoria.txt": "a07cb8dc8896759c042a69d8fb421ddd97510601d25ecab53ea16d7c9b8ab046"
+  "examples/aci_318_25/zapatas/aislada/pruebas/diseno_centrica.json": {
+    "proyecto.json": "53e684ce39a5431405d647d0921f6694e57298e8873a99d3cb40a7b538f7bacd",
+    "resultado.json": "3673ce297a0623c261e830a471d85b1cd96fcf6819a6ec6ca4fba3efe94488d7",
+    "memoria.txt": "399061b5afdde31af2409f07b6cfa110dccb54423d7eb9879990b56846407b4c"
   },
-  "examples/aci_318_25/zapatas/aislada/pruebas/diseno_tipologias_combinadas_etabs.json": {
-    "proyecto.json": "1b54b7fcf6f09b5a9893c4d9c5ab098f02638abbd2d3a90bce34108e7feae678",
-    "resultado.json": "423d11cc932dfdab7fa40aa08a4bca56afe87798aaa6c0d843feab71c7bb2aff",
-    "memoria.txt": "6b2193eccbbf884b05803636a183dbfbe3165826ff11f74537d5d2c5d7e70cc3"
+  "examples/aci_318_25/zapatas/aislada/pruebas/diseno_centrica_etabs.json": {
+    "proyecto.json": "a63d44610e7e036aeda36f00fcd301ea79a57cdc71196a588cda0021dc1d18d8",
+    "resultado.json": "91375f838c5f96836ada88b02420ce8653323e206db7b082061428bb0e5b5f4c",
+    "memoria.txt": "993cef3a927ea8bca6300f03c3fda6c9f601df8ee844406b86fc8c3ccd7003c3"
   },
   "examples/aci_318_25/zapatas/aislada/pruebas/zapata_centrica.json": {
     "resultado.json": "e0a9fa0588e1d4fa1c64b4fcbbc73f9a13bf85c42b1e018a74913427e100ae46",
@@ -123,6 +123,16 @@
     "resultado.json": "e077f183a259fb717943894e099c212907339d02accd3d7b98bc2a257306189b",
     "memoria.txt": "5f6b8e9711a6b72b1eb30596297df516a4cdfe1f00840809162335702836ca3c",
     "zapata_t_invertida_etabs_drawing.json": "e26a0802b44a34b26c885e2c04211ed8677e5d289e1554e30754f16885840e4e"
+  },
+  "examples/aci_318_25/zapatas/tipologias/pruebas/diseno_tipologias.json": {
+    "proyecto.json": "e750fbb25bc14b209532eed437e22ebaeac5b9c891d01259e9dc4b8057df9c0d",
+    "resultado.json": "b42468798d98121247be9bf8a07f9c5f02d0b041652d136de9f17b182a8af140",
+    "memoria.txt": "a07cb8dc8896759c042a69d8fb421ddd97510601d25ecab53ea16d7c9b8ab046"
+  },
+  "examples/aci_318_25/zapatas/tipologias/pruebas/diseno_tipologias_combinadas_etabs.json": {
+    "proyecto.json": "1b54b7fcf6f09b5a9893c4d9c5ab098f02638abbd2d3a90bce34108e7feae678",
+    "resultado.json": "423d11cc932dfdab7fa40aa08a4bca56afe87798aaa6c0d843feab71c7bb2aff",
+    "memoria.txt": "6b2193eccbbf884b05803636a183dbfbe3165826ff11f74537d5d2c5d7e70cc3"
   },
   "examples/nsr_10/cabezales/una_columna/pruebas/cabezal_columna.json": {
     "resultado.json": "dfde5527d66e7e027053fc92aea4819c1389131fc8eadbeb23738ef55a1a6292",
@@ -197,15 +207,15 @@
     "resultado.json": "28ca107f7426a0dbeadec64a51ed2ba29872e9acd33d7bce9971142e6ec05f90",
     "memoria.txt": "c3214dc4573072cb4d033264ea837665d04c6ff24fe3b3b117eb77fc0cda9670"
   },
-  "examples/nsr_10/zapatas/aislada/pruebas/diseno_tipologias.json": {
-    "proyecto.json": "c3e7271f0f89c3858c7a0201c2ad693e21d23a8e2ebe4bbeb32bb33eb813edce",
-    "resultado.json": "bea277de79d276d5ba419bf209aebdd05b409a0d696c6ee4542e8690579a43fa",
-    "memoria.txt": "9257988886b72abf154b8d5459094305a27da5316c474ee6b01816e7a3d26595"
+  "examples/nsr_10/zapatas/aislada/pruebas/diseno_centrica.json": {
+    "proyecto.json": "9786cbdc83ea2ba62f9eb268e5a6bb94fdae44aac552990cf619a5a002f8918e",
+    "resultado.json": "46a3979deb425bf1f5fba90ff8957c3cc224f9a48add40fb8639b2659c0db34d",
+    "memoria.txt": "940f7031f9443384fcb7c1567d9ec53b48f972ed225e672c9388a89bdbba3228"
   },
-  "examples/nsr_10/zapatas/aislada/pruebas/diseno_tipologias_combinadas_etabs.json": {
-    "proyecto.json": "78a274a49bfb52fb6ba75f2d17393665b5b56d6c763a67635dee457ef99682b8",
-    "resultado.json": "79b1e81a0f03f686e55f66c84923ceb5654768c63f2c003cb6d66b0f01594db7",
-    "memoria.txt": "9d415c945b3d759e4866ba5c2e5a496ea1155289bfee7f910b45eaaa2b3f4e09"
+  "examples/nsr_10/zapatas/aislada/pruebas/diseno_centrica_etabs.json": {
+    "proyecto.json": "a101b450170d0e955585ad015f2e76534e33bc749b9efb1046bb0197197761a3",
+    "resultado.json": "1c2e7debfd83a243bc273e0bca3966171ad46ba6b70488dd1fc70df910d6c354",
+    "memoria.txt": "204ddab8b293928e4fb5a2211bc4c31d14a176cab8aee468105cb577444a80cd"
   },
   "examples/nsr_10/zapatas/aislada/pruebas/zapata_centrica.json": {
     "resultado.json": "2985d4597ef1d0ad9e0e6e5447ac93715697be18a496069258ad0c5c7fb8277d",
@@ -248,5 +258,15 @@
     "resultado.json": "4ed32ce73e6368186f348a27c29d13cef6981f85d7499d1854e62bc0bc58b2e0",
     "memoria.txt": "38f32acd106b769bac30e0921bb15ef306312291f7033785fab89fcf6597f576",
     "zapata_t_invertida_etabs_drawing.json": "e26a0802b44a34b26c885e2c04211ed8677e5d289e1554e30754f16885840e4e"
+  },
+  "examples/nsr_10/zapatas/tipologias/pruebas/diseno_tipologias.json": {
+    "proyecto.json": "c3e7271f0f89c3858c7a0201c2ad693e21d23a8e2ebe4bbeb32bb33eb813edce",
+    "resultado.json": "bea277de79d276d5ba419bf209aebdd05b409a0d696c6ee4542e8690579a43fa",
+    "memoria.txt": "9257988886b72abf154b8d5459094305a27da5316c474ee6b01816e7a3d26595"
+  },
+  "examples/nsr_10/zapatas/tipologias/pruebas/diseno_tipologias_combinadas_etabs.json": {
+    "proyecto.json": "78a274a49bfb52fb6ba75f2d17393665b5b56d6c763a67635dee457ef99682b8",
+    "resultado.json": "79b1e81a0f03f686e55f66c84923ceb5654768c63f2c003cb6d66b0f01594db7",
+    "memoria.txt": "9d415c945b3d759e4866ba5c2e5a496ea1155289bfee7f910b45eaaa2b3f4e09"
   }
 }

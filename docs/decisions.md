@@ -3163,6 +3163,28 @@
   descripción (coordenadas de entrada y columnas respecto al centro de la base): geometría, refuerzo y costo idénticos a
   HEAD (comparado).
 
+### D-155: carpeta de ejemplos de tipologías y ejemplos de diseño de zapatas céntricas
+
+- **Fecha:** 2026-11-20
+- **Pedido del usuario:**
+  1. Una carpeta `tipologias/` al nivel de `aislada/`, `combinada/` y `t_invertida/` (dentro de
+     `examples/<perfil>/zapatas/`) con todos los ejemplos de tipologías, incluida la curva costo-N.
+  2. Ejemplos de diseño de zapatas céntricas con las cargas declaradas y desde ETABS.
+- **Decisiones del usuario:** el diseño de zapatas céntricas es una zapata por columna (sin agrupar): con el motor actual,
+  el diseño por tipologías con `design.typologies` igual al número de columnas; ejemplos pequeños (6 columnas) que entran
+  en la huella.
+- **Cambio de ejemplos (registrado):**
+  - Se mueven a `tipologias/` (y su `pruebas/`), en los dos perfiles: `diseno_tipologias.json`,
+    `diseno_tipologias_etabs.json`, `diseno_tipologias_combinadas_etabs.json` y `curva_tipologias.json`. Sus rutas a los
+    Excel no cambian (la carpeta está al mismo nivel). En la huella cambian las claves (las rutas), no los valores.
+  - Nuevos en `aislada/` (y su `pruebas/`), en los dos perfiles: `diseno_centrica.json` (las 6 columnas de
+    `diseno_tipologias.json`) y `diseno_centrica_etabs.json` (los 6 apoyos de CIM_ST1''_N-2.918 con la tabla de
+    coordenadas), una zapata por columna, método `dp`; los dos verifican PASS (NSR-10: f'c 24.5 MPa, zapatas de 1900 a
+    3100 mm; ETABS: f'c 28 MPa, de 3000 a 3600 mm). El de ETABS entra en la huella con el flujo de importar, diseñar y
+    verificar.
+  - LEEME: `tipologias/` nuevo; `aislada/` queda con la verificación y el diseño de céntricas; índice de `zapatas/` y
+    árbol de `examples/README.md` actualizados.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)
