@@ -41,6 +41,21 @@ cada uno debe estar en `columns[]` y no puede quitarlos todos. Los Unique Name d
 listados o por estar excluidos, se avisan al importar y quedan al final de la descripción del proyecto, que la memoria
 muestra (D-111).
 
+**Zapatas combinadas dentro del diseño por tipologías (D-153).** La misma plantilla puede declarar pares de columnas que
+van en zapata combinada; los demás nudos siguen por tipologías aisladas:
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `combined_pairs[].id` | texto | Identificador de la zapata combinada. |
+| `combined_pairs[].etabs_unique_names` | - | Los Unique Name de sus dos nudos. Deben estar en `columns[]` (de allí sale su sección) y no en `exclude_unique_names`; un nudo no puede estar en dos pares. Salen de las tipologías aisladas. |
+| `combined_pairs[].principal_direction` | texto | `x` o `y`: el eje global de la viga que une las columnas (D-094). |
+| `combined_pairs[].design` | objeto | Opcional: lo propio del par sobre `combined_design` (por ejemplo `placement_case`, `shape` y los campos de la T, `max_cantilever_start` y `max_cantilever_end`). |
+| `combined_design` | objeto | Obligatorio con pares: el bloque del diseño de la combinada (D-107, D-110, D-113) común a todos los pares, sin `fc_options` ni `prices`, que se toman de `design` (un solo f'c para toda la cimentación). |
+
+Las posiciones de las dos columnas de cada par salen de la tabla de coordenadas (`etabs_files.locations`), que entonces es
+obligatoria; sus cargas, de los Excel. El proyecto de diseño lleva cada par en `combined_footings[]` (columnas con `x`,
+`y` y `location`, y su `combined_design` ya completo).
+
 Con una plantilla que trae el bloque `combined_design` (D-112), el importador genera el proyecto de diseño de una zapata
 combinada de dos columnas (ver [zapatas](zapatas.md), diseño de la zapata combinada): `columns[]` son exactamente dos, con
 `id`, `etabs_unique_name`, `cx`, `cy`, `x` e `y` (como en la plantilla de verificación de la combinada, sin `dowels` ni

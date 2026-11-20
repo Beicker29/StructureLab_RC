@@ -14,7 +14,9 @@ neutras que después reutilizan las vigas.
 El usuario elige entre:
 
 1. Cerrar lo pendiente de cabezales (ver [Cabezales](#cabezales-sobre-pilotes)).
-2. El siguiente tipo de cimentación (ver [Tipos nuevos](#tipos-nuevos-uno-por-vez-d-052-d-055)).
+2. Seguir con el diseño de zapatas (ver [Diseño de zapatas](#diseño-de-zapatas)): la integración de las combinadas con
+   las tipologías ya está (D-153).
+3. El siguiente tipo de cimentación (ver [Tipos nuevos](#tipos-nuevos-uno-por-vez-d-052-d-055)).
 
 ## Validaciones del usuario
 
@@ -54,9 +56,11 @@ Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica
 
 ### Diseño de zapatas
 
-1. Integración de la zapata combinada con el diseño por tipologías (pendiente por decisión del usuario, D-109): todos
-   los nudos de ETABS y la configuración más económica, con los pares de columnas con zapata combinada declarados en la
-   plantilla y la planta de cada tipo; el caso que ubica la base se declara en `placement_case` (D-108, D-137).
+1. Tipologías de zapatas combinadas: agrupar pares parecidos en una misma zapata combinada tipo (hoy, una por par, D-153).
+2. Revisión de la interacción entre zapatas vecinas (hoy la planta de localización solo avisa si se traslapan, D-153).
+   El ejemplo `zapata_centrica_etabs` tiene un traslapo de datos (Z3-566 y Z3-565) que el aviso muestra.
+3. La curva costo–N y la medición de tiempos con los pares de combinadas: hoy solo diseñan las tipologías aisladas
+   (D-153).
 
 ### Zapata combinada en dos direcciones
 

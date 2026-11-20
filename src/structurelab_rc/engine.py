@@ -12,8 +12,9 @@ from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing import combined as combined_design
 from structurelab_rc.design.footing.assignment import available as solver_available
+from structurelab_rc.design.footing.mixed import design_with_pairs, designed_with_pairs
 from structurelab_rc.design.footing.profiling import profile_typologies
-from structurelab_rc.design.footing.typologies import DesignResult, design_typologies, designed_project, typology_curve
+from structurelab_rc.design.footing.typologies import DesignResult, typology_curve
 from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.design.pile_cap import search as pile_cap_design
 from structurelab_rc.detailing.schedule import ScheduleRow, schedule
@@ -531,11 +532,11 @@ def _design_footings(
     if profile:
         result, measurement = profile_typologies(ctx, workers)
     else:
-        result = design_typologies(ctx, workers)
+        result = design_with_pairs(ctx, workers)  # las tipologías y las combinadas de los pares, un solo f'c (D-153)
     if result.fc is None:
         failure = check_from_errors(CHECK_NAME, [invalid_input(f"Sin solucion dentro de los limites: {result.failure}")])
         return None, result, failure, measurement
-    return designed_project(ctx, result), result, validation, measurement
+    return designed_with_pairs(ctx, result), result, validation, measurement
 
 
 

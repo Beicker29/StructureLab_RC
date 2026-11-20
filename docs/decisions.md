@@ -3090,6 +3090,41 @@
 - **Control:** `test_more_than_16_piles_are_out_of_scope`, `test_design_template_rejects_more_than_16_piles` y
   `test_clipped_corners_with_several_columns_are_rejected`.
 
+### D-153: zapatas combinadas dentro del diseño por tipologías (enfoque 2 de D-109)
+
+- **Fecha:** 2026-11-19
+- **Pedido del usuario:** avanzar en la integración de la zapata combinada con el diseño por tipologías, pendiente desde
+  D-109 (enfoque 2 y punto 4, pares de columnas desde ETABS).
+- **Decisiones del usuario:**
+  1. Los pares se declaran en la plantilla de diseño por tipologías (`combined_pairs`): los dos Unique Name, la dirección
+     principal y lo propio del par (por ejemplo `placement_case`); un bloque `combined_design` común. Los nudos de los
+     pares salen de las tipologías aisladas.
+  2. Las posiciones de las columnas de cada par salen de la tabla de coordenadas de ETABS (`etabs_files.locations`), que
+     entonces es obligatoria.
+  3. Una zapata combinada por par (agruparlos en tipologías combinadas queda en la hoja de ruta).
+  4. Un solo f'c para toda la cimentación: cada combinada se diseña en todos los f'c y gana el f'c de menor costo total
+     (aisladas más combinadas). `combined_design` no declara `fc_options` ni `prices`: se toman de `design`.
+- **Reglas propias:** la planta de localización avisa si dos zapatas del mismo nivel se traslapan (el diseño no revisa la
+  interacción entre vecinas; queda en la hoja de ruta). Una combinada sin solución en un f'c deja ese f'c sin solución
+  para toda la cimentación, sin diseñar las aisladas en él.
+- **Código (sin fórmulas nuevas):** `model/template.TemplateCombinedPair` y `combined_design`/`combined_pairs` en la
+  plantilla; `model/design.DesignPair`, `PairColumn`, `pair_project` (el proyecto de la combinada de un par con los
+  modelos ya validados; las reglas de la combinada, en `_combined_rules`) y `combined_footings` en el proyecto de diseño;
+  `io/etabs/footings._design_pairs`; `design/footing/mixed.py` (diseña los pares y pasa su costo por f'c al diseño por
+  tipologías, `design_typologies(extra=...)`); `engine` y la CLI (resumen con las combinadas, su costo y el total);
+  `domain/footing/drawing._overlaps`.
+- **Ejemplo:** `diseno_tipologias_combinadas_etabs.json` en `zapatas/aislada/` y su copia en `pruebas/`, en los dos
+  perfiles: los 6 apoyos de CIM_ST1''_N-2.918 de los Excel de pruebas, el par 12-20 en ZC1 (Y global) y 4 aisladas en 2
+  tipologías, método `dp`. Entra en la huella (se importa, se diseña y se verifica: PASS).
+- **Efecto en los ejemplos existentes:** el aviso de traslapo aparece en la planta de `zapata_centrica_etabs` (pruebas,
+  los dos perfiles): las zapatas Z3-566 y Z3-565 de la plantilla se traslapan. Cambia solo su `_drawing.json`; ningún
+  resultado ni otra huella cambian.
+- **Control:** `tests/test_typology_combined.py`: el importador arma el par con las posiciones de ETABS; el diseño
+  integrado da las mismas tipologías que las aisladas solas con el f'c elegido y la misma combinada que su diseño con
+  ese f'c, y ese f'c es el de menor costo total; validaciones de la plantilla y del proyecto; la tabla de coordenadas es
+  obligatoria con pares; aviso de traslapo en la planta. No hay oráculo nuevo: no hay cálculo nuevo, y los de la
+  combinada (`derive_combined_design.py`) y de las tipologías siguen cubriendo cada parte.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

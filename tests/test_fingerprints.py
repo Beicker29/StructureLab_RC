@@ -47,6 +47,10 @@ COMBINED_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
 # las plantillas de diseño (diseno_*, D-141) se diseñan después de importarlas.
 CAP_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
                          for path in (ROOT / "examples").glob("*/cabezales/**/pruebas/*_etabs.json")))
+# Diseño por tipologías con una zapata combinada (D-153): 6 apoyos de un nivel de los Excel de pruebas, con la tabla de
+# coordenadas; se importa, se diseña y se verifica.
+TYPOLOGY_ETABS = tuple(sorted(str(path.relative_to(ROOT).as_posix())
+                              for path in (ROOT / "examples").glob("*/zapatas/**/pruebas/diseno_tipologias_combinadas_etabs.json")))
 WORKBOOK = ROOT / "examples" / "etabs" / "vigas" / "pruebas" / "Element Forces - Beams.xlsx"
 REACTIONS = (ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Servicio.xlsx",
              ROOT / "examples" / "etabs" / "zapatas" / "pruebas" / "Joint Reactions - Ultimas.xlsx")
@@ -56,7 +60,7 @@ UPDATE = os.environ.get("STRUCTURELAB_UPDATE_FINGERPRINTS") == "1"
 def _fingerprint(name: str, work: Path) -> dict[str, str]:
     project = ROOT / name
     files = ("resultado.json", "memoria.txt")
-    if Path(name).name.startswith("diseno_") and name not in COMBINED_ETABS and name not in CAP_ETABS:
+    if Path(name).name.startswith("diseno_") and name not in (*COMBINED_ETABS, *CAP_ETABS, *TYPOLOGY_ETABS):
         # Diseño por tipologías (D-069), de la zapata combinada (D-107, un proceso por f'c, sin cambiar el resultado) o de
         # cabezales (D-141):
         # huella del proyecto diseñado y de su verificación.
@@ -70,6 +74,19 @@ def _fingerprint(name: str, work: Path) -> dict[str, str]:
         assert data is not None, name
         project = work / "proyecto.json"
         project.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+        report_file(project, work / Path(name).stem)
+        return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **_digests(work / Path(name).stem, files)}
+    if name in TYPOLOGY_ETABS:
+        declared = json.loads(project.read_text(encoding="utf-8"))["etabs_files"]
+        excel = {key: (project.parent / value).resolve() for key, value in declared.items()}
+        imported = import_etabs_footings(excel["service"], excel["factored"], project, excel["locations"])[0]
+        assert imported is not None, name
+        project = work / "etabs.json"
+        project.write_text(json.dumps(imported, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+        designed = design_footings(project)[0]
+        assert designed is not None, name
+        project = work / "proyecto.json"
+        project.write_text(json.dumps(designed, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         report_file(project, work / Path(name).stem)
         return {"proyecto.json": hashlib.sha256(project.read_bytes()).hexdigest(), **_digests(work / Path(name).stem, files)}
     if name in CAP_ETABS:
@@ -108,7 +125,7 @@ def _digests(folder: Path, files: tuple[str, ...]) -> dict[str, str]:
     return {name: hashlib.sha256((folder / name).read_bytes()).hexdigest() for name in names}
 
 
-@pytest.mark.parametrize("name", [*EXAMPLES, *ETABS, *COMBINED_ETABS, *CAP_ETABS])
+@pytest.mark.parametrize("name", [*EXAMPLES, *ETABS, *COMBINED_ETABS, *CAP_ETABS, *TYPOLOGY_ETABS])
 def test_fingerprint_is_stable(name: str, tmp_path: Path) -> None:
     current = _fingerprint(name, tmp_path)
     stored = json.loads(FINGERPRINTS.read_text(encoding="utf-8")) if FINGERPRINTS.exists() else {}

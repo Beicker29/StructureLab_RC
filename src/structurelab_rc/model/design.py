@@ -178,15 +178,25 @@ class FootingDesignProject(_Input):
     curve: CurveSettings | None = None  # solo el ejemplo de la curva costo–N (D-096)
     detailing: DetailingSettings | None = None  # D-127: con él, el costo sale de la cartilla y el proyecto diseñado lo lleva
     drawing: DrawingSettings | None = None  # D-127: pasa al proyecto diseñado; requiere detailing (D-126)
+    combined_footings: tuple["DesignPair", ...] = ()  # D-153: pares de columnas en zapata combinada, una por par
 
     @model_validator(mode="after")
     def _check(self) -> Self:
         ids = [column.id for column in self.columns]
+        ids += [column.id for pair in self.combined_footings for column in pair.columns]
         if len(ids) != len(set(ids)):
-            raise ValueError("los identificadores de las columnas deben ser únicos")
+            raise ValueError("los identificadores de las columnas deben ser únicos (también entre las aisladas y las combinadas)")
+        pairs = [pair.id for pair in self.combined_footings]
+        if len(pairs) != len(set(pairs)):
+            raise ValueError("los identificadores de las zapatas combinadas deben ser únicos")
         if self.design.typologies > len(self.columns):
             raise ValueError("hay más tipologías que columnas")
         _check_drawing(self.detailing, self.drawing)
+        for pair in self.combined_footings:
+            # Un solo f'c para toda la cimentación (D-153): las combinadas prueban los mismos f'c que las aisladas.
+            if sorted(pair.combined_design.fc_options) != sorted(self.design.fc_options):
+                raise ValueError(f"la zapata combinada '{pair.id}' debe probar los mismos f'c que design.fc_options (D-153)")
+            pair_project(self, pair)  # los casos, placement_case y el resto del diseño de la combinada se validan ya
         return self
 
 
@@ -277,24 +287,65 @@ class CombinedDesignProject(_Input):
 
     @model_validator(mode="after")
     def _check(self) -> Self:
-        _check_drawing(self.detailing, self.drawing)
-        first, second = self.columns
-        if first.id == second.id:
-            raise ValueError("los identificadores de las columnas deben ser únicos")
-        keys = [{(load.kind, load.case): (load.dead_factor, load.live_factor, load.seismic) for load in column.loads}
-                for column in self.columns]
-        if any(len(own) != len(column.loads) for own, column in zip(keys, self.columns, strict=True)) or keys[0] != keys[1]:
-            raise ValueError("las dos columnas deben tener los mismos casos de carga, sin repetir, con los mismos factores y "
-                             "la misma marca de sismo")
-        chosen = self.combined_design.placement_case
-        if chosen is not None:
-            facts = keys[0].get(("service", chosen))
-            if facts is None:
-                raise ValueError(f"placement_case '{chosen}' no es un caso de servicio de las columnas (D-108)")
-            if facts[2]:
-                raise ValueError(f"placement_case '{chosen}' es un caso con sismo: la base se ubica con un caso sostenido (D-108)")
-        elif not any(kind == "service" and not facts[2] for (kind, _), facts in keys[0].items()):
-            raise ValueError("la ubicación de la base necesita un caso de servicio sin sismo (D+L, D-107)")
-        if not any(kind == "factored" for kind, _ in keys[0]):
-            raise ValueError("el diseño necesita casos mayorados")
+        _combined_rules(self)
         return self
+
+
+def _combined_rules(project: CombinedDesignProject) -> None:
+    """Las reglas propias del proyecto de la combinada: columnas distintas, los mismos casos en las dos, placement_case
+    de servicio sin sismo (D-108) y casos mayorados."""
+    _check_drawing(project.detailing, project.drawing)
+    first, second = project.columns
+    if first.id == second.id:
+        raise ValueError("los identificadores de las columnas deben ser únicos")
+    keys = [{(load.kind, load.case): (load.dead_factor, load.live_factor, load.seismic) for load in column.loads}
+            for column in project.columns]
+    if any(len(own) != len(column.loads) for own, column in zip(keys, project.columns, strict=True)) or keys[0] != keys[1]:
+        raise ValueError("las dos columnas deben tener los mismos casos de carga, sin repetir, con los mismos factores y "
+                         "la misma marca de sismo")
+    chosen = project.combined_design.placement_case
+    if chosen is not None:
+        facts = keys[0].get(("service", chosen))
+        if facts is None:
+            raise ValueError(f"placement_case '{chosen}' no es un caso de servicio de las columnas (D-108)")
+        if facts[2]:
+            raise ValueError(f"placement_case '{chosen}' es un caso con sismo: la base se ubica con un caso sostenido (D-108)")
+    elif not any(kind == "service" and not facts[2] for (kind, _), facts in keys[0].items()):
+        raise ValueError("la ubicación de la base necesita un caso de servicio sin sismo (D+L, D-107)")
+    if not any(kind == "factored" for kind, _ in keys[0]):
+        raise ValueError("el diseño necesita casos mayorados")
+
+
+class PairColumn(CombinedDesignColumn):
+    """Columna de un par del diseño por tipologías (D-153): la de la combinada con su ubicación de ETABS (D-130)."""
+
+    location: Location | None = None
+
+
+class DesignPair(_Input):
+    """Un par de columnas en zapata combinada dentro del diseño por tipologías (D-153): se diseña con el diseño de la
+    combinada (D-107, D-110, D-113), con sus dos columnas ubicadas en ejes globales (de la tabla de coordenadas de
+    ETABS), su dirección principal y su bloque combined_design (el común de la plantilla con lo propio del par)."""
+
+    id: str = Field(min_length=1)
+    principal_direction: Literal["x", "y"]
+    combined_design: CombinedDesign
+    columns: tuple[PairColumn, PairColumn]
+
+
+def pair_project(project: FootingDesignProject, pair: DesignPair) -> CombinedDesignProject:
+    """El proyecto de diseño de la combinada de un par (D-153), con los datos comunes del diseño por tipologías. Se arma
+    con los modelos ya validados (en unidades internas) y se le aplican las reglas propias del proyecto de la combinada
+    (los mismos casos en las dos columnas, placement_case, casos mayorados)."""
+    combined = CombinedDesignProject.model_construct(
+        description=f"Zapata combinada {pair.id} del diseño por tipologías (D-153).", profile=project.profile,
+        seismic=project.seismic, materials=project.materials, soil=project.soil, principal_direction=pair.principal_direction,
+        combined_design=pair.combined_design, columns=pair.columns, detailing=project.detailing, drawing=project.drawing)
+    try:
+        _combined_rules(combined)
+    except ValueError as error:
+        raise ValueError(f"la zapata combinada '{pair.id}': {error}") from error
+    return combined
+
+
+FootingDesignProject.model_rebuild()

@@ -158,6 +158,8 @@ class _Placed:
     typology: str
     row: list[str]
     entities: list[Entity] = field(default_factory=list)
+    box: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)  # contorno de la base en ejes globales (x0, y0, x1, y1)
+    name: str = ""  # la zapata, para los avisos del plano
 
 
 def _mat_text(mat: Mat | None, swap: bool = False) -> str:
@@ -194,7 +196,7 @@ def _isolated_place(drawing: Drawing, footing: FootingBody) -> _Placed:
     entities = _outline(drawing, centre, (footing.lx, footing.ly), columns, typology)
     row = [typology, f"{metres(footing.lx)} x {metres(footing.ly)} x {metres(footing.h)}", _mat_text(footing.bottom),
            _mat_text(footing.top)]
-    return _Placed(location.story, typology, row, entities)
+    return _Placed(location.story, typology, row, entities, _box(centre, (footing.lx, footing.ly)), footing.id)
 
 
 def _combined_place(drawing: Drawing, footing: CombinedFooting) -> _Placed:
@@ -222,7 +224,27 @@ def _combined_place(drawing: Drawing, footing: CombinedFooting) -> _Placed:
     assert first is not None
     row = [footing.id, f"{metres(size[0])} x {metres(size[1])} x {metres(footing.total_height)}", _mat_text(footing.bottom, rotated),
            "ver despiece"]
-    return _Placed(first.story, footing.id, row, entities)
+    return _Placed(first.story, footing.id, row, entities, _box(centre, size), footing.id)
+
+
+def _box(centre: tuple[float, float], size: tuple[float, float]) -> tuple[float, float, float, float]:
+    (x, y), (width, depth) = centre, size
+    return x - width / 2, y - depth / 2, x + width / 2, y + depth / 2
+
+
+def _overlaps(drawing: Drawing, placed: list[_Placed]) -> list[Entity]:
+    """Aviso en el plano de cada par de zapatas del mismo nivel cuyas bases se traslapan (D-153): el diseño no revisa la
+    interacción entre zapatas vecinas."""
+    small = drawing.text_height(small=True)
+    warnings: list[Entity] = []
+    for index, first in enumerate(placed):
+        for second in placed[index + 1:]:
+            a, b = first.box, second.box
+            if first.story == second.story and a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]:
+                x, y = (max(a[0], b[0]) + min(a[2], b[2])) / 2, (max(a[1], b[1]) + min(a[3], b[3])) / 2
+                warnings.append(Text(LABELS, (x, y), f"ADVERTENCIA: se traslapan {first.name} y {second.name}", small,
+                                     align="center"))
+    return warnings
 
 
 def _natural(name: str) -> list[tuple[int, str]]:
@@ -244,8 +266,9 @@ def location_views(drawing: Drawing, footings: Sequence[FootingBody], combined: 
         return []
     views = []
     for story in sorted({item.story for item in placed}):
+        own = [item for item in placed if item.story == story]
         view = View(_file_name(story), f"Planta de localizacion {story}",
-                    [entity for item in placed if item.story == story for entity in item.entities])
+                    [*(entity for item in own for entity in item.entities), *_overlaps(drawing, own)])
         views.append(titled(drawing, view))
     counts: dict[str, int] = {}
     rows: dict[str, list[str]] = {}

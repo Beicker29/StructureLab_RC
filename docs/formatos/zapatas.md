@@ -228,6 +228,14 @@ una variable del diseño. `soil` es igual que en la verificación.
 | `design.ends` | objeto | Cómo terminan las barras que se diseñan (D-134): `bottom` (malla inferior), `top` (malla superior) y `dowels` (pie de los pasadores), cada uno `straight`, `hook90`, `hook180` o `hook135`. |
 | `design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `design.method` | texto | `milp_iter` (por defecto desde E3b: iterativo, sin tabla de tramos, D-077), `milp` (asignación óptima sobre la tabla completa de tramos, D-075) o `dp` (solo la partición y la reasignación). `milp_iter` y `milp` requieren `pip install structurelab-rc[opt]`. `--method` en la CLI lo reemplaza. |
+| `combined_footings[]` | lista | Opcional (D-153): pares de columnas en zapata combinada, una por par: `id`, `principal_direction`, `combined_design` (el bloque del [diseño de la combinada](#diseño-de-la-zapata-combinada-diseno_combinadajson-comando-design-combined-d-107), con los mismos `fc_options` que `design`) y las dos `columns` (`id`, `cx`, `cy`, `x`, `y` en ejes globales, `location` opcional y `loads`). Lo arma el importador desde `combined_pairs` de la plantilla ([ETABS](etabs.md)). |
+
+**Con zapatas combinadas (D-153).** Cada par se diseña con el diseño de la combinada en todos los f'c, y el diseño por
+tipologías elige el f'c de menor costo total (aisladas más combinadas): un solo f'c para toda la cimentación. El
+proyecto diseñado lleva `footings` y `combined_footings` (cada combinada con la ubicación de sus columnas), y
+`tipologias.json` agrega `combined_footings` (el resumen de cada una en el f'c elegido), `combined_cost` y `total_cost`.
+La planta de localización avisa si dos zapatas del mismo nivel se traslapan: el diseño no revisa la interacción entre
+zapatas vecinas.
 | `design.milp_time_limit_s` | s | Límite de tiempo del MILP (por f'c con `milp`; por solución con `milp_iter`; por defecto 120). |
 | `design.iter_max` | - | Con `milp_iter`: iteraciones por f'c (por defecto 10). |
 | `design.iter_time_limit_s` | s | Con `milp_iter`: tiempo por f'c (por defecto 600). |

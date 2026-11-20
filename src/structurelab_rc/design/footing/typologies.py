@@ -20,7 +20,7 @@ entre procesos y la partición consulta la tabla ya calculada. El resultado es e
 import itertools
 import math
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -134,6 +134,8 @@ class DesignResult:
     milp: MilpInfo | None = None
     iterations: tuple[Iteration, ...] = ()
     cost_basis: str = ""  # de dónde sale el acero del costo (COST_BASIS, D-127)
+    combined: tuple[Any, ...] = ()  # las zapatas combinadas de los pares (design/footing/mixed.PairDesign, D-153)
+    combined_cost: float = 0.0  # su costo en el f'c elegido; cost es el de las aisladas
 
 
 def _duplicates(ctx: Context, typologies: Sequence[TypologyResult]) -> tuple[Duplicate, ...]:
@@ -555,12 +557,14 @@ def _largest(singles: dict[str, GroupDesign], members: Sequence[DesignColumn]) -
                     max(t.h for t in typologies), widest.bottom, widest.top)
 
 
-def design_typologies(ctx: Context, workers: int = 1) -> DesignResult:
-    """workers: procesos entre los que se reparte el diseño (1: en este proceso); no cambia el resultado."""
+def design_typologies(ctx: Context, workers: int = 1, extra: Mapping[float, float] | None = None) -> DesignResult:
+    """workers: procesos entre los que se reparte el diseño (1: en este proceso); no cambia el resultado. extra: el costo
+    de lo demás de la cimentación en cada f'c (las zapatas combinadas, D-153), que entra en la elección del f'c; con
+    infinito, ese f'c no tiene solución y no se diseña."""
     if workers <= 1:
-        return _design(ctx, lambda tasks: [_run(ctx, task) for task in tasks])
+        return _design(ctx, lambda tasks: [_run(ctx, task) for task in tasks], extra=extra)
     with ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(ctx.project, tuple(ctx.bars))) as pool:
-        return _design(ctx, lambda tasks: _in_pool(pool, tasks, workers))
+        return _design(ctx, lambda tasks: _in_pool(pool, tasks, workers), extra=extra)
 
 
 @dataclass(frozen=True)
@@ -615,11 +619,18 @@ def _in_pool(pool: Executor, tasks: list[Task], workers: int) -> list[Any]:
 Solver = Callable[[Context, float, Runner], "_FcSolution | str"]
 
 
-def _design(ctx: Context, run: Runner, solve: Solver = _for_fc) -> DesignResult:
+def _design(ctx: Context, run: Runner, solve: Solver = _for_fc, extra: Mapping[float, float] | None = None) -> DesignResult:
+    """El f'c de menor costo total: el de las tipologías más extra[f'c] (lo demás de la cimentación, D-153)."""
+    added = extra or {}
     best: tuple[float, _FcSolution] | None = None
     failures = []
     options = []
     for fc in sorted(ctx.design.fc_options):
+        if math.isinf(added.get(fc, 0.0)):  # las combinadas no tienen solución con este f'c (D-153)
+            reason = f"f'c = {fc:g} MPa: alguna zapata combinada no tiene solucion"
+            failures.append(reason)
+            options.append(FcOption(fc, None, None, reason))
+            continue
         outcome = solve(ctx, fc, run)
         if isinstance(outcome, str):
             failures.append(outcome)
@@ -627,7 +638,7 @@ def _design(ctx: Context, run: Runner, solve: Solver = _for_fc) -> DesignResult:
             continue
         options.append(FcOption(fc, outcome.total, _distinct_count([design.typology for design, _ in outcome.chosen]),
                                 milp=outcome.milp, iterations=outcome.iterations))
-        if best is None or outcome.total < best[1].total:
+        if best is None or outcome.total + added.get(fc, 0.0) < best[1].total + added.get(best[0], 0.0):
             best = (fc, outcome)
     if best is None:
         return DesignResult(None, (), math.inf, "; ".join(failures), options=tuple(options))

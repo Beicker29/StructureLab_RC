@@ -244,10 +244,29 @@ class TemplateColumns(_Input):
     cy: PositiveFloat
 
 
+class TemplateCombinedPair(_Input):
+    """Un par de columnas en zapata combinada dentro del diseño por tipologías (D-153): el id de la zapata, los Unique
+    Name de sus dos nudos (que deben estar en columns, de donde sale su sección), la dirección principal (el eje global de
+    la viga que las une) y lo propio del par sobre combined_design de la plantilla (por ejemplo placement_case, shape o
+    los voladizos máximos). Las posiciones salen de la tabla de coordenadas de ETABS."""
+
+    id: str = Field(min_length=1)
+    etabs_unique_names: tuple[str, str]
+    principal_direction: Literal["x", "y"]
+    design: dict[str, Any] = Field(default_factory=dict)
+
+
+# Lo que las combinadas toman del bloque design de las tipologías (D-153): un solo f'c para toda la cimentación y los
+# mismos precios.
+SHARED_DESIGN = ("fc_options", "prices")
+
+
 class EtabsFootingDesignTemplate(_Input):
     """Plantilla de diseño de zapatas por tipologías: el bloque design y las columnas; la asignación a tipologías la
     hace el diseño (D-069). soil y design se validan con el proyecto de diseño que se genera. Solo entran los Unique Name
-    de columns; exclude_unique_names quita algunos de ellos sin borrarlos de su grupo (D-111)."""
+    de columns; exclude_unique_names quita algunos de ellos sin borrarlos de su grupo (D-111). combined_pairs declara los
+    pares de columnas que van en zapata combinada, diseñadas con combined_design (D-153): sus nudos salen de las
+    tipologías aisladas."""
 
     @model_validator(mode="before")
     @classmethod
@@ -264,6 +283,8 @@ class EtabsFootingDesignTemplate(_Input):
     design: dict[str, Any]
     columns: tuple[TemplateColumns, ...] = Field(min_length=1)
     exclude_unique_names: tuple[str, ...] = ()
+    combined_design: dict[str, Any] | None = None  # D-153: lo común de las combinadas (sin fc_options ni prices)
+    combined_pairs: tuple[TemplateCombinedPair, ...] = ()  # D-153
     etabs_files: FootingEtabsFiles | None = None
     detailing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
     drawing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
@@ -276,8 +297,25 @@ class EtabsFootingDesignTemplate(_Input):
         unknown = sorted(set(self.exclude_unique_names) - set(names))
         if unknown:
             raise ValueError(f"exclude_unique_names nombra Unique Name que no estan en columns: {', '.join(unknown)}")
+        paired = [name for pair in self.combined_pairs for name in pair.etabs_unique_names]
+        if len(set(paired)) != len(paired):
+            raise ValueError("un Unique Name aparece en dos pares de combined_pairs")
+        outside = sorted(set(paired) - set(names))
+        if outside:
+            raise ValueError(f"combined_pairs nombra Unique Name que no estan en columns (de alli sale su seccion): {', '.join(outside)}")
+        excluded = sorted(set(paired) & set(self.exclude_unique_names))
+        if excluded:
+            raise ValueError(f"combined_pairs nombra Unique Name excluidos: {', '.join(excluded)}")
         if set(names) <= set(self.exclude_unique_names):
             raise ValueError("exclude_unique_names quita todos los Unique Name de columns")
+        if set(names) <= set(self.exclude_unique_names) | set(paired):
+            raise ValueError("combined_pairs y exclude_unique_names no dejan ninguna columna para las tipologias aisladas")
+        if self.combined_pairs and self.combined_design is None:
+            raise ValueError("combined_pairs necesita el bloque combined_design (D-153)")
+        if any(set(pair.design) & set(SHARED_DESIGN) for pair in self.combined_pairs) or (
+                self.combined_design is not None and set(self.combined_design) & set(SHARED_DESIGN)):
+            raise ValueError(f"combined_design y los pares no declaran {' ni '.join(SHARED_DESIGN)}: las combinadas usan los de "
+                             "design (un solo f'c para toda la cimentacion, D-153)")
         return self
 
 

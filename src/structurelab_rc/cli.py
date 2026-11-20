@@ -7,6 +7,7 @@ import os
 import platform
 import sys
 from collections.abc import Callable, Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -158,11 +159,22 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
          "h [mm]": item.design.typology.h, "bottom": item.design.typology.bottom, "top": item.design.typology.top,
          "columns": list(item.columns), "dowels": item.design.dowels, "concrete [m3]": round(item.design.concrete, 3),
          "steel [kg]": round(item.design.steel, 1), "cost": round(item.design.cost, 2)} for item in result.typologies]}
+    if result.combined:  # D-153: las combinadas de los pares, en el f'c elegido, y el costo de toda la cimentación
+        summary["combined_footings"] = [{"id": pair.pair.id, **_combined_summary(replace(pair.result, best=pair.solution),
+                                                                                pair.result.placement)} for pair in result.combined]
+        summary["combined_cost"] = round(result.combined_cost, 2)
+        summary["total_cost"] = round(result.cost + result.combined_cost, 2)
     (output / "tipologias.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"f'c = {result.fc:g} MPa; {len(result.typologies)} tipologias; costo total {result.cost:.2f} (acero: {result.cost_basis})")
     for item in result.typologies:
         t = item.design.typology
         print(f"  {item.name}: {t.lx:.0f} x {t.ly:.0f} x {t.h:.0f} mm; {len(item.columns)} columnas: {', '.join(item.columns)}")
+    for pair in result.combined:  # D-153
+        g = pair.solution.geometry
+        print(f"  {pair.pair.id} (combinada): {g.length:g} x {g.width:g} x {g.h:g} mm; columnas "
+              f"{', '.join(column.id for column in pair.pair.columns)}; costo {pair.solution.cost:.2f}")
+    if result.combined:
+        print(f"Costo de la cimentacion (aisladas y combinadas, un solo f'c): {result.cost + result.combined_cost:.2f}")
     if result.reassigned:
         print(f"Reasignadas {len(result.reassigned)} columnas; costo antes de reasignar {result.cost_before_reassignment:.2f}")
     if result.milp is not None:

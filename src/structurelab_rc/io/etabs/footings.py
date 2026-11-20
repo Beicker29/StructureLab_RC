@@ -22,7 +22,13 @@ from structurelab_rc.io.etabs.combinations import Combination
 from structurelab_rc.io.etabs.importer import EtabsImportError, case_label
 from structurelab_rc.io.etabs.xlsx import Table
 from structurelab_rc.model.layout import public
-from structurelab_rc.model.template import EtabsCombinedDesignTemplate, EtabsFootingDesignTemplate, EtabsFootingTemplate, LoadFactors
+from structurelab_rc.model.template import (
+    SHARED_DESIGN,
+    EtabsCombinedDesignTemplate,
+    EtabsFootingDesignTemplate,
+    EtabsFootingTemplate,
+    LoadFactors,
+)
 
 KINDS = {"service": "servicio", "factored": "cargas mayoradas"}
 BOTH = ("service", "factored")
@@ -231,7 +237,8 @@ def build_footing_design_project(
 ) -> tuple[dict[str, Any], FootingImportSummary]:
     """Proyecto de diseño por tipologías (D-069): una columna por nudo listado y no excluido, con su sección, sus casos
     de carga y, con la tabla de coordenadas, su ubicación (D-130). Los Unique Name de los Excel que no entran se avisan
-    en el resumen y en la descripción (D-111)."""
+    en el resumen y en la descripción (D-111). Los nudos de combined_pairs van a su zapata combinada (D-153), con su
+    posición de la tabla de coordenadas, que entonces es obligatoria."""
     excluded = set(template.exclude_unique_names)
     groups: list[Group] = [(str(index), tuple(name for name in group.etabs_unique_names if name not in excluded), BOTH)
                            for index, group in enumerate(template.columns)]
@@ -239,10 +246,14 @@ def build_footing_design_project(
     joints, skipped, ignored = joint_loads(combinations, {"service": service, "factored": factored}, groups)
     locations = locations_by_joint(coordinates, [joint.unique_name for joint in joints])
     sections = {str(index): group for index, group in enumerate(template.columns)}
+    paired = {name for pair in template.combined_pairs for name in pair.etabs_unique_names}
     columns = [{"id": joint.label, "cx": sections[joint.group].cx, "cy": sections[joint.group].cy,
-                **_located(locations, joint.unique_name), "loads": joint.loads} for joint in joints]
-    project = template.model_dump(mode="json", exclude={"columns", "etabs_files", "exclude_unique_names"})
+                **_located(locations, joint.unique_name), "loads": joint.loads} for joint in joints if joint.unique_name not in paired]
+    project = template.model_dump(mode="json", exclude={"columns", "etabs_files", "exclude_unique_names", "combined_design",
+                                                        "combined_pairs"})
     project["columns"] = columns
+    if template.combined_pairs:
+        project["combined_footings"] = _design_pairs(template, {joint.unique_name: joint for joint in joints}, sections, locations)
     used = {joint.unique_name for joint in joints}
     present = {row["Unique Name"] for table in (service, factored) if table is not None for row in table.rows
                if row.get("Case Type") == "Combination"}
@@ -251,6 +262,31 @@ def build_footing_design_project(
         project["description"] = (f"{project['description']} Unique Name de ETABS que no entran al diseño (no listados o "
                                   f"excluidos): {', '.join(omitted)}.")
     return public(project), replace(_summary(columns, skipped, ignored), omitted=omitted)
+
+
+def _design_pairs(template: EtabsFootingDesignTemplate, joints: dict[str, _Joint], sections: dict[str, Any],
+                  locations: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Las zapatas combinadas del diseño por tipologías (D-153): cada par con sus dos columnas (sección de su grupo,
+    posición y ubicación de la tabla de coordenadas, cargas de su nudo) y su combined_design: el común de la plantilla
+    con lo propio del par y, del bloque design, los f'c y los precios."""
+    assert template.combined_design is not None
+    shared = {key: template.design[key] for key in SHARED_DESIGN if key in template.design}
+    missing = sorted(name for pair in template.combined_pairs for name in pair.etabs_unique_names if name not in locations)
+    if missing:
+        raise EtabsImportError((invalid_input(
+            "Las zapatas combinadas de combined_pairs toman la posicion de sus columnas de la tabla de coordenadas de ETABS: "
+            f"declarela en etabs_files.locations; faltan los Unique Name {', '.join(missing)} (D-153)"),))
+    pairs = []
+    for pair in template.combined_pairs:
+        columns = []
+        for name in pair.etabs_unique_names:
+            joint, location = joints[name], locations[name]
+            section = sections[joint.group]
+            columns.append({"id": joint.label, "cx": section.cx, "cy": section.cy, "x": location["x"], "y": location["y"],
+                            "location": location, "loads": joint.loads})
+        design: dict[str, Any] = {**template.combined_design, **pair.design, **shared}
+        pairs.append({"id": pair.id, "principal_direction": pair.principal_direction, "combined_design": design, "columns": columns})
+    return pairs
 
 
 def _natural(name: str) -> tuple[int, str]:
