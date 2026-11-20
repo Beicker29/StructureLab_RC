@@ -1,12 +1,28 @@
 """Vista previa en SVG de una vista del modelo de dibujo (D-126), sin dependencias: el eje y del modelo hacia arriba se
 invierte para el SVG y el grosor de línea es el de la capa en papel, por la escala."""
 
+import math
 from html import escape
 
-from structurelab_rc.drawing.model import Circle, Dimension, Leader, Line, Polyline, Text, View, dimension_line, layer_style
+from structurelab_rc.drawing.model import (
+    DISTRIBUTION,
+    PAPER_ARROW,
+    ZONE_COLOR,
+    Circle,
+    Dimension,
+    Leader,
+    Line,
+    Polyline,
+    Text,
+    View,
+    dimension_line,
+    layer_style,
+)
 
 _WIDTH = 800.0  # px de ancho del SVG
 _MARGIN = 0.04  # fracción del tamaño de la vista
+_GRAY = "#a6a6a6"  # el ACI 252 de las divisiones de zona
+_ARROW = 3.75  # mm de papel: largo de la flecha de las líneas de distribución (el dimasz de DIM-75 a su escala)
 
 
 def view_svg(view: View, scale: float) -> tuple[str, float]:
@@ -29,6 +45,8 @@ def view_svg(view: View, scale: float) -> tuple[str, float]:
             points = " ".join(f"{x:.1f},{-y:.1f}" for x, y in entity.points)
             tag = "polygon" if entity.closed else "polyline"
             dash = f' stroke-dasharray="{6 * scale:.0f} {3 * scale:.0f}"' if entity.dashed else ""
+            if entity.color == ZONE_COLOR:  # las divisiones de zona, en gris (D-158)
+                stroke = stroke.replace(f'stroke="{color}"', f'stroke="{_GRAY}"')
             paint = f'fill="{color}" stroke="none"' if entity.filled else stroke
             parts.append(f'<{tag} points="{points}" {paint}{dash}/>')
         elif isinstance(entity, Circle):
@@ -43,13 +61,35 @@ def view_svg(view: View, scale: float) -> tuple[str, float]:
                          f'text-anchor="{anchor}"{rotate}>{escape(entity.text)}</text>')
         elif isinstance(entity, Leader):
             (x, y) = entity.at
-            parts += [f'<line x1="{tx:.1f}" y1="{-ty:.1f}" x2="{x:.1f}" y2="{-y:.1f}" {stroke}/>' for tx, ty in entity.targets]
+            for target in entity.targets:
+                parts.append(f'<line x1="{target[0]:.1f}" y1="{-target[1]:.1f}" x2="{x:.1f}" y2="{-y:.1f}" {stroke}/>')
+                parts.append(_arrow(target, (x, y), color, PAPER_ARROW * scale))
             parts.append(f'<text x="{x + entity.height * 0.3:.1f}" y="{-y + entity.height * 0.35:.1f}" font-size="{entity.height:.1f}" '
                          f'fill="{color}">{escape(entity.text)}</text>')
         elif isinstance(entity, Dimension):
-            parts += _dimension_svg(entity, stroke, color)
+            distribution = entity.layer == DISTRIBUTION
+            parts += _distribution_svg(entity, stroke, color, scale) if distribution else _dimension_svg(entity, stroke, color)
     parts.append("</svg>")
     return "\n".join(parts) + "\n", aspect
+
+
+def _distribution_svg(dimension: Dimension, stroke: str, color: str, scale: float) -> list[str]:
+    """Una línea de distribución (D-158): a trazos, con una flecha cerrada en cada extremo y sin texto."""
+    (sx, sy), (ex, ey) = dimension.start, dimension.end
+    dash = f'stroke-dasharray="{6 * scale:.0f} {3 * scale:.0f}"'
+    parts = [f'<line x1="{sx:.1f}" y1="{-sy:.1f}" x2="{ex:.1f}" y2="{-ey:.1f}" {stroke} {dash}/>']
+    parts += [_arrow((sx, sy), (ex, ey), color, _ARROW * scale), _arrow((ex, ey), (sx, sy), color, _ARROW * scale)]
+    return parts
+
+
+def _arrow(tip: tuple[float, float], toward: tuple[float, float], color: str, size: float) -> str:
+    """Una flecha cerrada de largo size con la punta en tip, mirando desde toward (distribución y rótulos, D-158)."""
+    (px, py), half = tip, size / 3
+    length = math.hypot(toward[0] - px, toward[1] - py) or 1.0
+    dx, dy = (toward[0] - px) / length, (toward[1] - py) / length
+    wing = [(px + dx * size - dy * half, py + dy * size + dx * half), (px + dx * size + dy * half, py + dy * size - dx * half)]
+    points = " ".join(f"{x:.1f},{-y:.1f}" for x, y in [(px, py), *wing])
+    return f'<polygon points="{points}" fill="{color}" stroke="none"/>'
 
 
 def _dimension_svg(dimension: Dimension, stroke: str, color: str) -> list[str]:

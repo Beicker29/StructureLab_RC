@@ -69,6 +69,11 @@ PAPER_SMALL = 2.0  # mm de papel: textos de cotas, rótulos y tablas
 PAPER_SUBTITLE = 3.0  # mm de papel: título de cada vista
 PAPER_TITLE = 6.0  # mm de papel: título de cada elemento
 PAPER_GAP = 8.0  # mm de papel: separación de cotas y llamadas
+PAPER_MARK = 1.25  # mm de papel: radio de la marca de una barra sobre su línea de distribución (D-158)
+PAPER_STUB = 18.0  # mm de papel: alto del arranque de columna en un alzado (D-158)
+PAPER_ARROW = 2.5  # mm de papel: flecha de los rótulos con llamada, como el MULTILEADER de la referencia (D-158)
+BASE_SCALE = 50.0  # la escala de la plantilla DXF: sus estilos y tipos de línea se multiplican por escala/BASE_SCALE
+ZONE_COLOR = 252  # ACI de las divisiones de zona (D-158)
 _CM = 10.0  # mm: una longitud múltiplo de 1 cm se escribe con dos decimales; si no, con tres
 _ROUND_OFF = 0.05  # mm: diferencia con el múltiplo de 1 cm que se toma como redondeo
 
@@ -95,6 +100,7 @@ class Polyline:
     closed: bool = False
     dashed: bool = False
     filled: bool = False  # cerrada y rellena (las columnas en planta): el DXF la sombrea y dibuja el contorno en OUTLINE
+    color: int | None = None  # color ACI propio (el gris 252 de las divisiones de zona, D-158); None: el de la capa
 
 
 @dataclass(frozen=True)
@@ -113,6 +119,9 @@ class Text:
     height: float
     align: str = "left"  # left, center o right
     rotation: float = 0.0  # grados, antihorario: 90 en los rótulos de las barras a lo largo de y
+    # Rótulo de una barra (D-158): los índices, en las entidades de su vista, de las polilíneas cuya longitud es cada L del
+    # texto ("L=3.95" o "L=6.00+3.25"); el DXF escribe cada L como un campo de AutoCAD ligado a esa longitud.
+    fields: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)

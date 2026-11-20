@@ -55,6 +55,7 @@ _BAR_135 = 135  # gancho de 135° en una barra (D-134)
 _CLASS_B_NOTE = "sin As requerido por analisis en la zona del empalme"
 _PER_METRE = 1000.0  # mm: las franjas por unidad de ancho se evalúan por metro
 _NEGLIGIBLE_MOMENT = 1.0  # N·mm
+SKIN = "piel"  # el grupo del refuerzo superficial (y "piel de la viga" en la T): en las caras laterales, no en planta (D-158)
 
 
 def splice_ratio(basis: Basis, section: tuple[float, float, float], provided: float, moment: float) -> float:
@@ -347,7 +348,7 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
         spec = _spec(bars, footing.skin.designation)
         for depth in depths:  # una corrida por nivel, para el dibujo; la cartilla las reúne en una marca
             ys = tuple(bar.x - footing.ly / 2 for bar in skin if round(bar.depth, 1) == depth)
-            runs.append(BarRun("piel", spec.designation, spec.diameter_mm, spec.mass_kg_m, len(ys), along,
+            runs.append(BarRun(SKIN, spec.designation, spec.diameter_mm, spec.mass_kg_m, len(ys), along,
                                _hooks(basis, spec.diameter_mm, footing.skin.end), note=f"{len(depths)} niveles en cada cara lateral",
                                placement=Placement("x", ys, h - depth, (-along / 2, along / 2))))
     runs += _stirrup_runs(basis, footing.stirrups, (footing.ly, h, cover), footing.lx)
@@ -425,7 +426,7 @@ def _t_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[BarRun]:
     ends = {round(layer.depth, 1): layer.end or "straight" for layer in beam.layers}  # la T exige end en cada capa (D-134)
     for (role, depth, designation), xs in groups.items():
         spec = _spec(bars, designation)
-        name = "piel de la viga" if role == "skin" else f"viga, capa a {depth:.0f} mm"
+        name = f"{SKIN} de la viga" if role == "skin" else f"viga, capa a {depth:.0f} mm"
         hooks = _hooks(basis, spec.diameter_mm, ends[min(ends, key=lambda own: abs(own - depth))])
         ratio = (lower_ratio if depth > beam.height / 2 else upper_ratio) if role == "flexure" else None
         run = _layer_run(basis, (name, spec, len(xs), hooks), (sorted(xs), depth, beam.height, cover + stirrup), (along, ratio))

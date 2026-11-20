@@ -7,7 +7,8 @@ detailing.py y el dibujo en sí es neutro (drawing/views.py).
 - Zapata combinada: planta de geometría, plantas del refuerzo, alzado longitudinal por el eje de la viga (y = 0) y un
   corte transversal por cada columna (este solo en el SVG y la memoria, no en el DXF, D-150).
 - T invertida: lo mismo, con el alma en las plantas, el alzado a la altura de la viga y el corte en T.
-La combinada se dibuja en los ejes de la viga (X a lo largo de la viga), en los que se calcula (D-094). Cada elemento deja su
+Las plantas de la combinada van en los ejes globales del proyecto (D-158): con la viga en la Y global, se giran desde los
+ejes de la viga en los que se calcula (D-094); el alzado y los cortes, a lo largo y a través de la viga. Cada elemento deja su
 título para el DXF en drawing.titles ("ZC_m h=0.80", D-150).
 
 Planta de localización (D-130): una por nivel de cimentación, en ejes globales, con cada zapata a escala en su nudo, su
@@ -18,9 +19,10 @@ de lo que da cada una, y si difieren se avisa en el plano.
 
 import re
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
-from structurelab_rc.detailing.schedule import BarRun, ScheduleRow, run_marks
+from structurelab_rc.detailing.schedule import BarRun, Piece, ScheduleRow, run_marks
+from structurelab_rc.domain.footing.detailing import SKIN
 from structurelab_rc.domain.footing.neighbors import (
     Footprint,
     close_neighbors,
@@ -28,7 +30,20 @@ from structurelab_rc.domain.footing.neighbors import (
     isolated_footprint,
     neighbor_text,
 )
-from structurelab_rc.drawing.model import LABELS, OUTLINE, Drawing, Entity, Polyline, Text, View, metres
+from structurelab_rc.drawing.model import (
+    DIMENSIONS,
+    LABELS,
+    OUTLINE,
+    PAPER_STUB,
+    Drawing,
+    Entity,
+    Line,
+    Point,
+    Polyline,
+    Text,
+    View,
+    metres,
+)
 from structurelab_rc.drawing.views import (
     Marked,
     cartilla_view,
@@ -44,7 +59,12 @@ from structurelab_rc.drawing.views import (
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import FootingBody, Mat
 
-_STUB = 0.6  # altura del arranque de columna dibujado, en lados de la columna
+# Símbolo de corte del arranque de columna (D-158), como el plano de referencia: sale de la columna 0.25 de su lado, el
+# quiebre va a 0.15 del lado desde el eje, con pasos de 2 mm y alturas de 4 mm de papel.
+_BREAK_MARGIN = 0.25
+_BREAK_AT = 0.15
+_BREAK_STEP = 2.0
+_BREAK_RISE = 4.0
 _MISMATCH = 10.0  # mm: diferencia entre la base que ubica cada columna de una combinada a partir de la cual se avisa
 _TABLE = (("Tipo", 24.0), ("Dimensiones lx x ly x h (m)", 50.0), ("Malla inferior", 56.0), ("Malla superior", 56.0),
           ("Cant.", 12.0))
@@ -65,13 +85,53 @@ def element_title(element: str, thickness: float) -> str:
     return f"{element} h={thickness / 1000:.2f}"
 
 
-def _stub(centre: float, size: float, top: float, pedestal: float) -> list[Polyline]:
-    """Pedestal (si lo hay) y arranque de la columna sobre la cara superior top, en un corte."""
+def _stub(drawing: Drawing, centre: float, size: float, levels: tuple[float, float]) -> list[Entity]:
+    """Pedestal (si lo hay) y arranque de la columna sobre la cara superior, en un corte, como los planos de despiece
+    (D-158): las dos caras de la columna hasta un alto fijo en papel y el símbolo de corte encima. levels = (cara
+    superior de la base, alto del pedestal)."""
+    top, pedestal = levels
     left, right = centre - size / 2, centre + size / 2
     stub = top + pedestal
-    shapes = [rectangle(OUTLINE, (left, top), (right, stub))] if pedestal > 0 else []
-    return [*shapes, Polyline(OUTLINE, ((left, stub), (left, stub + _STUB * size), (right, stub + _STUB * size), (right, stub)),
-                              dashed=True)]
+    high = stub + drawing.paper(PAPER_STUB)
+    entities: list[Entity] = [rectangle(OUTLINE, (left, top), (right, stub))] if pedestal > 0 else []
+    entities += [Line(OUTLINE, (left, stub), (left, high)), Line(OUTLINE, (right, stub), (right, high))]
+    step, rise = drawing.paper(_BREAK_STEP), drawing.paper(_BREAK_RISE)
+    kink = centre + _BREAK_AT * size
+    entities.append(Polyline(DIMENSIONS, ((left - _BREAK_MARGIN * size, high), (kink - step, high), (kink, high - rise),
+                                          (kink, high + rise), (kink + step, high), (right + _BREAK_MARGIN * size, high))))
+    return entities
+
+
+def _rotated(point: Point) -> Point:
+    """Un punto de los ejes de una viga en la Y global, en los ejes globales (D-094, D-158): x = −y', y = x'."""
+    return 0.0 - point[1], point[0]
+
+
+def _rotated_polyline(polyline: Polyline) -> Polyline:
+    return replace(polyline, points=tuple(_rotated(point) for point in polyline.points))
+
+
+def _rotated_marked(item: Marked) -> Marked:
+    """Una corrida horizontal de la combinada con la viga en la Y global, en los ejes globales (D-158), para las plantas:
+    las barras a lo largo de la viga (x') van a lo largo de y en las posiciones −y'; las transversales (y') van a lo largo
+    de x con el largo invertido, así que sus extremos (ganchos y patas B y C de la cartilla) se intercambian."""
+    run, place = item.run, item.place
+    if place.along == "x":
+        moved = replace(place, along="y", positions=tuple(sorted(0.0 - position for position in place.positions)))
+        return replace(item, run=replace(run, placement=moved))
+    if place.along != "y":
+        return item
+    moved = replace(place, along="x", span=(0.0 - place.span[1], 0.0 - place.span[0]))
+    pieces = tuple(_reversed_piece(piece) for piece in item.pieces)
+    return replace(item, run=replace(run, placement=moved, hooks=(run.hooks[1], run.hooks[0])), pieces=pieces)
+
+
+def _reversed_piece(piece: Piece) -> Piece:
+    """La pieza vista desde el otro extremo: los ganchos y, si hay dos patas, B y C intercambiadas."""
+    dimensions = dict(piece.dimensions)
+    if "B" in dimensions and "C" in dimensions:
+        dimensions["B"], dimensions["C"] = dimensions["C"], dimensions["B"]
+    return replace(piece, dimensions=tuple(dimensions.items()), angles=(piece.angles[1], piece.angles[0]))
 
 
 def footing_views(drawing: Drawing, footing: FootingBody, runs: list[BarRun], rows: tuple[list[ScheduleRow], float]) -> list[View]:
@@ -90,19 +150,21 @@ def footing_views(drawing: Drawing, footing: FootingBody, runs: list[BarRun], ro
                for name, column in zip(names, all_columns, strict=True)]
     cut_y = sum(column.offset_y for column in all_columns) / len(all_columns)
     cut_x = sum(column.offset_x for column in all_columns) / len(all_columns)
-    stubs_x = [shape for column in all_columns if abs(column.offset_y - cut_y) <= column.cy / 2
-               for shape in _stub(column.offset_x, column.cx, h, pedestal)]
-    stubs_y = [shape for column in all_columns if abs(column.offset_x - cut_x) <= column.cx / 2
-               for shape in _stub(column.offset_y, column.cy, h, pedestal)]
+    on_x = [column for column in all_columns if abs(column.offset_y - cut_y) <= column.cy / 2]
+    on_y = [column for column in all_columns if abs(column.offset_x - cut_x) <= column.cx / 2]
+    stubs_x = [shape for column in on_x for shape in _stub(drawing, column.offset_x, column.cx, (h, pedestal))]
+    stubs_y = [shape for column in on_y for shape in _stub(drawing, column.offset_y, column.cy, (h, pedestal))]
+    faces_x = [face for column in on_x for face in (column.offset_x - column.cx / 2, column.offset_x + column.cx / 2)]
+    faces_y = [face for column in on_y for face in (column.offset_y - column.cy / 2, column.offset_y + column.cy / 2)]
     labels = [(name, (column.offset_x, column.offset_y), (column.cx, column.cy)) for name, column in zip(names, all_columns, strict=True)]
     return [
         geometry_view(drawing, ("geometria", f"Planta de geometria {footing.id}"), (outline, []), labels,
                       (footing.cover, f"Espesor h = {_metres_text(h)}; pedestal {_metres_text(pedestal)}.")),
         *_plans(drawing, (footing.id, ""), ([outline], columns), marked, h / 2),
-        section_view(drawing, ("corte_x", "Corte X-X"), ("x", cut_y),
-                     [rectangle(OUTLINE, (-lx / 2, 0.0), (lx / 2, h)), *stubs_x], marked),
-        section_view(drawing, ("corte_y", "Corte Y-Y"), ("y", cut_x),
-                     [rectangle(OUTLINE, (-ly / 2, 0.0), (ly / 2, h)), *stubs_y], marked),
+        section_view(drawing, ("corte_x", "Corte X-X"), ("x", cut_y), marked,
+                     ([rectangle(OUTLINE, (-lx / 2, 0.0), (lx / 2, h))], stubs_x, faces_x, True)),
+        section_view(drawing, ("corte_y", "Corte Y-Y"), ("y", cut_x), marked,
+                     ([rectangle(OUTLINE, (-ly / 2, 0.0), (ly / 2, h))], stubs_y, faces_y, True)),
         cartilla_view(drawing, footing.id, schedule),
     ]
 
@@ -139,18 +201,29 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
         cross = Polyline(OUTLINE, ((-ly / 2, 0.0), (ly / 2, 0.0), (ly / 2, h), (half, h), (half, top), (-half, top),
                                    (-half, h), (-ly / 2, h)), closed=True)
     elevation = [rectangle(OUTLINE, (-lx / 2, 0.0), (lx / 2, top))]
-    elevation += [shape for column in footing.columns for shape in _stub(column.x, column.cx, top, pedestal)]
+    stubs = [shape for column in footing.columns for shape in _stub(drawing, column.x, column.cx, (top, pedestal))]
+    faces = [face for column in footing.columns for face in (column.x - column.cx / 2, column.x + column.cx / 2)]
     note = f"Espesor h = {_metres_text(h)}; pedestal {_metres_text(pedestal)}" + (
         "." if beam is None else f"; viga {metres(beam.width)} x {metres(beam.height)} m (alto desde la base).")
+    shapes = [(column.id, (column.x, column.y), (column.cx, column.cy)) for column in footing.columns]
+    # El refuerzo superficial va en las caras laterales: se ve en el alzado, no en las plantas (D-158).
+    plan_marked = [item for item in marked if not item.run.group.startswith(SKIN)]
+    plan_concrete, plan_columns = concrete, columns
+    if footing.principal_direction == "y":  # las plantas en los ejes globales del proyecto (D-158)
+        plan_marked = [_rotated_marked(item) for item in plan_marked]
+        plan_concrete = [_rotated_polyline(polyline) for polyline in concrete]
+        plan_columns = [(name, _rotated_polyline(polyline)) for name, polyline in columns]
+        shapes = [(name, _rotated(centre), (size[1], size[0])) for name, centre, size in shapes]
     views = [
-        geometry_view(drawing, ("geometria", f"Planta de geometria {footing.id} (ejes de la viga)"), (concrete[0], concrete[1:]),
-                      [(column.id, (column.x, column.y), (column.cx, column.cy)) for column in footing.columns], (footing.cover, note)),
-        *_plans(drawing, (footing.id, " (ejes de la viga)"), (concrete, columns), marked, h / 2 if beam is None else top / 2),
-        section_view(drawing, ("alzado", "Alzado longitudinal A-A"), ("x", 0.0), elevation, marked),
+        geometry_view(drawing, ("geometria", f"Planta de geometria {footing.id}"), (plan_concrete[0], plan_concrete[1:]), shapes,
+                      (footing.cover, note)),
+        *_plans(drawing, (footing.id, ""), (plan_concrete, plan_columns), plan_marked, h / 2 if beam is None else top / 2),
+        section_view(drawing, ("alzado", "Alzado longitudinal A-A"), ("x", 0.0), marked, (elevation, stubs, faces, False)),
     ]
     for column in footing.columns:  # solo en el SVG y la memoria (D-150)
-        section = section_view(drawing, (f"corte_{column.id}", f"Corte transversal por {column.id}"), ("y", column.x),
-                               [cross, *_stub(column.y, column.cy, top, pedestal)], marked)
+        stub = _stub(drawing, column.y, column.cy, (top, pedestal))
+        section = section_view(drawing, (f"corte_{column.id}", f"Corte transversal por {column.id}"), ("y", column.x), marked,
+                               ([cross], stub, [column.y - column.cy / 2, column.y + column.cy / 2], True))
         section.dxf = False
         views.append(section)
     views.append(cartilla_view(drawing, footing.id, schedule))

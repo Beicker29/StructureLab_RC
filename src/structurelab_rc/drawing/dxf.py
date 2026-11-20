@@ -3,14 +3,22 @@
 cortada.
 
 - Unidades: el modelo está en mm y el DXF en metros, como la plantilla; la conversión ocurre solo aquí.
-- Cotas: entidades DIMENSION con el estilo de la escala (DIM-50 a 1:50; si la plantilla no lo trae, uno igual a DIM-50
-  escalado), que miden en metros con dos decimales (tres si la medida no es múltiplo de 1 cm).
-- Rótulos de los cortes: MULTILEADER con una línea a cada barra del grupo. Barras cortadas: el bloque BARRA escalado al
-  radio del punto, en la capa de su diámetro. Columnas en planta: sombreado sólido en su capa y contorno en la del
-  concreto.
-- Composición, como los planos de despiece: por elemento, en una fila la planta de geometría y las plantas del refuerzo y
-  en otra los cortes y la cartilla, con el título del elemento ("ZC_m h=0.80") y la escala debajo; los elementos lado a
-  lado y un marco alrededor. Las vistas con dxf = False (los cortes transversales de la combinada) no entran.
+- Escala (D-158): el modelo ya trae los tamaños en papel × escala; lo que viene de la plantilla, pensada para 1:50, se
+  multiplica por escala/50: los estilos de cota, la escala del tipo de línea de cada entidad y la flecha, la separación
+  del texto y el quiebre de los MULTILEADER.
+- Cotas: entidades DIMENSION con el estilo de la escala (DIM-50 a 1:50; a otra, DIM-<escala> igual a DIM-50 escalado),
+  que miden en metros con dos decimales (tres si la medida no es múltiplo de 1 cm).
+- Líneas de distribución (capa de proyecciones): DIMENSION sin texto con el estilo DIM-75 de la plantilla (escalado a la
+  escala) y flechas cerradas en los dos extremos, como el plano de referencia (D-158).
+- Rótulos de las barras en planta: MTEXT; cada L ligada a una polilínea (Text.fields) se escribe como un campo de
+  AutoCAD con su longitud (\\AcObjProp ... .Length, dos decimales), como el plano de referencia (D-158).
+- Rótulos de los cortes: MULTILEADER con una línea a cada barra. Barras cortadas y marcas de las barras: el bloque BARRA
+  escalado al radio del punto, en la capa de su diámetro. Columnas en planta: sombreado sólido en su capa y contorno en
+  la del concreto. Títulos y escala con el estilo de texto ARIAL de la plantilla.
+- Composición, como el plano de referencia (D-158): por elemento, arriba las plantas del refuerzo inferior y superior,
+  debajo el alzado o los cortes y el título del elemento ("ZC_m h=0.80") con la escala; a la derecha, la planta de
+  geometría y la cartilla. Los elementos lado a lado y un marco alrededor. Las vistas con dxf = False (los cortes
+  transversales de la combinada) no entran.
 """
 
 import io
@@ -19,8 +27,12 @@ from pathlib import Path
 from typing import Any
 
 from structurelab_rc.drawing.model import (
+    BASE_SCALE,
     DIMENSIONS,
+    DISTRIBUTION,
+    LABELS,
     OUTLINE,
+    PAPER_ARROW,
     PAPER_TEXT,
     PAPER_TITLE,
     SUBTITLE,
@@ -41,15 +53,22 @@ _M_PER_MM = 0.001
 _PAPER_GAP = 20.0  # mm de papel: separación entre vistas, filas y elementos
 _FRAME = 10.0  # mm de papel: margen del marco
 _BASE_STYLE = "DIM-50"  # estilo de cota de la plantilla del que se escala el de otra escala
-_BASE_SCALE = 50.0
+_DISTRIBUTION_STYLE = "DIM-75"  # estilo de las líneas de distribución en la plantilla, a 1:50 (D-158)
 _SCALED_DIMVARS = ("dimtxt", "dimasz", "dimexe", "dimexo", "dimgap", "dimdli", "dimfxl", "dimdle", "dimcen")
+_ARROWS = {"dimsah": 1, "dimblk": "", "dimblk1": "", "dimblk2": ""}  # flechas cerradas, como el plano de referencia
 _BAR_BLOCK = "BARRA"  # punto relleno de radio 1 en la plantilla
 _DASHED = "HIDDEN2"
 _TEXT_STYLE = "Standard"  # Arial en la plantilla
+_TITLE_STYLE = "ARIAL"  # títulos y escala, como el plano de referencia (D-158)
 _MLEADER_STYLE = "LEADER"  # la clave del estilo de multileader que usa la plantilla (su nombre interno es Standard)
 _CM = 10.0  # mm
 _ROUND_OFF = 0.05  # mm
-_FIRST_ROW = ("geometria", "planta_")  # vistas de la primera fila de cada elemento
+_PLANS = "planta_"  # las plantas del refuerzo: la fila de arriba de cada elemento
+_SIDE = ("geometria", "cartilla")  # a la derecha de cada elemento (D-158)
+_FIELD_FORMAT = "%lu2%pr2"  # decimal con dos decimales, como el plano de referencia
+_UPRIGHT = 90.0  # grados: una cota con el sentido entre −90° y 90° tiene el texto derecho
+_BOTTOM_CENTER = 8  # MTEXT: punto de inserción abajo al centro
+_BOTTOM_LEFT = 7
 
 
 def available() -> bool:
@@ -67,7 +86,7 @@ def write_dxf(drawing: Drawing, path: Path, template: str) -> bool:
     import ezdxf  # noqa: PLC0415 - dependencia opcional
 
     document = ezdxf.read(io.StringIO(template))
-    writer = _Writer(document, drawing, _dimension_style(document, drawing.scale))
+    writer = _Writer(document, drawing, _dimension_styles(document, drawing.scale))
     left, frame = 0.0, [math.inf, math.inf, -math.inf, -math.inf]
     for element, views in drawing.views.items():
         shown = [view for view in views if view.dxf]
@@ -85,112 +104,232 @@ def write_dxf(drawing: Drawing, path: Path, template: str) -> bool:
     return True
 
 
-def _dimension_style(document: Any, scale: float) -> str:
-    """El estilo de cota de la escala: el de la plantilla (DIM-50) o uno igual a DIM-50 escalado."""
-    name = f"DIM-{scale:g}"
-    if name not in document.dimstyles:
-        base = document.dimstyles.get(_BASE_STYLE)
-        style = document.dimstyles.duplicate_entry(_BASE_STYLE, name)
-        for key in _SCALED_DIMVARS:
-            if base.dxf.hasattr(key):
-                style.dxf.set(key, base.dxf.get(key) * scale / _BASE_SCALE)
-    return name
+def _dimension_styles(document: Any, scale: float) -> tuple[str, str]:
+    """Los estilos de cota de la escala: el de las cotas (DIM-<escala>) igual a DIM-50 y el de las líneas de distribución
+    (DIM-<1.5·escala>) igual a DIM-75, con los tamaños multiplicados por escala/50. Un estilo de la plantilla con el
+    mismo nombre se rehace desde la base, porque los de otras escalas (DIM-20, DIM-25, DIM-125) no son proporcionales a
+    DIM-50."""
+    dimstyles = document.dimstyles
+    sizes = {base: {key: dimstyles.get(base).dxf.get(key) for key in _SCALED_DIMVARS if dimstyles.get(base).dxf.hasattr(key)}
+             for base in (_BASE_STYLE, _DISTRIBUTION_STYLE)}  # antes de tocar nada: a 1:75 las cotas se llaman DIM-75
+    names = []
+    for base, factor in ((_BASE_STYLE, 1.0), (_DISTRIBUTION_STYLE, 1.5)):
+        name = f"DIM-{scale * factor:g}"
+        if scale != BASE_SCALE:  # a 1:50 los nombres son las bases mismas
+            if name in dimstyles:
+                dimstyles.remove(name)
+            style = dimstyles.duplicate_entry(base, name)
+            for key, value in sizes[base].items():
+                style.dxf.set(key, value * scale / BASE_SCALE)
+        names.append(name)
+    return names[0], names[1]
 
 
 class _Writer:
     """Escribe las entidades del modelo (mm, en las coordenadas de su vista) en el espacio modelo (m), desplazadas."""
 
-    def __init__(self, document: Any, drawing: Drawing, dimstyle: str) -> None:
+    def __init__(self, document: Any, drawing: Drawing, dimstyles: tuple[str, str]) -> None:
+        self.document = document
         self.space = document.modelspace()
         self.drawing = drawing
-        self.dimstyle = dimstyle
+        self.dimstyle, self.distribution_style = dimstyles
+        self.ratio = drawing.scale / BASE_SCALE  # los tamaños de la plantilla (a 1:50) a la escala del dibujo
+        self.leader_style = document.mleader_styles.get(_MLEADER_STYLE)
         self.dx, self.dy = 0.0, 0.0
 
     def element(self, element: str, views: list[View], left: float) -> tuple[float, float, float, float]:
-        """Las vistas de un elemento desde la abscisa left (mm): la primera fila arriba, la segunda debajo, y el título;
-        devuelve lo que ocupa (x0, y0, x1, y1) en mm."""
+        """Las vistas de un elemento desde la abscisa left (mm), como el plano de referencia (D-158): arriba las plantas
+        del refuerzo, debajo el alzado o los cortes y el título con la escala, y a la derecha la planta de geometría y la
+        cartilla una sobre otra; devuelve lo que ocupa (x0, y0, x1, y1) en mm."""
         gap = _PAPER_GAP * self.drawing.scale
-        rows = [[view for view in views if view.name.startswith(_FIRST_ROW)],
-                [view for view in views if not view.name.startswith(_FIRST_ROW)]]
-        top, right = 0.0, left
+        side = [view for view in views if view.name in _SIDE]
+        rows = [[view for view in views if view.name.startswith(_PLANS)],
+                [view for view in views if view not in side and not view.name.startswith(_PLANS)]]
+        widths = [sum(view.bounds()[2] - view.bounds()[0] for view in row) + gap * (len(row) - 1) for row in rows if row]
+        block = max(widths, default=0.0)
+        top = 0.0
         for row in (row for row in rows if row):
-            column, tallest = left, 0.0
+            width = sum(view.bounds()[2] - view.bounds()[0] for view in row) + gap * (len(row) - 1)
+            column, tallest = left + (block - width) / 2, 0.0  # cada fila centrada en el bloque
             for view in row:
                 x0, y0, x1, y1 = view.bounds()
-                self.dx, self.dy = column - x0, top - y1
-                for entity in view.entities:
-                    self.entity(entity)
+                self.place(view, (column - x0, top - y1))
                 column += (x1 - x0) + gap
                 tallest = max(tallest, y1 - y0)
-            right = max(right, column - gap)
             top -= tallest + gap
-        self.dx, self.dy = 0.0, 0.0
+        self.dx, self.dy = 0.0, 0.0  # el título va en coordenadas del plano, no de la última vista
         bottom = top
         title = self.drawing.titles.get(element)
         if title is not None:
-            middle = (left + right) / 2
+            middle = left + block / 2
             title_height, scale_height = self.drawing.paper(PAPER_TITLE), self.drawing.paper(PAPER_TEXT)
             self.text(Text(TITLE, (middle, top), title, title_height, align="center"))
             bottom = top - 1.6 * scale_height
             self.text(Text(SUBTITLE, (middle, bottom), f"ESC 1:{self.drawing.scale:g}", scale_height, align="center"))
+        right, stack = left + block, 0.0
+        for view in side:
+            x0, y0, x1, y1 = view.bounds()
+            self.place(view, (left + block + gap - x0, stack - y1))
+            stack -= (y1 - y0) + gap
+            right = max(right, left + block + gap + (x1 - x0))
+            bottom = min(bottom, stack + gap)
+        self.dx, self.dy = 0.0, 0.0
         return left, bottom, right, 0.0
+
+    def place(self, view: View, shift: tuple[float, float]) -> None:
+        """Las entidades de una vista desplazadas shift (mm); los rótulos ligados a polilíneas, con sus campos."""
+        self.dx, self.dy = shift
+        written: dict[int, Any] = {}
+        for index, entity in enumerate(view.entities):
+            if isinstance(entity, Text) and entity.fields:
+                self.label(entity, [written[number] for number in entity.fields if number in written])
+            else:
+                written[index] = self.entity(entity)
+
+    def attributes(self, layer: str) -> dict[str, Any]:
+        """La capa y la escala del tipo de línea: los trazos de la plantilla (HIDDEN2, a 1:50) a la escala del dibujo."""
+        return {"layer": layer, "ltscale": self.ratio}
 
     def point(self, point: tuple[float, float]) -> tuple[float, float]:
         return (point[0] + self.dx) * _M_PER_MM, (point[1] + self.dy) * _M_PER_MM
 
-    def polyline(self, layer: str, points: list[tuple[float, float]], closed: bool = False, dashed: bool = False) -> None:
-        attributes = {"layer": layer, **({"linetype": _DASHED} if dashed else {})}
-        self.space.add_lwpolyline([self.point(p) for p in points], close=closed, dxfattribs=attributes)
+    def polyline(self, layer: str, points: list[tuple[float, float]], closed: bool = False, dashed: bool = False,
+                 color: int | None = None) -> Any:
+        attributes = {**self.attributes(layer), **({"linetype": _DASHED} if dashed else {}),
+                      **({"color": color} if color is not None else {})}
+        return self.space.add_lwpolyline([self.point(p) for p in points], close=closed, dxfattribs=attributes)
 
-    def text(self, text: Text) -> None:
+    def text(self, text: Text) -> Any:
+        """Un título, una escala o un texto de tabla como TEXT; un rótulo (capa de rótulos) como MTEXT."""
+        if text.layer == LABELS:
+            return self.mtext(text, text.text)
         from ezdxf.enums import TextEntityAlignment  # noqa: PLC0415 - dependencia opcional
 
         aligns = {"left": TextEntityAlignment.LEFT, "center": TextEntityAlignment.CENTER, "right": TextEntityAlignment.RIGHT}
+        style = _TITLE_STYLE if text.layer in (TITLE, SUBTITLE) else _TEXT_STYLE
         entity = self.space.add_text(text.text, height=text.height * _M_PER_MM, rotation=text.rotation,
-                                     dxfattribs={"layer": text.layer, "style": _TEXT_STYLE})
+                                     dxfattribs={"layer": text.layer, "style": style})
         entity.set_placement(self.point(text.at), align=aligns[text.align])
+        return entity
 
-    def entity(self, entity: Entity) -> None:
-        layer = {"layer": entity.layer}
+    def mtext(self, text: Text, content: str) -> Any:
+        attachment = _BOTTOM_CENTER if text.align == "center" else _BOTTOM_LEFT
+        return self.space.add_mtext(content, dxfattribs={"layer": text.layer, "style": _TEXT_STYLE, "char_height": text.height * _M_PER_MM,
+                                                         "insert": self.point(text.at), "rotation": text.rotation,
+                                                         "attachment_point": attachment})
+
+    def label(self, text: Text, polylines: list[Any]) -> None:
+        """Un rótulo de barra con cada L como campo de AutoCAD ligado a la longitud de su polilínea (D-158). El texto
+        guardado es el del modelo (la longitud de la cartilla), el que AutoCAD muestra hasta reevaluar el campo."""
+        head, found, tail = text.text.partition("L=")
+        values, _, rest = tail.partition(" ")
+        lengths = values.split("+")
+        mtext = self.mtext(text, text.text)
+        if not found or len(lengths) != len(polylines):
+            return
+        code = head + "L=" + "+".join(f"%<\\_FldIdx {index}>%" for index in range(len(lengths))) + (f" {rest}" if rest else "")
+        _length_fields(self.document, mtext, polylines, code)
+
+    def shape(self, entity: Polyline) -> Any:
+        if entity.filled:  # columna: sombreado en su capa y contorno en la del concreto
+            hatch = self.space.add_hatch(color=256, dxfattribs={"layer": entity.layer})  # 256: color de la capa
+            hatch.paths.add_polyline_path([self.point(p) for p in entity.points], is_closed=True)
+            return self.polyline(OUTLINE, list(entity.points), closed=True)
+        return self.polyline(entity.layer, list(entity.points), closed=entity.closed, dashed=entity.dashed, color=entity.color)
+
+    def circle(self, entity: Circle) -> Any:
+        radius = entity.radius * _M_PER_MM
+        if entity.filled:  # barra cortada o marca de barra: el bloque de la plantilla
+            attributes = {"layer": entity.layer, "xscale": radius, "yscale": radius}
+            return self.space.add_blockref(_BAR_BLOCK, self.point(entity.center), dxfattribs=attributes)
+        return self.space.add_circle(self.point(entity.center), radius, dxfattribs={"layer": entity.layer})
+
+    def entity(self, entity: Entity) -> Any:
         if isinstance(entity, Line):
-            self.space.add_line(self.point(entity.start), self.point(entity.end), dxfattribs=layer)
-        elif isinstance(entity, Polyline):
-            if entity.filled:  # columna: sombreado en su capa y contorno en la del concreto
-                hatch = self.space.add_hatch(color=256, dxfattribs=layer)  # 256: color de la capa
-                hatch.paths.add_polyline_path([self.point(p) for p in entity.points], is_closed=True)
-                self.polyline(OUTLINE, list(entity.points), closed=True)
-            else:
-                self.polyline(entity.layer, list(entity.points), closed=entity.closed, dashed=entity.dashed)
-        elif isinstance(entity, Circle):
-            radius = entity.radius * _M_PER_MM
-            if entity.filled:  # barra cortada: el bloque de la plantilla
-                self.space.add_blockref(_BAR_BLOCK, self.point(entity.center), dxfattribs={**layer, "xscale": radius, "yscale": radius})
-            else:
-                self.space.add_circle(self.point(entity.center), radius, dxfattribs=layer)
-        elif isinstance(entity, Text):
-            self.text(entity)
-        elif isinstance(entity, Leader):
-            self.leader(entity)
-        else:
-            self.dimension(entity)
+            return self.space.add_line(self.point(entity.start), self.point(entity.end), dxfattribs=self.attributes(entity.layer))
+        if isinstance(entity, Polyline):
+            return self.shape(entity)
+        if isinstance(entity, Circle):
+            return self.circle(entity)
+        if isinstance(entity, Text):
+            return self.text(entity)
+        if isinstance(entity, Leader):
+            return self.leader(entity)
+        return self.dimension(entity)
 
-    def dimension(self, dimension: Dimension) -> None:
+    def dimension(self, dimension: Dimension) -> Any:
+        """Una cota (o, en la capa de proyecciones, una línea de distribución: sin texto y con flechas, D-158)."""
         start, end = dimension.start, dimension.end
         base, _ = dimension_line(dimension)
         angle = math.degrees(math.atan2(end[1] - start[1], end[0] - start[0]))
+        if not -_UPRIGHT < angle <= _UPRIGHT:  # la misma línea en el otro sentido: el texto queda legible, no al revés
+            angle -= math.copysign(2 * _UPRIGHT, angle)
         length = math.hypot(end[0] - start[0], end[1] - start[1])
-        override = {} if abs(length - round(length / _CM) * _CM) < _ROUND_OFF else {"dimdec": 3}
-        built = self.space.add_linear_dim(base=self.point(base), p1=self.point(start), p2=self.point(end), angle=angle,
-                                          dimstyle=self.dimstyle, override=override, dxfattribs={"layer": dimension.layer})
+        if dimension.layer == DISTRIBUTION:
+            style, override, text = self.distribution_style, dict(_ARROWS), " "
+        else:
+            style, text = self.dimstyle, "<>"
+            override = {} if abs(length - round(length / _CM) * _CM) < _ROUND_OFF else {"dimdec": 3}
+        built = self.space.add_linear_dim(base=self.point(base), p1=self.point(start), p2=self.point(end), angle=angle, text=text,
+                                          dimstyle=style, override=override, dxfattribs=self.attributes(dimension.layer))
         built.render()
+        if built.dimension.dxf.get("text_midpoint") is None:  # sin texto: el punto medio de la línea, que los lectores piden
+            first, second = dimension_line(dimension)
+            built.dimension.dxf.text_midpoint = self.point(((first[0] + second[0]) / 2, (first[1] + second[1]) / 2))
+        return built.dimension
 
     def leader(self, leader: Leader) -> None:
-        """MULTILEADER con el estilo de la plantilla: el texto a la derecha de at y una línea a cada barra."""
+        """MULTILEADER con el estilo de la plantilla: el texto a la derecha de at y una línea a cada barra con la flecha
+        cerrada (D-158). La flecha, la separación del texto y el quiebre van a la escala del dibujo; ezdxf no copia la
+        flecha al contexto de la entidad (la deja en 4.0) si no se fija aquí."""
         from ezdxf.math import Vec2  # noqa: PLC0415 - dependencia opcional
         from ezdxf.render import mleader  # noqa: PLC0415 - dependencia opcional
 
         builder = self.space.add_multileader_mtext(_MLEADER_STYLE, dxfattribs={"layer": leader.layer})
         builder.set_content(leader.text, char_height=leader.height * _M_PER_MM, alignment=mleader.TextAlignment.left)
+        builder.set_arrow_properties(size=self.drawing.paper(PAPER_ARROW) * _M_PER_MM)
+        style = self.leader_style.dxf
+        builder.set_connection_properties(landing_gap=style.landing_gap_size * self.ratio, dogleg_length=style.dogleg_length * self.ratio)
         for target in leader.targets:
             builder.add_leader_line(mleader.ConnectionSide.left, [Vec2(self.point(target))])
         builder.build(insert=Vec2(self.point(leader.at)))
+        return builder.multileader
+
+
+def _length_fields(document: Any, mtext: Any, polylines: list[Any], code: str) -> None:
+    """Liga un MTEXT a la longitud de cada polilínea con campos de AutoCAD, como el plano de referencia (D-158): en su
+    diccionario de extensión, ACAD_FIELD/TEXT es un campo "_text" con el texto code (cada %<\\_FldIdx i>% es un valor) y
+    un campo hijo AcObjProp por polilínea (\\AcObjProp Object(...).Length, formato %lu2%pr2). ezdxf no trae API para los
+    campos: se escriben como objetos con sus etiquetas."""
+    from ezdxf.entities import DXFTagStorage  # noqa: PLC0415 - dependencia opcional
+    from ezdxf.lldxf.extendedtags import ExtendedTags  # noqa: PLC0415 - dependencia opcional
+    from ezdxf.lldxf.types import DXFTag  # noqa: PLC0415 - dependencia opcional
+
+    def add(handle: str, owner: str, tags: list[tuple[int, Any]]) -> None:
+        raw = [DXFTag(0, "FIELD"), DXFTag(5, handle), DXFTag(102, "{ACAD_REACTORS"), DXFTag(330, owner), DXFTag(102, "}"),
+               DXFTag(330, owner), DXFTag(100, "AcDbField"), *(DXFTag(group, value) for group, value in tags)]
+        entity = DXFTagStorage.load(ExtendedTags(raw), document)
+        document.entitydb.add(entity)
+        document.objects.add_object(entity)
+
+    def value_tags(name: str, kind: int, value: list[tuple[int, Any]]) -> list[tuple[int, Any]]:
+        return [(6, name), (93, 2), (90, kind), *value, (94, 0), (300, ""), (302, ""), (304, "ACVALUE_END")]
+
+    fields = mtext.new_extension_dict().dictionary.add_new_dict("ACAD_FIELD")
+    parent = document.entitydb.next_handle()
+    children = [document.entitydb.next_handle() for _ in polylines]
+    for child, polyline in zip(children, polylines, strict=True):
+        points = list(polyline.get_points("xy"))
+        length = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(points, points[1:], strict=False))
+        shown = f"{length:.2f}"
+        add(child, parent, [
+            (1, "AcObjProp"), (2, f'\\AcObjProp Object(%<\\_ObjIdx 0>%).Length \\f "{_FIELD_FORMAT}"'), (90, 0), (97, 1),
+            (331, polyline.dxf.handle), (91, 63), (92, 0), (94, 59), (95, 2), (96, 0), (300, ""), (93, 2),
+            *value_tags("ObjectPropertyId", 64, [(330, polyline.dxf.handle)]), *value_tags("ObjectPropertyName", 4, [(1, "Length")]),
+            (7, "ACFD_FIELD_VALUE"), (93, 4), (90, 2), (140, length), (94, 0), (300, _FIELD_FORMAT), (302, shown),
+            (304, "ACVALUE_END"), (301, shown), (98, len(shown))])
+    add(parent, fields.dxf.handle, [
+        (1, "_text"), (2, code), (90, len(children)), *((360, child) for child in children), (97, 0), (91, 63), (92, 0), (94, 13),
+        (95, 2), (96, 0), (300, ""), (93, 1), *value_tags("ACFD_FIELDTEXT_CHECKSUM", 2, [(140, 0.0)]), (7, "ACFD_FIELD_VALUE"),
+        (93, 3), (90, 0), (94, 0), (300, ""), (302, ""), (304, "ACVALUE_END"), (301, ""), (98, 0)])
+    fields["TEXT"] = document.entitydb[parent]

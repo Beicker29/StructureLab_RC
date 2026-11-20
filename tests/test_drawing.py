@@ -15,13 +15,14 @@ from structurelab_rc.cli import main
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.detailing.schedule import BarRun, ScheduleRow, run_marks, schedule, splice_spans
 from structurelab_rc.domain.basis import Basis
-from structurelab_rc.domain.footing.detailing import combined_runs, face_envelope, footing_runs
+from structurelab_rc.domain.footing.detailing import SKIN, combined_runs, face_envelope, footing_runs
 from structurelab_rc.domain.footing.drawing import combined_views, footing_views, location_views
 from structurelab_rc.drawing.model import (
     AXES,
     BAR_DESIGNATIONS,
     BAR_PREFIX,
     COLUMN_FILL,
+    DISTRIBUTION,
     LABELS,
     LAYERS,
     OPTIONAL_LAYERS,
@@ -41,7 +42,7 @@ from structurelab_rc.drawing.model import (
     metres,
 )
 from structurelab_rc.drawing.svg import view_svg
-from structurelab_rc.drawing.views import label_text, numbered, zones
+from structurelab_rc.drawing.views import drawn_is_cut, label_text, numbered, zones
 from structurelab_rc.engine import import_etabs_footings, report_file
 from structurelab_rc.io.etabs.footings import LOCATION_SHEET, locations_by_joint
 from structurelab_rc.io.etabs.importer import EtabsImportError
@@ -116,9 +117,10 @@ def test_views_of_each_footing_type(name: str, expected: list[str], tmp_path: Pa
     drawn = _views(_project(name, tmp_path))
     views = drawn.views
     assert [view.name for view in views] == expected
-    # D-132: en planta, una barra representativa por zona, con un trazo por tramo empalmado.
+    # D-132: en planta, una barra representativa por zona, con un trazo por tramo empalmado; el refuerzo superficial va en
+    # las caras laterales y no sale en planta (D-158).
     bottom = [run for run in drawn.runs if run.placement is not None and run.placement.along in ("x", "y")
-              and run.placement.level <= drawn.split]
+              and run.placement.level <= drawn.split and not run.group.startswith(SKIN)]
     expected_bars = sum(len(zones(run.placement.positions)) * len(splice_spans(run, drawn.stock)) for run in bottom
                         if run.placement is not None)
     assert len(_bars(drawn.view("planta_inferior"))) == expected_bars
@@ -201,9 +203,12 @@ def test_geometry_plan_dimensions_columns_from_the_edges(tmp_path: Path) -> None
     assert any(isinstance(entity, Polyline) and entity.layer == COLUMN_FILL and entity.filled for entity in view.entities)
     assert sum(1 for entity in view.entities if isinstance(entity, Polyline) and entity.layer == AXES) == 2
     assert f"recubrimiento {metres(footing.cover)}" in {entity.text for entity in view.entities if isinstance(entity, Text)}
-    # Las plantas de refuerzo no acotan la posición de la columna.
+    # D-158: las plantas de refuerzo acotan la columna como el plano de referencia: su tamaño y la distancia de su cara al
+    # borde +X y al borde más cercano en Y.
     plan = _views(project).view("planta_inferior")
-    assert metres(left) not in {entity.text for entity in plan.entities if isinstance(entity, Dimension)}
+    right = footing.lx / 2 - (column.offset_x + column.cx / 2)
+    plan_dimensions = {entity.text for entity in plan.entities if isinstance(entity, Dimension)}
+    assert {metres(column.cx), metres(column.cy), metres(right)} <= plan_dimensions
 
 
 def test_isolated_section_cuts_every_perpendicular_bar(tmp_path: Path) -> None:
@@ -214,6 +219,20 @@ def test_isolated_section_cuts_every_perpendicular_bar(tmp_path: Path) -> None:
     dots = [entity for entity in section.entities if isinstance(entity, Circle) and entity.filled]
     assert len(dots) == across
     assert all(entity.radius == pytest.approx(0.293 * SCALE) for entity in dots)  # tamaño fijo en papel (D-150)
+
+
+def test_dowel_hooks_point_into_the_column(tmp_path: Path) -> None:
+    """D-158: en el corte, el gancho del pie de cada pasador se dibuja hacia dentro de la columna, con la pata de la
+    cartilla."""
+    drawn = _views(_project("zapata_centrica.json", tmp_path))
+    dowels = [bar.points for bar in _bars(drawn.view("corte_x")) if len(bar.points) == 3  # noqa: PLR2004 - pie + fuste
+              and bar.points[0][1] == bar.points[1][1] and bar.points[1][0] == bar.points[2][0]
+              and bar.points[2][1] > bar.points[1][1]]
+    assert len(dowels) == 2  # noqa: PLR2004 - una barra a cada lado de la columna
+    centre = sum(points[1][0] for points in dowels) / 2
+    for points in dowels:
+        assert abs(points[0][0] - centre) < abs(points[1][0] - centre)
+        assert abs(points[0][0] - points[1][0]) > 0
 
 
 def test_run_marks_match_the_schedule(tmp_path: Path) -> None:
@@ -277,13 +296,24 @@ def test_dxf_uses_the_template(tmp_path: Path) -> None:
     assert {style.dxf.name for style in template.dimstyles} <= {style.dxf.name for style in document.dimstyles}
     model = json.loads((output / "zapata_combinada_drawing.json").read_text(encoding="utf-8"))
     drawn = [view for view in model["elements"]["ZC1"] if view["dxf"]]
-    expected = sorted(entity["text"] for view in drawn for entity in view["entities"] if entity["type"] == "dimension")
-    dimensions = list(space.query("DIMENSION"))
+    expected = sorted(entity["text"] for view in drawn for entity in view["entities"]
+                      if entity["type"] == "dimension" and entity["layer"] != DISTRIBUTION)
+    dimensions = [entity for entity in space.query("DIMENSION") if entity.dxf.layer != DISTRIBUTION]
     assert {entity.dxf.dimstyle for entity in dimensions} == {"DIM-50"}
     measured = sorted(metres(entity.get_measurement() * 1000) for entity in dimensions)
     assert measured == expected
+    # D-158: las líneas de distribución son cotas sin texto con el estilo DIM-75 y flechas cerradas, como la referencia.
+    lines = [entity for entity in space.query("DIMENSION") if entity.dxf.layer == DISTRIBUTION]
+    assert lines and {entity.dxf.dimstyle for entity in lines} == {"DIM-75"} and {entity.dxf.text for entity in lines} == {" "}
+    assert all(entity.override().get("dimsah") == 1 for entity in lines)
     leaders = sum(1 for view in drawn for entity in view["entities"] if entity["type"] == "leader")
     assert len(space.query("MULTILEADER")) == leaders > 0
+    # D-158: cada rótulo con la flecha cerrada (sin bloque), del mismo tamaño en la entidad y en el contexto: 0.125 m a
+    # 1:50, el del estilo de la plantilla.
+    style = document.mleader_styles.get("LEADER")
+    for entity in space.query("MULTILEADER"):
+        assert not entity.dxf.hasattr("arrow_head_handle")
+        assert entity.context.arrow_head_size == entity.dxf.arrow_head_size == pytest.approx(style.dxf.arrow_head_size)
     inserts = space.query("INSERT")
     assert inserts and {entity.dxf.name for entity in inserts} == {"BARRA"}
     assert all(entity.dxf.layer.startswith(BAR_PREFIX) for entity in inserts)
@@ -292,6 +322,63 @@ def test_dxf_uses_the_template(tmp_path: Path) -> None:
     assert not any(text.startswith("CORTE TRANSVERSAL") for text in texts)
     heights = {round(entity.dxf.height * 1000, 6) for entity in space.query("TEXT")}
     assert {PAPER_TITLE * SCALE, PAPER_SMALL * SCALE} <= heights
+
+
+def _dxf_sizes(path: Path, scale: float, tmp_path: Path) -> dict[str, list[float]]:
+    """Los tamaños de papel del DXF de un ejemplo dibujado a la escala dada: alturas de texto, flechas, separaciones y
+    quiebres de los rótulos, tamaños de los estilos de cota usados, escala del tipo de línea y de los puntos."""
+    ezdxf = pytest.importorskip("ezdxf")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["drawing"]["scale"] = scale
+    source = tmp_path / f"escala_{scale:g}.json"
+    source.write_text(json.dumps(data), encoding="utf-8")
+    output = tmp_path / f"escala_{scale:g}"
+    report_file(source, output)
+    document = ezdxf.readfile(output / f"{source.stem}.dxf")
+    space = document.modelspace()
+    leaders = list(space.query("MULTILEADER"))
+    styles = sorted({entity.dxf.dimstyle for entity in space.query("DIMENSION")})
+    dimvars = ("dimtxt", "dimasz", "dimexe", "dimexo", "dimgap", "dimdli", "dimfxl", "dimdle", "dimcen")
+    return {
+        "texto": sorted(entity.dxf.height for entity in space.query("TEXT")),
+        "mtext": sorted(entity.dxf.char_height for entity in space.query("MTEXT")),
+        "flecha": [entity.context.arrow_head_size for entity in leaders] + [entity.dxf.arrow_head_size for entity in leaders],
+        "rótulo": [entity.context.char_height for entity in leaders] + [entity.context.landing_gap_size for entity in leaders]
+                  + [entity.dxf.dogleg_length for entity in leaders],
+        "cotas": [document.dimstyles.get(name).dxf.get(key) for name in styles for key in dimvars],
+        "trazos": sorted({entity.dxf.get("ltscale", 1.0) for entity in space.query("LWPOLYLINE LINE DIMENSION")}),
+        "puntos": sorted(entity.dxf.xscale for entity in space.query("INSERT")),
+    }
+
+
+@pytest.mark.parametrize("name", ["zapata_centrica.json", "zapata_combinada.json"])
+def test_drawing_model_sizes_follow_the_scale(name: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """D-158: en el modelo de dibujo (y el SVG), a 1:100 cada altura de texto, radio de punto y separación de cota es el
+    doble que a 1:50."""
+    project = _project(name, tmp_path)
+    base = _views(project).views
+    model = Drawing
+    monkeypatch.setitem(globals(), "Drawing", lambda title, _: model(title, 2 * SCALE))
+    double = _views(project).views
+    for first, second in zip(base, double, strict=True):
+        assert len(first.entities) == len(second.entities), first.name
+        for a, b in zip(first.entities, second.entities, strict=True):
+            for size in ("height", "radius", "offset"):
+                if hasattr(a, size):
+                    assert getattr(b, size) == pytest.approx(2 * getattr(a, size)), (first.name, a)
+
+
+@pytest.mark.parametrize("factor", [2.0, 0.5])
+def test_dxf_sizes_follow_the_drawing_scale(factor: float, tmp_path: Path) -> None:
+    """D-158: cada tamaño de papel del DXF sigue la escala: a 1:100 es el doble que a 1:50 y a 1:25 la mitad (textos,
+    flechas, separaciones y quiebres de los rótulos, trazos, puntos de las barras y estilos de cota, rehechos desde DIM-50
+    y DIM-75: el DIM-25 de la plantilla no es proporcional); a 1:50, los de la plantilla."""
+    path = frozen("nsr_10", "zapatas", "zapata_combinada.json")
+    base, scaled = _dxf_sizes(path, SCALE, tmp_path), _dxf_sizes(path, factor * SCALE, tmp_path)
+    assert base["trazos"] == [1.0] and base["flecha"] and base["cotas"]
+    for key, values in base.items():
+        assert len(scaled[key]) == len(values), key
+        assert scaled[key] == pytest.approx([factor * value for value in values]), key
 
 
 def test_template_layers_match_the_drawing_model() -> None:
@@ -395,3 +482,98 @@ def test_run_writes_the_location_plan_outside_the_memoir(tmp_path: Path) -> None
     assert names[-1] == "cuadro_tipologias" and len(names) >= 2
     assert all((output / f"localizacion_{name}.svg").exists() for name in names)
     assert "localizacion" not in (output / "memoria.txt").read_text(encoding="utf-8").lower()
+
+
+def _length(polyline: Polyline) -> float:
+    return sum(((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5 for a, b in zip(polyline.points, polyline.points[1:], strict=False))
+
+
+@pytest.mark.parametrize("name", ["zapata_centrica.json", "zapata_combinada.json", "zapata_t_invertida_etabs.json"])
+def test_each_bar_label_is_linked_to_a_bar_that_measures_the_cartilla_length(name: str, tmp_path: Path) -> None:
+    """D-158: la barra representativa de una zona se dibuja con A, B y C de su pieza en la cartilla, así que mide la
+    longitud de corte (la del .dli); su rótulo liga esa L a la polilínea (Text.fields), salvo las que se miden por el eje."""
+    drawn = _views(_project(name, tmp_path))
+    pieces = {row.mark: row.piece for row in drawn.rows}
+    linked = 0
+    for view in (drawn.view("planta_inferior"), *[v for v in drawn.views if v.name == "planta_superior"]):
+        for entity in view.entities:
+            if not isinstance(entity, Text) or not entity.fields:
+                continue
+            marks = entity.text.rsplit("(", 1)[1].rstrip(")").split(", ")
+            assert len(marks) == len(entity.fields) == 1
+            bar = view.entities[entity.fields[0]]
+            assert isinstance(bar, Polyline) and bar.layer.startswith(BAR_PREFIX)
+            piece = pieces[marks[0]]
+            assert drawn_is_cut(piece)
+            assert _length(bar) == pytest.approx(piece.cut_length, abs=0.5)
+            assert f"L={metres(piece.cut_length)}" in entity.text
+            linked += 1
+    assert linked
+
+
+def test_plans_follow_the_reference_drawing(tmp_path: Path) -> None:
+    """D-158: cada zona con su línea de distribución (cota sin texto entre sus límites) y la marca de la barra; las zonas
+    divididas con líneas grises y acotadas en cadena que suma el largo; el ancho total arriba y el largo a la izquierda; el
+    título de la vista "REFUERZO INFERIOR"."""
+    project = _project("zapata_combinada.json", tmp_path)
+    footing = project.combined_footings[0]
+    plan = _views(project).view("planta_inferior")
+    lines = [entity for entity in plan.entities if isinstance(entity, Dimension) and entity.layer == DISTRIBUTION]
+    marks = [entity for entity in plan.entities if isinstance(entity, Circle) and entity.filled]
+    assert lines and len(marks) == len(lines) and all(line.text == "" for line in lines)
+    divisions = [entity for entity in plan.entities if isinstance(entity, Polyline) and entity.color is not None]
+    assert divisions and all(entity.dashed and entity.layer == DISTRIBUTION for entity in divisions)
+    bottom = -footing.ly / 2  # la cadena de las zonas de las barras transversales va sobre el borde −Y
+    chain = [entity for entity in plan.entities if isinstance(entity, Dimension) and entity.layer != DISTRIBUTION
+             and abs(entity.start[1] - bottom) < 1e-6 and abs(entity.end[1] - bottom) < 1e-6]
+    assert len(chain) > 1 and sum(abs(entity.end[0] - entity.start[0]) for entity in chain) == pytest.approx(footing.lx)
+    texts = [entity.text for entity in plan.entities if isinstance(entity, Text)]
+    assert "REFUERZO INFERIOR" in texts
+
+
+def test_combined_plans_are_drawn_in_global_axes(tmp_path: Path) -> None:
+    """D-158: con la viga en la Y global, las plantas van en ejes globales (la base, ly' de ancho en X y lx' de largo en Y) y
+    las barras de la dirección principal quedan a lo largo de y."""
+    data = json.loads(frozen("nsr_10", "zapatas", "zapata_combinada.json").read_text(encoding="utf-8"))
+    footing = data["combined_footings"][0]
+    footing["principal_direction"] = "y"
+    footing["lx"], footing["ly"] = footing["ly"], footing["lx"]
+    for column in footing["columns"]:
+        column["x"], column["y"], column["cx"], column["cy"] = 0.0 - column["y"], column["x"], column["cy"], column["cx"]
+    path = tmp_path / "girada.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    project = load_project(path)
+    combined = project.combined_footings[0]
+    plan = _views(project).view("planta_inferior")
+    outline = plan.entities[0]
+    assert isinstance(outline, Polyline)
+    xs, ys = [p[0] for p in outline.points], [p[1] for p in outline.points]
+    assert (max(xs) - min(xs), max(ys) - min(ys)) == (pytest.approx(combined.ly), pytest.approx(combined.lx))
+    along_y = [bar for bar in _bars(plan) if abs(bar.points[0][0] - bar.points[-1][0]) < 1.0]
+    assert any(abs(bar.points[0][1] - bar.points[-1][1]) > combined.lx / 2 for bar in along_y)
+
+
+def test_dxf_writes_each_bar_length_as_an_autocad_field(tmp_path: Path) -> None:
+    """D-158: en el DXF, cada rótulo de barra es un MTEXT con un campo de AutoCAD ligado a la longitud de su polilínea
+    (\\AcObjProp ... .Length), como el plano de referencia; el valor guardado es la longitud de la cartilla."""
+    ezdxf = pytest.importorskip("ezdxf")
+    output = tmp_path / "zapata_centrica"
+    report_file(frozen("nsr_10", "zapatas", "zapata_centrica.json"), output)
+    document = ezdxf.readfile(output / "zapata_centrica.dxf")
+    assert not document.audit().has_errors
+    labelled = 0
+    for mtext in document.modelspace().query("MTEXT"):
+        if not mtext.has_extension_dict:
+            continue
+        field = mtext.get_extension_dict().dictionary["ACAD_FIELD"]["TEXT"]
+        tags = {tag.code: tag.value for tag in field.xtags.get_subclass("AcDbField")}
+        assert "%<\\_FldIdx 0>%" in tags[2]
+        child = document.entitydb[tags[360]]
+        child_tags = list(child.xtags.get_subclass("AcDbField"))
+        assert any(tag.code == 2 and ".Length" in tag.value for tag in child_tags)
+        bar = document.entitydb[next(tag.value for tag in child_tags if tag.code == 331)]
+        points = list(bar.get_points("xy"))
+        length = sum(((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5 for a, b in zip(points, points[1:], strict=False))
+        assert f"L={metres(length * 1000)}" in mtext.text
+        labelled += 1
+    assert labelled

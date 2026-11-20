@@ -3232,6 +3232,102 @@
   pares igual a D-153, cada tipo PASS con todos sus pares, la partición contra una búsqueda exhaustiva, más familias que
   N), ejemplo en `tipologias/` con huella, documentación del formato y hoja de ruta.
 
+### D-158: DXF de zapatas aisladas y combinadas como el plano DESPIECE ZAPATAS COMBINADAS
+
+- **Fecha:** 2026-11-20
+- **Pedido del usuario:** ajustar el DXF de las zapatas aisladas y combinadas siguiendo fielmente el plano de referencia
+  `references/DESPIECE ZAPATAS COMBINADAS.dxf` (local), "incluyendo cotas, campos, etc.", con consistencia con la
+  cartilla y el `.dli`.
+- **Hallazgos en la referencia** (inventario con `tools/dxf_inspect.py` y por entidad):
+  - Por zapata: refuerzo inferior y superior arriba, el alzado debajo y el título `CIM COMB.5 h=0.85` con la escala.
+    No trae cartilla ni planta de geometría.
+  - Planta en ejes globales: la combinada tiene la viga vertical.
+  - Una barra representativa por zona, con sus patas: un tramo de 3.25 con patas de .35 da L=3.95, es decir, tramo + L
+    de DL-NET.
+  - Rótulos `MTEXT` en `TEXTO`.
+  - Cada L es un **campo de AutoCAD** ligado a la longitud de la polilínea de la barra:
+    `\AcObjProp Object(...).Length \f "%lu2%pr2"`. Hay 108 objetos FIELD.
+  - Las líneas de distribución son cotas sin texto `DIM-75` en `PROYECCIONES`, con flechas cerradas (`dimsah`).
+  - Marca de la barra: un punto relleno en la capa de su diámetro y un círculo en `DIM`.
+  - Divisiones de zona a trazos, con color 252.
+  - Cotas `DIM-50`: el total, la cadena de zonas, cada pata, y el tamaño y la posición de cada columna.
+  - Alzado:
+    - arranques de columna con símbolo de corte;
+    - barras longitudinales con sus patas acotadas;
+    - barras cortadas por zona, con un `MULTILEADER` por zona arriba y abajo;
+    - cadena de columnas arriba y de zonas abajo.
+  - Títulos en `ARIAL`.
+  - En el alzado de la referencia todos los rótulos dicen L=3.65, aunque en planta las mismas barras dicen 3.95, 3.75 o
+    4.25: son campos ligados a otra polilínea. Aquí se usa siempre la de la cartilla.
+- **Decisiones del usuario:**
+  1. El rótulo sigue el de D-150: `22#6 C/.15 L=6.65 (ZC1-01)`, no el de la referencia (`#7c/.11 L=3.95`).
+  2. La L es un campo real de AutoCAD ligado a la polilínea de la barra, como la referencia.
+  3. La cartilla y la planta de geometría quedan en el DXF, a la derecha de cada zapata.
+  4. Las plantas de la combinada van en los ejes globales del proyecto.
+  5. Debe haber consistencia con la cartilla y el `.dli`.
+- **Consistencia (punto 5):**
+  - Cada barra se dibuja con las dimensiones A, B y C de su fila de la cartilla. Para las barras rectas y las de
+    ganchos de 90° o 180°, la polilínea mide la longitud de corte (D-147): la misma del `.dli`, del peso y del costo,
+    que es lo que muestra el campo.
+  - Las patas acotadas son las B y C de la cartilla.
+  - Las barras que se miden por el eje (135° y estribos) y las empalmadas llevan texto fijo con la longitud de la
+    cartilla, para no mostrar un valor distinto.
+  - Los pasadores del corte también toman su pata de la cartilla.
+- **Ajustes pedidos en la revisión:**
+  - Los rótulos `MULTILEADER` llevan flecha. ezdxf no copiaba el tamaño de la flecha del estilo al contexto de la
+    entidad: quedaba en 4.0 mientras la entidad decía 0.125. Ahora los dos usan el del estilo (0.125 m), con la flecha
+    cerrada por defecto, como la referencia. En el SVG, la llamada lleva una flecha rellena.
+  - El gancho del pie de los pasadores se dibuja hacia dentro de la columna, no hacia afuera.
+  - Todos los tamaños siguen la escala elegida (`drawing.scale`): alturas de texto, flechas, puntos, separaciones, trazos.
+    - El modelo de dibujo y el SVG ya estaban en papel × escala.
+    - En el DXF, lo que viene de la plantilla (pensada para 1:50) se multiplica por escala/50:
+      - los estilos de cota (`DIM-<escala>` desde `DIM-50` y `DIM-<1.5·escala>` desde `DIM-75`). Un estilo de la
+        plantilla con ese nombre se rehace, porque `DIM-20`, `DIM-25` y `DIM-125` no son proporcionales a `DIM-50`:
+        `DIM-125` trae `dimexo` = 0.625 y `DIM-25` un `dimfxl` de 0.1. A 1:75, las cotas se llaman como la base de
+        distribución.
+      - la escala del tipo de línea de cada entidad (`ltscale`, para `HIDDEN2`);
+      - la flecha (2.5 mm de papel, `PAPER_ARROW`, la misma del SVG), la separación del texto y el quiebre de los
+        `MULTILEADER`.
+- **Código:**
+  - `drawing/model.py`: `Text.fields`, `Polyline.color`, `PAPER_MARK`, `PAPER_STUB`, `ZONE_COLOR`.
+  - `drawing/views.py`:
+    - `Marked.pieces`, `piece_legs`, `drawn_is_cut`;
+    - la planta: barra representativa, rótulo en el tramo libre de columnas, distribución, marca, divisiones, cadenas,
+      cotas de patas y de columnas, título `REFUERZO INFERIOR/SUPERIOR`;
+    - el corte y alzado: barras paralelas con patas y cotas, barras cortadas por zona con un rótulo cada una, cadenas.
+  - `domain/footing/drawing.py`:
+    - arranque de columna con dos caras y símbolo de corte;
+    - rotación de las plantas de la combinada a ejes globales (`_rotated_marked`, que intercambia los extremos y B/C);
+    - el refuerzo superficial (`SKIN`) fuera de las plantas.
+  - `drawing/dxf.py`:
+    - composición como la referencia;
+    - estilo de distribución (`DIM-75` escalado) con flechas;
+    - `MTEXT` con campos (`_length_fields`: los objetos FIELD se escriben con sus etiquetas, porque ezdxf no trae API);
+    - títulos en `ARIAL`;
+    - cotas con el texto derecho;
+    - punto medio del texto en las cotas sin texto.
+  - `drawing/svg.py`: la línea de distribución con flechas y el gris de las divisiones.
+- **Diferencias:**
+  - Ningún cálculo cambia. Los `resultado.json` de los ejemplos con dibujo son iguales a los de HEAD.
+  - En la memoria cambian solo los pies de figura de la combinada (sin "(ejes de la viga)").
+  - Cambian los `<nombre>_drawing.json` de las zapatas y los cabezales. El DXF no entra en la huella.
+- **Riesgo:**
+  - Los campos se escriben a mano. ezdxf los lee y su auditoría no da errores, pero no se probaron en AutoCAD. Si
+    AutoCAD los rechazara, muestra el texto guardado, que es la longitud de la cartilla.
+  - El formato `%lu2%pr2` de la referencia escribe `0.95` donde el modelo escribe `.95`, en barras de menos de 1 m.
+- **Control** (`tests/test_drawing.py`):
+  - el rótulo ligado a una barra que mide la longitud de corte de su marca;
+  - distribución, marcas, divisiones y cadena de zonas;
+  - plantas de la combinada en ejes globales;
+  - el campo en el DXF (`ACAD_FIELD`, `.Length`, la polilínea ligada mide la L del texto, sin errores de auditoría);
+  - las líneas de distribución con `DIM-75` y flechas;
+  - las cotas de las columnas en las plantas;
+  - la flecha de los `MULTILEADER`, del mismo tamaño en la entidad y en el contexto;
+  - el gancho de los pasadores hacia dentro de la columna;
+  - los tamaños según la escala:
+    - en el modelo, a 1:100 el doble que a 1:50;
+    - en el DXF, a 1:100 el doble y a 1:25 la mitad: textos, flechas, rótulos, estilos de cota, trazos y puntos.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)
