@@ -309,7 +309,8 @@ mayorados.
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `principal_direction` | texto | `x` (por defecto) o `y`: eje global en que va la viga que une las columnas (D-094). |
-| `columns[]` | lista | Exactamente dos columnas: `id`, `cx` y `cy` (mm, sección en ejes globales), `x` e `y` (mm, eje de la columna en ejes globales con cualquier origen; el diseño ubica la base) y `loads` (casos de carga, iguales a los de una zapata). |
+| `columns[]` | lista | Exactamente dos columnas: `id`, `cx` y `cy` (mm, sección en ejes globales), `x` e `y` (mm, eje de la columna en ejes globales con **cualquier origen**: solo cuenta la posición de una columna respecto a la otra; el diseño ubica la base y el proyecto diseñado da las columnas respecto al centro de la base), `property_lines` (opcional, linderos, ver abajo) y `loads` (casos de carga, iguales a los de una zapata). |
+| `columns[].property_lines` | mm | Opcional (D-154): los linderos (medianería) de la columna, `{"-x", "+x", "-y", "+y"}` en ejes globales; cada valor (≥ 0) es el voladizo máximo de la base más allá de la cara de esa columna en ese lado (0: la cara al ras del lindero). Un lado sin declarar no limita; si las dos columnas declaran un lado, rige el más restrictivo, y el lindero debe dejar cubrir las dos columnas. Solo en el diseño: en la verificación los linderos los controlan las dimensiones de la zapata y la posición de las columnas. |
 | `combined_design.fc_options`, `combined_design.prices` | MPa, moneda | Como en el diseño por tipologías: f'c comerciales con su precio por m³ y precio del acero por kg. |
 | `combined_design.plan_step`, `combined_design.plan_max` | mm | Paso de las dimensiones en planta y máximo del largo y del ancho. |
 | `combined_design.h_min`, `combined_design.h_step`, `combined_design.h_max` | mm | Espesor mínimo, paso y máximo. |
@@ -318,7 +319,6 @@ mayorados.
 | `combined_design.bars`, `combined_design.spacing_step` | -, mm | Barras permitidas para todo el refuerzo y paso de separación. |
 | `combined_design.ends` | objeto | Cómo terminan las barras que se diseñan (D-134): `bottom` (malla inferior, band y capa inferior de la viga de la T), `top` (barras superiores, band superior y capa superior de la viga), `dowels` (pie de los pasadores) y `skin` (piel), cada uno `straight`, `hook90`, `hook180` o `hook135`; y `stirrups` (`hook90`, `hook135` o `hook180`), obligatorio con `stirrup_bars`. |
 | `combined_design.dowel_bars` | - | Barras permitidas para los pasadores. |
-| `combined_design.max_cantilever_start`, `combined_design.max_cantilever_end` | mm | Opcionales: voladizo máximo más allá de la cara exterior de la columna de cada extremo, a lo largo de la dirección principal (`start`: la columna con la menor coordenada). Por ejemplo, 0 en una columna de lindero. |
 | `combined_design.min_steel_exception` | sí/no | Obligatorio (D-123): lo mismo para la zapata que se diseña; el diseño parte del As,min con o sin la excepción y lo escribe en `proyecto.json`. |
 | `combined_design.stirrup_bars` | - | Opcional (D-110): barras permitidas para estribos cerrados de la viga larga, por ejemplo `["#3", "#4"]`. Con ellas, el cortante (y en la T, la torsión del alma, con Aℓ en la piel) pueden tomarlos estribos en lugar de un espesor mayor; gana lo más barato. Sin ellas no se proponen estribos. En la combinada rectangular la torsión es de placa (D-118): la toman las barras x e y. |
 | `combined_design.shape` | texto | `rectangular` (por defecto) o `inverted_t` (D-113): con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa. |
@@ -377,6 +377,16 @@ columnas respecto al centroide de la base; lo verifica `run`, `verify` o `report
 
 `--workers N` reparte los f'c entre procesos (por defecto, los núcleos del equipo); no cambia el resultado. `run`
 reconoce el ejemplo por el bloque `combined_design`, diseña y genera la memoria de verificación de la zapata diseñada.
+
+**Linderos (D-154).** El largo se centra en la resultante y el ancho en la resultante transversal; si un borde pasa un
+lindero, la base se corre hacia dentro hasta él, y cuando el diseño pide más ancho (suelo o desarrollo transversal), crece
+solo hacia el lado libre. Con linderos en los dos lados de una dirección, el tamaño no pasa de la distancia entre ellos.
+Si un lado está al ras de su lindero, el ancho solo crece por desarrollo mientras el voladizo libre sea menor que el del
+lindero (después crecer no ayuda: lo que falla es el lado del lindero). La base excéntrica la revisan la presión, el
+contacto y las franjas como siempre. Junto a un lindero cercano conviene declarar las barras con gancho (`ends`): el
+desarrollo usa entonces ℓdh (D-134). La descripción del proyecto diseñado y `resumen.json`
+(`property_line_gaps [mm]`) dan la distancia de cada borde a su lindero.
+
 
 ## Despiece (`detailing`, D-125)
 

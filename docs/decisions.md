@@ -3125,6 +3125,44 @@
   obligatoria con pares; aviso de traslapo en la planta. No hay oráculo nuevo: no hay cálculo nuevo, y los de la
   combinada (`derive_combined_design.py`) y de las tipologías siguen cubriendo cada parte.
 
+### D-154: linderos (medianería) de la zapata combinada en el diseño, por columna
+
+- **Fecha:** 2026-11-20
+- **Pedido del usuario:** limitar el contorno de las zapatas combinadas por medianería; hoy solo había voladizos máximos a
+  lo largo de la viga (`max_cantilever_start` y `max_cantilever_end`, D-107), sin uso en los ejemplos, y nada en la
+  dirección transversal (el ancho crecía hacia los dos lados).
+- **Decisiones del usuario:**
+  1. Los linderos se declaran **en cada columna** (`property_lines`), en ejes globales (`-x`, `+x`, `-y`, `+y`), y cada
+     valor es el voladizo máximo de la base más allá de **la cara de esa columna** en ese lado (0: al ras). Reemplaza a
+     `max_cantilever_*` (una entrada que los traiga recibe un error que remite a `property_lines`).
+  2. Solo en el diseño: en la verificación los linderos los controlan las dimensiones de la zapata y la posición de las
+     columnas (una plantilla de verificación que los declare es un error).
+  3. Ejemplos: `diseno_combinada` con C1 al ras en −x y a 600 mm en −y; `diseno_combinada_etabs` solo con la columna
+     exterior al ras en la dirección principal (con un lindero lateral no hay solución hasta `h_max`); los dos con las
+     barras inferiores y superiores en gancho de 90°, para que el desarrollo use ℓdh (ya implementado y compartido,
+     D-134: `codes/<perfil>/development.hook_development_length`, `domain/development.required_length`).
+- **Aclaración:** en el diseño, `x` e `y` de las columnas tienen cualquier origen (solo cuenta la posición relativa); el
+  proyecto diseñado las da respecto al centro de la base. Por eso el lindero se declara respecto a la cara de la columna.
+- **Reglas propias:** el largo y el ancho se centran en la resultante (longitudinal y transversal) y se corren hacia
+  dentro hasta el lindero que pasen; con linderos en los dos lados de una dirección, el tamaño no pasa de la distancia
+  entre ellos. Al crecer el ancho, crece hacia el lado libre; con un lado al ras de su lindero, el ancho solo crece por
+  desarrollo mientras el voladizo libre sea menor que el del lindero (después lo que falla es el lado del lindero; sin
+  este corte, el diseño probaba todos los anchos hasta `plan_max` en cada largo y espesor). La base excéntrica la revisan
+  las verificaciones de siempre; no hay fórmulas nuevas.
+- **Hallazgos al probar** (diseno_combinada, NSR-10, f'c = 28 MPa): con el lindero lateral a 300 mm y barras rectas no hay
+  solución (las barras transversales no se desarrollan en 300 mm); con ganchos sí, pero 6500 × 6000 × 1200 mm, porque al
+  ensancharse solo hacia el lado libre la base se aleja de la resultante. Con 600 mm, 6500 × 1800 × 700 mm.
+- **Código:** `model/design.CombinedDesignColumn.property_lines`, `face`, `side_limits` y la validación en
+  `_combined_rules`; `TemplateCombinedColumn.property_lines` (rechazado en la verificación) y
+  `TemplateCombinedPair.property_lines` (D-153, por Unique Name); `design/footing/combined._fit`, `geometry_for`,
+  `widened`, `_widening_helps`, `property_gaps` (en `CombinedSolution`, la descripción y `resumen.json`).
+- **Oráculo:** `derive_combined_design.py` con los linderos por columna y casos `lindero`, `lindero-lateral`,
+  `linderos-opuestos` y `lindero-viga-en-y`; los casos anteriores dan la misma geometría.
+- **Huellas:** cambian los diseños de `diseno_combinada` y `diseno_combinada_etabs` (copia de pruebas, dos perfiles: cambio
+  registrado de los ejemplos, con linderos y ganchos). En `diseno_t_invertida` y `diseno_t_invertida_etabs` cambia solo la
+  descripción (coordenadas de entrada y columnas respecto al centro de la base): geometría, refuerzo y costo idénticos a
+  HEAD (comparado).
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

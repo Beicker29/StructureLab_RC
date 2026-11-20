@@ -1,5 +1,5 @@
 {
-  "description": "Ejemplo de diseño de zapata combinada (D-107): dos columnas, C1 de 500 × 500 mm y C2 de 550 × 550 mm a 5.0 m en X, con las cargas de servicio y mayoradas del ejemplo zapata_combinada; el diseño ubica la base en la resultante del caso D+L (placement_case, D-108) y propone dimensiones, f'c y refuerzo de menor costo, con estribos #3 o #4 si salen más baratos que más espesor (D-110). Posiciones con origen en C1. Datos ilustrativos; precios en la moneda del usuario.",
+  "description": "Ejemplo de diseño de zapata combinada (D-107): dos columnas, C1 de 500 × 500 mm y C2 de 550 × 550 mm a 5.0 m en X, con las cargas de servicio y mayoradas del ejemplo zapata_combinada; el diseño ubica la base en la resultante del caso D+L (placement_case, D-108) y propone dimensiones, f'c y refuerzo de menor costo, con estribos #3 o #4 si salen más baratos que más espesor (D-110). Posiciones con origen en C1. Datos ilustrativos; precios en la moneda del usuario. Linderos (D-154): la columna exterior al ras del lindero en la dirección principal y uno lateral a 600 mm (property_lines), con las barras inferiores y superiores en gancho de 90°.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",
@@ -63,8 +63,8 @@
     ],
     "spacing_step": 10.0,
     "ends": {
-      "bottom": "straight",
-      "top": "straight",
+      "bottom": "hook90",
+      "top": "hook90",
       "dowels": "hook90",
       "stirrups": "hook135",
       "skin": "straight"
@@ -87,6 +87,10 @@
       "cy": 500.0,
       "x": 0.0,
       "y": 0.0,
+      "property_lines": {
+        "-x": 0.0,
+        "-y": 600.0
+      },
       "loads": [
         {
           "case": "D+L",

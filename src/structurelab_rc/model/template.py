@@ -4,6 +4,7 @@ from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, model_validator
 
+from structurelab_rc.model.design import Side
 from structurelab_rc.model.footing import Column, Dowels, Mat
 from structurelab_rc.model.layout import internal
 from structurelab_rc.model.pile_cap import PileType
@@ -126,7 +127,8 @@ class LoadsSource(_Input):
 
 class TemplateCombinedColumn(_Input):
     """Columna de una zapata combinada en la plantilla: la del proyecto (D-080), con el Unique Name del nudo de ETABS
-    del que salen sus reacciones; loads trae solo los casos de los tipos que vienen de la plantilla."""
+    del que salen sus reacciones; loads trae solo los casos de los tipos que vienen de la plantilla. property_lines, los
+    linderos de la columna, solo en la plantilla de diseño (D-154)."""
 
     id: str = Field(min_length=1)
     etabs_unique_name: str = Field(min_length=1)
@@ -137,6 +139,7 @@ class TemplateCombinedColumn(_Input):
     dowels: Dowels | None = None
     band: dict[str, Any] | None = None
     band_top: dict[str, Any] | None = None
+    property_lines: dict[Side, NonNegativeFloat] | None = None
     loads: tuple[dict[str, Any], ...] = ()
 
 
@@ -167,6 +170,9 @@ class TemplateCombinedFooting(_Input):
     @model_validator(mode="after")
     def _check_sources(self) -> Self:
         _check_loads_source(f"de la zapata combinada '{self.id}'", self.columns, self.loads_source)
+        if any(column.property_lines is not None for column in self.columns):
+            raise ValueError(f"la zapata combinada '{self.id}' declara property_lines: los linderos son del diseño (D-154); en la "
+                             "verificacion los controlan las dimensiones de la zapata y la posicion de las columnas")
         return self
 
     def etabs_kinds(self) -> tuple[str, ...]:
@@ -254,6 +260,14 @@ class TemplateCombinedPair(_Input):
     etabs_unique_names: tuple[str, str]
     principal_direction: Literal["x", "y"]
     design: dict[str, Any] = Field(default_factory=dict)
+    property_lines: dict[str, dict[Side, NonNegativeFloat]] = Field(default_factory=dict)  # por Unique Name (D-154)
+
+    @model_validator(mode="after")
+    def _check_lines(self) -> Self:
+        unknown = sorted(set(self.property_lines) - set(self.etabs_unique_names))
+        if unknown:
+            raise ValueError(f"property_lines del par '{self.id}' nombra Unique Name que no son del par: {', '.join(unknown)}")
+        return self
 
 
 # Lo que las combinadas toman del bloque design de las tipologías (D-153): un solo f'c para toda la cimentación y los

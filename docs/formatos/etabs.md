@@ -49,7 +49,8 @@ van en zapata combinada; los demás nudos siguen por tipologías aisladas:
 | `combined_pairs[].id` | texto | Identificador de la zapata combinada. |
 | `combined_pairs[].etabs_unique_names` | - | Los Unique Name de sus dos nudos. Deben estar en `columns[]` (de allí sale su sección) y no en `exclude_unique_names`; un nudo no puede estar en dos pares. Salen de las tipologías aisladas. |
 | `combined_pairs[].principal_direction` | texto | `x` o `y`: el eje global de la viga que une las columnas (D-094). |
-| `combined_pairs[].design` | objeto | Opcional: lo propio del par sobre `combined_design` (por ejemplo `placement_case`, `shape` y los campos de la T, `max_cantilever_start` y `max_cantilever_end`). |
+| `combined_pairs[].design` | objeto | Opcional: lo propio del par sobre `combined_design` (por ejemplo `placement_case`, `shape` y los campos de la T). |
+| `combined_pairs[].property_lines` | mm | Opcional (D-154): los linderos de cada columna del par, por Unique Name: `{"276": {"+y": 0}, "288": {"-x": 300}}`, como `property_lines` de las columnas del diseño de la combinada. |
 | `combined_design` | objeto | Obligatorio con pares: el bloque del diseño de la combinada (D-107, D-110, D-113) común a todos los pares, sin `fc_options` ni `prices`, que se toman de `design` (un solo f'c para toda la cimentación). |
 
 Las posiciones de las dos columnas de cada par salen de la tabla de coordenadas (`etabs_files.locations`), que entonces es
@@ -59,7 +60,8 @@ obligatoria; sus cargas, de los Excel. El proyecto de diseño lleva cada par en 
 Con una plantilla que trae el bloque `combined_design` (D-112), el importador genera el proyecto de diseño de una zapata
 combinada de dos columnas (ver [zapatas](zapatas.md), diseño de la zapata combinada): `columns[]` son exactamente dos, con
 `id`, `etabs_unique_name`, `cx`, `cy`, `x` e `y` (como en la plantilla de verificación de la combinada, sin `dowels` ni
-`band`, que propone el diseño) y `loads` solo con los tipos que `loads_source` toma de la plantilla. El Excel de
+`band`, que propone el diseño; `x` e `y` con cualquier origen), `property_lines` opcional (los linderos de la columna,
+D-154; solo en el diseño) y `loads` solo con los tipos que `loads_source` toma de la plantilla. El Excel de
 combinaciones, `principal_direction`, `loads_source` y `etabs_files` son como en la verificación; `combined_design.placement_case` nombra
 la combinación de ETABS como la escribe el importador (por ejemplo `"SERVICIO 1 (D+L)"`). `run` importa, diseña y
 genera la memoria de la zapata diseñada (`diseno.json`, `proyecto.json`, `resumen.json` y la memoria).

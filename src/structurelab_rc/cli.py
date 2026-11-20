@@ -201,6 +201,7 @@ def _combined_summary(result: CombinedDesignResult, placement: str) -> dict[str,
     return {"fc [MPa]": best.fc, "length [mm]": g.length, "width [mm]": g.width, "h [mm]": g.h, **beam,
             "base_center [mm]": [round(g.center[0], 1), round(g.center[1], 1)], "placement_case": placement,
             "reinforcement": best.reinforcement,
+            **({"property_line_gaps [mm]": best.property_gaps} if best.property_gaps else {}),  # D-154
             "concrete [m3]": round(best.concrete, 3), "steel [kg]": round(best.steel, 1), "cost": round(best.cost, 2),
             "cost_basis": result.cost_basis,
             "by_fc": [{"fc [MPa]": option.fc,

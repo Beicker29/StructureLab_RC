@@ -438,3 +438,55 @@ def test_inverted_t_with_short_bars_is_the_cheapest_by_cartilla(monkeypatch: pyt
     assert footing is not None
     # La cartilla con 6 m pesa más que el estimado: los traslapos y los ganchos cuentan.
     assert best.steel > design._estimated_steel(ctx, best.fc, best.geometry, best.reinforcement, footing)
+
+
+def _example_data() -> dict[str, Any]:
+    data: dict[str, Any] = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    return data
+
+
+@pytest.mark.parametrize(("lines", "message"), [
+    ({"+x": 0.0}, r"el lindero \+x no deja cubrir las dos columnas"),  # C1 al ras en +x y C2 más allá en +x
+    ({"-x": -10.0}, "greater than or equal to 0"),
+])
+def test_property_lines_must_leave_room_for_both_columns(lines: dict[str, float], message: str) -> None:
+    """D-154: el voladizo de cada lado es ≥ 0 y el lindero debe dejar cubrir las dos columnas."""
+    data = _example_data()
+    data["columns"][0] = {**data["columns"][0], "property_lines": lines}
+    with pytest.raises(ValidationError, match=message):
+        CombinedDesignProject.model_validate(data)
+
+
+def test_old_cantilever_limits_point_to_property_lines() -> None:
+    data = _example_data()
+    data["combined_design"] = {**data["combined_design"], "max_cantilever_start": 0.0}
+    with pytest.raises(ValidationError, match="se reemplazaron por property_lines en cada columna"):
+        CombinedDesignProject.model_validate(data)
+
+
+def test_design_keeps_the_base_inside_the_property_lines() -> None:
+    """D-154: en el ejemplo congelado (C1 al ras en -x y con lindero -y a 600 mm) los bordes de la base no pasan los
+    linderos, el -x queda al ras y el ancho no crece hacia el lindero."""
+    project = CombinedDesignProject.model_validate(_example_data())
+    ctx = design.Context(project, PROFILES[project.profile], BARS)
+    option = design.design_for_fc(ctx, project.combined_design.fc_options[0])
+    assert option.solution is not None
+    gaps = option.solution.property_gaps
+    assert set(gaps) == {"-x", "-y"} and gaps["-x"] == pytest.approx(0.0, abs=1e-6) and gaps["-y"] >= 0.0
+    g = option.solution.geometry
+    c1 = project.columns[0]
+    assert g.center[0] - g.length / 2 == pytest.approx(c1.x - c1.cx / 2, abs=1e-6)  # al ras de la cara -x de C1
+    assert g.center[1] - g.width / 2 >= c1.y - c1.cy / 2 - 600.0 - 1e-6
+    widened = design.widened(ctx, g, g.width + 2000.0)
+    assert widened is not None and widened.center[1] - widened.width / 2 >= c1.y - c1.cy / 2 - 600.0 - 1e-6
+
+
+def test_verification_template_rejects_property_lines() -> None:
+    """D-154: los linderos son del diseño; en la verificación los controlan las dimensiones y la posición de las columnas."""
+    from structurelab_rc.model.template import EtabsFootingTemplate
+
+    template = json.loads(frozen("nsr_10", "zapatas", "zapata_combinada_etabs.json").read_text(encoding="utf-8"))
+    footing = template["combined_footings"][0]
+    footing["columns"][0] = {**footing["columns"][0], "property_lines": {"-x": 0.0}}
+    with pytest.raises(ValidationError, match="los linderos son del diseño"):
+        EtabsFootingTemplate.model_validate(template)

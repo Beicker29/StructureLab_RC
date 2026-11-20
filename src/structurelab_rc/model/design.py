@@ -5,6 +5,7 @@ tipologías, los f'c comerciales permitidos, los precios y los límites de la b�
 kPa, kN/m² y kN/m³ (como en las zapatas); precios en la moneda del usuario por m³ de concreto y por kg de acero.
 """
 
+from collections.abc import Sequence
 from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator, model_validator
@@ -15,6 +16,9 @@ from structurelab_rc.model.project import Coating, DetailingSettings, DrawingSet
 from structurelab_rc.model.reinforcement import BarEnd, StirrupEnd
 
 COMMERCIAL_FC = (21.0, 24.5, 28.0, 31.5, 35.0, 42.0, 48.0)  # MPa
+
+
+_TOUCH = 1e-6  # mm
 
 
 class _Input(BaseModel):
@@ -206,10 +210,9 @@ def _check_drawing(detailing: DetailingSettings | None, drawing: DrawingSettings
 
 
 class CombinedDesign(DesignLimits):
-    """Límites del diseño de una zapata combinada de dos columnas (D-107). plan_max limita el largo y el ancho.
-    max_cantilever_start y max_cantilever_end limitan el voladizo más allá de la cara exterior de la columna de cada
-    extremo, a lo largo de la dirección principal (start: el de la columna con la menor coordenada; por ejemplo, 0 en una
-    columna de lindero); sin ellos, la base se centra en la resultante. placement_case es el caso de servicio sin sismo
+    """Límites del diseño de una zapata combinada de dos columnas (D-107). plan_max limita el largo y el ancho. Los
+    linderos (medianería) se declaran en cada columna (property_lines, D-154); sin ellos, la base se centra en la
+    resultante. placement_case es el caso de servicio sin sismo
     cuya resultante ubica la base (D-108); sin él, el de servicio sin sismo de mayor carga total. stirrup_bars son las
     barras permitidas para estribos de la viga larga (D-110): con ellas, el cortante y la torsión pueden tomarlos estribos
     en lugar de un espesor mayor; sin ellas no se proponen estribos. shape = "inverted_t" diseña una T invertida (D-113):
@@ -217,8 +220,6 @@ class CombinedDesign(DesignLimits):
     columna más ancha más web_margin a cada lado y crece de a web_step hasta web_max (D-136)."""
 
     min_steel_exception: bool  # D-123: si el diseño y la verificación admiten la excepción de 4/3 del As,min
-    max_cantilever_start: NonNegativeFloat | None = None
-    max_cantilever_end: NonNegativeFloat | None = None
     placement_case: str | None = Field(None, min_length=1)
     stirrup_bars: tuple[str, ...] = ()  # D-110: barras para estribos de la viga larga; sin ellas, no se proponen
     shape: Literal["rectangular", "inverted_t"] = "rectangular"  # D-113
@@ -228,6 +229,15 @@ class CombinedDesign(DesignLimits):
     beam_h_min: PositiveFloat | None = None  # T invertida: alto total de la viga, mm
     beam_h_step: PositiveFloat | None = None
     beam_h_max: PositiveFloat | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _old_cantilevers(cls, data: Any) -> Any:
+        """max_cantilever_start y max_cantilever_end se reemplazaron por los linderos de cada columna (D-154)."""
+        if isinstance(data, dict) and {"max_cantilever_start", "max_cantilever_end"} & set(data):
+            raise ValueError("max_cantilever_start y max_cantilever_end se reemplazaron por property_lines en cada columna: el "
+                             "voladizo maximo mas alla de la cara de esa columna en cada lado global (-x, +x, -y, +y), D-154")
+        return data
 
     @model_validator(mode="after")
     def _check_shape(self) -> Self:
@@ -251,16 +261,38 @@ class CombinedDesign(DesignLimits):
         return self
 
 
+Side = Literal["-x", "+x", "-y", "+y"]
+
+
 class CombinedDesignColumn(_Input):
     """Columna de la zapata combinada a diseñar: sección cx × cy (cx a lo largo de X global), su eje en (x, y) en ejes
-    globales con cualquier origen (el diseño ubica la base) y sus casos de carga en la base."""
+    globales con cualquier origen (el diseño ubica la base; el proyecto diseñado las da respecto al centro de la base) y
+    sus casos de carga en la base. property_lines (D-154): los linderos de la columna, el voladizo máximo de la base más
+    allá de la cara de esta columna en cada lado global (0: la cara al ras del lindero)."""
 
     id: str = Field(min_length=1)
     cx: PositiveFloat
     cy: PositiveFloat
     x: float
     y: float
+    property_lines: dict[Side, NonNegativeFloat] | None = None
     loads: tuple[FootingLoad, ...] = Field(min_length=1)
+
+    def face(self, side: Side) -> float:
+        """La coordenada global de la cara de la columna en ese lado."""
+        sign = 1.0 if side[0] == "+" else -1.0
+        return (self.x + sign * self.cx / 2) if side[1] == "x" else (self.y + sign * self.cy / 2)
+
+
+def side_limits(columns: Sequence[CombinedDesignColumn]) -> dict[Side, float]:
+    """El borde más lejano que permiten los linderos en cada lado global declarado (D-154): en los lados negativos, el
+    mayor de (cara − voladizo) de las columnas que lo declaran; en los positivos, el menor de (cara + voladizo)."""
+    limits: dict[Side, float] = {}
+    for column in columns:
+        for side, overhang in (column.property_lines or {}).items():
+            edge = column.face(side) + (overhang if side[0] == "+" else -overhang)
+            limits[side] = edge if side not in limits else (min(limits[side], edge) if side[0] == "+" else max(limits[side], edge))
+    return limits
 
 
 class CombinedDesignProject(_Input):
@@ -314,6 +346,12 @@ def _combined_rules(project: CombinedDesignProject) -> None:
         raise ValueError("la ubicación de la base necesita un caso de servicio sin sismo (D+L, D-107)")
     if not any(kind == "factored" for kind, _ in keys[0]):
         raise ValueError("el diseño necesita casos mayorados")
+    for side, edge in side_limits(project.columns).items():  # los linderos dejan cubrir las dos columnas (D-154)
+        faces = [column.face(side) for column in project.columns]
+        reach = max(faces) if side[0] == "+" else min(faces)
+        if (side[0] == "+" and edge < reach - _TOUCH) or (side[0] == "-" and edge > reach + _TOUCH):
+            raise ValueError(f"el lindero {side} no deja cubrir las dos columnas: la base debe llegar a la cara {side} de cada una "
+                             "(D-154)")
 
 
 class PairColumn(CombinedDesignColumn):

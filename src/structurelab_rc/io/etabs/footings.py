@@ -282,8 +282,9 @@ def _design_pairs(template: EtabsFootingDesignTemplate, joints: dict[str, _Joint
         for name in pair.etabs_unique_names:
             joint, location = joints[name], locations[name]
             section = sections[joint.group]
+            lines = pair.property_lines.get(name)
             columns.append({"id": joint.label, "cx": section.cx, "cy": section.cy, "x": location["x"], "y": location["y"],
-                            "location": location, "loads": joint.loads})
+                            "location": location, **({} if lines is None else {"property_lines": lines}), "loads": joint.loads})
         design: dict[str, Any] = {**template.combined_design, **pair.design, **shared}
         pairs.append({"id": pair.id, "principal_direction": pair.principal_direction, "combined_design": design, "columns": columns})
     return pairs

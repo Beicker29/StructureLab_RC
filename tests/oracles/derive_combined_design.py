@@ -10,9 +10,12 @@ No importa el paquete. Unidades de trabajo: kN, m y kPa en las fuerzas; mm en la
    xr = Σ(v·x + My + H·Vx)/Σv,  yr = Σ(v·y − Mx + H·Vy)/Σv
    (la zapata, el relleno y las sobrecargas sobre toda la base actúan en su centroide y no dan momento).
 4. Largo, a lo largo de la dirección principal: L = ⌈2·max(sr − s0, s1 − sr)/paso⌉·paso, con s0 y s1 las caras exteriores
-   de las columnas y sr la coordenada de la resultante; la base va de sr − L/2 a sr + L/2. Con un voladizo máximo en el
-   inicio (columna de lindero), la base empieza en s0 − voladizo y conserva el largo.
-5. Ancho mínimo que cubre las columnas: ⌈2·max(|t − tr| + c/2)/paso⌉·paso en la dirección transversal.
+   de las columnas y sr la coordenada de la resultante; la base va de sr − L/2 a sr + L/2.
+5. Ancho mínimo que cubre las columnas: ⌈2·max(|t − tr| + c/2)/paso⌉·paso en la dirección transversal, centrado en tr.
+6. Linderos (D-154), declarados por columna en cada lado global como el voladizo máximo más allá de la cara de esa
+   columna: el borde de la base en el lado −e no baja de max(cara − voladizo) y en el +e no pasa de min(cara + voladizo).
+   En cada dirección la base se corre hacia dentro hasta el lindero que pase, conservando su tamaño; con linderos en los
+   dos lados y sin lugar, el tamaño es la distancia entre ellos.
 
 Uso: python tests/oracles/derive_combined_design.py
 """
@@ -72,24 +75,48 @@ def resultant(columns: list[dict], design: dict, h: float) -> tuple[float, float
     return sx / total * 1000, sy / total * 1000
 
 
+SIZE = {"x": "cx", "y": "cy"}
+
+
+def _edges(columns: list[dict], axis: str) -> tuple[float | None, float | None]:
+    """(borde mínimo, borde máximo) que permiten los linderos de las columnas a lo largo del eje (None: libre)."""
+    low = [c[axis] - c[SIZE[axis]] / 2 - c["property_lines"][f"-{axis}"] for c in columns if f"-{axis}" in c.get("property_lines", {})]
+    high = [c[axis] + c[SIZE[axis]] / 2 + c["property_lines"][f"+{axis}"] for c in columns if f"+{axis}" in c.get("property_lines", {})]
+    return (max(low) if low else None), (min(high) if high else None)
+
+
+def _inside(columns: list[dict], axis: str, size: float, center: float) -> tuple[float, float]:
+    """El tramo de la base de tamaño size centrado en center, corrido hacia dentro de los linderos."""
+    low_edge, high_edge = _edges(columns, axis)
+    if low_edge is not None and high_edge is not None:
+        size = min(size, high_edge - low_edge)
+    low = center - size / 2
+    if low_edge is not None and low < low_edge:
+        low = low_edge
+    if high_edge is not None and low + size > high_edge:
+        low = high_edge - size
+    return low, low + size
+
+
 def geometry(columns: list[dict], design: dict, principal: str, h: float) -> dict:
     xr, yr = resultant(columns, design, h)
     along, across = ("x", "y") if principal == "x" else ("y", "x")
-    size = {"x": "cx", "y": "cy"}
     center = {"x": xr, "y": yr}
-    s0 = min(c[along] - c[size[along]] / 2 for c in columns)
-    s1 = max(c[along] + c[size[along]] / 2 for c in columns)
+    s0 = min(c[along] - c[SIZE[along]] / 2 for c in columns)
+    s1 = max(c[along] + c[SIZE[along]] / 2 for c in columns)
     sr = center[along]
     length = math.ceil(round(2 * max(sr - s0, s1 - sr) / STEP, 9)) * STEP
-    low = sr - length / 2
-    limit = design.get("max_cantilever_start")
-    if limit is not None and s0 - low > limit:
-        low = s0 - limit
-    middle = low + length / 2
+    a0, a1 = _inside(columns, along, length, sr)
     tr = center[across]
-    width = math.ceil(round(2 * max(abs(c[across] - tr) + c[size[across]] / 2 for c in columns) / STEP, 9)) * STEP
-    base = {along: middle, across: tr}
-    return {"length_mm": length, "cover_width_mm": width, "center_mm": [base["x"], base["y"]]}
+    width = math.ceil(round(2 * max(abs(c[across] - tr) + c[SIZE[across]] / 2 for c in columns) / STEP, 9)) * STEP
+    t0, t1 = _inside(columns, across, width, tr)
+    base = {along: (a0 + a1) / 2, across: (t0 + t1) / 2}
+    return {"length_mm": a1 - a0, "cover_width_mm": t1 - t0, "center_mm": [base["x"], base["y"]]}
+
+
+def _lined(columns: list[dict], lines: dict[str, dict[str, float]]) -> list[dict]:
+    """Las columnas con los linderos de lines (por id de columna, D-154)."""
+    return [{**column, **({"property_lines": lines[column["id"]]} if column["id"] in lines else {})} for column in columns]
 
 
 def _design(**changes: object) -> dict:
@@ -115,8 +142,14 @@ def _rotated(columns: list[dict]) -> list[dict]:
 
 CASES = [
     ("centrada", "base centrada en la resultante de D+L, viga en X", "x", _columns(), _design(), 800.0),
-    ("lindero", "voladizo máximo 0 en el inicio: la columna C1 queda al ras del borde", "x", _columns(),
-     _design(max_cantilever_start=0.0), 800.0),
+    ("lindero", "lindero -x al ras de C1 (D-154): la base empieza en la cara -x de C1", "x", _lined(_columns(), {"C1": {"-x": 0.0}}),
+     _design(), 800.0),
+    ("lindero-lateral", "C1 con lindero -x al ras y -y a 50 mm (D-154): la base se corre en las dos direcciones", "x",
+     _lined(_columns(), {"C1": {"-x": 0.0, "-y": 50.0}}), _design(), 800.0),
+    ("linderos-opuestos", "linderos en los dos extremos (-x de C1 y +x de C2 al ras): el largo es la distancia entre ellos",
+     "x", _lined(_columns(), {"C1": {"-x": 0.0}, "C2": {"+x": 0.0}}), _design(), 800.0),
+    ("lindero-viga-en-y", "las columnas giradas (viga en Y) con el lindero -y al ras de C1 (D-154)", "y",
+     _lined(_rotated(_columns()), {"C1": {"-y": 0.0}}), _design(), 800.0),
     ("caso-declarado", "placement_case = D (D-108): la base se ubica con la resultante de D, no con la de mayor carga",
      "x", _columns(), _design(placement_case="D"), 800.0),
     ("viga-en-y", "las mismas columnas giradas, con la viga en la Y global (D-094)", "y", _rotated(_columns()), _design(), 800.0),

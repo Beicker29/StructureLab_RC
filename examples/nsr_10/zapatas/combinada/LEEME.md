@@ -11,8 +11,8 @@ Zapatas combinadas rectangulares de dos columnas: verificación (D-080 a D-083) 
 | `zapata_combinada_etabs_FH.json` | Plantilla para iterar de un par de columnas de ETABS (del usuario). |
 | `zapata_combinada_etabs_j.json` | Plantilla para iterar de un par de columnas de ETABS (del usuario). |
 | `zapata_combinada_etabs_m.json` | Plantilla para iterar de un par de columnas de ETABS (del usuario). |
-| `diseno_combinada.json` | Diseño de la zapata combinada (D-107): las columnas y cargas de `zapata_combinada.json` (posiciones con origen en C1); el diseño ubica la base en la resultante de D+L y elige dimensiones, f'c (21 o 28 MPa) y refuerzo de menor costo. |
-| `diseno_combinada_etabs.json` | Diseño de zapata combinada desde los Excel de `examples/etabs/zapatas/` (D-112): las dos columnas de ZC-A de `zapata_combinada_etabs.json` toman sus cargas de ETABS; la base se ubica con SERVICIO 1 (D+L) (`placement_case`). **Datos supuestos.** |
+| `diseno_combinada.json` | Diseño de la zapata combinada (D-107): las columnas y cargas de `zapata_combinada.json` (posiciones con origen en C1); el diseño ubica la base en la resultante de D+L y elige dimensiones, f'c (21 o 28 MPa) y refuerzo de menor costo; C1 con linderos (D-154): al ras en −x y a 600 mm en −y, con barras en gancho de 90°. |
+| `diseno_combinada_etabs.json` | Diseño de zapata combinada desde los Excel de `examples/etabs/zapatas/` (D-112): las dos columnas de ZC-A de `zapata_combinada_etabs.json` toman sus cargas de ETABS; la base se ubica con SERVICIO 1 (D+L) (`placement_case`); la columna exterior al ras de su lindero en la dirección principal (D-154), con barras en gancho de 90°. **Datos supuestos.** |
 
 Estos archivos son **para iterar**: se pueden cambiar libremente para probar parámetros. Las pruebas, las huellas y la CI
 leen solo la copia congelada de [`pruebas/`](pruebas/LEEME.md) (D-098). Nombres: `<tipo>.json` con las cargas

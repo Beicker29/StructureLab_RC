@@ -1,5 +1,5 @@
 {
-  "description": "Diseño de zapata combinada desde ETABS (D-112): las columnas C15 y la otra de ZC-A en zapata_combinada_etabs.json toman sus cargas de servicio y mayoradas de los Excel compartidos; el diseño ubica la base en la resultante de SERVICIO 1 (D+L) (placement_case) y propone dimensiones, f'c y refuerzo de menor costo, con estribos si salen más baratos (D-110). **Datos supuestos.**",
+  "description": "Diseño de zapata combinada desde ETABS (D-112): las columnas C15 y la otra de ZC-A en zapata_combinada_etabs.json toman sus cargas de servicio y mayoradas de los Excel compartidos; el diseño ubica la base en la resultante de SERVICIO 1 (D+L) (placement_case) y propone dimensiones, f'c y refuerzo de menor costo, con estribos si salen más baratos (D-110). **Datos supuestos.** Linderos (D-154): la columna exterior al ras del lindero en la dirección principal (property_lines), con las barras inferiores y superiores en gancho de 90°.",
   "etabs_files": {
     "service": "../../../../etabs/zapatas/pruebas/Joint Reactions - Servicio.xlsx",
     "factored": "../../../../etabs/zapatas/pruebas/Joint Reactions - Ultimas.xlsx",
@@ -69,8 +69,8 @@
     ],
     "spacing_step": 10.0,
     "ends": {
-      "bottom": "straight",
-      "top": "straight",
+      "bottom": "hook90",
+      "top": "hook90",
       "dowels": "hook90",
       "stirrups": "hook135",
       "skin": "straight"
@@ -93,7 +93,10 @@
       "cx": 600.0,
       "cy": 600.0,
       "x": -2700.0,
-      "y": 0.0
+      "y": 0.0,
+      "property_lines": {
+        "-x": 0.0
+      }
     },
     {
       "id": "C1659",

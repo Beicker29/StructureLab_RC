@@ -88,7 +88,7 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
-from structurelab_rc.model.design import CombinedDesign, CombinedDesignColumn, CombinedDesignProject
+from structurelab_rc.model.design import CombinedDesign, CombinedDesignColumn, CombinedDesignProject, side_limits
 from structurelab_rc.model.footing import FootingLoad
 from structurelab_rc.model.layout import public
 from structurelab_rc.model.project import Materials, Project
@@ -149,6 +149,7 @@ class Geometry:
     h: float
     center: tuple[float, float]
     beam: tuple[float, float] | None = None
+    cross: float | None = None  # la resultante transversal: el ancho se centra en ella dentro de los linderos (D-154)
 
     @property
     def total_height(self) -> float:
@@ -224,6 +225,7 @@ class CombinedSolution:
     concrete: float
     steel: float
     data: dict[str, Any] = field(repr=False)
+    property_gaps: dict[str, float] = field(default_factory=dict)  # distancia del borde a cada lindero (D-154)
 
 
 @dataclass(frozen=True)
@@ -428,37 +430,101 @@ def _coordinate(column: CombinedDesignColumn, axis: str) -> tuple[float, float]:
     return (column.x, column.cx) if axis == "x" else (column.y, column.cy)
 
 
+def _faces(ctx: Context, axis: str) -> tuple[float, float]:
+    """Las caras extremas de las dos columnas a lo largo del eje global (lo que la base debe cubrir)."""
+    spans = [_coordinate(column, axis) for column in ctx.project.columns]
+    return min(s - c / 2 for s, c in spans), max(s + c / 2 for s, c in spans)
+
+
+def _fit(ctx: Context, axis: str, size: float, center: float, shrink: bool) -> tuple[float, float] | None:
+    """El tramo [bajo, alto] de la base a lo largo del eje global: de largo size centrado en center, corrido hacia dentro
+    de los linderos de ese eje (D-154). Con linderos en los dos lados y sin lugar, shrink lo recorta a lo que cabe; si no
+    (o si no cubre las caras de las columnas), None."""
+    limits = side_limits(ctx.project.columns)
+    low_edge, high_edge = limits.get(f"-{axis}"), limits.get(f"+{axis}")  # type: ignore[call-overload]
+    if shrink and low_edge is not None and high_edge is not None:
+        size = min(size, high_edge - low_edge)
+    low, high = center - size / 2, center + size / 2
+    if low_edge is not None and low < low_edge:
+        low, high = low_edge, low_edge + size
+    if high_edge is not None and high > high_edge:
+        low, high = high_edge - size, high_edge
+    first, last = _faces(ctx, axis)
+    if (low_edge is not None and low < low_edge - _TOUCH) or low > first + _TOUCH or high < last - _TOUCH:
+        return None
+    return low, high
+
+
 def geometry_for(ctx: Context, h: float, extra: int, beam: tuple[float, float] | None = None) -> Geometry | None:
-    """La base de largo mínimo (más extra pasos) centrada en la resultante a lo largo de la dirección principal, salvo
-    que un voladizo máximo lo impida, y con el ancho mínimo que cubre las columnas; None si el largo pasa de plan_max."""
+    """La base de largo mínimo (más extra pasos) centrada en la resultante a lo largo de la dirección principal y con el
+    ancho mínimo que cubre las columnas centrado en la resultante transversal, las dos corridas hacia dentro de los
+    linderos de las columnas (D-154); None si el largo pasa de plan_max o la base no cabe entre los linderos."""
     design = ctx.design
     step = design.plan_step
     principal, transverse = ctx.axes()
     resultant = dict(zip(("x", "y"), placement(ctx, h, beam), strict=True))
-    spans = [_coordinate(column, principal) for column in ctx.project.columns]
-    start_face, end_face = min(s - c / 2 for s, c in spans), max(s + c / 2 for s, c in spans)
+    start_face, end_face = _faces(ctx, principal)
     center = resultant[principal]
     length = math.ceil(round(2 * max(center - start_face, end_face - center) / step, 9)) * step + extra * step
-    low, high = center - length / 2, center + length / 2
-    if design.max_cantilever_start is not None and start_face - low > design.max_cantilever_start:
-        low = start_face - design.max_cantilever_start
-        high = max(low + length, end_face)
-    if design.max_cantilever_end is not None and high - end_face > design.max_cantilever_end:
-        high = end_face + design.max_cantilever_end
-        low = high - length
-        if design.max_cantilever_start is not None:
-            low = max(low, start_face - design.max_cantilever_start)
-    length = high - low
-    if length > design.plan_max or low > start_face or high < end_face:
+    along = _fit(ctx, principal, length, center, shrink=True)
+    if along is None or along[1] - along[0] > design.plan_max:
         return None
+    low, high = along
     sides = [_coordinate(column, transverse) for column in ctx.project.columns]
     cross = resultant[transverse]
     width = math.ceil(round(2 * max(abs(t - cross) + c / 2 for t, c in sides) / step, 9)) * step
-    middle = (low + high) / 2
-    center_xy = (middle, cross) if principal == "x" else (cross, middle)
     if beam is not None:  # el alma cubre las columnas y la base, el alma
         width = max(width, math.ceil(round((beam[0] + 2 * design.cover) / step, 9)) * step)
-    return Geometry(length, width, h, center_xy, beam)
+    across = _fit(ctx, transverse, width, cross, shrink=True)
+    if across is None:
+        return None
+    middle, side = (low + high) / 2, (across[0] + across[1]) / 2
+    center_xy = (middle, side) if principal == "x" else (side, middle)
+    return Geometry(high - low, across[1] - across[0], h, center_xy, beam, cross)
+
+
+def property_gaps(ctx: Context, geometry: Geometry) -> dict[str, float]:
+    """La distancia del borde de la base a cada lindero declarado (mm, ≥ 0; 0: al ras), por lado global (D-154)."""
+    principal, _ = ctx.axes()
+    half = {"x": (geometry.length if principal == "x" else geometry.width) / 2,
+            "y": (geometry.width if principal == "x" else geometry.length) / 2}
+    center = {"x": geometry.center[0], "y": geometry.center[1]}
+    gaps: dict[str, float] = {}
+    for side, edge in side_limits(ctx.project.columns).items():
+        axis = side[1]
+        border = center[axis] + (half[axis] if side[0] == "+" else -half[axis])
+        gaps[side] = round(abs(edge - border), 6) + 0.0
+    return gaps
+
+
+def _widening_helps(ctx: Context, geometry: Geometry) -> bool:
+    """Si un ancho mayor puede dar más largo de desarrollo a las barras transversales (D-154): con la base al ras de un
+    lindero transversal, crece solo hacia el lado libre, y eso sirve mientras el voladizo libre (desde la cara de las
+    columnas) sea menor que el del lado del lindero; después, lo que falla es el lado del lindero y crecer no lo arregla."""
+    _, transverse = ctx.axes()
+    gaps = property_gaps(ctx, geometry)
+    pinned = [side for side in (f"-{transverse}", f"+{transverse}") if side in gaps and gaps[side] < _TOUCH]
+    if len(pinned) != 1:
+        return True
+    index = 0 if transverse == "x" else 1
+    low, high = geometry.center[index] - geometry.width / 2, geometry.center[index] + geometry.width / 2
+    first, last = _faces(ctx, transverse)
+    lined, free = (first - low, high - last) if pinned[0][0] == "-" else (high - last, first - low)
+    return free < lined
+
+
+def widened(ctx: Context, geometry: Geometry, width: float) -> Geometry | None:
+    """La base con otro ancho, centrada en la resultante transversal y corrida hacia dentro de los linderos (D-154): al
+    crecer, crece hacia el lado libre; None si ese ancho no cabe entre los linderos."""
+    _, transverse = ctx.axes()
+    index = 0 if transverse == "x" else 1
+    anchor = geometry.center[index] if geometry.cross is None else geometry.cross
+    across = _fit(ctx, transverse, width, anchor, shrink=False)
+    if across is None:
+        return None
+    middle = (across[0] + across[1]) / 2
+    center = (middle, geometry.center[1]) if index == 0 else (geometry.center[0], middle)
+    return replace(geometry, width=width, center=center)
 
 
 def _soil_ok(ctx: Context, geometry: Geometry) -> bool:
@@ -479,7 +545,9 @@ def width_for(ctx: Context, geometry: Geometry) -> Geometry | None:
     needed = (loads[0].p + loads[1].p) / soil.allowable_pressure / geometry.length
     width = max(geometry.width, math.ceil(round(needed / design.plan_step, 9)) * design.plan_step)
     while width <= design.plan_max:
-        candidate = replace(geometry, width=width)
+        candidate = widened(ctx, geometry, width)
+        if candidate is None:  # no cabe entre los linderos (D-154)
+            return None
         if _soil_ok(ctx, candidate):
             return candidate
         width += design.plan_step
@@ -952,7 +1020,8 @@ def priced(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[str,
     else:
         steel = _estimated_steel(ctx, fc, geometry, reinforcement, footing)
     cost = concrete * design.prices.concrete(fc) + steel * design.prices.steel_per_kg
-    return CombinedSolution(fc, geometry, reinforcement, cost, concrete, steel, _footing_data(ctx, geometry, reinforcement))
+    return CombinedSolution(fc, geometry, reinforcement, cost, concrete, steel, _footing_data(ctx, geometry, reinforcement),
+                            property_gaps(ctx, geometry))
 
 
 def _estimated_steel(ctx: Context, fc: float, geometry: Geometry, reinforcement: dict[str, Any], footing: CombinedFooting) -> float:
@@ -1101,10 +1170,16 @@ def _sized_from(ctx: Context, fc: float, geometry: Geometry | None, reached: flo
         return "soil", reached
     step, top = ctx.design.plan_step, ctx.design.plan_max
     while sized.width + step <= reached + _SPACING_TOLERANCE and sized.width + step <= top:
-        sized = replace(sized, width=sized.width + step)  # sobre la malla de anchos del suelo, hasta el ya alcanzado
+        wider = widened(ctx, sized, sized.width + step)  # sobre la malla de anchos del suelo, hasta el ya alcanzado
+        if wider is None:  # los linderos no dejan crecer (D-154)
+            break
+        sized = wider
     result = reinforce(ctx, fc, sized)
-    while result == "width" and sized.width + step <= top:
-        sized = replace(sized, width=sized.width + step)  # más largo de desarrollo transversal
+    while result == "width" and sized.width + step <= top and _widening_helps(ctx, sized):
+        wider = widened(ctx, sized, sized.width + step)  # más largo de desarrollo transversal
+        if wider is None:
+            break
+        sized = wider
         result = reinforce(ctx, fc, sized)
     return ("h" if result == "width" else result), sized.width
 
@@ -1152,8 +1227,8 @@ def _for_length(ctx: Context, fc: float, extra: int) -> CombinedSolution | str:
     return best
 
 
-_FAILURES = {"plan": "el largo necesario pasa de plan_max o no cabe con los voladizos maximos",
-             "soil": "ningun ancho hasta plan_max cumple la revision geotecnica",
+_FAILURES = {"plan": "el largo necesario pasa de plan_max o la base no cabe entre los linderos (property_lines, D-154)",
+             "soil": "ningun ancho hasta plan_max, dentro de los linderos, cumple la revision geotecnica",
              "h": "ningun espesor hasta h_max aprueba la verificacion estructural"}
 
 
@@ -1219,6 +1294,16 @@ def _placement_note(ctx: Context) -> str:
     return f"'{case}' ({how})"
 
 
+def _lines_note(solution: CombinedSolution) -> str:
+    """Los linderos de la descripción (D-154): la distancia del borde de la base a cada uno; la base se corre desde la
+    resultante si un lindero lo pide."""
+    gaps = solution.property_gaps
+    if not gaps:
+        return ""
+    sides = ", ".join(f"{side} a {gap:.0f} mm" for side, gap in gaps.items())
+    return f" (corrida hacia dentro de los linderos si hace falta; borde a su lindero: {sides}, D-154)"
+
+
 def designed_project(ctx: Context, solution: CombinedSolution) -> dict[str, Any]:
     """Proyecto de verificación (formato de entrada) con la zapata diseñada."""
     project = ctx.project
@@ -1230,9 +1315,10 @@ def designed_project(ctx: Context, solution: CombinedSolution) -> dict[str, Any]
         shape = f" en T invertida con viga de {g.beam[0]:g} × {g.beam[1]:g} mm{deep}"
     return public({
         "description": f"{project.description} Diseño de la zapata combinada (D-107){shape}: {g.length:g} × {g.width:g} × {g.h:g} mm, "
-                       f"f'c = {solution.fc:g} MPa, centroide de la base en ({g.center[0]:.1f}, {g.center[1]:.1f}) mm de los "
-                       f"ejes de las columnas, sobre la resultante del caso {_placement_note(ctx)}, costo {solution.cost:.2f} "
-                       f"(acero: {cost_basis(ctx)}, D-127).",
+                       f"f'c = {solution.fc:g} MPa, centroide de la base en ({g.center[0]:.1f}, {g.center[1]:.1f}) mm en las "
+                       f"coordenadas de entrada de las columnas, sobre la resultante del caso {_placement_note(ctx)}"
+                       f"{_lines_note(solution)}, costo {solution.cost:.2f} (acero: {cost_basis(ctx)}, D-127). Las columnas del "
+                       "proyecto quedan respecto al centro de la base.",
         "profile": project.profile,
         "seismic": project.seismic.model_dump(),
         "materials": {"fc": solution.fc, "fy": materials.fy, "fyt": materials.fyt, "concrete": materials.concrete,
