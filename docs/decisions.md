@@ -3435,11 +3435,11 @@
     diámetro interior de doblado del estribo del perfil.
   - L = 2·(b + h) + 2·g, con b × h exteriores a 10 mm. Es la misma longitud de DL-NET, la cartilla, el peso, el costo, el
     DXF y el `.dli`.
-- **Valores** (0.30 × 0.50; NSR-10 con 6db; ACI con máx(6db, 75 mm)):
+- **Valores** (0.30 × 0.50; los dos perfiles con máx(6db, 75 mm)):
 
   | Barra | g NSR-10 | g ACI | L NSR-10 | g estándar DL-NET |
   |---|---|---|---|---|
-  | #3 | 100 | 110 | 1800 | 100 |
+  | #3 | 110 | 110 | 1820 | 100 |
   | #4 | 130 | 130 | 1860 | 130 |
   | #5 | 160 | 160 | 1920 | 150 |
   | #6 | 220 | 220 | 2040 | 200 |
@@ -3448,10 +3448,10 @@
 
 - **Cumplimiento:** g contiene la extensión recta de la norma (ACI Tabla 25.3.2; NSR-10 C.7.1.3) y el doblez con el
   diámetro del perfil. La norma no fija una fórmula de longitud de corte (como en D-147).
-- **Pendiente:** el usuario indicó que en NSR-10 la extensión es 6db, no menor de 75 mm. El oráculo
-  (`derive_detailing.py`) registra, leído del PDF, que C.7.1.3(c) da 6db sin mínimo de 75 mm. Ese mínimo está en la
-  definición de gancho sísmico (C.21.1). El PDF local es escaneado y hoy no se pudo releer. Se mantiene 6db hasta que el
-  usuario confirme el numeral; con 75 mm, el #3 de NSR-10 tendría g = 110 mm.
+- **Extensión en NSR-10 (decisión de ingeniería del usuario, 2026-11-21):** C.7.1.3(c) pide 6db. C.7.1.4 pide gancho
+  sísmico de 135° con 6db, pero no menos de 75 mm, en los estribos de confinamiento de C.21 en DMO y DES (texto aportado
+  por el usuario). El usuario decide aplicar ese mínimo de 75 mm a todos los estribos de NSR-10, con cualquier nivel
+  sísmico. Solo cambia el #3 (6db = 57 mm). Es más exigente que la norma fuera de DMO y DES y no la contradice.
 - **Código:**
   - `detailing/schedule.py`: `stirrup_hook_length` (g) y `_stirrup_length` (L y A, B, C = b, h, g).
   - El gancho de 135° de una barra suelta sigue por el eje.

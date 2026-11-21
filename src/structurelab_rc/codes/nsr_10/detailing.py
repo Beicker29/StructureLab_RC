@@ -6,6 +6,7 @@ _BAR_11 = 35.8 + 0.5  # mm: No. 9 a No. 11
 _BAR_5 = 15.9 + 0.5  # mm: No. 5 y menores (estribos, C.7.1.3 y C.7.2.2)
 _ANGLE_90, _ANGLE_135, _ANGLE_180 = 90, 135, 180  # grados del doblez
 _HOOK_180_MIN = 65.0
+_STIRRUP_135_MIN = 75.0  # mm: gancho sísmico de C.7.1.4, aplicado a todos los estribos (decisión del usuario, D-160)
 _LAP_MIN = 300.0
 _LAP_FACTORS = {"A": 1.0, "B": 1.3}
 _CLASS_A_RATIO = 2.0
@@ -17,7 +18,7 @@ _FC_COMPRESSION = 21.0
 def clauses() -> dict[str, str]:
     return {
         "hook": "C.7.1.1 y C.7.1.2",
-        "stirrup_hook": "C.7.1.3",
+        "stirrup_hook": "C.7.1.3 y C.7.1.4",
         "bend": "C.7.2.1 y Tabla C.7.2",
         "stirrup_bend": "C.7.2.2",
         "tension_lap": "C.12.15.1",
@@ -48,12 +49,13 @@ def stirrup_bend_diameter(db: float) -> float:
 
 
 def stirrup_hook_extension(db: float, angle: int) -> float | None:
-    """C.7.1.3: 90° más 6db (No. 5 y menores) o 12db (No. 6 a No. 8); 135° más 6db (No. 8 y menores), en mm. None si
-    C.7.1.3 no define ese gancho para la barra."""
+    """C.7.1.3: 90° más 6db (No. 5 y menores) o 12db (No. 6 a No. 8); 135° más 6db (No. 8 y menores) pero no menos de
+    75 mm, el mínimo del gancho sísmico de C.7.1.4 (DMO y DES), que el usuario aplica a todos los estribos como decisión de
+    ingeniería (D-160), en mm. None si C.7.1.3 no define ese gancho para la barra."""
     if angle == _ANGLE_90:
         return 6.0 * db if db <= _BAR_5 else 12.0 * db if db <= _BAR_8 else None
     if angle == _ANGLE_135:
-        return 6.0 * db if db <= _BAR_8 else None
+        return max(6.0 * db, _STIRRUP_135_MIN) if db <= _BAR_8 else None
     return None
 
 

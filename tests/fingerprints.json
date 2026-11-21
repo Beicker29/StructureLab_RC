@@ -228,9 +228,9 @@
     "zapata_centrica_etabs_drawing.json": "a7e933150a748df20e0835d24a8a8ce8ac91ef0a14a9ac45eb2e287846cc2e23"
   },
   "examples/nsr_10/zapatas/combinada/pruebas/diseno_combinada.json": {
-    "proyecto.json": "2a09eebfadcb4b315bba4ca74488d2c5a5a0813fd1b2b18a9433a354759b36e7",
-    "resultado.json": "1376aafb04b78b06c7149719b20f80925ec615eb10b179c2b06d96ba747075a2",
-    "memoria.txt": "5f193e4287b2de49c11a984470dccf7558fdd723c83269b945f24b21c4458623"
+    "proyecto.json": "5efb4268a24d12ec7eaa9f93c97a04b323b60080915e5b042456f1587fd55d07",
+    "resultado.json": "4713e40bb958f26c86f7ccd3f5c1f804f138464822ab4788eae72888260047b5",
+    "memoria.txt": "326788da9aadd6c8aaeb1e3bacb3f7833cc489b71775665db65b8a96b5d5ee79"
   },
   "examples/nsr_10/zapatas/combinada/pruebas/diseno_combinada_etabs.json": {
     "resultado.json": "420accb00ae735773eea065951d9c45bb3ff1214682058d19833576e1ad34c33",
@@ -246,9 +246,9 @@
     "memoria.txt": "34a0a5714a23c00b4a00704f77601f4b0ef83527f96a211fc566f03f38807cea"
   },
   "examples/nsr_10/zapatas/t_invertida/pruebas/diseno_t_invertida.json": {
-    "proyecto.json": "0acc0f0fb7f28a140705857f409187cf27cce20c7bc56c5277a5f2fea17e2891",
-    "resultado.json": "4764ce2ac19cd6b1799f51f8a5aaac8f656c634fa15c55d736c92d41b48d0869",
-    "memoria.txt": "0a27e77229b58c71d8602eec196b4ed3a7ae5fb095c14abb91812f2fda82419f"
+    "proyecto.json": "8362b34ceb47d483c560402d833e293b02b18b2d14d5a517d00f8b89a386a7aa",
+    "resultado.json": "75de4020c7e8984686cdb8c5c85292e04b518fb0670199e464c44f80abf9740e",
+    "memoria.txt": "bd5e5936ac23e2af2092acd757368ec2967c76325f55a398a01da7b1ea084f56"
   },
   "examples/nsr_10/zapatas/t_invertida/pruebas/diseno_t_invertida_etabs.json": {
     "resultado.json": "3bf46a4714e716199f4d0b64f77293300ef9ba6ae55caac05eafeef0aac09541",

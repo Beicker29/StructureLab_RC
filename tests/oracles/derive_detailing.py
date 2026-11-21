@@ -5,7 +5,8 @@ Datos de la norma, leídos de los PDF:
   Tabla 25.3.2 (estribos): doblado 4db (No. 10–16), 6db (No. 19–25); 135° con máx(6db, 75 mm).
   25.5.2.1: máx(1.0ℓd, 300) clase A, máx(1.3ℓd, 300) clase B; 25.5.5.1: máx(0.071fy·db, 300) con fy ≤ 420 MPa.
 - NSR-10, C.7.1 y Tabla C.7.2: los mismos doblados y extensiones de ganchos estándar; estribos No. 5 y menores con
-  doblado 4db; 135° con 6db, sin mínimo de 75 mm (C.7.1.3(c)). C.12.15.1 y C.12.16.1: los mismos empalmes.
+  doblado 4db; 135° con 6db (C.7.1.3(c)) y, por decisión del usuario (D-160), no menos de 75 mm, el mínimo del gancho
+  sísmico de C.7.1.4, en todos los estribos. C.12.15.1 y C.12.16.1: los mismos empalmes.
 
 Geometría (independiente de detailing/schedule.py), convención de DL-NET (decisión del usuario, D-147):
 - Barra con ganchos y tramo horizontal exterior A: longitud total = A (hacia arriba a 10 mm) + la de cada gancho (hacia
@@ -29,7 +30,7 @@ import math
 from pathlib import Path
 
 HERE = Path(__file__).parent
-BARS = {"#4": 12.7, "#5": 15.9, "#6": 19.1, "#9": 28.7}  # mm
+BARS = {"#3": 9.5, "#4": 12.7, "#5": 15.9, "#6": 19.1, "#9": 28.7}  # mm
 FY, FC = 420.0, 28.0
 
 
@@ -44,7 +45,7 @@ def hook(folder: str, db: float) -> dict:
 
 def stirrup(folder: str, db: float) -> dict:
     bend = (4.0 if db <= 16.4 else 6.0) * db
-    ext135 = max(6.0 * db, 75.0) if folder == "aci_318_25" else 6.0 * db
+    ext135 = max(6.0 * db, 75.0)  # ACI Tabla 25.3.2; NSR-10 C.7.1.4 en todos los estribos (D-160)
     return {"bend": bend, "ext135": ext135}
 
 
@@ -106,7 +107,7 @@ def derive(folder: str) -> dict:
     return {
         "source": "derive_detailing.py (D-125, D-129)",
         "hooks": {name: hook(folder, db) for name, db in BARS.items()},
-        "stirrups": {name: stirrup(folder, db) for name, db in BARS.items() if name in ("#4", "#5")},
+        "stirrups": {name: stirrup(folder, db) for name, db in BARS.items() if name in ("#3", "#4", "#5")},
         "u_bar": {"designation": "#6", "A": 2850.0, **u_bar(folder, BARS["#6"], 2850.0)},
         "u_bar_180": {"designation": "#9", "A": 3127.0, **u_bar(folder, BARS["#9"], 3127.0, 180)},
         "closed_stirrup": {"designation": "#4", "W": 851.0, "H": 1550.0, **closed_stirrup(folder, BARS["#4"], 851.0, 1550.0)},
