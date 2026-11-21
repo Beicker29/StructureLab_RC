@@ -35,6 +35,7 @@ ROOT = Path(__file__).parent.parent
 FIXTURES = Path(__file__).parent / "fixtures" / "dlnet"
 REAL = FIXTURES / "n_12.dli"  # guardado por DL-NET 2026: barra con L.5 L.5 y estribo E
 SAVED = FIXTURES / "PRUEBA_StructureLab.dli"  # guardado por DL-NET: barra recta, un gancho, dos ganchos y estribo
+STIRRUPS = FIXTURES / "ESTRIBOS.dli"  # guardado por DL-NET: estribo con ganchos de 135° (F0/45), b*h exteriores
 
 
 def _real(path: Path) -> bytes:
@@ -104,7 +105,10 @@ def test_lines_match_the_files_saved_by_dlnet() -> None:
     assert row_line(_bar(3, "#6", 6400.0, {"B": 300.0, "C": 300.0}, (90, 90)), names) == lines[0]
     assert row_line(_bar(3, "#6", 6400.0, {"B": 300.0}, (90, None)), names) == lines[1]
     assert row_line(_bar(2, "#5", 2200.0, {}, (None, None)), names) == lines[2]
-    assert row_line(_stirrup(28, "#3", (300.0, 450.0), 100.0), names) == lines[5]
+    assert lines[5] == '28  E  "3/8\'\'"  .3*.45   G.1   F0/90'  # otra figura de DL-NET: solo se escribe la de 135°
+    stirrups = read_dli(_real(STIRRUPS)).elements[0].lines
+    assert row_line(_stirrup(1, "#3", (300.0, 500.0), 150.0), names) == stirrups[6]
+    assert row_line(_bar(24, "#6", 1660.0, {"B": 300.0}, (90, None)), names) == stirrups[5]
 
 
 def test_lines_without_the_real_files() -> None:
@@ -112,8 +116,9 @@ def test_lines_without_the_real_files() -> None:
     assert row_line(_bar(2, "#5", 2200.0, {}, (None, None)), NAMES) == '2  "5/8\'\'"  2.2'
     assert row_line(_bar(3, "#6", 6400.0, {"C": 300.0}, (None, 90)), NAMES) == '3  "3/4\'\'"  6.4   L.3'
     assert row_line(_bar(1, "#5", 5800.0, {"B": 180.0, "C": 180.0}, (180, 180)), NAMES) == '1  "5/8\'\'"  5.8   U.2   U.2'
-    assert row_line(_stirrup(6, "#4", (300.0, 500.0), 150.0), NAMES) == '6  E  "1/2\'\'"  .3*.5   G.15   F0/90'
-    # Las dimensiones son las de la cartilla: redondeadas hacia arriba a 50 mm.
+    assert row_line(_stirrup(6, "#4", (300.0, 500.0), 150.0), NAMES) == '6  E  "1/2\'\'"  .3*.5   G.15   F0/45'
+    assert row_line(_stirrup(6, "#4", (302.0, 487.0), 150.0), NAMES) == '6  E  "1/2\'\'"  .31*.49   G.15   F0/45'
+    # Los ganchos L y U de la cartilla van redondeados hacia arriba a 50 mm.
     assert row_line(_bar(16, "#6", 1550.0, {"B": 331.0}, (90, None)), NAMES) == '16  "3/4\'\'"  1.55   L.35'
 
 

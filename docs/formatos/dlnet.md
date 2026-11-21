@@ -40,8 +40,10 @@ Deducido por ingeniería inversa de archivos guardados por DL-NET 2026 (el forma
   4. **bloque de elementos:** `" N"` y, por elemento, su nombre, `" k"` y sus k líneas;
   5. **cola:** los grupos (`" G"` y, por grupo, nombre, marca y la pertenencia de los elementos), luego anotaciones,
      página y `FINALDEARCHIVORANDOM`.
-- **Grupos:** la pertenencia lleva `" 1 "` por elemento (`" 1  1 "` con dos elementos; vacía con ninguno). Al generar,
-  se rehace con todos los elementos en cada grupo de la plantilla.
+- **Grupos:** la pertenencia lleva un número por elemento (`" 1  1 "` con dos elementos; vacía con ninguno). En
+  `ESTRIBOS.dli`, con un solo elemento, el número es 3: parece la cantidad de ese elemento en el grupo, por confirmar.
+  Al generar, se rehace con todos los elementos en cada grupo de la plantilla, con cantidad 1 (cada elemento es una
+  zapata).
 
 ## Líneas
 
@@ -57,10 +59,11 @@ cartilla (D-147): la longitud total es el tramo horizontal más la longitud de c
 | `L` (un gancho de 90°) | `3  "3/4''"  6.4   L.3` | Verificada (ídem) |
 | `L-L` (gancho de 90° en los dos extremos) | `1  "1-1/8''"  5.8   L.5   L.5` | Verificada (`n_12.dli`) |
 | `U-U` (gancho de 180°; también `U` y `L-U`) | `1  "5/8''"  5.8   U.2   U.2` | Verificada por el usuario (D-147): `U` es el gancho de 180° |
-| `E`, estribo cerrado b × h, ganchos de 135° | `6  E  "1/2''"  .3*.5   G.15   F0/90` | Verificada; el significado de `F0/90` está por confirmar (se copia del ejemplo) |
+| `E`, estribo cerrado b × h, ganchos de 135° | `1  E  "3/8''"  .3*.5   G.15   F0/45` | Verificada por el usuario (`ESTRIBOS.dli`): b × h exteriores a 1 cm; `F0/45` es la figura de ganchos de 135° (`F0/90` es otra figura y no se escribe) |
 | Figura G | `6  G  "3/4''"  .5   G.2/.2   F360/0` | No implementada |
 
 Confirmado por el usuario (D-147): la longitud es la de corte, `U` es el gancho de 180° y la geometría de L y U es la de
-DL-NET (tramo = Ltotal − 2L o Ltotal − 2U). Por confirmar (constantes con `TODO D-133` en `io/dlnet.py`): b × h del
-estribo, el significado de `F0/90` y la pertenencia de los grupos. Una forma o un gancho que DL-NET no representa (figura G, gancho de 135° en una barra,
+DL-NET (tramo = Ltotal − 2L o Ltotal − 2U). También confirmado (D-133, 2026-11-21): los
+`.dli` generados abren sin errores, b × h del estribo son sus dimensiones exteriores (a 1 cm, dos decimales, como la cartilla
+del DXF) y la figura del estribo de 135° escribe `F0/45`. Por confirmar: el número de la pertenencia de los grupos. Una forma o un gancho que DL-NET no representa (figura G, gancho de 135° en una barra,
 estribo sin ganchos de 135°, una barra fuera de la librería) es un error con la marca, nunca una salida silenciosa.

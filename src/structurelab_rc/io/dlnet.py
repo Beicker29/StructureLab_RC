@@ -30,14 +30,16 @@ _COUNT_TAIL = b"NA"  # cola de los contadores
 _MM_PER_M = 1000.0
 
 # Sintaxis de las líneas (docs/formatos/dlnet.md). Verificadas: barra con gancho de 90° en los dos extremos ("L"), barra
-# recta, un gancho de 90°, gancho "U" y estribo "E" (abren en DL-NET: n_12.dli y PRUEBA_StructureLab.dli).
+# recta, un gancho de 90°, gancho "U" y estribo "E" (abren en DL-NET: n_12.dli, PRUEBA_StructureLab.dli y ESTRIBOS.dli).
 # "U" es el gancho de 180° (confirmado por el usuario, D-147).
 HOOK_CODES = {90: "L", 180: "U"}
 STIRRUP_ANGLE = 135  # gancho de cierre del estribo
-STIRRUP_FIELD = "F0/90"  # TODO D-133: significado del campo F del estribo sin confirmar; se copia del ejemplo real
+# La figura de DL-NET del estribo con ganchos de 135° (la de los estribos sísmicos) escribe F0/45; F0/90 es otra figura
+# de la misma librería (confirmado por el usuario con ESTRIBOS.dli, D-133). b*h son las dimensiones exteriores, a 1 cm.
+STIRRUP_FIELD = "F0/45"
 # La longitud de la línea es la total de la cartilla, tramo + L o U por gancho, y L y U van a 50 mm (convención de DL-NET,
-# D-147). TODO D-133: confirmar que b*h del estribo son sus dimensiones exteriores; así las da la cartilla.
-GROUP_MEMBER = " 1 "  # TODO D-133: la pertenencia de un elemento a un grupo de la cola (inferida: " 1  1 " con dos elementos)
+# D-147).
+GROUP_MEMBER = " 1 "  # TODO D-133: número de un elemento en un grupo de la cola; ESTRIBOS.dli lleva " 3 " con un elemento (¿cantidad?)
 
 
 class DliError(ValueError):
@@ -165,7 +167,7 @@ def _metres(value: float) -> float:
 
 def row_line(row: ScheduleRow, names: dict[str, str]) -> str:
     """La línea DL-NET de una marca de la cartilla, con las dimensiones de la cartilla (exteriores, redondeadas hacia
-    arriba a 50 mm) y la longitud de corte como longitud total."""
+    arriba a 1 cm; L y U a 50 mm) y la longitud de corte como longitud total."""
     piece = row.piece
     if piece.designation not in names:
         raise DliError(f"la barra {piece.designation} de la marca {row.mark} no está en la librería de la plantilla DL-NET")

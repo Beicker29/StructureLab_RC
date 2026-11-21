@@ -2527,11 +2527,19 @@
 - **Código:** `io/dlnet.py` (en la capa `io`, junto al importador de ETABS: registros, lectura y escritura, mapa de
   barras desde la librería de la plantilla, líneas, `schedule_dli` y `find_template`); `engine` escribe `<caso>.dli`
   (con el nombre de la carpeta de salida) y `Report.notes` lleva el aviso si falta la plantilla.
-- **Por confirmar en DL-NET** (constantes con `TODO D-133`): longitud total desarrollada, patas y estribo con
+- **Por confirmar en DL-NET** (constantes con `TODO D-133`; ver la validación del usuario abajo): longitud total desarrollada, patas y estribo con
   dimensiones exteriores, `U` como gancho de 180°, el campo `F0/90` del estribo y la pertenencia de los grupos.
 - **Control:** `tests/test_dlnet.py`: round-trip byte a byte de `n_12.dli`, punteros de un archivo generado, líneas
   iguales a las guardadas por DL-NET, formato numérico, mapa de diámetros, grupos, errores ante lo no soportado y la
   salida de `report`.
+- **Validación del usuario (2026-11-21):** los `.dli` generados abren en DL-NET sin errores. Con `ESTRIBOS.dli` (guardado por
+  DL-NET con la figura del estribo de ganchos de 135°) se confirma:
+  - b × h del estribo son sus dimensiones exteriores, con dos decimales (1 cm), como la cartilla del DXF;
+  - la figura de 135° escribe `F0/45`. El `F0/90` de `n_12.dli` era otra figura de la librería. `STIRRUP_FIELD` pasa
+    a `F0/45`, y la prueba compara con `ESTRIBOS.dli` (en `tests/fixtures/dlnet/`, fuera de Git).
+
+  Queda abierto el número de la pertenencia de los grupos: en `ESTRIBOS.dli`, con un elemento, es 3. Parece la
+  cantidad del elemento en el grupo; se sigue escribiendo 1 por elemento.
 
 ### D-134: extremos de las barras declarados por grupo (recta, gancho de 90°, 180° o 135°)
 
