@@ -3212,6 +3212,9 @@
   lo lleva; `engine._close_footings` y `close_footings_of`; `mixed._only_pairs`; la CLI imprime los avisos.
 - **Ejemplo de verificación:** la copia de pruebas de `zapata_centrica_etabs` declara `min_clear_spacing` = 500 mm
   (cambio registrado): su resultado lista los pares cercanos (entre ellos el traslapo de Z3-565 y Z3-566).
+- **Alcance (decisión del usuario, 2026-11-21):** la interacción entre zapatas vecinas se queda en el aviso de
+  `min_clear_spacing`; no se revisa en el cálculo y sale de la hoja de ruta. El traslapo de Z3-565 y Z3-566 del
+  ejemplo se queda como está.
 
 ### D-157: tipologías de zapatas combinadas
 

@@ -20,7 +20,8 @@ El usuario elige entre:
 
 ## Validaciones del usuario
 
-Ya confirmado: el gancho `U` de 180° y la longitud total del `.dli` (D-147).
+Ya confirmado: el gancho `U` de 180° y la longitud total del `.dli` (D-147), y el DXF sobre la plantilla de los planos
+de despiece en CAD (D-150, D-158; 2026-11-21).
 
 1. El `.dli` en DL-NET (constantes con `TODO D-133` en `io/dlnet.py`). Se prueba abriendo un `.dli` con estribos y con
    un grupo de tres o más tipos de barra:
@@ -28,9 +29,7 @@ Ya confirmado: el gancho `U` de 180° y la longitud total del `.dli` (D-147).
    - que b × h del estribo sean sus dimensiones exteriores;
    - la marca de los grupos de más de dos elementos (deducida de `" 1  1 "` con dos).
 2. Despiece: cómo medir el gancho de 135° de las barras y los estribos (hoy por el eje de la barra, D-147).
-3. El DXF sobre la plantilla de los planos de despiece (D-150), en su CAD: unidades en metros, cotas, rótulos
-   (`MULTILEADER`), bloque de la barra cortada y composición por elemento.
-4. Tipos de combinadas (D-157): revisar con un proyecto real el criterio de familia (separación a 1 mm, mismas secciones,
+3. Tipos de combinadas (D-157): revisar con un proyecto real el criterio de familia (separación a 1 mm, mismas secciones,
    linderos y `combined_design`) y la rejilla de posiciones de la base.
 
 ## Cimentaciones
@@ -58,11 +57,9 @@ Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica
 
 ### Diseño de zapatas
 
-1. Revisión de la interacción entre zapatas vecinas (hoy la planta de localización solo avisa si se traslapan, D-153).
-   El ejemplo `zapata_centrica_etabs` tiene un traslapo de datos (Z3-566 y Z3-565) que el aviso muestra.
-2. La curva costo–N y la medición de tiempos (`--profile`) con los pares de combinadas y sus tipos: hoy solo diseñan
+1. La curva costo–N y la medición de tiempos (`--profile`) con los pares de combinadas y sus tipos: hoy solo diseñan
    las tipologías aisladas (D-153, D-157).
-3. Más rapidez en la búsqueda de cada combinada, que hoy fija el tiempo de los tipos (D-157): con tres pares, cerca de
+2. Más rapidez en la búsqueda de cada combinada, que hoy fija el tiempo de los tipos (D-157): con tres pares, cerca de
    2 minutos con 32 procesos; cada búsqueda revisa todos los casos de todos sus pares.
 
 ### Zapata combinada en dos direcciones
