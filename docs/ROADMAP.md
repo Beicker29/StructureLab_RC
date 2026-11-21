@@ -14,15 +14,10 @@ neutras que después reutilizan las vigas.
 El usuario elige entre:
 
 1. Cerrar lo pendiente de cabezales (ver [Cabezales](#cabezales-sobre-pilotes)).
-2. Seguir con el diseño de zapatas (ver [Diseño de zapatas](#diseño-de-zapatas)): la integración de las combinadas con
-   las tipologías ya está (D-153), también en tipos (D-157).
+2. Seguir con el diseño de zapatas (ver [Diseño de zapatas](#diseño-de-zapatas)).
 3. El siguiente tipo de cimentación (ver [Tipos nuevos](#tipos-nuevos-uno-por-vez-d-052-d-055)).
 
 ## Validaciones del usuario
-
-Ya confirmado: el gancho `U` de 180° y la longitud total del `.dli` (D-147); que los `.dli` abren en DL-NET y el estribo
-(b × h exteriores, `F0/45`; D-133) y la pertenencia de los grupos como las unidades de cada elemento (D-159), los dos el
-2026-11-21; y el DXF sobre la plantilla de los planos de despiece en CAD (D-150, D-158; 2026-11-21).
 
 1. Despiece: cómo medir el gancho de 135° de las barras y los estribos (hoy por el eje de la barra, D-147).
 2. Tipos de combinadas (D-157): revisar con un proyecto real el criterio de familia (separación a 1 mm, mismas secciones,
@@ -117,7 +112,6 @@ secciones T.
 
 ## Diferido
 
-- Correr de nuevo el diseño por tipologías desde ETABS con D-079 (N = 6 y curva costo–N).
 - Algoritmo genético: para la geometría de la zapata combinada y la T (con el refuerzo determinista actual y la cota de
   costo del concreto) y como mejora de la calidad del óptimo del diseño por tipologías, no del tiempo.
 - Rendimiento (D-124): vectorizar el cálculo de las barras con NumPy si hace falta otro salto; flexión uniaxial en
