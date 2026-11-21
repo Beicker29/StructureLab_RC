@@ -3423,6 +3423,47 @@
     `zapata_centrica_etabs_drawing.json`, que pasa de un despiece por apoyo a uno por tipo.
   - Las copias congeladas `pruebas/` llevan `quantity` 1 (cambio registrado aquí, D-098).
 
+### D-160: longitud del estribo cerrado con la convención de DL-NET
+
+- **Fecha:** 2026-11-21
+- **Problema:** el estribo se medía por el eje, y la C de la cartilla (la G del `.dli`) era solo la extensión recta.
+  DL-NET calcula L = 2·(b + h) + 2·g con b × h exteriores. La captura del usuario lo muestra: 3/8", 0.30 × 0.50, g = 0.15
+  da L = 1.90 m. Así, la cartilla, el peso y el costo no coincidían con el pedido (#3 de 0.30 × 0.50: 1.71 m en la
+  cartilla y 1.72 m en DL-NET con G.06). Los g estándar de DL-NET son 10, 13, 15 y 20 cm para #3 a #6.
+- **Decisión del usuario:**
+  - g = extensión recta + arco del doblez por el eje − 0.5·(D + 0.5·db), redondeado hacia arriba a 10 mm. D es el
+    diámetro interior de doblado del estribo del perfil.
+  - L = 2·(b + h) + 2·g, con b × h exteriores a 10 mm. Es la misma longitud de DL-NET, la cartilla, el peso, el costo, el
+    DXF y el `.dli`.
+- **Valores** (0.30 × 0.50; NSR-10 con 6db; ACI con máx(6db, 75 mm)):
+
+  | Barra | g NSR-10 | g ACI | L NSR-10 | g estándar DL-NET |
+  |---|---|---|---|---|
+  | #3 | 100 | 110 | 1800 | 100 |
+  | #4 | 130 | 130 | 1860 | 130 |
+  | #5 | 160 | 160 | 1920 | 150 |
+  | #6 | 220 | 220 | 2040 | 200 |
+
+  En el #6, g sin redondear vale 210.04 mm y sube a 220.
+
+- **Cumplimiento:** g contiene la extensión recta de la norma (ACI Tabla 25.3.2; NSR-10 C.7.1.3) y el doblez con el
+  diámetro del perfil. La norma no fija una fórmula de longitud de corte (como en D-147).
+- **Pendiente:** el usuario indicó que en NSR-10 la extensión es 6db, no menor de 75 mm. El oráculo
+  (`derive_detailing.py`) registra, leído del PDF, que C.7.1.3(c) da 6db sin mínimo de 75 mm. Ese mínimo está en la
+  definición de gancho sísmico (C.21.1). El PDF local es escaneado y hoy no se pudo releer. Se mantiene 6db hasta que el
+  usuario confirme el numeral; con 75 mm, el #3 de NSR-10 tendría g = 110 mm.
+- **Código:**
+  - `detailing/schedule.py`: `stirrup_hook_length` (g) y `_stirrup_length` (L y A, B, C = b, h, g).
+  - El gancho de 135° de una barra suelta sigue por el eje.
+  - La memoria y `docs/formatos/` describen la convención.
+- **Control:**
+  - El oráculo independiente `derive_detailing.py` da g y L del estribo (#4 de 851 × 1550: g = 130, L = 5080).
+  - `tests/test_detailing.py` los compara con la cartilla.
+- **Diferencias:**
+  - Cambian las longitudes, los pesos y la C de los estribos de la combinada y la T, y sus `.dli` y dibujos.
+  - Los diseños de la combinada y la T eligen la misma solución que en HEAD; su costo sube de 0.1 a 0.3 %.
+  - La memoria de todos los ejemplos con despiece cambia por el párrafo de la convención.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

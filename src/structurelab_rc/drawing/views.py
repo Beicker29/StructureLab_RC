@@ -8,7 +8,7 @@ Convenciones (D-150 y D-158, como el plano de despiece de referencia):
   misma del .dli, del peso y del costo; las medidas van en metros (metres).
 - Cada barra se dibuja con las dimensiones A, B y C de su pieza en la cartilla (tramo y patas), así que la polilínea mide
   la longitud de corte; el rótulo liga cada L a esa polilínea (Text.fields: en el DXF, un campo de AutoCAD), salvo en las
-  barras que se miden por el eje (135° y estribos).
+  barras con ganchos de 135° y los estribos (D-160).
 - Cada barra va en la capa de su diámetro (Borde_<designación>).
 - En planta (x a la derecha, y arriba), las barras de un grupo se parten en zonas (donde el hueco entre dos barras
   vecinas supera 1.5 separaciones) y cada zona se dibuja con una barra representativa, sus patas abatidas y acotadas, una
@@ -112,7 +112,7 @@ def piece_legs(piece: Piece) -> tuple[float, float, float]:
 
 def drawn_is_cut(piece: Piece) -> bool:
     """Si la barra dibujada con A, B y C mide la longitud de corte de la cartilla (D-147, D-158): las barras rectas y las
-    de ganchos de 90° o 180° (tramo + L o U); no las de 135° ni los estribos, que se miden por el eje."""
+    de ganchos de 90° o 180° (tramo + L o U); no las de 135° (por el eje) ni los estribos (2·(b + h) + 2·g, D-160)."""
     start, straight, end = piece_legs(piece)
     plain = all(angle in (None, 90, 180) for angle in piece.angles)
     return plain and abs(start + straight + end - piece.cut_length) < _SAME / 2

@@ -46,9 +46,10 @@
   },
   "closed_stirrup": {
     "designation": "#4",
-    "W": 850.0,
+    "W": 851.0,
     "H": 1550.0,
-    "cut": 4950.0
+    "g": 130.0,
+    "cut": 5080.0
   },
   "spliced": {
     "length": 6850.0,

@@ -10,8 +10,9 @@ Datos de la norma, leídos de los PDF:
 Geometría (independiente de detailing/schedule.py), convención de DL-NET (decisión del usuario, D-147):
 - Barra con ganchos y tramo horizontal exterior A: longitud total = A (hacia arriba a 10 mm) + la de cada gancho (hacia
   arriba a 50 mm): L = extensión + π·(D + 0.5db)/8 con 90° y U = extensión + 0.5·π·(D + 0.5db) − 0.5·(D + 0.5db) con 180°.
-- Estribo cerrado de W × H exteriores con ganchos de 135°, por el eje (tramos rectos y arcos de radio D/2 + db/2):
-  2(W − D − 2db) + 2(H − D − 2db) + 3 arcos de 90° + 2 arcos de 135° + 2 extensiones, hacia arriba a 10 mm.
+- Estribo cerrado de W × H exteriores con ganchos de 135°, como DL-NET (decisión del usuario, D-160):
+  g = extensión + (3π/4)·(D/2 + db/2) − 0.5·(D + 0.5db), hacia arriba a 10 mm; L = 2(W + H) + 2g, con W y H hacia
+  arriba a 10 mm.
 - Barra recta de largo L > longitud comercial S con traslapo t: el patrón A corta S, S, …; el patrón B empieza con S/2;
   cada pieza hacia arriba a 10 mm.
 
@@ -56,12 +57,10 @@ def u_bar(folder: str, db: float, a: float, angle: int = 90) -> dict:
     return {"cut": round_up(a) + 2 * leg, "leg": leg}
 
 
-def closed_stirrup(folder: str, db: float, w: float, h_: float) -> float:
+def closed_stirrup(folder: str, db: float, w: float, h_: float) -> dict:
     s = stirrup(folder, db)
-    r = s["bend"] / 2
-    axis = (2 * (w - 2 * (r + db)) + 2 * (h_ - 2 * (r + db)) + 3 * math.pi / 2 * (r + db / 2)
-            + 2 * math.radians(135) * (r + db / 2) + 2 * s["ext135"])
-    return round_up(axis)
+    g = round_up(s["ext135"] + 0.75 * math.pi * (s["bend"] / 2 + db / 2) - 0.5 * (s["bend"] + 0.5 * db))
+    return {"g": g, "cut": 2 * (round_up(w) + round_up(h_)) + 2 * g}
 
 
 def spliced(length: float, stock: float, lap: float, first: float) -> list[float]:
@@ -110,7 +109,7 @@ def derive(folder: str) -> dict:
         "stirrups": {name: stirrup(folder, db) for name, db in BARS.items() if name in ("#4", "#5")},
         "u_bar": {"designation": "#6", "A": 2850.0, **u_bar(folder, BARS["#6"], 2850.0)},
         "u_bar_180": {"designation": "#9", "A": 3127.0, **u_bar(folder, BARS["#9"], 3127.0, 180)},
-        "closed_stirrup": {"designation": "#4", "W": 850.0, "H": 1550.0, "cut": closed_stirrup(folder, BARS["#4"], 850.0, 1550.0)},
+        "closed_stirrup": {"designation": "#4", "W": 851.0, "H": 1550.0, **closed_stirrup(folder, BARS["#4"], 851.0, 1550.0)},
         "spliced": {"length": 6850.0, "stock": 6000.0, "lap": 833.0,
                     "pattern_a": spliced(6850.0, 6000.0, 833.0, 6000.0), "pattern_b": spliced(6850.0, 6000.0, 833.0, 3000.0)},
         "tension_lap": {"designation": "#6", "cb": 84.55, **tension_lap(BARS["#6"], 84.55)},

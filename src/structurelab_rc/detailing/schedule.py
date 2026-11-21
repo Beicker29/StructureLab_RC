@@ -9,8 +9,10 @@ Convención de DL-NET (decisión del usuario, D-147): la longitud total de una b
 (redondeado hacia arriba a 1 cm) más la longitud de cada gancho (hook_length, redondeada hacia arriba a
 50 mm): con 90°, L = extensión + π·(D + 0.5·db)/8; con 180°, U = extensión + 0.5·π·(D + 0.5·db) − 0.5·(D + 0.5·db), con D
 el diámetro interior de doblado. Así DL-NET reconstruye el tramo como Ltotal − 2L o Ltotal − 2U. El gancho de 135° de una
-barra (que DL-NET no fabrica) y los estribos siguen por el eje de la barra (tramos rectos más arcos de radio D/2 + db/2),
-con la longitud total redondeada a 1 cm. Una barra más larga que la longitud comercial se parte en tramos con su empalme por
+barra (que DL-NET no fabrica) sigue por el eje de la barra (tramos rectos más arcos de radio D/2 + db/2), con la longitud
+total redondeada a 1 cm. El estribo cerrado, como lo calcula DL-NET (D-160): L = 2·(b + h) + 2·g, con b × h exteriores a
+1 cm y g = extensión + arco del doblez por el eje − 0.5·(D + 0.5·db), hacia arriba a 10 mm.
+Una barra más larga que la longitud comercial se parte en tramos con su empalme por
 traslapo; en las barras vecinas los empalmes se escalonan (la mitad de las barras empieza con medio tramo comercial),
 para no empalmar más de la mitad del acero en una sección.
 """
@@ -155,18 +157,22 @@ def _straight_length(run: BarRun, length: float, hooks: tuple[Hook | None, Hook 
     return total, dimensions
 
 
+def stirrup_hook_length(hook: Hook, db: float) -> float:
+    """g, el gancho del estribo en la convención de DL-NET (decisión del usuario, D-160): la extensión recta más el arco
+    del doblez por el eje menos 0.5·(D + 0.5·db), redondeado hacia arriba a 10 mm. En mm."""
+    arc = math.radians(hook.angle) * (hook.bend_diameter / 2 + db / 2)
+    return round_up(hook.extension + arc - 0.5 * (hook.bend_diameter + 0.5 * db))
+
+
 def _stirrup_length(run: BarRun) -> tuple[float, list[tuple[str, float]]]:
-    """Estribo cerrado de ancho × alto exteriores: cuatro lados, tres esquinas a 90° y los dos ganchos de 135° en la
-    esquina de cierre, por el eje."""
+    """Estribo cerrado en la convención de DL-NET (D-160): b × h exteriores, cada uno hacia arriba a 10 mm, y
+    L = 2·(b + h) + 2·g, la misma longitud que calcula DL-NET con la línea del .dli."""
     assert run.stirrup is not None
-    width, height = run.stirrup
+    width, height = (round_up(value) for value in run.stirrup)
     hook = run.hooks[0]
     assert hook is not None
-    db = run.diameter
-    radius = hook.bend_diameter / 2
-    straight = 2 * (width - 2 * (radius + db)) + 2 * (height - 2 * (radius + db))
-    corners = 3 * math.radians(90) * (radius + db / 2) + 2 * math.radians(hook.angle) * (radius + db / 2)
-    return straight + corners + 2 * hook.extension, [("A", width), ("B", height), ("C", hook.extension)]
+    g = stirrup_hook_length(hook, run.diameter)
+    return 2 * (width + height) + 2 * g, [("A", width), ("B", height), ("C", g)]
 
 
 def _angles(hooks: tuple[Hook | None, Hook | None]) -> tuple[int | None, int | None]:

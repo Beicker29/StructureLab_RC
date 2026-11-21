@@ -456,7 +456,9 @@ si hay plantilla; ver [dlnet.md](dlnet.md), D-133), y la memoria lleva el capít
   - 90°: L = extensión (12db) + π·(D + 0.5·db)/8;
   - 180°: U = extensión (4db, no menos de 65 mm) + 0.5·π·(D + 0.5·db) − 0.5·(D + 0.5·db).
 
-  El gancho de 135° de una barra y los estribos se miden por el eje de la barra, con la longitud total a 1 cm. El peso
+  El gancho de 135° de una barra se mide por el eje de la barra, con la longitud total a 1 cm. El estribo cerrado se
+  mide como DL-NET (D-160): L = 2·(b + h) + 2·g, con b × h exteriores a 1 cm y g (la C de la cartilla y la G del `.dli`)
+  = extensión + arco del doblez por el eje − 0.5·(D + 0.5·db), hacia arriba a 10 mm. El peso
   sale de la longitud total. Los empalmes de barras vecinas se escalonan: la mitad empieza con medio tramo
   comercial.
 - **Forma (D-150):** se nombra por sus extremos con la notación de DL-NET: `recta` sin ganchos; un código por gancho,

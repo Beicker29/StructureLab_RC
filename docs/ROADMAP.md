@@ -19,7 +19,9 @@ El usuario elige entre:
 
 ## Validaciones del usuario
 
-1. Despiece: cómo medir el gancho de 135° de las barras y los estribos (hoy por el eje de la barra, D-147).
+1. Despiece:
+   - cómo medir el gancho de 135° de las barras sueltas (hoy por el eje, D-147);
+   - si la extensión del gancho de estribo en NSR-10 lleva el mínimo de 75 mm (C.7.1.3 o el gancho sísmico de C.21.1, D-160).
 2. Tipos de combinadas (D-157): revisar con un proyecto real el criterio de familia (separación a 1 mm, mismas secciones,
    linderos y `combined_design`) y la rejilla de posiciones de la base.
 

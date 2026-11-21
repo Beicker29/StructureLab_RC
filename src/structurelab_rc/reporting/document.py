@@ -1210,7 +1210,10 @@ def _detailing_chapter(footing: dict[str, Any], drawings: list[DrawingFigure] | 
                                   + ("." if units == 1 else f"; la segunda tabla, la de las {units} unidades.")},
             {"kind": "p", "text": "Convención de DL-NET (D-147): la longitud de corte es el tramo exterior A, redondeado hacia "
                                   "arriba a 10 mm, más cada gancho (L con 90°, U con 180°), redondeado hacia arriba a 50 mm; el "
-                                  "gancho de 135° de una barra y los estribos, por el eje, a 10 mm. Forma por sus extremos "
+                                  "gancho de 135° de una barra, por el eje, a 10 mm; el estribo, L = 2·(b + h) + 2·g con b × h "
+                                  "exteriores y g = "
+                                  "extensión + arco del doblez por el eje − 0.5·(D + 0.5·db), hacia arriba a 10 mm (D-160). "
+                                  "Forma por sus extremos "
                                   "(recta, L, U, 135 o E, D-150); dimensiones en mm. Longitud comercial "
                                   f"{data['stock_length [mm]']:.0f} mm (las barras más largas se empalman por traslapo, "
                                   "escalonado). Ganchos, doblados y empalmes del perfil."},

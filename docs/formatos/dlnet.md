@@ -58,7 +58,7 @@ cartilla (D-147): la longitud total es el tramo horizontal más la longitud de c
 | `L` (un gancho de 90°) | `3  "3/4''"  6.4   L.3` | Verificada (ídem) |
 | `L-L` (gancho de 90° en los dos extremos) | `1  "1-1/8''"  5.8   L.5   L.5` | Verificada (`n_12.dli`) |
 | `U-U` (gancho de 180°; también `U` y `L-U`) | `1  "5/8''"  5.8   U.2   U.2` | Verificada por el usuario (D-147): `U` es el gancho de 180° |
-| `E`, estribo cerrado b × h, ganchos de 135° | `1  E  "3/8''"  .3*.5   G.15   F0/45` | Verificada por el usuario (`ESTRIBOS.dli`): b × h exteriores a 1 cm; `F0/45` es la figura de ganchos de 135° (`F0/90` es otra figura y no se escribe) |
+| `E`, estribo cerrado b × h, ganchos de 135° | `1  E  "3/8''"  .3*.5   G.15   F0/45` | Verificada por el usuario (`ESTRIBOS.dli`): b × h exteriores a 1 cm; `F0/45` es la figura de ganchos de 135° (`F0/90` es otra figura y no se escribe). G es la g de la cartilla y DL-NET calcula L = 2·(b + h) + 2·g, la misma longitud de la cartilla (D-160) |
 | Figura G | `6  G  "3/4''"  .5   G.2/.2   F360/0` | No implementada |
 
 Confirmado por el usuario (D-147): la longitud es la de corte, `U` es el gancho de 180° y la geometría de L y U es la de

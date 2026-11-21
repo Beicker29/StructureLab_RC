@@ -89,7 +89,8 @@ def test_bar_geometry_matches_the_oracle(profile: str) -> None:
     stirrup = Hook(135, detailing.stirrup_bend_diameter(db), extension)
     run = BarRun("e", closed["designation"], db, MASS[closed["designation"]], 1, 0.0, (stirrup, stirrup),
                  stirrup=(closed["W"], closed["H"]))
-    assert pieces(run, 12000.0)[0].cut_length == closed["cut"]
+    piece = pieces(run, 12000.0)[0]  # D-160: la convención de DL-NET
+    assert piece.cut_length == closed["cut"] and dict(piece.dimensions) == {"A": 860.0, "B": 1550.0, "C": closed["g"]}
 
 
 def test_long_bars_are_spliced_and_staggered() -> None:
