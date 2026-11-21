@@ -14,7 +14,9 @@ Tipologías de combinadas (D-157), con design.combined_typologies = N (sin él, 
   barata. Un grupo de un solo par es su diseño individual (D-153).
 - Agrupación: en cada familia, los pares en orden de su costo individual se parten en grupos seguidos (programación
   dinámica); los N tipos se reparten entre las familias para el menor costo total (cada par construye una zapata de su
-  tipo). Hay error si hay más familias que N.
+  tipo). Hay error, antes de diseñar, si hay más familias que N.
+- Rendimiento: cada búsqueda (un par en un f'c; un grupo en un f'c y una posición de la base) es independiente; las de
+  cada etapa se reparten entre los procesos de workers sin cambiar el resultado.
 """
 
 import math
@@ -63,20 +65,26 @@ class Grouping:
     cost: float
 
 
+def pair_contexts(ctx: Context) -> list[combined.Context]:
+    """El contexto del diseño de la combinada de cada par (D-153)."""
+    return [combined.Context(pair_project(ctx.project, pair), ctx.profile, ctx.bars) for pair in ctx.project.combined_footings]
+
+
 def design_pairs(ctx: Context, workers: int = 1) -> tuple[PairDesign, ...]:
-    """Cada par diseñado con el diseño de la combinada, en todos los f'c (D-153)."""
-    designs = []
-    for pair in ctx.project.combined_footings:
-        own = combined.Context(pair_project(ctx.project, pair), ctx.profile, ctx.bars)
-        designs.append(PairDesign(pair, own, combined.design_combined(own, workers)))
-    return tuple(designs)
+    """Cada par diseñado con el diseño de la combinada, en todos los f'c (D-153); workers reparte entre procesos todas
+    las búsquedas (par y f'c), sin cambiar el resultado."""
+    owns = pair_contexts(ctx)
+    fcs = ctx.design.fc_options
+    options = combined.design_tasks([(own.project, tuple(own.bars), fc, None) for own in owns for fc in fcs], workers)
+    return tuple(PairDesign(pair, own, combined.combined_result(own, options[index * len(fcs):(index + 1) * len(fcs)]))
+                 for index, (pair, own) in enumerate(zip(ctx.project.combined_footings, owns, strict=True)))
 
 
-def family_key(design: PairDesign) -> tuple[Any, ...]:
+def family_key(ctx: combined.Context) -> tuple[Any, ...]:
     """Lo que dos pares deben tener igual para compartir tipo (D-157): dirección principal, separación entre columnas en
     orden (a 1 mm), secciones y linderos en ese orden y el mismo combined_design."""
-    project = design.ctx.project
-    first, second = combined.ordered(design.ctx)
+    project = ctx.project
+    first, second = combined.ordered(ctx)
     columns = tuple((column.cx, column.cy, tuple(sorted((column.property_lines or {}).items()))) for column in (first, second))
     return (project.principal_direction, round(second.x - first.x), round(second.y - first.y), columns,
             project.combined_design.model_dump_json())
@@ -86,7 +94,7 @@ def families(pairs: Sequence[PairDesign]) -> list[list[PairDesign]]:
     """Los pares agrupados por familia, en el orden en que aparece cada una."""
     found: dict[tuple[Any, ...], list[PairDesign]] = {}
     for design in pairs:
-        found.setdefault(family_key(design), []).append(design)
+        found.setdefault(family_key(design.ctx), []).append(design)
     return list(found.values())
 
 
@@ -128,61 +136,97 @@ def anchors(group: Sequence[PairDesign], h: float) -> list[tuple[float, float]]:
     return [(x, y) for x in xs for y in ys]
 
 
-def group_design(group: Sequence[PairDesign], fc: float) -> Group | None:
-    """El tipo de un grupo en un f'c: con un solo par, su diseño individual; si no, la combinada más barata entre las
-    posiciones de anchors, diseñada con los casos de todos los pares. None si no tiene solución."""
-    if len(group) == 1:
-        solution = group[0].at(fc)
-        return None if solution is None else Group(tuple(group), solution, group[0].ctx)
-    project = merged_project(group)
-    first = group[0].ctx
-    best: Group | None = None
-    for anchor in anchors(group, project.combined_design.h_min):
-        own = combined.Context(project, first.profile, first.bars, anchor)
-        solution = combined.design_for_fc(own, fc, math.inf if best is None else best.solution.cost).solution
-        if solution is not None and (best is None or solution.cost < best.solution.cost):
-            best = Group(tuple(group), solution, own)
-    return best
+Designed = dict[tuple[float, tuple[str, ...]], Group | None]
 
 
-def _family_parts(family: list[PairDesign], fc: float, most: int) -> list[tuple[float, list[Group]] | None]:
-    """Para m = 1 … most tipos, la mejor partición de la familia en m grupos seguidos (en orden del costo individual) y
-    su costo; None si m grupos no tienen solución."""
+def _ranked(family: Sequence[PairDesign], fc: float) -> list[PairDesign]:
+    """Los pares de la familia en orden de su costo individual en este f'c."""
     def individual(design: PairDesign) -> float:
         solution = design.at(fc)
         return math.inf if solution is None else solution.cost
 
-    ranked = sorted(family, key=individual)
+    return sorted(family, key=individual)
+
+
+def _spans(size: int, most: int) -> list[tuple[int, int, int]]:
+    """Los (m, inicio, fin) que recorre la programación dinámica de una familia de size pares en a lo más most grupos:
+    con m < most, todos los fines (los usa m + 1); con m = most, solo el último; un solo grupo empieza en el primero."""
+    return [(m, start, end) for m in range(1, most + 1) for end in (range(m, size + 1) if m < most else (size,))
+            for start in (range(m - 1, end) if m > 1 else (0,))]
+
+
+def _most(found: Sequence[Sequence[PairDesign]], family: Sequence[PairDesign], count: int) -> int:
+    """Los tipos que puede usar una familia: los suyos sin dejar a las demás sin uno."""
+    return min(len(family), count - len(found) + 1)
+
+
+def _key(fc: float, group: Sequence[PairDesign]) -> tuple[float, tuple[str, ...]]:
+    return fc, tuple(design.pair.id for design in group)
+
+
+def group_designs(pairs: Sequence[PairDesign], fc_options: Sequence[float], count: int, workers: int = 1) -> Designed:
+    """El tipo de cada grupo de dos o más pares que puede usar la agrupación en cada f'c (D-157): la combinada más barata
+    entre las posiciones de anchors, diseñada con los casos de todos sus pares; None si no tiene solución. workers reparte
+    entre procesos todas las búsquedas (f'c, grupo y posición), sin cambiar el resultado."""
+    if not pairs:
+        return {}
+    found = families(pairs)
+    jobs: list[tuple[float, tuple[PairDesign, ...], CombinedDesignProject, tuple[float, float]]] = []
+    for fc in fc_options:
+        if any(design.at(fc) is None for design in pairs) or len(found) > count:
+            continue
+        for family in found:
+            ranked = _ranked(family, fc)
+            spans = sorted({(start, end) for _, start, end in _spans(len(ranked), _most(found, family, count)) if end - start > 1})
+            for start, end in spans:
+                group = tuple(ranked[start:end])
+                project = merged_project(group)
+                jobs += [(fc, group, project, anchor) for anchor in anchors(group, project.combined_design.h_min)]
+    first = pairs[0].ctx
+    options = combined.design_tasks([(project, tuple(first.bars), fc, anchor) for fc, _, project, anchor in jobs], workers)
+    designed: Designed = {}
+    for (fc, group, project, anchor), option in zip(jobs, options, strict=True):
+        key = _key(fc, group)
+        best = designed.setdefault(key, None)
+        if option.solution is not None and (best is None or option.solution.cost < best.solution.cost):
+            designed[key] = Group(group, option.solution, combined.Context(project, first.profile, first.bars, anchor))
+    return designed
+
+
+def _family_parts(family: list[PairDesign], fc: float, most: int, designed: Designed) -> list[tuple[float, list[Group]] | None]:
+    """Para m = 1 … most tipos, la mejor partición de la familia en m grupos seguidos (en orden del costo individual) y
+    su costo; None si m grupos no tienen solución. Un grupo de un solo par es su diseño individual (D-153)."""
+    ranked = _ranked(family, fc)
     size = len(ranked)
-    cache: dict[tuple[int, int], Group | None] = {}
 
     def segment(start: int, end: int) -> tuple[float, Group | None]:
-        if (start, end) not in cache:
-            cache[(start, end)] = group_design(ranked[start:end], fc)
-        found = cache[(start, end)]
+        if end - start == 1:
+            solution = ranked[start].at(fc)
+            found = None if solution is None else Group((ranked[start],), solution, ranked[start].ctx)
+        else:
+            found = designed.get(_key(fc, ranked[start:end]))
         return (math.inf, None) if found is None else (found.solution.cost * (end - start), found)
 
     # best[m][j]: el menor costo de los primeros j pares en m grupos, con sus grupos.
     best: list[list[tuple[float, list[Group]]]] = [[(math.inf, [])] * (size + 1) for _ in range(most + 1)]
     best[0][0] = (0.0, [])
-    for m in range(1, most + 1):
-        for end in range(m, size + 1):
-            for start in range(m - 1, end):
-                previous = best[m - 1][start]
-                if math.isinf(previous[0]):
-                    continue
-                cost, found = segment(start, end)
-                if found is not None and previous[0] + cost < best[m][end][0]:
-                    best[m][end] = (previous[0] + cost, [*previous[1], found])
+    for m, start, end in _spans(size, most):
+        previous = best[m - 1][start]
+        if math.isinf(previous[0]):
+            continue
+        cost, found = segment(start, end)
+        if found is not None and previous[0] + cost < best[m][end][0]:
+            best[m][end] = (previous[0] + cost, [*previous[1], found])
     return [None if math.isinf(best[m][size][0]) else best[m][size] for m in range(1, most + 1)]
 
 
-def grouping(pairs: Sequence[PairDesign], fc: float, count: int) -> Grouping | None:
-    """La agrupación de menor costo de los pares en a lo más count tipos en este f'c (D-157); None si no la hay."""
+def grouping(pairs: Sequence[PairDesign], fc: float, count: int, designed: Designed) -> Grouping | None:
+    """La agrupación de menor costo de los pares en a lo más count tipos en este f'c (D-157), con los tipos de
+    group_designs; None si no la hay."""
     found = families(pairs)
     if any(design.at(fc) is None for design in pairs) or len(found) > count:
         return None
-    parts = [_family_parts(family, fc, min(len(family), count - len(found) + 1)) for family in found]
+    parts = [_family_parts(family, fc, _most(found, family, count), designed) for family in found]
     # Reparto de los tipos entre las familias: options[k] = el menor costo usando k tipos en las familias vistas.
     options: dict[int, tuple[float, list[Group]]] = {0: (0.0, [])}
     for own in parts:
@@ -227,19 +271,21 @@ def _chosen(pairs: tuple[PairDesign, ...], fc: float, groupings: dict[float, Gro
 def design_with_pairs(ctx: Context, workers: int = 1) -> DesignResult:
     """Las tipologías aisladas y las combinadas (una por par o en tipos, D-157) con un solo f'c, el de menor costo total;
     el resultado lleva las combinadas (combined) y su costo (combined_cost)."""
+    count = ctx.design.combined_typologies
+    if count is not None:
+        kinds = len({family_key(own) for own in pair_contexts(ctx)})  # antes de diseñar: las familias no dependen del diseño
+        if kinds > count:
+            return DesignResult(None, (), math.inf, f"hay {kinds} familias de pares compatibles y combined_typologies = {count}: "
+                                                    "cada familia necesita al menos un tipo (D-157)", method=ctx.design.method)
     pairs = design_pairs(ctx, workers)
     if not pairs:
         return design_typologies(ctx, workers)
-    count = ctx.design.combined_typologies
     groupings: dict[float, Grouping | None] = {}
     if count is None:
         costs = pair_costs(pairs, ctx.design.fc_options)
     else:
-        if len(families(pairs)) > count:
-            return DesignResult(None, (), math.inf, f"hay {len(families(pairs))} familias de pares compatibles y combined_typologies "
-                                                    f"= {count}: cada familia necesita al menos un tipo (D-157)",
-                                method=ctx.design.method, combined=pairs)
-        groupings = {fc: grouping(pairs, fc, count) for fc in ctx.design.fc_options}
+        designed = group_designs(pairs, ctx.design.fc_options, count, workers)
+        groupings = {fc: grouping(pairs, fc, count, designed) for fc in ctx.design.fc_options}
         costs = {fc: math.inf if found is None else found.cost for fc, found in groupings.items()}
     if not ctx.project.columns:  # solo combinadas (D-156): el f'c de menor costo de las combinadas
         return _only_pairs(ctx, pairs, costs, groupings)

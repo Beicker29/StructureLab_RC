@@ -176,9 +176,9 @@ def _zero_shear(beam: BeamCase, low: float, high: float) -> list[float]:
         return []
     step = (high - low) / _SUBDIVISIONS
     points = [low + index * step for index in range(_SUBDIVISIONS + 1)]
+    values = [beam.shear(x) for x in points]  # una evaluación por punto: cada punto interior cierra un tramo y abre otro
     roots = []
-    for a, b in zip(points, points[1:], strict=False):
-        va, vb = beam.shear(a), beam.shear(b)
+    for a, b, va, vb in zip(points, points[1:], values, values[1:], strict=False):
         if va == 0 and a > low:
             roots.append(a)
             continue

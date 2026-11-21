@@ -3213,7 +3213,7 @@
 - **Ejemplo de verificación:** la copia de pruebas de `zapata_centrica_etabs` declara `min_clear_spacing` = 500 mm
   (cambio registrado): su resultado lista los pares cercanos (entre ellos el traslapo de Z3-565 y Z3-566).
 
-### D-157: tipologías de zapatas combinadas (en curso)
+### D-157: tipologías de zapatas combinadas
 
 - **Fecha:** 2026-11-20
 - **Decisiones del usuario** (D-156 y la consulta anterior): `design.combined_typologies` = N tipos de combinadas (sin
@@ -3221,16 +3221,37 @@
   (a 1 mm, en orden), las mismas secciones y linderos en ese orden y el mismo combined_design, sin volteo; error si hay más
   familias que N; la base del tipo se busca en las dos direcciones y el tipo debe cumplir con todos sus pares.
 - **Implementado:** `design/footing/mixed.py` (familias, `merged_project` con los casos de todos los pares marcados con su
-  par, `anchors` en una rejilla cada plan_step entre las resultantes de los pares, `group_design`, programación dinámica
+  par, `anchors` en una rejilla cada plan_step entre las resultantes de los pares, `group_designs`, programación dinámica
   por familia y reparto de los N tipos, un solo f'c); `combined.Context.anchor`, `ordered`, `transplanted` (la solución
-  del tipo bajo las columnas de cada par, con el refuerzo de cada columna por orden) y `design_for_fc(bound=...)`;
+  del tipo bajo las columnas de cada par, con el refuerzo de cada columna por orden);
   `CombinedFooting.typology` (rotula la planta y el cuadro); el resumen y la pantalla dan el tipo de cada combinada.
 - **Prueba manual:** los pares 150-1599, 28-1604 y 6-19 de CIM_SOT1_N-3.53 (4.34 m en Y) con N = 1 comparten ZCT1
   (6100 × 3700 × 900 mm, f'c = 28 MPa) y el proyecto diseñado verifica PASS con las cargas de cada par.
-- **Pendiente (siguiente sesión):** rendimiento (unos 6 minutos en esa prueba: cada posición de la base es un diseño
-  completo de la combinada con los casos de todos los pares; cerca de 100 s por f'c), pruebas automáticas (N = número de
-  pares igual a D-153, cada tipo PASS con todos sus pares, la partición contra una búsqueda exhaustiva, más familias que
-  N), ejemplo en `tipologias/` con huella, documentación del formato y hoja de ruta.
+- **Rendimiento** (antes unos 6 minutos en esa prueba):
+  - Cada búsqueda es independiente: un par en un f'c, o un grupo en un f'c y una posición de la base. Las de cada etapa
+    se reparten entre los procesos de `--workers` (`combined.design_tasks`, que usa también `design_combined`), sin
+    cambiar el resultado. El tiempo es el de la búsqueda más lenta.
+  - La programación dinámica ya no diseña grupos que no usa: con m = N solo el último fin, y un solo grupo empieza en el
+    primer par.
+  - `_zero_shear` evalúa V una vez por punto de muestreo; antes, dos veces cada punto interior. Los valores son los
+    mismos, y las huellas no cambian.
+  - El error por más familias que N sale antes de diseñar.
+  - Se quita la cota `bound` de `design_for_fc`, que no ahorraba tiempo.
+  - En la prueba de tres pares, unos 2.3 minutos con 32 procesos, con el mismo resultado.
+- **Pruebas** (`tests/test_combined_typologies.py`):
+  - La agrupación contra todas las particiones, con costos simulados (el par más exigente más un recargo), para varias
+    familias y cada N.
+  - El error con más familias que N, sin diseñar.
+  - Dos pares reales de la misma familia: la copia del par 12-20 de la plantilla congelada, corrida 40 m, con las cargas
+    al 80 % y las columnas al revés.
+    - Con N = 2 da lo mejor entre el tipo común y el diseño de cada par (D-153).
+    - Con N = 1, el tipo cuesta al menos lo del par más exigente y se traslada con la misma geometría y el refuerzo de
+      cada columna en orden.
+    - La verificación da PASS.
+- **Ejemplo:** `diseno_tipologias_etabs.json` de `tipologias/`, el único de ETABS (D-156), en los dos perfiles.
+  - Declara los pares 150-1599, 28-1604 y 6-19 con `combined_typologies` = 1. Las 67 aisladas salen en 6 tipos y las
+    tres combinadas en ZCT1 (6100 × 3700 × 900 mm, f'c = 28 MPa); verifica PASS.
+  - Tarda minutos, como antes, y no entra en la huella. La copia de `pruebas/` no cambia.
 
 ### D-158: DXF de zapatas aisladas y combinadas como el plano DESPIECE ZAPATAS COMBINADAS
 

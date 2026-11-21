@@ -1,5 +1,5 @@
 {
-  "description": "Plantilla de diseño por tipologías (D-069) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (73 apoyos en 4 niveles de cimentación). DATOS DE EJEMPLO: secciones de columna, suelo, relleno, sobrecargas, precios y límites son supuestos; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3. Zapatas combinadas: combined_pairs está vacío; para unir dos nudos en una combinada se declara el par (D-153), con combined_design común. Se avisan las zapatas a menos de 500 mm (min_clear_spacing, D-156).",
+  "description": "Plantilla de diseño por tipologías (D-069) para 'Joint Reactions - Servicio.xlsx' y 'Joint Reactions - Ultimas.xlsx' (73 apoyos en 4 niveles de cimentación). DATOS DE EJEMPLO: secciones de columna, suelo, relleno, sobrecargas, precios y límites son supuestos; reemplazar por los del proyecto. Unidades: mm, MPa, kPa, kN/m2 y kN/m3. Zapatas combinadas: los pares 150-1599, 28-1604 y 6-19 (dirección principal Y) van en combinadas (combined_pairs, D-153), con combined_design común, agrupadas en un solo tipo (design.combined_typologies = 1, D-157). Se avisan las zapatas a menos de 500 mm (min_clear_spacing, D-156).",
   "etabs_files": {
     "service": "../../../etabs/zapatas/Joint Reactions - Servicio.xlsx",
     "factored": "../../../etabs/zapatas/Joint Reactions - Ultimas.xlsx",
@@ -77,7 +77,8 @@
     "dowel_bars": [
       "#5",
       "#6"
-    ]
+    ],
+    "combined_typologies": 1
   },
   "columns": [
     {
@@ -203,6 +204,40 @@
       "#4"
     ]
   },
-  "combined_pairs": [],
+  "combined_pairs": [
+    {
+      "id": "ZC1",
+      "etabs_unique_names": [
+        "150",
+        "1599"
+      ],
+      "principal_direction": "y",
+      "design": {
+        "placement_case": "SERVICIO 1 (D+L)"
+      }
+    },
+    {
+      "id": "ZC2",
+      "etabs_unique_names": [
+        "28",
+        "1604"
+      ],
+      "principal_direction": "y",
+      "design": {
+        "placement_case": "SERVICIO 1 (D+L)"
+      }
+    },
+    {
+      "id": "ZC3",
+      "etabs_unique_names": [
+        "6",
+        "19"
+      ],
+      "principal_direction": "y",
+      "design": {
+        "placement_case": "SERVICIO 1 (D+L)"
+      }
+    }
+  ],
   "min_clear_spacing": 500.0
 }

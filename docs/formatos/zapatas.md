@@ -230,6 +230,7 @@ una variable del diseño. `soil` es igual que en la verificación.
 | `design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `design.method` | texto | `milp_iter` (por defecto desde E3b: iterativo, sin tabla de tramos, D-077), `milp` (asignación óptima sobre la tabla completa de tramos, D-075) o `dp` (solo la partición y la reasignación). `milp_iter` y `milp` requieren `pip install structurelab-rc[opt]`. `--method` en la CLI lo reemplaza. |
 | `combined_footings[]` | lista | Opcional (D-153): pares de columnas en zapata combinada, una por par: `id`, `principal_direction`, `combined_design` (el bloque del [diseño de la combinada](#diseño-de-la-zapata-combinada-diseno_combinadajson-comando-design-combined-d-107), con los mismos `fc_options` que `design`) y las dos `columns` (`id`, `cx`, `cy`, `x`, `y` en ejes globales, `location` opcional y `loads`). Lo arma el importador desde `combined_pairs` de la plantilla ([ETABS](etabs.md)). |
+| `design.combined_typologies` | - | Opcional (D-157): número de zapatas combinadas tipo para los pares de `combined_footings`. Sin él, una combinada por par (D-153). |
 
 **Con zapatas combinadas (D-153).** Cada par se diseña con el diseño de la combinada en todos los f'c, y el diseño por
 tipologías elige el f'c de menor costo total (aisladas más combinadas): un solo f'c para toda la cimentación. El
@@ -237,6 +238,21 @@ proyecto diseñado lleva `footings` y `combined_footings` (cada combinada con la
 `tipologias.json` agrega `combined_footings` (el resumen de cada una en el f'c elegido), `combined_cost` y `total_cost`.
 La planta de localización avisa si dos zapatas del mismo nivel se traslapan: el diseño no revisa la interacción entre
 zapatas vecinas.
+
+**Tipos de combinadas (`design.combined_typologies` = N, D-157).** Los pares se agrupan en a lo más N zapatas tipo:
+- Solo comparten tipo los pares de una misma familia: la misma dirección principal, la misma separación entre columnas
+  (a 1 mm, en orden a lo largo de la dirección principal), las mismas secciones y linderos en ese orden y el mismo
+  `combined_design`, sin volteo. Si hay más familias que N, es error (antes de diseñar).
+- El tipo de un grupo es una combinada diseñada con los casos de todos sus pares (cada caso con su par, `"ZC2: COMB1"`):
+  cumple con cualquiera de ellos. Su base se busca en una rejilla cada `plan_step` en X y en Y, entre la menor y la
+  mayor de las resultantes de `placement_case` de los pares, y gana la más barata. Un grupo de un solo par es su diseño
+  individual.
+- En cada familia, los pares en orden de su costo individual se parten en grupos seguidos, y los N tipos se reparten
+  entre las familias para el menor costo total (cada par construye una zapata de su tipo).
+- Cada combinada del proyecto diseñado lleva la geometría y el refuerzo de su tipo bajo sus columnas, con `typology`
+  (`ZCT1`, `ZCT2`, …), que rotula la planta de localización; `tipologias.json` da el tipo de cada una.
+- Las búsquedas (cada par y f'c; cada grupo, f'c y posición de la base) se reparten entre los procesos de `--workers`
+  sin cambiar el resultado.
 | `design.milp_time_limit_s` | s | Límite de tiempo del MILP (por f'c con `milp`; por solución con `milp_iter`; por defecto 120). |
 | `design.iter_max` | - | Con `milp_iter`: iteraciones por f'c (por defecto 10). |
 | `design.iter_time_limit_s` | s | Con `milp_iter`: tiempo por f'c (por defecto 600). |

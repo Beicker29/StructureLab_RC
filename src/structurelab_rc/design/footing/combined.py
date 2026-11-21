@@ -1259,15 +1259,13 @@ _FAILURES = {"plan": "el largo necesario pasa de plan_max o la base no cabe entr
              "h": "ningun espesor hasta h_max aprueba la verificacion estructural"}
 
 
-def design_for_fc(ctx: Context, fc: float, bound: float = math.inf) -> FcOption:
-    """La zapata de menor costo con este f'c entre el largo mínimo con solución y los _EXTRA_LENGTHS siguientes. bound:
-    un costo ya alcanzado por otra búsqueda (otra posición del tipo, D-157); lo que no pueda bajarlo no se diseña."""
+def design_for_fc(ctx: Context, fc: float) -> FcOption:
+    """La zapata de menor costo con este f'c entre el largo mínimo con solución y los _EXTRA_LENGTHS siguientes."""
     best: CombinedSolution | None = None
     failure = "h"
     extra, remaining = 0, None
     while remaining is None or remaining > 0:
-        floor = _length_floor(ctx, fc, extra)
-        if floor >= min(bound, math.inf if best is None else best.cost):
+        if best is not None and _length_floor(ctx, fc, extra) >= best.cost:
             break  # ni el concreto mínimo de este largo (ni de los mayores) alcanza el mejor costo (D-136)
         result = _for_length(ctx, fc, extra)
         if result == "plan":
@@ -1296,24 +1294,36 @@ def _length_floor(ctx: Context, fc: float, extra: int) -> float:
     return math.inf if sized is None else _concrete_floor(ctx, fc, sized)
 
 
-def _fc_in_worker(task: tuple[CombinedDesignProject, tuple[RebarSpec, ...], float]) -> FcOption:
-    """Un f'c en un proceso del pool: el perfil (módulos) no se copia entre procesos, se toma del registro."""
-    project, bars, fc = task
-    return design_for_fc(Context(project, PROFILES[project.profile], bars), fc)
+Task = tuple[CombinedDesignProject, tuple[RebarSpec, ...], float, tuple[float, float] | None]
+
+
+def _task_in_worker(task: Task) -> FcOption:
+    """Una búsqueda (proyecto, barras, f'c, posición de la base o None) en un proceso del pool: el perfil (módulos) no se
+    copia entre procesos, se toma del registro."""
+    project, bars, fc, anchor = task
+    return design_for_fc(Context(project, PROFILES[project.profile], bars, anchor), fc)
+
+
+def design_tasks(tasks: Sequence[Task], workers: int = 1) -> tuple[FcOption, ...]:
+    """Las búsquedas de design_for_fc, en orden; workers las reparte entre procesos (no cambia el resultado)."""
+    if workers > 1 and len(tasks) > 1:
+        with ProcessPoolExecutor(max_workers=min(workers, len(tasks))) as pool:
+            return tuple(pool.map(_task_in_worker, tasks))
+    return tuple(_task_in_worker(task) for task in tasks)
+
+
+def combined_result(ctx: Context, options: tuple[FcOption, ...]) -> CombinedDesignResult:
+    """El resultado del diseño con la búsqueda de cada f'c: la solución de menor costo entre ellas (D-107)."""
+    solved = [option.solution for option in options if option.solution is not None]
+    return CombinedDesignResult(min(solved, key=lambda solution: solution.cost) if solved else None, options,
+                                placement_loads(ctx)[0].case, cost_basis(ctx))
 
 
 def design_combined(ctx: Context, workers: int = 1) -> CombinedDesignResult:
     """La zapata de menor costo entre los f'c de la lista (D-107); workers reparte los f'c entre procesos (no cambia el
     resultado)."""
-    fcs = list(ctx.design.fc_options)
-    if workers > 1 and len(fcs) > 1:
-        with ProcessPoolExecutor(max_workers=min(workers, len(fcs))) as pool:
-            options = tuple(pool.map(_fc_in_worker, [(ctx.project, tuple(ctx.bars), fc) for fc in fcs]))
-    else:
-        options = tuple(design_for_fc(ctx, fc) for fc in fcs)
-    solved = [option.solution for option in options if option.solution is not None]
-    return CombinedDesignResult(min(solved, key=lambda solution: solution.cost) if solved else None, options,
-                                placement_loads(ctx)[0].case, cost_basis(ctx))
+    tasks = [(ctx.project, tuple(ctx.bars), fc, ctx.anchor) for fc in ctx.design.fc_options]
+    return combined_result(ctx, design_tasks(tasks, workers))
 
 
 def _placement_note(ctx: Context) -> str:
