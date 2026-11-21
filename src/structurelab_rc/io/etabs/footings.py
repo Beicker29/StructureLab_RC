@@ -219,7 +219,7 @@ def build_footing_project(
     isolated = {footing.id for footing in template.footings}
     bases = {footing.id: footing.model_dump(mode="json", exclude={"id", "etabs_unique_names"}) for footing in template.footings}
     footings = [{"id": f"{joint.group}-{joint.label}", **bases[joint.group], "loads": joint.loads,
-                 **({"typology": joint.group, **_located(locations, joint.unique_name)} if locations else {})}
+                 "typology": joint.group, **_located(locations, joint.unique_name)}
                 for joint in joints if joint.group in isolated]
     combined = _combined_footings(template, [joint for joint in joints if joint.group not in isolated], locations)
     project = template.model_dump(mode="json", exclude={"footings", "combined_footings", "etabs_files"})

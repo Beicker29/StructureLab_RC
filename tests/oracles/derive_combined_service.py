@@ -135,7 +135,7 @@ def _column(name: str, x: float, loads: list[dict], cx: float = 450.0, cy: float
 def _footing(columns: list[dict], **changes: object) -> dict:
     mat = {"first": "x", "x": {"designation": "#6", "spacing": 200.0, "end": "straight"}, "y": {"designation": "#5",
         "spacing": 200.0, "end": "straight"}}
-    data = {"id": "ZC", "min_steel_exception": False,
+    data = {"id": "ZC", "quantity": 1, "min_steel_exception": False,
             "lx": 6000.0, "ly": 2000.0, "h": 700.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns, "bottom": mat}
     data.update(changes)

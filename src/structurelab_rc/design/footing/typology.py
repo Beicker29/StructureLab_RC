@@ -100,7 +100,7 @@ class Context:
 def footing_for(ctx: Context, typology: Typology, column: DesignColumn, dowels: dict[str, Any] | None) -> Footing:
     """La zapata de una columna con la tipología: columna centrada, con sus cargas y sus pasadores."""
     design = ctx.design
-    data = {"id": column.id, "lx": typology.lx, "ly": typology.ly, "h": typology.h, "cover": design.cover,
+    data = {"id": column.id, "quantity": 1, "lx": typology.lx, "ly": typology.ly, "h": typology.h, "cover": design.cover,
             "fill_height": design.fill_height, "pedestal_height": design.pedestal_height,
             "surcharge_dead_kNm2": design.surcharge_dead, "surcharge_live_kNm2": design.surcharge_live,
             "column": {"cx": column.cx, "cy": column.cy, "offset_x": 0.0, "offset_y": 0.0, "dowels": dowels},

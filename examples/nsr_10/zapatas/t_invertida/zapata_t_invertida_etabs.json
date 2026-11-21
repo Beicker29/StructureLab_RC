@@ -39,6 +39,7 @@
   "combined_footings": [
     {
       "id": "ZT-1",
+      "quantity": 1,
       "min_steel_exception": false,
       "principal_direction": "y",
       "lx": 4100,

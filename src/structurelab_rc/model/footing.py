@@ -8,7 +8,7 @@ nunca se declaran.
 
 from typing import Literal, Protocol, Self
 
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator, model_validator
 
 from structurelab_rc.model.reinforcement import BarEnd
 
@@ -256,6 +256,7 @@ class FootingBody(RectangularBase, _Input):
     localización. Las columnas y las cargas las declara cada elemento."""
 
     id: str = Field(min_length=1)
+    quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     location: Location | None = None
     typology: str | None = Field(default=None, min_length=1)
     lx: PositiveFloat

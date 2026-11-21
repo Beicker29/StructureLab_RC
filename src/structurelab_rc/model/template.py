@@ -2,7 +2,7 @@
 
 from typing import Any, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, model_validator
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, PositiveFloat, PositiveInt, model_validator
 
 from structurelab_rc.model.design import Side
 from structurelab_rc.model.footing import Column, Dowels, Mat
@@ -98,6 +98,7 @@ class TemplateFooting(_Input):
 
     id: str = Field(min_length=1)
     etabs_unique_names: tuple[str, ...] = Field(min_length=1)
+    quantity: PositiveInt  # D-159: por nudo; el tipo (su grupo) suma la de sus nudos
     lx: PositiveFloat
     ly: PositiveFloat
     h: PositiveFloat
@@ -158,6 +159,7 @@ class TemplateCombinedFooting(_Input):
     surcharge_live_kNm2: NonNegativeFloat
     loads_source: LoadsSource = LoadsSource()
     min_steel_exception: bool  # D-123
+    quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2, max_length=2)
     bottom: dict[str, Any]
     top: dict[str, Any] | None = None
@@ -353,6 +355,7 @@ class EtabsCombinedDesignTemplate(_Input):
     materials: dict[str, Any]
     soil: dict[str, float]
     principal_direction: Literal["x", "y"] = "x"
+    quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     loads_source: LoadsSource = LoadsSource()
     combined_design: dict[str, Any]
     columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2, max_length=2)
@@ -424,6 +427,7 @@ class TemplatePileCap(_Input):
     campos (extra = forbid, como el resto de la entrada): un campo mal escrito se rechaza al leer la plantilla."""
 
     id: str = Field(min_length=1)
+    quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     loads_from: Literal["column", "piles"]
     etabs_station: float | None = None
     column_station: float | None = None
@@ -499,6 +503,7 @@ class TemplateDesignCap(_Input):
     verificación (D-138). Con cargas de la columna no lleva pilotes: el diseño los elige."""
 
     id: str = Field(min_length=1)
+    quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     loads_from: Literal["column", "piles"]
     column_unique_name: str = Field(min_length=1)
     etabs_station: float | None = None

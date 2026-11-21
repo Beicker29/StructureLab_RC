@@ -35,7 +35,7 @@ def test_square_footing_flexure_matches_wight(profile: str) -> None:
     side, column = data["side_ft"] * MM_PER_FT, data["column_in"] * MM_PER_IN
     mat = {"designation": data["bar"], "spacing": data["spacing_mm"], "end": "straight"}
     footing = Footing.model_validate({
-        "id": "Z", "lx": side, "ly": side, "h": data["h_in"] * MM_PER_IN, "cover": data["cover_in"] * MM_PER_IN,
+        "id": "Z", "quantity": 1, "lx": side, "ly": side, "h": data["h_in"] * MM_PER_IN, "cover": data["cover_in"] * MM_PER_IN,
         "fill_height": 0.0, "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
         "column": {"cx": column, "cy": column, "offset_x": 0.0, "offset_y": 0.0},
         "bottom": {"first": "x", "x": mat, "y": mat}, "top": None,

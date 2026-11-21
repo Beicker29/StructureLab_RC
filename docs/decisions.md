@@ -3360,6 +3360,69 @@
     - en el modelo, a 1:100 el doble que a 1:50;
     - en el DXF, a 1:100 el doble y a 1:25 la mitad: textos, flechas, rótulos, estilos de cota, trazos y puntos.
 
+### D-159: elementos tipo con N unidades en la cartilla, el DXF y el `.dli`
+
+- **Fecha:** 2026-11-21
+- **Pedido del usuario:** un elemento tipo puede construirse n veces, y el acero se pide n veces. En la verificación y el
+  diseño de un elemento, n se declara; en las tipologías y la curva N, es el número de zapatas del tipo. Las cartillas
+  del DXF y del `.dli` deben llevarlo: una tabla para una unidad y otra para las N unidades. Debe servir después para
+  vigas, columnas y los demás elementos. En `ESTRIBOS.dli`, el 3 de los grupos es esa cantidad.
+- **Decisiones del usuario:**
+  - `quantity` es obligatorio; en los ejemplos vale 1.
+  - Los elementos del mismo tipo con cartillas distintas no se unen: cada uno sale con su cartilla y un aviso.
+  - Un despiece (plantas, cortes y cartilla) por tipo, no por zapata. La planta de localización sigue mostrando todas las
+    zapatas.
+- **Entrada:**
+  - `quantity` (entero ≥ 1) en `footings[]`, `combined_footings[]` y `pile_caps[]` de la verificación, en el proyecto
+    de diseño de una combinada o una T y en `caps[]` del diseño de cabezales. También en las plantillas de ETABS
+    (`footings[]`, `combined_footings[]`, `pile_caps[]`, `caps[]` y la del diseño de la combinada). En la plantilla de
+    zapatas aisladas, la `quantity` es por apoyo.
+  - El diseño por tipologías no la declara: cada columna o par es una zapata, y el proyecto diseñado escribe `quantity`
+    1 y `typology` en cada una, con o sin coordenadas (antes `typology` salía solo con coordenadas). El importador de ETABS
+    hace lo mismo: cada zapata generada lleva `typology` = su grupo.
+- **Regla:**
+  - El tipo de un elemento es su `typology` o, sin ella, su `id`. Su cartilla se calcula con el nombre del tipo, así que
+    las marcas son las del tipo (`Z3-01`).
+  - N es la suma de `quantity` de los elementos del tipo.
+  - Los elementos se unen si sus cartillas coinciden en marca, barra, forma, dimensiones, longitud de corte, cantidad y
+    ganchos. El grupo y la nota no cuentan, porque nombran las columnas de cada uno; el tipo toma los del primero.
+  - La verificación sigue siendo por elemento, con sus cargas y su posición. Solo la cartilla, el despiece y el `.dli`
+    van por tipo.
+- **Salida:**
+  - `resultado.json`: el `detailing` de cada elemento es el de su tipo. Lleva `element`, `members` y `units`, y `total`
+    con las filas (cantidad y peso por N), el acero por designación, el acero total y el concreto de las N unidades.
+  - `cartilla.csv`: una vez por tipo, con las columnas `unidades`, `cantidad total` y `peso total (kg)`.
+  - Memoria: "Despiece y cantidades" dice el tipo, N y sus elementos. Con N > 1 agrega la tabla y los totales de las N
+    unidades. Las vistas son las del tipo.
+  - Dibujo y DXF: un despiece por tipo, con la cartilla de una unidad y, si N > 1, la de las N unidades debajo. El cuadro
+    de tipologías de la planta de localización suma `quantity`.
+  - `.dli`: un elemento por tipo, con la cartilla de una unidad. En cada grupo de la cola entra con sus N unidades
+    (`" N "`), como `ESTRIBOS.dli`. Se quita la constante `GROUP_MEMBER` (`TODO D-133`).
+- **Código:**
+  - `detailing/units.py` (nuevo, neutro, para todos los elementos): `Member`, `Unit`, `units` y `scaled`.
+  - `engine._detailing` arma la cartilla de cada elemento con el nombre de su tipo, los une con `units` y dibuja una
+    vez por tipo. `io/dlnet.schedule_dli` recibe las unidades.
+  - `drawing/views.cartilla_view` dibuja las dos tablas. `reporting/results.detailing_data` y `detailing_csv` y el
+    capítulo de la memoria muestran las N unidades.
+  - Un elemento nuevo (vigas, columnas) solo entrega su cartilla con su tipo y su `quantity`.
+- **Pruebas:**
+  - Oráculos: `quantity` se agrega como dato de entrada en los oráculos de zapatas y cabezales y en sus scripts. Ningún
+    valor de referencia cambia; los scripts regeneran los mismos JSON.
+  - `tests/test_units.py`:
+    - la agrupación por tipo y la suma de N;
+    - un elemento que no coincide con su tipo;
+    - la cartilla de N unidades;
+    - de extremo a extremo, dos zapatas del mismo tipo (cantidades 2 y 3, N = 5): resultado, CSV, dibujo, memoria y
+      `.dli`.
+  - `tests/test_dlnet.py`: N en los grupos, comparado con `ESTRIBOS.dli`.
+- **Diferencias:**
+  - Ninguna verificación cambia. Los resultados sin el despiece y las filas de la cartilla de una unidad son iguales a
+    los de HEAD.
+  - En la huella cambian `resultado.json` (los campos nuevos de `detailing` y `quantity` en el proyecto) y
+    `memoria.txt` (el párrafo del tipo). Cambian también los `proyecto.json` diseñados (`quantity` y `typology`) y
+    `zapata_centrica_etabs_drawing.json`, que pasa de un despiece por apoyo a uno por tipo.
+  - Las copias congeladas `pruebas/` llevan `quantity` 1 (cambio registrado aquí, D-098).
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

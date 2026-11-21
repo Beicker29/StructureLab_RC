@@ -45,6 +45,7 @@
   "combined_footings": [
     {
       "id": "ZC_fh",
+      "quantity": 1,
       "min_steel_exception": true,
       "principal_direction": "y",
       "lx": 3400,

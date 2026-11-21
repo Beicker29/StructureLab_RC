@@ -278,7 +278,7 @@ def _load(case: str, dead: float, live: float, p: float, mx: float = 0.0, my: fl
 
 
 def _footing(**changes: object) -> dict:
-    data = {"id": "Z", "lx": 2400.0, "ly": 2400.0, "h": 550.0, "cover": 75.0, "fill_height": 1000.0,
+    data = {"id": "Z", "quantity": 1, "lx": 2400.0, "ly": 2400.0, "h": 550.0, "cover": 75.0, "fill_height": 1000.0,
             "pedestal_height": 0.0, "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0,
             "column": {"cx": 450.0, "cy": 450.0, "offset_x": 0.0, "offset_y": 0.0},
             "bottom": _mat("x", ("#5", 150.0), ("#5", 150.0)), "top": None,

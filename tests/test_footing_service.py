@@ -29,7 +29,7 @@ CASES = [pytest.param(profile, case, id=f"{profile}-{case['id']}")
 
 def _footing(case: dict[str, Any], kind: str = "service") -> Footing:
     load = {"case": "S", "kind": kind, **case["load"]}
-    return Footing.model_validate({"id": "Z", **case["footing"], "bottom": MAT, "top": None, "loads": [load]})
+    return Footing.model_validate({"id": "Z", "quantity": 1, **case["footing"], "bottom": MAT, "top": None, "loads": [load]})
 
 
 @pytest.mark.parametrize(("profile", "case"), CASES)

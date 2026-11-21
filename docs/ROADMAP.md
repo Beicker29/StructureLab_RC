@@ -21,14 +21,11 @@ El usuario elige entre:
 ## Validaciones del usuario
 
 Ya confirmado: el gancho `U` de 180° y la longitud total del `.dli` (D-147); que los `.dli` abren en DL-NET y el estribo
-(b × h exteriores, `F0/45`; D-133, 2026-11-21); y el DXF sobre la plantilla de los planos
-de despiece en CAD (D-150, D-158; 2026-11-21).
+(b × h exteriores, `F0/45`; D-133) y la pertenencia de los grupos como las unidades de cada elemento (D-159), los dos el
+2026-11-21; y el DXF sobre la plantilla de los planos de despiece en CAD (D-150, D-158; 2026-11-21).
 
-1. Grupos del `.dli` (`GROUP_MEMBER`, `TODO D-133` en `io/dlnet.py`): el número de cada elemento en un grupo. En
-   `ESTRIBOS.dli` vale 3 con un elemento; parece la cantidad de ese elemento. Si se confirma, falta decidir si las zapatas
-   iguales (tipos) van como un solo elemento con su cantidad.
-2. Despiece: cómo medir el gancho de 135° de las barras y los estribos (hoy por el eje de la barra, D-147).
-3. Tipos de combinadas (D-157): revisar con un proyecto real el criterio de familia (separación a 1 mm, mismas secciones,
+1. Despiece: cómo medir el gancho de 135° de las barras y los estribos (hoy por el eje de la barra, D-147).
+2. Tipos de combinadas (D-157): revisar con un proyecto real el criterio de familia (separación a 1 mm, mismas secciones,
    linderos y `combined_design`) y la rejilla de posiciones de la base.
 
 ## Cimentaciones

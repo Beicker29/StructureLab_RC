@@ -33,6 +33,7 @@
       "description": "columna interior sin momento",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2400.0,
         "ly": 2400.0,
         "h": 550.0,
@@ -148,6 +149,7 @@
       "description": "columna rectangular con momentos en los dos ejes: transferencia por excentricidad del cortante",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 3000.0,
         "ly": 2400.0,
         "h": 600.0,
@@ -247,6 +249,7 @@
       "description": "columna cerca del borde +X: un lado del perímetro fuera de la base (αs = 30)",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2600.0,
         "ly": 2400.0,
         "h": 550.0,
@@ -346,6 +349,7 @@
       "description": "columna cerca de la esquina: dos lados fuera (αs = 20)",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2600.0,
         "ly": 2600.0,
         "h": 550.0,
@@ -445,6 +449,7 @@
       "description": "columna de 900 x 300 (β = 3): gobierna la ecuación (b), distinta en cada perfil",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2800.0,
         "ly": 2400.0,
         "h": 500.0,
@@ -560,6 +565,7 @@
       "description": "zapata delgada muy cargada: falla en una dirección y activa ACI 8.6.1.2",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2400.0,
         "ly": 2400.0,
         "h": 350.0,

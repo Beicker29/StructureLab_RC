@@ -316,6 +316,7 @@ class CombinedDesignProject(_Input):
     materials: DesignMaterials
     soil: Soil
     principal_direction: Literal["x", "y"] = "x"
+    quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     combined_design: CombinedDesign
     columns: tuple[CombinedDesignColumn, ...] = Field(min_length=2, max_length=2)
     detailing: DetailingSettings | None = None  # D-127: con él, el costo sale de la cartilla y el proyecto diseñado lo lleva
@@ -382,6 +383,7 @@ def pair_project(project: FootingDesignProject, pair: DesignPair) -> CombinedDes
     combined = CombinedDesignProject.model_construct(
         description=f"Zapata combinada {pair.id} del diseño por tipologías (D-153).", profile=project.profile,
         seismic=project.seismic, materials=project.materials, soil=project.soil, principal_direction=pair.principal_direction,
+        quantity=1,  # D-159: un par es una zapata; su tipo suma las de sus pares
         combined_design=pair.combined_design, columns=pair.columns, detailing=project.detailing, drawing=project.drawing)
     try:
         _combined_rules(combined)

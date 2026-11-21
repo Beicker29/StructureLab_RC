@@ -77,7 +77,7 @@ COLUMN = [_load("S1", "service", 1.0, 1.0, (2000.0, 6.0, 4.0, -10.0, 15.0)),
           _load("S2", "service", 1.0, 1.0, (2100.0, 80.0, 10.0, -20.0, 250.0), True),
           _load("U1", "factored", 1.2, 1.6, (2900.0, 9.0, 6.0, -14.0, 22.0)),
           _load("U2", "factored", 1.2, 1.0, (2600.0, 120.0, 15.0, -30.0, 400.0), True)]
-CAP_A = {"id": "A", "loads_from": "column",
+CAP_A = {"id": "A", "quantity": 1, "loads_from": "column",
          "lx": 2000.0, "ly": 2000.0, "h": 900.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 600.0,
          "pedestal_height": 0.0, "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0,
          "column": {"cx": 500.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0},
@@ -92,7 +92,8 @@ CAP_A = {"id": "A", "loads_from": "column",
 PILE_CASES = [("S1", "service", 1.0, 1.0, False, (1100.0, 1150.0), 10.0, 20.0),
               ("U1", "factored", 1.2, 1.6, False, (1500.0, 1600.0), 15.0, 30.0),
               ("U2", "factored", 1.2, 1.0, True, (1200.0, 1900.0), 60.0, 120.0)]
-CAP_B = {"id": "B", "loads_from": "piles", "lx": 1200.0, "ly": 3600.0, "h": 800.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 0.0,
+CAP_B = {"id": "B", "quantity": 1, "loads_from": "piles",
+         "lx": 1200.0, "ly": 3600.0, "h": 800.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 0.0,
          "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
          "column": {"cx": 500.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0},
          "bottom": {"first": "y", "x": _mat("#6", 150.0), "y": _mat("#8", 100.0)},
@@ -107,7 +108,7 @@ CAP_B = {"id": "B", "loads_from": "piles", "lx": 1200.0, "ly": 3600.0, "h": 800.
 
 # Simétrico, sin momentos: reacciones parcialmente interpoladas a d de las caras y a d/2 de la columna, y pilotes de
 # esquina (P3).
-CAP_C = {"id": "C", "loads_from": "column", "symmetric": True,
+CAP_C = {"id": "C", "quantity": 1, "loads_from": "column", "symmetric": True,
          "lx": 2000.0, "ly": 2000.0, "h": 700.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 0.0,
          "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
          "column": {"cx": 500.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0},
@@ -121,7 +122,7 @@ CAP_C = {"id": "C", "loads_from": "column", "symmetric": True,
 
 
 # Seis pilotes en dos filas de tres, lejos de la columna: cada fila punzona en conjunto (grupo de tres, D-138).
-CAP_D = {"id": "D", "loads_from": "column",
+CAP_D = {"id": "D", "quantity": 1, "loads_from": "column",
          "lx": 3600.0, "ly": 3800.0, "h": 850.0, "cover": 75.0, "bottom_cover": 150.0, "fill_height": 0.0,
          "pedestal_height": 0.0, "surcharge_dead_kNm2": 0.0, "surcharge_live_kNm2": 0.0,
          "column": {"cx": 500.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0},

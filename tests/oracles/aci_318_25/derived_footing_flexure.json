@@ -35,6 +35,7 @@
       "description": "zapata cuadrada con carga centrada: flexión, εt, As,min, separación y altura",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2400.0,
         "ly": 2400.0,
         "h": 550.0,
@@ -142,6 +143,7 @@
       "description": "rectangular con la columna desplazada y momento: franja γs y malla superior",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 3200.0,
         "ly": 2200.0,
         "h": 600.0,
@@ -333,6 +335,7 @@
       "description": "franja central con barras muy juntas y pocas fuera: fuera de la franja no alcanza (1 − γs)·As",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 3600.0,
         "ly": 2000.0,
         "h": 600.0,
@@ -453,6 +456,7 @@
       "description": "casi cuadrada: entre la franja central y el borde no cabe ninguna barra; todo As va en la franja con reparto uniforme (D-142)",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2500.0,
         "ly": 2400.0,
         "h": 550.0,
@@ -566,6 +570,7 @@
       "description": "momento negativo sin malla superior con nivel alto: el concreto simple no se permite, FAIL",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2400.0,
         "ly": 2400.0,
         "h": 550.0,
@@ -680,6 +685,7 @@
       "description": "momento negativo moderado sin malla superior y nivel bajo: lo resiste el concreto simple",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2800.0,
         "ly": 2000.0,
         "h": 600.0,
@@ -807,6 +813,7 @@
       "description": "zapata delgada con momento negativo sin malla superior y nivel bajo: no alcanza el concreto simple",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2400.0,
         "ly": 2400.0,
         "h": 250.0,
@@ -922,6 +929,7 @@
       "description": "con malla superior y nivel bajo: el concreto simple resiste el momento negativo y la malla superior no se exige (D-140)",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 3200.0,
         "ly": 2200.0,
         "h": 600.0,
@@ -1108,6 +1116,7 @@
       "description": "con malla superior y nivel bajo en una zapata delgada: el concreto simple no alcanza y se revisa la malla superior (D-140)",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2400.0,
         "ly": 2400.0,
         "h": 250.0,
@@ -1262,6 +1271,7 @@
       "description": "resultante mayorada fuera de la base",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2400.0,
         "ly": 2400.0,
         "h": 550.0,
@@ -1360,6 +1370,7 @@
       "description": "separación mayor que la permitida y acero bajo el mínimo",
       "footing": {
         "id": "Z",
+        "quantity": 1,
         "lx": 2400.0,
         "ly": 2400.0,
         "h": 200.0,

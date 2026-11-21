@@ -134,9 +134,10 @@ def _reversed_piece(piece: Piece) -> Piece:
     return replace(piece, dimensions=tuple(dimensions.items()), angles=(piece.angles[1], piece.angles[0]))
 
 
-def footing_views(drawing: Drawing, footing: FootingBody, runs: list[BarRun], rows: tuple[list[ScheduleRow], float]) -> list[View]:
+def footing_views(drawing: Drawing, footing: FootingBody, runs: list[BarRun], rows: tuple[list[ScheduleRow], float],
+                  units: int) -> list[View]:
     """Zapata aislada o cabezal: planta, cortes X-X e Y-Y por las columnas (por el eje medio si hay varias, D-143) y
-    cartilla; rows = (cartilla, longitud comercial)."""
+    cartilla; rows = (cartilla, longitud comercial); units, las veces que se construye el tipo (D-159)."""
     schedule, _ = rows
     marked = _marked(footing.id, runs, rows)
     drawing.titles[footing.id] = element_title(footing.id, footing.h)
@@ -165,7 +166,7 @@ def footing_views(drawing: Drawing, footing: FootingBody, runs: list[BarRun], ro
                      ([rectangle(OUTLINE, (-lx / 2, 0.0), (lx / 2, h))], stubs_x, faces_x, True)),
         section_view(drawing, ("corte_y", "Corte Y-Y"), ("y", cut_x), marked,
                      ([rectangle(OUTLINE, (-ly / 2, 0.0), (ly / 2, h))], stubs_y, faces_y, True)),
-        cartilla_view(drawing, footing.id, schedule),
+        cartilla_view(drawing, footing.id, schedule, units),
     ]
 
 
@@ -182,8 +183,9 @@ def _plans(drawing: Drawing, names: tuple[str, str], outline: tuple[list[Polylin
 
 
 def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun],
-                   rows: tuple[list[ScheduleRow], float]) -> list[View]:
-    """Zapata combinada o T invertida: planta, alzado longitudinal, un corte transversal por columna y cartilla."""
+                   rows: tuple[list[ScheduleRow], float], units: int) -> list[View]:
+    """Zapata combinada o T invertida: planta, alzado longitudinal, un corte transversal por columna y cartilla (de una
+    unidad y, si el tipo se construye units > 1 veces, de las N unidades, D-159)."""
     schedule, _ = rows
     marked = _marked(footing.id, runs, rows)
     drawing.titles[footing.id] = element_title(footing.id, footing.h)
@@ -226,7 +228,7 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
                                ([cross], stub, [column.y - column.cy / 2, column.y + column.cy / 2], True))
         section.dxf = False
         views.append(section)
-    views.append(cartilla_view(drawing, footing.id, schedule))
+    views.append(cartilla_view(drawing, footing.id, schedule, units))
     return views
 
 
@@ -237,6 +239,7 @@ class _Placed:
     story: str
     typology: str
     row: list[str]
+    quantity: int  # las veces que se construye (D-159): el cuadro de tipologías suma las de cada tipo
     entities: list[Entity] = field(default_factory=list)
     footprint: Footprint | None = None  # la planta de la zapata en ejes globales (D-156)
 
@@ -276,7 +279,7 @@ def _isolated_place(drawing: Drawing, footing: FootingBody) -> _Placed:
     entities = _outline(drawing, centre, (footing.lx, footing.ly), columns, typology)
     row = [typology, f"{metres(footing.lx)} x {metres(footing.ly)} x {metres(footing.h)}", _mat_text(footing.bottom),
            _mat_text(footing.top)]
-    return _Placed(location.story, typology, row, entities, footprint)
+    return _Placed(location.story, typology, row, footing.quantity, entities, footprint)
 
 
 def _combined_place(drawing: Drawing, footing: CombinedFooting) -> _Placed:
@@ -300,7 +303,7 @@ def _combined_place(drawing: Drawing, footing: CombinedFooting) -> _Placed:
                              align="center"))
     row = [typology, f"{metres(size[0])} x {metres(size[1])} x {metres(footing.total_height)}", _mat_text(footing.bottom, rotated),
            "ver despiece"]
-    return _Placed(footprint.story, typology, row, entities, footprint)
+    return _Placed(footprint.story, typology, row, footing.quantity, entities, footprint)
 
 
 def _warnings(drawing: Drawing, placed: list[_Placed], minimum: float | None) -> list[Entity]:
@@ -343,7 +346,7 @@ def location_views(drawing: Drawing, footings: Sequence[FootingBody], combined: 
     counts: dict[str, int] = {}
     rows: dict[str, list[str]] = {}
     for item in placed:
-        counts[item.typology] = counts.get(item.typology, 0) + 1
+        counts[item.typology] = counts.get(item.typology, 0) + item.quantity
         rows.setdefault(item.typology, item.row)
     table = [[*rows[name], str(counts[name])] for name in sorted(rows, key=_natural)]
     views.append(table_view(drawing, ("cuadro_tipologias", "Cuadro de tipologias"), _TABLE, table))

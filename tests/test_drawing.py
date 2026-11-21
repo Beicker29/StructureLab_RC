@@ -92,13 +92,13 @@ def _views(project: Project) -> _Drawn:
         footing = project.footings[0]
         runs = footing_runs(basis, footing, face_envelope(footing, project.soil))
         rows = schedule(footing.id, runs, stock)
-        views = footing_views(drawing, footing, runs, (rows, stock))
+        views = footing_views(drawing, footing, runs, (rows, stock), 1)
         split = footing.h / 2
     else:
         combined = project.combined_footings[0]
         runs = combined_runs(basis, combined, project.soil)
         rows = schedule(combined.id, runs, stock)
-        views = combined_views(drawing, combined, runs, (rows, stock))
+        views = combined_views(drawing, combined, runs, (rows, stock), 1)
         split = (combined.h if combined.beam is None else combined.total_height) / 2
     return _Drawn(views, runs, [row.mark for row in rows], stock, split, rows)
 

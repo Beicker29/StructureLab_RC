@@ -34,6 +34,7 @@
   "pile_caps": [
     {
       "id": "CP-1600",
+      "quantity": 1,
       "loads_from": "column",
       "lx": 2600.0,
       "ly": 2600.0,

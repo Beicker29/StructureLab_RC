@@ -369,7 +369,7 @@ def _footing(**changes: object) -> dict:
                {"id": "C2", "cx": 500.0, "cy": 500.0, "x": 2500.0, "y": 0.0, "loads": [_load("U1", 1150.0)]}]
     beam = {"width": 600.0, "height": 900.0, "layers": [TOP, BOTTOM],
             "stirrups": {"designation": "#4", "legs": 4, "spacing": 120.0, "closed": True, "end": "hook135"}}
-    data = {"id": "ZT", "min_steel_exception": False,
+    data = {"id": "ZT", "quantity": 1, "min_steel_exception": False,
             "lx": 6600.0, "ly": 2400.0, "h": 400.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns, "beam": beam,
             "bottom": {"first": "x", "x": {"designation": "#6", "spacing": 150.0, "end": "straight"},

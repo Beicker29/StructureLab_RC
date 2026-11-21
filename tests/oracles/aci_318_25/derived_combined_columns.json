@@ -32,6 +32,7 @@
       "description": "dos columnas interiores simétricas, con band bajo cada una; barras superiores con gancho y malla recta",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2400.0,
@@ -867,6 +868,7 @@
       "description": "el caso anterior con el band de C1 a 50 mm: separación libre 24.6 mm, menor que la mínima (D-102)",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2400.0,
@@ -1702,6 +1704,7 @@
       "description": "columna de borde (perímetro de 3 lados, αs = 30), cargas desiguales, sin band",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2400.0,
@@ -2481,6 +2484,7 @@
       "description": "dos casos con My, Mx, Vx y columnas desplazadas en Y; pedestal",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2400.0,
@@ -4008,6 +4012,7 @@
       "description": "barras con gancho; columna pequeña y carga alta: el aplastamiento no alcanza y toman los pasadores",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2400.0,
@@ -4805,6 +4810,7 @@
       "description": "C1 en la zona sin presión: su franja toca la zona en contacto (forma integrada en la franja)",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2400.0,
@@ -5557,6 +5563,7 @@
       "description": "C1 en la zona sin presión y toda su franja sin contacto (carga uniforme F/B)",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2400.0,
@@ -6324,6 +6331,7 @@
       "description": "columnas a 350 mm de cara a cara (menos que d): perímetros traslapados y perímetro común",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 3600.0,
         "ly": 2600.0,
@@ -7182,6 +7190,7 @@
       "description": "zapata delgada: punzonamiento, flexión y cortante de las franjas no cumplen; C2 grande, con A2/A1 < 4",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 2400.0,
@@ -7999,6 +8008,7 @@
       "description": "Mx grande en las dos columnas (D-095): la presión en la línea de cada columna se anula hacia −Y, la carga uniforme manda en ese voladizo y aparece el momento negativo transversal",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 3000.0,
@@ -8853,6 +8863,7 @@
       "description": "el caso anterior con barras superiores transversales (D-097): el momento negativo de las franjas lo toman esas barras; band solo en C1 (único refuerzo inferior de su franja) y la malla y fuera de su zona; retracción y temperatura por zona",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 3000.0,
@@ -9895,6 +9906,7 @@
       "description": "el caso anterior con las barras superiores y más cerca de la cara superior (top.first = y, D-099): las x quedan debajo de ellas y las y suben",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 3000.0,
@@ -10937,6 +10949,7 @@
       "description": "D-119: band superior #6 c/150 en C1 (sus barras superiores de franja); top.y #5 c/200 solo fuera de su zona; C1 corrida en Y con Mx: torsión de placa, su cortante fuera de las franjas y la retracción de la zona con el band superior",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 3000.0,
@@ -12031,6 +12044,7 @@
       "description": "D-119: band superior en las dos columnas y sin barras superiores: fuera de las franjas, la torsión de placa superior en concreto simple y el band superior termina como la malla",
       "footing": {
         "id": "ZC",
+        "quantity": 1,
         "min_steel_exception": false,
         "lx": 6000.0,
         "ly": 3000.0,

@@ -7,7 +7,7 @@ lo largo de ella): con la dirección principal en la Y global, la geometría, el
 
 from typing import Any, Literal, Self
 
-from pydantic import Field, NonNegativeFloat, PositiveFloat, field_validator, model_validator
+from pydantic import Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator, model_validator
 
 from structurelab_rc.model.footing import (
     MPA_PER_KPA,
@@ -143,6 +143,7 @@ class CombinedFooting(RectangularBase, _Input):
     localización y el cuadro de tipologías (D-157); sin él, el id."""
 
     id: str = Field(min_length=1)
+    quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     typology: str | None = Field(default=None, min_length=1)
     lx: PositiveFloat
     ly: PositiveFloat

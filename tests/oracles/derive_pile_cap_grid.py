@@ -53,7 +53,7 @@ def _cap() -> dict:
     def mat(designation: str, spacing: float) -> dict:
         return {"designation": designation, "spacing": spacing, "end": "hook90"}
 
-    return {"id": "G", "loads_from": "column", "lx": L, "ly": L, "h": H, "cover": COVER, "bottom_cover": BOTTOM_COVER,
+    return {"id": "G", "quantity": 1, "loads_from": "column", "lx": L, "ly": L, "h": H, "cover": COVER, "bottom_cover": BOTTOM_COVER,
             "fill_height": FILL, "pedestal_height": 0.0, "surcharge_dead_kNm2": QD * 1e3, "surcharge_live_kNm2": QL * 1e3,
             "columns": [{"id": name, "cx": SIZE, "cy": SIZE, "offset_x": x, "offset_y": y,
                          "dowels": {"designation": "#6", "count": 8, "end": "hook90"}, "loads": LOADS[name]} for name, x, y in COLUMNS],

@@ -141,7 +141,7 @@ def cap_data(ctx: Context, candidate: _Candidate, mats: Mats, dowels: dict[str, 
     column = {"id": "C1", "cx": cap.column.cx, "cy": cap.column.cy, "offset_x": arrangement.column[0],
               "offset_y": arrangement.column[1], "dowels": dowels}
     data: dict[str, Any] = {
-        "id": cap.id, "loads_from": cap.loads_from, "lx": arrangement.lx, "ly": arrangement.ly, "h": candidate.h,
+        "id": cap.id, "quantity": cap.quantity, "loads_from": cap.loads_from, "lx": arrangement.lx, "ly": arrangement.ly, "h": candidate.h,
         "cover": design.cover, "bottom_cover": design.bottom_cover, "fill_height": design.fill_height,
         "pedestal_height": design.pedestal_height, "surcharge_dead_kNm2": design.surcharge_dead,
         "surcharge_live_kNm2": design.surcharge_live, "columns": [column], "bottom": bottom, "top": top,

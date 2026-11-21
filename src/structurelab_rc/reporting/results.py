@@ -10,7 +10,8 @@ import math
 from typing import Any
 
 from structurelab_rc.codes.registry import PROFILES
-from structurelab_rc.detailing.schedule import ScheduleRow, round_up, totals
+from structurelab_rc.detailing.schedule import round_up, totals
+from structurelab_rc.detailing.units import Unit, scaled
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.combined_beam import two_way_warning
 from structurelab_rc.domain.footing.combined_columns import BEAM_SHEAR
@@ -438,11 +439,18 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
     return results
 
 
-def detailing_data(rows: list[ScheduleRow], concrete: float, stock: float) -> dict[str, Any]:
-    """Cartilla de un elemento (D-125): una fila por marca con su forma (D-150), sus dimensiones (el tramo A y la longitud
-    de cada gancho, D-147), la longitud de corte y el peso; el acero por designación, el total y el volumen de concreto (m³)."""
+def detailing_data(unit: Unit, concrete: float, stock: float) -> dict[str, Any]:
+    """Cartilla del tipo de un elemento (D-125, D-159): el tipo, sus elementos y N; una fila por marca de una unidad con su
+    forma (D-150), sus dimensiones (el tramo A y la longitud de cada gancho, D-147), la longitud de corte y el peso; el
+    acero por designación, el total y el volumen de concreto (m³) de una unidad; y en total, lo mismo para las N unidades."""
+    rows = list(unit.rows)
     by_designation = totals(rows)
+    many = scaled(rows, unit.quantity)
+    many_by_designation = totals(many)
     return {
+        "element": unit.name,
+        "members": list(unit.members),
+        "units": unit.quantity,
         "stock_length [mm]": stock,
         "rows": [{"mark": row.mark, "group": row.piece.group, "designation": row.piece.designation, "shape": row.piece.shape,
                   "count": row.piece.count, "dimensions [mm]": {name: round_up(value) for name, value in row.piece.dimensions},
@@ -451,18 +459,31 @@ def detailing_data(rows: list[ScheduleRow], concrete: float, stock: float) -> di
         "steel_by_designation [kg]": {designation: round(mass, 1) for designation, mass in by_designation.items()},
         "steel [kg]": round(sum(by_designation.values()), 1),
         "concrete [m3]": round(concrete, 3),
+        "total": {
+            "rows": [{"mark": row.mark, "count": row.piece.count, "mass [kg]": round(row.mass, 1)} for row in many],
+            "steel_by_designation [kg]": {designation: round(mass, 1) for designation, mass in many_by_designation.items()},
+            "steel [kg]": round(sum(many_by_designation.values()), 1),
+            "concrete [m3]": round(concrete * unit.quantity, 3),
+        },
     }
 
 
 def detailing_csv(results: dict[str, Any]) -> str:
-    """La cartilla de todos los elementos, separada por punto y coma (entre comillas los campos que lo contienen)."""
+    """La cartilla de cada tipo (D-159), separada por punto y coma (entre comillas los campos que lo contienen): las filas
+    de una unidad con sus unidades N, la cantidad y el peso de las N unidades."""
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", lineterminator="\n")
     writer.writerow(["elemento", "marca", "grupo", "barra", "forma", "cantidad", "dimensiones (mm)", "longitud de corte (mm)",
-                     "peso (kg)", "nota"])
+                     "peso (kg)", "unidades", "cantidad total", "peso total (kg)", "nota"])
+    written: set[str] = set()
     for footing in [*results.get("footings", []), *results.get("combined_footings", []), *results.get("pile_caps", [])]:
-        for row in (footing.get("detailing") or {}).get("rows", []):
+        data = footing.get("detailing")
+        if not data or data["element"] in written:
+            continue
+        written.add(data["element"])
+        for row, total in zip(data["rows"], data["total"]["rows"], strict=True):
             dimensions = " ".join(f"{name}={value:.0f}" for name, value in row["dimensions [mm]"].items())
-            writer.writerow([footing["id"], row["mark"], row["group"], row["designation"], row["shape"], row["count"], dimensions,
-                             f"{row['cut_length [mm]']:.0f}", f"{row['mass [kg]']:.1f}", row["note"]])
+            writer.writerow([data["element"], row["mark"], row["group"], row["designation"], row["shape"], row["count"], dimensions,
+                             f"{row['cut_length [mm]']:.0f}", f"{row['mass [kg]']:.1f}", data["units"], total["count"],
+                             f"{total['mass [kg]']:.1f}", row["note"]])
     return buffer.getvalue()

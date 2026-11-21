@@ -83,6 +83,7 @@
   "caps": [
     {
       "id": "CP-1725",
+      "quantity": 1,
       "loads_from": "piles",
       "column_unique_name": "277",
       "etabs_station": 0.002,

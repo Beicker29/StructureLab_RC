@@ -40,10 +40,9 @@ Deducido por ingeniería inversa de archivos guardados por DL-NET 2026 (el forma
   4. **bloque de elementos:** `" N"` y, por elemento, su nombre, `" k"` y sus k líneas;
   5. **cola:** los grupos (`" G"` y, por grupo, nombre, marca y la pertenencia de los elementos), luego anotaciones,
      página y `FINALDEARCHIVORANDOM`.
-- **Grupos:** la pertenencia lleva un número por elemento (`" 1  1 "` con dos elementos; vacía con ninguno). En
-  `ESTRIBOS.dli`, con un solo elemento, el número es 3: parece la cantidad de ese elemento en el grupo, por confirmar.
-  Al generar, se rehace con todos los elementos en cada grupo de la plantilla, con cantidad 1 (cada elemento es una
-  zapata).
+- **Grupos:** la pertenencia lleva, por elemento, las veces que se construye: `" 1  1 "` con dos elementos de una
+  unidad, `" 3 "` con uno de tres (`ESTRIBOS.dli`), vacía con ninguno. Confirmado por el usuario (D-159). Al generar, cada
+  elemento es un tipo, con la cartilla de una unidad, y entra en cada grupo de la plantilla con sus N unidades.
 
 ## Líneas
 
@@ -65,5 +64,5 @@ cartilla (D-147): la longitud total es el tramo horizontal más la longitud de c
 Confirmado por el usuario (D-147): la longitud es la de corte, `U` es el gancho de 180° y la geometría de L y U es la de
 DL-NET (tramo = Ltotal − 2L o Ltotal − 2U). También confirmado (D-133, 2026-11-21): los
 `.dli` generados abren sin errores, b × h del estribo son sus dimensiones exteriores (a 1 cm, dos decimales, como la cartilla
-del DXF) y la figura del estribo de 135° escribe `F0/45`. Por confirmar: el número de la pertenencia de los grupos. Una forma o un gancho que DL-NET no representa (figura G, gancho de 135° en una barra,
+del DXF) y la figura del estribo de 135° escribe `F0/45`. El número de la pertenencia de cada grupo es la cantidad de unidades del elemento (D-159). Una forma o un gancho que DL-NET no representa (figura G, gancho de 135° en una barra,
 estribo sin ganchos de 135°, una barra fuera de la librería) es un error con la marca, nunca una salida silenciosa.

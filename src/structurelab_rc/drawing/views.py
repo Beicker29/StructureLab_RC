@@ -27,6 +27,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from structurelab_rc.detailing.schedule import STIRRUP_SHAPE, BarRun, Piece, Placement, ScheduleRow, splice_spans
+from structurelab_rc.detailing.units import scaled
 from structurelab_rc.drawing.model import (
     AXES,
     COLUMN_FILL,
@@ -608,41 +609,53 @@ def _dowels(item: Marked, axis: str, at: float) -> tuple[list[Entity], Point | N
     return entities, (centre[along] + offset[along], (place.span[0] + place.span[1]) / 2)
 
 
-def cartilla_view(drawing: Drawing, element: str, rows: list[ScheduleRow]) -> View:
+def cartilla_view(drawing: Drawing, element: str, rows: list[ScheduleRow], units: int) -> View:
     """La cartilla como tabla, con el croquis de la forma de cada marca y sus dimensiones A, B y C y la longitud de corte
-    en metros (D-150), las mismas de la cartilla de la memoria (en mm) y del .dli."""
+    en metros (D-150), las mismas de la cartilla de la memoria (en mm) y del .dli. Es la de una unidad del tipo; si se
+    construye más de una vez (units, D-159), debajo va la de las N unidades, con la cantidad y el peso por N."""
+    view = View("cartilla", f"Cartilla de despiece {element}" + (f" (1 unidad de {units})" if units > 1 else ""))
+    bottom = _schedule_table(drawing, view, rows, 0.0)
+    if units > 1:
+        small = drawing.text_height(small=True)
+        top = bottom - 4 * small
+        view.entities.append(Text(TABLE, (0.0, top + small), f"Cartilla de despiece {element}: {units} unidades", small))
+        _schedule_table(drawing, view, scaled(rows, units), top)
+    _title(drawing, view)
+    return view
+
+
+def _schedule_table(drawing: Drawing, view: View, rows: list[ScheduleRow], top: float) -> float:
+    """Dibuja una tabla de la cartilla con su borde superior en top y devuelve la cota de su borde inferior."""
     scale, small = drawing.scale, drawing.text_height(small=True)
-    view = View("cartilla", f"Cartilla de despiece {element}")
     width = sum(size for _, size in _COLUMNS) * scale
     lefts = [sum(size for _, size in _COLUMNS[:index]) * scale for index in range(len(_COLUMNS))]
     header, row_height = _HEADER * scale, _ROW * scale
-    bottom = -header - row_height * (len(rows) + 1)
-    view.entities.append(rectangle(TABLE, (0.0, 0.0), (width, bottom)))
+    bottom = top - header - row_height * (len(rows) + 1)
+    view.entities.append(rectangle(TABLE, (0.0, top), (width, bottom)))
     for left in lefts[1:]:
-        view.entities.append(Line(TABLE, (left, 0.0), (left, bottom)))
+        view.entities.append(Line(TABLE, (left, top), (left, bottom)))
     for (name, size), left in zip(_COLUMNS, lefts, strict=True):
-        view.entities.append(Text(TABLE, (left + size * scale / 2, -header * 0.65), name, small, align="center"))
-    view.entities.append(Line(TABLE, (0.0, -header), (width, -header)))
+        view.entities.append(Text(TABLE, (left + size * scale / 2, top - header * 0.65), name, small, align="center"))
+    view.entities.append(Line(TABLE, (0.0, top - header), (width, top - header)))
     for index, row in enumerate(rows):
-        top = -header - index * row_height
-        view.entities.append(Line(TABLE, (0.0, top - row_height), (width, top - row_height)))
+        upper = top - header - index * row_height
+        view.entities.append(Line(TABLE, (0.0, upper - row_height), (width, upper - row_height)))
         piece, dimensions = row.piece, dict(row.piece.dimensions)
         cells = [row.mark, piece.designation, str(piece.count), piece.shape,
                  *(metres(dimensions[name]) if name in dimensions else "" for name in ("A", "B", "C")),
                  metres(piece.cut_length), f"{row.mass:.1f}"]
         for column, (text, (_, size), left) in enumerate(zip(cells, _COLUMNS, lefts, strict=True)):
             if text and column != _SHAPE_COLUMN:
-                view.entities.append(Text(TABLE, (left + size * scale / 2, top - row_height * 0.6), text, small, align="center"))
-        view.entities.append(Text(TABLE, (lefts[_SHAPE_COLUMN] + 0.5 * small, top - 0.5 * small - small * 0.8), piece.shape,
+                view.entities.append(Text(TABLE, (left + size * scale / 2, upper - row_height * 0.6), text, small, align="center"))
+        view.entities.append(Text(TABLE, (lefts[_SHAPE_COLUMN] + 0.5 * small, upper - 0.5 * small - small * 0.8), piece.shape,
                                   small * 0.8))
-        view.entities += _shape(row, (lefts[_SHAPE_COLUMN], top), (_COLUMNS[_SHAPE_COLUMN][1] * scale, row_height), small)
+        view.entities += _shape(row, (lefts[_SHAPE_COLUMN], upper), (_COLUMNS[_SHAPE_COLUMN][1] * scale, row_height), small)
     total = sum(row.mass for row in rows)
     last = bottom + row_height
     view.entities.append(Text(TABLE, (lefts[-1] - small, last - row_height * 0.6), "Total acero", small, align="right"))
     view.entities.append(Text(TABLE, (lefts[-1] + _COLUMNS[-1][1] * scale / 2, last - row_height * 0.6), f"{total:.1f}", small,
                               align="center"))
-    _title(drawing, view)
-    return view
+    return bottom
 
 
 _SHAPE_COLUMN = 3  # la columna "Forma": su nombre arriba a la izquierda y el croquis

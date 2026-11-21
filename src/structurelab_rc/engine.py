@@ -3,7 +3,7 @@
 import json
 import os
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -17,7 +17,8 @@ from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import DesignResult, typology_curve
 from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.design.pile_cap import search as pile_cap_design
-from structurelab_rc.detailing.schedule import ScheduleRow, schedule
+from structurelab_rc.detailing.schedule import BarRun, ScheduleRow, schedule
+from structurelab_rc.detailing.units import Member, Unit, units
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.station import station_checks
 from structurelab_rc.domain.check import Check, check_from_errors
@@ -34,7 +35,7 @@ from structurelab_rc.domain.pile_cap.outline import bar_span
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.drawing.dxf import write_dxf
-from structurelab_rc.drawing.model import Drawing
+from structurelab_rc.drawing.model import Drawing, View
 from structurelab_rc.drawing.svg import view_svg
 from structurelab_rc.errors import invalid_input
 from structurelab_rc.io.dlnet import TEMPLATE_PATH, TEMPLATE_VARIABLE, DliError, find_template, schedule_dli
@@ -49,7 +50,9 @@ from structurelab_rc.io.etabs.footings import (
 from structurelab_rc.io.etabs.importer import SHEET, EtabsImportError, ImportSummary, build_project
 from structurelab_rc.io.etabs.pile_caps import PILE_SHEET, build_pile_cap_design_project, build_pile_cap_project
 from structurelab_rc.io.etabs.xlsx import XlsxError, read_table
+from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.design import CombinedDesignProject, FootingDesignProject
+from structurelab_rc.model.footing import Footing
 from structurelab_rc.model.loader import (
     ProjectLoadError,
     load_combined_design,
@@ -60,6 +63,7 @@ from structurelab_rc.model.loader import (
     load_template,
     validate_input,
 )
+from structurelab_rc.model.pile_cap import PileCap
 from structurelab_rc.model.pile_cap_design import PileCapDesignProject
 from structurelab_rc.model.project import Project
 from structurelab_rc.model.template import (
@@ -249,66 +253,78 @@ def _combined_diagrams(project: Project | None, checks: tuple[Check, ...]) -> Di
     return diagrams
 
 
+Draw = Callable[[Drawing, str, list[ScheduleRow], int], list[View]]
+
+
 def _detailing(
     project: Project | None, results: dict[str, Any], given: tuple[str, Analyses]
-) -> tuple[dict[str, list[ScheduleRow]], Drawing | None]:
-    """Agrega la cartilla de cada zapata a su entrada del resultado (D-125) si el proyecto pide despiece y la entrada es
-    válida: (la cartilla de cada elemento, vacía si no se despieza; el dibujo del refuerzo si el proyecto lo pide, D-126)."""
+) -> tuple[list[Unit], list[str], Drawing | None]:
+    """Agrega la cartilla del tipo de cada zapata a su entrada del resultado (D-125, D-159) si el proyecto pide despiece y
+    la entrada es válida: (los tipos con su cartilla de una unidad y sus N unidades, vacío si no se despieza; los avisos
+    de los elementos que no coinciden con su tipo; el dibujo del refuerzo, una vez por tipo, si el proyecto lo pide,
+    D-126)."""
     name, analyses = given
-    schedules: dict[str, list[ScheduleRow]] = {}
     if project is None or project.detailing is None:
-        return schedules, None
+        return [], [], None
     if not any(key in results for key in ("footings", "combined_footings", "pile_caps")):
-        return schedules, None
+        return [], [], None
     bars = load_engine().bars
     basis = Basis(PROFILES[project.profile], project.materials, bars, project.seismic.level)
     stock = project.detailing.stock_length
     drawing = None if project.drawing is None else Drawing(name, project.drawing.scale)
     entries = {entry["id"]: entry for key in ("footings", "combined_footings", "pile_caps") for entry in results.get(key, [])}
+    built: list[tuple[Member, float, Draw]] = []
+
+    def add(element: Footing | PileCap | CombinedFooting, runs: list[BarRun], concrete: float, views: Callable[..., list[View]]) -> None:
+        """La cartilla del elemento con las marcas de su tipo (typology o, sin él, id) y cómo dibujar su tipo."""
+        typology = element.typology or element.id
+        member = Member(element.id, typology, element.quantity, tuple(schedule(typology, runs, stock)))
+
+        def draw(target: Drawing, unit: str, rows: list[ScheduleRow], quantity: int) -> list[View]:
+            return views(target, element.model_copy(update={"id": unit}), runs, (rows, stock), quantity)
+
+        built.append((member, concrete, draw))
+
     pile_soil = project.pile_soil
     if pile_soil is not None:  # cabezales (D-138), con su análisis
         for cap in project.pile_caps:
-            concrete = sum(cap.weights(pile_soil)[:2]) / pile_soil.unit_weight_concrete / 1e9
             spans = (lambda direction, position, cap=cap: bar_span(cap, direction, position)) if cap.clipped_corners else None
-            runs = footing_runs(basis, cap, moment_envelope(list(analyses[cap.id].moments)), spans)
-            rows = schedules[cap.id] = schedule(cap.id, runs, stock)
-            entries[cap.id]["detailing"] = detailing_data(rows, concrete, stock)
-            if drawing is not None:
-                drawing.views[cap.id] = pile_cap_views(drawing, cap, runs, (rows, stock))
+            add(cap, footing_runs(basis, cap, moment_envelope(list(analyses[cap.id].moments)), spans),
+                sum(cap.weights(pile_soil)[:2]) / pile_soil.unit_weight_concrete / 1e9, pile_cap_views)
     soil = project.soil
     for footing in project.footings if soil is not None else ():
         assert soil is not None
-        concrete = sum(footing.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
-        runs = footing_runs(basis, footing, face_envelope(footing, soil))
-        rows = schedules[footing.id] = schedule(footing.id, runs, stock)
-        entries[footing.id]["detailing"] = detailing_data(rows, concrete, stock)
-        if drawing is not None:
-            drawing.views[footing.id] = footing_views(drawing, footing, runs, (rows, stock))
+        add(footing, footing_runs(basis, footing, face_envelope(footing, soil)),
+            sum(footing.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9, footing_views)
     for combined in project.combined_footings if soil is not None else ():
         assert soil is not None
-        concrete = sum(combined.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9
-        runs = combined_runs(basis, combined, soil)
-        rows = schedules[combined.id] = schedule(combined.id, runs, stock)
-        entries[combined.id]["detailing"] = detailing_data(rows, concrete, stock)
-        if drawing is not None:
-            drawing.views[combined.id] = combined_views(drawing, combined, runs, (rows, stock))
+        add(combined, combined_runs(basis, combined, soil), sum(combined.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9,
+            combined_views)
+    found, warnings = units([member for member, _, _ in built])
+    unit_of = {member: unit for unit in found for member in unit.members}
+    for member, concrete, draw in built:
+        unit = unit_of[member.id]
+        entries[member.id]["detailing"] = detailing_data(unit, concrete, stock)
+        if drawing is not None and unit.members[0] == member.id:  # un despiece por tipo
+            drawing.views[unit.name] = draw(drawing, unit.name, list(unit.rows), unit.quantity)
     if drawing is not None:
         located = location_views(drawing, [*project.footings, *project.pile_caps], project.combined_footings,  # D-130, D-138
                                  project.min_clear_spacing)  # D-156
         if located:
             drawing.views[LOCATION] = located
-    return schedules, drawing
+    return found, warnings, drawing
 
 
-def _dli_file(schedules: dict[str, list[ScheduleRow]], output: Path, start: Path) -> tuple[list[Path], list[str]]:
-    """Escribe la cartilla DL-NET <caso>.dli (D-133) con la plantilla que encuentra find_template: (archivos, avisos)."""
+def _dli_file(found: list[Unit], output: Path, start: Path) -> tuple[list[Path], list[str]]:
+    """Escribe la cartilla DL-NET <caso>.dli (D-133) con la plantilla que encuentra find_template, un elemento por tipo
+    con sus unidades (D-159): (archivos, avisos)."""
     template = find_template(start, dict(os.environ))
     if template is None:
         return [], [f"{output.name}.dli no se genero: falta la plantilla DL-NET ({TEMPLATE_PATH.as_posix()} o la variable "
                     f"{TEMPLATE_VARIABLE})"]
     path = output / f"{output.name}.dli"
     try:
-        data = schedule_dli(list(schedules.items()), template)
+        data = schedule_dli([(unit.name, unit.rows, unit.quantity) for unit in found], template)
     except DliError as error:  # una barra que DL-NET no representa (p. ej., gancho de 135° en una malla, D-134)
         return [], [f"{output.name}.dli no se genero: {error}"]
     path.write_bytes(data)
@@ -345,7 +361,8 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     if close:
         results["close_footings"] = close
     # El dibujo y el DXF llevan el nombre del caso (la carpeta de salida), como el .dli.
-    schedules, drawing = ({}, None) if checks[0].status is Status.FAIL else _detailing(project, results, (output.name, analyses))
+    found, mismatched, drawing = ([], [], None) if checks[0].status is Status.FAIL else _detailing(
+        project, results, (output.name, analyses))
     output.mkdir(parents=True, exist_ok=True)
     figures = pressure_figures(results, output)
     diagram_files = diagram_figures(results, output)
@@ -357,11 +374,12 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     memoir_path.write_text(text, encoding="utf-8", newline="\n")
     pdf_written = write_pdf(documents, pdf_path)
     files = (result_path, memoir_path, pdf_path) if pdf_written else (result_path, memoir_path)
-    notes: list[str] = []
-    if schedules:  # la cartilla de todos los elementos (D-125) y la cartilla DL-NET (D-133)
+    notes: list[str] = list(mismatched)
+    if found:  # la cartilla de cada tipo (D-125, D-159) y la cartilla DL-NET (D-133)
         schedule_path = output / "cartilla.csv"
         schedule_path.write_text(detailing_csv(results), encoding="utf-8", newline="\n")
-        dli_paths, notes = _dli_file(schedules, output, path.parent)
+        dli_paths, dli_notes = _dli_file(found, output, path.parent)
+        notes += dli_notes
         files = (*files, schedule_path, *dli_paths)
     files = (*files, *figures.values(), *(path for paths in diagram_files.values() for path in paths), *drawing_paths)
     notes += [f"Zapatas vecinas: {item['text']}" for item in close]

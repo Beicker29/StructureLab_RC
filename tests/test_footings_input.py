@@ -42,7 +42,7 @@ MAT = {"first": "x", "x": {"designation": "#5", "spacing": 150.0, "end": "straig
 
 def _footing(**changes: Any) -> dict[str, Any]:
     data: dict[str, Any] = {
-        "id": "Z1", "lx": 3000.0, "ly": 2000.0, "h": 600.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 500.0,
+        "id": "Z1", "quantity": 1, "lx": 3000.0, "ly": 2000.0, "h": 600.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 500.0,
         "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0,
         "column": {"cx": 400.0, "cy": 500.0, "offset_x": 0.0, "offset_y": 0.0}, "bottom": MAT, "top": None,
         "loads": [{"case": "D+L", "kind": "service", "dead_factor": 1.0, "live_factor": 1.0, "P_kN": 1000.0, "Vx_kN": 0.0,
@@ -258,7 +258,7 @@ def _combined_template(source: dict[str, str], loads: dict[str, list[dict[str, A
     columns = [{"id": name, "etabs_unique_name": unique, "cx": 450.0, "cy": 450.0, "x": 0.0, "y": 0.0, along: position,
                 "loads": loads.get(name, [])} for name, unique, position in (("C1", "10", -2000.0), ("C2", "11", 2000.0))]
     lx, ly = (6000.0, 2000.0) if principal == "x" else (2000.0, 6000.0)
-    combined = {"id": "ZC", "min_steel_exception": False,
+    combined = {"id": "ZC", "quantity": 1, "min_steel_exception": False,
                 "lx": lx, "ly": ly, "h": 700.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
                 "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "loads_source": source, "columns": columns, "bottom": mat,
                 "principal_direction": principal}

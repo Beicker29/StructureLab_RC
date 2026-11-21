@@ -1199,7 +1199,15 @@ def _detailing_chapter(footing: dict[str, Any], drawings: list[DrawingFigure] | 
                  f"{row['cut_length [mm]']:.0f}", f"{row['mass [kg]']:.1f}"] for row in data["rows"]]
         totals = [[designation, f"{mass:.1f}"] for designation, mass in data["steel_by_designation [kg]"].items()]
         notes = sorted({row["note"] for row in data["rows"] if row["note"]})
+        units, total = data["units"], data["total"]
+        members = ", ".join(data["members"])
+        many = [[row["mark"], row["designation"], str(item["count"]), f"{item['mass [kg]']:.1f}"]
+                for row, item in zip(data["rows"], total["rows"], strict=True)]
+        many_totals = [[designation, f"{mass:.1f}"] for designation, mass in total["steel_by_designation [kg]"].items()]
         return [
+            {"kind": "p", "text": f"Tipo {data['element']}: se construye {units} {'vez' if units == 1 else 'veces'} "
+                                  f"({members}; D-159). La cartilla es la de una unidad"
+                                  + ("." if units == 1 else f"; la segunda tabla, la de las {units} unidades.")},
             {"kind": "p", "text": "Convención de DL-NET (D-147): la longitud de corte es el tramo exterior A, redondeado hacia "
                                   "arriba a 10 mm, más cada gancho (L con 90°, U con 180°), redondeado hacia arriba a 50 mm; el "
                                   "gancho de 135° de una barra y los estribos, por el eje, a 10 mm. Forma por sus extremos "
@@ -1210,6 +1218,10 @@ def _detailing_chapter(footing: dict[str, Any], drawings: list[DrawingFigure] | 
              "rows": rows},
             {"kind": "table", "headers": ["Barra", "Peso (kg)"],
              "rows": [*totals, ["Total acero", f"{data['steel [kg]']:.1f}"], ["Concreto (m³)", f"{data['concrete [m3]']:.3f}"]]},
+            *([{"kind": "table", "headers": ["Marca", "Barra", f"Cant. ({units} u.)", f"Peso {units} u. (kg)"], "rows": many},
+               {"kind": "table", "headers": ["Barra", f"Peso {units} u. (kg)"],
+                "rows": [*many_totals, ["Total acero", f"{total['steel [kg]']:.1f}"],
+                         ["Concreto (m³)", f"{total['concrete [m3]']:.3f}"]]}] if units > 1 else []),
             *({"kind": "p", "text": f"Nota: {note}."} for note in notes),
             *({"kind": "image", "path": str(path), "aspect": aspect, "caption": caption} for path, aspect, caption in drawings or []),
         ]
@@ -1340,10 +1352,15 @@ def report_documents(results: dict[str, Any], *, full: bool = False, figures: di
                  {"kind": "p", "text": "La entrada no es válida:"},
                  *({"kind": "alert", "text": f"[{error['code']}] {error['message']}"} for error in validation["errors"])]]
     documents = [beam_document(results, member, full) for member in results["members"]]
-    documents += [footing_document(results, footing, full, (figures or {}).get(footing["id"]), (drawings or {}).get(footing["id"]))
+    documents += [footing_document(results, footing, full, (figures or {}).get(footing["id"]), _drawn(drawings, footing))
                   for footing in results.get("footings", [])]
     documents += [combined_document(results, footing, full, ((figures or {}).get(footing["id"]), (diagrams or {}).get(footing["id"])),
-                                    (drawings or {}).get(footing["id"]))
+                                    _drawn(drawings, footing))
                   for footing in results.get("combined_footings", [])]
-    documents += [pile_cap_document(results, cap, full, (drawings or {}).get(cap["id"])) for cap in results.get("pile_caps", [])]
+    documents += [pile_cap_document(results, cap, full, _drawn(drawings, cap)) for cap in results.get("pile_caps", [])]
     return documents
+
+
+def _drawn(drawings: dict[str, list[DrawingFigure]] | None, entry: dict[str, Any]) -> list[DrawingFigure] | None:
+    """Las vistas del refuerzo de un elemento: las de su tipo, que se dibuja una vez (D-159)."""
+    return (drawings or {}).get((entry.get("detailing") or {}).get("element", entry["id"]))

@@ -258,7 +258,7 @@ def test_etabs_template_builds_the_combined_design_project() -> None:
                  "Vy_kN": 0.0, "Mx_kNm": 0.0, "My_kNm": 0.0} for p in (1250.0, 1700.0)]
     columns = [{"id": column["id"], "etabs_unique_name": unique, "cx": column["cx"], "cy": column["cy"], "x": column["x"],
                 "y": column["y"], "loads": [load]} for column, unique, load in zip(data["columns"], ("7", "9"), factored, strict=True)]
-    keys = ("description", "profile", "seismic", "concrete", "reinforcement_steel", "soil", "principal_direction")
+    keys = ("description", "profile", "seismic", "concrete", "reinforcement_steel", "soil", "principal_direction", "quantity")
     raw = {key: data[key] for key in keys}
     template = EtabsCombinedDesignTemplate.model_validate({
         **raw,

@@ -62,6 +62,7 @@ Supuestos:
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `id` | texto | Identificador único. |
+| `quantity` | - | Obligatorio (D-159): las veces que se construye (entero ≥ 1; en los ejemplos, 1). La cartilla de su tipo se reporta para una unidad y para las N unidades. |
 | `lx`, `ly` | mm | Dimensiones en planta a lo largo de X y de Y. |
 | `h` | mm | Espesor de la zapata. |
 | `cover` | mm | Recubrimiento libre de las mallas. |
@@ -76,7 +77,7 @@ Supuestos:
 | `top` | objeto o `null` | Malla superior, o `null` si no hay. |
 | `loads` | lista | Casos de carga (abajo). |
 | `location` | objeto | Opcional (D-130): `{"x", "y", "story", "joint"}`, el eje de la columna en el proyecto (x e y globales en mm, el nivel y el nudo de ETABS). Lo llena el importador con `etabs_files.locations` o se declara. Solo lo usa la planta de localización. También en `combined_footings[].columns[]`, en ejes globales aunque la viga vaya en Y, y en las columnas del diseño por tipologías, que lo pasan a su zapata. |
-| `typology` | texto | Opcional (D-130): el tipo que rotula la planta de localización y agrupa el cuadro de tipologías (el grupo de la plantilla o la tipología del diseño). Sin él, el `id`. |
+| `typology` | texto | Opcional (D-130): el tipo que rotula la planta de localización y agrupa el cuadro de tipologías (el grupo de la plantilla o la tipología del diseño). Sin él, el `id`. Con despiece, las zapatas del mismo tipo comparten una cartilla y un despiece, con N = la suma de sus `quantity` (D-159). |
 
 El relleno y las sobrecargas ocupan el área de la base menos la de la columna.
 
@@ -160,7 +161,7 @@ los dos perfiles.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
-| `id`, `lx`, `ly`, `h`, `cover`, `fill_height`, `pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2` | | Como en la zapata aislada. |
+| `id`, `quantity`, `typology`, `lx`, `ly`, `h`, `cover`, `fill_height`, `pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2` | | Como en la zapata aislada. |
 | `principal_direction` | texto | Dirección principal (la de la viga que une las columnas) en ejes globales de ETABS: `x` (por defecto) o `y` (D-094). Todo se escribe en ejes globales, como está la zapata en planta: con `y`, `ly` es la dimensión paralela a la viga, las columnas van a distintas `y` y `bottom.y` y `top.y` son las barras paralelas a la viga (D-099). Estribos, refuerzo superficial, capas de torsión, `band` y la viga de la T no tienen dirección propia: van paralelos o transversales a la viga. El cálculo trabaja en ejes de la viga (X = +Y global, Y = −X global): con `y`, al cargar se intercambian lx y ly, las columnas pasan a x = y, y = −x, con cx = cy y cy = cx, las barras x e y (y `first`) de `bottom` y de `top` se intercambian y las cargas pasan a Vx = Vy, Vy = −Vx, Mx = My y My = −Mx. La salida vuelve a los ejes declarados con el giro inverso (D-101); `resultado.json` trae `principal_direction` en `geometry [mm]`. |
 | `columns[]` | lista | Exactamente dos columnas. |
 | `columns[].id` | texto | Identificador de la columna. |
@@ -326,6 +327,7 @@ mayorados.
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `principal_direction` | texto | `x` (por defecto) o `y`: eje global en que va la viga que une las columnas (D-094). |
+| `quantity` | - | Obligatorio (D-159): las veces que se construye la combinada; pasa al proyecto diseñado. |
 | `columns[]` | lista | Exactamente dos columnas: `id`, `cx` y `cy` (mm, sección en ejes globales), `x` e `y` (mm, eje de la columna en ejes globales con **cualquier origen**: solo cuenta la posición de una columna respecto a la otra; el diseño ubica la base y el proyecto diseñado da las columnas respecto al centro de la base), `property_lines` (opcional, linderos, ver abajo) y `loads` (casos de carga, iguales a los de una zapata). |
 | `columns[].property_lines` | mm | Opcional (D-154): los linderos (medianería) de la columna, `{"-x", "+x", "-y", "+y"}` en ejes globales; cada valor (≥ 0) es el voladizo máximo de la base más allá de la cara de esa columna en ese lado (0: la cara al ras del lindero). Un lado sin declarar no limita; si las dos columnas declaran un lado, rige el más restrictivo, y el lindero debe dejar cubrir las dos columnas. Solo en el diseño: en la verificación los linderos los controlan las dimensiones de la zapata y la posición de las columnas. |
 | `combined_design.fc_options`, `combined_design.prices` | MPa, moneda | Como en el diseño por tipologías: f'c comerciales con su precio por m³ y precio del acero por kg. |
@@ -460,15 +462,25 @@ si hay plantilla; ver [dlnet.md](dlnet.md), D-133), y la memoria lleva el capít
 - **Forma (D-150):** se nombra por sus extremos con la notación de DL-NET: `recta` sin ganchos; un código por gancho,
   `L` (90°), `U` (180°) o `135` (135°), unidos por un guion en el orden de los extremos (`L`, `L-L`, `U-U`, `L-U`, …); y
   `E`, el estribo cerrado. Así la cartilla, el plano y el `.dli` usan el mismo vocabulario.
-- **Marcas:** `<elemento>-01`, `-02`, … Barras iguales (designación, forma, dimensiones y longitud de corte) comparten
+- **Marcas:** `<tipo>-01`, `-02`, … Barras iguales (designación, forma, dimensiones y longitud de corte) comparten
   marca y la fila nombra los grupos que reúne.
+- **Tipos y unidades (D-159):** el tipo de un elemento es su `typology` o, sin ella, su `id`. Los elementos del mismo tipo
+  comparten una cartilla, un despiece en el dibujo y un elemento del `.dli`, si sus cartillas coinciden barra por barra
+  (el grupo y la nota no cuentan, porque nombran sus columnas). Si no coinciden, el elemento va con su propia cartilla,
+  marcada con su `id`, y `run` lo avisa. N, las unidades del tipo, es la suma de `quantity` de sus elementos. En el diseño
+  por tipologías cada columna o par es una zapata (`quantity` 1), así que N es el número de zapatas del tipo. Se reportan
+  la cartilla de una unidad y la de las N unidades: en la memoria, el plano (segunda tabla si N > 1), `cartilla.csv`
+  (columnas `unidades`, `cantidad total` y `peso total (kg)`) y `resultado.json` (`total`). En el `.dli`, el tipo entra
+  en cada grupo con sus N unidades.
 
 | Campo de `detailing` en el resultado | Unidad | Descripción |
 | --- | --- | --- |
+| `element`, `members`, `units` | | El tipo (D-159), los elementos que lo construyen y N, sus unidades. |
 | `stock_length [mm]` | mm | Longitud comercial declarada. |
 | `rows` | lista | Una por marca: `mark`, `group`, `designation`, `shape` (`recta`, `L`, `L-L`, `U-U`, `L-U`, `135`, …, `E`; D-150), `count`, `dimensions [mm]` (A, B, C), `cut_length [mm]`, `mass [kg/m]`, `mass [kg]` y `note` (tramo y traslapo, clase del empalme). |
 | `steel_by_designation [kg]`, `steel [kg]` | kg | Acero por designación y total. |
 | `concrete [m3]` | m³ | Volumen de concreto de la zapata y los pedestales (en la T, con el alma). |
+| `total` | | Las N unidades (D-159): `rows` (`mark`, `count` y `mass [kg]` por N), `steel_by_designation [kg]`, `steel [kg]` y `concrete [m3]`. |
 
 ## Dibujo del refuerzo (`drawing`, D-126, D-132, D-150, D-158)
 

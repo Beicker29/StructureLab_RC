@@ -281,7 +281,8 @@ def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any
         item["loads"] = [load_input(load) for load in column.loads]
         columns.append(item)
     data: dict[str, Any] = {
-        "id": FOOTING_ID, "principal_direction": principal, "lx": lx, "ly": ly, "h": geometry.h, "cover": design.cover,
+        "id": FOOTING_ID, "quantity": ctx.project.quantity, "principal_direction": principal,
+        "lx": lx, "ly": ly, "h": geometry.h, "cover": design.cover,
         "min_steel_exception": design.min_steel_exception,
         "fill_height": design.fill_height, "pedestal_height": design.pedestal_height,
         "surcharge_dead_kNm2": design.surcharge_dead, "surcharge_live_kNm2": design.surcharge_live, "columns": columns,

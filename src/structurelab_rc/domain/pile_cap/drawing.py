@@ -22,9 +22,10 @@ def _plan_piles(drawing: Drawing, cap: PileCap) -> list[Circle | Text]:
     return entities
 
 
-def pile_cap_views(drawing: Drawing, cap: PileCap, runs: list[BarRun], rows: tuple[list[ScheduleRow], float]) -> list[View]:
+def pile_cap_views(drawing: Drawing, cap: PileCap, runs: list[BarRun], rows: tuple[list[ScheduleRow], float],
+                   units: int) -> list[View]:
     """Planta de geometría, plantas del refuerzo, cortes X-X e Y-Y por las columnas y cartilla, con los pilotes."""
-    views = footing_views(drawing, cap, runs, rows)
+    views = footing_views(drawing, cap, runs, rows, units)
     if cap.clipped_corners:  # D-141: el contorno real en lugar del rectángulo
         rectangle_outline = rectangle(OUTLINE, (-cap.lx / 2, -cap.ly / 2), (cap.lx / 2, cap.ly / 2))
         polygon = Polyline(OUTLINE, cap.outline, closed=True)

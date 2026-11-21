@@ -11,7 +11,7 @@ cálculo sale de él.
 - **Diseño:** propone soluciones de menor costo y las aprueba con la misma verificación; no tiene fórmulas propias.
 - **Salidas:** `resultado.json` con todo el detalle, la memoria de cálculo en texto y PDF (una por elemento, con el
   resultado y el DCR máximo arriba, cada valor con su nombre, su símbolo y la referencia literal de la norma) y, si el
-  proyecto lo pide, la cartilla de despiece, el `.dli` de DL-NET y los planos en DXF y SVG.
+  proyecto lo pide, la cartilla de despiece por tipo (de una unidad y de las N unidades, D-159), el `.dli` de DL-NET y los planos en DXF y SVG.
 
 ## Estado
 

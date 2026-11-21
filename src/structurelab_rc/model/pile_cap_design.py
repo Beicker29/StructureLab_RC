@@ -74,6 +74,7 @@ class DesignCap(_Input):
     D-130) ubica la columna en la planta de localización; la llena el importador de ETABS."""
 
     id: str = Field(min_length=1)
+    quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     loads_from: Literal["column", "piles"]
     column: DesignCapColumn
     loads: tuple[FootingLoad, ...] = ()

@@ -46,6 +46,7 @@
   "footings": [
     {
       "id": "Z1",
+      "quantity": 1,
       "etabs_unique_names": [
         "1657",
         "150",
@@ -111,6 +112,7 @@
     },
     {
       "id": "Z2",
+      "quantity": 1,
       "etabs_unique_names": [
         "1601",
         "19",
@@ -179,6 +181,7 @@
     },
     {
       "id": "Z3",
+      "quantity": 1,
       "etabs_unique_names": [
         "1618",
         "1610",

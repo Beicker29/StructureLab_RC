@@ -153,12 +153,19 @@ def test_unsupported_bars_raise_a_clear_error(row: ScheduleRow, message: str) ->
 
 
 def test_group_membership_follows_the_elements(tmp_path: Path) -> None:
+    """D-159: cada elemento tipo entra en cada grupo con las veces que se construye."""
     template = tmp_path / "plantilla.dli"
     template.write_bytes(_synthetic(("Total", "vigas")))
     rows = [_bar(2, "#5", 2200.0, {}, (None, None))]
-    result = read_dli(schedule_dli([("Z1", rows), ("Z2", rows), ("Z3", rows)], template))
+    result = read_dli(schedule_dli([("Z1", rows, 1), ("Z2", rows, 12), ("Z3", rows, 3)], template))
     assert [element.name for element in result.elements] == ["Z1", "Z2", "Z3"]
-    assert [record.value for record in result.suffix[:7]] == [" 2", "Total", "-1", " 1  1  1 ", "vigas", "-1", " 1  1  1 "]
+    assert [record.value for record in result.suffix[:7]] == [" 2", "Total", "-1", " 1  12  3 ", "vigas", "-1", " 1  12  3 "]
+
+
+def test_group_membership_matches_the_file_saved_by_dlnet() -> None:
+    """ESTRIBOS.dli, guardado por DL-NET: un elemento construido tres veces se escribe " 3 " en cada grupo."""
+    saved = read_dli(_real(STIRRUPS))
+    assert [saved.suffix[3].value, saved.suffix[6].value] == [" 3 ", " 3 "]
 
 
 def test_find_template_prefers_the_environment_then_searches_upward(tmp_path: Path) -> None:

@@ -36,6 +36,7 @@
     "seismic_bearing_factor": 1.33
   },
   "principal_direction": "y",
+  "quantity": 1,
   "combined_design": {
     "min_steel_exception": true,
     "fc_options": [

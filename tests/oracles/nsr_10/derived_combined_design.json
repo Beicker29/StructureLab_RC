@@ -36,6 +36,7 @@
           "seismic_bearing_factor": 1.33
         },
         "principal_direction": "x",
+        "quantity": 1,
         "combined_design": {
           "min_steel_exception": false,
           "fc_options": [
@@ -233,6 +234,7 @@
           "seismic_bearing_factor": 1.33
         },
         "principal_direction": "x",
+        "quantity": 1,
         "combined_design": {
           "min_steel_exception": false,
           "fc_options": [
@@ -433,6 +435,7 @@
           "seismic_bearing_factor": 1.33
         },
         "principal_direction": "x",
+        "quantity": 1,
         "combined_design": {
           "min_steel_exception": false,
           "fc_options": [
@@ -634,6 +637,7 @@
           "seismic_bearing_factor": 1.33
         },
         "principal_direction": "x",
+        "quantity": 1,
         "combined_design": {
           "min_steel_exception": false,
           "fc_options": [
@@ -837,6 +841,7 @@
           "seismic_bearing_factor": 1.33
         },
         "principal_direction": "y",
+        "quantity": 1,
         "combined_design": {
           "min_steel_exception": false,
           "fc_options": [
@@ -1037,6 +1042,7 @@
           "seismic_bearing_factor": 1.33
         },
         "principal_direction": "x",
+        "quantity": 1,
         "combined_design": {
           "min_steel_exception": false,
           "fc_options": [
@@ -1235,6 +1241,7 @@
           "seismic_bearing_factor": 1.33
         },
         "principal_direction": "y",
+        "quantity": 1,
         "combined_design": {
           "min_steel_exception": false,
           "fc_options": [

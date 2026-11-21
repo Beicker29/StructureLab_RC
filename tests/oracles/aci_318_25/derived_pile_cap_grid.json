@@ -12,6 +12,7 @@
  "tolerance_rel": 1e-06,
  "cap": {
   "id": "G",
+  "quantity": 1,
   "loads_from": "column",
   "lx": 3400.0,
   "ly": 3400.0,

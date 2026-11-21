@@ -93,6 +93,7 @@ ETABS reporta la fuerza del apoyo sobre la estructura. Sobre la zapata actúa la
 | `etabs_files.combinations` | texto | Obligatorio (D-137). Ruta del Excel de combinaciones (ver abajo): qué combinaciones de ETABS entran, de qué tipo y con qué factores. En `import-etabs-footings` se puede pasar o reemplazar con `--combinations`. |
 | `footings[].id` | texto | Nombre del tipo de zapata. |
 | `footings[].etabs_unique_names` | lista | Unique Name de los apoyos de ETABS que usan este tipo. |
+| `footings[].quantity` | - | Obligatorio (D-159): las veces que se construye la zapata de cada apoyo (en los ejemplos, 1). Cada zapata generada lleva `typology` = el `id` del tipo, con o sin coordenadas, y el tipo suma la `quantity` de sus apoyos. |
 | `footings[].lx`, `ly`, `h`, `cover`, `fill_height`, `pedestal_height` | mm | Igual que en el proyecto. |
 | `footings[].surcharge_dead_kNm2`, `surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas muerta y viva. |
 | `footings[].column`, `bottom`, `top` | objeto | Columna y mallas, igual que en el proyecto. |

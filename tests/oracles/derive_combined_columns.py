@@ -863,7 +863,7 @@ def _load(case: str, p: float, **changes: float) -> dict:
 
 
 def _footing(columns: list[dict], **changes: object) -> dict:
-    data = {"id": "ZC", "min_steel_exception": False,
+    data = {"id": "ZC", "quantity": 1, "min_steel_exception": False,
             "lx": 6000.0, "ly": 2400.0, "h": 750.0, "cover": 75.0, "fill_height": 1000.0, "pedestal_height": 0.0,
             "surcharge_dead_kNm2": 2.0, "surcharge_live_kNm2": 5.0, "columns": columns,
             "bottom": {"first": "x", "x": {"designation": "#7", "spacing": 150.0, "end": "straight"},

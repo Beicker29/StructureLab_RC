@@ -21,7 +21,7 @@ los pilotes. Un proyecto no mezcla zapatas y cabezales.
 
 ## Cabezal
 
-Tiene los campos de la zapata aislada ([zapatas](zapatas.md)): `id`, `lx`, `ly`, `h`, `cover`, `fill_height`,
+Tiene los campos de la zapata aislada ([zapatas](zapatas.md)): `id`, `quantity` (D-159), `lx`, `ly`, `h`, `cover`, `fill_height`,
 `pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2`, `bottom` y `top`; las columnas van en `columns` (D-143). Además:
 
 | Campo | Unidad | Descripción |
@@ -143,6 +143,7 @@ tienen solución).
 | Campo de `caps[]` | Descripción |
 | --- | --- |
 | `id` | Identificador único. |
+| `quantity` | Obligatorio (D-159): las veces que se construye; pasa al cabezal diseñado. |
 | `loads_from` | `column`: `loads` de la columna; el diseño elige el número y el arreglo de los pilotes y el cabezal. `piles`: `piles[]` con `id`, `x`, `y` (mm, desde el eje de la columna) y `loads`, y `reactions_include_weight`; el arreglo queda declarado y se diseña solo el cabezal. |
 | `column` | `cx`, `cy` (mm). Con cargas de la columna va en el centroide del grupo. El diseño es de una columna (D-141): por eso `column` y no `columns`; el cabezal diseñado sale con `columns` de una columna, `C1`. Los cabezales de varias columnas se verifican (D-143) y su diseño queda para una fase siguiente. |
 | `clipped_corners` | Solo con cargas de los pilotes: los recortes declarados (D-141). |

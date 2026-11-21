@@ -39,7 +39,8 @@ STIRRUP_ANGLE = 135  # gancho de cierre del estribo
 STIRRUP_FIELD = "F0/45"
 # La longitud de la línea es la total de la cartilla, tramo + L o U por gancho, y L y U van a 50 mm (convención de DL-NET,
 # D-147).
-GROUP_MEMBER = " 1 "  # TODO D-133: número de un elemento en un grupo de la cola; ESTRIBOS.dli lleva " 3 " con un elemento (¿cantidad?)
+# La pertenencia de cada elemento a un grupo de la cola es " N ": las veces que se construye (" 1  1 " con dos elementos
+# de una unidad; ESTRIBOS.dli, " 3 " con uno de tres). Confirmado por el usuario (D-159).
 
 
 class DliError(ValueError):
@@ -189,25 +190,25 @@ def row_line(row: ScheduleRow, names: dict[str, str]) -> str:
     return line
 
 
-def schedule_dli(elements: Sequence[tuple[str, Sequence[ScheduleRow]]], template: Path) -> bytes:
-    """La cartilla DL-NET de los elementos (nombre y cartilla de cada uno) sobre la plantilla: su encabezado, sus
-    librerías y su cola, con la pertenencia de cada grupo rehecha para estos elementos."""
+def schedule_dli(elements: Sequence[tuple[str, Sequence[ScheduleRow], int]], template: Path) -> bytes:
+    """La cartilla DL-NET de los elementos tipo (nombre, cartilla de una unidad y las veces que se construye, D-159) sobre
+    la plantilla: su encabezado, sus librerías y su cola, con la pertenencia de cada grupo rehecha para estos elementos."""
     base = read_dli(template.read_bytes())
     names = bar_names(base.prefix)
-    built = tuple(DliElement(name, tuple(row_line(row, names) for row in rows)) for name, rows in elements)
-    return write_dli(DliFile(base.prefix, built, _groups(base.suffix, len(built))))
+    built = tuple(DliElement(name, tuple(row_line(row, names) for row in rows)) for name, rows, _ in elements)
+    return write_dli(DliFile(base.prefix, built, _groups(base.suffix, [units for _, _, units in elements])))
 
 
-def _groups(suffix: tuple[Record, ...], elements: int) -> tuple[Record, ...]:
-    """La cola con la pertenencia de cada grupo rehecha: todos los elementos en cada grupo (" G" y, por grupo, nombre,
-    marca y pertenencia)."""
+def _groups(suffix: tuple[Record, ...], units: Sequence[int]) -> tuple[Record, ...]:
+    """La cola con la pertenencia de cada grupo rehecha: todos los elementos en cada grupo, cada uno con sus unidades
+    (" G" y, por grupo, nombre, marca y pertenencia)."""
     groups = _count(suffix[0])
     if len(suffix) < 1 + 3 * groups:
         raise DliError("la cola de la plantilla DL-NET no tiene los grupos esperados")
     records = list(suffix)
     for group in range(groups):
         index = 3 + 3 * group
-        records[index] = Record((GROUP_MEMBER * elements).encode(ENCODING), records[index].tail)
+        records[index] = Record("".join(f" {count} " for count in units).encode(ENCODING), records[index].tail)
     return tuple(records)
 
 

@@ -169,7 +169,7 @@ def derive(folder: str) -> dict:
                                            "cohesion_kPa": 0.0, "passive_factor": 0.5, "sliding_safety_factor": 1.5,
                                            "sliding_safety_factor_seismic": 1.1, "overturning_safety_factor": 2.0,
                                            "overturning_safety_factor_seismic": 1.5, "seismic_bearing_factor": 1.33},
-                                  "principal_direction": principal, "combined_design": design, "columns": columns},
+                                  "principal_direction": principal, "quantity": 1, "combined_design": design, "columns": columns},
                       "expected": geometry(columns, design, principal, h)})
     return {"source": "derive_combined_design.py (D-107)", "tolerance_mm": 1e-6, "cases": cases}
 
