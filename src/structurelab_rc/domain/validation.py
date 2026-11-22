@@ -92,21 +92,12 @@ def _dowel_errors(dowels: Dowels | None, specs: dict[str, RebarSpec], where: dic
         yield invalid_input(f"La barra '{dowels.designation}' de los pasadores no esta en el catalogo", **where)
 
 
-_HOOK_135 = "hook135"
-
-
-def _hook_errors(groups: list[tuple[str, str, str]], stirrups: list[tuple[str, Stirrups]], specs: dict[str, RebarSpec],
+def _hook_errors(stirrups: list[tuple[str, Stirrups]], specs: dict[str, RebarSpec],
                  context: tuple[Profile, dict[str, str]]) -> Iterator[StructuredError]:
-    """Ganchos que el perfil no define (D-134): el de 135° de una barra (grupo, designación, extremo) toma la extensión del
-    gancho de 135° de estribos, que el perfil define solo hasta cierto diámetro; y el gancho de cierre de los estribos."""
+    """El gancho de cierre de los estribos que el perfil no define (D-134). Las barras no llevan gancho de 135° (D-161)."""
     profile, where = context
     detailing = profile.detailing
     clause = detailing.clauses()["stirrup_hook"]
-    for name, designation, end in groups:
-        spec = specs.get(designation)
-        if end == _HOOK_135 and spec is not None and detailing.stirrup_hook_extension(spec.diameter_mm, 135) is None:
-            yield invalid_input(f"El gancho de 135 grados de {name} ({designation}) no esta definido para esa barra: su extension "
-                                f"es la del gancho de 135 grados de estribos ({clause}, D-134)", **where)
     for name, own in stirrups:
         spec = specs.get(own.designation)
         angle = int((own.end or "hook135").removeprefix("hook"))
@@ -123,13 +114,8 @@ def _footing_errors(footing: FootingBody, specs: dict[str, RebarSpec], profile: 
     if footing.top is not None:
         layers.append(("superior", [("x", footing.top.x), ("y", footing.top.y)]))
     yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
-    groups: list[tuple[str, str, str]] = [(f"la malla {name} {direction}", bars.designation, bars.end)
-                                          for name, sets in layers for direction, bars in sets]
     for column in footing.all_columns:
         yield from _dowel_errors(column.dowels, specs, where)
-        dowels = column.dowels
-        groups += [] if dowels is None else [("los pasadores", dowels.designation, dowels.end)]
-    yield from _hook_errors(groups, [], specs, (profile, where))
 
 
 def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], profile: Profile) -> Iterator[StructuredError]:
@@ -155,27 +141,7 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], prof
         yield invalid_input(f"La barra '{footing.stirrups.designation}' de los estribos no esta en el catalogo", **where)
     if footing.beam is not None:
         yield from _t_beam_errors(footing, specs, profile)
-    yield from _hook_errors(_combined_groups(footing, layers), _combined_stirrups(footing), specs, (profile, where))
-
-
-def _combined_groups(footing: CombinedFooting, layers: list[tuple[str, list[tuple[str, BarSet]]]]) -> list[tuple[str, str, str]]:
-    """Los grupos de barras de una combinada con su extremo (D-134): mallas, band, band superior, piel, pasadores y capas
-    de la viga de la T."""
-    groups: list[tuple[str, str, str]] = [(f"la malla {name} {direction}", bars.designation, bars.end)
-                                          for name, sets in layers for direction, bars in sets]
-    for column in footing.columns:
-        for name, bars in ((f"el band de la columna '{column.id}'", column.band),
-                           (f"el band superior de la columna '{column.id}'", column.band_top)):
-            if bars is not None:
-                groups.append((name, bars.designation, bars.end))
-        if column.dowels is not None:
-            groups.append((f"los pasadores de la columna '{column.id}'", column.dowels.designation, column.dowels.end))
-    if footing.skin is not None:
-        groups.append(("el refuerzo superficial", footing.skin.designation, footing.skin.end))
-    if footing.beam is not None:
-        groups += [(f"la capa a {layer.depth:.0f} mm de la viga", designation, layer.end or "straight")
-                   for layer in footing.beam.layers for designation in dict.fromkeys(layer.designations())]
-    return groups
+    yield from _hook_errors(_combined_stirrups(footing), specs, (profile, where))
 
 
 def _combined_stirrups(footing: CombinedFooting) -> list[tuple[str, Stirrups]]:

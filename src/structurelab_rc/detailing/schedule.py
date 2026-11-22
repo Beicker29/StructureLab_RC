@@ -58,7 +58,8 @@ class BarRun:
     """Barras iguales de un grupo del elemento. length es la dimensión exterior del tramo recto principal (de cara
     exterior a cara exterior, ganchos incluidos); hooks, el gancho de cada extremo (None si es recto); lap, la longitud
     de empalme por traslapo si hay que partir la barra (None si no se empalma); stirrup, el ancho y el alto exteriores de
-    un estribo cerrado (con ganchos de 135° en hooks); note, lo que la cartilla debe decir de la barra."""
+    un estribo cerrado (con ganchos de 135° en hooks); note, lo que la cartilla debe decir de la barra; single_leg, un
+    estribo de una rama, de largo exterior length, con los ganchos del estribo (D-161)."""
 
     group: str
     designation: str
@@ -71,6 +72,7 @@ class BarRun:
     stirrup: tuple[float, float] | None = None
     note: str = ""
     placement: Placement | None = None
+    single_leg: bool = False  # estribo de una rama (stirrup, ACI 318-25 cap. 2): cada gancho mide la g del estribo (D-161)
 
 
 @dataclass(frozen=True)
@@ -88,6 +90,7 @@ class Piece:
     count: int
     note: str
     angles: tuple[int | None, int | None] = (None, None)
+    single_leg: bool = False  # estribo de una rama, con la g del estribo en cada gancho (D-161)
 
 
 @dataclass(frozen=True)
@@ -120,24 +123,23 @@ _QUARTER_TURN = 90  # °
 
 
 def hook_length(hook: Hook, db: float) -> float:
-    """Longitud de un gancho en la convención de DL-NET (decisión del usuario, D-147), la dimensión B o C de la cartilla:
-    la extensión más el doblez medido con D + 0.5·db, redondeada hacia arriba a 50 mm. Con 90°, L = extensión +
-    π·(D + 0.5·db)/8; con 180°, U = extensión + 0.5·π·(D + 0.5·db) − 0.5·(D + 0.5·db). Con 135° (no lo fabrica DL-NET), lo
-    que el gancho agrega por el eje a la dimensión exterior. En mm."""
+    """Longitud de un gancho de barra en la convención de DL-NET (decisión del usuario, D-147), la dimensión B o C de la
+    cartilla: la extensión más el doblez medido con D + 0.5·db, redondeada hacia arriba a 50 mm. Con 90°, L = extensión +
+    π·(D + 0.5·db)/8; con 180°, U = extensión + 0.5·π·(D + 0.5·db) − 0.5·(D + 0.5·db). Las barras no llevan gancho de
+    135° (D-161). En mm."""
     base = hook.bend_diameter + 0.5 * db
     if hook.angle == _QUARTER_TURN:
         raw = hook.extension + math.pi * base / 8
     elif hook.angle == _HALF_TURN:
         raw = hook.extension + 0.5 * math.pi * base - 0.5 * base
     else:
-        cut, arc, _ = _hook_parts(hook, db)
-        raw = arc + hook.extension - cut
+        raise ValueError(f"una barra no lleva gancho de {hook.angle}° (D-161); solo los estribos")
     return round_up(raw, HOOK_ROUNDING)
 
 
 def hook_leg(hook: Hook, db: float) -> float:
-    """Pata que se dibuja de un gancho, en mm: con 90°, su longitud L de la cartilla (hook_length); con 180°, el ancho
-    exterior de la U (D + 2·db); con 135°, la pata exterior (extensión + D/2 + db)."""
+    """Pata que se dibuja de un gancho de barra, en mm: con 90°, su longitud L de la cartilla (hook_length); con 180°, el
+    ancho exterior de la U (D + 2·db)."""
     if hook.angle == _QUARTER_TURN:
         return hook_length(hook, db)
     return _hook_parts(hook, db)[2]
@@ -145,13 +147,14 @@ def hook_leg(hook: Hook, db: float) -> float:
 
 def _straight_length(run: BarRun, length: float, hooks: tuple[Hook | None, Hook | None]) -> tuple[float, list[tuple[str, float]]]:
     """Longitud total y dimensiones de una barra de tramo exterior length con ganchos opcionales (D-147): el tramo A
-    redondeado hacia arriba a 1 cm más la longitud de cada gancho (hook_length)."""
+    redondeado hacia arriba a 1 cm más la longitud de cada gancho (hook_length; en un estribo de una rama, la g del
+    estribo, D-161)."""
     straight = round_up(length)
     total, dimensions = straight, [("A", straight)]
     for hook, name in zip(hooks, ("B", "C"), strict=True):
         if hook is None:
             continue
-        leg = hook_length(hook, run.diameter)
+        leg = stirrup_hook_length(hook, run.diameter) if run.single_leg else hook_length(hook, run.diameter)
         total += leg
         dimensions.append((name, leg))
     return total, dimensions
@@ -180,7 +183,7 @@ def _angles(hooks: tuple[Hook | None, Hook | None]) -> tuple[int | None, int | N
     return None if start is None else start.angle, None if end is None else end.angle
 
 
-HOOK_SHAPE = {90: "L", 180: "U", 135: "135"}  # código de cada gancho en el nombre de la forma (D-150)
+HOOK_SHAPE = {90: "L", 180: "U", 135: "135"}  # código de cada gancho en el nombre de la forma (D-150); 135 solo en estribos de una rama
 STIRRUP_SHAPE = "E"
 STRAIGHT_SHAPE = "recta"
 
@@ -201,7 +204,7 @@ def pieces(run: BarRun, stock: float) -> list[Piece]:
     if total <= stock or run.lap is None:
         note = run.note if total <= stock else f"{run.note}; supera la longitud comercial y no se empalma".lstrip("; ")
         return [Piece(run.group, run.designation, _shape(run.hooks), tuple(dimensions), total, run.mass_kg_m, run.count, note,
-                      _angles(run.hooks))]
+                      _angles(run.hooks), run.single_leg)]
     patterns = [(math.ceil(run.count / 2), stock), (run.count // 2, stock / 2)] if run.count > 1 else [(1, stock)]
     result: list[Piece] = []
     for count, first in patterns:
@@ -276,7 +279,7 @@ def schedule(element: str, runs: list[BarRun], stock: float) -> list[ScheduleRow
 def _keyed(runs: list[BarRun], stock: float) -> list[tuple[int, tuple[object, ...], Piece]]:
     """(índice de la corrida, clave de la marca, barra cortada) de todas las corridas, en orden."""
     return [(index, (piece.designation, piece.shape, tuple((name, round_up(value)) for name, value in piece.dimensions),
-                     piece.cut_length, piece.angles), piece)
+                     piece.cut_length, piece.angles, piece.single_leg), piece)
             for index, run in enumerate(runs) for piece in pieces(run, stock)]
 
 

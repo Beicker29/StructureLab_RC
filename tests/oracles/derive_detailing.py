@@ -14,6 +14,8 @@ Geometría (independiente de detailing/schedule.py), convención de DL-NET (deci
 - Estribo cerrado de W × H exteriores con ganchos de 135°, como DL-NET (decisión del usuario, D-160):
   g = extensión + (3π/4)·(D/2 + db/2) − 0.5·(D + 0.5db), hacia arriba a 10 mm; L = 2(W + H) + 2g, con W y H hacia
   arriba a 10 mm.
+- Estribo de una rama (D-161) de largo exterior A con ganchos de 135°: A (hacia arriba a 10 mm) + 2g, con
+  la g del estribo.
 - Barra recta de largo L > longitud comercial S con traslapo t: el patrón A corta S, S, …; el patrón B empieza con S/2;
   cada pieza hacia arriba a 10 mm.
 
@@ -64,6 +66,12 @@ def closed_stirrup(folder: str, db: float, w: float, h_: float) -> dict:
     return {"g": g, "cut": 2 * (round_up(w) + round_up(h_)) + 2 * g}
 
 
+def single_leg(folder: str, db: float, a: float) -> dict:
+    s = stirrup(folder, db)
+    g = round_up(s["ext135"] + 0.75 * math.pi * (s["bend"] / 2 + db / 2) - 0.5 * (s["bend"] + 0.5 * db))
+    return {**s, "A_rounded": round_up(a), "g": g, "cut": round_up(a) + 2 * g}
+
+
 def spliced(length: float, stock: float, lap: float, first: float) -> list[float]:
     cuts, start, size = [], 0.0, first
     while start + size < length:
@@ -111,6 +119,7 @@ def derive(folder: str) -> dict:
         "u_bar": {"designation": "#6", "A": 2850.0, **u_bar(folder, BARS["#6"], 2850.0)},
         "u_bar_180": {"designation": "#9", "A": 3127.0, **u_bar(folder, BARS["#9"], 3127.0, 180)},
         "closed_stirrup": {"designation": "#4", "W": 851.0, "H": 1550.0, **closed_stirrup(folder, BARS["#4"], 851.0, 1550.0)},
+        "single_leg": {"designation": "#3", "A": 642.0, **single_leg(folder, BARS["#3"], 642.0)},
         "spliced": {"length": 6850.0, "stock": 6000.0, "lap": 833.0,
                     "pattern_a": spliced(6850.0, 6000.0, 833.0, 6000.0), "pattern_b": spliced(6850.0, 6000.0, 833.0, 3000.0)},
         "tension_lap": {"designation": "#6", "cb": 84.55, **tension_lap(BARS["#6"], 84.55)},

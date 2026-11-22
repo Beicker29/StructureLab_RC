@@ -352,6 +352,16 @@ def _drawing_files(drawing: Drawing, output: Path) -> tuple[list[Path], dict[str
     return files, figures
 
 
+def _clear_outputs(output: Path) -> None:
+    """Borra lo que report_file escribió en una corrida anterior (D-162), para que no queden vistas o elementos que ya no
+    existen: las figuras y vistas SVG, el modelo de dibujo, el DXF y el .dli del caso, la cartilla, la memoria y el
+    resultado. No toca proyecto.json (el diseño lo escribe antes) ni otros archivos."""
+    names = ("resultado.json", "memoria.txt", "memoria.pdf", "cartilla.csv", f"{output.name}.dxf", f"{output.name}.dli",
+             f"{output.name}_drawing.json")
+    for path in [*output.glob("*.svg"), *(output / name for name in names)]:
+        path.unlink(missing_ok=True)
+
+
 def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050), con
     las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
@@ -364,6 +374,7 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     found, mismatched, drawing = ([], [], None) if checks[0].status is Status.FAIL else _detailing(
         project, results, (output.name, analyses))
     output.mkdir(parents=True, exist_ok=True)
+    _clear_outputs(output)
     figures = pressure_figures(results, output)
     diagram_files = diagram_figures(results, output)
     drawing_paths, drawings = ([], {}) if drawing is None else _drawing_files(drawing, output)

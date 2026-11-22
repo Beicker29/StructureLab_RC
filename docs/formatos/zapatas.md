@@ -72,7 +72,7 @@ Supuestos:
 | `surcharge_live_kNm2` | kN/m² | Sobrecarga superimpuesta viva sobre el relleno (0 si no hay). |
 | `column.cx`, `column.cy` | mm | Dimensiones de la columna a lo largo de X y de Y. |
 | `column.offset_x`, `column.offset_y` | mm | Posición del eje de la columna respecto al centroide de la base. |
-| `column.dowels.designation`, `column.dowels.count`, `column.dowels.end` | -, -, texto | Pasadores entre la columna y la zapata: barra del catálogo, número y cómo termina su pie (`straight`, `hook90`, `hook180` o `hook135`; obligatorio, D-134). Si faltan, sus verificaciones salen `INCOMPLETE`. |
+| `column.dowels.designation`, `column.dowels.count`, `column.dowels.end` | -, -, texto | Pasadores entre la columna y la zapata: barra del catálogo, número y cómo termina su pie (`straight`, `hook90` o `hook180`; obligatorio, D-134). Si faltan, sus verificaciones salen `INCOMPLETE`. |
 | `bottom` | objeto | Malla inferior (abajo). |
 | `top` | objeto o `null` | Malla superior, o `null` si no hay. |
 | `loads` | lista | Casos de carga (abajo). |
@@ -89,14 +89,14 @@ El relleno y las sobrecargas ocupan el área de la base menos la de la columna.
 | `x.designation`, `x.spacing`, `x.end` | -, mm, texto | Barras paralelas a X: designación del catálogo, separación centro a centro y cómo terminan (obligatorio, D-134). |
 | `y.designation`, `y.spacing`, `y.end` | -, mm, texto | Barras paralelas a Y. |
 
-**Extremos (`end`, D-134).** Cada grupo de barras declara el suyo, sin valor por defecto: `straight` (recta), `hook90`,
-`hook180` o `hook135`. Con 90° y 180° la barra se desarrolla con gancho estándar (ℓdh; ACI 25.4.3, NSR-10 C.12.5; el
-factor de recubrimiento 0.7 pide el recubrimiento sobre la extensión solo con 90°) y el despiece usa la extensión y el
-doblado del gancho estándar (ACI Tabla 25.3.1, NSR-10 C.7.1 y C.7.2). El de 135° no es gancho estándar de barras: se
-desarrolla como barra recta y el despiece usa la extensión del gancho de 135° de estribos (ACI Tabla 25.3.2, NSR-10
-C.7.1.3) con el doblado del gancho estándar; en una barra mayor que lo que cubre esa tabla (No. 25 / #8) es un error de
-entrada. Los estribos declaran su gancho de cierre en `stirrups.end`: `hook90`, `hook135` o `hook180` (este último no
-existe en NSR-10, C.7.1.3).
+**Extremos (`end`, D-134).** Cada grupo de barras declara el suyo, sin valor por defecto: `straight` (recta), `hook90`
+o `hook180`. Con 90° y 180° la barra se desarrolla con gancho estándar (ℓdh; ACI 25.4.3, NSR-10 C.12.5; el factor de
+recubrimiento 0.7 pide el recubrimiento sobre la extensión solo con 90°) y el despiece usa la extensión y el doblado del
+gancho estándar (ACI Tabla 25.3.1, NSR-10 C.7.1 y C.7.2). Las barras no llevan gancho de 135°: `hook135` en una barra es
+un error de entrada (D-161). Los estribos declaran su gancho de cierre en `stirrups.end`: `hook90`, `hook135` o
+`hook180` (este último no existe en NSR-10, C.7.1.3). Con un número impar de ramas, la rama impar es un estribo de una rama
+(stirrup, ACI 318-25 cap. 2) del alto exterior de los estribos con sus ganchos; cada gancho mide la g del estribo (D-160,
+D-161).
 | `x.band_spacing` o `y.band_spacing` | mm | Opcional, solo en la dirección corta de una zapata rectangular: separación en la franja central de ancho igual al lado corto, centrada en la columna; fuera de ella rige `spacing`. |
 
 ### Caso de carga (`loads[]`)
@@ -227,7 +227,7 @@ una variable del diseño. `soil` es igual que en la verificación.
 | `design.cover`, `design.fill_height`, `design.pedestal_height` | mm | Recubrimiento, relleno y pedestal de todas las zapatas. |
 | `design.surcharge_dead_kNm2`, `design.surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas. |
 | `design.bars`, `design.spacing_step` | -, mm | Barras permitidas para las mallas y paso de separación. |
-| `design.ends` | objeto | Cómo terminan las barras que se diseñan (D-134): `bottom` (malla inferior), `top` (malla superior) y `dowels` (pie de los pasadores), cada uno `straight`, `hook90`, `hook180` o `hook135`. |
+| `design.ends` | objeto | Cómo terminan las barras que se diseñan (D-134): `bottom` (malla inferior), `top` (malla superior) y `dowels` (pie de los pasadores), cada uno `straight`, `hook90` o `hook180` (D-161). |
 | `design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `design.method` | texto | `milp_iter` (por defecto desde E3b: iterativo, sin tabla de tramos, D-077), `milp` (asignación óptima sobre la tabla completa de tramos, D-075) o `dp` (solo la partición y la reasignación). `milp_iter` y `milp` requieren `pip install structurelab-rc[opt]`. `--method` en la CLI lo reemplaza. |
 | `combined_footings[]` | lista | Opcional (D-153): pares de columnas en zapata combinada, una por par: `id`, `principal_direction`, `combined_design` (el bloque del [diseño de la combinada](#diseño-de-la-zapata-combinada-diseno_combinadajson-comando-design-combined-d-107), con los mismos `fc_options` que `design`) y las dos `columns` (`id`, `cx`, `cy`, `x`, `y` en ejes globales, `location` opcional y `loads`). Lo arma el importador desde `combined_pairs` de la plantilla ([ETABS](etabs.md)). |
@@ -336,7 +336,7 @@ mayorados.
 | `combined_design.cover`, `combined_design.fill_height`, `combined_design.pedestal_height` | mm | Recubrimiento, relleno y pedestal. |
 | `combined_design.surcharge_dead_kNm2`, `combined_design.surcharge_live_kNm2` | kN/m² | Sobrecargas superimpuestas. |
 | `combined_design.bars`, `combined_design.spacing_step` | -, mm | Barras permitidas para todo el refuerzo y paso de separación. |
-| `combined_design.ends` | objeto | Cómo terminan las barras que se diseñan (D-134): `bottom` (malla inferior, band y capa inferior de la viga de la T), `top` (barras superiores, band superior y capa superior de la viga), `dowels` (pie de los pasadores) y `skin` (piel), cada uno `straight`, `hook90`, `hook180` o `hook135`; y `stirrups` (`hook90`, `hook135` o `hook180`), obligatorio con `stirrup_bars`. |
+| `combined_design.ends` | objeto | Cómo terminan las barras que se diseñan (D-134): `bottom` (malla inferior, band y capa inferior de la viga de la T), `top` (barras superiores, band superior y capa superior de la viga), `dowels` (pie de los pasadores) y `skin` (piel), cada uno `straight`, `hook90` o `hook180` (D-161); y `stirrups` (`hook90`, `hook135` o `hook180`), obligatorio con `stirrup_bars`. |
 | `combined_design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `combined_design.min_steel_exception` | sí/no | Obligatorio (D-123): lo mismo para la zapata que se diseña; el diseño parte del As,min con o sin la excepción y lo escribe en `proyecto.json`. |
 | `combined_design.stirrup_bars` | - | Opcional (D-110): barras permitidas para estribos cerrados de la viga larga, por ejemplo `["#3", "#4"]`. Con ellas, el cortante (y en la T, la torsión del alma, con Aℓ en la piel) pueden tomarlos estribos en lugar de un espesor mayor; gana lo más barato. Sin ellas no se proponen estribos. En la combinada rectangular la torsión es de placa (D-118): la toman las barras x e y. |
@@ -468,8 +468,17 @@ si hay plantilla; ver [dlnet.md](dlnet.md), D-133), y la memoria lleva el capít
   marca y la fila nombra los grupos que reúne.
 - **Tipos y unidades (D-159):** el tipo de un elemento es su `typology` o, sin ella, su `id`. Los elementos del mismo tipo
   comparten una cartilla, un despiece en el dibujo y un elemento del `.dli`, si sus cartillas coinciden barra por barra
-  (el grupo y la nota no cuentan, porque nombran sus columnas). Si no coinciden, el elemento va con su propia cartilla,
-  marcada con su `id`, y `run` lo avisa. N, las unidades del tipo, es la suma de `quantity` de sus elementos. En el diseño
+  (el grupo y la nota no cuentan). Si no coinciden, el elemento va con su propia cartilla, marcada con su `id`, y `run`
+  lo avisa.
+- **Columnas en los grupos y las notas (D-162):** el grupo y la nota de una marca nombran la columna ("band columna …",
+  "band superior columna …", "columna …: empotramiento …"):
+  - sin `typology`, con el `id` de la columna (`columns[].id`; desde ETABS, la etiqueta del nudo; con una sola columna,
+    el `id` del elemento), por ejemplo "band columna C_Ext";
+  - con `typology`, con su posición, "band columna 1", "band superior columna 2", "columna 1: empotramiento …", porque
+    la cartilla del tipo vale para todos sus elementos, que tienen otras columnas. En la combinada y la T, la numeración
+    sigue el orden a lo largo de la viga, el mismo con que el tipo se traslada a cada par (D-157); en un cabezal, el
+    orden declarado.
+- **Unidades:** N, las unidades del tipo, es la suma de `quantity` de sus elementos. En el diseño
   por tipologías cada columna o par es una zapata (`quantity` 1), así que N es el número de zapatas del tipo. Se reportan
   la cartilla de una unidad y la de las N unidades: en la memoria, el plano (segunda tabla si N > 1), `cartilla.csv`
   (columnas `unidades`, `cantidad total` y `peso total (kg)`) y `resultado.json` (`total`). En el `.dli`, el tipo entra

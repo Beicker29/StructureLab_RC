@@ -19,9 +19,11 @@ El usuario elige entre:
 
 ## Validaciones del usuario
 
-1. Despiece: cómo medir el gancho de 135° de las barras sueltas (hoy por el eje, D-147).
-2. Tipos de combinadas (D-157): revisar con un proyecto real el criterio de familia (separación a 1 mm, mismas secciones,
+1. Tipos de combinadas (D-157): revisar con un proyecto real el criterio de familia (separación a 1 mm, mismas secciones,
    linderos y `combined_design`) y la rejilla de posiciones de la base.
+2. `.dli` en DL-NET con elementos tipo y estribos (D-159, D-160, D-161): abrir el del diseño por tipologías desde ETABS
+   y revisar que el total de cada grupo multiplique por N (`10  5  24  9  14  5  3`) y que la longitud y el peso de cada
+   estribo coincidan con la cartilla (L = 2·(b + h) + 2·g; en el de una rama, L = h + 2·g).
 
 ## Cimentaciones
 
@@ -87,7 +89,10 @@ Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica
 ### Requisitos sísmicos
 
 Según el nivel declarado: Ve con momentos probables, zonas de confinamiento, límites de cuantía y geometría, empalmes
-prohibidos y miembros que no hacen parte del sistema. Aceptación: un ejemplo por nivel y perfil.
+prohibidos y miembros que no hacen parte del sistema. Hoops (estribos de confinamiento, ganchos sísmicos en los dos
+extremos) y crossties (ganchos suplementarios: gancho sísmico en un extremo y de al menos 90° en el otro) como piezas
+propias, con el vocabulario del ACI 318-25 (D-161); el gancho de cada uno mide la g del estribo (D-160). Aceptación: un
+ejemplo por nivel y perfil.
 
 ### Diseño
 
@@ -101,12 +106,14 @@ prohibidos y miembros que no hacen parte del sistema. Aceptación: un ejemplo po
 
 Sobre el despiece y el dibujo de las cimentaciones (formas, longitudes de corte, empalmes, marcas, cartilla, cantidades,
 modelo de dibujo, DXF y SVG): alzado y secciones de la viga, estribos por zona, empalmes fuera de las zonas prohibidas y
-secciones T.
+secciones T. Las vigas declaran `quantity` y su tipo, y usan `detailing/units.py` para la cartilla de una unidad y de las
+N unidades (D-159); sus estribos, la convención de D-160.
 
 ## Columnas, losas y muros
 
 1. Columnas: P-M biaxial y confinamiento (el diagrama de interacción usará Pn = Pu/φ, D-024); factor ψr de estribos o
-   espirales en el desarrollo (D-071).
+   espirales en el desarrollo (D-071). Su refuerzo transversal son ties (y hoops y crossties en zonas sísmicas), no
+   stirrups (ACI 318-25 cap. 2, D-161).
 2. Losas y muros, sobre el mismo `ReinforcementLayout`.
 3. Interfaz web y API.
 

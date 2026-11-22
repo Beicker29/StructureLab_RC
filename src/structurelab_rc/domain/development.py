@@ -35,16 +35,15 @@ class BarAnchorage:
     excess: float = 1.0
 
 
-# Cómo se desarrolla cada extremo declarado (D-134): (forma de desarrollo, ángulo del gancho). El gancho de 135° no es
-# gancho estándar de desarrollo (ACI Tabla 25.3.1, NSR-10 C.7.1): la barra se desarrolla como recta (decisión del usuario).
+# Cómo se desarrolla cada extremo declarado (D-134): (forma de desarrollo, ángulo del gancho). Las barras no llevan
+# gancho de 135° (D-161).
 _DEVELOPED: dict[str, tuple[Literal["straight", "hook"], int]] = {
-    "straight": ("straight", 90), "hook90": ("hook", 90), "hook180": ("hook", 180), "hook135": ("straight", 90)}
-END_TEXT = {"straight": "rectas", "hook90": "con gancho de 90°", "hook180": "con gancho de 180°",
-            "hook135": "con gancho de 135° (desarrollo como barra recta, D-134)"}
+    "straight": ("straight", 90), "hook90": ("hook", 90), "hook180": ("hook", 180)}
+END_TEXT = {"straight": "rectas", "hook90": "con gancho de 90°", "hook180": "con gancho de 180°"}
 
 
 def developed_end(end: str) -> tuple[Literal["straight", "hook"], int]:
-    """(forma de desarrollo, ángulo del gancho) de un extremo declarado: straight, hook90, hook180 o hook135."""
+    """(forma de desarrollo, ángulo del gancho) de un extremo declarado: straight, hook90 o hook180."""
     return _DEVELOPED[end]
 
 

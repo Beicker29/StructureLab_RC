@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, model_validato
 # Cómo termina cada grupo de barras (D-134), declarado siempre, sin valor por defecto. Barras: recta o gancho de 90°, 180°
 # o 135° (este no es gancho estándar de desarrollo: la barra se desarrolla como recta). Estribos: gancho de 90°, 135° o
 # 180°.
-BarEnd = Literal["straight", "hook90", "hook180", "hook135"]
+BarEnd = Literal["straight", "hook90", "hook180"]  # D-161: el gancho de 135° solo en estribos
 StirrupEnd = Literal["hook90", "hook135", "hook180"]
 
 

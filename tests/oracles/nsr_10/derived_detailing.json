@@ -60,6 +60,15 @@
     "g": 130.0,
     "cut": 5080.0
   },
+  "single_leg": {
+    "designation": "#3",
+    "A": 642.0,
+    "bend": 38.0,
+    "ext135": 75.0,
+    "A_rounded": 650.0,
+    "g": 110.0,
+    "cut": 870.0
+  },
   "spliced": {
     "length": 6850.0,
     "stock": 6000.0,

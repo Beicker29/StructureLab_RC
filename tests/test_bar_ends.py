@@ -17,7 +17,7 @@ from structurelab_rc.domain.footing.detailing import face_envelope, footing_runs
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
 from structurelab_rc.engine import report_file
-from structurelab_rc.io.dlnet import TEMPLATE_VARIABLE
+from structurelab_rc.io.dlnet import TEMPLATE_VARIABLE, DliError
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.project import Project
 from structurelab_rc.setup import load_engine
@@ -69,6 +69,19 @@ def test_each_group_must_declare_its_end(folder: str) -> None:
         Project.model_validate(data)
 
 
+@pytest.mark.parametrize("folder", FOLDERS)
+def test_bars_do_not_take_a_135_degree_hook(folder: str) -> None:
+    """D-161: el gancho de 135° solo en estribos; en una malla, unos pasadores o una capa es error de entrada."""
+    data = _centric(folder)
+    data["footings"][0]["bottom"]["x"]["end"] = "hook135"
+    with pytest.raises(ValidationError, match="hook180"):
+        Project.model_validate(data)
+    data = _centric(folder)
+    data["footings"][0]["column"]["dowels"]["end"] = "hook135"
+    with pytest.raises(ValidationError, match="hook180"):
+        Project.model_validate(data)
+
+
 def test_combined_stirrups_must_declare_their_hook() -> None:
     data = json.loads((frozen("nsr_10", "zapatas", "zapata_combinada.json")).read_text(encoding="utf-8"))["combined_footings"][0]
     data["stirrups"] = {"designation": "#4", "legs": 4, "spacing": 200.0, "closed": True}
@@ -78,7 +91,7 @@ def test_combined_stirrups_must_declare_their_hook() -> None:
 
 @pytest.mark.parametrize("folder", FOLDERS)
 def test_hook_ends_choose_the_development_equation(folder: str) -> None:
-    """hook90 y hook180 se desarrollan con ℓdh; hook135, que no es gancho estándar, como barra recta, con su nota (D-134)."""
+    """hook90 y hook180 se desarrollan con ℓdh; straight, como barra recta (D-134)."""
     clauses = PROFILES[NAMES[folder]].development.clauses()
 
     def development(end: str) -> Any:
@@ -86,11 +99,9 @@ def test_hook_ends_choose_the_development_equation(folder: str) -> None:
         checks = footing_checks(_basis(project), project.footings[0], project.soil)  # type: ignore[arg-type]
         return next(check for check in checks if check.name == "Desarrollo malla inferior (barras x)")
 
-    straight, hook90, hook180, hook135 = (development(end) for end in ("straight", "hook90", "hook180", "hook135"))
+    straight, hook90, hook180 = (development(end) for end in ("straight", "hook90", "hook180"))
     assert clauses["hook"] in hook90.clause and clauses["hook"] in hook180.clause
-    assert clauses["hook"] not in straight.clause and clauses["hook"] not in hook135.clause
-    assert hook135.demand == pytest.approx(straight.demand)
-    assert "con gancho de 135" in hook135.note and "desarrollo como barra recta" in hook135.note
+    assert clauses["hook"] not in straight.clause
     assert "con gancho de 180" in hook180.note
 
 
@@ -99,30 +110,20 @@ def test_detailing_uses_the_declared_hooks(folder: str) -> None:
     profile = PROFILES[NAMES[folder]]
     data = _centric(folder)
     data["footings"][0]["column"]["dowels"]["end"] = "hook180"
-    project = _with(data, end="hook135")
+    project = _with(data, end="hook90")
     assert project.soil is not None
     footing = project.footings[0]
     runs = {run.group: run for run in footing_runs(_basis(project), footing, face_envelope(footing, project.soil))}
     mesh = runs["malla inferior x"]
     db = mesh.diameter
     hook = mesh.hooks[0]
-    assert hook is not None and hook.angle == 135
-    assert hook.extension == pytest.approx(profile.detailing.stirrup_hook_extension(db, 135))  # del gancho de 135° de estribos
+    assert hook is not None and hook.angle == 90
+    assert hook.extension == pytest.approx(profile.detailing.hook_extension(db, 90))
     assert hook.bend_diameter == pytest.approx(profile.detailing.hook_bend_diameter(db))  # doblado del gancho estándar
     foot = runs["pasadores"].hooks[0]
     assert foot is not None and foot.angle == 180
     assert foot.extension == pytest.approx(profile.detailing.hook_extension(runs["pasadores"].diameter, 180))
     assert runs["malla inferior y"].hooks == (None, None)
-
-
-@pytest.mark.parametrize("folder", FOLDERS)
-def test_hooks_the_profile_does_not_define_are_input_errors(folder: str) -> None:
-    """El gancho de 135° de una barra toma la extensión del de estribos, que ACI (Tabla 25.3.2) y NSR-10 (C.7.1.3) definen
-    hasta la No. 25 / #8: una #9 no se puede (D-134)."""
-    project = _with(_centric(folder), designation="#9", end="hook135")
-    check = validate_project(project, BARS)
-    assert check.status is Status.FAIL
-    assert any("gancho de 135 grados" in error.message for error in check.errors)
 
 
 def test_nsr10_has_no_180_degree_stirrup_hook() -> None:
@@ -134,17 +135,21 @@ def test_nsr10_has_no_180_degree_stirrup_hook() -> None:
         assert (check.status is not Status.FAIL) == valid, folder
 
 
-def test_dlnet_skips_with_a_note_when_a_hook_has_no_syntax(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Un gancho de 135° en una malla no tiene sintaxis DL-NET: la salida avisa y escribe lo demás (no se detiene)."""
+def test_dlnet_skips_with_a_note_when_a_bar_has_no_syntax(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Una barra que no está en la librería de la plantilla DL-NET: la salida avisa y escribe lo demás (no se detiene)."""
     template = ROOT / "references" / "dlnet" / "plantilla.dli"
     if not template.is_file():
         pytest.skip("falta la plantilla DL-NET local")
     monkeypatch.setenv(TEMPLATE_VARIABLE, str(template))
     data = _centric("nsr_10")
-    data["footings"][0]["bottom"]["x"]["end"] = "hook135"
     project = tmp_path / "zapata.json"
     project.write_text(json.dumps(data), encoding="utf-8")
+    monkeypatch.setattr("structurelab_rc.engine.schedule_dli", _refuse)
     report = report_file(project, tmp_path / "salida")
     assert not any(path.suffix == ".dli" for path in report.files)
-    assert any("135" in note for note in report.notes)
+    assert any("no se genero" in note for note in report.notes)
     assert (tmp_path / "salida" / "cartilla.csv").is_file()
+
+
+def _refuse(*_: Any) -> bytes:
+    raise DliError("la barra #99 de la marca Z1-01 no está en la librería de la plantilla DL-NET")

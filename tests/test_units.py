@@ -15,8 +15,10 @@ from frozen_examples import frozen
 
 from structurelab_rc.detailing.schedule import Piece, ScheduleRow
 from structurelab_rc.detailing.units import Member, scaled, units
+from structurelab_rc.domain.footing.detailing import column_labels
 from structurelab_rc.engine import report_file
 from structurelab_rc.io.dlnet import read_dli
+from structurelab_rc.model.combined import CombinedFooting
 
 FIRST, SECOND = 2, 3  # las unidades declaradas de las dos zapatas del tipo
 
@@ -115,3 +117,32 @@ def test_dli_has_one_element_per_type_with_its_units(two_of_a_type: Path) -> Non
     saved = read_dli(files[0].read_bytes())
     assert [element.name for element in saved.elements] == ["ZT"]
     assert saved.suffix[3].value == f" {FIRST + SECOND} "
+
+
+def test_a_type_names_its_columns_by_position(two_of_a_type: Path) -> None:
+    """D-162: la cartilla de un tipo no nombra las columnas de su primer elemento, sino su posición."""
+    results = json.loads((two_of_a_type / "resultado.json").read_text(encoding="utf-8"))
+    notes = " ".join(row["note"] for row in results["footings"][0]["detailing"]["rows"])
+    assert "columna 1:" in notes and "Z1a" not in notes
+
+
+def test_combined_columns_are_labelled_along_the_beam() -> None:
+    """D-162: en una combinada tipo, columna 1 y 2 en orden de x; sin typology, el id de cada columna."""
+    data = json.loads(frozen("nsr_10", "zapatas", "zapata_combinada.json").read_text(encoding="utf-8"))["combined_footings"][0]
+    plain = CombinedFooting.model_validate(data)
+    assert column_labels(plain) == {column.id: column.id for column in plain.columns}
+    typed = CombinedFooting.model_validate({**data, "typology": "ZCT1", "columns": data["columns"][::-1]})
+    first, second = sorted(typed.columns, key=lambda column: column.x)
+    assert column_labels(typed) == {first.id: "1", second.id: "2"}
+
+
+def test_run_clears_the_outputs_of_a_previous_run(tmp_path: Path) -> None:
+    """D-162: report borra lo que escribió antes (una vista que ya no existe) y no toca proyecto.json ni otros archivos."""
+    output = tmp_path / "salida"
+    output.mkdir()
+    stale, project, mine = output / "Z9_cartilla.svg", output / "proyecto.json", output / "notas.txt"
+    for path in (stale, project, mine):
+        path.write_text("x", encoding="utf-8")
+    report_file(frozen("nsr_10", "zapatas", "zapata_centrica.json"), output)
+    assert not stale.exists() and project.exists() and mine.exists()
+    assert (output / "resultado.json").is_file()

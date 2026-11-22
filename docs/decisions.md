@@ -3464,6 +3464,68 @@
   - Los diseños de la combinada y la T eligen la misma solución que en HEAD; su costo sube de 0.1 a 0.3 %.
   - La memoria de todos los ejemplos con despiece cambia por el párrafo de la convención.
 
+### D-161: sin gancho de 135° en las barras; estribo de una rama con la g del estribo; vocabulario del ACI 318-25
+
+- **Fecha:** 2026-11-22
+- **Decisiones del usuario:**
+  - Las barras (mallas, band, pasadores, piel y capas de la viga) no llevan gancho de 135°. Se elimina la posibilidad:
+    `hook135` en una barra es error de entrada.
+  - En un estribo de una rama o un crosstie, cada gancho mide la g del estribo (D-160).
+  - Desde ahora se distinguen stirrup, tie, hoop y crosstie según el ACI 318-25.
+- **Vocabulario** (ACI 318-25, capítulo 2, y su nombre en el código y en la cartilla):
+
+  | ACI 318-25 | Definición (resumen) | Aquí |
+  |---|---|---|
+  | stirrup | Refuerzo de cortante y torsión de un miembro; de una rama o en forma de L, U o rectángulo | `Stirrups`, "estribos" (cerrado, forma `E`) y "estribos de una rama" (`single_leg`) |
+  | tie | Barra que encierra el refuerzo longitudinal (columnas); "ver también stirrup, hoop" | Sin implementar: llegará con las columnas |
+  | hoop | Tie cerrado o continuo con ganchos sísmicos en los dos extremos | Sin implementar: confinamiento sísmico de vigas y columnas |
+  | crosstie | Barra con gancho sísmico en un extremo y gancho de al menos 90° con 6db en el otro, que abraza barras longitudinales perimetrales | Sin implementar como pieza propia: llegará con los requisitos sísmicos. Su gancho medirá la g del estribo |
+
+  NSR-10 usa "estribo", "estribo de confinamiento" y "gancho suplementario" (C.7.1.4). El código no usa `tie` para otra
+  cosa (antes se llamaba así el estribo de una rama).
+- **Hallazgo:** los estribos de ramas impares se despiezaban solo con sus estribos cerrados de dos ramas, y la rama
+  impar faltaba en la cartilla. La T de NSR-10 de los ejemplos de iteración declara 3 ramas.
+- **Regla:**
+  - La rama impar es un estribo de una rama, con el alto exterior de los estribos y sus ganchos de cierre.
+  - L = A + 2·g, con A a 10 mm y g = extensión + arco del doblez por el eje − 0.5·(D + 0.5·db), hacia arriba a 10 mm.
+  - Forma `135-135` (`L-L` con ganchos de 90°).
+- **DL-NET** (captura del usuario):
+  - La pieza es la figura `g`. `4 g 3/8'' 0.5 f45/45` con h = 0.50 y g estándar 0.10 da L = 0.70 = h + 2g; `f45/45`, los
+    dos ganchos a 135°.
+  - Con la g declarada, DL-NET la escribe con un solo valor, como en el estribo cerrado: `4 g 3/8'' 0.5 G0.15 f45/45` da
+    L = 0.80, y con G0.20, L = 0.90 (segunda captura del usuario). Se escribe `N  g  "barra"  h   G<g>   F45/45`.
+  - Con ganchos de 90° va como barra con dos L iguales a g; DL-NET reconstruye el tramo como Ltotal − 2L.
+- **Código:**
+  - `model/reinforcement.BarEnd` sin `hook135`. Se quitan el desarrollo de `hook135` (`domain/development.py`) y su
+    validación en barras (`domain/validation.py`).
+  - `detailing/schedule.py`: `BarRun.single_leg` y `Piece.single_leg`; `hook_length` rechaza 135°.
+  - `domain/footing/detailing._stirrup_runs` agrega el estribo de una rama. `io/dlnet.py`: `_single_leg_line`.
+- **Control:**
+  - Oráculo `derive_detailing.py`: estribo de una rama #3 de 642 mm, g = 110 y L = 870.
+  - Pruebas del estribo de una rama, del rechazo de `hook135` en barras y de las líneas de DL-NET.
+- **Diferencias:** ninguna en la huella. Ningún ejemplo congelado usa `hook135` en barras ni estribos de ramas impares.
+
+### D-162: columnas por posición en la cartilla de un tipo y salidas sin restos de la corrida anterior
+
+- **Fecha:** 2026-11-22
+- **Problema:**
+  - La cartilla de un tipo (D-159) tomaba el grupo y la nota de su primer elemento, que nombran sus columnas por su `id`
+    (`columns[].id`; desde ETABS, la etiqueta del nudo). Por ejemplo, "band columna 150" en una ZCT que va también bajo
+    otras columnas.
+  - `run` no borraba los archivos de una corrida anterior: al pasar de un despiece por zapata a uno por tipo quedaban
+    los SVG viejos.
+- **Decisión del usuario** (las recomendaciones):
+  - En un elemento con `typology`, el grupo y la nota nombran cada columna por su posición: "band columna 1", "band
+    superior columna 2", "columna 1: empotramiento…". En la combinada y la T, en orden a lo largo de la viga (x), el mismo
+    con que el tipo se traslada a cada par (D-157). En un cabezal, en el orden declarado. En la aislada, "columna 1".
+    Sin `typology` sigue el `id` de la columna (con una sola columna, el del elemento).
+  - `report` y `run` borran antes de escribir lo que generan en la carpeta de salida: los SVG, el modelo de dibujo, el
+    DXF y el `.dli` del caso, la cartilla, la memoria y el resultado. No tocan `proyecto.json` ni otros archivos.
+- **Código:** `domain/footing/detailing.column_labels` y `engine._clear_outputs`.
+- **Control:** `tests/test_units.py` (rótulos del tipo, orden en la combinada, limpieza de la salida).
+- **Diferencias:** cambian las notas y los grupos de la cartilla de los elementos con `typology`: los diseños por
+  tipologías y las zapatas importadas de ETABS, que llevan `typology` desde D-159. Ningún cálculo cambia.
+
 ## Consultas abiertas
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)

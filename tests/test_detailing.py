@@ -212,7 +212,7 @@ def test_report_writes_the_schedule(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(("angles", "shape"), [
-    ((None, None), "recta"), ((None, 90), "L"), ((90, 90), "L-L"), ((180, 180), "U-U"), ((90, 180), "L-U"), ((135, None), "135"),
+    ((None, None), "recta"), ((None, 90), "L"), ((90, 90), "L-L"), ((180, 180), "U-U"), ((90, 180), "L-U"),
 ])
 def test_shape_is_named_by_its_ends(angles: tuple[int | None, int | None], shape: str) -> None:
     """D-150: la forma se nombra por sus extremos con la notación de DL-NET (L 90°, U 180°, 135) y el estribo es E."""
@@ -221,3 +221,24 @@ def test_shape_is_named_by_its_ends(angles: tuple[int | None, int | None], shape
     assert pieces(run, 12000.0)[0].shape == shape
     stirrup = BarRun("e", "#3", 9.5, 0.56, 4, 0.0, (Hook(135, 38.0, 75.0), Hook(135, 38.0, 75.0)), stirrup=(300.0, 500.0))
     assert pieces(stirrup, 12000.0)[0].shape == "E"
+
+
+def test_a_bar_does_not_take_a_135_degree_hook() -> None:
+    """D-161: el gancho de 135° solo en estribos."""
+    run = BarRun("g", "#5", 15.9, 1.552, 2, 2000.0, (Hook(135, 95.4, 95.4), None))
+    with pytest.raises(ValueError, match="135"):
+        pieces(run, 12000.0)
+
+
+def test_a_single_leg_stirrup_takes_the_stirrup_hook_in_each_end() -> None:
+    """D-161: el estribo de una rama mide su largo exterior más la g del estribo en cada gancho, con g =
+    extensión + arco por el eje − 0.5·(D + 0.5db), hacia arriba a 10 mm (la del oráculo, D-160)."""
+    oracle = _oracle("nsr-10")["single_leg"]
+    db = DIAMETER[oracle["designation"]]
+    hook = Hook(135, oracle["bend"], oracle["ext135"])
+    piece = pieces(BarRun("estribos de una rama", oracle["designation"], db, MASS[oracle["designation"]], 3, oracle["A"], (hook, hook),
+                          single_leg=True),
+                   12000.0)[0]
+    assert piece.single_leg and piece.shape == "135-135"
+    assert dict(piece.dimensions) == {"A": oracle["A_rounded"], "B": oracle["g"], "C": oracle["g"]}
+    assert piece.cut_length == oracle["cut"]

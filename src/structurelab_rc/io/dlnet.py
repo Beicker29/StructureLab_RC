@@ -37,6 +37,11 @@ STIRRUP_ANGLE = 135  # gancho de cierre del estribo
 # La figura de DL-NET del estribo con ganchos de 135° (la de los estribos sísmicos) escribe F0/45; F0/90 es otra figura
 # de la misma librería (confirmado por el usuario con ESTRIBOS.dli, D-133). b*h son las dimensiones exteriores, a 1 cm.
 STIRRUP_FIELD = "F0/45"
+# El estribo de una rama (D-161) con ganchos de 135° va con la figura "g" de DL-NET, con la g declarada como en el estribo
+# cerrado (capturas del usuario: "4 g 3/8'' 0.5 G0.15 f45/45" da L = 0.80 y G0.20, L = 0.90; L = h + 2g; f45/45, los dos
+# ganchos a 135°).
+SINGLE_LEG_FIGURE = "g"
+SINGLE_LEG_FIELD = "F45/45"
 # La longitud de la línea es la total de la cartilla, tramo + L o U por gancho, y L y U van a 50 mm (convención de DL-NET,
 # D-147).
 # La pertenencia de cada elemento a un grupo de la cola es " N ": las veces que se construye (" 1  1 " con dos elementos
@@ -179,6 +184,8 @@ def row_line(row: ScheduleRow, names: dict[str, str]) -> str:
             raise DliError(f"marca {row.mark}: DL-NET solo representa estribos con ganchos de {STIRRUP_ANGLE}°")
         width, height, hook = (number(_metres(dimensions[name])) for name in ("A", "B", "C"))
         return f'{piece.count}  E  "{bar}"  {width}*{height}   G{hook}   {STIRRUP_FIELD}'
+    if piece.single_leg:
+        return _single_leg_line(row, bar, dimensions)
     if piece.shape != STRAIGHT_SHAPE and not set(piece.shape.split("-")) <= set(HOOK_SHAPE.values()):
         raise DliError(f"marca {row.mark}: la forma {piece.shape!r} no está soportada en la cartilla DL-NET")
     line = f'{piece.count}  "{bar}"  {number(_metres(piece.cut_length))}'
@@ -188,6 +195,19 @@ def row_line(row: ScheduleRow, names: dict[str, str]) -> str:
             raise DliError(f"marca {row.mark}: DL-NET no tiene la sintaxis del gancho de {angle}°")
         line += f"   {HOOK_CODES[angle]}{number(_metres(round_up(dict(piece.dimensions)[leg], HOOK_ROUNDING)))}"
     return line
+
+
+def _single_leg_line(row: ScheduleRow, bar: str, dimensions: dict[str, float]) -> str:
+    """El estribo de una rama (D-161): con ganchos de 135°, la figura g de DL-NET (alto exterior h y la g de los dos
+    ganchos, L = h + 2g); con ganchos de 90°, la barra con sus dos L, cada una igual a la g del estribo (DL-NET reconstruye
+    el tramo como Ltotal − 2L)."""
+    piece = row.piece
+    length, start, end = (number(_metres(dimensions[name])) for name in ("A", "B", "C"))
+    if piece.angles == (STIRRUP_ANGLE, STIRRUP_ANGLE):
+        return f'{piece.count}  {SINGLE_LEG_FIGURE}  "{bar}"  {length}   G{start}   {SINGLE_LEG_FIELD}'
+    if piece.angles == (90, 90):
+        return f'{piece.count}  "{bar}"  {number(_metres(piece.cut_length))}   L{start}   L{end}'
+    raise DliError(f"marca {row.mark}: DL-NET no tiene la sintaxis de un estribo de una rama con ganchos de {piece.angles}")
 
 
 def schedule_dli(elements: Sequence[tuple[str, Sequence[ScheduleRow], int]], template: Path) -> bytes:

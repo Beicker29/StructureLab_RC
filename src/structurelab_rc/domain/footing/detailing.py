@@ -82,16 +82,12 @@ def end_angle(end: str) -> int:
 
 def _hook(basis: Basis, db: float, end: str) -> Hook | None:
     """El gancho de un extremo declarado de una barra (D-134): ninguno si es recta; el estándar del perfil con 90° o 180°
-    (diámetro de doblado y extensión, ACI Tabla 25.3.1, NSR-10 C.7.1 y C.7.2); con 135°, que no es gancho estándar de
-    barras, el diámetro de doblado del gancho estándar y la extensión del gancho de 135° de estribos del perfil (ACI
-    Tabla 25.3.2, NSR-10 C.7.1.3). La validación rechaza las barras fuera de esa tabla."""
+    (diámetro de doblado y extensión, ACI Tabla 25.3.1, NSR-10 C.7.1 y C.7.2). Las barras no llevan gancho de 135°
+    (D-161)."""
     if end == "straight":
         return None
     detailing, angle = basis.profile.detailing, end_angle(end)
-    extension = detailing.stirrup_hook_extension(db, angle) if angle == _BAR_135 else detailing.hook_extension(db, angle)
-    if extension is None:
-        raise ValueError(f"el perfil no define el gancho de {angle}° para una barra de {db:g} mm")
-    return Hook(angle, detailing.hook_bend_diameter(db), extension)
+    return Hook(angle, detailing.hook_bend_diameter(db), detailing.hook_extension(db, angle))
 
 
 def _hooks(basis: Basis, db: float, end: str) -> tuple[Hook | None, Hook | None]:
@@ -128,6 +124,20 @@ def _class_note(splice_class: str, ratio: float | None) -> str:
     if math.isinf(ratio):
         return f"empalme clase {splice_class} (sin momento que traccione las barras)"
     return f"empalme clase {splice_class} (As/As req = {ratio:.2f})"
+
+
+def column_labels(element: FootingBody | CombinedFooting) -> dict[str, str]:
+    """El rótulo de cada columna en los grupos y las notas de la cartilla (D-162), por su id. Sin typology, el id de la
+    columna (con una sola columna, el del elemento). En un elemento tipo, su posición ("1", "2", …): la cartilla del tipo
+    vale para todos sus elementos, que tienen otras columnas; en la combinada, en orden a lo largo de la viga (x), el
+    mismo con que el tipo se traslada a cada par (D-157), y en un cabezal, en el orden declarado."""
+    if isinstance(element, CombinedFooting):
+        ids = [column.id for column in sorted(element.columns, key=lambda column: column.x)]
+    else:
+        ids = [str(getattr(column, "id", element.id)) for column in element.all_columns]
+    if element.typology is not None:
+        return {column: str(position) for position, column in enumerate(ids, start=1)}
+    return {ids[0]: element.id} if len(ids) == 1 and not isinstance(element, CombinedFooting) else {column: column for column in ids}
 
 
 def _dowel_run(basis: Basis, dowels: Dowels | None, embed: float, pedestal: float, column: str) -> BarRun | None:
@@ -184,6 +194,10 @@ def _stirrup_runs(basis: Basis, stirrups: Stirrups | None, frame: tuple[float, f
         closed = (outer_width - 2 * pair * gap, outer_height)
         runs.append(BarRun("estribos", stirrups.designation, db, spec.mass_kg_m, count, 0.0, (hook, hook), stirrup=closed,
                            note=f"{stirrups.legs} ramas c/{stirrups.spacing:.0f} mm", placement=place))
+    if stirrups.legs % 2:  # la rama impar: un estribo de una rama del alto exterior, con los mismos ganchos (D-161)
+        runs.append(BarRun("estribos de una rama", stirrups.designation, db, spec.mass_kg_m, count, outer_height,
+                           (hook, hook), note=f"rama impar de los estribos de {stirrups.legs} ramas c/{stirrups.spacing:.0f} mm",
+                           single_leg=True))
     return runs
 
 
@@ -250,9 +264,9 @@ def footing_runs(basis: Basis, footing: FootingBody, envelope: Envelope | None, 
                     runs.append(run)
     rows = mat_rows(footing, footing.bottom, basis.bars)
     embed = h - footing.bottom_face_cover - rows["x"].diameter - rows["y"].diameter
-    columns = footing.all_columns
-    for column in columns:  # los pasadores de cada columna (D-143); con una, rotulados con el elemento
-        name = footing.id if len(columns) == 1 else str(getattr(column, "id", footing.id))
+    labels = column_labels(footing)
+    for column in footing.all_columns:  # los pasadores de cada columna (D-143), con su rótulo (D-162)
+        name = labels[str(getattr(column, "id", footing.id))]
         dowels = _placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, name), column, (h, embed), cover)
         runs += [] if dowels is None else [dowels]
     return runs
@@ -312,6 +326,7 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
     bottom, tops = mat_rows(footing, footing.bottom, bars), top_rows(footing, bars)
     ratios = _CombinedRatios(basis, footing, soil, bottom["y"].depth)
     geometry = (h, cover)
+    labels = column_labels(footing)
     runs: list[BarRun | None] = [
         _row_run(basis, bottom["x"], ("malla inferior x", along, _hooks(basis, bottom["x"].diameter, footing.bottom.x.end)),
                  (footing.bottom.x.spacing, True, geometry, ratios.x(bottom["x"], True))),
@@ -323,7 +338,7 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
     for index, column in enumerate(footing.columns):
         band = band_row(footing, column, bottom["y"], basis)
         if band is not None and column.band is not None:
-            runs.append(_row_run(basis, band, (f"band columna {column.id}", across, _hooks(basis, band.diameter, column.band.end)),
+            runs.append(_row_run(basis, band, (f"band columna {labels[column.id]}", across, _hooks(basis, band.diameter, column.band.end)),
                                  (column.band.spacing, True, geometry, ratios.strip(index, band, True))))
     if footing.top is not None:
         if "x" in tops and footing.top.x is not None:
@@ -338,7 +353,7 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
     for index, column in enumerate(footing.columns):
         band_top = band_top_row(footing, column, bottom["y"].depth, bars)
         if band_top is not None and column.band_top is not None:
-            runs.append(_row_run(basis, band_top, (f"band superior columna {column.id}", across,
+            runs.append(_row_run(basis, band_top, (f"band superior columna {labels[column.id]}", across,
                                                    _hooks(basis, band_top.diameter, column.band_top.end)),
                                  (column.band_top.spacing, False, geometry, ratios.strip(index, band_top, False))))
     if footing.skin is not None:
@@ -353,8 +368,8 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
                                placement=Placement("x", ys, h - depth, (-along / 2, along / 2))))
     runs += _stirrup_runs(basis, footing.stirrups, (footing.ly, h, cover), footing.lx)
     embed = h - cover - bottom["x"].diameter - bottom["y"].diameter
-    runs += [_placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, column.id), column, (h, embed), cover)
-             for column in footing.columns]
+    runs += [_placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, labels[column.id]), column,
+                            (h, embed), cover) for column in footing.columns]
     return [run for run in runs if run is not None]
 
 
@@ -458,6 +473,7 @@ def _t_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[BarRun]:
                                               _hooks(basis, row.diameter, bar_set.end)),
                                  (bar_set.spacing, False, geometry, ratio)))
     embed = footing.total_height - cover - rows["y"].diameter
-    runs += [_placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, column.id), column,
+    labels = column_labels(footing)
+    runs += [_placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, labels[column.id]), column,
                             (footing.total_height, embed), cover) for column in footing.columns]
     return [run for run in runs if run is not None]

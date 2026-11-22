@@ -57,7 +57,7 @@ class FoundationBeam(_Input):
         if not any(layer.role == "flexure" for layer in self.layers):
             raise ValueError("la viga de la T invertida necesita al menos una capa de flexion")
         if any(layer.end is None for layer in self.layers):
-            raise ValueError("cada capa de la viga de la T invertida declara end: straight, hook90, hook180 o hook135 (D-134)")
+            raise ValueError("cada capa de la viga de la T invertida declara end: straight, hook90 o hook180 (D-134, D-161)")
         if self.stirrups is not None and self.stirrups.end is None:
             raise ValueError("los estribos de la viga de la T invertida declaran end: hook90, hook135 o hook180 (D-134)")
         if any(layer.depth >= self.height for layer in self.layers):

@@ -122,6 +122,16 @@ def test_lines_without_the_real_files() -> None:
     assert row_line(_bar(16, "#6", 1550.0, {"B": 331.0}, (90, None)), NAMES) == '16  "3/4\'\'"  1.55   L.35'
 
 
+def test_single_leg_stirrup_lines() -> None:
+    """D-161: el estribo de una rama de 135° con la figura g de DL-NET y la g del estribo; el de 90°, con sus dos L
+    iguales a g."""
+    dimensions = (("A", 500.0), ("B", 110.0), ("C", 110.0))
+    hooked = Piece("estribos de una rama", "#3", "135-135", dimensions, 720.0, 0.56, 4, "", (135, 135), single_leg=True)
+    assert row_line(_row("Z-03", hooked), NAMES) == '4  g  "3/8\'\'"  .5   G.11   F45/45'
+    square = Piece("estribos de una rama", "#3", "L-L", dimensions, 720.0, 0.56, 4, "", (90, 90), single_leg=True)
+    assert row_line(_row("Z-03", square), NAMES) == '4  "3/8\'\'"  .72   L.11   L.11'
+
+
 @pytest.mark.parametrize(("value", "text"), [(0.5, ".5"), (6.0, "6"), (2.45, "2.45"), (0.05, ".05"), (12.0, "12"),
                                              (1.55, "1.55"), (0.125, ".125"), (10.5, "10.5")])
 def test_number_format(value: float, text: str) -> None:
