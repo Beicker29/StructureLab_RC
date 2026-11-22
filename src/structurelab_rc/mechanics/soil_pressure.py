@@ -1,4 +1,7 @@
-"""Presión lineal del suelo bajo una zapata rectangular rígida, sin tracción en el contacto, en N, mm y MPa.
+"""Presión lineal del suelo bajo una zapata rígida, sin tracción en el contacto, en N, mm y MPa.
+
+Planta rectangular: `footing_pressure`, la solución cerrada de Bellos y Bakas. Otra planta (trapecio, T o L):
+`polygon_pressure`, las mismas tres ecuaciones de equilibrio de Bellos resueltas con Newton sobre el polígono (D-164).
 
 Solución analítica de Bellos y Bakas (2017), "Complete Analytical Solution for Linear Soil Pressure Distribution
 under Rigid Rectangular Spread Footings", Int. J. Geomech. 17(7): 04017005.
@@ -17,7 +20,7 @@ import math
 from dataclasses import dataclass
 
 from structurelab_rc.mechanics.materials import NoEquilibrium
-from structurelab_rc.mechanics.polygon import Point, area_centroid, clip, linear_resultant
+from structurelab_rc.mechanics.polygon import Point, area_centroid, clip, convex_hull, linear_resultant, moments, strictly_inside
 
 _EDGE_OF_BASE = 0.5  # |e|/l: la resultante sale de la base.
 _QUARTER = 0.25  # |e|/l: lados rectos de las regiones A, D y E.
@@ -30,7 +33,8 @@ _EDGE = 1e-12  # En los bordes entre regiones ambas fórmulas coinciden; evita q
 
 @dataclass(frozen=True)
 class SoilPressure:
-    """Presión del suelo: plano p0 + gx·x + gy·y recortado en cero, y la región de Bellos (A a E)."""
+    """Presión del suelo: plano p0 + gx·x + gy·y recortado en cero, y la región de Bellos (A a E) o, en un polígono,
+    "total" o "parcial" (D-164). outline: la planta si no es el rectángulo lx × ly centrado (lx y ly, su caja)."""
 
     lx: float
     ly: float
@@ -38,8 +42,11 @@ class SoilPressure:
     gx: float
     gy: float
     region: str
+    outline: tuple[Point, ...] | None = None
 
     def base(self) -> tuple[Point, ...]:
+        if self.outline is not None:
+            return self.outline
         hx, hy = self.lx / 2, self.ly / 2
         return ((-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy))
 
@@ -66,16 +73,21 @@ class SoilPressure:
         a, b, c, d = (self.at(x, y) for x, y in self.base())
         return a, b, c, d
 
+    def vertices(self) -> tuple[float, ...]:
+        """Presión en cada vértice de la planta, en su orden."""
+        return tuple(self.at(x, y) for x, y in self.base())
+
     @property
     def pmax(self) -> float:
-        return max(self.corners())
+        """La mayor presión, que con un plano está en un vértice."""
+        return max(self.vertices())
 
     def contact(self, polygon: tuple[Point, ...] | None = None) -> tuple[Point, ...]:
         """Parte del polígono (por defecto, la base) en contacto con el suelo."""
         return clip(self.base() if polygon is None else polygon, (self.gx, self.gy), -self.p0)
 
     def contact_fraction(self) -> float:
-        return area_centroid(self.contact())[0] / (self.lx * self.ly)
+        return area_centroid(self.contact())[0] / area_centroid(self.base())[0]
 
     def resultant(self, polygon: tuple[Point, ...]) -> tuple[float, float, float]:
         """Fuerza del suelo sobre la parte del polígono en contacto y sus momentos estáticos: ∫p dA, ∫x·p dA, ∫y·p dA."""
@@ -156,3 +168,76 @@ def footing_pressure(lx: float, ly: float, load: float, ex: float, ey: float) ->
     sx, sy = math.copysign(1.0, ex), math.copysign(1.0, ey)
     p0 = pmax * (1 - kx * lx / 2 - ky * ly / 2)
     return SoilPressure(lx, ly, p0, pmax * kx * sx, pmax * ky * sy, region)
+
+
+_POLYGON_STEPS = 100
+_POLYGON_TOLERANCE = 1e-12  # residuo relativo a P (fuerza) y a P·escala (momentos)
+_BACKTRACKS = 40
+
+
+def polygon_pressure(outline: tuple[Point, ...], load: float, ex: float, ey: float) -> SoilPressure:
+    """Presión bajo una planta poligonal (antihoraria, coordenadas desde su centroide) con carga P (> 0) en (ex, ey)
+    (D-164): el plano p = p0 + gx·x + gy·y, recortado en cero, que cumple las ecuaciones de equilibrio de Bellos y Bakas
+    sobre la parte en contacto, ∫p dA = P, ∫x·p dA = P·ex, ∫y·p dA = P·ey.
+
+    Con contacto total es la fórmula lineal con los momentos de área de la planta. Si no, Newton: el jacobiano son los
+    momentos de área de la parte en contacto (en la línea p = 0 el integrando se anula y el borde que se mueve no
+    aporta), con paso amortiguado sobre la norma del residuo. Las ecuaciones son el gradiente de una función convexa
+    (½∫p₊² dA − P·(p0 + gx·ex + gy·ey)), así que la solución es única. NoEquilibrium si la resultante no cae dentro de
+    la envolvente convexa de la planta o si Newton no converge."""
+    if load <= 0:
+        raise NoEquilibrium("la carga sobre el suelo no es de compresión")
+    if not strictly_inside((ex, ey), convex_hull(outline)):
+        raise NoEquilibrium("la resultante cae fuera de la base")
+    xs, ys = [x for x, _ in outline], [y for _, y in outline]
+    lx, ly = max(xs) - min(xs), max(ys) - min(ys)
+    scale = max(lx, ly)
+    target = (load, load * ex, load * ey)
+
+    def residual(theta: tuple[float, float, float]) -> tuple[tuple[float, float, float], tuple[Point, ...]]:
+        contact = clip(outline, (theta[1], theta[2]), -theta[0])
+        force, sx, sy = linear_resultant(contact, theta)
+        return (force - target[0], sx - target[1], sy - target[2]), contact
+
+    def size(r: tuple[float, float, float]) -> float:
+        return math.hypot(r[0], r[1] / scale, r[2] / scale) / load
+
+    theta = _solve(moments(outline), target)
+    r, contact = residual(theta)
+    region = "total" if all(theta[0] + theta[1] * x + theta[2] * y >= -_EDGE * abs(theta[0]) for x, y in outline) else "parcial"
+    for _ in range(_POLYGON_STEPS):
+        if size(r) < _POLYGON_TOLERANCE:
+            return SoilPressure(lx, ly, theta[0], theta[1], theta[2], region, outline)
+        step = _solve(moments(contact), (-r[0], -r[1], -r[2]))
+        length = 1.0
+        for _ in range(_BACKTRACKS):
+            trial = (theta[0] + length * step[0], theta[1] + length * step[1], theta[2] + length * step[2])
+            trial_r, trial_contact = residual(trial)
+            if size(trial_r) < size(r):
+                break
+            length /= 2
+        else:
+            break
+        theta, r, contact = trial, trial_r, trial_contact
+    if size(r) < _POLYGON_TOLERANCE * 1e3:
+        return SoilPressure(lx, ly, theta[0], theta[1], theta[2], region, outline)
+    raise NoEquilibrium("la presión en la planta poligonal no convergió")
+
+
+def _solve(area: tuple[float, ...], rhs: tuple[float, float, float]) -> tuple[float, float, float]:
+    """Resuelve [[A, Sx, Sy], [Sx, Sxx, Sxy], [Sy, Sxy, Syy]]·(p0, gx, gy) = rhs por Cramer (matriz simétrica 3 × 3)."""
+    a, sx, sy, sxx, sxy, syy = area
+    m = ((a, sx, sy), (sx, sxx, sxy), (sy, sxy, syy))
+
+    def det(rows: tuple[tuple[float, float, float], ...]) -> float:
+        (a1, b1, c1), (a2, b2, c2), (a3, b3, c3) = rows
+        return a1 * (b2 * c3 - b3 * c2) - b1 * (a2 * c3 - a3 * c2) + c1 * (a2 * b3 - a3 * b2)
+
+    full = det(m)
+    if full == 0:
+        raise NoEquilibrium("el área en contacto es degenerada")
+    columns = []
+    for index in range(3):
+        rows = tuple(tuple(rhs[r] if c == index else m[r][c] for c in range(3)) for r in range(3))
+        columns.append(det(rows) / full)  # type: ignore[arg-type]
+    return columns[0], columns[1], columns[2]

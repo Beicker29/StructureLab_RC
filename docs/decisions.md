@@ -3563,6 +3563,59 @@
   - Huella: cambia el texto de la memoria de las combinadas y las T (convenciones). Ningún resultado de los ejemplos
     congelados cambia, porque sus franjas no se montan.
 
+### D-164: zapata combinada trapezoidal y en planta T o L, fase B de D-163
+
+- **Fecha:** 2026-11-22
+- **Problema:** la combinada solo admitía planta rectangular. Bellos y Bakas resuelven en forma cerrada solo el
+  rectángulo (C-017).
+- **Decisión del usuario:**
+  - Presión (C-017): las mismas ecuaciones de equilibrio de Bellos y Bakas, resueltas con Newton sobre el polígono.
+    El rectángulo conserva la forma cerrada.
+  - Trapecio: puede ser asimétrico, con un lado recto (junto a un lindero).
+  - Planta en T o en L (dos rectángulos de anchos distintos). El usuario declara la geometría y la ubicación de las columnas confirma si es de
+    lindero, como en la rectangular.
+  - Volcamiento respecto a cada lado del polígono, incluidos los oblicuos.
+  - Despiece: una marca por cada longitud distinta de las barras de longitud variable.
+  - Sin refuerzo adicional en la esquina entrante.
+  - Aviso de dos direcciones (D-091): ℓn de cada tramo contra el mayor ancho dentro de ese tramo.
+  - Coordenadas: ejes globales con `principal_direction`, como la combinada rectangular (D-094, D-101). Origen en el
+    borde negativo a lo largo de la dirección principal, sobre la línea de referencia transversal del usuario; el
+    centroide se calcula. Planta: `trapezoid` (largo y, en cada extremo, `low` y `high` transversales) o `stepped` (dos o
+    más tramos, cada uno con su largo, `low` y `high`).
+  - Punzonamiento: perímetro rectangular a d/2 de las caras de la columna; cada lado se recorta con el contorno de la
+    planta y b0 suma los tramos que quedan dentro (el borde libre no cuenta), como hoy en la rectangular. αs por las
+    esquinas del perímetro que quedan dentro de la planta: 4 → 40 (interior), 3 → 30 (un borde oblicuo corta una
+    esquina: un lado menos), 2 → 30 (borde, un lado entero afuera), 1 → 20 (esquina). En el rectángulo da lo mismo que
+    hoy. Los tramos siguen paralelos a x o y: γv y Jc con el código actual.
+  - Viga longitudinal: ancho local B(x) y solo las barras x que pasan por la sección; mxy = T/B(x). Es la regla de la
+    rectangular, donde B es constante y todas las barras x son continuas. El desarrollo de cada barra x, hasta su
+    extremo real.
+  - Franjas: voladizos desde las caras de la columna hasta los bordes locales, en el eje de la columna; si la franja
+    cruza un escalón, con el ancho menor.
+  - Sin estribos ni refuerzo superficial en planta no rectangular (`BLOCKED` si se declaran; pendiente en la hoja de
+    ruta).
+  - Pasiva del deslizamiento con el ancho proyectado de la planta normal a cada dirección.
+  - Alcance: N ≥ 2 columnas, entrada desde ETABS en la verificación y sin T invertida trapezoidal (queda en la hoja de
+    ruta). Primero la verificación; el diseño, el despiece y el dibujo, después.
+- **Parte B1 (presión, `mechanics/`):** `soil_pressure.polygon_pressure(outline, P, ex, ey)`.
+  - Con contacto total es la fórmula lineal con los momentos de área de la planta.
+  - Si no, Newton cuyo jacobiano son los momentos de área de la parte en contacto, con paso amortiguado. Las ecuaciones
+    son el gradiente de una función convexa, así que la solución es única.
+  - `NoEquilibrium` si la resultante no cae dentro de la envolvente convexa de la planta.
+  - `SoilPressure` gana `outline` y `vertices()`; `pmax` es la mayor presión en un vértice y `contact_fraction`
+    divide por el área de la planta (en el rectángulo, lo mismo de antes). `polygon.moments`, `convex_hull` y
+    `strictly_inside` son las piezas nuevas.
+- **Control B1:**
+  - Oráculo `derive_polygon_pressure.py`, independiente: piezas convexas en triángulos con la regla de los puntos
+    medios y Newton con jacobiano por diferencias.
+  - Planta trapecio simétrico, trapecio con lado recto, T y L, con seis excentricidades cada una (contacto total y
+    parcial, uniaxial y biaxial).
+  - El trapecio con la resultante sobre su eje se compara además con su forma cerrada (eje neutro paralelo a los lados
+    paralelos, c por bisección).
+  - En el rectángulo, la solución general es la de Bellos en las cinco regiones (400 casos al azar; 3000 al
+    desarrollarla, error relativo máximo 6·10⁻¹²).
+- **Diferencias B1:** ninguna. El rectángulo sigue por `footing_pressure`.
+
 ## Consultas abiertas
 
 ### C-017: presión del suelo bajo una combinada trapezoidal o en planta T (fase B de D-163)

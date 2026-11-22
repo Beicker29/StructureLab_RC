@@ -41,12 +41,14 @@ El usuario elige entre:
 Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica); después, su diseño, despiece y dibujo.
 
 1. Medianera con viga de amarre (pausada; las preguntas abiertas se reformulan al empezar).
-2. Zapatas combinadas de otras formas (fase B de D-163): trapecio y planta en T (dos rectángulos de anchos distintos).
-   Antes, decidir la presión del suelo en planta no rectangular (C-017).
-3. Zapata corrida bajo un muro (los criterios se revisan al empezar).
-4. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
-5. Losas de cimentación.
-6. Muros.
+2. Zapatas combinadas trapezoidal y en planta T o L (D-164): la presión en el polígono ya está (B1); faltan la
+   verificación y la entrada desde ETABS (B2) y después el diseño, el despiece y el dibujo.
+3. Pendientes de D-164: T invertida trapezoidal; estribos y refuerzo superficial en la combinada trapezoidal o en planta
+   T o L.
+4. Zapata corrida bajo un muro (los criterios se revisan al empezar).
+5. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
+6. Losas de cimentación.
+7. Muros.
 
 ### Diseño de zapatas
 

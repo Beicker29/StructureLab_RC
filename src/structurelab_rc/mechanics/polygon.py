@@ -39,13 +39,15 @@ def clip(polygon: tuple[Point, ...], u: Point, level: float) -> tuple[Point, ...
     return tuple(kept)
 
 
-def linear_resultant(polygon: tuple[Point, ...], plane: tuple[float, float, float]) -> tuple[float, float, float]:
-    """Integrales exactas de q = q0 + gx·x + gy·y sobre el polígono: ∫q dA, ∫x·q dA y ∫y·q dA.
+Moments = tuple[float, float, float, float, float, float]
 
-    Usa los momentos de área de orden 0 a 2 por el teorema de Green; el signo no depende del sentido de recorrido.
-    """
+
+def moments(polygon: tuple[Point, ...]) -> Moments:
+    """Momentos de área de orden 0 a 2 del polígono, (A, ∫x, ∫y, ∫x², ∫xy, ∫y²), por el teorema de Green; el signo no
+    depende del sentido de recorrido. Un recorte de un polígono no convexo puede traer aristas de ida y vuelta sobre la
+    misma recta: no tienen área y no cambian las integrales."""
     if len(polygon) < _MIN_VERTICES:
-        return 0.0, 0.0, 0.0
+        return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     a = sx = sy = sxx = sxy = syy = 0.0
     for (x1, y1), (x2, y2) in _edges(polygon):
         cross = x1 * y2 - x2 * y1
@@ -57,5 +59,37 @@ def linear_resultant(polygon: tuple[Point, ...], plane: tuple[float, float, floa
         syy += (y1 * y1 + y1 * y2 + y2 * y2) * cross / 12
     if a < 0:
         a, sx, sy, sxx, sxy, syy = -a, -sx, -sy, -sxx, -sxy, -syy
+    return a, sx, sy, sxx, sxy, syy
+
+
+def linear_resultant(polygon: tuple[Point, ...], plane: tuple[float, float, float]) -> tuple[float, float, float]:
+    """Integrales exactas de q = q0 + gx·x + gy·y sobre el polígono: ∫q dA, ∫x·q dA y ∫y·q dA."""
+    a, sx, sy, sxx, sxy, syy = moments(polygon)
     q0, gx, gy = plane
     return q0 * a + gx * sx + gy * sy, q0 * sx + gx * sxx + gy * sxy, q0 * sy + gx * sxy + gy * syy
+
+
+def convex_hull(points: tuple[Point, ...]) -> tuple[Point, ...]:
+    """Envolvente convexa en sentido antihorario (cadena monótona de Andrew), sin puntos alineados."""
+    ordered = sorted(set(points))
+    if len(ordered) < _MIN_VERTICES:
+        return tuple(ordered)
+
+    def half(sequence: list[Point]) -> list[Point]:
+        chain: list[Point] = []
+        for point in sequence:
+            while len(chain) >= 2 and _cross(chain[-2], chain[-1], point) <= 0:  # noqa: PLR2004
+                chain.pop()
+            chain.append(point)
+        return chain[:-1]
+
+    return (*half(ordered), *half(ordered[::-1]))
+
+
+def _cross(o: Point, a: Point, b: Point) -> float:
+    return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+
+def strictly_inside(point: Point, convex: tuple[Point, ...]) -> bool:
+    """Si el punto está en el interior de un polígono convexo antihorario (no en su borde)."""
+    return len(convex) >= _MIN_VERTICES and all(_cross(a, b, point) > 0 for a, b in _edges(convex))
