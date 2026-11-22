@@ -10,7 +10,7 @@ No importa el paquete. Unidades de trabajo: N y mm. Para cada caso mayorado:
    derive_footing_shear.py; cada columna a la izquierda baja F = P + fd·(γc·A·hp − (γf·hf + qD)·A) − fl·qL·A en su eje
    y aplica el par My + (h + hp)·Vx. V = suma de fuerzas hacia arriba; M = suma de momentos respecto a la sección
    (positivo tracciona abajo).
-3. Estaciones de cada caso: entre las cuatro caras y los extremos interiores de M de cada tramo (barrido fino de M y
+3. Estaciones de cada caso: entre las caras (cuatro con dos columnas) y los extremos interiores de M de cada tramo (barrido fino de M y
    sección áurea, no por las raíces de V, como el paquete), la del mayor momento de Wood-Armer de las barras inferiores
    y la del mayor de las superiores, y las secciones a d (de las barras inferiores x) de cada cara hacia su tramo.
 4. En cada estación, las reglas de vigas (D-081) escritas aparte: resistencia por compatibilidad de deformaciones con
@@ -117,8 +117,12 @@ def _torque(beam: dict, x: float) -> float:
 
 
 def _regions(beam: dict) -> list[tuple[float, float]]:
-    a, b = beam["columns"]
-    return [(-beam["lx"] / 2, a["x"] - a["half"]), (a["x"] + a["half"], b["x"] - b["half"]), (b["x"] + b["half"], beam["lx"] / 2)]
+    """Tramos libres: el borde −X, las caras de las columnas ordenadas por x y el borde +X, tomados de a dos (D-163)."""
+    edges = [-beam["lx"] / 2]
+    for c in beam["columns"]:
+        edges += [c["x"] - c["half"], c["x"] + c["half"]]
+    edges.append(beam["lx"] / 2)
+    return [(edges[i], edges[i + 1]) for i in range(0, len(edges), 2)]
 
 
 def _faces(beam: dict) -> list[tuple[float, float]]:
@@ -558,6 +562,18 @@ CASES = [
      "simple (D-072, D-118)",
      _footing([_column("C1", -2000.0, [_load("U1", 900.0)], y=450.0), _column("C2", 2000.0, [_load("U1", 900.0)], y=-450.0)],
               top=None)),
+    ("tres-columnas", "tres columnas desiguales (D-163): dos tramos interiores con su momento negativo y voladizos",
+     _footing([_column("C1", -3800.0, [_load("U1", 900.0)]), _column("C2", 0.0, [_load("U1", 1600.0)], cx=500.0, cy=500.0),
+               _column("C3", 3600.0, [_load("U1", 1100.0)])], lx=9000.0, ly=2400.0, h=800.0)),
+    ("cuatro-columnas-sismo", "cuatro columnas con momentos y sismo, desplazadas en Y (D-163): tres tramos interiores y "
+     "torsión de placa",
+     _footing([_column("C1", -4500.0, [_load("U1", 800.0), _load("U2", 600.0, dead=1.0, live=0.5, my=150.0, vx=60.0, seismic=True)]),
+               _column("C2", -1500.0, [_load("U1", 1300.0, mx=-40.0), _load("U2", 900.0, dead=1.0, live=0.5, my=200.0, vx=80.0,
+                                                                         seismic=True)], y=200.0),
+               _column("C3", 1500.0, [_load("U1", 1300.0), _load("U2", 900.0, dead=1.0, live=0.5, my=200.0, vx=80.0, seismic=True)],
+                       y=-200.0),
+               _column("C4", 4500.0, [_load("U1", 800.0), _load("U2", 600.0, dead=1.0, live=0.5, my=150.0, vx=60.0, seismic=True)])],
+              lx=10200.0, ly=2200.0, h=750.0)),
     ("contacto-parcial", "momento grande: contacto parcial, la carga uniforme supera la presión en un voladizo",
      _footing([_column("C1", -2000.0, [_load("U1", 900.0, my=900.0, live=0.0, dead=1.2)]),
                _column("C2", 2000.0, [_load("U1", 400.0, my=900.0, live=0.0, dead=1.2)])])),

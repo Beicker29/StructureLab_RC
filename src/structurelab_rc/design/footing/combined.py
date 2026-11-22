@@ -1,4 +1,4 @@
-"""Diseño de una zapata combinada rectangular de dos columnas (v3 Fase 3B, D-107).
+"""Diseño de una zapata combinada rectangular de dos o más columnas alineadas (v3 Fase 3B, D-107, D-163).
 
 El diseño no tiene fórmulas propias: propone zapatas y las aprueba con la verificación de la combinada
 (`domain/footing/checks.combined_footing_checks`). Para proponer barras usa los momentos de la viga larga y de las franjas
@@ -8,7 +8,7 @@ de `domain/footing` y el As requerido de `design/bars`.
   sin sismo de mayor carga (D+L), con los momentos y los cortantes llevados a la base, como en `combined_resultant`:
   así ese caso no tiene excentricidad. Un voladizo máximo declarado (columna de lindero) puede impedirlo: la base se
   corre lo necesario y queda excéntrica.
-- Largo: el menor que cubre las dos columnas con esa ubicación, al paso de la planta; luego los mayores (la primera
+- Largo: el menor que cubre las columnas con esa ubicación, al paso de la planta; luego los mayores (la primera
   solución y _EXTRA_LENGTHS más, la heurística de D-069). Ancho: el menor, al paso, que cumple la revisión geotécnica.
 - Espesor: el menor con solución, por bisección, y los mayores mientras el concreto solo no alcance el mejor costo.
 - Refuerzo: cada grupo (barras inferiores y superiores x de la viga larga, continuas y sin cortes; band de cada
@@ -245,16 +245,16 @@ class CombinedDesignResult:
     cost_basis: str = ""  # de dónde sale el acero del costo (COST_BASIS, D-127)
 
 
-def placement_loads(ctx: Context) -> tuple[FootingLoad, FootingLoad]:
-    """Las cargas de las dos columnas en el caso que ubica la base (D-108): placement_case si se declara; si no, el caso
-    de servicio sin sismo de mayor carga total (D-107)."""
-    first, second = ctx.project.columns
-    pairs = [(load, next(other for other in second.loads if other.case == load.case and other.kind == load.kind))
+def placement_loads(ctx: Context) -> tuple[FootingLoad, ...]:
+    """Las cargas de las columnas (en el orden declarado) en el caso que ubica la base (D-108): placement_case si se
+    declara; si no, el caso de servicio sin sismo de mayor carga total (D-107)."""
+    first, *others = ctx.project.columns
+    cases = [(load, *(next(own for own in other.loads if own.case == load.case and own.kind == load.kind) for other in others))
              for load in first.loads if load.kind == "service" and not load.seismic]
     chosen = ctx.design.placement_case
     if chosen is not None:
-        return next(pair for pair in pairs if pair[0].case == chosen)
-    return max(pairs, key=lambda pair: pair[0].p + pair[1].p)
+        return next(case for case in cases if case[0].case == chosen)
+    return max(cases, key=lambda case: sum(load.p for load in case))
 
 
 def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any]) -> dict[str, Any]:
@@ -376,10 +376,11 @@ def _beam_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any]) 
 
 def _is_deep(ctx: Context, geometry: Geometry) -> bool:
     """Viga de gran altura si la luz libre entre las caras de las columnas sobre el alto es ≤ 4 (ACI 9.9.1.1, NSR-10
-    C.10.7.1): el diseño la declara deep_beam y se revisa con D-089 (D-109)."""
+    C.10.7.1): el diseño la declara deep_beam y se revisa con D-089 (D-109). Con más de dos columnas basta un tramo
+    interior que lo sea, el más corto (D-163)."""
     principal, _ = ctx.axes()
     spans = sorted((_coordinate(column, principal) for column in ctx.project.columns), key=lambda item: item[0])
-    clear = (spans[1][0] - spans[1][1] / 2) - (spans[0][0] + spans[0][1] / 2)
+    clear = min((second[0] - second[1] / 2) - (first[0] + first[1] / 2) for first, second in zip(spans, spans[1:], strict=False))
     return clear / geometry.total_height <= ctx.profile.deep_beam.max_span_to_depth()
 
 
@@ -436,7 +437,7 @@ def _coordinate(column: CombinedDesignColumn, axis: str) -> tuple[float, float]:
 
 
 def _faces(ctx: Context, axis: str) -> tuple[float, float]:
-    """Las caras extremas de las dos columnas a lo largo del eje global (lo que la base debe cubrir)."""
+    """Las caras extremas de las columnas a lo largo del eje global (lo que la base debe cubrir)."""
     spans = [_coordinate(column, axis) for column in ctx.project.columns]
     return min(s - c / 2 for s, c in spans), max(s + c / 2 for s, c in spans)
 
@@ -547,7 +548,7 @@ def width_for(ctx: Context, geometry: Geometry) -> Geometry | None:
     design = ctx.design
     soil = ctx.project.soil
     loads = placement_loads(ctx)
-    needed = (loads[0].p + loads[1].p) / soil.allowable_pressure / geometry.length
+    needed = sum(load.p for load in loads) / soil.allowable_pressure / geometry.length
     width = max(geometry.width, math.ceil(round(needed / design.plan_step, 9)) * design.plan_step)
     while width <= design.plan_max:
         candidate = widened(ctx, geometry, width)

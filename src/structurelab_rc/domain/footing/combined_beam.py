@@ -3,7 +3,7 @@
 Como todo el cálculo de la combinada, en ejes de la viga: X a lo largo de ella (dirección principal), Y transversal
 (dirección secundaria). Las verificaciones se devuelven en los ejes declarados en domain/footing/declared.py (D-101).
 
-La zapata es rígida: la carga neta hacia arriba es la presión de Bellos y Bakas de la resultante de las dos columnas
+La zapata es rígida: la carga neta hacia arriba es la presión de Bellos y Bakas de la resultante de las columnas
 menos las cargas uniformes (domain/footing/loads.py), integrada en todo el ancho. Cada columna baja en su eje la fuerza
 vertical de `column_vertical` y el par My + (h + pedestal)·Vx, con los momentos tomados en el plano de la base, el
 mismo de la resultante: así los diagramas cierran en cero en los dos extremos. Para una sección en x, con el cuerpo
@@ -56,7 +56,7 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.mechanics.plate import wood_armer
 from structurelab_rc.mechanics.roots import find_root
 from structurelab_rc.model.catalog import RebarSpec
-from structurelab_rc.model.combined import CombinedFooting
+from structurelab_rc.model.combined import COLUMNS, CombinedFooting
 from structurelab_rc.model.footing import FootingLoad, Soil
 from structurelab_rc.model.project import Demands, Member, Section, Station
 from structurelab_rc.model.reinforcement import BarLayer, BarPosition, BarSpacing, ReinforcementLayout
@@ -97,7 +97,7 @@ class CriticalSection:
 
 @dataclass(frozen=True)
 class BeamCase:
-    """Un caso mayorado de la viga larga: la carga neta del suelo y las dos columnas ordenadas por x."""
+    """Un caso mayorado de la viga larga: la carga neta del suelo y las columnas ordenadas por x."""
 
     pressure: FactoredCase
     columns: tuple[ColumnForce, ...]
@@ -156,15 +156,23 @@ def beam_case(footing: CombinedFooting, soil: Soil, pressure: FactoredCase, load
     return BeamCase(pressure, tuple(columns), footing.lx, footing.ly, line)
 
 
+def span_label(first: str, second: str, count: int) -> str:
+    """El rótulo de un tramo interior (D-163): "entre columnas" con dos columnas (como siempre) y, con más, el par que lo
+    limita ("entre columnas C1 y C2")."""
+    return "entre columnas" if count == COLUMNS else f"entre columnas {first} y {second}"
+
+
 def _regions(beam: BeamCase) -> list[tuple[float, float, str]]:
-    """Los tres tramos sin columna: voladizo −X, entre columnas y voladizo +X."""
-    first, second = beam.columns
-    return [(-beam.lx / 2, first.x - first.half, "voladizo -X"), (first.x + first.half, second.x - second.half, "entre columnas"),
-            (second.x + second.half, beam.lx / 2, "voladizo +X")]
+    """Los tramos sin columna: voladizo −X, los N − 1 tramos entre columnas vecinas y voladizo +X (D-163)."""
+    columns = beam.columns
+    spans = [(first.x + first.half, second.x - second.half, span_label(first.id, second.id, len(columns)))
+             for first, second in zip(columns, columns[1:], strict=False)]
+    return [(-beam.lx / 2, columns[0].x - columns[0].half, "voladizo -X"), *spans,
+            (columns[-1].x + columns[-1].half, beam.lx / 2, "voladizo +X")]
 
 
 def _faces(beam: BeamCase) -> list[tuple[CriticalSection, float]]:
-    """Las cuatro caras con la dirección hacia su tramo (−1 a la izquierda, +1 a la derecha)."""
+    """Las caras de las columnas con la dirección hacia su tramo (−1 a la izquierda, +1 a la derecha)."""
     return [(CriticalSection(column.x + side * column.half, f"cara {'+' if side > 0 else '-'}X de la columna {column.id}",
                              face=True), side)
             for column in beam.columns for side in (-1.0, 1.0)]
@@ -245,10 +253,12 @@ def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None],
 
 @dataclass(frozen=True)
 class TwoWayWarning:
-    """Zapata ancha para revisarla en una dirección (D-091): B ≥ ℓn, la luz libre entre las caras de las columnas."""
+    """Zapata ancha para revisarla en una dirección (D-091): B ≥ ℓn, la luz libre entre las caras de las columnas; con
+    más de dos columnas, la del tramo interior más corto, que es el que rige (D-163)."""
 
     width: float
     clear_span: float
+    span: str = "entre columnas"
 
     @property
     def ratio(self) -> float:
@@ -256,11 +266,14 @@ class TwoWayWarning:
 
 
 def two_way_warning(footing: CombinedFooting) -> TwoWayWarning | None:
-    """Aviso si el ancho B alcanza la luz libre ℓn entre las caras de las dos columnas a lo largo de X (criterio del
-    usuario, D-091): la zapata se sigue revisando en una dirección (ACI 13.3.2), pero puede trabajar en dos (13.3.4)."""
-    first, second = sorted(footing.columns, key=lambda column: column.x)
-    clear_span = (second.x - second.cx / 2) - (first.x + first.cx / 2)
-    return TwoWayWarning(footing.ly, clear_span) if footing.ly >= clear_span else None
+    """Aviso si el ancho B alcanza la luz libre ℓn entre las caras de dos columnas vecinas a lo largo de X (criterio del
+    usuario, D-091): la zapata se sigue revisando en una dirección (ACI 13.3.2), pero puede trabajar en dos (13.3.4).
+    Con más de dos columnas se avisa con el tramo interior más corto, nombrándolo (D-163)."""
+    ordered = sorted(footing.columns, key=lambda column: column.x)
+    spans = [((second.x - second.cx / 2) - (first.x + first.cx / 2), span_label(first.id, second.id, len(ordered)))
+             for first, second in zip(ordered, ordered[1:], strict=False)]
+    clear_span, span = min(spans, key=lambda item: item[0])
+    return TwoWayWarning(footing.ly, clear_span, span) if footing.ly >= clear_span else None
 
 
 def flange_width(profile: Profile, footing: CombinedFooting) -> float | None:

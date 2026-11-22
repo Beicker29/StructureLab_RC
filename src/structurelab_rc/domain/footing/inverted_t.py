@@ -234,14 +234,16 @@ def _shear(basis: Basis, footing: CombinedFooting, row: BarRow, per_metre: float
 
 def _tension_flange(basis: Basis, footing: CombinedFooting, bottom: BarRow) -> list[Check]:
     """Reparto del refuerzo del ala a tracción (ACI 24.3.4, NSR-10 C.10.6.6): dentro del menor entre el ala efectiva y
-    1/10 de la luz; si ese ancho es menor que el ala, debe haber barras en sus zonas exteriores."""
+    1/10 de la luz (con más de dos columnas, el menor de los tramos, D-163); si ese ancho es menor que el ala, debe
+    haber barras en sus zonas exteriores."""
     flexure = basis.profile.flexure
     width = flange_width(basis.profile, footing)
     if width is None:
         return []
-    first, second = sorted(footing.columns, key=lambda column: column.x)
-    clear = (second.x - second.cx / 2) - (first.x + first.cx / 2)
-    spread = flexure.flange_tension_width(width, clear, second.x - first.x)
+    ordered = sorted(footing.columns, key=lambda column: column.x)
+    # Con más de dos columnas, el tramo que da el menor ancho de reparto (D-163).
+    spread = min(flexure.flange_tension_width(width, (second.x - second.cx / 2) - (first.x + first.cx / 2), second.x - first.x)
+                 for first, second in zip(ordered, ordered[1:], strict=False))
     values = (("bf", width), ("ancho de reparto", spread))
     clause = flexure.clauses()["flange_tension"]
     if spread >= width:

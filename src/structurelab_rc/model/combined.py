@@ -1,9 +1,8 @@
-"""Zapata combinada rectangular de dos columnas (D-080). Las mismas unidades que la zapata aislada (D-052, D-055, D-057):
-geometría en mm, sobrecargas en kN/m² al declarar. Se declara en ejes globales de ETABS, con el origen en el centroide de
-la base; principal_direction dice en qué eje va la viga que une las columnas. El cálculo trabaja en ejes de la viga (X a
-lo largo de ella): con la dirección principal en la Y global, la geometría, el armado y las cargas se rotan al cargar
-(D-094). Las propiedades derivadas se calculan; nunca se declaran.
-"""
+"""Zapata combinada rectangular de dos o más columnas alineadas (D-080, D-163). Las mismas unidades que la zapata aislada
+(D-052, D-055, D-057): geometría en mm, sobrecargas en kN/m² al declarar. Se declara en ejes globales de ETABS, con el
+origen en el centroide de la base; principal_direction dice en qué eje va la viga que une las columnas. El cálculo
+trabaja en ejes de la viga (X a lo largo de ella): con la dirección principal en la Y global, la geometría, el armado y
+las cargas se rotan al cargar (D-094). Las propiedades derivadas se calculan; nunca se declaran."""
 
 from typing import Any, Literal, Self
 
@@ -133,7 +132,7 @@ class CombinedColumn(_Input):
 
 
 class CombinedFooting(RectangularBase, _Input):
-    """Zapata combinada de espesor h con dos columnas a lo largo de X. bottom es la malla inferior en las dos direcciones;
+    """Zapata combinada de espesor h con dos o más columnas a lo largo de X (D-163). bottom es la malla inferior en las dos direcciones;
     top, las barras superiores con la misma estructura (D-099; opcional: sin barras superiores en una dirección, su
     momento negativo se revisa como concreto simple, D-072); stirrups, los estribos de la dirección larga, como en las
     vigas (opcional, D-081; solo para el cortante: la torsión es de placa, D-118, y torsion_layers se rechaza);
@@ -153,7 +152,7 @@ class CombinedFooting(RectangularBase, _Input):
     pedestal_height: NonNegativeFloat
     surcharge_dead: NonNegativeFloat = Field(validation_alias="surcharge_dead_kNm2")
     surcharge_live: NonNegativeFloat = Field(validation_alias="surcharge_live_kNm2")
-    columns: tuple[CombinedColumn, ...] = Field(min_length=COLUMNS, max_length=COLUMNS)
+    columns: tuple[CombinedColumn, ...] = Field(min_length=COLUMNS)  # D-163: dos o más, alineadas a lo largo de la viga
     bottom: Mat
     top: TopMat | None = None
     stirrups: Stirrups | None = None
@@ -207,8 +206,8 @@ class CombinedFooting(RectangularBase, _Input):
         for column in self.columns:
             if abs(column.x) + column.cx / 2 > self.lx / 2 or abs(column.y) + column.cy / 2 > self.ly / 2:
                 raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' se sale de la base")
-        first, second = sorted(self.columns, key=lambda column: column.x)
-        if first.x + first.cx / 2 >= second.x - second.cx / 2:
+        ordered = sorted(self.columns, key=lambda column: column.x)
+        if any(first.x + first.cx / 2 >= second.x - second.cx / 2 for first, second in zip(ordered, ordered[1:], strict=False)):
             # Se compara en ejes de la viga; el mensaje nombra el eje global en que la escribió el usuario (D-094).
             raise ValueError(f"las columnas de la zapata combinada '{self.id}' se traslapan a lo largo de la viga (dirección "
                              f"principal {self.principal_direction.upper()} global)")
@@ -224,8 +223,8 @@ class CombinedFooting(RectangularBase, _Input):
         for column, own in zip(self.columns, cases, strict=True):
             if len(own) != len(column.loads):
                 raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' repite un caso de carga")
-        if cases[0] != cases[1]:
-            raise ValueError(f"las dos columnas de la zapata combinada '{self.id}' deben tener los mismos casos de carga, "
+        if any(own != cases[0] for own in cases[1:]):
+            raise ValueError(f"las columnas de la zapata combinada '{self.id}' deben tener los mismos casos de carga, "
                              "con los mismos factores y la misma marca de sismo")
         return self
 
@@ -262,7 +261,7 @@ class CombinedFooting(RectangularBase, _Input):
 
     @property
     def column_area(self) -> float:
-        """Área de las dos columnas (o pedestales), en mm²: el relleno y las sobrecargas ocupan el resto de la base."""
+        """Área de las columnas (o pedestales), en mm²: el relleno y las sobrecargas ocupan el resto de la base."""
         return sum(column.area for column in self.columns)
 
     def weights(self, soil: UnitWeighted) -> tuple[float, float, float]:

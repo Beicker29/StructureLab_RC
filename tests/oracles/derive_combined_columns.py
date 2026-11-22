@@ -94,7 +94,16 @@ def _shrinkage_ratio(folder: str) -> float:
 
 
 def _limits(f: dict, c: dict, d: float) -> tuple[float, float]:
-    return max(c["x"] - c["cx"] / 2 - d / 2, -f["lx"] / 2), min(c["x"] + c["cx"] / 2 + d / 2, f["lx"] / 2)
+    """Franja de flexión (D-080): columna + d/2 a cada lado, dentro de la base; si se monta con la franja de la columna
+    vecina (en orden de x), las dos terminan en el punto medio entre las caras enfrentadas (D-163)."""
+    ordered = sorted(f["columns"], key=lambda other: other["x"])
+    strips = [[o["x"] - o["cx"] / 2 - d / 2, o["x"] + o["cx"] / 2 + d / 2] for o in ordered]
+    for i in range(len(ordered) - 1):
+        if strips[i][1] > strips[i + 1][0]:
+            middle = ((ordered[i]["x"] + ordered[i]["cx"] / 2) + (ordered[i + 1]["x"] - ordered[i + 1]["cx"] / 2)) / 2
+            strips[i][1] = strips[i + 1][0] = middle
+    low, high = strips[ordered.index(c)]
+    return max(low, -f["lx"] / 2), min(high, f["lx"] / 2)
 
 
 def _shear_limits(f: dict, c: dict, d: float) -> tuple[float, float]:
@@ -239,22 +248,41 @@ def _punching(folder: str, f: dict, beam: dict, index: int, case: str) -> list[d
 
 
 def _group(folder: str, f: dict, beam: dict, case: str) -> list[dict]:
-    """Perímetro común (D-086) si los perímetros individuales se traslapan: el menor rectángulo que contiene los dos
-    perímetros (calculado aquí desde sus bordes); el área cargada es ese rectángulo menos d/2 por lado."""
+    """Perímetro común (D-086) de cada grupo de columnas cuyos perímetros se traslapan, directamente o en cadena
+    (D-163): el menor rectángulo que contiene los perímetros del grupo (calculado aquí desde sus bordes); el área
+    cargada es ese rectángulo menos d/2 por lado."""
     depth = _depth(f)
     boxes = [(c["x"] - (c["cx"] + depth) / 2, c["x"] + (c["cx"] + depth) / 2, c["y"] - (c["cy"] + depth) / 2,
               c["y"] + (c["cy"] + depth) / 2) for c in f["columns"]]
-    (l1, r1, b1, t1), (l2, r2, b2, t2) = boxes
-    if r1 <= l2 or r2 <= l1 or t1 <= b2 or t2 <= b1:
-        return []
-    extents = (min(l1, l2), max(r1, r2), min(b1, b2), max(t1, t2))
-    size = (extents[1] - extents[0] - depth, extents[3] - extents[2] - depth)
-    centre = ((extents[0] + extents[1]) / 2, (extents[2] + extents[3]) / 2)
-    actions = [_action(f, beam, index, case) for index in range(2)]
-    total = tuple(a + b for a, b in zip(*actions, strict=True))
-    names = " y ".join(c["id"] for c in f["columns"])
-    return _punch(folder, f, beam, {"extents": extents, "c": size, "centre": centre, "total": total,
-                                    "where": f"Columnas {names} (perimetro comun)", "case": case, "indices": [0, 1]})
+
+    def touch(i: int, j: int) -> bool:
+        (l1, r1, b1, t1), (l2, r2, b2, t2) = boxes[i], boxes[j]
+        return not (r1 <= l2 or r2 <= l1 or t1 <= b2 or t2 <= b1)
+
+    label = list(range(len(boxes)))  # componentes conexas por propagación de etiquetas
+    changed = True
+    while changed:
+        changed = False
+        for i in range(len(boxes)):
+            for j in range(len(boxes)):
+                if i != j and touch(i, j) and label[j] < label[i]:
+                    label[i], changed = label[j], True
+    checks = []
+    for root in sorted(set(label)):
+        group = [i for i in range(len(boxes)) if label[i] == root]
+        if len(group) < 2:
+            continue
+        extents = (min(boxes[i][0] for i in group), max(boxes[i][1] for i in group), min(boxes[i][2] for i in group),
+                   max(boxes[i][3] for i in group))
+        size = (extents[1] - extents[0] - depth, extents[3] - extents[2] - depth)
+        centre = ((extents[0] + extents[1]) / 2, (extents[2] + extents[3]) / 2)
+        actions = [_action(f, beam, index, case) for index in group]
+        total = tuple(sum(values) for values in zip(*actions, strict=True))
+        ids = [f["columns"][i]["id"] for i in group]
+        names = ids[0] if len(ids) == 1 else ", ".join(ids[:-1]) + " y " + ids[-1]
+        checks += _punch(folder, f, beam, {"extents": extents, "c": size, "centre": centre, "total": total,
+                                           "where": f"Columnas {names} (perimetro comun)", "case": case, "indices": group})
+    return checks
 
 
 def _punch(folder: str, f: dict, beam: dict, spec: dict) -> list[dict]:
@@ -422,7 +450,7 @@ def _shape(f: dict, beam: dict, index: int, depth: float):  # noqa: ANN202
     plane = beam["plane"]
     if _along_y(plane, c["x"], -half, half)[0] > 0:
         return (lambda y0, y1: _along_y(plane, c["x"], y0, y1)), "linea"
-    x0, x1 = max(c["x"] - c["cx"] / 2 - depth / 2, -f["lx"] / 2), min(c["x"] + c["cx"] / 2 + depth / 2, f["lx"] / 2)
+    x0, x1 = _limits(f, c, depth)
 
     def strip(y0: float, y1: float) -> tuple[float, float]:
         if y1 <= y0:
@@ -446,7 +474,7 @@ def _strip_sections(f: dict, beam: dict, index: int, case: str, depth: float,
     c = f["columns"][index]
     half = f["ly"] / 2
     shape, _ = _shape(f, beam, index, depth)
-    x0, x1 = max(c["x"] - c["cx"] / 2 - depth / 2, -f["lx"] / 2), min(c["x"] + c["cx"] / 2 + depth / 2, f["lx"] / 2)
+    x0, x1 = _limits(f, c, depth)
     uniform = beam["w"] * (x1 - x0)
     scale = (_action(f, beam, index, case)[0] + uniform * f["ly"]) / shape(-half, half)[0]
 
@@ -902,6 +930,17 @@ CASES = [
     ("columnas-juntas", "columnas a 350 mm de cara a cara (menos que d): perímetros traslapados y perímetro común",
      _footing([_column("C1", -400.0, [_load("U1", 1500.0, my=60.0)]), _column("C2", 450.0, [_load("U1", 1800.0, mx=80.0)], cx=500.0)],
               lx=3600.0, ly=2600.0)),
+    ("tres-columnas", "tres columnas separadas con band (D-163): una franja y un punzonamiento por columna, sin perímetro "
+     "común",
+     _footing([_column("C1", -3800.0, [_load("U1", 900.0, my=40.0)], band={"designation": "#6", "spacing": 150.0, "end": "straight"}),
+               _column("C2", 0.0, [_load("U1", 1600.0, mx=60.0)], cx=500.0, cy=500.0,
+                       band={"designation": "#6", "spacing": 120.0, "end": "straight"}),
+               _column("C3", 3600.0, [_load("U1", 1100.0)], band={"designation": "#6", "spacing": 150.0, "end": "straight"})],
+              lx=9000.0)),
+    ("tres-columnas-juntas", "tres columnas a 350 mm de cara a cara (D-163): perímetro común de las tres encadenadas y "
+     "franjas cortadas en el punto medio entre caras",
+     _footing([_column("C1", -800.0, [_load("U1", 1200.0, my=50.0)]), _column("C2", 0.0, [_load("U1", 1700.0, mx=60.0)]),
+               _column("C3", 800.0, [_load("U1", 1300.0)])], lx=4400.0, ly=2600.0)),
     ("delgada", "zapata delgada: punzonamiento, flexión y cortante de las franjas no cumplen; C2 grande, con A2/A1 < 4",
      _footing([_column("C1", -1800.0, [_load("U1", 2200.0)]), _column("C2", 1800.0, [_load("U1", 2200.0)], cx=1000.0, cy=1000.0)],
               h=450.0)),

@@ -159,6 +159,9 @@ CASES = [
     ("sin-equilibrio", "momento enorme: resultante fuera de la base",
      _footing([_column("C1", -2000.0, [_load("D", 100.0, my=4000.0, live=0.0)]),
                _column("C2", 2000.0, [_load("D", 100.0, my=4000.0, live=0.0)])])),
+    ("tres-columnas", "tres columnas desiguales con momentos y una desplazada en Y (D-163): resultante de las tres",
+     _footing([_column("C1", -3800.0, [_load("D+L", 700.0, my=40.0)]), _column("C2", 0.0, [_load("D+L", 1300.0, mx=-30.0)], y=150.0),
+               _column("C3", 3600.0, [_load("D+L", 900.0, my=-50.0)])], lx=9000.0, ly=2400.0)),
     ("viga-en-y", "viga en la Y global (D-094), escrita en ejes globales: ly a lo largo de la viga, columnas a distintas y "
                   "(una corrida en X y rectangular), cortantes y momentos de ETABS en los dos ejes y con sismo",
      _footing([{**_column("C1", -120.0, [_load("D+0.7E", 950.0, vx=-20.0, vy=60.0, mx=-150.0, my=40.0, live=0.0, seismic=True)],

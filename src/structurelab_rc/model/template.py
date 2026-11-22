@@ -160,7 +160,7 @@ class TemplateCombinedFooting(_Input):
     loads_source: LoadsSource = LoadsSource()
     min_steel_exception: bool  # D-123
     quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
-    columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2, max_length=2)
+    columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2)  # D-163
     bottom: dict[str, Any]
     top: dict[str, Any] | None = None
     stirrups: dict[str, Any] | None = None
@@ -183,7 +183,7 @@ class TemplateCombinedFooting(_Input):
 
 
 def _check_loads_source(where: str, columns: tuple["TemplateCombinedColumn", ...], source: LoadsSource) -> None:
-    """Cada columna trae en loads justo los tipos que loads_source pide de la plantilla, y los dos nudos son distintos
+    """Cada columna trae en loads justo los tipos que loads_source pide de la plantilla, y los nudos son distintos
     (D-084, D-112)."""
     sources = {"service": source.service, "factored": source.factored}
     for column in columns:
@@ -193,8 +193,9 @@ def _check_loads_source(where: str, columns: tuple["TemplateCombinedColumn", ...
                 raise ValueError(f"la columna '{column.id}' {where} no trae casos '{kind}' y loads_source los pide de la plantilla")
             if origin == "etabs" and kind in kinds:
                 raise ValueError(f"la columna '{column.id}' {where} trae casos '{kind}' que loads_source toma de ETABS")
-    if columns[0].etabs_unique_name == columns[1].etabs_unique_name:
-        raise ValueError(f"las dos columnas {where} tienen el mismo Unique Name")
+    names = [column.etabs_unique_name for column in columns]
+    if len(set(names)) != len(names):
+        raise ValueError(f"dos columnas {where} tienen el mismo Unique Name")
 
 
 def _etabs_kinds(source: LoadsSource) -> tuple[str, ...]:
@@ -337,7 +338,7 @@ class EtabsFootingDesignTemplate(_Input):
 
 
 class EtabsCombinedDesignTemplate(_Input):
-    """Plantilla del diseño de una zapata combinada de dos columnas desde ETABS (D-112, enfoque 1): el proyecto de diseño
+    """Plantilla del diseño de una zapata combinada desde ETABS (D-112, enfoque 1): el proyecto de diseño
     (D-107) con cada columna ligada al Unique Name de su nudo; las cargas de los tipos que loads_source toma de ETABS
     salen de los Excel y las demás, de columns[].loads. combined_design, soil y materials se validan con el proyecto de
     diseño que se genera; placement_case nombra la combinación de ETABS (como la escribe el importador)."""
@@ -358,7 +359,7 @@ class EtabsCombinedDesignTemplate(_Input):
     quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     loads_source: LoadsSource = LoadsSource()
     combined_design: dict[str, Any]
-    columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2, max_length=2)
+    columns: tuple[TemplateCombinedColumn, ...] = Field(min_length=2)  # D-163
     etabs_files: FootingEtabsFiles | None = None
     detailing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
     drawing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él

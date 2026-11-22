@@ -91,8 +91,8 @@ _FOOTING_CONVENTIONS = (
     "casos de servicio y los factores de seguridad declarados por el usuario, sísmicos en los casos marcados (D-070).",
 )
 _COMBINED_CONVENTIONS = (
-    "Zapata combinada rectangular de dos columnas, rígida, con la presión lineal y sin tracción de Bellos y Bakas (2017) "
-    "de la resultante de las dos columnas (D-080). Dirección principal: la de la viga que une las columnas; secundaria: "
+    "Zapata combinada rectangular de dos o más columnas alineadas, rígida, con la presión lineal y sin tracción de Bellos "
+    "y Bakas (2017) de la resultante de las columnas (D-080, D-163). Dirección principal: la de la viga que une las columnas; secundaria: "
     "la transversal. Ejes globales declarados, con el origen en el centroide de la base (D-094, D-101).",
     "Las fuerzas de cada columna actúan en su eje a la altura h + pedestal: el cortante horizontal produce un momento en "
     "la base, que entra en la presión, en la viga de la dirección principal y en el punzonamiento.",
@@ -131,13 +131,14 @@ _COMBINED_LIMITATIONS = (
     "T invertida, torsión del alma: la de compatibilidad (Tu reducido a φTcr), la reducción de Aℓ en la zona comprimida, "
     "la prolongación (bt + d) del refuerzo, el desarrollo de Aℓ en los extremos y el gancho de 135° de los estribos "
     "cerrados no se verifican (D-088).",
-    "Si los perímetros de punzonamiento de las dos columnas se traslapan, se revisa además el perímetro común (D-086). Si "
+    "Si los perímetros de punzonamiento de columnas vecinas se traslapan, se revisa además el perímetro común de cada "
+    "grupo encadenado (D-086, D-163); si dos franjas se montan, cada una llega al punto medio entre las caras. Si "
     "la presión es nula en la línea de una columna, su franja usa la presión integrada en su ancho o, sin ella, la carga "
     "uniforme (D-085).",
     "Revisión en una dirección (ACI 13.3.2); el comportamiento en dos direcciones (13.3.4) no está implementado y se avisa "
-    "cuando B ≥ ℓn, la luz libre entre las caras de las columnas (D-091).",
+    "cuando B ≥ ℓn, la luz libre entre las caras de dos columnas vecinas (D-091).",
     "Viga de la dirección principal de gran altura (deep_beam): la resistencia por análisis no lineal o puntal-tensor no "
-    "se verifica (D-089). Otras formas de zapata combinada y más de dos columnas: no cubiertas.",
+    "se verifica (D-089). Otras formas de zapata combinada y columnas no alineadas: no cubiertas.",
 )
 _FOOTING_LIMITATIONS = (
     "El pedestal no aporta empuje pasivo: el pasivo solo actúa sobre el espesor de la zapata (decisión del usuario, "
@@ -751,7 +752,8 @@ def _two_way_alert(footing: dict[str, Any]) -> list[Block]:
     warning = footing.get("two_way_warning")
     if not warning:
         return []
-    return [{"kind": "alert", "text": f"El ancho B = {number(warning['B [mm]'], 'mm')} mm alcanza la luz libre entre columnas "
+    span = warning.get("tramo", "entre columnas")  # D-163: con más de dos columnas, el tramo interior más corto
+    return [{"kind": "alert", "text": f"El ancho B = {number(warning['B [mm]'], 'mm')} mm alcanza la luz libre {span} "
                                       f"ℓn = {number(warning['ln [mm]'], 'mm')} mm (B/ℓn = {warning['B/ln']:.2f}): la zapata "
                                       "puede trabajar en dos direcciones (ACI 13.3.4). Se revisa en una dirección (ACI "
                                       "13.3.2); la revisión en dos direcciones no está implementada (D-091)."}]

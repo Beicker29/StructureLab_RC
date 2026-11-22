@@ -597,6 +597,125 @@
       }
     },
     {
+      "id": "tres-columnas",
+      "description": "tres columnas desiguales con momentos y una desplazada en Y (D-163): resultante de las tres",
+      "footing": {
+        "id": "ZC",
+        "quantity": 1,
+        "min_steel_exception": false,
+        "lx": 9000.0,
+        "ly": 2400.0,
+        "h": 700.0,
+        "cover": 75.0,
+        "fill_height": 1000.0,
+        "pedestal_height": 0.0,
+        "surcharge_dead_kNm2": 2.0,
+        "surcharge_live_kNm2": 5.0,
+        "columns": [
+          {
+            "id": "C1",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": -3800.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "P_kN": 700.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": 40.0
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 0.0,
+            "y": 150.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "P_kN": 1300.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": -30.0,
+                "My_kNm": 0.0
+              }
+            ]
+          },
+          {
+            "id": "C3",
+            "cx": 450.0,
+            "cy": 450.0,
+            "x": 3600.0,
+            "y": 0.0,
+            "loads": [
+              {
+                "case": "D+L",
+                "kind": "service",
+                "dead_factor": 1.0,
+                "live_factor": 1.0,
+                "P_kN": 900.0,
+                "Vx_kN": 0.0,
+                "Vy_kN": 0.0,
+                "Mx_kNm": 0.0,
+                "My_kNm": -50.0
+              }
+            ]
+          }
+        ],
+        "bottom": {
+          "first": "x",
+          "x": {
+            "designation": "#6",
+            "spacing": 200.0,
+            "end": "straight"
+          },
+          "y": {
+            "designation": "#5",
+            "spacing": 200.0,
+            "end": "straight"
+          }
+        }
+      },
+      "expected": {
+        "D+L": {
+          "N_kN": 3787.6925,
+          "Mx_base_kNm": -224.240625,
+          "My_base_kNm": 571.0125000000002,
+          "equilibrium": true,
+          "ex_mm": 150.7547141168403,
+          "ey_mm": 59.202436575830795,
+          "pmax_kPa": 218.93375289351852,
+          "corners_kPa": [
+            131.77851562500004,
+            167.0262008101852,
+            218.93375289351852,
+            183.68606770833335
+          ],
+          "capacity_kPa": 300.0,
+          "bearing": "PASS",
+          "contact_fraction": 1.0,
+          "contact": "PASS",
+          "sliding_demand_kN": 0.0,
+          "sliding_capacity_kN": 2171.08225,
+          "sliding": "PASS",
+          "overturning_demand_kNm": 448.48125,
+          "overturning_capacity_kNm": 4545.231,
+          "overturning": "PASS"
+        }
+      }
+    },
+    {
       "id": "viga-en-y",
       "description": "viga en la Y global (D-094), escrita en ejes globales: ly a lo largo de la viga, columnas a distintas y (una corrida en X y rectangular), cortantes y momentos de ETABS en los dos ejes y con sismo",
       "footing": {

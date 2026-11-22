@@ -333,10 +333,14 @@ def _expected(folder: str, f: dict) -> dict:
                            "capacity": capacity, "case": case, "note_prefix": f"Columna {column['id']}"})
     flange = _flange(f)
     if flange:
-        first, second = sorted(f["columns"], key=lambda c: c["x"])
-        clear = (second["x"] - second["cx"] / 2) - (first["x"] + first["cx"] / 2)
-        span = clear if folder == "aci_318_25" else second["x"] - first["x"]
-        spread = min(flange, span / 10)
+        # Con varias columnas, cada tramo interior da su ancho de reparto y rige el menor (D-163).
+        ordered = sorted(f["columns"], key=lambda c: c["x"])
+        spreads = []
+        for first, second in zip(ordered, ordered[1:], strict=False):
+            clear = (second["x"] - second["cx"] / 2) - (first["x"] + first["cx"] / 2)
+            span = clear if folder == "aci_318_25" else second["x"] - first["x"]
+            spreads.append(min(flange, span / 10))
+        spread = min(spreads)
         outer = [y for y in rows["bottom_all"] if abs(y) > spread / 2]
         checks.append({"name": "Viga T: refuerzo del ala en traccion", "status": "PASS" if spread >= flange or outer else "FAIL"})
     minimum = 0.0018 * f["h"] * 1000.0
@@ -399,6 +403,12 @@ CASES = [
                       "y": {"designation": "#5", "spacing": 150.0, "end": "straight"}},
               beam_changes={"bottom_width": 1200.0,
                             "layers": [TOP, _layer(900 - 75 - 19.1 / 2, "#6", [y + 300 for y in _spread(-450, 450, 7)])]})),
+    ("tres-columnas", "T invertida de 11.6 m con tres columnas (D-163): dos tramos interiores, el ala a tracción con el "
+                      "tramo más corto",
+     _footing(lx=11600.0,
+              columns=[{"id": "C1", "cx": 500.0, "cy": 500.0, "x": -5000.0, "y": 0.0, "loads": [_load("U1", 900.0)]},
+                       {"id": "C2", "cx": 500.0, "cy": 500.0, "x": -500.0, "y": 0.0, "loads": [_load("U1", 1500.0, my=80.0)]},
+                       {"id": "C3", "cx": 500.0, "cy": 500.0, "x": 5000.0, "y": 0.0, "loads": [_load("U1", 1100.0)]}])),
     ("aleta-superior", "Mx grande: la presión baja hacia un borde y aparece el momento negativo en esa aleta, que toman las "
                        "barras superiores y de la zarpa, #5 c/200 (top, D-114)",
      _footing(columns=[{"id": "C1", "cx": 500.0, "cy": 500.0, "x": -2500.0, "y": 0.0, "loads": [_load("U1", 350.0, mx=350.0)]},

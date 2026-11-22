@@ -3526,7 +3526,65 @@
 - **Diferencias:** cambian las notas y los grupos de la cartilla de los elementos con `typology`: los diseños por
   tipologías y las zapatas importadas de ETABS, que llevan `typology` desde D-159. Ningún cálculo cambia.
 
+### D-163: zapata combinada y T invertida con dos o más columnas alineadas (fase A)
+
+- **Fecha:** 2026-11-22
+- **Problema:** la combinada rectangular y la T invertida admitían exactamente dos columnas. El usuario pidió más columnas,
+  sin límite si no cuesta mucho más, y después las otras formas (fase B: trapecio y planta en T).
+- **Decisión del usuario** (las recomendaciones):
+  - N ≥ 2 columnas alineadas a lo largo de la viga, sin tope, en verificación, ETABS, diseño, despiece y dibujo. Los
+    pares del diseño por tipologías (D-153, D-157) siguen siendo de dos columnas.
+  - La presión del suelo sigue siendo la de Bellos y Bakas con la resultante de las N columnas: la base es rectangular.
+  - Tramos de la viga: voladizo −X, los N − 1 tramos entre columnas vecinas y voladizo +X. Con dos columnas el tramo se
+    sigue llamando "entre columnas"; con más, "entre columnas C1 y C2".
+  - Franjas que se montan (punto 1): cada una llega hasta el punto medio entre las caras enfrentadas, para no contar dos
+    veces la misma presión. Aplica también a dos columnas.
+  - Perímetro común (punto 2): uno por cada grupo de columnas cuyos perímetros se traslapan, directamente o en cadena
+    (C1 con C2 y C2 con C3: un solo perímetro, el rectángulo que contiene los tres). Es la extensión de D-086.
+  - Aviso de dos direcciones (punto 3, D-091): si B ≥ ℓn de cualquier tramo interior; se reporta el más corto y en
+    `resultado.json` se agrega `tramo` cuando hay más de dos columnas.
+  - Diseño (punto 4): el ejemplo de prueba es de tres columnas y la rapidez queda en el punto ya abierto de la hoja de
+    ruta. La base cubre todas las columnas y se ubica en su resultante. Es de gran altura si lo es el tramo interior más
+    corto. En la T, el reparto del ala a tracción (ACI 24.3.4, NSR-10 C.10.6.6) usa el tramo que da el menor ancho.
+- **Código:** `model/combined.py`, `model/design.py` y `model/template.py` (validación por pares vecinos);
+  `combined_beam._regions`, `span_label` y `two_way_warning`; `combined_columns.strip_limits`, `punching_groups` y
+  `_group_punching`; `inverted_t._tension_flange`; `design/footing/combined.placement_loads`, `_is_deep` y `width_for`.
+- **Control:**
+  - oráculos con casos nuevos: tres y cuatro columnas en `derive_combined_beam.py`, tres columnas separadas y tres
+    juntas (perímetro común encadenado y franjas cortadas) en `derive_combined_columns.py`, tres columnas en
+    `derive_combined_service.py` y en `derive_inverted_t.py`. El oráculo escribe aparte el corte de las franjas y los
+    grupos encadenados;
+  - pruebas de los tramos, los grupos, el corte de las franjas y la validación.
+- **Diferencias:**
+  - Oráculo "columnas-juntas" (dos columnas a 350 mm de cara a cara): sus franjas se montaban y ahora se cortan en el
+    punto medio. La franja de C2 cuenta menos barras y su flexión pasa de CUMPLE a NO CUMPLE (φMn de 471.8 a
+    404.7 kN·m con Mu ≈ 429 kN·m). La torsión de placa fuera de las franjas sube de 7.3 a 15.5 kN·m, porque el borde
+    común queda en el punto medio.
+  - Huella: cambia el texto de la memoria de las combinadas y las T (convenciones). Ningún resultado de los ejemplos
+    congelados cambia, porque sus franjas no se montan.
+
 ## Consultas abiertas
+
+### C-017: presión del suelo bajo una combinada trapezoidal o en planta T (fase B de D-163)
+
+- **Pendiente:** Bellos y Bakas (2017) resuelven en forma cerrada solo la planta rectangular. El usuario pidió buscar si
+  su formulación se extiende al trapecio y a la planta en T.
+- **Lo encontrado:**
+  - El planteamiento sí se generaliza. Base rígida, presión lineal p = p0 + gx·x + gy·y sin tracción y tres ecuaciones
+    de equilibrio (∫p = P, ∫x·p = P·ex, ∫y·p = P·ey) sobre la parte del polígono en contacto. Bellos clasifica las
+    regiones por cuáles esquinas quedan en contacto.
+  - Trapecio con excentricidad solo a lo largo de la viga: el eje neutro es paralelo a los lados paralelos y la
+    ecuación es un polinomio de grado 3 o 4, con solución cerrada.
+  - Trapecio con excentricidad biaxial: más regiones que en el rectángulo (los lados no son ortogonales) y ecuaciones
+    polinómicas acopladas. Algunas regiones piden raíces numéricas, como la región B de Bellos (D-053).
+  - Planta en T: tiene ocho vértices y una esquina entrante, y el área en contacto puede no ser convexa. El número de
+    casos crece mucho y una tabla cerrada por regiones no es práctica.
+  - En la literatura hay soluciones para el trapecio con contacto total y aproximaciones con contacto parcial. No se
+    encontró una solución cerrada completa para el trapecio biaxial ni para la planta en T.
+- **Decisión del usuario (2026-11-22), la recomendación:** las mismas ecuaciones de Bellos (mismo modelo y mismas hipótesis) resueltas con
+  Newton sobre las integrales exactas del polígono recortado (`mechanics/polygon.py`), y la forma cerrada de Bellos en
+  el rectángulo. Oráculo: en un rectángulo, la solución numérica debe dar lo mismo que Bellos. En el trapecio
+  uniaxial, contra la forma cerrada.
 
 ### C-016: páginas restantes de la fe de erratas del ACI 318-25 (SI)
 

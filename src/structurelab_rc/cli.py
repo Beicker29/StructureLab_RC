@@ -442,8 +442,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     designer.add_argument("--method", choices=("dp", "milp", "milp_iter"),
                           help="dp (particion), milp (asignacion optima) o milp_iter (iterativo, sin tabla de tramos); los dos "
                                "ultimos requieren structurelab-rc[opt]; reemplaza design.method")
-    combined = commands.add_parser("design-combined", help="disena una zapata combinada de dos columnas (D-107)")
-    combined.add_argument("project", type=Path, help="proyecto de diseno en JSON (dos columnas y bloque combined_design)")
+    combined = commands.add_parser("design-combined", help="disena una zapata combinada de dos o mas columnas alineadas (D-107, D-163)")
+    combined.add_argument("project", type=Path, help="proyecto de diseno en JSON (columnas y bloque combined_design)")
     combined.add_argument("--output", type=Path, required=True, help="carpeta donde escribir proyecto.json y resumen.json")
     combined.add_argument("--workers", type=int, help="procesos en paralelo, uno por f'c (por defecto, los nucleos del equipo)")
     caps = commands.add_parser("design-pile-caps", help="disena cabezales sobre pilotes (D-141)")

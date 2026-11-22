@@ -30,20 +30,20 @@ El usuario elige entre:
 ### Cabezales sobre pilotes
 
 1. Diseño de cabezales de varias columnas.
-2. Posición de la columna en la planta y en el DXF, y un dibujo más completo del cabezal.
+2. Dibujo más completo del cabezal (la posición de la columna en la planta y en el DXF ya está, D-143): cotas de los
+   pilotes, cuadro de pilotes, cotas de empotramiento y recubrimiento inferior en los cortes, cotas de los recortes y
+   pilotes en la planta de localización. En espera del plano de referencia del usuario, como en D-158.
 3. Cobertura de oráculo: estados límite CRSI 4 a 6 con varias columnas, valor del perímetro común, importación con
    `column_station` y desarrollo con varias columnas (pendiente de la auditoría de D-145).
-4. Fuera del alcance (D-152): más de 16 pilotes por cabezal, esquinas recortadas con varias columnas, puntal-tensor y
-   requisitos sísmicos de los pilotes.
 
 ### Tipos nuevos, uno por vez (D-052, D-055)
 
 Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica); después, su diseño, despiece y dibujo.
 
 1. Medianera con viga de amarre (pausada; las preguntas abiertas se reformulan al empezar).
-2. Zapatas combinadas de otras formas o con más de dos columnas.
-3. Zapata corrida bajo un muro (los criterios se revisan al empezar) y T invertida o zapata corrida con más de dos
-   columnas.
+2. Zapatas combinadas de otras formas (fase B de D-163): trapecio y planta en T (dos rectángulos de anchos distintos).
+   Antes, decidir la presión del suelo en planta no rectangular (C-017).
+3. Zapata corrida bajo un muro (los criterios se revisan al empezar).
 4. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
 5. Losas de cimentación.
 6. Muros.

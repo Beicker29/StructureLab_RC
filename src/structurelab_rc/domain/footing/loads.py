@@ -121,7 +121,7 @@ def factored_cases(footing: Footing, soil: Soil) -> tuple[list[FactoredCase], li
 def combined_factored_cases(
     footing: CombinedFooting, soil: Soil
 ) -> tuple[list[tuple[FactoredCase, tuple[FootingLoad, ...]]], list[Check]]:
-    """Lo mismo para una zapata combinada (D-080): cada caso mayorado con la presión de la resultante de las dos columnas
+    """Lo mismo para una zapata combinada (D-080): cada caso mayorado con la presión de la resultante de las columnas
     (su carga es la suma de las dos) y las cargas de cada columna."""
     cases, failures = [], []
     for loads in footing.cases():

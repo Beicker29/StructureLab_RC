@@ -446,11 +446,11 @@ def _example_data() -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(("lines", "message"), [
-    ({"+x": 0.0}, r"el lindero \+x no deja cubrir las dos columnas"),  # C1 al ras en +x y C2 más allá en +x
+    ({"+x": 0.0}, r"el lindero \+x no deja cubrir las columnas"),  # C1 al ras en +x y C2 más allá en +x
     ({"-x": -10.0}, "greater than or equal to 0"),
 ])
 def test_property_lines_must_leave_room_for_both_columns(lines: dict[str, float], message: str) -> None:
-    """D-154: el voladizo de cada lado es ≥ 0 y el lindero debe dejar cubrir las dos columnas."""
+    """D-154: el voladizo de cada lado es ≥ 0 y el lindero debe dejar cubrir las columnas."""
     data = _example_data()
     data["columns"][0] = {**data["columns"][0], "property_lines": lines}
     with pytest.raises(ValidationError, match=message):

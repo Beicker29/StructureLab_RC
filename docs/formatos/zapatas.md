@@ -118,19 +118,19 @@ y del relleno, y fuerzas de las sobrecargas. Salen en `resultado.json`, en `foot
 
 ## Zapata combinada (`combined_footings[]`, D-080)
 
-Zapata rectangular de dos columnas, solo verificación. La **dirección principal** es la de la viga que une las columnas
+Zapata rectangular de dos o más columnas alineadas a lo largo de la viga (D-163), solo verificación. La **dirección principal** es la de la viga que une las columnas
 (`principal_direction`, X o Y global) y la **dirección secundaria** la transversal (D-101). Las verificaciones nombran
 las barras por su dirección ("dirección principal", "dirección secundaria"), no por un eje; la memoria agrega el eje
 global, por ejemplo "Dirección principal (Y global)". Usa el mismo `soil` que las zapatas aisladas. Se verifican la parte
-geotécnica con la resultante de las dos columnas (V3J.1) y, con los casos mayorados:
+geotécnica con la resultante de las columnas (V3J.1) y, con los casos mayorados:
 
 - la viga de la dirección principal con las verificaciones de vigas en sus secciones críticas (V3J.2, D-081): cada
   check lleva `z`, la posición a lo largo de la viga desde su borde negativo (−X o −Y global), y en `note` la sección
   ("cara +X de la columna …"); Vc y Av,min de cimentación; separación de 3h y 450 mm. El cortante, solo a d de las caras
   (D-149), con la d del cortante de esa misma sección (el centroide de fuerzas del acero a tracción, D-131), que se
   encuentra por iteración (D-151);
-- por columna (V3J.3, D-082): el punzonamiento (y el del perímetro común si los de las dos columnas se traslapan,
-  D-086), la franja transversal de la dirección secundaria (también con las verificaciones de vigas, con `z` desde el
+- por columna (V3J.3, D-082): el punzonamiento (y el del perímetro común de cada grupo de columnas cuyos perímetros se
+  traslapan, directamente o encadenados, D-086, D-163), la franja transversal de la dirección secundaria (también con las verificaciones de vigas, con `z` desde el
   borde negativo de la dirección secundaria y `note` "Franja transversal de la columna …, cara ±Y", "a d de la cara ±Y"
   o "mayor M negativo hacia el borde ±Y", con el eje de la dirección secundaria; el cortante solo a d de la cara (D-148),
   a la d del cortante de esa sección (D-131, D-151); su carga es la neta: la fuerza de la columna con la forma de la
@@ -163,14 +163,14 @@ los dos perfiles.
 | --- | --- | --- |
 | `id`, `quantity`, `typology`, `lx`, `ly`, `h`, `cover`, `fill_height`, `pedestal_height`, `surcharge_dead_kNm2`, `surcharge_live_kNm2` | | Como en la zapata aislada. |
 | `principal_direction` | texto | Dirección principal (la de la viga que une las columnas) en ejes globales de ETABS: `x` (por defecto) o `y` (D-094). Todo se escribe en ejes globales, como está la zapata en planta: con `y`, `ly` es la dimensión paralela a la viga, las columnas van a distintas `y` y `bottom.y` y `top.y` son las barras paralelas a la viga (D-099). Estribos, refuerzo superficial, capas de torsión, `band` y la viga de la T no tienen dirección propia: van paralelos o transversales a la viga. El cálculo trabaja en ejes de la viga (X = +Y global, Y = −X global): con `y`, al cargar se intercambian lx y ly, las columnas pasan a x = y, y = −x, con cx = cy y cy = cx, las barras x e y (y `first`) de `bottom` y de `top` se intercambian y las cargas pasan a Vx = Vy, Vy = −Vx, Mx = My y My = −Mx. La salida vuelve a los ejes declarados con el giro inverso (D-101); `resultado.json` trae `principal_direction` en `geometry [mm]`. |
-| `columns[]` | lista | Exactamente dos columnas. |
+| `columns[]` | lista | Dos o más columnas a lo largo de la viga (D-163), sin traslaparse entre vecinas. Con más de dos, los tramos interiores se rotulan "entre columnas C1 y C2"; cada franja transversal llega hasta el punto medio entre las caras si se monta con la de la columna vecina, y el aviso de dos direcciones (D-091) usa el tramo interior más corto (`two_way_warning.tramo`). |
 | `columns[].id` | texto | Identificador de la columna. |
 | `columns[].cx`, `columns[].cy` | mm | Sección (cx a lo largo de X). |
 | `columns[].x`, `columns[].y` | mm | Posición del eje de la columna respecto al centroide de la base. |
 | `columns[].dowels` | | Pasadores, como en la zapata aislada (opcional; sin ellos sus verificaciones quedan INCOMPLETE). |
 | `columns[].band` | | Refuerzo transversal inferior bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation`, `spacing` y `end` (opcional). Es el único refuerzo inferior transversal de esa zona: la malla inferior y va solo fuera de las zonas de band (D-097). |
 | `columns[].band_top` | | Band superior (D-119): barras transversales arriba en el ancho de la franja, `designation`, `spacing` y `end` (opcional, sin `band_spacing`); toman el momento negativo de la franja y el de la torsión de placa. Van como `top.y` (debajo de `top.x` si esa dirección va más cerca de la cara) y son la capa superior de la franja; donde lo hay, `top.y` va solo fuera de esa zona. Sin `top`, terminan como la malla inferior. No aplica en la T invertida. |
-| `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; las dos columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
+| `columns[].loads` | lista | Casos de carga de la columna, como en la zapata aislada; todas las columnas deben tener los mismos casos, con los mismos factores y la misma marca de sismo. |
 | `bottom` | | Malla inferior en las dos direcciones (sin `band_spacing`). |
 | `top` | | Barras superiores con la estructura de `bottom` (D-099), opcional: `x` (paralelas a X, a lo largo de la viga) e `y` (paralelas a Y, uniformes en todo el largo, D-097), cada una `{designation, spacing, end}` y opcional, con al menos una; `first`, la dirección más cercana a la cara superior, obligatoria si se declaran las dos. Sin barras superiores en la dirección principal, el momento negativo de la viga se revisa como concreto simple (D-072); sin ellas en la secundaria, el de las franjas transversales. Con `principal_direction: "y"`, `x`, `y` y `first` están en ejes globales y se intercambian como en `bottom`. En la T invertida, `top` es la malla superior de la zarpa (D-114; el refuerzo de la viga va en `beam.layers`): con `top.y`, el momento negativo de las aletas se revisa con esas barras por metro y se revisa su desarrollo desde la cara de la viga; sin ellas, de concreto simple. |
 | `stirrups` | | Estribos de la viga de la dirección principal, como en las vigas (`designation`, `legs`, `spacing`, `closed`) más su gancho de cierre `end` (obligatorio, D-134), opcional (D-081); solo para el cortante: la torsión de la combinada rectangular es de placa (D-118). |
@@ -318,18 +318,18 @@ El diseño del N elegido se obtiene con `design-footings` y se reverifica con `r
 
 ## Diseño de la zapata combinada (`diseno_combinada.json`, comando `design-combined`, D-107)
 
-Diseña una zapata combinada rectangular de dos columnas: ubica la base, propone largo, ancho, espesor, f'c y todo el
+Diseña una zapata combinada rectangular de dos o más columnas alineadas (D-163): ubica la base, propone largo, ancho, espesor, f'c y todo el
 refuerzo, y elige la solución de menor costo que aprueba la verificación de la combinada. `concrete` no declara `fc`:
 f'c es una variable del diseño. `soil` es igual que en la
-verificación. Las dos columnas deben tener los mismos casos de carga, con al menos un caso de servicio sin sismo y casos
+verificación. Las columnas deben tener los mismos casos de carga, con al menos un caso de servicio sin sismo y casos
 mayorados.
 
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `principal_direction` | texto | `x` (por defecto) o `y`: eje global en que va la viga que une las columnas (D-094). |
 | `quantity` | - | Obligatorio (D-159): las veces que se construye la combinada; pasa al proyecto diseñado. |
-| `columns[]` | lista | Exactamente dos columnas: `id`, `cx` y `cy` (mm, sección en ejes globales), `x` e `y` (mm, eje de la columna en ejes globales con **cualquier origen**: solo cuenta la posición de una columna respecto a la otra; el diseño ubica la base y el proyecto diseñado da las columnas respecto al centro de la base), `property_lines` (opcional, linderos, ver abajo) y `loads` (casos de carga, iguales a los de una zapata). |
-| `columns[].property_lines` | mm | Opcional (D-154): los linderos (medianería) de la columna, `{"-x", "+x", "-y", "+y"}` en ejes globales; cada valor (≥ 0) es el voladizo máximo de la base más allá de la cara de esa columna en ese lado (0: la cara al ras del lindero). Un lado sin declarar no limita; si las dos columnas declaran un lado, rige el más restrictivo, y el lindero debe dejar cubrir las dos columnas. Solo en el diseño: en la verificación los linderos los controlan las dimensiones de la zapata y la posición de las columnas. |
+| `columns[]` | lista | Dos o más columnas (D-163): `id`, `cx` y `cy` (mm, sección en ejes globales), `x` e `y` (mm, eje de la columna en ejes globales con **cualquier origen**: solo cuenta la posición de las columnas entre sí; el diseño ubica la base y el proyecto diseñado da las columnas respecto al centro de la base), `property_lines` (opcional, linderos, ver abajo) y `loads` (casos de carga, iguales a los de una zapata). |
+| `columns[].property_lines` | mm | Opcional (D-154): los linderos (medianería) de la columna, `{"-x", "+x", "-y", "+y"}` en ejes globales; cada valor (≥ 0) es el voladizo máximo de la base más allá de la cara de esa columna en ese lado (0: la cara al ras del lindero). Un lado sin declarar no limita; si varias columnas declaran un lado, rige el más restrictivo, y el lindero debe dejar cubrir todas las columnas. Solo en el diseño: en la verificación los linderos los controlan las dimensiones de la zapata y la posición de las columnas. |
 | `combined_design.fc_options`, `combined_design.prices` | MPa, moneda | Como en el diseño por tipologías: f'c comerciales con su precio por m³ y precio del acero por kg. |
 | `combined_design.plan_step`, `combined_design.plan_max` | mm | Paso de las dimensiones en planta y máximo del largo y del ancho. |
 | `combined_design.h_min`, `combined_design.h_step`, `combined_design.h_max` | mm | Espesor mínimo, paso y máximo. |
@@ -343,7 +343,7 @@ mayorados.
 | `combined_design.shape` | texto | `rectangular` (por defecto) o `inverted_t` (D-113): con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa. |
 | `combined_design.web_margin`, `combined_design.web_step`, `combined_design.web_max` | mm | Solo con `inverted_t`: el alma parte de la columna más ancha (respecto a la resultante transversal) más `web_margin` a cada lado y crece de a `web_step`. El alma crece hasta `web_max`, obligatorio con la T (D-136). |
 | `combined_design.beam_h_min`, `combined_design.beam_h_step`, `combined_design.beam_h_max` | mm | Solo con `inverted_t`: alto total de la viga; `beam_h_min` debe superar `h_min`. |
-| `combined_design.placement_case` | texto | Opcional (D-108): el caso de servicio sin sismo cuya resultante ubica la base, por ejemplo `"D+L"`. Debe existir en las dos columnas, ser de servicio y no tener sismo. Sin él, se usa el de servicio sin sismo de mayor carga total. |
+| `combined_design.placement_case` | texto | Opcional (D-108): el caso de servicio sin sismo cuya resultante ubica la base, por ejemplo `"D+L"`. Debe existir en todas las columnas, ser de servicio y no tener sismo. Sin él, se usa el de servicio sin sismo de mayor carga total. |
 
 Búsqueda (cada solución la aprueba `combined_footing_checks`; el diseño no tiene fórmulas propias):
 
@@ -351,7 +351,7 @@ Búsqueda (cada solución la aprueba `combined_footing_checks`; el diseño no ti
    `placement_case` (o, sin él, en el de servicio sin sismo de mayor carga), con los momentos y los cortantes llevados a
    la base (h + pedestal): en ese caso la presión queda uniforme. Si un voladizo máximo
    lo impide, la base se corre lo necesario y queda excéntrica.
-2. **Largo:** el menor que cubre las dos columnas, al paso de la planta; luego los mayores (el primero con solución y dos
+2. **Largo:** el menor que cubre las columnas, al paso de la planta; luego los mayores (el primero con solución y dos
    más). **Ancho:** el menor, al paso, que cumple presión, contacto, deslizamiento y volcamiento.
 3. **Espesor:** el menor con solución, por bisección, y los mayores mientras el costo del concreto solo no alcance el
    mejor.
@@ -582,13 +582,13 @@ del peso y del costo; las cotas de las patas son las B y C de la cartilla.
   vuelta completa, 135° pata inclinada) y sus dimensiones A, B y C y la longitud de corte en metros (la memoria y
   `cartilla.csv` siguen en mm).
 
-**Planta de localización (D-130).** Si alguna zapata tiene `location` (en la combinada, sus dos columnas), el dibujo
+**Planta de localización (D-130).** Si alguna zapata tiene `location` (en la combinada, todas sus columnas), el dibujo
 agrega el elemento `localizacion`, que va en el SVG, el DXF y el modelo de dibujo pero no en la memoria:
 
 - **Una planta por nivel** (`localizacion_<nivel>.svg`), en ejes globales.
   - Cada zapata aislada se dibuja a escala, centrada en su nudo menos el desplazamiento de su columna, con la
     columna, el tipo (`typology`) y el nudo.
-  - La combinada se ubica por sus dos columnas: el centro de la base es el promedio de lo que da cada una. Si
+  - La combinada se ubica por sus columnas: el centro de la base es el promedio de lo que da cada una. Si
     difieren en más de 10 mm (la distancia de ETABS no cuadra con la declarada), el plano lo avisa.
 - **El cuadro de tipologías** (`localizacion_cuadro_tipologias.svg`): tipo, lx × ly × h, mallas inferior y superior en
   ejes globales, y cantidad.
@@ -649,7 +649,7 @@ transversal de la viga de cimentación, D-103) y las verificaciones, cada
 una con su `case`, su `z [mm]` (posición a lo largo de la viga desde su borde negativo, o en la franja desde el borde
 negativo de la dirección secundaria, en ejes declarados; nula en las demás) y en `note` la sección, la franja o la
 columna. Su memoria separa la dirección principal (flexión con los momentos de Wood-Armer y cortante, D-118; en la T, también
-la torsión de vigas del alma, D-088) de la secundaria (franjas o aletas) y trae la planta de presiones con las dos columnas y la tabla de esfuerzos de punzonamiento en cada esquina.
+la torsión de vigas del alma, D-088) de la secundaria (franjas o aletas) y trae la planta de presiones con las columnas y la tabla de esfuerzos de punzonamiento en cada esquina.
 
 ## Verificaciones de zapatas
 

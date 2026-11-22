@@ -15,9 +15,10 @@ from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.checks import COMBINED_STRUCTURAL
-from structurelab_rc.domain.footing.combined_beam import beam_case, long_beam_checks, two_way_warning
+from structurelab_rc.domain.footing.combined_beam import beam_case, long_beam_checks, moment_sections, two_way_warning
 from structurelab_rc.domain.footing.combined_columns import (
     column_checks,
+    punching_groups,
     strip_demands,
     strip_limits,
     strip_member,
@@ -166,6 +167,8 @@ def _where(check: Check) -> str:
     """Columna o franja de un check de V3J.3 (la nota empieza con ella); el desarrollo ya la lleva en el nombre."""
     if check.name.startswith("Desarrollo") or not check.note.startswith(("Franja", "Columna")):
         return ""
+    if check.note.startswith("Columnas"):  # perímetro común: "Columnas C1, C2 y C3 (perimetro comun)" (D-163)
+        return check.note.split(")")[0] + ")"
     return check.note.split(",")[0].split(":")[0].split(";")[0]
 
 
@@ -655,3 +658,62 @@ def test_section_at_depth_converges_keeps_the_last_depth_or_falls_back_to_geomet
     assert section_at_depth(1000.0, -1.0, lambda _: next(steps), 700.0) == pytest.approx(350.0)  # cara: 650; luego sin d
     swing = iter([500.0, *([600.0, 500.0] * 20)])
     assert section_at_depth(1000.0, 1.0, lambda _: next(swing), 700.0) == pytest.approx(1700.0)  # oscila: la geométrica
+
+
+def _three_columns(spacing: float = 4000.0) -> dict[str, Any]:
+    """El ejemplo con una tercera columna (D-163): C1, C2 y C3 a lo largo de X, a spacing entre ejes."""
+    data: dict[str, Any] = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    footing = data["combined_footings"][0]
+    first, second = footing["columns"]
+    third = {**first, "id": "C3"}
+    first["x"], second["x"], third["x"] = -spacing, 0.0, spacing
+    second["y"] = 0.0
+    second.pop("band_top", None)
+    footing["columns"] = [first, second, third]
+    footing["lx"] = 2 * spacing + 1500.0
+    return data
+
+
+def test_three_columns_give_two_interior_spans_and_a_strip_each() -> None:
+    """D-163: con tres columnas la viga tiene dos tramos interiores, rotulados con el par que los limita, y cada columna
+    su franja; el aviso de dos direcciones nombra el tramo interior más corto."""
+    footing = CombinedFooting.model_validate(_three_columns()["combined_footings"][0])
+    oracle = _oracle("nsr_10", "derived_combined_columns")
+    basis = Basis(PROFILES["nsr-10"], Materials.model_validate(oracle["materials"]), BARS, oracle["seismic_level"])
+    soil = Soil.model_validate(oracle["soil"])
+    cases, _ = combined_factored_cases(footing, soil)
+    pressure, loads = cases[0]
+    labels = {section.label for section in moment_sections(beam_case(footing, soil, pressure, loads))}
+    assert {"entre columnas C1 y C2, V = 0", "entre columnas C2 y C3, V = 0"} <= labels
+    strips = {check.note.split(",")[0] for check in column_checks(basis, footing, soil, cases) if check.note.startswith("Franja")}
+    assert strips == {f"Franja transversal de la columna C{index}" for index in (1, 2, 3)}
+    wide = CombinedFooting.model_validate({**_three_columns()["combined_footings"][0], "ly": 3800.0})
+    warning = two_way_warning(wide)
+    assert warning is not None and warning.span == "entre columnas C1 y C2"
+    assert warning.clear_span == pytest.approx(4000.0 - 250.0 - 275.0)
+
+
+def test_chained_punching_perimeters_make_one_group_and_strips_meet_halfway() -> None:
+    """D-163: si los perímetros de C1 y C2 y los de C2 y C3 se traslapan, el perímetro común es uno, el de las tres; las
+    franjas que se montan terminan en el punto medio entre las caras enfrentadas."""
+    footing = CombinedFooting.model_validate(_three_columns(800.0)["combined_footings"][0])
+    assert punching_groups(footing, 650.0) == [[0, 1, 2]]
+    first, second = footing.columns[0], footing.columns[1]
+    middle = ((first.x + first.cx / 2) + (second.x - second.cx / 2)) / 2
+    assert strip_limits(footing, first, 650.0)[1] == pytest.approx(middle)
+    assert strip_limits(footing, second, 650.0)[0] == pytest.approx(middle)
+    apart = CombinedFooting.model_validate(_three_columns()["combined_footings"][0])
+    assert punching_groups(apart, 650.0) == []
+    assert strip_limits(apart, apart.columns[0], 650.0)[1] == pytest.approx(apart.columns[0].x + 250.0 + 325.0)
+
+
+def test_neighbouring_columns_must_not_overlap_and_share_cases() -> None:
+    """D-163: las columnas se validan por pares vecinos a lo largo de la viga y todas deben tener los mismos casos."""
+    footing = _three_columns()["combined_footings"][0]
+    footing["columns"][2]["x"] = 300.0
+    with pytest.raises(ValidationError, match="se traslapan"):
+        CombinedFooting.model_validate(footing)
+    footing = _three_columns()["combined_footings"][0]
+    footing["columns"][2]["loads"] = footing["columns"][2]["loads"][:-1]
+    with pytest.raises(ValidationError, match="mismos casos de carga"):
+        CombinedFooting.model_validate(footing)

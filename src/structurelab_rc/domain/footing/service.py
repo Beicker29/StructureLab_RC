@@ -87,7 +87,7 @@ def service_checks(profile: Profile, footing: Footing, soil: Soil) -> list[Check
 
 
 def combined_service_checks(profile: Profile, footing: CombinedFooting, soil: Soil) -> list[Check]:
-    """La misma revisión geotécnica para una zapata combinada (D-080), con la resultante de las dos columnas; la fuerza
+    """La misma revisión geotécnica para una zapata combinada (D-080), con la resultante de las columnas; la fuerza
     horizontal del deslizamiento es la suma de las dos."""
     cases = [loads for loads in footing.cases() if loads[0].kind == "service"]
     if not cases:

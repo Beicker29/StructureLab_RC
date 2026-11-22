@@ -18,7 +18,7 @@ from structurelab_rc.domain.footing.combined_columns import BEAM_SHEAR
 from structurelab_rc.domain.footing.combined_diagrams import Envelope
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis
 from structurelab_rc.domain.status import Status, aggregate
-from structurelab_rc.model.combined import CombinedColumn, CombinedFooting, beam_to_global
+from structurelab_rc.model.combined import COLUMNS, CombinedColumn, CombinedFooting, beam_to_global
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingBody, FootingLoad, RectangularBase, Soil
 from structurelab_rc.model.pile_cap import PileCap, PileCapSoil
 from structurelab_rc.model.project import Demands, Project
@@ -264,12 +264,16 @@ def _swapped_properties(properties: dict[str, float]) -> dict[str, float]:
     return out
 
 
-def _two_way(footing: CombinedFooting) -> dict[str, float] | None:
+def _two_way(footing: CombinedFooting) -> dict[str, float | str] | None:
     """B, ℓn y B/ℓn si la zapata es ancha para revisarla en una dirección (D-091); None si no."""
     warning = two_way_warning(footing)
     if warning is None:
         return None
-    return {"B [mm]": significant(warning.width), "ln [mm]": significant(warning.clear_span), "B/ln": significant(warning.ratio)}
+    found: dict[str, float | str] = {"B [mm]": significant(warning.width), "ln [mm]": significant(warning.clear_span),
+                                     "B/ln": significant(warning.ratio)}
+    if len(footing.columns) > COLUMNS:  # D-163: con más de dos columnas, el tramo que rige
+        found["tramo"] = warning.span
+    return found
 
 
 NEGATIVE_TRANSFER = "Transferencia de momento: parte negativa"

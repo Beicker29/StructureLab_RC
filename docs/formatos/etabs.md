@@ -62,7 +62,7 @@ obligatoria; sus cargas, de los Excel. El proyecto de diseño lleva cada par en 
 `y` y `location`, y su `combined_design` ya completo).
 
 Con una plantilla que trae el bloque `combined_design` (D-112), el importador genera el proyecto de diseño de una zapata
-combinada de dos columnas (ver [zapatas](zapatas.md), diseño de la zapata combinada): `columns[]` son exactamente dos, con
+combinada (ver [zapatas](zapatas.md), diseño de la zapata combinada): `columns[]` son dos o más (D-163), con
 `id`, `etabs_unique_name`, `cx`, `cy`, `x` e `y` (como en la plantilla de verificación de la combinada, sin `dowels` ni
 `band`, que propone el diseño; `x` e `y` con cualquier origen), `property_lines` opcional (los linderos de la columna,
 D-154; solo en el diseño) y `loads` solo con los tipos que `loads_source` toma de la plantilla. El Excel de
@@ -111,7 +111,7 @@ diferencias:
 | `combined_footings[].principal_direction` | texto | `x` (por defecto) o `y`: eje global de ETABS en que va la viga de la zapata combinada o en T invertida (D-094). La plantilla se escribe en ejes globales (con `y`, `ly` es la dimensión paralela a la viga) y los Excel no se modifican: geometría y fuerzas pasan al proyecto tal cual y se rotan a los ejes de la viga al cargarlo. |
 | `combined_footings[].columns[].etabs_unique_name` | texto | Unique Name del nudo de ETABS del que salen las reacciones de la columna. |
 | `combined_footings[].loads_source` | objeto | `{"service": "etabs" o "json", "factored": "etabs" o "json"}` (por defecto `etabs` los dos): de dónde salen las cargas de cada tipo. Con `etabs`, de la tabla de ese tipo con las combinaciones del Excel de combinaciones; con `json`, de `columns[].loads` de la plantilla, con el formato del proyecto. |
-| `combined_footings[].columns[].loads` | lista | Solo los casos de los tipos que vienen de la plantilla; las dos columnas deben terminar con los mismos casos. |
+| `combined_footings[].columns[].loads` | lista | Solo los casos de los tipos que vienen de la plantilla; todas las columnas deben terminar con los mismos casos. |
 
 Cada zapata combinada de la plantilla es una zapata del proyecto (su `id` se conserva). Si ninguna zapata pide cargas de
 un tipo a ETABS, su Excel puede omitirse escribiendo `-` en su lugar:

@@ -214,7 +214,7 @@ def _check_drawing(detailing: DetailingSettings | None, drawing: DrawingSettings
 
 
 class CombinedDesign(DesignLimits):
-    """Límites del diseño de una zapata combinada de dos columnas (D-107). plan_max limita el largo y el ancho. Los
+    """Límites del diseño de una zapata combinada (D-107). plan_max limita el largo y el ancho. Los
     linderos (medianería) se declaran en cada columna (property_lines, D-154); sin ellos, la base se centra en la
     resultante. placement_case es el caso de servicio sin sismo
     cuya resultante ubica la base (D-108); sin él, el de servicio sin sismo de mayor carga total. stirrup_bars son las
@@ -300,8 +300,8 @@ def side_limits(columns: Sequence[CombinedDesignColumn]) -> dict[Side, float]:
 
 
 class CombinedDesignProject(_Input):
-    """Proyecto de diseño de una zapata combinada rectangular de dos columnas (D-107): las columnas con sus posiciones y
-    sus cargas, la dirección principal (el eje global en que va la viga que las une) y el bloque combined_design."""
+    """Proyecto de diseño de una zapata combinada rectangular de dos o más columnas alineadas (D-107, D-163): las columnas
+    con sus posiciones y sus cargas, la dirección principal (el eje global en que va la viga que las une) y el bloque combined_design."""
 
     @model_validator(mode="before")
     @classmethod
@@ -318,7 +318,7 @@ class CombinedDesignProject(_Input):
     principal_direction: Literal["x", "y"] = "x"
     quantity: PositiveInt  # D-159: las veces que se construye; la cartilla se reporta por unidad y por las N unidades
     combined_design: CombinedDesign
-    columns: tuple[CombinedDesignColumn, ...] = Field(min_length=2, max_length=2)
+    columns: tuple[CombinedDesignColumn, ...] = Field(min_length=2)  # D-163: dos o más, alineadas
     detailing: DetailingSettings | None = None  # D-127: con él, el costo sale de la cartilla y el proyecto diseñado lo lleva
     drawing: DrawingSettings | None = None  # D-127: pasa al proyecto diseñado; requiere detailing (D-126)
 
@@ -332,13 +332,13 @@ def _combined_rules(project: CombinedDesignProject) -> None:
     """Las reglas propias del proyecto de la combinada: columnas distintas, los mismos casos en las dos, placement_case
     de servicio sin sismo (D-108) y casos mayorados."""
     _check_drawing(project.detailing, project.drawing)
-    first, second = project.columns
-    if first.id == second.id:
+    if len({column.id for column in project.columns}) != len(project.columns):
         raise ValueError("los identificadores de las columnas deben ser únicos")
     keys = [{(load.kind, load.case): (load.dead_factor, load.live_factor, load.seismic) for load in column.loads}
             for column in project.columns]
-    if any(len(own) != len(column.loads) for own, column in zip(keys, project.columns, strict=True)) or keys[0] != keys[1]:
-        raise ValueError("las dos columnas deben tener los mismos casos de carga, sin repetir, con los mismos factores y "
+    repeated = any(len(own) != len(column.loads) for own, column in zip(keys, project.columns, strict=True))
+    if repeated or any(own != keys[0] for own in keys[1:]):
+        raise ValueError("las columnas deben tener los mismos casos de carga, sin repetir, con los mismos factores y "
                          "la misma marca de sismo")
     chosen = project.combined_design.placement_case
     if chosen is not None:
@@ -351,11 +351,11 @@ def _combined_rules(project: CombinedDesignProject) -> None:
         raise ValueError("la ubicación de la base necesita un caso de servicio sin sismo (D+L, D-107)")
     if not any(kind == "factored" for kind, _ in keys[0]):
         raise ValueError("el diseño necesita casos mayorados")
-    for side, edge in side_limits(project.columns).items():  # los linderos dejan cubrir las dos columnas (D-154)
+    for side, edge in side_limits(project.columns).items():  # los linderos dejan cubrir las columnas (D-154)
         faces = [column.face(side) for column in project.columns]
         reach = max(faces) if side[0] == "+" else min(faces)
         if (side[0] == "+" and edge < reach - _TOUCH) or (side[0] == "-" and edge > reach + _TOUCH):
-            raise ValueError(f"el lindero {side} no deja cubrir las dos columnas: la base debe llegar a la cara {side} de cada una "
+            raise ValueError(f"el lindero {side} no deja cubrir las columnas: la base debe llegar a la cara {side} de cada una "
                              "(D-154)")
 
 

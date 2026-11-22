@@ -33,7 +33,7 @@ def structural_checks(basis: Basis, footing: Footing, soil: Soil) -> list[Check]
 
 
 def combined_footing_checks(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Check]:
-    """Zapata combinada (D-080): la revisión geotécnica con la resultante de las dos columnas y, con los casos mayorados,
+    """Zapata combinada (D-080): la revisión geotécnica con la resultante de las columnas y, con los casos mayorados,
     el equilibrio, la viga en la dirección principal (V3J.2, D-081) y, por columna, el punzonamiento, la franja de la
     dirección secundaria, el desarrollo, el aplastamiento y los pasadores (V3J.3, D-082). Se calcula en ejes de la viga
     y se devuelve en los ejes declarados (D-101)."""

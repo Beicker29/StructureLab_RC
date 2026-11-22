@@ -13,7 +13,7 @@ título para el DXF en drawing.titles ("ZC_m h=0.80", D-150).
 
 Planta de localización (D-130): una por nivel de cimentación, en ejes globales, con cada zapata a escala en su nudo, su
 columna, el rótulo del tipo y el nudo de ETABS, y el cuadro de tipologías. La zapata aislada se ubica por su columna
-(location menos el desplazamiento de la columna); la combinada, por sus dos columnas: el centro de la base es el promedio
+(location menos el desplazamiento de la columna); la combinada, por sus columnas: el centro de la base es el promedio
 de lo que da cada una, y si difieren se avisa en el plano.
 """
 
@@ -331,7 +331,7 @@ def _file_name(story: str) -> str:
 def location_views(drawing: Drawing, footings: Sequence[FootingBody], combined: Sequence[CombinedFooting],
                    minimum: float | None = None) -> list[View]:
     """Plantas de localización por nivel y cuadro de tipologías (D-130), con las zapatas que tienen ubicación; [] si
-    ninguna la tiene. Una combinada entra si sus dos columnas la tienen. minimum: la separación libre mínima entre
+    ninguna la tiene. Una combinada entra si todas sus columnas la tienen. minimum: la separación libre mínima entre
     zapatas (min_clear_spacing, D-156); el plano avisa los pares más cercanos y los traslapados."""
     placed = [_isolated_place(drawing, footing) for footing in footings if footing.location is not None]
     placed += [_combined_place(drawing, footing) for footing in combined if all(column.location is not None for column in footing.columns)]

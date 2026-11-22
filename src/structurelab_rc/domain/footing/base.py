@@ -81,7 +81,7 @@ def column_vertical(footing: CombinedFooting, soil: Soil, column: CombinedColumn
 def combined_resultant(footing: CombinedFooting, soil: Soil, loads: tuple[FootingLoad, ...]) -> BaseResultant:
     """Resultante de una zapata combinada (D-080) para un caso: las fuerzas de cada columna en su eje (x, y) a la altura
     h + pedestal, su pedestal y el área que ocupa (sin relleno ni sobrecarga), y la zapata, el relleno y las sobrecargas
-    en el centroide; los factores de carga muerta y viva son los del caso, iguales en las dos columnas."""
+    en el centroide; los factores de carga muerta y viva son los del caso, iguales en todas las columnas."""
     case = loads[0]
     height = footing.total_height + footing.pedestal_height
     slab = soil.unit_weight_concrete * footing.area * footing.h
@@ -101,7 +101,7 @@ def combined_resultant(footing: CombinedFooting, soil: Soil, loads: tuple[Footin
 
 
 def combined_load(loads: tuple[FootingLoad, ...]) -> FootingLoad:
-    """Las cargas de las dos columnas de un caso sumadas: el nombre, los factores y la marca de sismo del caso, y la
+    """Las cargas de las columnas de un caso sumadas: el nombre, los factores y la marca de sismo del caso, y la
     fuerza horizontal total (para el deslizamiento)."""
     first = loads[0]
     return FootingLoad.model_construct(case=first.case, kind=first.kind, dead_factor=first.dead_factor,

@@ -613,7 +613,7 @@ def design_pile_caps_file(path: Path) -> tuple[dict[str, Any] | None, pile_cap_d
 def design_combined_file(
     path: Path, workers: int = 1,
 ) -> tuple[dict[str, Any] | None, combined_design.CombinedDesignResult | None, Check]:
-    """Diseño de una zapata combinada de dos columnas (D-107): el proyecto de verificación con la zapata de menor costo,
+    """Diseño de una zapata combinada (D-107, D-163): el proyecto de verificación con la zapata de menor costo,
     el resultado de la búsqueda (con cada f'c) y la validación; sin solución, un Check con el motivo de cada f'c. workers
     reparte los f'c entre procesos (no cambia el resultado)."""
     try:
