@@ -12,13 +12,13 @@ from pydantic import ValidationError
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing import combined
-from structurelab_rc.design.footing.mixed import design_with_pairs, designed_with_pairs, pair_costs
+from structurelab_rc.design.footing.mixed import combined_part, design_with_pairs, designed_with_pairs, pair_costs
 from structurelab_rc.design.footing.typologies import design_typologies
 from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.domain.footing.drawing import location_views
 from structurelab_rc.domain.status import Status
 from structurelab_rc.drawing.model import Drawing, Text
-from structurelab_rc.engine import import_etabs_footings
+from structurelab_rc.engine import import_etabs_footings, run_plan, typology_curve_file
 from structurelab_rc.model.design import FootingDesignProject, pair_project
 from structurelab_rc.model.loader import load_project
 from structurelab_rc.model.template import EtabsFootingDesignTemplate
@@ -183,3 +183,37 @@ def test_design_with_only_combined_footings() -> None:
     assert result.fc is not None and result.typologies == () and result.cost == 0.0 and len(result.combined) == 1
     designed = designed_with_pairs(ctx, result)
     assert designed["footings"] == [] and len(designed["combined_footings"]) == 1
+
+
+def test_curve_adds_the_combined_cost_and_matches_the_design(tmp_path: Path) -> None:
+    """D-165 (opción del usuario): en la curva costo-N, N varía solo las tipologías aisladas; las combinadas se diseñan
+    una vez y suman su costo constante en el f'c de cada punto. El punto N = 2 cuesta lo mismo que el diseño por
+    tipologías con N = 2 (aisladas más combinada)."""
+    project = _imported()
+    source = tmp_path / "curva.json"
+    source.write_text(json.dumps(project), encoding="utf-8")
+    report, check = typology_curve_file(source, tmp_path / "salida", [1, 2], workers=1)
+    assert report is not None, check
+    points = report.data["points"]
+    assert report.data["combined"] == {"pairs": 1, "types": None}
+    assert all(point["cost"] == pytest.approx(point["isolated_cost"] + point["combined_cost"]) for point in points)
+    assert points[0]["combined_cost"] == points[1]["combined_cost"] > 0
+    design = design_with_pairs(_context({**project, "design": {**project["design"], "typologies": 2}}))
+    assert points[1]["cost"] == pytest.approx(design.cost + design.combined_cost, rel=1e-9)
+    assert "costo_combinadas" in (tmp_path / "salida" / "curva.csv").read_text(encoding="utf-8")
+
+
+def test_etabs_template_with_curve_runs_the_curve() -> None:
+    """D-165: una plantilla de diseño de ETABS con bloque curve es una curva costo-N desde ETABS."""
+    for name in ("curva_tipologias_aisladas_etabs.json", "curva_tipologias_combinadas_etabs.json"):
+        assert run_plan(frozen("nsr_10", "zapatas", name)).kind == "etabs_curve"
+
+
+def test_pending_combined_shapes_can_be_declared_but_not_designed() -> None:
+    """D-165: la trapezoidal y la de planta en T o L se pueden declarar en combined_design.shape (D-164), pero el diseño
+    responde, antes de diseñar, que no está implementado."""
+    project = _imported()
+    for shape, word in (("trapezoid", "trapezoidal"), ("stepped", "planta T o L")):
+        pairs = [{**pair, "combined_design": {**pair["combined_design"], "shape": shape}} for pair in project["combined_footings"]]
+        part = combined_part(_context({**project, "combined_footings": pairs}))
+        assert isinstance(part, str) and word in part and "no esta implementado" in part

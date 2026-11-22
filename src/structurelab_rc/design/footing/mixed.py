@@ -268,25 +268,56 @@ def _chosen(pairs: tuple[PairDesign, ...], fc: float, groupings: dict[float, Gro
     return tuple(typed[pair.pair.id] for pair in pairs)
 
 
-def design_with_pairs(ctx: Context, workers: int = 1) -> DesignResult:
-    """Las tipologías aisladas y las combinadas (una por par o en tipos, D-157) con un solo f'c, el de menor costo total;
-    el resultado lleva las combinadas (combined) y su costo (combined_cost)."""
+@dataclass(frozen=True)
+class CombinedPart:
+    """Las combinadas del diseño por tipologías, diseñadas una vez (D-153, D-157): los pares, su costo en cada f'c
+    (infinito si alguno no tiene solución con él) y, con combined_typologies, sus tipos en cada f'c."""
+
+    pairs: tuple[PairDesign, ...]
+    costs: dict[float, float]
+    groupings: dict[float, Grouping | None]
+
+    def chosen(self, fc: float) -> tuple[PairDesign, ...]:
+        """Cada par con la solución de su tipo (o la suya) en el f'c dado."""
+        return _chosen(self.pairs, fc, self.groupings)
+
+
+def combined_part(ctx: Context, workers: int = 1) -> CombinedPart | str:
+    """Las combinadas del proyecto, que no dependen de las tipologías aisladas: la usan el diseño por tipologías y la
+    curva costo–N (D-165, en la curva su costo es constante en cada f'c). Devuelve el error si hay más familias que
+    combined_typologies (antes de diseñar)."""
     count = ctx.design.combined_typologies
+    shapes = {own.design.shape for own in pair_contexts(ctx)}
+    pending = sorted(combined.PENDING_SHAPES[shape] for shape in shapes if shape in combined.PENDING_SHAPES)
+    if pending:  # la forma se declara, pero su diseño no está implementado (D-164, D-165)
+        return "; ".join(pending)
     if count is not None:
         kinds = len({family_key(own) for own in pair_contexts(ctx)})  # antes de diseñar: las familias no dependen del diseño
         if kinds > count:
-            return DesignResult(None, (), math.inf, f"hay {kinds} familias de pares compatibles y combined_typologies = {count}: "
-                                                    "cada familia necesita al menos un tipo (D-157)", method=ctx.design.method)
+            return (f"hay {kinds} familias de pares compatibles y combined_typologies = {count}: cada familia necesita al menos "
+                    "un tipo (D-157)")
     pairs = design_pairs(ctx, workers)
-    if not pairs:
-        return design_typologies(ctx, workers)
     groupings: dict[float, Grouping | None] = {}
+    if not pairs:
+        return CombinedPart(pairs, {}, groupings)
     if count is None:
         costs = pair_costs(pairs, ctx.design.fc_options)
     else:
         designed = group_designs(pairs, ctx.design.fc_options, count, workers)
         groupings = {fc: grouping(pairs, fc, count, designed) for fc in ctx.design.fc_options}
         costs = {fc: math.inf if found is None else found.cost for fc, found in groupings.items()}
+    return CombinedPart(pairs, costs, groupings)
+
+
+def design_with_pairs(ctx: Context, workers: int = 1) -> DesignResult:
+    """Las tipologías aisladas y las combinadas (una por par o en tipos, D-157) con un solo f'c, el de menor costo total;
+    el resultado lleva las combinadas (combined) y su costo (combined_cost)."""
+    part = combined_part(ctx, workers)
+    if isinstance(part, str):
+        return DesignResult(None, (), math.inf, part, method=ctx.design.method)
+    pairs, costs, groupings = part.pairs, part.costs, part.groupings
+    if not pairs:
+        return design_typologies(ctx, workers)
     if not ctx.project.columns:  # solo combinadas (D-156): el f'c de menor costo de las combinadas
         return _only_pairs(ctx, pairs, costs, groupings)
     result = design_typologies(ctx, workers, costs)

@@ -368,7 +368,7 @@ def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
         "etabs_combined_design": lambda path: _design_combined(path, out, workers),
         "etabs_pile_cap_design": lambda path: _design_pile_caps(path, out),
     }
-    imported = out / ("diseno.json" if plan.kind in designs else "proyecto.json")
+    imported = out / ("diseno.json" if plan.kind in designs or plan.kind == "etabs_curve" else "proyecto.json")
     if plan.kind == "etabs_beams":
         assert plan.workbook is not None
         code = _import_etabs(plan.workbook, plan.path, imported)
@@ -377,6 +377,8 @@ def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
                                       (plan.locations, plan.combinations))
     if code:
         return code
+    if plan.kind == "etabs_curve":  # la curva costo-N con los pares de ETABS (D-165)
+        return _typology_curve(imported, out, None, workers, None)
     if plan.kind in designs:  # diseña y verifica el proyecto diseñado
         return designs[plan.kind](imported) or _report(out / "proyecto.json", out, full)
     return _report(imported, out, full)

@@ -576,19 +576,28 @@ class CurvePoint:
     result: DesignResult
     saving: float | None
     rises: bool
+    combined_cost: float = 0.0  # el de las combinadas en el f'c del punto (D-165): constante en cada f'c
+
+    @property
+    def total(self) -> float:
+        """El costo de la cimentación: las tipologías aisladas más las combinadas."""
+        return self.result.cost + self.combined_cost
 
 
-def typology_curve(ctx: Context, counts: Sequence[int], workers: int = 1) -> tuple[CurvePoint, ...]:
+def typology_curve(ctx: Context, counts: Sequence[int], workers: int = 1,
+                   extra: Mapping[float, float] | None = None) -> tuple[CurvePoint, ...]:
     """Curva costo–N (D-078): el diseño con cada N de counts (en orden creciente). Lo que no depende de N se calcula una
     vez por f'c y se conserva: con milp_iter, el catálogo y su cobertura (que siguen creciendo entre valores de N); con
-    milp y dp, la tabla de tramos. Determinista: la misma curva da el mismo resultado con cualquier número de procesos."""
+    milp y dp, la tabla de tramos. Determinista: la misma curva da el mismo resultado con cualquier número de procesos.
+    extra: el costo de las combinadas en cada f'c (D-165, opción del usuario): N varía solo las aisladas, las combinadas
+    suman su costo constante y entran en la elección del f'c y en el ahorro."""
     if workers <= 1:
-        return _curve(ctx, sorted(counts), lambda tasks: [_run(ctx, task) for task in tasks])
+        return _curve(ctx, sorted(counts), lambda tasks: [_run(ctx, task) for task in tasks], extra)
     with ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(ctx.project, tuple(ctx.bars))) as pool:
-        return _curve(ctx, sorted(counts), lambda tasks: _in_pool(pool, tasks, workers))
+        return _curve(ctx, sorted(counts), lambda tasks: _in_pool(pool, tasks, workers), extra)
 
 
-def _curve(ctx: Context, counts: Sequence[int], run: Runner) -> tuple[CurvePoint, ...]:
+def _curve(ctx: Context, counts: Sequence[int], run: Runner, extra: Mapping[float, float] | None = None) -> tuple[CurvePoint, ...]:
     cache: dict[float, _Catalog | _Tables | str] = {}
 
     def solve(ctx_n: Context, fc: float, run: Runner) -> _FcSolution | str:
@@ -599,15 +608,18 @@ def _curve(ctx: Context, counts: Sequence[int], run: Runner) -> tuple[CurvePoint
             return state
         return _iterate(ctx_n, state, run) if isinstance(state, _Catalog) else _from_tables(ctx_n, state, run)
 
+    added = extra or {}
     points: list[CurvePoint] = []
     for count in counts:
         project = ctx.project.model_copy(update={"design": ctx.design.model_copy(update={"typologies": count})})
-        result = _design(Context(project, ctx.profile, ctx.bars), run, solve)
-        previous = points[-1].result.cost if points and points[-1].result.fc is not None else None
+        result = _design(Context(project, ctx.profile, ctx.bars), run, solve, extra)
+        combined = 0.0 if result.fc is None else added.get(result.fc, 0.0)
+        previous = points[-1].total if points and points[-1].result.fc is not None else None
+        total = result.cost + combined
         if result.fc is None or previous is None:
-            points.append(CurvePoint(count, result, None, False))
+            points.append(CurvePoint(count, result, None, False, combined))
         else:
-            points.append(CurvePoint(count, result, previous - result.cost, result.cost > previous + 1e-6))
+            points.append(CurvePoint(count, result, previous - total, total > previous + 1e-6, combined))
     return tuple(points)
 
 

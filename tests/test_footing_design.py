@@ -521,7 +521,7 @@ def test_the_curve_is_the_same_with_any_number_of_workers() -> None:
 
 def test_saving_and_rising_cost_are_marked(monkeypatch: pytest.MonkeyPatch) -> None:
     costs = iter([10.0, 8.0, 9.0])
-    monkeypatch.setattr(typologies_impl, "_design", lambda ctx, run, solve: DesignResult(21.0, (), next(costs)))
+    monkeypatch.setattr(typologies_impl, "_design", lambda ctx, run, solve, extra=None: DesignResult(21.0, (), next(costs)))
     points = typology_curve(_context(_curve_data("milp_iter")), [3, 1, 2])
     assert [(point.count, point.saving, point.rises) for point in points] == [(1, None, False), (2, 2.0, False), (3, -1.0, True)]
 

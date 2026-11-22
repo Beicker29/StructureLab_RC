@@ -25,20 +25,26 @@ def _status(result: DesignResult) -> str | None:
     return None if result.milp is None else result.milp.status
 
 
-def curve_data(points: Sequence[CurvePoint], method: str, seconds: float) -> dict[str, Any]:
+def curve_data(points: Sequence[CurvePoint], method: str, seconds: float,
+               combined: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Los puntos de la curva. Con combinadas (D-165), combined = {"pairs": pares, "types": tipos o None}: el costo de cada
+    punto es el de la cimentación (aisladas más combinadas) y cada fila separa los dos."""
     rows = []
-    reference = next((point.result.cost for point in points if point.result.fc is not None), None)  # el menor N con solución
+    reference = next((point.total for point in points if point.result.fc is not None), None)  # el menor N con solución
     for point in points:
         result = point.result
         status = _status(result)
-        total = None if reference is None or result.fc is None else reference - result.cost
+        total = None if reference is None or result.fc is None else reference - point.total
+        costs = ({"isolated_cost": None if result.fc is None else round(result.cost, 2),
+                  "combined_cost": None if result.fc is None else round(point.combined_cost, 2)} if combined else {})
         rows.append({
             "N": point.count,
             "fc [MPa]": result.fc,
-            "cost": None if result.fc is None else round(result.cost, 2),
+            "cost": None if result.fc is None else round(point.total, 2),
+            **costs,
             "saving": None if point.saving is None else round(point.saving, 2),
-            "saving [%]": None if point.saving is None or not point.saving + result.cost else
-            round(100 * point.saving / (point.saving + result.cost), 3),
+            "saving [%]": None if point.saving is None or not point.saving + point.total else
+            round(100 * point.saving / (point.saving + point.total), 3),
             "saving_from_first": None if total is None else round(total, 2),
             "saving_from_first [%]": None if total is None or reference is None or not reference else
             round(100 * total / reference, 3),
@@ -49,16 +55,19 @@ def curve_data(points: Sequence[CurvePoint], method: str, seconds: float) -> dic
             "duplicates": [{"typologies": list(group.typologies), "at_limit": list(group.at_limit)} for group in result.duplicates],
             **({"failure": result.failure} if result.failure else {}),
         })
-    return {"method": method, "seconds": round(seconds, 1), "points": rows}
+    return {"method": method, "seconds": round(seconds, 1), **({"combined": combined} if combined else {}), "points": rows}
 
 
 def curve_csv(data: dict[str, Any]) -> str:
-    header = "N;fc_MPa;costo;ahorro;ahorro_pct;ahorro_desde_N1;ahorro_desde_N1_pct;sube;certificado;distintas;repetidas"
+    split = "combined" in data  # con combinadas, el costo de las aisladas y el de las combinadas (D-165)
+    header = "N;fc_MPa;costo;" + ("costo_aisladas;costo_combinadas;" if split else "") + (
+        "ahorro;ahorro_pct;ahorro_desde_N1;ahorro_desde_N1_pct;sube;certificado;distintas;repetidas")
     lines = [header]
     for row in data["points"]:
         repeats = " | ".join("=".join(group["typologies"]) + (f" ({','.join(group['at_limit'])})" if group["at_limit"] else "")
                              for group in row["duplicates"])
-        values = [row["N"], row["fc [MPa]"], row["cost"], row["saving"], row["saving [%]"], row["saving_from_first"],
+        values = [row["N"], row["fc [MPa]"], row["cost"], *([row["isolated_cost"], row["combined_cost"]] if split else []),
+                  row["saving"], row["saving [%]"], row["saving_from_first"],
                   row["saving_from_first [%]"], row["rises"], row["certified"], row["distinct_count"], repeats]
         lines.append(";".join("" if value is None else str(value) for value in values))
     return "\n".join(lines) + "\n"
@@ -118,6 +127,7 @@ def curve_svg(data: dict[str, Any]) -> str:
 
 def curve_document(data: dict[str, Any], project: dict[str, str], svg_path: str) -> list[dict[str, Any]]:
     """Bloques de la memoria de la curva (los mismos que dibujan memoria.txt y memoria.pdf)."""
+    combined = data.get("combined")
     rows = []
     for row in data["points"]:
         repeats = "; ".join(" = ".join(group["typologies"]) + (f" (límite {', '.join(group['at_limit'])})" if group["at_limit"] else "")
@@ -125,6 +135,8 @@ def curve_document(data: dict[str, Any], project: dict[str, str], svg_path: str)
         certified = {True: "sí", False: "no", None: "–"}[row["certified"]]
         rows.append([str(row["N"]), "–" if row["fc [MPa]"] is None else f"{row['fc [MPa]']:g}",
                      "sin solución" if row["cost"] is None else _money(row["cost"]),
+                     *(["–" if row["isolated_cost"] is None else _money(row["isolated_cost"]),
+                        "–" if row["combined_cost"] is None else _money(row["combined_cost"])] if combined else []),
                      "–" if row["saving"] is None else _money(row["saving"]),
                      "–" if row["saving [%]"] is None else f"{row['saving [%]']:.2f} %",
                      "–" if not row["saving_from_first"] else _money(row["saving_from_first"]),
@@ -134,10 +146,12 @@ def curve_document(data: dict[str, Any], project: dict[str, str], svg_path: str)
     blocks: list[dict[str, Any]] = [
         {"kind": "h1", "text": "Curva costo–N del diseño por tipologías"},
         {"kind": "kv", "items": [("Proyecto", project["description"]), ("Perfil", project["profile"]),
-                                 ("Método", data["method"]), ("Tiempo total", f"{data['seconds']:.0f} s")]},
+                                 ("Método", data["method"]), ("Tiempo total", f"{data['seconds']:.0f} s"),
+                                 *([("Zapatas combinadas", _combined_text(combined))] if combined else [])]},
         {"kind": "image", "path": svg_path, "caption": "Costo total frente al número de tipologías", "aspect": _HEIGHT / _WIDTH},
         {"kind": "h2", "text": "Puntos de la curva"},
-        {"kind": "table", "headers": ["N", "f'c (MPa)", "Costo total", "Ahorro frente a N − 1", "Ahorro (%)",
+        {"kind": "table", "headers": ["N", "f'c (MPa)", "Costo total", *(["Aisladas", "Combinadas"] if combined else []),
+                                      "Ahorro frente a N − 1", "Ahorro (%)",
                                       f"Ahorro frente a N = {data['points'][0]['N']}", "Ahorro acumulado (%)", "Sube",
                                       "Óptimo certificado", "Distintas", "Repetidas"], "rows": rows},
         {"kind": "h2", "text": "Lectura de la curva"},
@@ -148,6 +162,10 @@ def curve_document(data: dict[str, Any], project: dict[str, str], svg_path: str)
                                  "pequeño; una repetida en plan_max o h_max indica que el límite de diseño, no la demanda, fija "
                                  "la tipología (D-074)."},
     ]
+    if combined:
+        blocks.append({"kind": "note", "text": "N es el número de tipologías de las zapatas aisladas; las combinadas se diseñan "
+                                               "una vez, con sus pares y combined_typologies declarados, y suman su costo en el "
+                                               "f'c de cada punto (decisión del usuario, D-165)."})
     rises = [str(row["N"]) for row in data["points"] if row["rises"]]
     if rises:
         blocks.append({"kind": "alert", "text": f"El costo sube respecto al punto anterior en N = {', '.join(rises)}: con N "
@@ -156,3 +174,10 @@ def curve_document(data: dict[str, Any], project: dict[str, str], svg_path: str)
     if uncertified:
         blocks.append({"kind": "alert", "text": f"Óptimo sin certificar (límite de tiempo del MILP) en N = {', '.join(uncertified)}."})
     return blocks
+
+
+def _combined_text(combined: dict[str, Any]) -> str:
+    """Los pares y sus tipos, para la memoria de la curva (D-165)."""
+    types = combined.get("types")
+    grouped = f" en {types} tipos (combined_typologies)" if types else ", una por par"
+    return f"{combined['pairs']} pares{grouped}; su costo es constante en cada f'c"

@@ -53,6 +53,7 @@ van en zapata combinada; los demás nudos siguen por tipologías aisladas:
 | `combined_pairs[].property_lines` | mm | Opcional (D-154): los linderos de cada columna del par, por Unique Name: `{"276": {"+y": 0}, "288": {"-x": 300}}`, como `property_lines` de las columnas del diseño de la combinada. |
 | `combined_design` | objeto | Obligatorio con pares: el bloque del diseño de la combinada (D-107, D-110, D-113) común a todos los pares, sin `fc_options` ni `prices`, que se toman de `design` (un solo f'c para toda la cimentación). |
 | `min_clear_spacing` | mm | Opcional (D-156): separación libre mínima entre zapatas vecinas; pasa al proyecto, que avisa los pares más cercanos con sus nudos. También en la plantilla de verificación. |
+| `curve` | objeto | Opcional (D-165): `{"n": "1-6"}`. Con él, `run` corre la curva costo–N desde ETABS en lugar del diseño: N es el número de tipologías de las aisladas y los pares de `combined_pairs` suman su costo (ver [zapatas](zapatas.md), curva costo–N). |
 
 Los nudos de las zapatas aisladas son los de `columns[]` que no están en un par; cualquiera de los dos grupos puede quedar
 vacío (todos los nudos en pares, o ningún par), D-156.

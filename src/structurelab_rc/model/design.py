@@ -221,12 +221,14 @@ class CombinedDesign(DesignLimits):
     barras permitidas para estribos de la viga larga (D-110): con ellas, el cortante y la torsión pueden tomarlos estribos
     en lugar de un espesor mayor; sin ellas no se proponen estribos. shape = "inverted_t" diseña una T invertida (D-113):
     h_min, h_step y h_max son los del espesor de la zarpa; beam_h_* los del alto total de la viga, y el alma parte de la
-    columna más ancha más web_margin a cada lado y crece de a web_step hasta web_max (D-136)."""
+    columna más ancha más web_margin a cada lado y crece de a web_step hasta web_max (D-136). shape = "trapezoid" o
+    "stepped" (planta en T o L, D-164) se puede declarar, pero el diseño responde que no está implementado (D-165)."""
 
     min_steel_exception: bool  # D-123: si el diseño y la verificación admiten la excepción de 4/3 del As,min
     placement_case: str | None = Field(None, min_length=1)
     stirrup_bars: tuple[str, ...] = ()  # D-110: barras para estribos de la viga larga; sin ellas, no se proponen
-    shape: Literal["rectangular", "inverted_t"] = "rectangular"  # D-113
+    # D-113; trapezoid y stepped (T o L, D-164) se declaran, pero su diseño todavía no está implementado (D-165)
+    shape: Literal["rectangular", "inverted_t", "trapezoid", "stepped"] = "rectangular"
     web_margin: NonNegativeFloat | None = None  # T invertida: margen del alma a cada lado de la columna más ancha, mm
     web_step: PositiveFloat | None = None  # T invertida: paso del ancho del alma, mm
     web_max: PositiveFloat | None = None  # T invertida: ancho máximo del alma que prueba la búsqueda, mm (D-136)

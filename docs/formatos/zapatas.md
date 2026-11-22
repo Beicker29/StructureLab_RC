@@ -367,6 +367,17 @@ cobertura, que siguen creciendo (un punto puede salir igual o más barato que el
 `dp`, la tabla de tramos (cada punto es igual al diseño suelto). El valor de `design.typologies` del proyecto se ignora.
 El diseño del N elegido se obtiene con `design-footings` y se reverifica con `report`.
 
+**Con zapatas combinadas (D-165).** Los pares se declaran como en el diseño por tipologías: en el proyecto,
+`combined_footings`, y desde ETABS, `combined_pairs`. Las demás columnas son las aisladas.
+- N es el número de tipologías de las **aisladas** (decisión del usuario), entre 1 y el número de columnas aisladas.
+- Las combinadas se diseñan una sola vez, con sus pares y su `combined_typologies`, porque no dependen de N. Su costo,
+  constante en cada f'c, entra en la elección del f'c de cada punto y en el ahorro.
+- `resultado.json` agrega `combined` (`pairs` y `types`) y, en cada punto, `isolated_cost` y `combined_cost`; `cost` es
+  el de toda la cimentación. `curva.csv` agrega las columnas `costo_aisladas` y `costo_combinadas`, y la memoria, las
+  columnas "Aisladas" y "Combinadas".
+- Una plantilla de diseño de ETABS con el bloque `curve` (`curva_*_etabs.json`) corre la curva desde los Excel: `run`
+  importa la plantilla (deja `diseno.json`) y corre la curva.
+
 ## Diseño de la zapata combinada (`diseno_combinada.json`, comando `design-combined`, D-107)
 
 Diseña una zapata combinada rectangular de dos o más columnas alineadas (D-163): ubica la base, propone largo, ancho, espesor, f'c y todo el
@@ -391,7 +402,7 @@ mayorados.
 | `combined_design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `combined_design.min_steel_exception` | sí/no | Obligatorio (D-123): lo mismo para la zapata que se diseña; el diseño parte del As,min con o sin la excepción y lo escribe en `proyecto.json`. |
 | `combined_design.stirrup_bars` | - | Opcional (D-110): barras permitidas para estribos cerrados de la viga larga, por ejemplo `["#3", "#4"]`. Con ellas, el cortante (y en la T, la torsión del alma, con Aℓ en la piel) pueden tomarlos estribos en lugar de un espesor mayor; gana lo más barato. Sin ellas no se proponen estribos. En la combinada rectangular la torsión es de placa (D-118): la toman las barras x e y. |
-| `combined_design.shape` | texto | `rectangular` (por defecto) o `inverted_t` (D-113): con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa. |
+| `combined_design.shape` | texto | El tipo de combinada: `rectangular` (por defecto) o `inverted_t` (D-113): con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa. `trapezoid` y `stepped` (planta en T o L, D-164) se pueden declarar, pero su diseño todavía no existe: el diseño y la curva responden que no está implementado (D-165). En el diseño por tipologías y en la curva, cada par puede cambiarlo en su `design`. |
 | `combined_design.web_margin`, `combined_design.web_step`, `combined_design.web_max` | mm | Solo con `inverted_t`: el alma parte de la columna más ancha (respecto a la resultante transversal) más `web_margin` a cada lado y crece de a `web_step`. El alma crece hasta `web_max`, obligatorio con la T (D-136). |
 | `combined_design.beam_h_min`, `combined_design.beam_h_step`, `combined_design.beam_h_max` | mm | Solo con `inverted_t`: alto total de la viga; `beam_h_min` debe superar `h_min`. |
 | `combined_design.placement_case` | texto | Opcional (D-108): el caso de servicio sin sismo cuya resultante ubica la base, por ejemplo `"D+L"`. Debe existir en todas las columnas, ser de servicio y no tener sismo. Sin él, se usa el de servicio sin sismo de mayor carga total. |

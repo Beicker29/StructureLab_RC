@@ -27,8 +27,9 @@ def _expected_kind(path: Path) -> str:
     if name in _COMBINED_DESIGNS:
         return _COMBINED_DESIGNS[name]
     if path.stem.endswith("_etabs"):
-        if name.startswith("diseno_"):
-            return "etabs_pile_cap_design" if element_of(path) == "cabezales" else "etabs_design"
+        if name.startswith(("curva_", "diseno_")):  # la curva costo-N desde ETABS (D-165) o un diseño
+            design = "etabs_pile_cap_design" if element_of(path) == "cabezales" else "etabs_design"
+            return "etabs_curve" if name.startswith("curva_") else design
         return "etabs_beams" if element_of(path) == "vigas" else "etabs_footings"
     if name.startswith("diseno_"):
         return "pile_cap_design" if element_of(path) == "cabezales" else "design"

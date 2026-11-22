@@ -3695,6 +3695,25 @@
   7 s, grupos 23 s, medidos con el perfilador). El resto es la búsqueda de las tipologías aisladas (unos 99 s) y la
   escritura de la memoria.
 - **Control:** la suite (1548 pruebas) y la huella sin cambios; la suite baja de unos 105 s a 79 s.
+- **Curva costo–N con combinadas (6.1):**
+  - Los pares se declaran como en el diseño por tipologías (`combined_footings`, o `combined_pairs` desde ETABS); la
+    curva no decide qué columnas van en combinada.
+  - `mixed.combined_part` diseña las combinadas una vez: pares, costo por f'c y tipos. La usan `design_with_pairs` y la
+    curva. `typology_curve(..., extra)` suma ese costo en el f'c de cada punto; `CurvePoint.total` es la cimentación.
+  - La salida separa `isolated_cost` y `combined_cost` (JSON, CSV y memoria).
+  - La plantilla de ETABS acepta `curve` (`run` la corre como `etabs_curve`: importa y corre la curva).
+  - Dos ejemplos desde ETABS, por pedido del usuario, en los dos perfiles y en `pruebas/`; como toda curva, no entran en
+    la huella:
+    - `curva_tipologias_aisladas_etabs.json`: todos los nudos en zapatas aisladas (`columns`);
+    - `curva_tipologias_combinadas_etabs.json`: los nudos de las aisladas en `columns` y los de cada par en
+      `combined_pairs`, con el tipo de combinada declarado en `combined_design.shape`.
+    En `tipologias/` usan los Excel de `examples/etabs/zapatas/` (N = 4 a 8) y en `pruebas/` los 6 apoyos de pruebas
+    (N = 1 a 4).
+  - Tipo de combinada (pedido del usuario): `combined_design.shape` admite además `trapezoid` y `stepped` (D-164) para
+    declararlos desde ya. Su diseño no existe: `combined_part` responde "no implementado" antes de diseñar, y
+    `design_for_fc` también si se llega por otra vía.
+  - Prueba: el punto N = 2 de la curva cuesta lo mismo que el diseño por tipologías con N = 2 (aisladas 36 454 589.61
+    más combinada 19 317 402.21 = 55 771 991.82 en la copia de `pruebas/` del ACI).
 
 ## Consultas abiertas
 

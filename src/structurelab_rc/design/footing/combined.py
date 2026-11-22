@@ -1261,8 +1261,16 @@ _FAILURES = {"plan": "el largo necesario pasa de plan_max o la base no cabe entr
              "h": "ningun espesor hasta h_max aprueba la verificacion estructural"}
 
 
+PENDING_SHAPES = {
+    "trapezoid": "el diseno de la zapata combinada trapezoidal no esta implementado (D-164); se verifica con plan",
+    "stepped": "el diseno de la zapata combinada en planta T o L no esta implementado (D-164); se verifica con plan",
+}
+
+
 def design_for_fc(ctx: Context, fc: float) -> FcOption:
     """La zapata de menor costo con este f'c entre el largo mínimo con solución y los _EXTRA_LENGTHS siguientes."""
+    if ctx.design.shape in PENDING_SHAPES:  # se declara, pero su diseño no está implementado (D-164, D-165)
+        return FcOption(fc, None, PENDING_SHAPES[ctx.design.shape])
     best: CombinedSolution | None = None
     failure = "h"
     extra, remaining = 0, None

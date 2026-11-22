@@ -12,7 +12,7 @@ from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing import combined as combined_design
 from structurelab_rc.design.footing.assignment import available as solver_available
-from structurelab_rc.design.footing.mixed import design_with_pairs, designed_with_pairs
+from structurelab_rc.design.footing.mixed import combined_part, design_with_pairs, designed_with_pairs
 from structurelab_rc.design.footing.profiling import profile_typologies
 from structurelab_rc.design.footing.typologies import DesignResult, typology_curve
 from structurelab_rc.design.footing.typology import Context
@@ -89,6 +89,7 @@ RUN_KINDS = {"project": "proyecto de verificación", "design": "diseño por tipo
              "combined_design": "diseño de zapata combinada",
              "etabs_beams": "plantilla de vigas de ETABS", "etabs_footings": "plantilla de zapatas de ETABS",
              "etabs_design": "plantilla de diseño de zapatas de ETABS",
+             "etabs_curve": "plantilla de curva costo-N de ETABS",
              "etabs_combined_design": "plantilla de diseño de zapata combinada de ETABS",
              "pile_cap_design": "diseño de cabezales",
              "etabs_pile_cap_design": "plantilla de diseño de cabezales de ETABS"}
@@ -164,6 +165,8 @@ def run_plan(path: Path, output: Path | None = None) -> RunPlan:
             raise RunError(f"La plantilla {path.name} no declara su Excel de combinaciones en etabs_files.combinations (D-137)")
         kinds = {"design": "etabs_design", "combined_design": "etabs_combined_design", "pile_cap_design": "etabs_pile_cap_design"}
         kind = next((value for key, value in kinds.items() if key in data), "etabs_footings")
+        if kind == "etabs_design" and "curve" in data:  # la curva costo-N desde ETABS (D-165)
+            kind = "etabs_curve"
         return RunPlan(kind, path, out, service=excel("service"), factored=excel("factored"), locations=excel("locations"),
                        combinations=excel("combinations"))
     if any(isinstance(member, dict) and "etabs_unique_name" in member for member in members):
@@ -524,7 +527,7 @@ def typology_curve_file(
     ctx, validation = _design_context(path, method)
     if ctx is None:
         return None, validation
-    columns = len(ctx.project.columns)
+    columns = len(ctx.project.columns)  # las aisladas: N es su número de tipologías (D-165)
     if counts:
         wanted = sorted(set(counts))
     elif ctx.project.curve is not None:  # el ejemplo de la curva declara sus N (D-096)
@@ -536,8 +539,12 @@ def typology_curve_file(
         message = f"N debe estar entre 1 y el numero de columnas ({columns}): {', '.join(map(str, outside))}"
         return None, check_from_errors(CHECK_NAME, [invalid_input(message)])
     begin = time.perf_counter()
-    points = typology_curve(ctx, wanted, workers)
-    data = curve_data(points, ctx.design.method, time.perf_counter() - begin)
+    part = combined_part(ctx, workers) if ctx.project.combined_footings else None  # una vez: no depende de N (D-165)
+    if isinstance(part, str):
+        return None, check_from_errors(CHECK_NAME, [invalid_input(part)])
+    points = typology_curve(ctx, wanted, workers, None if part is None else part.costs)
+    combined = None if part is None else {"pairs": len(part.pairs), "types": ctx.design.combined_typologies}
+    data = curve_data(points, ctx.design.method, time.perf_counter() - begin, combined)
     data = {"project": str(path), "profile": ctx.project.profile, **data}
     output.mkdir(parents=True, exist_ok=True)
     json_path, csv_path, svg_path = output / "resultado.json", output / "curva.csv", output / "curva.svg"

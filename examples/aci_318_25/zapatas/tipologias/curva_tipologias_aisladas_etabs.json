@@ -1,0 +1,173 @@
+{
+  "description": "Curva costo-N desde ETABS con todas las zapatas aisladas (D-078, D-165): los Excel de examples/etabs/zapatas/ (70 apoyos); los nudos se declaran en columns (por grupos de seccion) y cada uno va en una zapata aislada. N es el numero de tipologias. Datos supuestos. Tarda varios minutos.",
+  "etabs_files": {
+    "service": "../../../etabs/zapatas/Joint Reactions - Servicio.xlsx",
+    "factored": "../../../etabs/zapatas/Joint Reactions - Ultimas.xlsx",
+    "combinations": "../../../etabs/zapatas/Combinaciones.xlsx",
+    "locations": "../../../etabs/zapatas/Joint Location.xlsx"
+  },
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "special",
+    "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo."
+  },
+  "concrete": {
+    "type": "normalweight",
+    "max_aggregate": 19.0,
+    "unit_weight_kNm3": 24.0
+  },
+  "reinforcement_steel": {
+    "fy": 420.0,
+    "fyt": 420.0,
+    "coating": "uncoated"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 300.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.45,
+    "adhesion_kPa": 0.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "design": {
+    "typologies": 6,
+    "fc_options": [
+      21.0,
+      24.5,
+      28.0
+    ],
+    "prices": {
+      "concrete_per_m3": {
+        "21": 711357.0,
+        "24.5": 729470.0,
+        "28": 747582.0,
+        "35": 779082.0
+      },
+      "steel_per_kg": 4385.0
+    },
+    "shape": "square",
+    "plan_step": 100.0,
+    "plan_max": 6000.0,
+    "h_min": 500.0,
+    "h_step": 50.0,
+    "h_max": 1500.0,
+    "cover": 75.0,
+    "fill_height": 1500.0,
+    "pedestal_height": 0.0,
+    "surcharge_dead_kNm2": 2.0,
+    "surcharge_live_kNm2": 5.0,
+    "bars": [
+      "#5",
+      "#6",
+      "#7"
+    ],
+    "spacing_step": 25.0,
+    "ends": {
+      "bottom": "straight",
+      "top": "straight",
+      "dowels": "hook90"
+    },
+    "dowel_bars": [
+      "#5",
+      "#6"
+    ]
+  },
+  "columns": [
+    {
+      "etabs_unique_names": [
+        "6",
+        "12",
+        "15",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "28",
+        "150",
+        "157",
+        "161",
+        "198",
+        "199",
+        "201",
+        "202",
+        "223",
+        "224",
+        "228",
+        "233",
+        "234",
+        "967",
+        "971",
+        "1225",
+        "1273",
+        "1599",
+        "1600",
+        "1601",
+        "1602",
+        "1603",
+        "1604",
+        "1605",
+        "1606",
+        "1607",
+        "1608",
+        "1609",
+        "1610",
+        "1611",
+        "1612",
+        "1613",
+        "1614",
+        "1615",
+        "1616",
+        "1617",
+        "1618",
+        "1619",
+        "1620",
+        "1621",
+        "1622",
+        "1623",
+        "1624",
+        "1625",
+        "1626",
+        "1627",
+        "1628",
+        "1629",
+        "1630",
+        "1631",
+        "1632",
+        "1633",
+        "1636",
+        "1637",
+        "1641",
+        "1642",
+        "1655",
+        "1656",
+        "1657",
+        "1658",
+        "1659",
+        "1670",
+        "1671",
+        "1672"
+      ],
+      "cx": 500.0,
+      "cy": 800.0
+    }
+  ],
+  "detailing": {
+    "stock_length_mm": 12000.0
+  },
+  "drawing": {
+    "scale": 50.0
+  },
+  "min_clear_spacing": 500.0,
+  "curve": {
+    "n": "4-8"
+  }
+}
