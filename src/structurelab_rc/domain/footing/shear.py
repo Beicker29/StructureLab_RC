@@ -20,6 +20,7 @@ from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError
 from structurelab_rc.mechanics.flexure import SteelLayer
 from structurelab_rc.mechanics.perimeter import Perimeter, critical_perimeter
+from structurelab_rc.mechanics.polygon import Point, clip
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing, FootingBase
 from structurelab_rc.model.project import Materials
@@ -59,9 +60,16 @@ def _one_way(profile: Profile, materials: Materials, footing: Footing, row: BarR
 def transferred_load(column: tuple[float, float, float], case: FactoredCase, perimeter: Perimeter) -> TransferredLoad:
     """Carga que atraviesa la sección crítica: la acción de la columna expresada como carga neta equivalente (fuerza y
     momentos estáticos ∫q, ∫x·q, ∫y·q) menos la carga neta dentro del área crítica, con los momentos respecto al
-    centroide del perímetro."""
+    centroide del perímetro. En una planta trapezoidal o en T/L, el área crítica es la parte de la planta dentro del
+    rectángulo del perímetro (D-164)."""
     (x0, y0), (x1, y1) = perimeter.region
-    inside = case.net(((x0, y0), (x1, y0), (x1, y1), (x0, y1)))
+    area: tuple[Point, ...] = ((x0, y0), (x1, y0), (x1, y1), (x0, y1))
+    outline = case.pressure.outline
+    if outline is not None:
+        area = outline
+        for normal, level in (((1.0, 0.0), x0), ((-1.0, 0.0), -x1), ((0.0, 1.0), y0), ((0.0, -1.0), -y1)):
+            area = clip(area, normal, level)
+    inside = case.net(area)
     force, sx, sy = (a - b for a, b in zip(column, inside, strict=True))
     xc, yc = perimeter.centroid
     return TransferredLoad(force, sx - xc * force, sy - yc * force)

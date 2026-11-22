@@ -1,5 +1,6 @@
 """Polígonos simples: área y centroide, recorte por un semiplano e integración de un campo lineal, en mm."""
 
+import math
 from collections.abc import Iterator
 
 Point = tuple[float, float]
@@ -93,3 +94,65 @@ def _cross(o: Point, a: Point, b: Point) -> float:
 def strictly_inside(point: Point, convex: tuple[Point, ...]) -> bool:
     """Si el punto está en el interior de un polígono convexo antihorario (no en su borde)."""
     return len(convex) >= _MIN_VERTICES and all(_cross(a, b, point) > 0 for a, b in _edges(convex))
+
+
+def contains(point: Point, polygon: tuple[Point, ...]) -> bool:
+    """Si el punto está dentro del polígono simple (convexo o no) o sobre su borde (cruce de rayos)."""
+    x, y = point
+    inside = False
+    for (x1, y1), (x2, y2) in _edges(polygon):
+        aligned = abs((x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)) <= _TOLERANCE * max(1.0, abs(x2 - x1) + abs(y2 - y1))
+        within = min(x1, x2) - _TOLERANCE <= x <= max(x1, x2) + _TOLERANCE and min(y1, y2) - _TOLERANCE <= y <= max(y1, y2) + _TOLERANCE
+        if aligned and within:
+            return True  # sobre el borde
+        if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1):
+            inside = not inside
+    return inside
+
+
+def segment_inside(start: Point, end: Point, polygon: tuple[Point, ...]) -> list[tuple[Point, Point]]:
+    """Los tramos de un segmento dentro de un polígono simple (convexo o no): corta el segmento en sus cruces con los
+    lados y conserva los tramos cuyo punto medio queda dentro."""
+    dx, dy = end[0] - start[0], end[1] - start[1]
+    cuts = {0.0, 1.0}
+    for (x1, y1), (x2, y2) in _edges(polygon):
+        ex, ey = x2 - x1, y2 - y1
+        den = dx * ey - dy * ex
+        if den == 0:
+            continue
+        t = ((x1 - start[0]) * ey - (y1 - start[1]) * ex) / den
+        u = ((x1 - start[0]) * dy - (y1 - start[1]) * dx) / den
+        if 0.0 < t < 1.0 and -_TOLERANCE <= u <= 1.0 + _TOLERANCE:
+            cuts.add(t)
+    ordered = sorted(cuts)
+    parts: list[tuple[Point, Point]] = []
+    for a, b in zip(ordered, ordered[1:], strict=False):
+        middle = (start[0] + (a + b) / 2 * dx, start[1] + (a + b) / 2 * dy)
+        if b - a > _TOLERANCE and contains(middle, polygon):
+            first = (start[0] + a * dx, start[1] + a * dy)
+            if parts and parts[-1][1] == first:  # tramos seguidos: uno solo
+                first = parts.pop()[0]
+            parts.append((first, (start[0] + b * dx, start[1] + b * dy)))
+    return parts
+
+
+def inset(polygon: tuple[Point, ...], distance: float) -> tuple[Point, ...]:
+    """El contorno antihorario corrido distance hacia adentro: cada lado paralelo a sí mismo y cada vértice en el cruce
+    de los dos lados corridos (vale para plantas convexas y para las escalonadas con esquinas entrantes rectas)."""
+    count = len(polygon)
+    lines = []
+    for index in range(count):
+        (x1, y1), (x2, y2) = polygon[index], polygon[(index + 1) % count]
+        length = math.hypot(x2 - x1, y2 - y1)
+        nx, ny = -(y2 - y1) / length, (x2 - x1) / length  # hacia adentro
+        lines.append(((x1 + distance * nx, y1 + distance * ny), (x2 - x1, y2 - y1)))
+    points = []
+    for index in range(count):
+        (p, d), (q, e) = lines[index - 1], lines[index]
+        cross = d[0] * e[1] - d[1] * e[0]
+        if abs(cross) < _TOLERANCE:
+            points.append(q)
+            continue
+        t = ((q[0] - p[0]) * e[1] - (q[1] - p[1]) * e[0]) / cross
+        points.append((p[0] + t * d[0], p[1] + t * d[1]))
+    return tuple(points)

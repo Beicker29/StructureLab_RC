@@ -34,6 +34,7 @@ from structurelab_rc.domain.footing.combined_columns import (
     strip_cantilever,
     strip_demands,
     strip_depth_at,
+    strip_edges,
     strip_load,
     transverse_bottom,
 )
@@ -127,7 +128,7 @@ def _envelope(title: str, samples: list[list[tuple[float, float, float]]], cases
 def long_beam_envelope(basis: Basis, footing: CombinedFooting, soil: Soil, cases: Cases) -> Envelope:
     """M(x) y V(x) de la viga larga en toda su longitud, con el salto de V en el eje de cada columna; secciones críticas:
     las caras de las columnas, las secciones a d hacia cada tramo y los extremos de momento (D-104)."""
-    half = footing.lx / 2
+    start = footing.x_range[0]
     depth = beam_depth(footing, basis.bars)
     member = long_beam_member(footing, basis.bars, basis.profile)
     beams = [beam_case(footing, soil, pressure, loads) for pressure, loads in cases]
@@ -137,7 +138,7 @@ def long_beam_envelope(basis: Basis, footing: CombinedFooting, soil: Soil, cases
     sheared = [{section.label: section.x for section in shear_sections(beam, depth, beam_depth_at(basis, footing, member, beam))}
                for beam in beams]
     sections += [(tuple(own[label] for own in sheared), label) for label in sheared[0] if all(label in own for own in sheared)]
-    points = [-half + footing.lx * index / _SAMPLES for index in range(_SAMPLES + 1)]
+    points = [start + footing.lx * index / _SAMPLES for index in range(_SAMPLES + 1)]
     for column in footing.columns:
         points += [column.x - _JUMP, column.x + _JUMP]
     points = sorted({*points, *(x for positions, _ in sections for x in positions)})
@@ -164,10 +165,10 @@ def strip_envelopes(basis: Basis, footing: CombinedFooting, soil: Soil, cases: C
     al borde +Y."""
     row = transverse_bottom(footing, mat_rows(footing, footing.bottom, basis.bars)["y"])  # la de las verificaciones (D-097)
     depth = row.depth
-    half = footing.ly / 2
     count = len(cases)
     envelopes = []
     for index, column in enumerate(footing.columns):
+        edge_low, edge_high = strip_edges(footing, column, depth)  # los bordes locales en una planta no rectangular (D-164)
         low, high = column.y - column.cy / 2, column.y + column.cy / 2
         # Secciones críticas de la franja (D-104): las caras de la columna y las secciones a d hacia cada borde, en cada caso
         # a la d del cortante de esa sección (D-151), como en las verificaciones.
@@ -182,8 +183,8 @@ def strip_envelopes(basis: Basis, footing: CombinedFooting, soil: Soil, cases: C
                     at_d.setdefault(f"{label} de {column.id}", []).append(y)
         sections += [(tuple(positions), label) for label, positions in at_d.items() if len(positions) == count]
         extra = [at for positions, _ in sections for at in positions]
-        left = sorted({*_cantilever_points(-half, low), *(at for at in extra if at < low)}) if low > -half else []
-        right = sorted({*_cantilever_points(high, half), *(at for at in extra if at > high)}) if high < half else []
+        left = sorted({*_cantilever_points(edge_low, low), *(at for at in extra if at < low)}) if low > edge_low else []
+        right = sorted({*_cantilever_points(high, edge_high), *(at for at in extra if at > high)}) if high < edge_high else []
         sampled = {*left, *right}
         sections = [section for section in sections if all(at in sampled for at in section[0])]
         samples, names = [], []

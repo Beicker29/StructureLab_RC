@@ -8,12 +8,12 @@ from dataclasses import dataclass
 
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import BaseResultant, base_resultant, combined_load, combined_resultant
-from structurelab_rc.domain.footing.service import contact_region, corner_values
+from structurelab_rc.domain.footing.service import base_pressure, contact_region, corner_values, is_polygon
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import invalid_input
 from structurelab_rc.mechanics.materials import NoEquilibrium
 from structurelab_rc.mechanics.polygon import Point, area_centroid
-from structurelab_rc.mechanics.soil_pressure import SoilPressure, footing_pressure
+from structurelab_rc.mechanics.soil_pressure import SoilPressure
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing, FootingBody, FootingLoad, Soil, UnitWeighted
 
@@ -72,16 +72,21 @@ def _equilibrium(footing: Footing | CombinedFooting, load: FootingLoad, resultan
         failure = invalid_input("La resultante mayorada sale de la base: la carga mayorada sobre el suelo no es de compresion",
                                 member=footing.id, case=load.case)
         return None, Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", values=values, member=footing.id, case=load.case)
-    relative_x, relative_y = abs(ex) / footing.lx, abs(ey) / footing.ly
-    values += (("ex", ex), ("ey", ey), ("ex/lx", relative_x), ("ey/ly", relative_y))
-    eccentricity = max(relative_x, relative_y)
+    values += (("ex", ex), ("ey", ey))
+    # En una planta poligonal la condición es caer dentro de su envolvente convexa (D-164): no hay razón e/l.
+    eccentricity: float | None = None
+    if not is_polygon(footing):
+        relative_x, relative_y = abs(ex) / footing.lx, abs(ey) / footing.ly
+        values += (("ex/lx", relative_x), ("ey/ly", relative_y))
+        eccentricity = max(relative_x, relative_y)
+    limit = None if eccentricity is None else 0.5
     try:
-        pressure = footing_pressure(footing.lx, footing.ly, resultant.n, ex, ey)
+        pressure = base_pressure(footing, resultant.n, ex, ey)
     except NoEquilibrium as error:
         failure = invalid_input(f"La resultante mayorada sale de la base: {error}", member=footing.id, case=load.case)
-        return None, Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", demand=eccentricity, capacity=0.5, values=values,
+        return None, Check(EQUILIBRIUM, Status.FAIL, (failure,), "D-054", demand=eccentricity, capacity=limit, values=values,
                            member=footing.id, case=load.case)
-    return pressure, Check(EQUILIBRIUM, Status.PASS, clause="D-054", demand=eccentricity, capacity=0.5,
+    return pressure, Check(EQUILIBRIUM, Status.PASS, clause="D-054", demand=eccentricity, capacity=limit,
                            values=(*values, *corner_values(pressure)), note=contact_region(pressure), member=footing.id,
                            case=load.case)
 

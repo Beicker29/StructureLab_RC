@@ -3615,6 +3615,50 @@
   - En el rectángulo, la solución general es la de Bellos en las cinco regiones (400 casos al azar; 3000 al
     desarrollarla, error relativo máximo 6·10⁻¹²).
 - **Diferencias B1:** ninguna. El rectángulo sigue por `footing_pressure`.
+- **Parte B2 (verificación):**
+  - Entrada: `plan` en `CombinedFooting` y en la plantilla de ETABS. `lx` y `ly` se calculan (la caja). Las columnas
+    pasan del sistema de la planta al centroide y después se rotan como toda la zapata. `outline`, `x_range`, `y_range`
+    y `across(x0, x1)` dan el contorno en ejes de la viga y los bordes locales; el área, las inercias, los módulos y el
+    núcleo son los del polígono.
+  - Geotecnia: `service.base_pressure`, presión por vértice (`p vertice i`) y contacto total o parcial; volcamiento por
+    los lados de la envolvente convexa; el equilibrio mayorado sin razón e/l (la condición es la envolvente).
+  - Estructural: `BeamCase` integra sobre la planta recortada en x' ≤ x, con B(x) en Wood-Armer. `member_at` da la
+    sección de cada x (ancho local y barras que pasan). `strip_edges` da los bordes de las franjas. `plan_perimeter`
+    recorta el perímetro con el contorno, sea convexo o no (`polygon.segment_inside` y `contains`), con αs por esquinas.
+    `transferred_load` recorta el área crítica con la planta. El desarrollo de las barras x usa `bar_extent`; el de las
+    barras y, los bordes locales. El aplastamiento usa los bordes más estrechos en el largo del tronco. Las mallas se
+    centran en la caja de la planta.
+  - Estribos y piel en planta no rectangular: `BLOCKED` ("Estribos y refuerzo superficial en planta no rectangular") y
+    la viga se revisa sin ellos. T invertida con `plan`: entrada inválida. Despiece y dibujo: no se generan; la corrida
+    lo avisa en las notas.
+  - Memoria: la planta declarada, su caja y su centroide; la tabla de presiones por vértice; la planta de presiones con
+    el polígono y el número de cada vértice.
+- **Control B2:**
+  - Oráculo `derive_combined_plan.py`: trapecio con lado recto y tres columnas (C3 junto al lado oblicuo, con una
+    esquina del perímetro afuera), trapecio simétrico, planta en L y planta en T de tres tramos con una columna sobre el
+    escalón.
+  - Compara centroide y área, plano de presión, V, M y T de la viga en las caras y cada 700 mm, límites y bordes de las
+    franjas con el momento en cada cara, b0 y lados descontados del punzonamiento, y el volcamiento que rige.
+  - `tests/test_combined_plan.py`: la misma planta con la viga en la Y global (reflejada en t, con las cargas
+    reflejadas) da las mismas verificaciones; además, el rechazo de `lx`/`ly` con `plan`, la columna fuera de la planta y
+    los estribos `BLOCKED`.
+- **Diferencias B2:** ninguna en las combinadas rectangulares (la huella no cambia).
+- **Parte B3 (despiece, dibujo y ejemplos), decisiones del usuario:**
+  - Desarrollo de las barras x (opción A): la regla de la barra más corta hacía fallar casi todo trapecio (en el ejemplo,
+    259 mm disponibles frente a 833 mm). Desde la sección de mayor momento cuentan solo las barras que alcanzan a
+    desarrollarse hasta el extremo real de su tramo (con su ld sin la reducción por exceso de acero, `developed`). Deben
+    bastar para el As requerido de esa sección; si no, la revisión no cumple. La flexión de las demás secciones cuenta,
+    como en la rectangular, las barras que pasan.
+  - Se mantiene una marca por cada longitud distinta: en el trapecio la cartilla queda larga (127 filas en el ejemplo).
+- **Código B3:**
+  - Despiece: `detailing.plan_chords` y `_plan_runs`, de borde a borde menos el recubrimiento, como en D-141. Una barra
+    que cruza un tramo angosto entre dos anchos queda en dos.
+  - Dibujo: el contorno real, el recubrimiento con `polygon.inset`, las cotas de `_plan_dimensions`, el alzado con el
+    largo real, los cortes con el ancho local y la línea de reparto dentro del tramo de la barra.
+  - La planta de localización todavía no ubica estas zapatas.
+- **Ejemplos:** `zapata_combinada_trapecio.json`, `zapata_combinada_planta_l.json` y `zapata_combinada_planta_t.json`
+  (este con la viga en la Y global), en los dos perfiles y en `pruebas/`, con su huella. Cumplen y generan la memoria, la
+  cartilla, el `.dli`, el DXF (sin errores en la auditoría de ezdxf) y los SVG.
 
 ## Consultas abiertas
 

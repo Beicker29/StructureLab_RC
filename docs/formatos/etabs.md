@@ -110,6 +110,7 @@ diferencias:
 | --- | --- | --- |
 | `combined_footings[].principal_direction` | texto | `x` (por defecto) o `y`: eje global de ETABS en que va la viga de la zapata combinada o en T invertida (D-094). La plantilla se escribe en ejes globales (con `y`, `ly` es la dimensión paralela a la viga) y los Excel no se modifican: geometría y fuerzas pasan al proyecto tal cual y se rotan a los ejes de la viga al cargarlo. |
 | `combined_footings[].columns[].etabs_unique_name` | texto | Unique Name del nudo de ETABS del que salen las reacciones de la columna. |
+| `combined_footings[].plan` | | Opcional (D-164): planta trapezoidal o en T/L en lugar de `lx` y `ly`, con el formato del proyecto (ver [zapatas](zapatas.md)). |
 | `combined_footings[].loads_source` | objeto | `{"service": "etabs" o "json", "factored": "etabs" o "json"}` (por defecto `etabs` los dos): de dónde salen las cargas de cada tipo. Con `etabs`, de la tabla de ese tipo con las combinaciones del Excel de combinaciones; con `json`, de `columns[].loads` de la plantilla, con el formato del proyecto. |
 | `combined_footings[].columns[].loads` | lista | Solo los casos de los tipos que vienen de la plantilla; todas las columnas deben terminar con los mismos casos. |
 

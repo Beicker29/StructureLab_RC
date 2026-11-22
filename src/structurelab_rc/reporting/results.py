@@ -78,6 +78,8 @@ def _value_key(name: str) -> tuple[str, str]:
     unit = _VALUE_UNITS.get(name, "")
     if name.startswith("esquina "):
         unit = _CORNER_UNITS.get(name.rsplit(" ", 1)[-1], "")
+    if name.startswith("p vertice "):  # presión en cada vértice de una planta trapezoidal o en T/L (D-164)
+        unit = "N/mm2"
     shown = _unit(unit) if unit else ""
     return (f"{name} [{shown}]" if shown else name), unit
 
@@ -204,7 +206,15 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
     rotated = footing.principal_direction == "y"
     columns = [_declared_column(column, rotated) for column in footing.columns]
     reinforcement = footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin"})
-    geometry = _geometry(footing, {"beam", "principal_direction"})
+    geometry = _geometry(footing, {"beam", "principal_direction", "plan"})
+    if footing.plan is None:
+        geometry.pop("plan", None)
+    else:
+        # El contorno en los ejes declarados, desde el centroide, y el centroide en el sistema de la planta (D-164).
+        _, along, across = footing.plan.area_centroid()
+        geometry["centroid"] = {"a": significant(along), "t": significant(across)}
+        geometry["outline"] = [[significant(value) for value in (beam_to_global(x, y) if rotated else (x, y))]
+                               for x, y in footing.outline]
     properties = _base_properties(footing, soil)
     if rotated:
         # El cálculo va en ejes de la viga; la salida, en los ejes declarados (D-101).

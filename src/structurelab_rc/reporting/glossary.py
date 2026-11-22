@@ -282,6 +282,9 @@ def unit_of(key: str) -> tuple[str, str]:
 
 def describe(name: str) -> tuple[str, str]:
     """Descripción en palabras y símbolo de un valor; los desconocidos se muestran tal cual."""
+    if name.startswith("p vertice "):  # planta trapezoidal o en T/L (D-164)
+        index = name.rsplit(" ", 1)[-1]
+        return f"Presión en el vértice {index} de la planta", f"p{index}"
     return VALUES.get(name, (name, name))
 
 

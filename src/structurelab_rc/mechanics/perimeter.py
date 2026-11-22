@@ -9,8 +9,10 @@ comentario ACI R8.4.4.2.3). No conoce φ ni numerales.
 
 from dataclasses import dataclass
 
-Point = tuple[float, float]
+from structurelab_rc.mechanics.polygon import Point, contains, segment_inside
+
 _EMPTY = 1e-12  # fracción del lado: por debajo, el lado queda fuera del contorno
+_OUTSIDE_BY_CORNERS = {4: 0, 3: 1, 2: 1, 1: 2, 0: 4}  # esquinas dentro → lados que se descuentan para αs (D-164)
 
 
 @dataclass(frozen=True)
@@ -77,6 +79,22 @@ def critical_perimeter(centre: Point, c1: float, c2: float, depth: float, bounds
                   "top": Side((cr, top), (cl, top)), "left": Side((left, ct), (left, cb))}
     sides = tuple(side for name, side in candidates.items() if inside[name])
     return Perimeter(sides, sum(1 for present in inside.values() if not present), depth, ((cl, cb), (cr, ct)))
+
+
+def plan_perimeter(centre: Point, c1: float, c2: float, depth: float, outline: tuple[Point, ...]) -> Perimeter:
+    """Perímetro a d/2 de un área cargada c1 × c2 en una planta trapezoidal o en T/L (D-164): de cada lado del
+    rectángulo queda lo que cae dentro del contorno (convexo o no; el borde libre no es sección). outside sale de las
+    esquinas del rectángulo dentro del contorno, criterio del usuario: 4 → 0 lados afuera (interior), 3 → 1 (un borde
+    corta una esquina), 2 → 1 (borde: un lado entero afuera), 1 → 2 (esquina); sin ninguna, 4 (sin αs)."""
+    left, right = centre[0] - (c1 + depth) / 2, centre[0] + (c1 + depth) / 2
+    bottom, top = centre[1] - (c2 + depth) / 2, centre[1] + (c2 + depth) / 2
+    corners = ((left, bottom), (right, bottom), (right, top), (left, top))
+    sides = [Side(*part) for index, start in enumerate(corners)
+             for part in segment_inside(start, corners[(index + 1) % 4], outline)]
+    inside = sum(1 for corner in corners if contains(corner, outline))
+    points = [point for side in sides for point in (side.start, side.end)] or [centre]
+    region = ((min(p[0] for p in points), min(p[1] for p in points)), (max(p[0] for p in points), max(p[1] for p in points)))
+    return Perimeter(tuple(sides), _OUTSIDE_BY_CORNERS[inside], depth, region)
 
 
 def _inside_part(start: Point, end: Point, outline: tuple[Point, ...]) -> tuple[Point, Point] | None:

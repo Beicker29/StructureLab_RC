@@ -52,6 +52,7 @@ from structurelab_rc.drawing.model import (
     bar_layer,
     metres,
 )
+from structurelab_rc.mechanics.polygon import inset
 
 _LABEL_STEP = 1.8  # separación de los rótulos apilados, en alturas de texto
 _PAIR = 2  # con dos barras o menos (piel, caras opuestas) el rótulo no da separación
@@ -237,7 +238,8 @@ def plan_view(drawing: Drawing, names: tuple[str, str], outline: tuple[list[Poly
         if own:
             bounds = _zone_bounds([zone for _, zone in own], (box[1], box[3]) if along == "x" else (box[0], box[2]))
             for (item, zone), low, high in zip(own, bounds, bounds[1:], strict=False):
-                _plan_bar(drawing, view, (item, zone), ((low, high), box, [_box(column) for _, column in columns]))
+                _plan_bar(drawing, view, (item, zone), ((low, high), box, [_box(column) for _, column in columns]),
+                          _is_plan(concrete[0]))
             _zone_divisions(drawing, view, along, bounds, box)
     _column_dimensions(drawing, view, [column for _, column in columns], box)
     _dimensions(drawing, view, concrete[0])
@@ -317,7 +319,7 @@ def _free_middle(span: tuple[float, float], blocked: list[tuple[float, float]]) 
 
 
 def _plan_bar(drawing: Drawing, view: View, chosen: tuple[Marked, tuple[float, ...]],
-              extent: tuple[tuple[float, float], Box, list[Box]]) -> None:
+              extent: tuple[tuple[float, float], Box, list[Box]], plan: bool = False) -> None:
     """La barra representativa de una zona (en su barra central), como los planos de despiece (D-158): dibujada con las
     dimensiones A, B y C de su pieza en la cartilla (así mide la longitud de corte, la misma del .dli), con las patas
     abatidas (hacia abajo en las barras a lo largo de x, a la derecha en las de y) y su cota; los tramos empalmados
@@ -339,6 +341,9 @@ def _plan_bar(drawing: Drawing, view: View, chosen: tuple[Marked, tuple[float, .
         direction = (outward, 0.0) if horizontal else (0.0, outward)
         view.entities.append(_dim((foot, tip), direction, 0.4 * gap, height))
     x0, y0, x1, y1 = box
+    if plan:  # planta trapezoidal o en T/L (D-164): la línea dentro del tramo de la barra, que está en el concreto
+        x0, x1 = place.span if horizontal else (x0, x1)
+        y0, y1 = place.span if not horizontal else (y0, y1)
     # Las barras en y, con su línea en el centro del tramo más largo sin columnas, como el plano de referencia.
     line = x0 + _LINE_AT * (x1 - x0) if horizontal else _free_middle((y0, y1), [(c[1], c[3]) for c in columns])
     mark = drawing.paper(PAPER_MARK)
@@ -447,7 +452,10 @@ def geometry_view(drawing: Drawing, names: tuple[str, str], shape: tuple[Polylin
     view = View(*names, [outline, *extra])
     x0, y0, x1, y1 = view.bounds()
     height, gap = drawing.text_height(small=True), drawing.gap()
-    view.entities += [rectangle(DISTRIBUTION, (x0 + cover, y0 + cover), (x1 - cover, y1 - cover), dashed=True),
+    plan = _is_plan(outline)
+    cover_line = (Polyline(DISTRIBUTION, inset(outline.points, cover), closed=True, dashed=True) if plan
+                  else rectangle(DISTRIBUTION, (x0 + cover, y0 + cover), (x1 - cover, y1 - cover), dashed=True))
+    view.entities += [cover_line,
                       Text(LABELS, (x0 + cover + 0.5 * height, y0 + cover + 0.5 * height), f"recubrimiento {metres(cover)}", height)]
     stops_x, chains_y = [x0, x1], []
     for column_id, (cx, cy), (bx, by) in columns:
@@ -470,8 +478,37 @@ def geometry_view(drawing: Drawing, names: tuple[str, str], shape: tuple[Polylin
     view.entities += [Dimension(DIMENSIONS, (x0, y0), (x1, y0), -2 * gap, metres(x1 - x0), height),
                       Dimension(DIMENSIONS, (x0, y0), (x0, y1), (len(unique) + 1) * gap, metres(y1 - y0), height),
                       Text(LABELS, (x0, y0 - 3.2 * gap), note, height)]
+    if plan:
+        view.entities += _plan_dimensions(outline, (x0, y1), gap, height)
     _title(drawing, view)
     return view
+
+
+def _is_plan(outline: Polyline) -> bool:
+    """Si el contorno no es un rectángulo con lados paralelos a los ejes (planta trapezoidal o en T/L, D-164)."""
+    points = outline.points
+    corners, sides = 4, 2
+    return (len(points) != corners or len({round(x, 3) for x, _ in points}) != sides
+            or len({round(y, 3) for _, y in points}) != sides)
+
+
+def _plan_dimensions(outline: Polyline, corner: Point, gap: float, height: float) -> list[Entity]:
+    """Cotas propias de una planta trapezoidal o en T/L (D-164): arriba, la cadena de las x de sus vértices (el largo de
+    cada tramo); y el largo de cada lado transversal (paralelo al eje y) que no sea el del borde izquierdo, del lado de
+    afuera de la planta."""
+    x0, y1 = corner
+    points = outline.points
+    stops = _stops([x for x, _ in points])
+    entities: list[Entity] = [Dimension(DIMENSIONS, (a, y1), (b, y1), gap, metres(b - a), height)
+                              for a, b in zip(stops, stops[1:], strict=False)]
+    for (xa, ya), (xb, yb) in zip(points, (*points[1:], points[0]), strict=True):
+        if abs(xa - xb) > _SAME or abs(xa - x0) <= _SAME:
+            continue
+        low, high = sorted((ya, yb))
+        # Contorno antihorario: el lado que sube tiene afuera a la derecha (cota negativa); el que baja, a la izquierda.
+        offset = -gap / 2 if yb > ya else gap / 2
+        entities.append(Dimension(DIMENSIONS, (xa, low), (xa, high), offset, metres(high - low), height))
+    return entities
 
 
 def _stops(values: list[float]) -> list[float]:

@@ -191,7 +191,10 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
     drawing.titles[footing.id] = element_title(footing.id, footing.h)
     lx, ly, h, top, pedestal = footing.lx, footing.ly, footing.h, footing.total_height, footing.pedestal_height
     beam = footing.beam
-    concrete = [rectangle(OUTLINE, (-lx / 2, -ly / 2), (lx / 2, ly / 2))]
+    first, last = footing.x_range
+    # La planta trapezoidal o en T/L con su contorno real (D-164); el rectángulo, como siempre.
+    concrete = [rectangle(OUTLINE, (-lx / 2, -ly / 2), (lx / 2, ly / 2)) if footing.plan is None
+                else Polyline(OUTLINE, footing.outline, closed=True)]
     if beam is not None:
         concrete += [Polyline(OUTLINE, ((-lx / 2, side * beam.width / 2), (lx / 2, side * beam.width / 2))) for side in (-1, 1)]
     columns = [(column.id, column_rectangle((column.x - column.cx / 2, column.y - column.cy / 2),
@@ -202,7 +205,7 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
         half = beam.width / 2
         cross = Polyline(OUTLINE, ((-ly / 2, 0.0), (ly / 2, 0.0), (ly / 2, h), (half, h), (half, top), (-half, top),
                                    (-half, h), (-ly / 2, h)), closed=True)
-    elevation = [rectangle(OUTLINE, (-lx / 2, 0.0), (lx / 2, top))]
+    elevation = [rectangle(OUTLINE, (first, 0.0), (last, top))]
     stubs = [shape for column in footing.columns for shape in _stub(drawing, column.x, column.cx, (top, pedestal))]
     faces = [face for column in footing.columns for face in (column.x - column.cx / 2, column.x + column.cx / 2)]
     note = f"Espesor h = {_metres_text(h)}; pedestal {_metres_text(pedestal)}" + (
@@ -224,6 +227,9 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
     ]
     for column in footing.columns:  # solo en el SVG y la memoria (D-150)
         stub = _stub(drawing, column.y, column.cy, (top, pedestal))
+        if footing.plan is not None:  # el ancho local de la base en la columna (D-164)
+            low, high = footing.across(column.x)
+            cross = rectangle(OUTLINE, (low, 0.0), (high, h))
         section = section_view(drawing, (f"corte_{column.id}", f"Corte transversal por {column.id}"), ("y", column.x), marked,
                                ([cross], stub, [column.y - column.cy / 2, column.y + column.cy / 2], True))
         section.dxf = False

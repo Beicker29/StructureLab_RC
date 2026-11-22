@@ -665,6 +665,8 @@ def _soil_pressures(footing: dict[str, Any], figure: Path | None,
     """Presión del suelo en las esquinas (D-080): la planta del caso de servicio que gobierna la presión admisible, la
     tabla de las combinaciones de servicio (ASD) y la de las mayoradas (LRFD), estas de la verificación de equilibrio
     (D-054); una combinación mayorada sin equilibrio aparece sin presiones."""
+    if footing["geometry [mm]"].get("outline"):
+        return _plan_pressures(footing, figure, heading)
     service = [check for check in footing["checks"] if check["name"] == PRESSURE and corner_key("-x-y") in check["values"]]
     factored = [check for check in footing["checks"] if check["name"] == EQUILIBRIUM]
     if not service and not factored:
@@ -689,6 +691,47 @@ def _soil_pressures(footing: dict[str, Any], figure: Path | None,
                                            "de Bellos y Bakas (A: contacto total; B a E: contacto parcial). Una combinación "
                                            "cuya resultante sale de la base (|e|/l ≥ 0.5) o no es de compresión no tiene "
                                            "equilibrio con el suelo y no tiene presiones."})
+    return blocks
+
+
+def _plan_pressures(footing: dict[str, Any], figure: Path | None, heading: str) -> list[Block]:
+    """Presión del suelo en los vértices de una planta trapezoidal o en T/L (D-164): la planta del caso de servicio que
+    gobierna y las tablas ASD y LRFD con la presión en cada vértice, las excentricidades y si el contacto es total o
+    parcial."""
+    outline = footing["geometry [mm]"]["outline"]
+    service = [check for check in footing["checks"] if check["name"] == PRESSURE and "p vertice 1 [kPa]" in check["values"]]
+    factored = [check for check in footing["checks"] if check["name"] == EQUILIBRIUM]
+    if not service and not factored:
+        return []
+    blocks: list[Block] = [{"kind": "h2", "text": heading}]
+    governing = governing_pressure(footing["checks"])
+    if figure is not None and governing is not None:
+        xs, ys = [point[0] for point in outline], [point[1] for point in outline]
+        blocks.append({"kind": "image", "path": str(figure), "aspect": pressure_aspect(max(xs) - min(xs), max(ys) - min(ys)),
+                       "caption": f"Presión del suelo en planta, caso que gobierna {governing['case']}"})
+    vertices = [f"({x:.0f}, {y:.0f})" for x, y in outline]
+    blocks.append({"kind": "p", "text": "Vértices de la planta desde su centroide, en mm: "
+                                        + "; ".join(f"{index} {text}" for index, text in enumerate(vertices, start=1)) + "."})
+    headers = ["Caso", *(f"p{index} kPa" for index in range(1, len(outline) + 1)), "ex (mm)", "ey (mm)", "Contacto"]
+
+    def row(check: dict[str, Any]) -> list[str]:
+        values = check["values"]
+        pressures = [number(values.get(f"p vertice {index} [kPa]"), "kPa") for index in range(1, len(outline) + 1)]
+        if "ex [mm]" not in values:
+            return [check["case"], *pressures, "–", "–", "sin compresión"]
+        note = check.get("note") or ""
+        contact = note.split(":")[0].replace("Contacto ", "") if note.startswith("Contacto ") else "sale de la base"
+        return [check["case"], *pressures, number(values["ex [mm]"], "mm"), number(values["ey [mm]"], "mm"), contact]
+
+    for checks, title in ((service, "Combinaciones de esfuerzos admisibles (ASD):"),
+                          (factored, "Combinaciones de resistencia última (LRFD), para el diseño estructural y el equilibrio "
+                                     "(D-054):")):
+        if checks:
+            blocks += [{"kind": "p", "text": title}, {"kind": "table", "headers": headers, "rows": [row(check) for check in checks]}]
+    blocks.append({"kind": "note", "text": "Presión bruta con las ecuaciones de equilibrio de Bellos y Bakas (2017) resueltas sobre la "
+                                           "planta (D-164); 0 indica un vértice sin contacto. ex y ey son las excentricidades de "
+                                           "la resultante respecto al centroide. Sin equilibrio, la resultante cae fuera de la "
+                                           "envolvente convexa de la planta o no es de compresión."})
     return blocks
 
 
@@ -929,13 +972,30 @@ def _combined_materials(results: dict[str, Any], number_text: str) -> list[Block
             {"kind": "table", "headers": ["Propiedad (dato del usuario)", "Valor", "Unidad"], "rows": ground}]
 
 
+def _plan_rows(g: dict[str, Any]) -> list[list[str]]:
+    """La planta trapezoidal o en T/L (D-164): su forma declarada, la caja que la contiene y su centroide en el sistema de
+    la planta (a desde el borde negativo de la dirección principal, t desde la línea de referencia)."""
+    plan = g["plan"]
+    if plan["shape"] == "trapezoid":
+        shape = (f"trapecio de largo {plan['length']:.0f} mm; extremo negativo de {plan['start']['low']:.0f} a "
+                 f"{plan['start']['high']:.0f} mm, extremo positivo de {plan['end']['low']:.0f} a {plan['end']['high']:.0f} mm")
+    else:
+        shape = "en tramos: " + "; ".join(f"{part['length']:.0f} mm de {part['low']:.0f} a {part['high']:.0f}"
+                                          for part in plan["parts"])
+    return [["Planta (D-164)", shape, "–"],
+            ["Caja de la planta a lo largo de X (lx)", number(g["lx"], "mm"), "mm"],
+            ["Caja de la planta a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
+            ["Centroide en el sistema de la planta (a, t)", f"({g['centroid']['a']:.0f}, {g['centroid']['t']:.0f})", "mm"]]
+
+
 def _combined_geometry(results: dict[str, Any], footing: dict[str, Any], number_text: str) -> list[Block]:
     """2.1 Zapata combinada, 2.2 Acero de refuerzo, 2.3 Suelo y 2.4 Columnas (D-104)."""
     g = footing["geometry [mm]"]
     principal, secondary = _combined_axes(footing)
     rows = [["Dirección principal (la de la viga que une las columnas)", f"{principal} global", "–"],
-            ["Dimensión a lo largo de X (lx)", number(g["lx"], "mm"), "mm"],
-            ["Dimensión a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"],
+            *(_plan_rows(g) if g.get("plan") else
+              [["Dimensión a lo largo de X (lx)", number(g["lx"], "mm"), "mm"],
+               ["Dimensión a lo largo de Y (ly)", number(g["ly"], "mm"), "mm"]]),
             ["Espesor (h)" if not g.get("beam") else "Espesor de la zarpa (h)", number(g["h"], "mm"), "mm"],
             *([["Ancho de la viga (bw, T invertida)", number(g["beam"]["width"], "mm"), "mm"],
                ["Altura total de la viga (H)", number(g["beam"]["height"], "mm"), "mm"]] if g.get("beam") else []),

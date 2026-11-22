@@ -48,12 +48,16 @@ from structurelab_rc.domain.beam.shear import section_at_depth, shear_checks, sh
 from structurelab_rc.domain.beam.station import checks_for, flexure_station_checks, shear_and_torsion_checks
 from structurelab_rc.domain.beam.station_input import StationInput
 from structurelab_rc.domain.check import Check
+from structurelab_rc.domain.development import required_length
 from structurelab_rc.domain.footing.base import column_vertical, stem_line_load
+from structurelab_rc.domain.footing.connection import bar_anchorage
 from structurelab_rc.domain.footing.flexure import plain_principal_check, plain_resists
 from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows
 from structurelab_rc.domain.status import Status
+from structurelab_rc.errors import StructuredError
 from structurelab_rc.mechanics.plate import wood_armer
+from structurelab_rc.mechanics.polygon import Point, clip
 from structurelab_rc.mechanics.roots import find_root
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import COLUMNS, CombinedFooting
@@ -104,19 +108,32 @@ class BeamCase:
     lx: float
     ly: float
     line: float = 0.0  # carga lineal hacia abajo del alma de la T invertida, mayorada (N/mm, D-093)
+    outline: tuple[Point, ...] | None = None  # planta trapezoidal o en T/L (D-164); sin ella, el rectángulo lx × ly
+    breadth: Callable[[float], float] | None = None  # ancho local B(x) de esa planta
 
     @property
     def case(self) -> str:
         return self.pressure.case
 
+    @property
+    def start(self) -> float:
+        """Abscisa del borde −X de la base."""
+        return -self.lx / 2 if self.outline is None else min(x for x, _ in self.outline)
+
+    def width(self, x: float) -> float:
+        """Ancho de la base en x: ly o el ancho local de la planta (D-164)."""
+        return self.ly if self.breadth is None else self.breadth(x)
+
     def _left(self, x: float) -> tuple[float, float, float]:
-        hx, hy = self.lx / 2, self.ly / 2
-        if x <= -hx:
+        if x <= self.start:
             return 0.0, 0.0, 0.0
+        if self.outline is not None:  # la parte de la planta con abscisa ≤ x (D-164)
+            return self.pressure.net(clip(self.outline, (-1.0, 0.0), -x))
+        hx, hy = self.lx / 2, self.ly / 2
         return self.pressure.net(((-hx, -hy), (x, -hy), (x, hy), (-hx, hy)))
 
     def _span(self, x: float) -> float:
-        return min(max(x + self.lx / 2, 0.0), self.lx)
+        return min(max(x - self.start, 0.0), self.lx)
 
     def shear(self, x: float) -> float:
         force, _, _ = self._left(x)
@@ -134,14 +151,15 @@ class BeamCase:
 
     def twist(self, x: float) -> float:
         """Momento torsor de placa por unidad de ancho, mxy = T(x)/B, uniforme en el ancho (decisión del usuario, D-118)."""
-        return self.torque(x) / self.ly
+        return self.torque(x) / self.width(x)
 
     def plate_moments(self, x: float) -> tuple[float, float]:
         """(Mu de las barras inferiores ≥ 0, Mu de las superiores ≤ 0) en todo el ancho B por Wood-Armer (D-118), con
         mx = M/B, mxy = T/B y my = 0. Con my = 0 el mx* de Wood-Armer es el mayor posible (my solo reduce mx* en la rama
         my* < 0), así que es conservador y desacopla la dirección x de las franjas. Sin torsión: (máx(M, 0), mín(M, 0))."""
-        design = wood_armer(self.moment(x) / self.ly, 0.0, self.twist(x))
-        return design.bottom.x * self.ly, design.top.x * self.ly
+        width = self.width(x)
+        design = wood_armer(self.moment(x) / width, 0.0, self.twist(x))
+        return design.bottom.x * width, design.top.x * width
 
 
 def beam_case(footing: CombinedFooting, soil: Soil, pressure: FactoredCase, loads: tuple[FootingLoad, ...]) -> BeamCase:
@@ -153,7 +171,14 @@ def beam_case(footing: CombinedFooting, soil: Soil, pressure: FactoredCase, load
                                    force * column.y - load.mx + height * load.vy))
     columns.sort(key=lambda column: column.x)
     line = loads[0].dead_factor * stem_line_load(footing, soil)
-    return BeamCase(pressure, tuple(columns), footing.lx, footing.ly, line)
+    if footing.plan is None:
+        return BeamCase(pressure, tuple(columns), footing.lx, footing.ly, line)
+
+    def breadth(x: float) -> float:
+        low, high = footing.across(x)
+        return high - low
+
+    return BeamCase(pressure, tuple(columns), footing.lx, footing.ly, line, footing.outline, breadth)
 
 
 def span_label(first: str, second: str, count: int) -> str:
@@ -167,8 +192,8 @@ def _regions(beam: BeamCase) -> list[tuple[float, float, str]]:
     columns = beam.columns
     spans = [(first.x + first.half, second.x - second.half, span_label(first.id, second.id, len(columns)))
              for first, second in zip(columns, columns[1:], strict=False)]
-    return [(-beam.lx / 2, columns[0].x - columns[0].half, "voladizo -X"), *spans,
-            (columns[-1].x + columns[-1].half, beam.lx / 2, "voladizo +X")]
+    return [(beam.start, columns[0].x - columns[0].half, "voladizo -X"), *spans,
+            (columns[-1].x + columns[-1].half, beam.start + beam.lx, "voladizo +X")]
 
 
 def _faces(beam: BeamCase) -> list[tuple[CriticalSection, float]]:
@@ -235,20 +260,25 @@ def _skin_layers(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], b
     return layers
 
 
-def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None],
-                bars: Sequence[RebarSpec]) -> tuple[Section, ReinforcementLayout]:
+def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], bars: Sequence[RebarSpec],
+                at: float | None = None) -> tuple[Section, ReinforcementLayout]:
     """La viga larga como viga: sección B × h con el recubrimiento de la zapata, las barras inferiores y superiores x
     como capas (x desde la cara −Y, profundidad desde la cara superior), el refuerzo superficial y los estribos
-    declarados (D-081, D-083)."""
+    declarados (D-081, D-083). En una planta trapezoidal o en T/L (D-164), la sección en la abscisa at: el ancho local
+    B(x) y solo las barras x que pasan por ella (las que caen dentro de ese ancho)."""
     bottom, top = rows
-    half = footing.ly / 2
-    layers = [BarLayer(depth=bottom.depth, role="flexure",
-                       bars=tuple(BarPosition(designation=bottom.designation, x=x + half) for x in bottom.positions))]
+    low, high = (-footing.ly / 2, footing.ly / 2) if footing.plan is None or at is None else footing.across(at)
+
+    def placed(row: BarRow) -> tuple[BarPosition, ...]:
+        return tuple(BarPosition(designation=row.designation, x=y - low) for y in row.positions if low < y < high)
+
+    layers = [BarLayer(depth=bottom.depth, role="flexure", bars=placed(bottom))]
     if top is not None:
-        layers.insert(0, BarLayer(depth=footing.h - top.depth, role="flexure",
-                                  bars=tuple(BarPosition(designation=top.designation, x=x + half) for x in top.positions)))
+        layers.insert(0, BarLayer(depth=footing.h - top.depth, role="flexure", bars=placed(top)))
+    if footing.plan is not None:  # sin estribos ni piel en la planta no rectangular (BLOCKED aparte, D-164)
+        return Section(bw=high - low, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=None)
     layers += _skin_layers(footing, rows, bars)
-    return Section(bw=footing.ly, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
+    return Section(bw=high - low, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
 
 
 @dataclass(frozen=True)
@@ -268,12 +298,26 @@ class TwoWayWarning:
 def two_way_warning(footing: CombinedFooting) -> TwoWayWarning | None:
     """Aviso si el ancho B alcanza la luz libre ℓn entre las caras de dos columnas vecinas a lo largo de X (criterio del
     usuario, D-091): la zapata se sigue revisando en una dirección (ACI 13.3.2), pero puede trabajar en dos (13.3.4).
-    Con más de dos columnas se avisa con el tramo interior más corto, nombrándolo (D-163)."""
+    Con más de dos columnas se avisa con el tramo que rige, nombrándolo (D-163); en una planta trapezoidal o en T/L, B
+    es el mayor ancho dentro del tramo (D-164)."""
     ordered = sorted(footing.columns, key=lambda column: column.x)
-    spans = [((second.x - second.cx / 2) - (first.x + first.cx / 2), span_label(first.id, second.id, len(ordered)))
-             for first, second in zip(ordered, ordered[1:], strict=False)]
-    clear_span, span = min(spans, key=lambda item: item[0])
-    return TwoWayWarning(footing.ly, clear_span, span) if footing.ly >= clear_span else None
+    found = []
+    for first, second in zip(ordered, ordered[1:], strict=False):
+        low, high = first.x + first.cx / 2, second.x - second.cx / 2
+        width = _widest(footing, low, high)
+        if width >= high - low:
+            found.append(TwoWayWarning(width, high - low, span_label(first.id, second.id, len(ordered))))
+    # Rige el tramo con la mayor razón B/ℓn (con ancho constante, el más corto).
+    return max(found, key=lambda warning: warning.ratio, default=None)
+
+
+def _widest(footing: CombinedFooting, low: float, high: float) -> float:
+    """El mayor ancho de la base entre low y high: ly en el rectángulo; en una planta trapezoidal o en T/L, el de los
+    extremos del tramo y el de cada lado de sus vértices (D-164)."""
+    if footing.plan is None:
+        return footing.ly
+    points = [low, high, *(x + side for x, _ in footing.outline if low < x < high for side in (-1.0, 1.0))]
+    return max(footing.across(x)[1] - footing.across(x)[0] for x in points)
 
 
 def flange_width(profile: Profile, footing: CombinedFooting) -> float | None:
@@ -386,18 +430,61 @@ def t_beam_rows(profile: Profile, footing: CombinedFooting, bars: Sequence[Rebar
     return row(beam.bottom_layer.depth), (row(top.depth) if top is not beam.bottom_layer else None)
 
 
-def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec], profile: Profile | None = None) -> Member:
+def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec], profile: Profile | None = None,
+                     at: float | None = None) -> Member:
     """La viga larga como miembro de vigas, con una estación de referencia que lleva su armado. La de la T invertida va
-    volteada y es estáticamente determinada (sus fuerzas salen de la estática con la presión de Bellos, D-093)."""
+    volteada y es estáticamente determinada (sus fuerzas salen de la estática con la presión de Bellos, D-093). En una
+    planta trapezoidal o en T/L, la sección en la abscisa at (D-164)."""
     if footing.beam is not None:
         assert profile is not None
         section, layout = _t_beam_member(profile, footing, bars)
     else:
-        section, layout = beam_member(footing, (mat_rows(footing, footing.bottom, bars)["x"], top_rows(footing, bars).get("x")), bars)
+        rows = (mat_rows(footing, footing.bottom, bars)["x"], top_rows(footing, bars).get("x"))
+        section, layout = beam_member(footing, rows, bars, at)
     placeholder = Station.model_construct(z=0.0, layout=layout, demands=Demands.model_construct(), case=None)
     return Member.model_construct(id=footing.id, type="beam", min_steel_exception=footing.min_steel_exception,
                                   statically_determinate=True if footing.beam is not None else None,
                                   deep_beam=footing.deep_beam, length=footing.lx, section=section, stations=(placeholder,))
+
+
+def member_at(basis: Basis, footing: CombinedFooting, member: Member, x: float) -> Member:
+    """El miembro de la sección en x: el mismo en la rectangular; en una planta trapezoidal o en T/L, con el ancho local
+    y las barras que pasan por x (D-164)."""
+    return member if footing.plan is None else long_beam_member(footing, basis.bars, basis.profile, x)
+
+
+def bar_extent(footing: CombinedFooting, y: float, x: float) -> tuple[float, float]:
+    """Extremos a lo largo de X de la barra x en la ordenada y que pasa por x: los de la base en el rectángulo; en una
+    planta trapezoidal o en T/L, los cruces de la recta y con el contorno que encierran a x (D-164)."""
+    if footing.plan is None:
+        return -footing.lx / 2, footing.lx / 2
+    outline = footing.outline
+    crossings = sorted(x1 + (x2 - x1) * (y - y1) / (y2 - y1)
+                       for (x1, y1), (x2, y2) in zip(outline, (*outline[1:], outline[0]), strict=True)
+                       if y1 != y2 and min(y1, y2) <= y < max(y1, y2))
+    pairs = list(zip(crossings[::2], crossings[1::2], strict=False))
+    return next(((a, b) for a, b in pairs if a <= x <= b), footing.x_range)
+
+
+def developed(basis: Basis, footing: CombinedFooting, given: tuple[BarRow, str, float, bool], x: float,
+              positions: Sequence[float]) -> list[float]:
+    """Las barras x (posiciones y) que en la sección x tienen, hasta el extremo más cercano de su tramo real menos el
+    recubrimiento, al menos su ld (sin la reducción por As requerido / As suministrado, que depende de las barras que
+    cuentan): en una planta trapezoidal o en T/L, las que se cuentan en el desarrollo desde la sección de mayor momento
+    (opción A del usuario, D-164). given = (fila, extremo declarado, separación, malla inferior)."""
+    row, end, spacing, bottom = given
+    bar = bar_anchorage(row, (end, spacing, bottom), (footing.total_height, footing.cover), 1.0)
+    length = required_length(basis.profile, basis.materials, bar, basis.seismic_level)
+    if isinstance(length, StructuredError):
+        return list(positions)
+    kept = []
+    for y in positions:
+        first, last = bar_extent(footing, y, x)
+        if min(x - first, last - x) - footing.cover >= length.length:
+            kept.append(y)
+    return kept
+
+
 
 
 def _design_moments(beam: BeamCase, x: float, plate: bool) -> tuple[float, float]:
@@ -470,7 +557,8 @@ def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member
     momento) y, si la sección es a d de una cara, el cortante de vigas una sola vez, sin torsión de vigas (la toman los
     momentos de placa); en la cara de una viga alta, los límites de la sección (D-149)."""
     beam, section, has_top = given
-    z = section.x + footing.lx / 2
+    z = section.x - footing.x_range[0]
+    member = member_at(basis, footing, member, section.x)
     twisted = abs(beam.twist(section.x)) > _NEGLIGIBLE_TWIST
     moments = [moment for moment in beam.plate_moments(section.x) if moment != 0] or [beam.moment(section.x)]
     checks: list[Check] = []
@@ -484,7 +572,7 @@ def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member
         values = _plate_values(beam, section.x, moment)
         first = index == 0
         # Sin barras superiores, o si el concreto simple resiste (D-140): concreto simple (D-072), con la sección en la nota.
-        if moment < 0 and (not has_top or plain_resists(basis, footing.ly, footing.h, -moment)):
+        if moment < 0 and (not has_top or plain_resists(basis, member.section.bw, footing.h, -moment)):
             plain = plain_principal_check(basis, footing, -moment, (label, beam.case, _sentence(label) + plate))
             rest = ((*shear_and_torsion_checks(given_station), *(deep_beam_checks(given_station) if footing.deep_beam else ()))
                     if section.sheared else _face_limits(footing, section, given_station))
@@ -508,8 +596,9 @@ def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member
 def _plate_values(beam: BeamCase, x: float, moment: float) -> tuple[tuple[str, float], ...]:
     """Mu = M flexión + M torsión de la sección y los momentos por unidad de ancho de Wood-Armer de las barras x
     (mx = M/B, my = 0, mxy = T/B), para la memoria y su tabla (D-118, D-119)."""
-    design = wood_armer(beam.moment(x) / beam.ly, 0.0, beam.twist(x))
-    return (("M flexion", beam.moment(x)), ("M torsion", moment - beam.moment(x)), ("mx", beam.moment(x) / beam.ly),
+    width = beam.width(x)
+    design = wood_armer(beam.moment(x) / width, 0.0, beam.twist(x))
+    return (("M flexion", beam.moment(x)), ("M torsion", moment - beam.moment(x)), ("mx", beam.moment(x) / width),
             ("my", 0.0), ("mxy", beam.twist(x)), ("mx* inf", design.bottom.x), ("mx* sup", design.top.x))
 
 
@@ -522,7 +611,7 @@ def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, give
     moment = beam.moment(section.x) * (-1.0 if footing.beam is not None else 1.0)
     # El cortante y la torsión solo en las secciones a d de las caras, con su Vu, su Mu y su T (ACI 9.4.3.2 y 9.4.4.3,
     # D-149).
-    z = section.x + footing.lx / 2
+    z = section.x - footing.x_range[0]
     station = Station.model_construct(z=z, layout=member.stations[0].layout, case=beam.case,
                                       demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(section.x), v3=0.0,
                                                                       tu=beam.torque(section.x)))
@@ -567,9 +656,10 @@ def beam_depth_at(basis: Basis, footing: CombinedFooting, member: Member, beam: 
     def depth_at(x: float) -> float | None:
         plate = next((value for value in beam.plate_moments(x) if value != 0), beam.moment(x))
         moment = plate if footing.beam is None else -beam.moment(x)
-        station = Station.model_construct(z=x + footing.lx / 2, layout=member.stations[0].layout, case=beam.case,
+        own = member_at(basis, footing, member, x)
+        station = Station.model_construct(z=x - footing.x_range[0], layout=own.stations[0].layout, case=beam.case,
                                           demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=0.0, v3=0.0, tu=0.0))
-        return shear_depth(StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True))
+        return shear_depth(StationInput(basis.profile, basis.materials, own, station, basis.bars, foundation=True))
 
     return depth_at
 

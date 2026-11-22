@@ -4,6 +4,7 @@ cada esquina del caso de servicio que gobierna la presión admisible. Diagramas 
 combinadas (D-095): la envolvente de los casos mayorados, en la dirección larga y en la transversal.
 """
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -51,9 +52,10 @@ def corner_key(name: str) -> str:
 
 
 def governing_pressure(checks: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """La verificación de presión admisible de mayor razón que tiene las presiones en las esquinas, o None."""
+    """La verificación de presión admisible de mayor razón que tiene las presiones en las esquinas (o en los vértices de
+    una planta trapezoidal o en T/L, D-164), o None."""
     candidates = [check for check in checks if check["name"] == PRESSURE and check.get("ratio") is not None
-                  and corner_key("-x-y") in check["values"]]
+                  and (corner_key("-x-y") in check["values"] or "p vertice 1 [kPa]" in check["values"])]
     return max(candidates, key=lambda check: check["ratio"], default=None)
 
 
@@ -71,9 +73,61 @@ def pressure_figures(results: dict[str, Any], folder: Path) -> dict[str, Path]:
             continue
         geometry = footing["geometry [mm]"]
         path = folder / f"presion_{footing['id']}.svg"
-        path.write_text(pressure_svg(geometry["lx"], geometry["ly"], columns, governing), encoding="utf-8", newline="\n")
+        svg = (plan_pressure_svg(geometry["outline"], columns, governing) if geometry.get("outline")
+               else pressure_svg(geometry["lx"], geometry["ly"], columns, governing))
+        path.write_text(svg, encoding="utf-8", newline="\n")
         figures[footing["id"]] = path
     return figures
+
+
+def plan_pressure_svg(outline: list[list[float]], columns: list[dict[str, float]], check: dict[str, Any]) -> str:
+    """Planta trapezoidal o en T/L (D-164; vértices desde el centroide, mm) con sus columnas y la presión en cada vértice
+    (kPa) del caso; los vértices sin contacto van en rojo."""
+    xs, ys = [point[0] for point in outline], [point[1] for point in outline]
+    lx, ly = max(xs) - min(xs), max(ys) - min(ys)
+    middle = ((max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2)
+    scale = _plan_scale(lx, ly)
+    height = _plan_height(lx, ly)
+    cx0, cy0 = _WIDTH / 2, _ABOVE + ly * scale / 2
+
+    def point(x: float, y: float) -> tuple[float, float]:
+        return cx0 + (x - middle[0]) * scale, cy0 - (y - middle[1]) * scale  # Y hacia arriba en la planta
+
+    shape = " ".join(f"{px:.1f},{py:.1f}" for px, py in (point(x, y) for x, y in outline))
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{_WIDTH}" height="{height:.0f}" viewBox="0 0 {_WIDTH} {height:.0f}">',
+             f'<rect x="0" y="0" width="{_WIDTH}" height="{height:.0f}" fill="#ffffff"/>',
+             f'<text x="{_WIDTH / 2}" y="24" font-size="14" font-family="{_FONT}" text-anchor="middle" fill="{_ACCENT}" '
+             f'font-weight="bold">Presión del suelo en planta, caso {check.get("case", "")} (kPa)</text>',
+             f'<polygon points="{shape}" fill="{_FILL}" stroke="{_INK}" stroke-width="1.5"/>']
+    for column in columns:
+        x0, y0 = point(column["x"] - column["cx"] / 2, column["y"] + column["cy"] / 2)
+        parts.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{column["cx"] * scale:.1f}" height="{column["cy"] * scale:.1f}" '
+                     f'fill="{_COLUMN}" stroke="{_INK}" stroke-width="1"/>')
+    count = len(outline)
+    for index, (x, y) in enumerate(outline, start=1):
+        value = check["values"][f"p vertice {index} [kPa]"]
+        px, py = point(x, y)
+        color = _NONE if value == 0 else _INK
+        parts.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="4" fill="{color}"/>')
+        # El número del vértice hacia afuera, por la suma de las normales exteriores de sus dos lados (contorno
+        # antihorario); la presión de cada vértice va en la tabla.
+        (ax, ay), (bx, by) = outline[index - 2], outline[index % count]
+        nx, ny = (y - ay) + (by - y), -(x - ax) - (bx - x)
+        if (x - ax) * (by - y) - (y - ay) * (bx - x) < 0:  # esquina entrante: el número va hacia adentro
+            nx, ny = -nx, -ny
+        size = math.hypot(nx, ny) or 1.0
+        lx_, ly_ = px + 14 * nx / size, py - 14 * ny / size + 4
+        parts.append(f'<text x="{lx_:.1f}" y="{ly_:.1f}" font-size="12" font-family="Helvetica" text-anchor="middle" '
+                     f'fill="{color}">{index}</text>')
+    parts += [f'<text x="{_WIDTH / 2}" y="{height - 16:.0f}" font-size="12" font-family="{_FONT}" text-anchor="middle" '
+              f'fill="{_INK}">Caja {lx:.0f} × {ly:.0f} mm; {check.get("note", "")}</text>']
+    parts += _legend(height - _LEGEND + 2, [
+        (f'<rect x="0" y="0" width="22" height="12" fill="{_FILL}" stroke="{_INK}" stroke-width="1"/>', "Zapata"),
+        (f'<rect x="0" y="0" width="22" height="12" fill="{_COLUMN}" stroke="{_INK}" stroke-width="1"/>', "Columna"),
+        (f'<circle cx="11" cy="6" r="4" fill="{_INK}"/>', "Vértice (su presión, en la tabla)"),
+        (f'<circle cx="11" cy="6" r="4" fill="{_NONE}"/>', "Sin contacto")])
+    parts.append("</svg>")
+    return "\n".join(parts)
 
 
 def pressure_svg(lx: float, ly: float, columns: list[dict[str, float]], check: dict[str, Any]) -> str:

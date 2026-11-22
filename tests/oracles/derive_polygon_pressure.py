@@ -86,18 +86,18 @@ def _solve3(m: list[list[float]], r: list[float]) -> list[float]:
     return x
 
 
-def _newton(pieces: list[list[Point]], ex: float, ey: float, scale: float) -> tuple[float, float, float]:
-    target = (LOAD, LOAD * ex, LOAD * ey)
+def _newton(pieces: list[list[Point]], ex: float, ey: float, scale: float, load: float = LOAD) -> tuple[float, float, float]:
+    target = (load, load * ex, load * ey)
     area = _resultant(pieces, (1.0, 0.0, 0.0))[0]
-    theta = [LOAD / area, 0.0, 0.0]
-    steps = (LOAD / area * 1e-6, LOAD / area / scale * 1e-6, LOAD / area / scale * 1e-6)
+    theta = [load / area, 0.0, 0.0]
+    steps = (load / area * 1e-6, load / area / scale * 1e-6, load / area / scale * 1e-6)
 
     def residual(t: list[float]) -> list[float]:
         got = _resultant(pieces, (t[0], t[1], t[2]))
         return [got[k] - target[k] for k in range(3)]
 
     def norm(r: list[float]) -> float:
-        return math.hypot(r[0], r[1] / scale, r[2] / scale) / LOAD
+        return math.hypot(r[0], r[1] / scale, r[2] / scale) / load
 
     r = residual(theta)
     for _ in range(200):

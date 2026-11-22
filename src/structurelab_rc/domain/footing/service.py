@@ -13,7 +13,7 @@ from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING, overt
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete, invalid_input
 from structurelab_rc.mechanics.materials import NoEquilibrium
-from structurelab_rc.mechanics.soil_pressure import SoilPressure, footing_pressure
+from structurelab_rc.mechanics.soil_pressure import SoilPressure, footing_pressure, polygon_pressure
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing, FootingBase, FootingLoad, Soil
 
@@ -23,13 +23,33 @@ CONTACT_CLAUSE = "D-052 (minimo declarado por el usuario)"
 _REGIONS = {"A": "triangular", "B": "pentagonal", "C": "total", "D": "trapezoidal en x", "E": "trapezoidal en y"}
 
 
+def is_polygon(footing: FootingBase) -> bool:
+    """Si la base es una planta trapezoidal o en T/L (D-164) y no el rectángulo lx × ly."""
+    return isinstance(footing, CombinedFooting) and footing.plan is not None
+
+
+def base_pressure(footing: FootingBase, load: float, ex: float, ey: float) -> SoilPressure:
+    """La presión del suelo bajo la base: Bellos y Bakas en el rectángulo y sus mismas ecuaciones resueltas sobre la planta
+    en la trapezoidal o en T/L (D-164)."""
+    if isinstance(footing, CombinedFooting) and footing.plan is not None:
+        return polygon_pressure(footing.outline, load, ex, ey)
+    return footing_pressure(footing.lx, footing.ly, load, ex, ey)
+
+
 def contact_region(pressure: SoilPressure) -> str:
-    """La región de Bellos y Bakas (2017) en palabras, para la nota de la verificación."""
+    """La región de Bellos y Bakas (2017) en palabras, para la nota de la verificación; en una planta poligonal, si el
+    contacto es total o parcial (D-164)."""
+    if pressure.outline is not None:
+        return (f"Contacto {pressure.region}: ecuaciones de equilibrio de Bellos y Bakas (2017) resueltas sobre la planta "
+                "(D-164)")
     return f"Region {pressure.region} de Bellos y Bakas (2017): contacto {_REGIONS[pressure.region]}"
 
 
 def corner_values(pressure: SoilPressure) -> tuple[tuple[str, float], ...]:
-    """La presión en cada esquina, para la planta y las tablas de la memoria (D-080)."""
+    """La presión en cada esquina, para la planta y las tablas de la memoria (D-080); en una planta poligonal, en cada
+    vértice en el orden del contorno (D-164)."""
+    if pressure.outline is not None:
+        return tuple((f"p vertice {index}", value) for index, value in enumerate(pressure.vertices(), start=1))
     return tuple((f"p esquina {name}", value) for name, value in zip(("-x-y", "+x-y", "+x+y", "-x+y"), pressure.corners(),
                                                                      strict=True))
 
@@ -44,7 +64,7 @@ def _case_checks(profile: Profile, footing: FootingBase, soil: Soil, load: Footi
     try:
         if ex is None or ey is None:
             raise NoEquilibrium("la carga de servicio sobre el suelo no es de compresion")
-        pressure = footing_pressure(footing.lx, footing.ly, resultant.n, ex, ey)
+        pressure = base_pressure(footing, resultant.n, ex, ey)
     except NoEquilibrium as error:
         failure = invalid_input(f"Sin equilibrio con el suelo: {error}", member=footing.id, case=load.case)
         return [

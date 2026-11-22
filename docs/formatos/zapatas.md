@@ -166,7 +166,8 @@ los dos perfiles.
 | `columns[]` | lista | Dos o más columnas a lo largo de la viga (D-163), sin traslaparse entre vecinas. Con más de dos, los tramos interiores se rotulan "entre columnas C1 y C2"; cada franja transversal llega hasta el punto medio entre las caras si se monta con la de la columna vecina, y el aviso de dos direcciones (D-091) usa el tramo interior más corto (`two_way_warning.tramo`). |
 | `columns[].id` | texto | Identificador de la columna. |
 | `columns[].cx`, `columns[].cy` | mm | Sección (cx a lo largo de X). |
-| `columns[].x`, `columns[].y` | mm | Posición del eje de la columna respecto al centroide de la base. |
+| `columns[].x`, `columns[].y` | mm | Posición del eje de la columna respecto al centroide de la base; con `plan`, en el sistema de la planta (ver abajo). |
+| `plan` | | Opcional (D-164): planta trapezoidal o en T/L, en lugar de `lx` y `ly` (que entonces se calculan, como la caja de la planta). Ver "Planta trapezoidal o en T/L". |
 | `columns[].dowels` | | Pasadores, como en la zapata aislada (opcional; sin ellos sus verificaciones quedan INCOMPLETE). |
 | `columns[].band` | | Refuerzo transversal inferior bajo la columna, paralelo a Y, en el ancho de su franja (columna + d/2 a cada lado, dentro de la base), a la profundidad de las barras y de la malla inferior: `designation`, `spacing` y `end` (opcional). Es el único refuerzo inferior transversal de esa zona: la malla inferior y va solo fuera de las zonas de band (D-097). |
 | `columns[].band_top` | | Band superior (D-119): barras transversales arriba en el ancho de la franja, `designation`, `spacing` y `end` (opcional, sin `band_spacing`); toman el momento negativo de la franja y el de la torsión de placa. Van como `top.y` (debajo de `top.x` si esa dirección va más cerca de la cara) y son la capa superior de la franja; donde lo hay, `top.y` va solo fuera de esa zona. Sin `top`, terminan como la malla inferior. No aplica en la T invertida. |
@@ -206,6 +207,56 @@ La memoria de la combinada rectangular (D-119) trae:
 - un índice DCR con una fila por verificación, dirección y signo de momento.
 
 No hay torsión de vigas: `torsion_layers` se rechaza. La T invertida conserva la torsión de vigas en su alma.
+
+### Planta trapezoidal o en T/L (`plan`, D-164)
+
+La planta se declara en ejes globales, con `principal_direction`, igual que la rectangular. Su sistema: `a` a lo largo de
+la dirección principal desde el borde negativo de la zapata (a = 0) y `t` en el eje global transversal (Y si la viga va
+en X; X si va en Y) desde una línea de referencia que elige el usuario (t = 0), por ejemplo el lindero o el eje de las
+columnas. Las columnas (`x`, `y`) se dan en ese mismo sistema global. El área, el centroide, las inercias y el núcleo se
+calculan; el centroide sale en la memoria y en `geometry [mm].centroid` (a, t).
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `plan.shape` | texto | `trapezoid` o `stepped`. |
+| `plan.length` | mm | Trapecio: el largo a lo largo de la dirección principal. |
+| `plan.start`, `plan.end` | mm | Trapecio: `{low, high}`, las coordenadas `t` mínima y máxima del extremo negativo (a = 0) y del positivo (a = length). Con el mismo `low` (o `high`) en los dos extremos, ese lado queda recto. |
+| `plan.parts[]` | mm | Planta en T, L u otra escalonada: dos o más tramos en orden a lo largo de la dirección principal, cada uno `{length, low, high}`. Centrados queda en T; con un borde común, en L. Cada tramo debe compartir ancho con el siguiente. |
+
+Ejemplo (viga en la Y global, trapecio con el lado −X recto):
+
+```json
+"principal_direction": "y",
+"plan": {"shape": "trapezoid", "length": 7000, "start": {"low": -1300, "high": 1300}, "end": {"low": -1300, "high": 300}}
+```
+
+Con `plan`, el cálculo:
+
+- **Presión:** las ecuaciones de equilibrio de Bellos y Bakas resueltas sobre la planta. La memoria da la presión en cada
+  vértice (`p vertice i`, numerados en la planta desde el centroide) y si el contacto es total o parcial. Sin equilibrio,
+  la resultante cae fuera de la envolvente convexa.
+- **Volcamiento:** alrededor de cada lado de la envolvente convexa (los oblicuos incluidos). La pasiva del deslizamiento
+  usa el ancho proyectado (lx, ly de la caja).
+- **Viga longitudinal:** el cuerpo libre se integra sobre la planta. Cada sección usa el ancho local B(x) y solo las
+  barras x que pasan por ella; la torsión de placa, mxy = T/B(x). En el desarrollo de las barras x desde la sección de
+  mayor momento cuentan solo las que alcanzan a desarrollarse hasta el extremo real de su tramo: deben bastar para el As
+  requerido de esa sección; si no, la revisión no cumple (decisión del usuario, D-164).
+- **Franjas:** los voladizos van hasta los bordes locales en el eje de la columna; si la franja cruza un escalón, hasta
+  los del tramo más angosto.
+- **Punzonamiento:** el perímetro rectangular a d/2 se recorta con la planta y b0 suma lo que queda dentro. αs sale de
+  las esquinas del perímetro dentro de la planta: 4 → 40, 3 → 30 (un borde corta una esquina), 2 → 30 (borde), 1 → 20.
+- **Aviso de dos direcciones (D-091):** ℓn de cada tramo contra el mayor ancho dentro de ese tramo.
+
+- **Despiece:** cada barra va de borde a borde de la planta menos el recubrimiento a lo largo de la barra, como en el
+  cabezal con esquinas recortadas (D-141); las de longitud distinta van en grupos aparte, con una marca cada una
+  ("malla inferior y (1)", "(2)", …). En una planta con dos tramos anchos, la barra que cruza el angosto queda en dos.
+  La cartilla, el `.dli` y el DXF las llevan como cualquier otra barra.
+- **Dibujo:** las plantas con el contorno real, el recubrimiento como contorno interior, la cadena de cotas del largo de
+  cada tramo y el ancho de cada lado transversal; el alzado con el largo real y cada corte con el ancho de la base en la
+  columna.
+
+No implementado todavía: estribos y refuerzo superficial (si se declaran, `BLOCKED` y la viga se revisa sin ellos), la T
+invertida con esta planta (entrada inválida), el diseño y la planta de localización (la zapata no se ubica en ella).
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 

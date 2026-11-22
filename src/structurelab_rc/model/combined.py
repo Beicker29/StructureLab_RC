@@ -4,6 +4,7 @@ origen en el centroide de la base; principal_direction dice en qué eje va la vi
 trabaja en ejes de la viga (X a lo largo de ella): con la dirección principal en la Y global, la geometría, el armado y
 las cargas se rotan al cargar (D-094). Las propiedades derivadas se calculan; nunca se declaran."""
 
+import math
 from typing import Any, Literal, Self
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator, model_validator
@@ -100,6 +101,93 @@ class TopMat(_Input):
         return self.first or ("x" if self.x is not None else "y")
 
 
+Point = tuple[float, float]
+
+
+class PlanEdge(_Input):
+    """Un extremo del trapecio (D-164): sus coordenadas transversales mínima y máxima, en mm."""
+
+    low: float
+    high: float
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if self.high <= self.low:
+            raise ValueError("en la planta, high debe ser mayor que low")
+        return self
+
+
+class PlanPart(PlanEdge):
+    """Un tramo de la planta en T o L (D-164): su largo a lo largo de la dirección principal y sus coordenadas
+    transversales mínima y máxima, en mm."""
+
+    length: PositiveFloat
+
+
+class Plan(_Input):
+    """Planta no rectangular de la combinada (D-164), en ejes globales: a lo largo de la dirección principal desde el
+    borde negativo de la zapata (a = 0) y en el eje global transversal desde la línea de referencia del usuario (t = 0).
+    trapezoid: length, start (extremo negativo) y end (positivo); stepped: los tramos en orden, dos o más (T, L u otra
+    forma escalonada). Las columnas se dan en el mismo sistema; el área y el centroide se calculan."""
+
+    shape: Literal["trapezoid", "stepped"]
+    length: PositiveFloat | None = None
+    start: PlanEdge | None = None
+    end: PlanEdge | None = None
+    parts: tuple[PlanPart, ...] | None = None
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if self.shape == "trapezoid":
+            if self.length is None or self.start is None or self.end is None or self.parts is not None:
+                raise ValueError("la planta trapezoid declara length, start y end (y no parts)")
+        elif self.parts is None or len(self.parts) < COLUMNS or any(
+                value is not None for value in (self.length, self.start, self.end)):
+            raise ValueError("la planta stepped declara parts con dos o más tramos (y no length, start ni end)")
+        elif any(min(a.high, b.high) <= max(a.low, b.low) for a, b in zip(self.parts, self.parts[1:], strict=False)):
+            raise ValueError("en la planta stepped, cada tramo debe compartir ancho con el siguiente")
+        return self
+
+    def polygon(self) -> tuple[Point, ...]:
+        """Contorno en (a, t), antihorario, sin vértices alineados en los escalones."""
+        if self.shape == "trapezoid":
+            assert self.length is not None and self.start is not None and self.end is not None
+            return ((0.0, self.start.low), (self.length, self.end.low), (self.length, self.end.high), (0.0, self.start.high))
+        assert self.parts is not None
+        lower: list[Point] = []
+        upper: list[Point] = []
+        a = 0.0
+        for part in self.parts:
+            lower += [(a, part.low), (a + part.length, part.low)]
+            upper += [(a, part.high), (a + part.length, part.high)]
+            a += part.length
+        return _without_collinear((*lower, *reversed(upper)))
+
+    def area_centroid(self) -> tuple[float, float, float]:
+        """Área y centroide (a, t) del contorno (fórmula de Gauss)."""
+        points = self.polygon()
+        area = ca = ct = 0.0
+        for (a1, t1), (a2, t2) in zip(points, (*points[1:], points[0]), strict=True):
+            cross = a1 * t2 - a2 * t1
+            area, ca, ct = area + cross, ca + (a1 + a2) * cross, ct + (t1 + t2) * cross
+        return area / 2, ca / (3 * area), ct / (3 * area)
+
+
+_COLLINEAR = 1e-9  # mm²: producto cruz por debajo del cual tres puntos están alineados
+
+
+def _without_collinear(points: tuple[Point, ...]) -> tuple[Point, ...]:
+    """El contorno sin puntos repetidos ni intermedios sobre una recta (los escalones de ancho igual)."""
+    unique = [point for index, point in enumerate(points) if point != points[index - 1]]
+    kept = []
+    for index, point in enumerate(unique):
+        before, after = unique[index - 1], unique[(index + 1) % len(unique)]
+        cross = (point[0] - before[0]) * (after[1] - before[1]) - (point[1] - before[1]) * (after[0] - before[0])
+        if abs(cross) > _COLLINEAR:
+            kept.append(point)
+    return tuple(kept)
+
+
 class CombinedColumn(_Input):
     """Columna cx × cy (cx a lo largo de X) con su eje en (x, y) respecto al centroide de la base; dowels son sus
     pasadores (si faltan, sus verificaciones quedan INCOMPLETE) y band el refuerzo inferior transversal bajo ella,
@@ -161,6 +249,7 @@ class CombinedFooting(RectangularBase, _Input):
     deep_beam: bool = False
     beam: FoundationBeam | None = None
     principal_direction: Literal["x", "y"] = "x"
+    plan: Plan | None = None  # D-164: planta trapezoidal o en T/L; sin ella, el rectángulo lx × ly
 
     @model_validator(mode="before")
     @classmethod
@@ -182,6 +271,7 @@ class CombinedFooting(RectangularBase, _Input):
         intercambian (D-099); cargas Vx' = Vy, Vy' = −Vx, Mx' = My, My' = −Mx (P no cambia). Estribos, refuerzo
         superficial, band y la viga de la T no tienen dirección propia: ya van paralelos o transversales
         a la viga. El modelo queda en ejes de la viga: no se vuelve a serializar como entrada."""
+        data = _place_plan(data)
         if not isinstance(data, dict) or data.get("principal_direction") != "y":
             return data
         rotated = {**data, "lx": data.get("ly"), "ly": data.get("lx"),
@@ -203,9 +293,15 @@ class CombinedFooting(RectangularBase, _Input):
 
     @model_validator(mode="after")
     def _check(self) -> Self:
+        first_x, last_x = self.x_range
         for column in self.columns:
-            if abs(column.x) + column.cx / 2 > self.lx / 2 or abs(column.y) + column.cy / 2 > self.ly / 2:
+            x0, x1 = column.x - column.cx / 2, column.x + column.cx / 2
+            low, high = self.across(x0, x1) if first_x <= x0 and x1 <= last_x else (math.inf, -math.inf)
+            if x0 < first_x or x1 > last_x or column.y - column.cy / 2 < low or column.y + column.cy / 2 > high:
                 raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' se sale de la base")
+        if self.plan is not None and self.beam is not None:
+            raise ValueError(f"la zapata combinada '{self.id}': la T invertida con planta trapezoidal o en T/L no está "
+                             "implementada (D-164)")
         ordered = sorted(self.columns, key=lambda column: column.x)
         if any(first.x + first.cx / 2 >= second.x - second.cx / 2 for first, second in zip(ordered, ordered[1:], strict=False)):
             # Se compara en ejes de la viga; el mensaje nombra el eje global en que la escribió el usuario (D-094).
@@ -250,6 +346,88 @@ class CombinedFooting(RectangularBase, _Input):
                 raise ValueError(f"la zapata combinada en T invertida '{self.id}' no usa band ni band_top (columna '{column.id}')")
 
     @property
+    def outline(self) -> tuple[Point, ...]:
+        """Contorno de la base en ejes de la viga, con el origen en su centroide, antihorario: el rectángulo lx × ly o la
+        planta declarada (D-164)."""
+        if self.plan is None:
+            hx, hy = self.lx / 2, self.ly / 2
+            return ((-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy))
+        _, ca, ct = self.plan.area_centroid()
+        points = [(a - ca, t - ct) for a, t in self.plan.polygon()]
+        if self.principal_direction == "x":
+            return tuple(points)
+        # Y de la viga = −X global (D-094): el reflejo t → −t invierte el sentido de recorrido.
+        return tuple((a, -t) for a, t in reversed(points))
+
+    @property
+    def area(self) -> float:
+        """Área de la base, en mm²: la del rectángulo o la de la planta (D-164)."""
+        return self.lx * self.ly if self.plan is None else self.plan.area_centroid()[0]
+
+    def _second_moments(self) -> tuple[float, float]:
+        """(∫y² dA, ∫x² dA) de la planta respecto a su centroide (fórmula de Green)."""
+        ixx = iyy = 0.0
+        points = self.outline
+        for (x1, y1), (x2, y2) in zip(points, (*points[1:], points[0]), strict=True):
+            cross = x1 * y2 - x2 * y1
+            ixx += (y1 * y1 + y1 * y2 + y2 * y2) * cross / 12
+            iyy += (x1 * x1 + x1 * x2 + x2 * x2) * cross / 12
+        return abs(ixx), abs(iyy)
+
+    @property
+    def inertia_x(self) -> float:
+        """Inercia respecto al eje X por el centroide, en mm⁴ (en una planta trapezoidal o en T/L, la del polígono)."""
+        return super().inertia_x if self.plan is None else self._second_moments()[0]
+
+    @property
+    def inertia_y(self) -> float:
+        """Inercia respecto al eje Y por el centroide, en mm⁴."""
+        return super().inertia_y if self.plan is None else self._second_moments()[1]
+
+    @property
+    def modulus_x(self) -> float:
+        """Módulo de sección respecto al eje X con la fibra más alejada, en mm³."""
+        return super().modulus_x if self.plan is None else self.inertia_x / max(abs(y) for _, y in self.outline)
+
+    @property
+    def modulus_y(self) -> float:
+        """Módulo de sección respecto al eje Y con la fibra más alejada, en mm³."""
+        return super().modulus_y if self.plan is None else self.inertia_y / max(abs(x) for x, _ in self.outline)
+
+    @property
+    def kern(self) -> tuple[float, float]:
+        """Núcleo central en cada eje (S/A; lx/6 y ly/6 en el rectángulo)."""
+        return super().kern if self.plan is None else (self.modulus_y / self.area, self.modulus_x / self.area)
+
+    @property
+    def x_range(self) -> tuple[float, float]:
+        """Extremos de la base a lo largo de la viga, en ejes de la viga (−lx/2 y lx/2 en el rectángulo)."""
+        xs = [x for x, _ in self.outline]
+        return min(xs), max(xs)
+
+    @property
+    def y_range(self) -> tuple[float, float]:
+        """Extremos de la base transversales a la viga, en ejes de la viga (−ly/2 y ly/2 en el rectángulo)."""
+        ys = [y for _, y in self.outline]
+        return min(ys), max(ys)
+
+    def across(self, x0: float, x1: float | None = None) -> tuple[float, float]:
+        """Bordes −Y y +Y de la base en la abscisa x0 o, entre x0 y x1, los más estrechos (D-164): en un escalón cuenta
+        el tramo más angosto. En el rectángulo, (−ly/2, ly/2)."""
+        if self.plan is None:
+            return -self.ly / 2, self.ly / 2
+        high_x = x0 if x1 is None else x1
+        first, last = self.x_range
+        points = [x0, high_x, *(x for x, _ in self.outline if x0 < x < high_x)]
+        low, high = -math.inf, math.inf
+        for x in points:
+            # A cada lado del punto (en un escalón, los dos tramos): la planta es monótona en x.
+            for side in (x - _NUDGE, x + _NUDGE):
+                values = _crossings(self.outline, min(max(side, first + _NUDGE), last - _NUDGE))
+                low, high = max(low, min(values)), min(high, max(values))
+        return low, high
+
+    @property
     def total_height(self) -> float:
         """Altura total: la de la viga en la T invertida (D-093) o el espesor h, en mm."""
         return self.h if self.beam is None else self.beam.height
@@ -283,6 +461,44 @@ class CombinedFooting(RectangularBase, _Input):
 
 
 _GLOBAL_KEYS = ("Vx_kN", "Vy_kN", "Mx_kNm", "My_kNm")
+
+
+_NUDGE = 1e-6  # mm: a cada lado de una abscisa, para leer los dos tramos de un escalón
+
+
+def _crossings(outline: tuple[Point, ...], x: float) -> list[float]:
+    """Las y en que la recta vertical de abscisa x (fuera de los lados verticales) corta el contorno."""
+    found = []
+    for (x1, y1), (x2, y2) in zip(outline, (*outline[1:], outline[0]), strict=True):
+        if x1 != x2 and min(x1, x2) <= x <= max(x1, x2):
+            found.append(y1 + (y2 - y1) * (x - x1) / (x2 - x1))
+    return found
+
+
+def _place_plan(data: Any) -> Any:
+    """Con plan (D-164): lx y ly son la caja de la planta en ejes globales y las columnas pasan del sistema de la planta
+    (a desde el borde negativo de la dirección principal, t desde la línea de referencia transversal) al centroide de la
+    base, aún en ejes globales; después se rotan como toda la zapata (D-094)."""
+    if not isinstance(data, dict) or not isinstance(data.get("plan"), dict):
+        return data
+    if "lx" in data or "ly" in data:
+        raise ValueError(f"la zapata combinada '{data.get('id', '')}' declara plan: lx y ly se calculan, no se declaran (D-164)")
+    plan = Plan.model_validate(data["plan"])
+    _, ca, ct = plan.area_centroid()
+    points = plan.polygon()
+    along = max(a for a, _ in points) - min(a for a, _ in points)
+    width = max(t for _, t in points) - min(t for _, t in points)
+    principal = data.get("principal_direction", "x")
+    sizes = {"lx": along, "ly": width} if principal == "x" else {"lx": width, "ly": along}
+
+    def moved(column: Any) -> Any:
+        if not isinstance(column, dict) or "x" not in column or "y" not in column:
+            return column
+        if principal == "x":
+            return {**column, "x": column["x"] - ca, "y": column["y"] - ct}
+        return {**column, "x": column["x"] - ct, "y": column["y"] - ca}
+
+    return {**data, **sizes, "columns": [moved(column) for column in data.get("columns", [])]}
 
 
 def beam_to_global(x: float, y: float) -> tuple[float, float]:

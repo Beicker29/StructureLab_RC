@@ -149,8 +149,8 @@ class TemplateCombinedFooting(_Input):
     El armado y la geometría se validan con el proyecto que se genera."""
 
     id: str = Field(min_length=1)
-    lx: PositiveFloat
-    ly: PositiveFloat
+    lx: PositiveFloat | None = None  # sin plan; con plan, se calculan (D-164)
+    ly: PositiveFloat | None = None
     h: PositiveFloat
     cover: PositiveFloat
     fill_height: NonNegativeFloat
@@ -168,9 +168,14 @@ class TemplateCombinedFooting(_Input):
     deep_beam: bool = False
     beam: dict[str, Any] | None = None
     principal_direction: Literal["x", "y"] = "x"  # eje global de la viga (D-094); las fuerzas de ETABS no se tocan
+    plan: dict[str, Any] | None = None  # D-164: planta trapezoidal o en T/L; se valida con el proyecto
 
     @model_validator(mode="after")
     def _check_sources(self) -> Self:
+        rectangle = self.lx is not None and self.ly is not None
+        planned = self.plan is not None and self.lx is None and self.ly is None
+        if not ((self.plan is None and rectangle) or planned):
+            raise ValueError(f"la zapata combinada '{self.id}' declara lx y ly o plan (D-164), no los dos")
         _check_loads_source(f"de la zapata combinada '{self.id}'", self.columns, self.loads_source)
         if any(column.property_lines is not None for column in self.columns):
             raise ValueError(f"la zapata combinada '{self.id}' declara property_lines: los linderos son del diseño (D-154); en la "

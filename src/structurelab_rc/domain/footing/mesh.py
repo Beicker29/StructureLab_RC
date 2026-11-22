@@ -89,8 +89,9 @@ def band_limits(footing: FootingBody, direction: str) -> tuple[float, float] | N
 
 
 def stirrup_diameter(footing: FootingBody | CombinedFooting, bars: Sequence[RebarSpec]) -> float:
-    """Diámetro de los estribos de la zapata combinada (0 si no los tiene o es una zapata aislada)."""
-    if not isinstance(footing, CombinedFooting) or footing.stirrups is None:
+    """Diámetro de los estribos de la zapata combinada (0 si no los tiene, es una zapata aislada o su planta es
+    trapezoidal o en T/L, donde no se usan, D-164)."""
+    if not isinstance(footing, CombinedFooting) or footing.stirrups is None or footing.plan is not None:
         return 0.0
     return next(bar.diameter_mm for bar in bars if bar.designation == footing.stirrups.designation)
 
@@ -106,7 +107,12 @@ def _row(footing: FootingBody | CombinedFooting, direction: str, bar: tuple[BarS
     # Los estribos de la combinada encierran las barras x por los lados ±Y; a lo largo de X no hay estribo en los extremos.
     half = width / 2 - footing.cover - (stirrup if direction == "x" else 0.0) - spec.diameter_mm / 2
     band = band_limits(footing, direction) if isinstance(footing, FootingBody) else None
-    positions, inner = _positions(-half, half, bar_set, band)
+    # En una planta trapezoidal o en T/L el origen es su centroide, no el centro de su caja (D-164).
+    centre = 0.0
+    if isinstance(footing, CombinedFooting) and footing.plan is not None and section is None:
+        extent = footing.y_range if direction == "x" else footing.x_range
+        centre = (extent[0] + extent[1]) / 2
+    positions, inner = _positions(centre - half, centre + half, bar_set, band)
     return BarRow(direction, bar_set.designation, spec.diameter_mm, spec.area_mm2, thickness - from_face, width,
                   tuple(positions), band, tuple(inner))
 

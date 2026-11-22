@@ -316,6 +316,40 @@ class _CombinedRatios:
         return min(ratios)
 
 
+def plan_chords(footing: CombinedFooting, direction: str, position: float) -> list[tuple[float, float]]:
+    """Los tramos de una barra x (en y = position) o y (en x = position) dentro de una planta trapezoidal o en T/L, de
+    borde a borde menos el recubrimiento a lo largo de la barra, como en el cabezal con esquinas recortadas (D-141,
+    D-164). En una planta con dos tramos anchos la barra que cruza el angosto queda en dos."""
+    outline = footing.outline
+    along, across = (0, 1) if direction == "x" else (1, 0)
+    crossings = sorted(a[along] + (b[along] - a[along]) * (position - a[across]) / (b[across] - a[across])
+                       for a, b in zip(outline, (*outline[1:], outline[0]), strict=True)
+                       if a[across] != b[across] and min(a[across], b[across]) <= position < max(a[across], b[across]))
+    cover = footing.cover
+    return [(low + cover, high - cover) for low, high in zip(crossings[::2], crossings[1::2], strict=False) if high - low > 2 * cover]
+
+
+def _plan_runs(basis: Basis, footing: CombinedFooting, row: BarRow, given: tuple[str, float, tuple[Hook | None, Hook | None]],
+               anchorage: tuple[float, bool, tuple[float, float], float | None]) -> list[BarRun]:
+    """Las barras de una fila: en el rectángulo, una corrida centrada; en una planta trapezoidal o en T/L (D-164), una por
+    cada tramo distinto (cada longitud, su marca), numeradas en el grupo."""
+    if footing.plan is None:
+        run = _row_run(basis, row, given, anchorage)
+        return [] if run is None else [run]
+    groups: dict[tuple[float, float], list[float]] = {}
+    for position in row.positions:
+        for span in plan_chords(footing, row.direction, position):
+            groups.setdefault((round(span[0], 1), round(span[1], 1)), []).append(position)
+    label, _, hooks = given
+    runs = []
+    for number, (span, positions) in enumerate(sorted(groups.items(), key=lambda item: (item[0][1] - item[0][0], item[0])), start=1):
+        part = replace(row, positions=tuple(positions), band_positions=())
+        name = label + (f" ({number})" if len(groups) > 1 else "")
+        run = _row_run(basis, part, (name, span[1] - span[0], hooks), anchorage, span)
+        runs += [] if run is None else [run]
+    return runs
+
+
 def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[BarRun]:
     """Zapata combinada rectangular o T invertida: mallas, band y band superior, barras superiores, piel o capas de la
     viga, estribos y pasadores."""
@@ -328,35 +362,37 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
     geometry = (h, cover)
     labels = column_labels(footing)
     runs: list[BarRun | None] = [
-        _row_run(basis, bottom["x"], ("malla inferior x", along, _hooks(basis, bottom["x"].diameter, footing.bottom.x.end)),
-                 (footing.bottom.x.spacing, True, geometry, ratios.x(bottom["x"], True))),
+        *_plan_runs(basis, footing, bottom["x"], ("malla inferior x", along, _hooks(basis, bottom["x"].diameter, footing.bottom.x.end)),
+                    (footing.bottom.x.spacing, True, geometry, ratios.x(bottom["x"], True))),
     ]
     mesh_y = transverse_bottom(footing, bottom["y"])
-    runs.append(_row_run(basis, mesh_y, ("malla inferior y", across, _hooks(basis, bottom["y"].diameter, footing.bottom.y.end)),
-                         (footing.bottom.y.spacing, True, geometry,
-                          ratios.y(bottom["y"], footing.bottom.y.spacing, True, [c.band is not None for c in footing.columns]))))
+    runs += _plan_runs(basis, footing, mesh_y, ("malla inferior y", across, _hooks(basis, bottom["y"].diameter, footing.bottom.y.end)),
+                       (footing.bottom.y.spacing, True, geometry,
+                        ratios.y(bottom["y"], footing.bottom.y.spacing, True, [c.band is not None for c in footing.columns])))
     for index, column in enumerate(footing.columns):
         band = band_row(footing, column, bottom["y"], basis)
         if band is not None and column.band is not None:
-            runs.append(_row_run(basis, band, (f"band columna {labels[column.id]}", across, _hooks(basis, band.diameter, column.band.end)),
-                                 (column.band.spacing, True, geometry, ratios.strip(index, band, True))))
+            runs += _plan_runs(basis, footing, band, (f"band columna {labels[column.id]}", across,
+                                                      _hooks(basis, band.diameter, column.band.end)),
+                               (column.band.spacing, True, geometry, ratios.strip(index, band, True)))
     if footing.top is not None:
         if "x" in tops and footing.top.x is not None:
-            runs.append(_row_run(basis, tops["x"], ("barras superiores x", along, _hooks(basis, tops["x"].diameter, footing.top.x.end)),
-                                 (footing.top.x.spacing, False, geometry, ratios.x(tops["x"], False))))
+            runs += _plan_runs(basis, footing, tops["x"], ("barras superiores x", along,
+                                                           _hooks(basis, tops["x"].diameter, footing.top.x.end)),
+                               (footing.top.x.spacing, False, geometry, ratios.x(tops["x"], False)))
         across_top = transverse_top(footing, tops.get("y"), bottom["y"].depth)
         if across_top is not None and footing.top.y is not None:
             banded = [c.band_top is not None for c in footing.columns]
-            runs.append(_row_run(basis, across_top, ("barras superiores y", across, _hooks(basis, across_top.diameter, footing.top.y.end)),
-                                 (footing.top.y.spacing, False, geometry,
-                                  ratios.y(tops["y"], footing.top.y.spacing, False, banded))))
+            runs += _plan_runs(basis, footing, across_top, ("barras superiores y", across,
+                                                            _hooks(basis, across_top.diameter, footing.top.y.end)),
+                               (footing.top.y.spacing, False, geometry, ratios.y(tops["y"], footing.top.y.spacing, False, banded)))
     for index, column in enumerate(footing.columns):
         band_top = band_top_row(footing, column, bottom["y"].depth, bars)
         if band_top is not None and column.band_top is not None:
-            runs.append(_row_run(basis, band_top, (f"band superior columna {labels[column.id]}", across,
-                                                   _hooks(basis, band_top.diameter, column.band_top.end)),
-                                 (column.band_top.spacing, False, geometry, ratios.strip(index, band_top, False))))
-    if footing.skin is not None:
+            runs += _plan_runs(basis, footing, band_top, (f"band superior columna {labels[column.id]}", across,
+                                                          _hooks(basis, band_top.diameter, column.band_top.end)),
+                               (column.band_top.spacing, False, geometry, ratios.strip(index, band_top, False)))
+    if footing.skin is not None and footing.plan is None:  # sin piel ni estribos en planta no rectangular (D-164)
         section, layout = beam_member(footing, (bottom["x"], tops.get("x")), bars)
         skin = [bar for bar in placed_bars(layout, section, bars) if bar.role == "skin"]
         depths = sorted({round(bar.depth, 1) for bar in skin})
@@ -366,7 +402,7 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
             runs.append(BarRun(SKIN, spec.designation, spec.diameter_mm, spec.mass_kg_m, len(ys), along,
                                _hooks(basis, spec.diameter_mm, footing.skin.end), note=f"{len(depths)} niveles en cada cara lateral",
                                placement=Placement("x", ys, h - depth, (-along / 2, along / 2))))
-    runs += _stirrup_runs(basis, footing.stirrups, (footing.ly, h, cover), footing.lx)
+    runs += _stirrup_runs(basis, footing.stirrups if footing.plan is None else None, (footing.ly, h, cover), footing.lx)
     embed = h - cover - bottom["x"].diameter - bottom["y"].diameter
     runs += [_placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, labels[column.id]), column,
                             (h, embed), cover) for column in footing.columns]

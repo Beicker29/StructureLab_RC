@@ -33,7 +33,7 @@ from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.development import END_TEXT, development_check, required_length
 from structurelab_rc.domain.flexure_strength import MomentStrength, RectangularSection, rectangular_strength, required_area
 from structurelab_rc.domain.footing.base import column_vertical
-from structurelab_rc.domain.footing.combined_beam import BeamCase, beam_case, extreme_moments, moment_sign
+from structurelab_rc.domain.footing.combined_beam import BeamCase, bar_extent, beam_case, developed, extreme_moments, moment_sign
 from structurelab_rc.domain.footing.connection import Support, bar_anchorage, bearing_checks, dowel_checks
 from structurelab_rc.domain.footing.declared import DIRECTIONS, PRINCIPAL, SECONDARY
 from structurelab_rc.domain.footing.flexure import plain_resists, plain_strip_check
@@ -43,7 +43,7 @@ from structurelab_rc.domain.footing.shear import PunchedColumn, punching_checks,
 from structurelab_rc.domain.shear_strength import two_way_shear
 from structurelab_rc.domain.status import Status
 from structurelab_rc.mechanics.flexure import SteelLayer
-from structurelab_rc.mechanics.perimeter import critical_perimeter
+from structurelab_rc.mechanics.perimeter import Perimeter, critical_perimeter, plan_perimeter
 from structurelab_rc.mechanics.plate import wood_armer
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting
@@ -70,6 +70,15 @@ def column_action(footing: CombinedFooting, soil: Soil, column: CombinedColumn, 
     return force, force * column.x + load.my + height * load.vx, force * column.y - load.mx + height * load.vy
 
 
+def _perimeter(footing: CombinedFooting, centre: tuple[float, float], size: tuple[float, float], depth: float) -> Perimeter:
+    """El perímetro crítico a d/2 recortado con la base: con el rectángulo lx × ly o con la planta trapezoidal o en T/L,
+    con αs por las esquinas dentro de ella (D-164)."""
+    if footing.plan is not None:
+        return plan_perimeter(centre, *size, depth, footing.outline)
+    bounds = ((-footing.lx / 2, -footing.ly / 2), (footing.lx / 2, footing.ly / 2))
+    return critical_perimeter(centre, *size, depth, bounds)
+
+
 def _note(column: CombinedColumn) -> str:
     return f"Columna {column.id}"
 
@@ -77,11 +86,10 @@ def _note(column: CombinedColumn) -> str:
 def _punching(basis: Basis, footing: CombinedFooting, soil: Soil, bottom: dict[str, BarRow], cases: Cases) -> list[Check]:
     profile, materials = basis.profile, basis.materials
     depth = (bottom["x"].depth + bottom["y"].depth) / 2
-    bounds = ((-footing.lx / 2, -footing.ly / 2), (footing.lx / 2, footing.ly / 2))
     loaded = profile.footing.punching_size_factor()
     checks = []
     for index, column in enumerate(footing.columns):
-        perimeter = critical_perimeter((column.x, column.y), column.cx, column.cy, depth, bounds)
+        perimeter = _perimeter(footing, (column.x, column.y), (column.cx, column.cy), depth)
         punched = PunchedColumn(column.cx, column.cy, column.x, column.y, _punching_rows(basis, footing, bottom, [column]),
                                 _note(column), MINIMUM_NOTE, _top_rows(basis, footing), DIRECTIONS)
         for pressure, loads in cases:
@@ -140,7 +148,6 @@ def _group_punching(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tu
     columnas del grupo, recortado con la base; la carga es la suma de sus acciones menos la carga neta dentro de él. Se
     agrega a las revisiones individuales, que se conservan."""
     bottom, depth = rows
-    bounds = ((-footing.lx / 2, -footing.ly / 2), (footing.lx / 2, footing.ly / 2))
     checks = []
     for group in punching_groups(footing, depth):
         members = [footing.columns[index] for index in group]
@@ -149,7 +156,7 @@ def _group_punching(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tu
         low = min(column.y - column.cy / 2 for column in members)
         high = max(column.y + column.cy / 2 for column in members)
         size, centre = (right - left, high - low), ((left + right) / 2, (low + high) / 2)
-        perimeter = critical_perimeter(centre, *size, depth, bounds)
+        perimeter = _perimeter(footing, centre, size, depth)
         punched = PunchedColumn(*size, *centre, _punching_rows(basis, footing, bottom, members),
                                 f"Columnas {_names([column.id for column in members])} (perimetro comun)", MINIMUM_NOTE,
                                 _top_rows(basis, footing), DIRECTIONS)
@@ -173,7 +180,19 @@ def strip_limits(footing: CombinedFooting, column: CombinedColumn, depth: float)
             high = (column.x + column.cx / 2 + other.x - other.cx / 2) / 2
         elif other.x < column.x and other.x + other.cx / 2 + depth / 2 > low:
             low = (column.x - column.cx / 2 + other.x + other.cx / 2) / 2
-    return max(low, -footing.lx / 2), min(high, footing.lx / 2)
+    first, last = footing.x_range
+    return max(low, first), min(high, last)
+
+
+def strip_edges(footing: CombinedFooting, column: CombinedColumn, depth: float) -> tuple[float, float]:
+    """Bordes −Y y +Y hasta los que van los voladizos de la franja: ±ly/2 en el rectángulo; en una planta trapezoidal o
+    en T/L (D-164), los bordes en el eje de la columna y, si la franja cruza un escalón, los del tramo más angosto."""
+    if footing.plan is None:
+        return -footing.ly / 2, footing.ly / 2
+    x0, x1 = strip_limits(footing, column, depth)
+    outline = footing.outline
+    stepped = any(a[0] == b[0] and x0 < a[0] < x1 for a, b in zip(outline, (*outline[1:], outline[0]), strict=True))
+    return footing.across(x0, x1) if stepped else footing.across(column.x)
 
 
 def shear_limits(footing: CombinedFooting, column: CombinedColumn, depth: float) -> tuple[float, float]:
@@ -187,7 +206,8 @@ def shear_limits(footing: CombinedFooting, column: CombinedColumn, depth: float)
         elif other.x < column.x:
             low = max(low, (column.x - column.cx / 2 + other.x + other.cx / 2) / 2)
     flexure = strip_limits(footing, column, depth)
-    return max(min(low, flexure[0]), -footing.lx / 2), min(max(high, flexure[1]), footing.lx / 2)
+    first, last = footing.x_range
+    return max(min(low, flexure[0]), first), min(max(high, flexure[1]), last)
 
 
 def band_row(footing: CombinedFooting, column: CombinedColumn, row: BarRow, basis: Basis) -> BarRow | None:
@@ -196,8 +216,10 @@ def band_row(footing: CombinedFooting, column: CombinedColumn, row: BarRow, basi
         return None
     spec = next(bar for bar in basis.bars if bar.designation == column.band.designation)
     x0, x1 = strip_limits(footing, column, row.depth)
-    edge = footing.lx / 2 - footing.cover - spec.diameter_mm / 2
-    positions = uniform_positions(max(x0 + spec.diameter_mm / 2, -edge), min(x1 - spec.diameter_mm / 2, edge), column.band.spacing)
+    first, last = footing.x_range
+    inset = footing.cover + spec.diameter_mm / 2
+    positions = uniform_positions(max(x0 + spec.diameter_mm / 2, first + inset), min(x1 - spec.diameter_mm / 2, last - inset),
+                                  column.band.spacing)
     return BarRow("y", spec.designation, spec.diameter_mm, spec.area_mm2, row.depth, x1 - x0, tuple(positions), None, ())
 
 
@@ -213,8 +235,10 @@ def band_top_row(footing: CombinedFooting, column: CombinedColumn, depth: float,
     above = specs[top.x.designation].diameter_mm if top is not None and top.x is not None and top.nearest == "x" else 0.0
     from_face = footing.cover + stirrup_diameter(footing, bars) + above + spec.diameter_mm / 2
     x0, x1 = strip_limits(footing, column, depth)
-    edge = footing.lx / 2 - footing.cover - spec.diameter_mm / 2
-    positions = uniform_positions(max(x0 + spec.diameter_mm / 2, -edge), min(x1 - spec.diameter_mm / 2, edge), column.band_top.spacing)
+    first, last = footing.x_range
+    inset = footing.cover + spec.diameter_mm / 2
+    positions = uniform_positions(max(x0 + spec.diameter_mm / 2, first + inset), min(x1 - spec.diameter_mm / 2, last - inset),
+                                  column.band_top.spacing)
     return BarRow("y", spec.designation, spec.diameter_mm, spec.area_mm2, footing.h - from_face, x1 - x0, tuple(positions), None, ())
 
 
@@ -280,18 +304,28 @@ def _strip_shape(footing: CombinedFooting, pressure: FactoredCase, column: Combi
     """Forma de la carga de la franja en el ancho B (D-080, D-085): ∫q dy y ∫y·q dy entre y0 y y1, sin escalar. Primero la
     presión en la línea de la columna; si es nula, la presión integrada en el ancho de la franja; si también es nula,
     uniforme (equilibra el cortante de la viga larga, repartido en todo el ancho). La nota dice qué forma se usó."""
-    half = footing.ly / 2
-    if pressure.pressure.along_y(column.x, -half, half)[0] > 0:
-        return (lambda y0, y1: pressure.pressure.along_y(column.x, y0, y1)), ""
+    low, high = strip_edges(footing, column, depth)
+
+    def line(y0: float, y1: float) -> tuple[float, float]:
+        y0, y1 = max(y0, low), min(y1, high)
+        return pressure.pressure.along_y(column.x, y0, y1) if y1 > y0 else (0.0, 0.0)
+
+    if line(low, high)[0] > 0:
+        return line, ""
     x0, x1 = strip_limits(footing, column, depth)
 
     def strip(y0: float, y1: float) -> tuple[float, float]:
+        y0, y1 = max(y0, low), min(y1, high)
         force, _, first = pressure.pressure.resultant(((x0, y0), (x1, y0), (x1, y1), (x0, y1))) if y1 > y0 else (0.0, 0.0, 0.0)
         return force, first
 
-    if strip(-half, half)[0] > 0:
+    def uniform(y0: float, y1: float) -> tuple[float, float]:
+        y0, y1 = max(y0, low), min(y1, high)
+        return (y1 - y0, (y1**2 - y0**2) / 2) if y1 > y0 else (0.0, 0.0)
+
+    if strip(low, high)[0] > 0:
         return strip, "carga con la forma de la presion integrada en el ancho de la franja (presion nula en la linea de la columna)"
-    return (lambda y0, y1: (y1 - y0, (y1**2 - y0**2) / 2)), "carga uniforme F/B (presion nula en toda la franja)"
+    return uniform, "carga uniforme F/B (presion nula en toda la franja)"
 
 
 def strip_load(footing: CombinedFooting, pressure: FactoredCase, column: CombinedColumn,
@@ -301,15 +335,17 @@ def strip_load(footing: CombinedFooting, pressure: FactoredCase, column: Combine
     q(y) = s·forma(y) − w·b, con s tal que ∫q dy = F. Con la forma uniforme es F/B, como antes de D-095; donde la presión
     se anula queda −w·b (hacia abajo). Devuelve (∫q dy, ∫y·q dy) entre y0 y y1 (N, N·mm) y la nota de la forma."""
     force, depth = given
-    half = footing.ly / 2
+    low, high = strip_edges(footing, column, depth)  # fuera de los bordes no hay carga (D-164)
     shape, note = _strip_shape(footing, pressure, column, depth)
     x0, x1 = strip_limits(footing, column, depth)
     uniform = pressure.net_load * (x1 - x0)
-    scale = (force + uniform * footing.ly) / shape(-half, half)[0]
+    scale = (force + uniform * (high - low)) / shape(low, high)[0]
 
     def load(y0: float, y1: float) -> tuple[float, float]:
         force_part, first = shape(y0, y1)
-        return scale * force_part - uniform * (y1 - y0), scale * first - uniform * (y1**2 - y0**2) / 2
+        y0, y1 = max(y0, low), min(y1, high)
+        span = max(y1 - y0, 0.0)
+        return scale * force_part - uniform * span, scale * first - uniform * ((y1**2 - y0**2) / 2 if span else 0.0)
 
     return load, note
 
@@ -317,9 +353,10 @@ def strip_load(footing: CombinedFooting, pressure: FactoredCase, column: Combine
 def strip_cantilever(footing: CombinedFooting, load: Callable[[float, float], tuple[float, float]], at: float,
                      side: float) -> tuple[float, float]:
     """(M, V) en y = at del voladizo de la franja hacia el borde `side` (+1: +Y; −1: −Y), con el cuerpo libre entre la
-    sección y el borde: M > 0 tracciona la cara inferior; V es la carga neta hacia arriba de ese tramo."""
-    half = footing.ly / 2
-    y0, y1 = (at, half) if side > 0 else (-half, at)
+    sección y el borde: M > 0 tracciona la cara inferior; V es la carga neta hacia arriba de ese tramo. La carga ya es
+    nula fuera de los bordes de la franja: basta integrar hasta el borde de la base."""
+    low, high = footing.y_range
+    y0, y1 = (at, high) if side > 0 else (low, at)
     net, first = load(y0, y1)
     return side * (first - at * net), net
 
@@ -338,14 +375,14 @@ def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: Comb
     depth_at(y, M) da la d del cortante de la sección en y con el momento M de la franja (D-131): con ella la sección a d
     de la cara queda a esa misma d (D-151); sin ella, a la d dada."""
     depth = given[1]
-    half = footing.ly / 2
+    low, high = strip_edges(footing, column, depth)
     load, note = strip_load(footing, pressure, column, given)
     result = []
     for side, face, name in ((1.0, column.y + column.cy / 2, "+Y"), (-1.0, column.y - column.cy / 2, "-Y")):
         at_d = face + side * depth if depth_at is None else section_at_depth(face, side, _cantilever_depth(footing, load, side, depth_at),
                                                                               depth)
-        inside = -half < at_d < half
-        if not -half < face < half:
+        inside = low < at_d < high
+        if not low < face < high:
             continue
         # La cara es sección de flexión; el cortante se revisa a d de ella (D-148).
         moment, shear = strip_cantilever(footing, load, face, side)
@@ -353,7 +390,8 @@ def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: Comb
         if inside:
             moment, shear = strip_cantilever(footing, load, at_d, side)
             result.append((at_d, moment, shear, f"a d de la cara {name}"))
-        points = [face + side * (half - side * face) * index / _SWEEP for index in range(1, _SWEEP)]
+        edge = high if side > 0 else low
+        points = [face + (edge - face) * index / _SWEEP for index in range(1, _SWEEP)]
         y, moment = min(((point, strip_cantilever(footing, load, point, side)[0]) for point in points), key=lambda item: item[1])
         if moment < -_NEGLIGIBLE_MOMENT and moment < strip_cantilever(footing, load, face, side)[0]:
             shear = strip_cantilever(footing, load, y, side)[1]
@@ -397,7 +435,7 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
                  f"{jump / 1e3:.1f} kN: alivia el voladizo de un lado y carga el del otro (D-119, D-151)"
                  if twist > _NEGLIGIBLE_TWIST else "")
         for y, physical, shear, label in demands:
-            z = y + footing.ly / 2
+            z = y - footing.y_range[0]
             torsion_shear = torsion_side(jump, label)
             # El cortante se revisa en la sección crítica a d de la cara y más allá, con su Vu y su Mu (C.11.1.3.1, ACI
             # 9.4.3.2); en la cara solo la flexión (decisión del usuario, D-148).
@@ -462,7 +500,7 @@ def strip_depth_at(basis: Basis, footing: CombinedFooting, soil: Soil, column_ro
 
     def depth_at(y: float, physical: float) -> float | None:
         moment = strip_moments(physical, limits[1] - limits[0], twist)[0]
-        station = Station.model_construct(z=y + footing.ly / 2, layout=member.stations[0].layout, case=given[0].case,
+        station = Station.model_construct(z=y - footing.y_range[0], layout=member.stations[0].layout, case=given[0].case,
                                           demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=0.0, v3=0.0, tu=0.0))
         return shear_depth(StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False))
 
@@ -475,7 +513,8 @@ def strip_torsion_shear(footing: CombinedFooting, soil: Soil, given: tuple[Facto
     mxy = T/B, integrado en el ancho b. El salto es el momento respecto al eje X de las cargas de la franja (la presión en
     todo el ancho menos el par de la columna, que la flexión de la franja no toma, D-088)."""
     beam = beam_case(footing, soil, *given)
-    return (beam.torque(limits[1]) - beam.torque(limits[0])) / footing.ly
+    # Con mxy = T/B(x): el salto de mxy entre los bordes de la franja (con B constante, (T(x1) − T(x0))/B; D-164).
+    return beam.twist(limits[1]) - beam.twist(limits[0])
 
 
 def torsion_side(jump: float, label: str) -> float:
@@ -523,8 +562,8 @@ def outside_twist_envelope(footing: CombinedFooting, soil: Soil, depth: float, c
 
 def _outside_points(footing: CombinedFooting, zones: list[tuple[float, float]]) -> list[float]:
     """Las secciones x fuera de las franjas: 64 tramos del largo y los bordes de cada franja."""
-    half = footing.lx / 2
-    points = [-half + footing.lx * index / _PLATE_SAMPLES for index in range(_PLATE_SAMPLES + 1)]
+    start = footing.x_range[0]
+    points = [start + footing.lx * index / _PLATE_SAMPLES for index in range(_PLATE_SAMPLES + 1)]
     points += [edge for zone in zones for edge in zone]
     return [x for x in points if not any(x0 + _TOLERANCE < x < x1 - _TOLERANCE for x0, x1 in zones)]
 
@@ -532,9 +571,11 @@ def _outside_points(footing: CombinedFooting, zones: list[tuple[float, float]]) 
 def plate_shear(footing: CombinedFooting, pressure: FactoredCase, x: float) -> float:
     """Cortante de placa por unidad de ancho en la dirección y fuera de las franjas (decisión del usuario, D-119): con
     my = 0, el equilibrio de la placa da qy = ∂mxy/∂x = (dT/dx)/B, y dT/dx en x es ∫y·q dy de la carga neta en esa
-    línea; la carga uniforme w es simétrica en el ancho, así que solo cuenta la presión del suelo (N/mm)."""
-    half = footing.ly / 2
-    return abs(pressure.pressure.along_y(x, -half, half)[1]) / footing.ly
+    línea; la carga uniforme w es simétrica en el ancho, así que solo cuenta la presión del suelo (N/mm). En una planta
+    trapezoidal o en T/L, con el ancho local (D-164); allí el momento de w respecto al eje X no se anula y se suma."""
+    low, high = footing.across(x)
+    first = pressure.pressure.along_y(x, low, high)[1] - pressure.net_load * (high**2 - low**2) / 2
+    return abs(first) / (high - low)
 
 
 def _plate_shear_check(basis: Basis, footing: CombinedFooting, row: BarRow, beam: BeamCase,
@@ -557,8 +598,9 @@ def _plate_shear_check(basis: Basis, footing: CombinedFooting, row: BarRow, beam
     vc = profile.footing.one_way_concrete_shear(fc=materials.fc, lam=lam, bw=_PLATE_STRIP, d=row.depth, h=footing.h, rho_w=rho,
                                                 vu=vu, mu=mu)
     phi = profile.shear.strength_reduction()
-    where = f"a {x + footing.lx / 2:.0f} mm del borde negativo a lo largo de la viga"
-    note = (f"Fuera de las franjas, {where}: dT/dx = {shear * footing.ly / 1e3:.1f} kN (presion del suelo en la linea), "
+    where = f"a {x - footing.x_range[0]:.0f} mm del borde negativo a lo largo de la viga"
+    breadth = footing.across(x)[1] - footing.across(x)[0]
+    note = (f"Fuera de las franjas, {where}: dT/dx = {shear * breadth / 1e3:.1f} kN (presion del suelo en la linea), "
             f"qy = (dT/dx)/B = {shear:.2f} kN/m, por metro (cortante de placa, D-119)")
     return Check(PLATE_SHEAR, Status.PASS if vu <= phi * vc else Status.FAIL, clause=clause, demand=vu, capacity=phi * vc, unit="N",
                  member=footing.id, case=beam.case, note=note,
@@ -602,10 +644,10 @@ def plate_secondary_checks(basis: Basis, footing: CombinedFooting, soil: Soil, c
         shear = _plate_shear_check(basis, footing, bottom, beam, zones)
         if shear is not None:
             checks.append(shear)
-        data = (f"T = {beam.torque(x) / 1e6:.1f} kN*m, B = {footing.ly:.0f} mm, mxy = T/B = {twist / 1e3:.2f} kN*m/m; my = 0, "
+        data = (f"T = {beam.torque(x) / 1e6:.1f} kN*m, B = {beam.width(x):.0f} mm, mxy = T/B = {twist / 1e3:.2f} kN*m/m; my = 0, "
                 "asi que Wood-Armer pide my* = +|mxy| abajo y -|mxy| arriba, por metro (D-118)")
         # El signo en la nota: la memoria separa con él la revisión de cada cara (D-095).
-        where = f"a {x + footing.lx / 2:.0f} mm del borde negativo a lo largo de la viga"
+        where = f"a {x - footing.x_range[0]:.0f} mm del borde negativo a lo largo de la viga"
         note = {sign: f"Fuera de las franjas, {where}, momento {sign}: {data}" for sign in ("positivo", "negativo")}
         # Mu = M flexión (0: fuera de las franjas la carga va en X) + M torsión (Wood-Armer con my = 0), por metro (D-119).
         design = wood_armer(0.0, 0.0, twist)
@@ -725,6 +767,17 @@ def steel_excess(basis: Basis, section: tuple[float, float, float], provided: fl
     return min(max(analysis, minimum) / provided, 1.0)
 
 
+def steel_required(basis: Basis, section: tuple[float, float, float], moment: float, exception: bool = False) -> float | None:
+    """El As requerido de la sección (el de análisis o el mínimo de vigas, como steel_excess); None sin solución."""
+    width, h, depth = section
+    profile, materials = basis.profile, basis.materials
+    analysis = required_area(profile, materials, RectangularSection(width, h), depth, moment)
+    if analysis is None:
+        return None
+    as_min = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, width, depth)
+    return max(analysis, profile.flexure.effective_min_reinforcement(as_min, analysis) if exception else as_min)
+
+
 def bar_development_check(basis: Basis, footing: CombinedFooting, row: BarRow,
                           anchorage: tuple[str, float, str, float, float], text: tuple[str, str]) -> Check:
     """anchorage = (extremo declarado del grupo de barras, menor separación, capa: "bottom" o "top", As requerido / As
@@ -747,7 +800,7 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
     """Barras x desde la sección de mayor momento de su signo hasta el extremo más cercano, menos el recubrimiento."""
     bottom, top = rows
     positive, negative = extreme_moments(footing, soil, cases)
-    half = footing.lx / 2
+    start = footing.x_range[0]
     checks = []
     top_x = footing.top.x if footing.top is not None else None
     spacings = (footing.bottom.x.spacing, 0.0 if top_x is None else top_x.spacing)
@@ -764,16 +817,40 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
         moment, x = moment_at
         if row is None or moment <= 0:
             continue
-        if label == "superiores" and footing.beam is None and plain_resists(basis, footing.ly, footing.h, moment):
+        low, high = footing.across(x)
+        width = high - low
+        if label == "superiores" and footing.beam is None and plain_resists(basis, width, footing.h, moment):
             continue  # D-140: el concreto simple resiste el momento negativo; las barras superiores no se exigen
-        # En la T invertida la sección no es rectangular: sin reducción por As requerido / As provisto (D-093).
-        excess = 1.0 if footing.beam is not None else steel_excess(basis, (footing.ly, footing.h, row.depth), row.area, moment,
-                                                                    footing.min_steel_exception)
-        available = min(x + half, half - x) - footing.cover
         sign = "positivo" if label == "inferiores" else "negativo"
-        note = f"Desde la seccion de mayor momento {sign} (z = {x + half:.0f} mm)"
+        name = f"{DEVELOPMENT} barras {label}, {PRINCIPAL}"
+        # En una planta no rectangular (opción A del usuario, D-164) cuentan las barras que cruzan x y alcanzan a
+        # desarrollarse allí: deben bastar para el As requerido de la sección; si no, no cumple.
+        passing = list(row.positions)
+        if footing.plan is not None:
+            crossing = [y for y in row.positions if low < y < high
+                        and (span := bar_extent(footing, y, x))[0] + footing.cover <= x <= span[1] - footing.cover]
+            passing = developed(basis, footing, (row, end, spacing, label == "inferiores"), x, crossing)
+            needed = steel_required(basis, (width, footing.h, row.depth), moment, footing.min_steel_exception)
+            provided = len(passing) * row.bar_area
+            if needed is not None and provided < needed:
+                checks.append(Check(name, Status.FAIL, clause=basis.profile.development.clauses()["tension"], demand=needed,
+                                    capacity=provided, unit="mm2", member=footing.id,
+                                    note=f"Desde la seccion de mayor momento {sign} (z = {x - start:.0f} mm): las barras que "
+                                         f"alcanzan a desarrollarse ({len(passing)} de {len(crossing)}) no bastan para el As "
+                                         "requerido (D-164)"))
+                continue
+            if not passing:
+                continue
+        # En la T invertida la sección no es rectangular: sin reducción por As requerido / As provisto (D-093).
+        excess = 1.0 if footing.beam is not None else steel_excess(basis, (width, footing.h, row.depth),
+                                                                    len(passing) * row.bar_area, moment, footing.min_steel_exception)
+        # Hasta el extremo real de cada barra que pasa por la sección (D-164): la más corta rige.
+        available = min(min(x - first, last - x) for first, last in (bar_extent(footing, y, x) for y in passing)) - footing.cover
+        note = f"Desde la seccion de mayor momento {sign} (z = {x - start:.0f} mm)"
+        if footing.plan is not None:
+            note += f"; {len(passing)} barras que alcanzan a desarrollarse (D-164)"
         checks.append(bar_development_check(basis, footing, row, (end, spacing, "bottom" if label == "inferiores" else "top", excess,
-                                                                  available), (f"{DEVELOPMENT} barras {label}, {PRINCIPAL}", note)))
+                                                                  available), (name, note)))
     return checks
 
 
@@ -799,14 +876,14 @@ def _y_development(basis: Basis, footing: CombinedFooting, soil: Soil, row: BarR
     """Barras y de cada franja desde la cara de la columna hasta el borde, menos el recubrimiento: las inferiores (el band
     si lo hay, que es el único refuerzo inferior de la franja, D-097; si no, la malla y) con el mayor momento positivo de
     las caras, y las superiores y (D-097, D-099) con el mayor momento negativo de la franja."""
-    half = footing.ly / 2
     checks = []
     for index, column in enumerate(footing.columns):
         band = band_row(footing, column, row, basis)
         limits = strip_limits(footing, column, row.depth)
         width = limits[1] - limits[0]
         positive, negative = strip_envelope(footing, soil, (index, row.depth), cases)
-        available = min(half - (column.y + column.cy / 2), column.y - column.cy / 2 + half) - footing.cover
+        low, high = strip_edges(footing, column, row.depth)  # los bordes locales en una planta no rectangular (D-164)
+        available = min(high - (column.y + column.cy / 2), column.y - column.cy / 2 - low) - footing.cover
         note = f"Franja transversal de la columna {column.id}, desde la cara de la columna"
         bottom = band if band is not None else row
         bottom_area = len(positions_within(bottom, limits)) * bottom.bar_area

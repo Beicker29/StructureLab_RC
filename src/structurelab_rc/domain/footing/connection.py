@@ -28,6 +28,7 @@ from structurelab_rc.domain.footing.loads import FactoredCase
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import incomplete
+from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Dowels, Footing, FootingBase, FootingBody
 
 BEARING = "Aplastamiento"
@@ -108,11 +109,17 @@ class Support:
 
 
 def bearing_area(footing: FootingBase, support: Support) -> tuple[float, float]:
-    """A1 (columna) y A2: base del tronco de pirámide de pendiente 1:2 bajo A1, contenido en la zapata."""
+    """A1 (columna) y A2: base del tronco de pirámide de pendiente 1:2 bajo A1, contenido en la zapata. En una planta
+    trapezoidal o en T/L (D-164), los bordes −Y y +Y son los más estrechos en el largo que cubre el tronco."""
     length, width, depth = support.surface or (footing.lx, footing.ly, footing.h)
     hx, hy = length / 2, width / 2
-    gaps = (hx - (support.x + support.cx / 2), support.x - support.cx / 2 + hx,
-            hy - (support.y + support.cy / 2), support.y - support.cy / 2 + hy)
+    (first, last), (low, high) = (-hx, hx), (-hy, hy)
+    if isinstance(footing, CombinedFooting) and footing.plan is not None and support.surface is None:
+        first, last = footing.x_range
+        low, high = footing.across(max(support.x - support.cx / 2 - 2 * depth, first),
+                                   min(support.x + support.cx / 2 + 2 * depth, last))
+    gaps = (last - (support.x + support.cx / 2), support.x - support.cx / 2 - first,
+            high - (support.y + support.cy / 2), support.y - support.cy / 2 - low)
     spread = min(2 * depth, *gaps)
     return support.cx * support.cy, (support.cx + 2 * spread) * (support.cy + 2 * spread)
 
