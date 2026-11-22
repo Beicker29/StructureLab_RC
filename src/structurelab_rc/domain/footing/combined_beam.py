@@ -35,7 +35,7 @@ alma entra como carga lineal a lo largo de X.
 """
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.basis import Basis
@@ -52,7 +52,7 @@ from structurelab_rc.domain.development import required_length
 from structurelab_rc.domain.footing.base import column_vertical, stem_line_load
 from structurelab_rc.domain.footing.connection import bar_anchorage
 from structurelab_rc.domain.footing.flexure import plain_principal_check, plain_resists
-from structurelab_rc.domain.footing.loads import FactoredCase
+from structurelab_rc.domain.footing.loads import FactoredCase, remembered
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError
@@ -110,6 +110,8 @@ class BeamCase:
     line: float = 0.0  # carga lineal hacia abajo del alma de la T invertida, mayorada (N/mm, D-093)
     outline: tuple[Point, ...] | None = None  # planta trapezoidal o en T/L (D-164); sin ella, el rectángulo lx × ly
     breadth: Callable[[float], float] | None = None  # ancho local B(x) de esa planta
+    # El cuerpo libre de cada x ya integrado (D-165): V, M y T de la misma x lo comparten.
+    memo: dict[float, tuple[float, float, float]] = field(default_factory=dict, compare=False, repr=False)
 
     @property
     def case(self) -> str:
@@ -125,6 +127,12 @@ class BeamCase:
         return self.ly if self.breadth is None else self.breadth(x)
 
     def _left(self, x: float) -> tuple[float, float, float]:
+        found = self.memo.get(x)
+        if found is None:
+            found = self.memo[x] = self._integrate(x)
+        return found
+
+    def _integrate(self, x: float) -> tuple[float, float, float]:
         if x <= self.start:
             return 0.0, 0.0, 0.0
         if self.outline is not None:  # la parte de la planta con abscisa ≤ x (D-164)
@@ -162,7 +170,17 @@ class BeamCase:
         return design.bottom.x * width, design.top.x * width
 
 
+_BEAMS: dict[tuple[str, Soil, FactoredCase], BeamCase] = {}
+
+
 def beam_case(footing: CombinedFooting, soil: Soil, pressure: FactoredCase, loads: tuple[FootingLoad, ...]) -> BeamCase:
+    """El caso de la viga; depende solo de la geometría, las cargas y la presión del caso: se recuerda por geometry_key y
+    por la presión del caso (D-165), con su cuerpo libre ya integrado."""
+    return remembered(_BEAMS, (footing.geometry_key, soil, pressure),  # type: ignore[no-any-return]
+                      lambda: _beam_case(footing, soil, pressure, loads))
+
+
+def _beam_case(footing: CombinedFooting, soil: Soil, pressure: FactoredCase, loads: tuple[FootingLoad, ...]) -> BeamCase:
     height = footing.total_height + footing.pedestal_height
     columns = []
     for column, load in zip(footing.columns, loads, strict=True):

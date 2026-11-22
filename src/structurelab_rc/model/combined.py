@@ -5,6 +5,7 @@ trabaja en ejes de la viga (X a lo largo de ella): con la dirección principal e
 las cargas se rotan al cargar (D-094). Las propiedades derivadas se calculan; nunca se declaran."""
 
 import math
+from functools import cached_property
 from typing import Any, Literal, Self
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat, PositiveInt, field_validator, model_validator
@@ -345,7 +346,17 @@ class CombinedFooting(RectangularBase, _Input):
             if column.band is not None or column.band_top is not None:
                 raise ValueError(f"la zapata combinada en T invertida '{self.id}' no usa band ni band_top (columna '{column.id}')")
 
-    @property
+    @cached_property
+    def geometry_key(self) -> str:
+        """Todo lo que fija la presión del suelo y las fuerzas de la viga, sin el refuerzo (D-165): con la misma clave, dos
+        zapatas tienen los mismos casos mayorados y la misma viga, y el diseño los reutiliza entre candidatas."""
+        exclude: dict[str, Any] = {"bottom": True, "top": True, "stirrups": True, "skin": True, "min_steel_exception": True,
+                                   "deep_beam": True, "typology": True, "quantity": True,
+                                   "columns": {"__all__": {"dowels", "band", "band_top", "location"}},
+                                   "beam": {"layers", "stirrups", "bottom_width"}}
+        return self.model_dump_json(exclude=exclude)
+
+    @cached_property
     def outline(self) -> tuple[Point, ...]:
         """Contorno de la base en ejes de la viga, con el origen en su centroide, antihorario: el rectángulo lx × ly o la
         planta declarada (D-164)."""
@@ -399,13 +410,13 @@ class CombinedFooting(RectangularBase, _Input):
         """Núcleo central en cada eje (S/A; lx/6 y ly/6 en el rectángulo)."""
         return super().kern if self.plan is None else (self.modulus_y / self.area, self.modulus_x / self.area)
 
-    @property
+    @cached_property
     def x_range(self) -> tuple[float, float]:
         """Extremos de la base a lo largo de la viga, en ejes de la viga (−lx/2 y lx/2 en el rectángulo)."""
         xs = [x for x, _ in self.outline]
         return min(xs), max(xs)
 
-    @property
+    @cached_property
     def y_range(self) -> tuple[float, float]:
         """Extremos de la base transversales a la viga, en ejes de la viga (−ly/2 y ly/2 en el rectángulo)."""
         ys = [y for _, y in self.outline]

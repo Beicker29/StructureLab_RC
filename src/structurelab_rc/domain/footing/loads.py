@@ -4,7 +4,9 @@ La carga neta hacia arriba es la presión del suelo (Bellos y Bakas 2017, con la
 pesos y las sobrecargas) menos las cargas uniformes sobre la zapata fuera de la columna: fd·(γc·h + γf·hf + qD) + fl·qL.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.base import BaseResultant, base_resultant, combined_load, combined_resultant
@@ -123,11 +125,29 @@ def factored_cases(footing: Footing, soil: Soil) -> tuple[list[FactoredCase], li
     return cases, failures
 
 
-def combined_factored_cases(
-    footing: CombinedFooting, soil: Soil
-) -> tuple[list[tuple[FactoredCase, tuple[FootingLoad, ...]]], list[Check]]:
+Combined = tuple[list[tuple[FactoredCase, tuple[FootingLoad, ...]]], list[Check]]
+_MEMO_SIZE = 256  # geometrías recordadas por proceso (D-165)
+_COMBINED: dict[tuple[str, Soil], Combined] = {}
+
+
+def remembered(memo: dict[Any, Any], key: Any, compute: Callable[[], Any]) -> Any:
+    """El valor de key en memo o, si no está, el que calcula compute, guardado (D-165): la memoria se vacía al llenarse.
+    Solo para valores que dependen únicamente de la clave."""
+    if key not in memo:
+        if len(memo) >= _MEMO_SIZE:
+            memo.clear()
+        memo[key] = compute()
+    return memo[key]
+
+
+def combined_factored_cases(footing: CombinedFooting, soil: Soil) -> Combined:
     """Lo mismo para una zapata combinada (D-080): cada caso mayorado con la presión de la resultante de las columnas
-    (su carga es la suma de las dos) y las cargas de cada columna."""
+    (su carga es la suma de las dos) y las cargas de cada columna. Dependen solo de la geometría y las cargas: se recuerdan
+    por geometry_key (D-165), y el diseño los reutiliza mientras prueba refuerzos sobre la misma planta."""
+    return remembered(_COMBINED, (footing.geometry_key, soil), lambda: _combined_cases(footing, soil))  # type: ignore[no-any-return]
+
+
+def _combined_cases(footing: CombinedFooting, soil: Soil) -> Combined:
     cases, failures = [], []
     for loads in footing.cases():
         if loads[0].kind != "factored":

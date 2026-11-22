@@ -42,7 +42,7 @@ from structurelab_rc.domain.footing.combined_columns import (
 )
 from structurelab_rc.domain.footing.connection import Support, bearing_checks, dowel_checks
 from structurelab_rc.domain.footing.flexure import plain_resists
-from structurelab_rc.domain.footing.loads import FactoredCase
+from structurelab_rc.domain.footing.loads import FactoredCase, remembered
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, top_rows
 from structurelab_rc.domain.plain_strength import plain_rectangular_moment
 from structurelab_rc.domain.status import Status
@@ -86,12 +86,16 @@ def _maximize(function: Callable[[float], float], low: float, high: float) -> tu
     return max(((points[best], values[best]), (middle, function(middle))), key=lambda item: item[1])
 
 
+_GOVERNING: dict[tuple[str, FactoredCase, float, str], tuple[float, float, float]] = {}
+
+
 class Flanges:
     """Cargas de las dos aletas de un caso: momento en la cara, cortante a d y momento a d, por unidad de longitud."""
 
     def __init__(self, footing: CombinedFooting, pressure: FactoredCase, depth: float) -> None:
         assert footing.beam is not None
         self.pressure = pressure
+        self.key = footing.geometry_key
         self.face, self.edge, self.depth = footing.beam.width / 2, footing.ly / 2, depth
         self.half = footing.lx / 2
 
@@ -128,7 +132,12 @@ class Flanges:
 
     def governing(self, kind: str) -> tuple[float, float, float]:
         """(x, valor, lado) del mayor momento positivo ("moment"), negativo ("negative", con signo positivo) o |cortante| a
-        d ("shear", el mayor valor absoluto) de las dos aletas a lo largo de X."""
+        d ("shear", el mayor valor absoluto) de las dos aletas a lo largo de X. Depende solo de la geometría, la presión del
+        caso y d: se recuerda (D-165), porque el diseño la repite con cada candidata de refuerzo."""
+        return remembered(_GOVERNING, (self.key, self.pressure, self.depth, kind),  # type: ignore[no-any-return]
+                          lambda: self._governing(kind))
+
+    def _governing(self, kind: str) -> tuple[float, float, float]:
         options = []
         for side in (1.0, -1.0):
             x, value = _maximize(self._function(kind, side), -self.half, self.half)

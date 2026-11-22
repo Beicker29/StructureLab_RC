@@ -3660,6 +3660,42 @@
   (este con la viga en la Y global), en los dos perfiles y en `pruebas/`, con su huella. Cumplen y generan la memoria, la
   cartilla, el `.dli`, el DXF (sin errores en la auditoría de ezdxf) y los SVG.
 
+### D-165: más rapidez en el diseño de las combinadas y en la memoria PDF
+
+- **Fecha:** 2026-11-22
+- **Pedido del usuario:** punto 6 de la hoja de ruta, empezando por la rapidez de la búsqueda de cada combinada (6.2).
+  Para la curva costo–N con combinadas (6.1), el usuario eligió la opción a: N es el número de tipos de aisladas y las
+  combinadas suman su costo con su `combined_typologies` declarado.
+- **Diagnóstico:** durante la búsqueda, una misma geometría (planta, espesor, posición) se verifica muchas veces, una por
+  candidata de refuerzo. La presión del suelo, los casos de la viga, su cuerpo libre, los máximos de las aletas de la T y
+  el barrido del momento negativo de las franjas no dependen del refuerzo.
+- **Cambios (sin cambiar resultados):**
+  - `CombinedFooting.geometry_key` es todo lo que fija la presión y la viga, sin el refuerzo. `outline`, `x_range` y
+    `y_range` se calculan una vez por zapata.
+  - `loads.remembered` es una memoria acotada por proceso (256 entradas). La usan `combined_factored_cases` (por
+    geometría y suelo), `beam_case` (por geometría, suelo y presión del caso), `Flanges.governing` (por geometría,
+    presión, d y tipo) y el barrido del momento negativo de las franjas.
+  - `BeamCase.memo` guarda el cuerpo libre de cada x: V, M y T de la misma x lo comparten.
+  - PDF (`reporting/pdf.py`): los anchos de texto y los renglones de cada celda se miden una vez por fuente y texto, y la
+    altura de cada fila de tabla se calcula una vez, no dos.
+- **Medición** (mismos resultados que HEAD: `resumen.json`, `proyecto.json`, `resultado.json`, memoria, cartilla, SVG y
+  `.dli` iguales; el PDF igual salvo la fecha de creación y su identificador):
+
+  | Ejemplo | Antes | Ahora |
+  | --- | --- | --- |
+  | `diseno_combinada` (1 proceso) | 15.3 s | 11.0 s |
+  | `diseno_t_invertida` (1 proceso) | 31.9 s | 14.1 s |
+  | `diseno_combinada` (32 procesos) | 8.1 s | 6.3 s |
+  | `diseno_t_invertida` (32 procesos) | 16.3 s | 8.0 s |
+  | `diseno_tipologias_etabs` de `pruebas/` (32 procesos) | 14.4 s | 10.4 s |
+  | `diseno_tipologias_etabs` de tres pares y 67 aisladas (32 procesos) | 237 s | 222 s |
+  | Memoria del proyecto diseñado de tres pares (70 zapatas) | 23.2 s | 16.9 s |
+
+- **Hallazgo:** en el diseño de tres pares las combinadas ya no fijan el tiempo: sus búsquedas toman unos 30 s (pares
+  7 s, grupos 23 s, medidos con el perfilador). El resto es la búsqueda de las tipologías aisladas (unos 99 s) y la
+  escritura de la memoria.
+- **Control:** la suite (1548 pruebas) y la huella sin cambios; la suite baja de unos 105 s a 79 s.
+
 ## Consultas abiertas
 
 ### C-017: presión del suelo bajo una combinada trapezoidal o en planta T (fase B de D-163)

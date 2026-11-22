@@ -53,9 +53,10 @@ Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica
 ### Diseño de zapatas
 
 1. La curva costo–N y la medición de tiempos (`--profile`) con los pares de combinadas y sus tipos: hoy solo diseñan
-   las tipologías aisladas (D-153, D-157).
-2. Más rapidez en la búsqueda de cada combinada, que hoy fija el tiempo de los tipos (D-157): con tres pares, cerca de
-   2 minutos con 32 procesos; cada búsqueda revisa todos los casos de todos sus pares.
+   las tipologías aisladas (D-153, D-157). Decisión del usuario (D-165): N es el número de tipos de aisladas y las
+   combinadas suman su costo con su `combined_typologies` declarado.
+2. Rapidez del diseño por tipologías (D-165): las combinadas ya no fijan el tiempo (unos 30 s de 222 s con tres pares y
+   67 aisladas); lo que pesa es la búsqueda de las tipologías aisladas (unos 99 s) y la escritura de la memoria.
 
 ### Zapata combinada en dos direcciones
 

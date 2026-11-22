@@ -53,6 +53,18 @@ class _Renderer:
             document.add_font("Body", "", fonts[0])
             document.add_font("Body", "B", fonts[1])
             self.font, self.clean = "Body", (lambda text: text)
+        # Anchos y renglones ya medidos, por fuente, estilo y tamaño (D-165): las memorias largas repiten los mismos textos.
+        self._widths: dict[tuple[str, str, float, str], float] = {}
+        self._lines: dict[tuple[str, str, float, float, str], int] = {}
+
+    def width_of(self, text: str) -> float:
+        """El ancho del texto con la fuente actual (get_string_width), recordado."""
+        pdf = self.pdf
+        key = (pdf.font_family, pdf.font_style, pdf.font_size_pt, text)
+        found = self._widths.get(key)
+        if found is None:
+            found = self._widths[key] = pdf.get_string_width(text)
+        return found
 
     def text(self, text: str, size: float, bold: bool = False, gap: float = 0.0) -> None:
         pdf = self.pdf
@@ -73,15 +85,16 @@ class _Renderer:
         pdf.set_draw_color(*_RULE)
         pdf.set_line_width(0.15)
         head = self._height(headers, widths, True)
-        if pdf.get_y() + head + self._height(rows[0], widths, False) > pdf.page_break_trigger if rows else False:
+        heights = [self._height(row, widths, False) for row in rows]  # una vez por fila (D-165)
+        if pdf.get_y() + head + heights[0] > pdf.page_break_trigger if rows else False:
             pdf.add_page()
-        self._row(headers, widths, (True, False, frozenset()))
+        self._row(headers, widths, (True, False, frozenset()), head)
         for index, row in enumerate(rows):
-            if pdf.get_y() + self._height(row, widths, False) > pdf.page_break_trigger:
+            if pdf.get_y() + heights[index] > pdf.page_break_trigger:
                 pdf.add_page()
-                self._row(headers, widths, (True, False, frozenset()))
+                self._row(headers, widths, (True, False, frozenset()), head)
             bold = frozenset(column for r, column in emphasis if r == index)
-            self._row(row, widths, (False, index % 2 == 1, bold))
+            self._row(row, widths, (False, index % 2 == 1, bold), heights[index])
         pdf.set_draw_color(0, 0, 0)
         pdf.set_line_width(0.2)
         pdf.ln(1.5)
@@ -91,11 +104,10 @@ class _Renderer:
         texts = [self.clean(str(cell)) for cell in row]
         return max(self.lines(w, text) for w, text in zip(widths, texts, strict=True)) * _LINE + 0.6
 
-    def _row(self, row: list[str], widths: list[float], style: tuple[bool, bool, frozenset[int]]) -> None:
-        """Una fila; style = (encabezado, sombreada, columnas en negrilla)."""
+    def _row(self, row: list[str], widths: list[float], style: tuple[bool, bool, frozenset[int]], height: float) -> None:
+        """Una fila de la altura dada (_height); style = (encabezado, sombreada, columnas en negrilla)."""
         header, shade, bold = style
         pdf = self.pdf
-        height = self._height(row, widths, header)
         y, x = pdf.get_y(), pdf.l_margin
         fill = _ACCENT if header else (_ZEBRA if shade else None)
         for column, (w, cell) in enumerate(zip(widths, row, strict=True)):
@@ -128,12 +140,12 @@ class _Renderer:
             pdf.set_font(self.font, "B", _SIZES["body"])
             head = self.clean(str(header))
             # Solo el espacio común separa palabras: el de no separación las une (signo, número y unidad).
-            longest, word = pdf.get_string_width(head), max((pdf.get_string_width(part) for part in head.split(" ")), default=0.0)
+            longest, word = self.width_of(head), max((self.width_of(part) for part in head.split(" ")), default=0.0)
             pdf.set_font(self.font, "", _SIZES["body"])
             for row in rows:
                 text = self.clean(str(row[index]))
-                longest = max(longest, pdf.get_string_width(text))
-                word = max(word, *(pdf.get_string_width(part) for part in text.split(" ")), 0.0)
+                longest = max(longest, self.width_of(text))
+                word = max(word, *(self.width_of(part) for part in text.split(" ")), 0.0)
             natural.append(longest + pad)
             minimum.append(min(word, longest) + pad)
         if sum(natural) <= width:
@@ -145,10 +157,16 @@ class _Renderer:
         return [m + spare * want / sum(wanting) for m, want in zip(minimum, wanting, strict=True)]
 
     def lines(self, width: float, text: str) -> int:
-        """Renglones de una celda; solo se simula el ajuste de línea si el texto no cabe en uno (lo poco común)."""
-        if self.pdf.get_string_width(text) <= width - 2 * self.pdf.c_margin:
+        """Renglones de una celda; solo se simula el ajuste de línea si el texto no cabe en uno (lo poco común). Recordado
+        por fuente, ancho y texto (D-165)."""
+        if self.width_of(text) <= width - 2 * self.pdf.c_margin:
             return 1
-        return len(self.pdf.multi_cell(width, _LINE, text, dry_run=True, output="LINES"))
+        pdf = self.pdf
+        key = (pdf.font_family, pdf.font_style, pdf.font_size_pt, width, text)
+        found = self._lines.get(key)
+        if found is None:
+            found = self._lines[key] = len(pdf.multi_cell(width, _LINE, text, dry_run=True, output="LINES"))
+        return found
 
     def title(self, block: dict[str, Any]) -> None:
         """Bloque de título: el nombre del elemento, sus datos en dos columnas y un cuadro con el resultado y el DCR."""

@@ -22,6 +22,7 @@ F = `column_vertical` y momentos estáticos ∫x·q = F·x + My + H·Vx y ∫y·
 
 from collections.abc import Callable, Sequence
 from dataclasses import replace
+from functools import partial
 
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.flexure import MIN_REINFORCEMENT as FLEXURE_MINIMUM
@@ -37,7 +38,7 @@ from structurelab_rc.domain.footing.combined_beam import BeamCase, bar_extent, b
 from structurelab_rc.domain.footing.connection import Support, bar_anchorage, bearing_checks, dowel_checks
 from structurelab_rc.domain.footing.declared import DIRECTIONS, PRINCIPAL, SECONDARY
 from structurelab_rc.domain.footing.flexure import plain_resists, plain_strip_check
-from structurelab_rc.domain.footing.loads import FactoredCase
+from structurelab_rc.domain.footing.loads import FactoredCase, remembered
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, positions_within, stirrup_diameter, top_rows, uniform_positions
 from structurelab_rc.domain.footing.shear import PunchedColumn, punching_checks, transferred_load
 from structurelab_rc.domain.shear_strength import two_way_shear
@@ -391,12 +392,25 @@ def strip_demands(footing: CombinedFooting, pressure: FactoredCase, column: Comb
             moment, shear = strip_cantilever(footing, load, at_d, side)
             result.append((at_d, moment, shear, f"a d de la cara {name}"))
         edge = high if side > 0 else low
-        points = [face + (edge - face) * index / _SWEEP for index in range(1, _SWEEP)]
-        y, moment = min(((point, strip_cantilever(footing, load, point, side)[0]) for point in points), key=lambda item: item[1])
+        # El barrido no depende del refuerzo: se recuerda por geometría, caso, columna, F, d y lado (D-165).
+        key = (footing.geometry_key, pressure, column.id, given, side)
+        span = (face, edge)
+        y, moment, shear = remembered(_PEAKS, key, partial(_negative_peak, footing, load, span, side))
         if moment < -_NEGLIGIBLE_MOMENT and moment < strip_cantilever(footing, load, face, side)[0]:
-            shear = strip_cantilever(footing, load, y, side)[1]
             result.append((y, moment, shear, f"mayor M negativo hacia el borde {name}"))
     return result, note
+
+
+_PEAKS: dict[tuple[str, FactoredCase, str, tuple[float, float], float], tuple[float, float, float]] = {}
+
+
+def _negative_peak(footing: CombinedFooting, load: Callable[[float, float], tuple[float, float]], span: tuple[float, float],
+                   side: float) -> tuple[float, float, float]:
+    """(y, M, V) del menor momento del voladizo entre la cara y el borde (64 puntos, D-095)."""
+    face, edge = span
+    points = [face + (edge - face) * index / _SWEEP for index in range(1, _SWEEP)]
+    y, moment = min(((point, strip_cantilever(footing, load, point, side)[0]) for point in points), key=lambda item: item[1])
+    return y, moment, strip_cantilever(footing, load, y, side)[1]
 
 
 def strip_twist(footing: CombinedFooting, soil: Soil, given: tuple[FactoredCase, tuple[FootingLoad, ...]],
