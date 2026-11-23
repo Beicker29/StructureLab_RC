@@ -3754,6 +3754,9 @@
     midan la longitud de corte. Antes usaban el tramo exacto, hasta 1 cm distinto por el redondeo de D-147.
   - Quedan con texto fijo las barras empalmadas y los estribos.
 - **Cabezal (fases 2 a 5):** lo descrito en [cabezales.md](formatos/cabezales.md#dibujo-d-138-d-166).
+  - Ajuste del usuario (2026-11-23): en una sola planta de geometría la cadena de los centros de los pilotes y la de sus
+    bordes se montaban. Se parte en dos plantas: a bordes (caras de columnas, bordes de pilotes, diámetro y recortes) y
+    a ejes (ejes de columnas, centros de pilotes y cotas del eje de la columna a los pilotes).
   - El modelo de dibujo suma `Circle.dashed` y `Dimension.kind` (`diameter`, que el DXF escribe como DIMENSION de
     diámetro con `%%c` y el SVG como línea con flechas).
   - El prefijo es `Ø` (Latin-1), porque la memoria PDF usa las fuentes base, que no tienen `∅` ni `□`; el pilote

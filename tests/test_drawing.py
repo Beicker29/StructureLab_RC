@@ -426,26 +426,35 @@ def _texts(view: dict[str, Any], kind: str = "text") -> list[str]:
     return [entity["text"] for entity in view["entities"] if entity["type"] == kind]
 
 
+def _top_chain(view: dict[str, Any], top: float) -> list[str]:
+    return sorted(e["text"] for e in view["entities"] if e["type"] == "dimension" and e["start"][1] == e["end"][1] == top
+                  and abs(e["offset"]) == pytest.approx(PAPER_GAP * SCALE))
+
+
 def test_pile_cap_plans_show_the_piles_like_the_reference(tmp_path: Path) -> None:
-    """D-166: los pilotes a trazos en todas las plantas; en la de geometría con su nombre, la cota del diámetro y, arriba y
-    a la derecha, la cadena de sus centros desde los bordes (que suma el ancho) y la de sus bordes; en las del refuerzo,
-    sin nombre."""
+    """D-166: los pilotes a trazos en todas las plantas, con nombre solo en las dos de geometría. La de bordes lleva la
+    cota del diámetro y arriba la cadena de los bordes de los pilotes; la de ejes, arriba la de sus centros desde los
+    bordes del cabezal, y abajo la de los ejes de las columnas."""
     cap, views = _cap_model("cabezal_pilotes.json", tmp_path)
     names = {pile["id"] for pile in cap["piles"]}
-    size = metres(cap["pile"]["size"])
+    size = cap["pile"]["size"]
     for name, view in views.items():
-        if name == "geometria" or name.startswith("planta_"):
+        if name.startswith(("geometria", "planta_")):
             piles = [e for e in view["entities"] if e["type"] == "circle" and e["layer"] == PILES and e["dashed"]]
             assert len(piles) == len(names), name
-            assert bool(names & set(_texts(view))) == (name == "geometria"), name
-    geometry = views["geometria"]
-    diameters = [e for e in geometry["entities"] if e["type"] == "dimension" and e["kind"] == "diameter"]
-    assert [e["text"] for e in diameters] == [f"Ø{size}"]
-    top = cap["ly"] / 2
+            assert bool(names & set(_texts(view))) == name.startswith("geometria"), name
+    edges, axes = views["geometria"], views["geometria_ejes"]
+    assert edges["title"].endswith("bordes") and axes["title"].endswith("ejes")
+    diameters = [e for e in edges["entities"] if e["type"] == "dimension" and e["kind"] == "diameter"]
+    assert [e["text"] for e in diameters] == [f"Ø{metres(size)}"]
+    x0, x1, top = -cap["lx"] / 2, cap["lx"] / 2, cap["ly"] / 2
     centres = sorted({round(pile["x"], 1) for pile in cap["piles"]})
-    chain = [e for e in geometry["entities"] if e["type"] == "dimension" and e["start"][1] == e["end"][1] == top]
-    assert sorted(metres(b - a) for a, b in zip([-cap["lx"] / 2, *centres], [*centres, cap["lx"] / 2], strict=True)) == \
-        sorted(e["text"] for e in chain if abs(e["offset"]) == pytest.approx(PAPER_GAP * SCALE))
+    faces = sorted(x + side * size / 2 for x in centres for side in (-1, 1))
+    assert _top_chain(axes, top) == sorted(metres(b - a) for a, b in zip([x0, *centres], [*centres, x1], strict=True))
+    assert _top_chain(edges, top) == sorted(metres(b - a) for a, b in zip([x0, *faces], [*faces, x1], strict=True))
+    column = cap["columns"][0].get("offset_x", 0.0)
+    bottom = [e["text"] for e in axes["entities"] if e["type"] == "dimension" and e["start"][1] == e["end"][1] == -top]
+    assert metres(column - x0) in bottom and metres(x1 - column) in bottom
 
 
 def test_clipped_pile_cap_dimensions_each_cut_corner(tmp_path: Path) -> None:

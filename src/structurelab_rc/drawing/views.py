@@ -237,7 +237,7 @@ def _dimensions(drawing: Drawing, view: View, outline: Polyline) -> None:
     view.entities += [measure(((x0, y1), (x1, y1)), (0.0, 1.0), gap, height), measure(((x0, y0), (x0, y1)), (-1.0, 0.0), gap, height)]
 
 
-def _title(drawing: Drawing, view: View, scaled: bool = False, text: str | None = None) -> None:
+def view_title(drawing: Drawing, view: View, scaled: bool = False, text: str | None = None) -> None:
     """El título de la vista debajo de lo dibujado (por omisión, el de la vista en mayúsculas); la escala va en el título del
     elemento (D-150), salvo en las vistas sueltas (scaled: la planta de localización)."""
     x0, y0, x1, _ = view.bounds()
@@ -267,7 +267,7 @@ def plan_view(drawing: Drawing, names: tuple[str, str], outline: tuple[list[Poly
             _zone_divisions(drawing, view, along, bounds, box)
     _column_dimensions(drawing, view, [column for _, column in columns], box)
     _dimensions(drawing, view, concrete[0])
-    _title(drawing, view, text="REFUERZO SUPERIOR" if upper else "REFUERZO INFERIOR")
+    view_title(drawing, view, text="REFUERZO SUPERIOR" if upper else "REFUERZO INFERIOR")
     return view
 
 
@@ -437,7 +437,7 @@ _LINE_AT = 0.16
 
 def titled(drawing: Drawing, view: View) -> View:
     """La vista con su título y la escala debajo de lo dibujado."""
-    _title(drawing, view, scaled=True)
+    view_title(drawing, view, scaled=True)
     return view
 
 
@@ -458,7 +458,7 @@ def table_view(drawing: Drawing, names: tuple[str, str], columns: tuple[tuple[st
         view.entities.append(Line(TABLE, (0.0, top), (width, top)))
         view.entities += [Text(TABLE, (left + size * scale / 2, top - row_height * 0.65), text, small, align="center")
                           for text, (_, size), left in zip(row, columns, lefts, strict=True) if text]
-    _title(drawing, view)
+    view_title(drawing, view)
     return view
 
 
@@ -503,7 +503,7 @@ def geometry_view(drawing: Drawing, names: tuple[str, str], shape: tuple[Polylin
                       Text(LABELS, (x0, y0 - 3.2 * gap), note, height)]
     if plan:
         view.entities += _plan_dimensions(outline, (x0, y1), gap, height)
-    _title(drawing, view)
+    view_title(drawing, view)
     return view
 
 
@@ -587,7 +587,7 @@ def section_view(drawing: Drawing, names: tuple[str, str], cut: tuple[str, float
     if faces:
         view.entities += chain([x0, *faces, x1], ("x", y1), ((0.0, 1.0), 0.4 * gap), height)
     if titled_view:
-        _title(drawing, view)
+        view_title(drawing, view)
     return view
 
 
@@ -686,7 +686,7 @@ def cartilla_view(drawing: Drawing, element: str, rows: list[ScheduleRow], units
         top = bottom - 4 * small
         view.entities.append(Text(TABLE, (0.0, top + small), f"Cartilla de despiece {element}: {units} unidades", small))
         _schedule_table(drawing, view, scaled(rows, units), top)
-    _title(drawing, view)
+    view_title(drawing, view)
     return view
 
 

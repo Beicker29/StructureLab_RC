@@ -2,9 +2,11 @@
 presentado igual, y los pilotes como el plano de despiece de cabezales de referencia.
 
 - Contorno del concreto en la capa CABEZAL; con esquinas recortadas, el contorno real y el recubrimiento corrido a él.
-- Plantas: los pilotes a trazos. En la de geometría, además, la marca del centro, el nombre (el del cuadro), la cota del
-  diámetro (o del lado) de un pilote, arriba (en x) y a la derecha (en y) la cadena de los centros de los pilotes y por
-  fuera la de sus bordes, con una columna las cotas del eje de la columna a los centros, y lo que quita cada recorte.
+- Plantas: los pilotes a trazos. Dos plantas de geometría, con la marca del centro y el nombre (el del cuadro) de cada
+  pilote: a bordes (las caras de las columnas, como la zapata, los bordes de los pilotes arriba y a la derecha, la cota
+  del diámetro o del lado de un pilote y lo que quita cada recorte) y a ejes (los ejes de las columnas abajo y a la
+  izquierda, los centros de los pilotes arriba y a la derecha y, con una columna, las cotas del eje de la columna a los
+  centros).
 - Cortes X-X e Y-Y por las columnas: bajo el cabezal, los pilotes de esa dirección en proyección (el empotramiento a
   trazos dentro del concreto y un tramo visible con corte ondulado), la cadena de sus bordes y la de sus centros, el
   empotramiento y el recubrimiento inferior. Sin el refuerzo de los pilotes.
@@ -12,6 +14,7 @@ presentado igual, y los pilotes como el plano de despiece de cabezales de refere
 """
 
 import math
+from dataclasses import replace
 
 from structurelab_rc.detailing.schedule import BarRun, ScheduleRow
 from structurelab_rc.domain.footing.drawing import isolated_views
@@ -31,7 +34,7 @@ from structurelab_rc.drawing.model import (
     View,
     metres,
 )
-from structurelab_rc.drawing.views import chain, measure, rectangle, table_view
+from structurelab_rc.drawing.views import chain, measure, rectangle, table_view, view_title
 from structurelab_rc.mechanics.polygon import inset
 from structurelab_rc.model.pile_cap import PileCap
 
@@ -76,19 +79,17 @@ def _plan_piles(drawing: Drawing, cap: PileCap, geometry: bool) -> list[Entity]:
     return entities
 
 
-def _pile_dimensions(drawing: Drawing, cap: PileCap) -> list[Entity]:
-    """Las cotas de los pilotes en la planta de geometría, como la referencia: el diámetro (o el lado) de un pilote;
-    arriba (x) y a la derecha (y), la cadena de los centros desde los bordes y por fuera la de los bordes de los
-    pilotes; con una columna, las del eje de la columna al centro de cada fila de pilotes."""
+def _edge_dimensions(drawing: Drawing, cap: PileCap) -> list[Entity]:
+    """Las cotas de los pilotes en la planta de geometría a bordes (D-166): el diámetro (o el lado) de un pilote y,
+    arriba (x) y a la derecha (y), la cadena de los bordes de los pilotes desde los bordes del cabezal (las caras de las
+    columnas ya van abajo y a la izquierda)."""
     height, gap = drawing.text_height(small=True), drawing.gap()
     x0, x1, y0, y1 = -cap.lx / 2, cap.lx / 2, -cap.ly / 2, cap.ly / 2
     size = cap.pile.size
     xs, ys = _distinct([pile.x for pile in cap.piles]), _distinct([pile.y for pile in cap.piles])
     entities: list[Entity] = [
-        *chain([x0, *xs, x1], ("x", y1), ((0.0, 1.0), gap), height),
-        *chain([x0, *(x + side * size / 2 for x in xs for side in (-1, 1)), x1], ("x", y1), ((0.0, 1.0), 2 * gap), height),
-        *chain([y0, *ys, y1], ("y", x1), ((1.0, 0.0), gap), height),
-        *chain([y0, *(y + side * size / 2 for y in ys for side in (-1, 1)), y1], ("y", x1), ((1.0, 0.0), 2 * gap), height),
+        *chain([x0, *(x + side * size / 2 for x in xs for side in (-1, 1)), x1], ("x", y1), ((0.0, 1.0), gap), height),
+        *chain([y0, *(y + side * size / 2 for y in ys for side in (-1, 1)), y1], ("y", x1), ((1.0, 0.0), gap), height),
     ]
     first = max(cap.piles, key=lambda pile: (pile.y, pile.x))  # el de arriba a la derecha, como la referencia
     if cap.pile.shape == "circular":
@@ -98,11 +99,43 @@ def _pile_dimensions(drawing: Drawing, cap: PileCap) -> list[Entity]:
     else:
         entities.append(measure(((first.x - size / 2, first.y + size / 2), (first.x + size / 2, first.y + size / 2)),
                                 (0.0, 1.0), 0.3 * gap, height))
+    return entities
+
+
+def _axis_dimensions(drawing: Drawing, cap: PileCap) -> list[Entity]:
+    """Las cotas de la planta de geometría a ejes (D-166): abajo (x) y a la izquierda (y), la cadena de los ejes de las
+    columnas desde los bordes y el total; arriba y a la derecha, la de los centros de los pilotes; con una columna, las
+    del eje de la columna al centro de cada fila de pilotes, como la referencia."""
+    height, gap = drawing.text_height(small=True), drawing.gap()
+    x0, x1, y0, y1 = -cap.lx / 2, cap.lx / 2, -cap.ly / 2, cap.ly / 2
+    xs, ys = _distinct([pile.x for pile in cap.piles]), _distinct([pile.y for pile in cap.piles])
+    columns_x = _distinct([column.offset_x for column in cap.columns])
+    columns_y = _distinct([column.offset_y for column in cap.columns])
+    entities: list[Entity] = [
+        *chain([x0, *columns_x, x1], ("x", y0), ((0.0, -1.0), gap), height),
+        measure(((x0, y0), (x1, y0)), (0.0, -1.0), 2 * gap, height),
+        *chain([y0, *columns_y, y1], ("y", x0), ((-1.0, 0.0), gap), height),
+        measure(((x0, y0), (x0, y1)), (-1.0, 0.0), 2 * gap, height),
+        *chain([x0, *xs, x1], ("x", y1), ((0.0, 1.0), gap), height),
+        *chain([y0, *ys, y1], ("y", x1), ((1.0, 0.0), gap), height),
+    ]
     if len(cap.columns) == 1:
         cx, cy = cap.columns[0].offset_x, cap.columns[0].offset_y
         entities += [measure(((cx, cy), (x, cy)), (0.0, -1.0), 0.3 * gap, height) for x in xs if abs(x - cx) > _SAME]
-        entities += [measure(((cx, cy), (cx, y)), (1.0, 0.0), 0.3 * gap, height) for y in ys if abs(y - cy) > _SAME]
+        # A la izquierda del eje: el nombre de la columna va a su derecha.
+        entities += [measure(((cx, cy), (cx, y)), (-1.0, 0.0), 0.3 * gap, height) for y in ys if abs(y - cy) > _SAME]
     return entities
+
+
+def _axes_view(drawing: Drawing, cap: PileCap, geometry: View) -> View:
+    """La planta de geometría a ejes (D-166): lo dibujado en la de bordes (contorno, recubrimiento, columnas con sus ejes,
+    pilotes con su nombre y la nota), sin sus cotas, con las cotas a ejes de columnas y pilotes."""
+    title = geometry.title.upper()
+    kept = [entity for entity in geometry.entities
+            if not isinstance(entity, Dimension) and not (isinstance(entity, Text) and entity.text == title)]
+    view = View("geometria_ejes", f"Planta de geometria {cap.id} - ejes", [*kept, *_axis_dimensions(drawing, cap)])
+    view_title(drawing, view)
+    return view
 
 
 def _clip_dimensions(drawing: Drawing, cap: PileCap) -> list[Entity]:
@@ -186,8 +219,19 @@ def pile_cap_views(drawing: Drawing, cap: PileCap, runs: list[BarRun], rows: tup
         _clipped(drawing, cap, views)
     for view in views:
         if view.name == "geometria":
-            view.entities += [*_plan_piles(drawing, cap, geometry=True), *_pile_dimensions(drawing, cap)]
+            _retitled(view, f"Planta de geometria {cap.id} - bordes")
+            view.entities += [*_plan_piles(drawing, cap, geometry=True), *_edge_dimensions(drawing, cap)]
         elif view.name.startswith("planta_"):
             view.entities += _plan_piles(drawing, cap, geometry=False)
+    at = next(index for index, view in enumerate(views) if view.name == "geometria")
+    views.insert(at + 1, _axes_view(drawing, cap, views[at]))
     views.append(pile_table(drawing, cap))
     return views
+
+
+def _retitled(view: View, title: str) -> None:
+    """La vista con otro título, también en el texto del título dibujado."""
+    old = view.title.upper()
+    view.entities[:] = [replace(entity, text=title.upper()) if isinstance(entity, Text) and entity.text == old else entity
+                        for entity in view.entities]
+    view.title = title
