@@ -583,16 +583,20 @@ Con el bloque, `report` y `run` escriben:
     múltiplo de 1 cm), siempre con el texto derecho;
   - líneas de distribución como cotas sin texto con el estilo `DIM-75` a 1:50 (`DIM-<1.5·escala>` igual a `DIM-75`
     escalado a otra escala) y flechas cerradas, en la capa `PROYECCIONES` (D-158);
-  - rótulos de las barras en planta como `MTEXT`, con cada L como **campo de AutoCAD** ligado a la longitud de la
-    polilínea de su barra (`\AcObjProp ... .Length`, dos decimales): si se edita la barra en CAD, el rótulo se actualiza
-    (D-158). El texto guardado es la longitud de la cartilla. Las barras que se miden por el eje (135° y estribos) y las
-    empalmadas llevan texto fijo;
-  - rótulos de los cortes como `MULTILEADER`, barras cortadas y marcas de las barras con el bloque `BARRA` en la capa de
-    su diámetro, columnas en planta con sombreado sólido; títulos y escala con el estilo `ARIAL`;
+  - el contorno del concreto en la capa `ZAPATA` (aislada, combinada, T invertida, trapecio y planta en T o L) o
+    `CABEZAL` (cabezales), también en la planta de localización; la capa `0` queda para las columnas y sus arranques
+    (D-166);
+  - rótulos de las barras en planta como `MTEXT` y en los cortes y alzados como `MULTILEADER`, con cada L como **campo de
+    AutoCAD** ligado a la longitud de la polilínea de su barra (`\AcObjProp ... .Length`, dos decimales): si se edita la
+    barra en CAD, el rótulo se actualiza (D-158, D-166). En los cortes, las barras paralelas y los pasadores se ligan a
+    su polilínea y las barras cortadas (los puntos) a su barra de la planta. El texto guardado es la longitud de la
+    cartilla. Las barras empalmadas y los estribos llevan texto fijo, porque su polilínea no mide esa longitud;
+  - barras cortadas y marcas de las barras con el bloque `BARRA` en la capa de su diámetro, columnas en planta con
+    sombreado sólido; títulos y escala con el estilo `ARIAL`;
   - por elemento, como el plano de despiece de referencia (D-158): arriba las plantas del refuerzo inferior y superior,
     debajo el alzado (o los cortes X-X e Y-Y de la aislada) y el título (`ZC1 h=0.80`) con la escala (`ESC 1:50`); a la
-    derecha, la planta de geometría y la cartilla. Los elementos lado a lado dentro de un marco. Los cortes transversales
-    de la combinada y la T van solo en el SVG y la memoria.
+    derecha, la planta de geometría, la cartilla y, en los cabezales, el cuadro de pilotes. Los elementos lado a lado
+    dentro de un marco. Los cortes transversales de la combinada y la T van solo en el SVG y la memoria.
 
   La plantilla se arma con `python tools/make_dxf_template.py <plano de referencia>.dxf
   src/structurelab_rc/data/plantilla.dxf`, que quita todo lo del proyecto (entidades, layouts, historia del archivo) y
@@ -605,8 +609,9 @@ largo de la viga. Las cotas y los rótulos van en metros, como los planos de des
 múltiplo de 1 cm) y sin el cero inicial (`3.40`, `.15`, `.075`, D-150).
 
 **Consistencia con la cartilla y el `.dli`:** cada barra se dibuja con las dimensiones A, B y C de su fila de la cartilla
-(tramo exterior y patas L o U de DL-NET, D-147), así que la barra dibujada mide la longitud de corte, la misma del `.dli`,
-del peso y del costo; las cotas de las patas son las B y C de la cartilla.
+(tramo exterior y patas L o U de DL-NET, D-147), en planta y en los cortes (las barras paralelas al corte y los pasadores,
+D-166), así que la barra dibujada mide la longitud de corte, la misma del `.dli`, del peso y del costo; las cotas de las
+patas son las B y C de la cartilla.
 
 - **Planta de geometría** (`<zapata>_geometria.svg`, D-132): contorno de la base (y el alma en la T), columnas con sus
   ejes, el recubrimiento (línea a trazos y su valor) y cotas en cadena: abajo, de los bordes a las caras de las columnas

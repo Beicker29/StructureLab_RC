@@ -32,9 +32,13 @@ from structurelab_rc.domain.footing.neighbors import (
 )
 from structurelab_rc.drawing.model import (
     DIMENSIONS,
+    FOOTING,
     LABELS,
     OUTLINE,
     PAPER_STUB,
+    PILE_CAP,
+    PILES,
+    Circle,
     Drawing,
     Entity,
     Line,
@@ -58,6 +62,7 @@ from structurelab_rc.drawing.views import (
 )
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import FootingBody, Mat
+from structurelab_rc.model.pile_cap import PileCap
 
 # Símbolo de corte del arranque de columna (D-158), como el plano de referencia: sale de la columna 0.25 de su lado, el
 # quiebre va a 0.15 del lado desde el eje, con pasos de 2 mm y alturas de 4 mm de papel.
@@ -136,8 +141,18 @@ def _reversed_piece(piece: Piece) -> Piece:
 
 def footing_views(drawing: Drawing, footing: FootingBody, runs: list[BarRun], rows: tuple[list[ScheduleRow], float],
                   units: int) -> list[View]:
+    """Zapata aislada: planta, cortes X-X e Y-Y por la columna y cartilla; rows = (cartilla, longitud comercial); units,
+    las veces que se construye el tipo (D-159)."""
+    return isolated_views(drawing, footing, (runs, rows, units), (FOOTING, {}))
+
+
+def isolated_views(drawing: Drawing, footing: FootingBody, detail: tuple[list[BarRun], tuple[list[ScheduleRow], float], int],
+                   body: tuple[str, dict[str, list[Entity]]]) -> list[View]:
     """Zapata aislada o cabezal: planta, cortes X-X e Y-Y por las columnas (por el eje medio si hay varias, D-143) y
-    cartilla; rows = (cartilla, longitud comercial); units, las veces que se construye el tipo (D-159)."""
+    cartilla; detail = (corridas, (cartilla, longitud comercial), unidades del tipo); body = (capa del contorno del
+    concreto, ZAPATA o CABEZAL, y lo que se dibuja bajo la base en cada corte "x" e "y": los pilotes, D-166)."""
+    runs, rows, units = detail
+    layer, below = body
     schedule, _ = rows
     marked = _marked(footing.id, runs, rows)
     drawing.titles[footing.id] = element_title(footing.id, footing.h)
@@ -145,7 +160,7 @@ def footing_views(drawing: Drawing, footing: FootingBody, runs: list[BarRun], ro
     all_columns = footing.all_columns
     names = [footing.id] if len(all_columns) == 1 else [str(getattr(column, "id", footing.id)) for column in all_columns]
     lx, ly = footing.lx, footing.ly
-    outline = rectangle(OUTLINE, (-lx / 2, -ly / 2), (lx / 2, ly / 2))
+    outline = rectangle(layer, (-lx / 2, -ly / 2), (lx / 2, ly / 2))
     columns = [(name, column_rectangle((column.offset_x - column.cx / 2, column.offset_y - column.cy / 2),
                                        (column.offset_x + column.cx / 2, column.offset_y + column.cy / 2)))
                for name, column in zip(names, all_columns, strict=True)]
@@ -163,9 +178,9 @@ def footing_views(drawing: Drawing, footing: FootingBody, runs: list[BarRun], ro
                       (footing.cover, f"Espesor h = {_metres_text(h)}; pedestal {_metres_text(pedestal)}.")),
         *_plans(drawing, (footing.id, ""), ([outline], columns), marked, h / 2),
         section_view(drawing, ("corte_x", "Corte X-X"), ("x", cut_y), marked,
-                     ([rectangle(OUTLINE, (-lx / 2, 0.0), (lx / 2, h))], stubs_x, faces_x, True)),
+                     ([rectangle(layer, (-lx / 2, 0.0), (lx / 2, h))], [*stubs_x, *below.get("x", [])], faces_x, True)),
         section_view(drawing, ("corte_y", "Corte Y-Y"), ("y", cut_x), marked,
-                     ([rectangle(OUTLINE, (-ly / 2, 0.0), (ly / 2, h))], stubs_y, faces_y, True)),
+                     ([rectangle(layer, (-ly / 2, 0.0), (ly / 2, h))], [*stubs_y, *below.get("y", [])], faces_y, True)),
         cartilla_view(drawing, footing.id, schedule, units),
     ]
 
@@ -193,19 +208,19 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
     beam = footing.beam
     first, last = footing.x_range
     # La planta trapezoidal o en T/L con su contorno real (D-164); el rectángulo, como siempre.
-    concrete = [rectangle(OUTLINE, (-lx / 2, -ly / 2), (lx / 2, ly / 2)) if footing.plan is None
-                else Polyline(OUTLINE, footing.outline, closed=True)]
+    concrete = [rectangle(FOOTING, (-lx / 2, -ly / 2), (lx / 2, ly / 2)) if footing.plan is None
+                else Polyline(FOOTING, footing.outline, closed=True)]
     if beam is not None:
-        concrete += [Polyline(OUTLINE, ((-lx / 2, side * beam.width / 2), (lx / 2, side * beam.width / 2))) for side in (-1, 1)]
+        concrete += [Polyline(FOOTING, ((-lx / 2, side * beam.width / 2), (lx / 2, side * beam.width / 2))) for side in (-1, 1)]
     columns = [(column.id, column_rectangle((column.x - column.cx / 2, column.y - column.cy / 2),
                                             (column.x + column.cx / 2, column.y + column.cy / 2))) for column in footing.columns]
     if beam is None:
-        cross = rectangle(OUTLINE, (-ly / 2, 0.0), (ly / 2, h))
+        cross = rectangle(FOOTING, (-ly / 2, 0.0), (ly / 2, h))
     else:
         half = beam.width / 2
-        cross = Polyline(OUTLINE, ((-ly / 2, 0.0), (ly / 2, 0.0), (ly / 2, h), (half, h), (half, top), (-half, top),
+        cross = Polyline(FOOTING, ((-ly / 2, 0.0), (ly / 2, 0.0), (ly / 2, h), (half, h), (half, top), (-half, top),
                                    (-half, h), (-ly / 2, h)), closed=True)
-    elevation = [rectangle(OUTLINE, (first, 0.0), (last, top))]
+    elevation = [rectangle(FOOTING, (first, 0.0), (last, top))]
     stubs = [shape for column in footing.columns for shape in _stub(drawing, column.x, column.cx, (top, pedestal))]
     faces = [face for column in footing.columns for face in (column.x - column.cx / 2, column.x + column.cx / 2)]
     note = f"Espesor h = {_metres_text(h)}; pedestal {_metres_text(pedestal)}" + (
@@ -229,7 +244,7 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
         stub = _stub(drawing, column.y, column.cy, (top, pedestal))
         if footing.plan is not None:  # el ancho local de la base en la columna (D-164)
             low, high = footing.across(column.x)
-            cross = rectangle(OUTLINE, (low, 0.0), (high, h))
+            cross = rectangle(FOOTING, (low, 0.0), (high, h))
         section = section_view(drawing, (f"corte_{column.id}", f"Corte transversal por {column.id}"), ("y", column.x), marked,
                                ([cross], stub, [column.y - column.cy / 2, column.y + column.cy / 2], True))
         section.dxf = False
@@ -259,10 +274,12 @@ def _mat_text(mat: Mat | None, swap: bool = False) -> str:
 
 
 def _outline(drawing: Drawing, centre: tuple[float, float], size: tuple[float, float],
-             columns: list[tuple[tuple[float, float], tuple[float, float], str]], label: str) -> list[Entity]:
-    """Contorno de la base de tamaño size centrada en centre, las columnas (centro, tamaño, nudo) y el rótulo del tipo."""
+             columns: list[tuple[tuple[float, float], tuple[float, float], str]], named: tuple[str, str]) -> list[Entity]:
+    """Contorno de la base de tamaño size centrada en centre, las columnas (centro, tamaño, nudo) y el rótulo del tipo;
+    named = (rótulo, capa del contorno: ZAPATA o CABEZAL, D-166)."""
+    label, layer = named
     (x, y), (width, depth) = centre, size
-    entities: list[Entity] = [rectangle(OUTLINE, (x - width / 2, y - depth / 2), (x + width / 2, y + depth / 2))]
+    entities: list[Entity] = [rectangle(layer, (x - width / 2, y - depth / 2), (x + width / 2, y + depth / 2))]
     small = drawing.text_height(small=True)
     for (cx, cy), (bx, by), joint in columns:
         entities.append(column_rectangle((cx - bx / 2, cy - by / 2), (cx + bx / 2, cy + by / 2)))
@@ -282,7 +299,16 @@ def _isolated_place(drawing: Drawing, footing: FootingBody) -> _Placed:
     columns = [((centre[0] + column.offset_x, centre[1] + column.offset_y), (column.cx, column.cy),
                 location.joint if column is first else str(getattr(column, "id", "")))
                for column in footing.all_columns]
-    entities = _outline(drawing, centre, (footing.lx, footing.ly), columns, typology)
+    entities = _outline(drawing, centre, (footing.lx, footing.ly), columns,
+                        (typology, PILE_CAP if isinstance(footing, PileCap) else FOOTING))
+    if isinstance(footing, PileCap):  # D-166: el contorno real (con recortes) y los pilotes a trazos, sin nombre
+        entities[0] = Polyline(PILE_CAP, tuple((centre[0] + x, centre[1] + y) for x, y in footing.outline), closed=True)
+        size = footing.pile.size
+        for pile in footing.piles:
+            at = (centre[0] + pile.x, centre[1] + pile.y)
+            entities.append(Circle(PILES, at, size / 2, filled=False, dashed=True) if footing.pile.shape == "circular"
+                            else rectangle(PILES, (at[0] - size / 2, at[1] - size / 2), (at[0] + size / 2, at[1] + size / 2),
+                                           dashed=True))
     row = [typology, f"{metres(footing.lx)} x {metres(footing.ly)} x {metres(footing.h)}", _mat_text(footing.bottom),
            _mat_text(footing.top)]
     return _Placed(location.story, typology, row, footing.quantity, entities, footprint)
@@ -301,7 +327,7 @@ def _combined_place(drawing: Drawing, footing: CombinedFooting) -> _Placed:
         assert location is not None
         columns.append(((location.x, location.y), (column.cy, column.cx) if rotated else (column.cx, column.cy), location.joint))
     typology = footing.typology or footing.id  # el tipo de combinada (D-157)
-    entities = _outline(drawing, centre, size, columns, typology)
+    entities = _outline(drawing, centre, size, columns, (typology, FOOTING))
     if mismatch > _MISMATCH:
         small = drawing.text_height(small=True)
         entities.append(Text(LABELS, (centre[0], centre[1] - size[1] / 2 - 3 * small),

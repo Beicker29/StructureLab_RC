@@ -7,6 +7,7 @@ import io
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pytest
 from frozen_examples import frozen
@@ -23,13 +24,17 @@ from structurelab_rc.drawing.model import (
     BAR_PREFIX,
     COLUMN_FILL,
     DISTRIBUTION,
+    FOOTING,
     LABELS,
     LAYERS,
     OPTIONAL_LAYERS,
+    PAPER_GAP,
     PAPER_SMALL,
     PAPER_SUBTITLE,
     PAPER_TEXT,
     PAPER_TITLE,
+    PILE_CAP,
+    PILES,
     Circle,
     Dimension,
     Drawing,
@@ -381,6 +386,122 @@ def test_dxf_sizes_follow_the_drawing_scale(factor: float, tmp_path: Path) -> No
         assert scaled[key] == pytest.approx([factor * value for value in values]), key
 
 
+@pytest.mark.parametrize(("element", "name", "layer"), [
+    ("zapatas", "zapata_centrica.json", FOOTING), ("zapatas", "zapata_combinada.json", FOOTING),
+    ("zapatas", "zapata_combinada_trapecio.json", FOOTING), ("cabezales", "cabezal_tres_pilotes.json", PILE_CAP),
+])
+def test_concrete_outline_has_its_own_layer(element: str, name: str, layer: str, tmp_path: Path) -> None:
+    """D-166: el contorno del concreto va en la capa ZAPATA (aislada, combinada y T) o CABEZAL, no en la capa 0, que
+    queda para las columnas y sus arranques; cada vista con concreto lo lleva."""
+    output = tmp_path / "salida"
+    report_file(frozen("nsr_10", element, name), output)
+    model = json.loads((output / "salida_drawing.json").read_text(encoding="utf-8"))
+    other = PILE_CAP if layer == FOOTING else FOOTING
+    for views in model["elements"].values():
+        for view in views:
+            layers = {entity["layer"] for entity in view["entities"]}
+            assert other not in layers, view["name"]
+            if view["name"] not in ("cartilla", "cuadro_pilotes"):
+                assert layer in layers, view["name"]
+
+
+def test_inverted_t_outline_is_on_the_footing_layer(tmp_path: Path) -> None:
+    """D-166: la T invertida (base, alma y corte en T) también va en la capa ZAPATA."""
+    for view in _views(_project("zapata_t_invertida_etabs.json", tmp_path)).views:
+        layers = {entity.layer for entity in view.entities}
+        assert PILE_CAP not in layers and (view.name == "cartilla" or FOOTING in layers), view.name
+
+
+def _cap_model(name: str, tmp_path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """El cabezal congelado de nsr_10 (su JSON) y las vistas de su dibujo por nombre."""
+    path = frozen("nsr_10", "cabezales", name)
+    output = tmp_path / "salida"
+    report_file(path, output)
+    model = json.loads((output / "salida_drawing.json").read_text(encoding="utf-8"))
+    cap = json.loads(path.read_text(encoding="utf-8"))["pile_caps"][0]
+    return cap, {view["name"]: view for view in next(iter(model["elements"].values()))}
+
+
+def _texts(view: dict[str, Any], kind: str = "text") -> list[str]:
+    return [entity["text"] for entity in view["entities"] if entity["type"] == kind]
+
+
+def test_pile_cap_plans_show_the_piles_like_the_reference(tmp_path: Path) -> None:
+    """D-166: los pilotes a trazos en todas las plantas; en la de geometría con su nombre, la cota del diámetro y, arriba y
+    a la derecha, la cadena de sus centros desde los bordes (que suma el ancho) y la de sus bordes; en las del refuerzo,
+    sin nombre."""
+    cap, views = _cap_model("cabezal_pilotes.json", tmp_path)
+    names = {pile["id"] for pile in cap["piles"]}
+    size = metres(cap["pile"]["size"])
+    for name, view in views.items():
+        if name == "geometria" or name.startswith("planta_"):
+            piles = [e for e in view["entities"] if e["type"] == "circle" and e["layer"] == PILES and e["dashed"]]
+            assert len(piles) == len(names), name
+            assert bool(names & set(_texts(view))) == (name == "geometria"), name
+    geometry = views["geometria"]
+    diameters = [e for e in geometry["entities"] if e["type"] == "dimension" and e["kind"] == "diameter"]
+    assert [e["text"] for e in diameters] == [f"Ø{size}"]
+    top = cap["ly"] / 2
+    centres = sorted({round(pile["x"], 1) for pile in cap["piles"]})
+    chain = [e for e in geometry["entities"] if e["type"] == "dimension" and e["start"][1] == e["end"][1] == top]
+    assert sorted(metres(b - a) for a, b in zip([-cap["lx"] / 2, *centres], [*centres, cap["lx"] / 2], strict=True)) == \
+        sorted(e["text"] for e in chain if abs(e["offset"]) == pytest.approx(PAPER_GAP * SCALE))
+
+
+def test_clipped_pile_cap_dimensions_each_cut_corner(tmp_path: Path) -> None:
+    """D-166: con esquinas recortadas, la planta de geometría acota lo que quita cada recorte en sus dos bordes, y el
+    recubrimiento sigue el contorno real."""
+    cap, views = _cap_model("cabezal_tres_pilotes.json", tmp_path)
+    geometry = views["geometria"]
+    texts = _texts(geometry, "dimension")
+    for clip in cap["clipped_corners"]:
+        assert metres(clip["along_x"]) in texts and metres(clip["along_y"]) in texts
+    cover = [e for e in geometry["entities"] if e["type"] == "polyline" and e["layer"] == DISTRIBUTION and e["closed"]]
+    assert len(cover) == 1 and len(cover[0]["points"]) == 4 + len(cap["clipped_corners"])
+
+
+def test_pile_cap_sections_show_the_piles_below_the_cap(tmp_path: Path) -> None:
+    """D-166: en los cortes, los pilotes bajo el cabezal (el empotramiento a trazos), con el empotramiento y el
+    recubrimiento inferior acotados; las cotas de las zonas y el largo total quedan debajo de los pilotes."""
+    cap, views = _cap_model("cabezal_pilotes.json", tmp_path)
+    for name in ("corte_x", "corte_y"):
+        entities = views[name]["entities"]
+        piles = [e for e in entities if e["layer"] == PILES]
+        lowest = min(point[1] for e in piles for point in (e.get("points") or [e["start"], e["end"]]))
+        assert lowest < 0 and any(e.get("dashed") for e in piles)
+        texts = _texts(views[name], "dimension")
+        assert metres(cap["pile"]["embedment"]) in texts and metres(cap["bottom_cover"]) in texts
+        total = metres(cap["lx"] if name == "corte_x" else cap["ly"])
+        assert all(e["start"][1] <= lowest for e in entities if e["type"] == "dimension" and e["text"] == total)
+
+
+def test_pile_cap_has_a_pile_table(tmp_path: Path) -> None:
+    """D-166: el cuadro de pilotes con el nombre, el centro (x, y), la sección y el empotramiento de cada pilote."""
+    cap, views = _cap_model("cabezal_pilotes.json", tmp_path)
+    texts = _texts(views["cuadro_pilotes"])
+    for pile in cap["piles"]:
+        assert pile["id"] in texts and metres(pile["x"]) in texts and metres(pile["y"]) in texts
+    assert f"Ø{metres(cap['pile']['size'])}" in texts and metres(cap["pile"]["embedment"]) in texts
+
+
+def test_location_plan_draws_the_piles_of_each_pile_cap(tmp_path: Path) -> None:
+    """D-166: en la planta de localización, el cabezal con su contorno real (con recortes) en la capa CABEZAL y cada
+    pilote a trazos."""
+    data = json.loads(frozen("nsr_10", "cabezales", "cabezal_tres_pilotes.json").read_text(encoding="utf-8"))
+    cap = data["pile_caps"][0]
+    cap["location"] = {"x": 10000.0, "y": 5000.0, "story": "Base", "joint": "7"}
+    path = tmp_path / "ubicado.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    output = tmp_path / "salida"
+    report_file(path, output)
+    model = json.loads((output / "salida_drawing.json").read_text(encoding="utf-8"))
+    plans = [view for view in model["elements"]["localizacion"] if view["name"] != "cuadro_tipologias"]
+    entities = [entity for view in plans for entity in view["entities"]]
+    outlines = [entity for entity in entities if entity["layer"] == PILE_CAP]
+    assert len(outlines) == 1 and len(outlines[0]["points"]) == 4 + len(cap["clipped_corners"])
+    assert sum(1 for entity in entities if entity["layer"] == PILES and entity.get("dashed")) == len(cap["piles"])
+
+
 def test_template_layers_match_the_drawing_model() -> None:
     """D-150: la plantilla trae cada capa del modelo de dibujo con su color ACI (drawing/model.py es la fuente)."""
     ezdxf = pytest.importorskip("ezdxf")
@@ -490,25 +611,33 @@ def _length(polyline: Polyline) -> float:
 
 @pytest.mark.parametrize("name", ["zapata_centrica.json", "zapata_combinada.json", "zapata_t_invertida_etabs.json"])
 def test_each_bar_label_is_linked_to_a_bar_that_measures_the_cartilla_length(name: str, tmp_path: Path) -> None:
-    """D-158: la barra representativa de una zona se dibuja con A, B y C de su pieza en la cartilla, así que mide la
-    longitud de corte (la del .dli); su rótulo liga esa L a la polilínea (Text.fields), salvo las que se miden por el eje."""
+    """D-158, D-166: cada barra dibujada con A, B y C de su pieza mide la longitud de corte (la del .dli) y lleva su marca;
+    cada rótulo, en planta (Text) o en un corte (Leader), lleva las marcas de sus L. Con una sola L de una pieza que se
+    mide por fuera, hay una polilínea de esa marca (en la vista o, en un corte, en la planta) que mide esa L."""
     drawn = _views(_project(name, tmp_path))
     pieces = {row.mark: row.piece for row in drawn.rows}
-    linked = 0
-    for view in (drawn.view("planta_inferior"), *[v for v in drawn.views if v.name == "planta_superior"]):
+    bars: dict[tuple[str, str], Polyline] = {}
+    for view in drawn.views:
         for entity in view.entities:
-            if not isinstance(entity, Text) or not entity.fields:
+            if isinstance(entity, Polyline) and entity.mark:
+                assert entity.layer.startswith(BAR_PREFIX)
+                assert _length(entity) == pytest.approx(pieces[entity.mark].cut_length, abs=0.5)
+                bars.setdefault((view.name, entity.mark), entity)
+                bars.setdefault(("", entity.mark), entity)
+    linked = {"planta": 0, "corte": 0}
+    for view in drawn.views:
+        for entity in view.entities:
+            if not isinstance(entity, (Text, Leader)) or not entity.marks:
                 continue
-            marks = entity.text.rsplit("(", 1)[1].rstrip(")").split(", ")
-            assert len(marks) == len(entity.fields) == 1
-            bar = view.entities[entity.fields[0]]
-            assert isinstance(bar, Polyline) and bar.layer.startswith(BAR_PREFIX)
-            piece = pieces[marks[0]]
-            assert drawn_is_cut(piece)
-            assert _length(bar) == pytest.approx(piece.cut_length, abs=0.5)
-            assert f"L={metres(piece.cut_length)}" in entity.text
-            linked += 1
-    assert linked
+            assert entity.marks == tuple(entity.text.rsplit("(", 1)[1].rstrip(")").split(", "))
+            if len(entity.marks) != 1 or not drawn_is_cut(pieces[entity.marks[0]]):
+                continue
+            mark = entity.marks[0]
+            bar = bars.get((view.name, mark), bars.get(("", mark)))
+            assert bar is not None, (view.name, entity.text)
+            assert f"L={metres(_length(bar))}" in entity.text
+            linked["planta" if view.name.startswith("planta_") else "corte"] += 1
+    assert linked["planta"] and linked["corte"]
 
 
 def test_plans_follow_the_reference_drawing(tmp_path: Path) -> None:
@@ -553,27 +682,32 @@ def test_combined_plans_are_drawn_in_global_axes(tmp_path: Path) -> None:
     assert any(abs(bar.points[0][1] - bar.points[-1][1]) > combined.lx / 2 for bar in along_y)
 
 
-def test_dxf_writes_each_bar_length_as_an_autocad_field(tmp_path: Path) -> None:
-    """D-158: en el DXF, cada rótulo de barra es un MTEXT con un campo de AutoCAD ligado a la longitud de su polilínea
-    (\\AcObjProp ... .Length), como el plano de referencia; el valor guardado es la longitud de la cartilla."""
+@pytest.mark.parametrize(("element", "name"), [("zapatas", "zapata_centrica.json"), ("zapatas", "zapata_combinada.json"),
+                                               ("cabezales", "cabezal_pilotes.json")])
+def test_dxf_writes_each_bar_length_as_an_autocad_field(element: str, name: str, tmp_path: Path) -> None:
+    """D-158, D-166: en el DXF, los rótulos de las plantas (MTEXT) y de los cortes (MULTILEADER) llevan cada L como un
+    campo de AutoCAD ligado a la longitud de una polilínea de barra (\\AcObjProp ... .Length), como el plano de
+    referencia; el valor guardado es la longitud de la cartilla, la que mide esa polilínea."""
     ezdxf = pytest.importorskip("ezdxf")
-    output = tmp_path / "zapata_centrica"
-    report_file(frozen("nsr_10", "zapatas", "zapata_centrica.json"), output)
-    document = ezdxf.readfile(output / "zapata_centrica.dxf")
+    output = tmp_path / "salida"
+    report_file(frozen("nsr_10", element, name), output)
+    document = ezdxf.readfile(output / "salida.dxf")
     assert not document.audit().has_errors
-    labelled = 0
-    for mtext in document.modelspace().query("MTEXT"):
-        if not mtext.has_extension_dict:
+    labelled = {"MTEXT": 0, "MULTILEADER": 0}
+    for label in document.modelspace().query("MTEXT MULTILEADER"):
+        if not label.has_extension_dict:
             continue
-        field = mtext.get_extension_dict().dictionary["ACAD_FIELD"]["TEXT"]
+        field = label.get_extension_dict().dictionary["ACAD_FIELD"]["TEXT"]
         tags = {tag.code: tag.value for tag in field.xtags.get_subclass("AcDbField")}
         assert "%<\\_FldIdx 0>%" in tags[2]
         child = document.entitydb[tags[360]]
         child_tags = list(child.xtags.get_subclass("AcDbField"))
         assert any(tag.code == 2 and ".Length" in tag.value for tag in child_tags)
         bar = document.entitydb[next(tag.value for tag in child_tags if tag.code == 331)]
+        assert bar.dxf.layer.startswith(BAR_PREFIX)
         points = list(bar.get_points("xy"))
         length = sum(((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5 for a, b in zip(points, points[1:], strict=False))
-        assert f"L={metres(length * 1000)}" in mtext.text
-        labelled += 1
-    assert labelled
+        text = label.text if label.dxftype() == "MTEXT" else label.context.mtext.default_content
+        assert f"L={metres(length * 1000)}" in text
+        labelled[label.dxftype()] += 1
+    assert labelled["MTEXT"] and labelled["MULTILEADER"]

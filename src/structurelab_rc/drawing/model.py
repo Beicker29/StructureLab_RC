@@ -16,7 +16,9 @@ Point = tuple[float, float]
 
 # Capas de la plantilla (D-150): (color RGB para SVG, color ACI para DXF, grosor de línea en mm de papel). El ACI es el de
 # la plantilla (una prueba lo compara); el RGB es el del SVG, legible sobre fondo blanco.
-OUTLINE = "0"  # contornos del concreto y de las columnas
+OUTLINE = "0"  # contornos de las columnas y de sus arranques
+FOOTING = "ZAPATA"  # contorno del concreto de las zapatas aisladas, combinadas y T invertidas (D-166)
+PILE_CAP = "CABEZAL"  # contorno del concreto de los cabezales (D-166)
 COLUMN_FILL = "ACH ESTRUCTURA"  # relleno sólido de las columnas en planta
 DIMENSIONS = "DIM"  # cotas y llamadas de los cortes
 LABELS = "TEXTO"  # rótulos de las barras, nombres de las columnas y notas
@@ -27,6 +29,8 @@ AXES = "EJES"
 TABLE = "CARTILLA"
 LAYERS: dict[str, tuple[str, int, float]] = {
     OUTLINE: ("#000000", 7, 0.35),
+    FOOTING: ("#000000", 7, 0.35),
+    PILE_CAP: ("#000000", 7, 0.35),
     COLUMN_FILL: ("#666666", 252, 0.18),
     DIMENSIONS: ("#cc0000", 1, 0.18),
     LABELS: ("#7d6608", 2, 0.18),
@@ -37,7 +41,8 @@ LAYERS: dict[str, tuple[str, int, float]] = {
     TABLE: ("#000000", 7, 0.18),
 }
 # Capas que solo aparecen si el dibujo las usa: los pilotes de los cabezales (D-138).
-OPTIONAL_LAYERS: dict[str, tuple[str, int, float]] = {"PILOTES": ("#5d4037", 34, 0.25)}
+PILES = "PILOTES"
+OPTIONAL_LAYERS: dict[str, tuple[str, int, float]] = {PILES: ("#5d4037", 34, 0.25)}
 BAR_PREFIX = "Borde_"
 # Colores de las capas de barras, por el número de la designación (#5 -> 5): (RGB, ACI), uno distinto por barra. De #4 a #8,
 # los de la plantilla (D-150); las demás conservan los de D-132. Una barra fuera de la tabla, gris.
@@ -72,6 +77,7 @@ PAPER_GAP = 8.0  # mm de papel: separación de cotas y llamadas
 PAPER_MARK = 1.25  # mm de papel: radio de la marca de una barra sobre su línea de distribución (D-158)
 PAPER_STUB = 18.0  # mm de papel: alto del arranque de columna en un alzado (D-158)
 PAPER_ARROW = 2.5  # mm de papel: flecha de los rótulos con llamada, como el MULTILEADER de la referencia (D-158)
+DIAMETER = "Ø"  # prefijo del texto de una cota de diámetro (D-166); Latin-1, para las fuentes base de la memoria PDF
 BASE_SCALE = 50.0  # la escala de la plantilla DXF: sus estilos y tipos de línea se multiplican por escala/BASE_SCALE
 ZONE_COLOR = 252  # ACI de las divisiones de zona (D-158)
 _CM = 10.0  # mm: una longitud múltiplo de 1 cm se escribe con dos decimales; si no, con tres
@@ -101,6 +107,8 @@ class Polyline:
     dashed: bool = False
     filled: bool = False  # cerrada y rellena (las columnas en planta): el DXF la sombrea y dibuja el contorno en OUTLINE
     color: int | None = None  # color ACI propio (el gris 252 de las divisiones de zona, D-158); None: el de la capa
+    # Una barra dibujada que mide la longitud de corte de su marca de la cartilla (D-158, D-166): la marca; si no, "".
+    mark: str = ""
 
 
 @dataclass(frozen=True)
@@ -109,6 +117,7 @@ class Circle:
     center: Point
     radius: float
     filled: bool = True  # sin relleno: el círculo del número de un grupo de barras
+    dashed: bool = False  # a trazos: los pilotes bajo el cabezal en planta (D-166)
 
 
 @dataclass(frozen=True)
@@ -119,26 +128,28 @@ class Text:
     height: float
     align: str = "left"  # left, center o right
     rotation: float = 0.0  # grados, antihorario: 90 en los rótulos de las barras a lo largo de y
-    # Rótulo de una barra (D-158): los índices, en las entidades de su vista, de las polilíneas cuya longitud es cada L del
-    # texto ("L=3.95" o "L=6.00+3.25"); el DXF escribe cada L como un campo de AutoCAD ligado a esa longitud.
-    fields: tuple[int, ...] = ()
+    # Rótulo de una barra (D-158, D-166): la marca de cada L del texto ("L=3.95" o "L=6.00+3.25"); el DXF escribe cada L
+    # como un campo de AutoCAD ligado a la longitud de la polilínea de esa marca (Polyline.mark) en el mismo elemento.
+    marks: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
 class Leader:
     """Rótulo con líneas de llamada a varios puntos (las barras de un grupo en un corte): el texto empieza en at y cada
-    línea va del comienzo del texto a un punto de targets."""
+    línea va del comienzo del texto a un punto de targets. marks, como en Text: cada L ligada a la polilínea de su marca."""
 
     layer: str
     at: Point
     text: str
     height: float
     targets: tuple[Point, ...]
+    marks: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
 class Dimension:
-    """Cota lineal entre dos puntos, con la línea de cota corrida offset en la normal (izquierda del sentido)."""
+    """Cota lineal entre dos puntos, con la línea de cota corrida offset en la normal (izquierda del sentido); o, con
+    kind "diameter", la cota del diámetro de un círculo entre dos puntos opuestos de él (el pilote, D-166)."""
 
     layer: str
     start: Point
@@ -146,6 +157,7 @@ class Dimension:
     offset: float
     text: str
     height: float
+    kind: str = "linear"  # linear o diameter
 
 
 Entity = Line | Polyline | Circle | Text | Leader | Dimension

@@ -117,6 +117,28 @@ al recorte a dp/2 + d (d ≤ 330 mm) del pilote más cercano; P3 solo en las esq
 largo variable (de borde a borde del contorno menos el recubrimiento, medido a lo largo de la barra) y el dibujo, el
 contorno real. El As mínimo, la separación y la franja central se revisan con las mallas completas.
 
+## Dibujo (D-138, D-166)
+
+Las vistas de la zapata aislada ([zapatas.md](zapatas.md)), con el refuerzo presentado igual, y los pilotes como el
+plano de despiece de cabezales de referencia (sin su refuerzo):
+
+- **Contorno** en la capa `CABEZAL`; con `clipped_corners`, el contorno real y el recubrimiento corrido a él.
+- **Plantas:** los pilotes a trazos en la capa `PILOTES`. En la planta de geometría, además:
+  - la marca del centro y el nombre (el del cuadro);
+  - la cota del diámetro de un pilote (`Ø.40`) o la de su lado;
+  - arriba (en x) y a la derecha (en y), la cadena de los centros de los pilotes desde los bordes y, por fuera, la de
+    sus bordes;
+  - con una columna, las cotas del eje de la columna al centro de cada fila de pilotes;
+  - en cada esquina recortada, lo que quita el recorte en cada uno de sus dos bordes.
+- **Cortes X-X e Y-Y** por las columnas: bajo el cabezal, los pilotes de esa dirección en proyección (el empotramiento a
+  trazos dentro del concreto y un tramo visible de 24 mm de papel con corte ondulado). En la franja de los pilotes, la
+  cadena de sus bordes y la de sus centros desde los bordes del cabezal; junto a los pilotes de los extremos, el
+  empotramiento y el recubrimiento inferior (`bottom_cover`). La cadena de las zonas, el largo total y los rótulos de
+  las barras inferiores quedan debajo de los pilotes.
+- **Cuadro de pilotes** (`<cabezal>_cuadro_pilotes.svg`; en el DXF, a la derecha con la geometría y la cartilla):
+  nombre, centro (x, y) en metros respecto al centroide del cabezal, sección y empotramiento.
+- **Planta de localización:** el cabezal con su contorno real y sus pilotes a trazos, sin nombre.
+
 ## Diseño (D-141)
 
 Un proyecto de diseño trae `pile_cap_design` y `caps` en lugar de `pile_caps`; `concrete` va sin `fc` (lo elige el

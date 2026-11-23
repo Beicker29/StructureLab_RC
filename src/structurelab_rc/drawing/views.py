@@ -7,8 +7,10 @@ Convenciones (D-150 y D-158, como el plano de despiece de referencia):
   cada marca y las marcas de la cartilla: "22#6 C/.15 L=6.65 (ZC_m-01)". La longitud es la de la cartilla (D-147), la
   misma del .dli, del peso y del costo; las medidas van en metros (metres).
 - Cada barra se dibuja con las dimensiones A, B y C de su pieza en la cartilla (tramo y patas), así que la polilínea mide
-  la longitud de corte; el rótulo liga cada L a esa polilínea (Text.fields: en el DXF, un campo de AutoCAD), salvo en las
-  barras con ganchos de 135° y los estribos (D-160).
+  la longitud de corte y lleva su marca (Polyline.mark); cada rótulo, en planta o en un corte, lleva las marcas de sus L
+  (Text.marks, Leader.marks) y el DXF liga cada L a la polilínea de su marca en el mismo elemento con un campo de AutoCAD
+  (D-158, D-166). Las barras cortadas de un corte se ligan a su barra de la planta; las empalmadas y los estribos, cuya
+  polilínea no mide la longitud de la cartilla, quedan con texto fijo (D-160).
 - Cada barra va en la capa de su diámetro (Borde_<designación>).
 - En planta (x a la derecha, y arriba), las barras de un grupo se parten en zonas (donde el hueco entre dos barras
   vecinas supera 1.5 separaciones) y cada zona se dibuja con una barra representativa, sus patas abatidas y acotadas, una
@@ -119,12 +121,31 @@ def drawn_is_cut(piece: Piece) -> bool:
     return plain and abs(start + straight + end - piece.cut_length) < _SAME / 2
 
 
+def measured_mark(item: Marked, points: tuple[Point, ...]) -> str:
+    """La marca de una barra dibujada si la polilínea mide su longitud de corte de la cartilla (D-158, D-166): una sola
+    pieza que se mide por fuera (drawn_is_cut) y una polilínea de ese largo; si no, "" (los tramos empalmados)."""
+    if len(item.pieces) != 1 or not drawn_is_cut(item.pieces[0]):
+        return ""
+    length = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(points, points[1:], strict=False))
+    return item.marks[0] if abs(length - item.lengths[0]) < _SAME / 2 else ""
+
+
+def _label_pairs(items: list[Marked]) -> list[tuple[str, float]]:
+    """(marca, longitud de corte) de cada marca de un rótulo, en su orden y sin repetir."""
+    return list(dict.fromkeys(pair for item in items for pair in zip(item.marks, item.lengths, strict=True)))
+
+
+def label_marks(items: list[Marked]) -> tuple[str, ...]:
+    """Las marcas de las L de un rótulo, en su orden (Text.marks y Leader.marks, D-166)."""
+    return tuple(mark for mark, _ in _label_pairs(items))
+
+
 def label_text(items: list[Marked], count: int | None = None, positions: tuple[float, ...] | None = None) -> str:
     """El rótulo de un grupo (D-150): cantidad, barra (E delante en los estribos), separación si tiene más de dos barras,
     "pasadores" en los pasadores, la longitud de corte de cada marca y las marcas: "22#6 C/.15 L=6.65 (ZC_m-01)". count y
     positions, los de una zona de la planta (por omisión, todo el grupo)."""
     run, place = items[0].run, items[0].place
-    marks = dict.fromkeys(pair for item in items for pair in zip(item.marks, item.lengths, strict=True))
+    marks = _label_pairs(items)
     total = sum(item.run.count for item in items) if count is None else count
     spots = place.positions if positions is None else positions
     body = f"{total}{'E' if place.along == 'estribo' else ''}{run.designation}"
@@ -170,12 +191,15 @@ def _labels(drawing: Drawing, view: View, anchors: list[tuple[Point, Marked]], m
     x, top = corner[0] + drawing.gap(), corner[1]
     grouped: dict[str, list[Point]] = {}  # por texto: dos grupos con el mismo rótulo (las barras x e y de una malla) van juntos
     texts: dict[int, str] = {}
+    marks: dict[str, tuple[str, ...]] = {}
     for anchor, item in anchors:
-        text = texts.setdefault(item.number, label_text([other for other in marked if other.number == item.number]))
+        group = [other for other in marked if other.number == item.number]
+        text = texts.setdefault(item.number, label_text(group))
+        marks.setdefault(text, label_marks(group))
         grouped.setdefault(text, []).append(anchor)
     ordered = sorted(grouped.items(), key=lambda pair: -max(point[1] for point in pair[1]))
     for index, (text, points) in enumerate(ordered):
-        view.entities.append(Leader(DIMENSIONS, (x, top - index * _LABEL_STEP * height), text, height, tuple(points)))
+        view.entities.append(Leader(DIMENSIONS, (x, top - index * _LABEL_STEP * height), text, height, tuple(points), marks[text]))
 
 
 def _box(outline: Polyline) -> tuple[float, float, float, float]:
@@ -184,7 +208,7 @@ def _box(outline: Polyline) -> tuple[float, float, float, float]:
     return min(xs), min(ys), max(xs), max(ys)
 
 
-def _dim(points: tuple[Point, Point], outward: Point, offset: float, height: float) -> Dimension:
+def measure(points: tuple[Point, Point], outward: Point, offset: float, height: float) -> Dimension:
     """Cota entre dos puntos con la línea de cota corrida offset hacia outward (el lado de afuera)."""
     p, q = points
     left = (-(q[1] - p[1]), q[0] - p[0])  # la normal izquierda del sentido p -> q
@@ -193,7 +217,7 @@ def _dim(points: tuple[Point, Point], outward: Point, offset: float, height: flo
     return Dimension(DIMENSIONS, p, q, offset, metres(math.hypot(q[0] - p[0], q[1] - p[1])), height)
 
 
-def _chain(stops: list[float], line: tuple[str, float], side: tuple[Point, float], height: float) -> list[Dimension]:
+def chain(stops: list[float], line: tuple[str, float], side: tuple[Point, float], height: float) -> list[Dimension]:
     """Una cadena de cotas por las posiciones stops; line = (eje "x" o "y" a lo largo del cual van, coordenada fija de la
     recta); side = (sentido hacia afuera, distancia de la línea de cota)."""
     axis, fixed = line
@@ -203,14 +227,14 @@ def _chain(stops: list[float], line: tuple[str, float], side: tuple[Point, float
     def point(value: float) -> Point:
         return (value, fixed) if axis == "x" else (fixed, value)
 
-    return [_dim((point(a), point(b)), outward, offset, height) for a, b in zip(ordered, ordered[1:], strict=False)]
+    return [measure((point(a), point(b)), outward, offset, height) for a, b in zip(ordered, ordered[1:], strict=False)]
 
 
 def _dimensions(drawing: Drawing, view: View, outline: Polyline) -> None:
     """Cotas totales de la planta, como los planos de despiece (D-158): el ancho arriba y el largo a la izquierda."""
     x0, y0, x1, y1 = _box(outline)
     height, gap = drawing.text_height(small=True), drawing.gap()
-    view.entities += [_dim(((x0, y1), (x1, y1)), (0.0, 1.0), gap, height), _dim(((x0, y0), (x0, y1)), (-1.0, 0.0), gap, height)]
+    view.entities += [measure(((x0, y1), (x1, y1)), (0.0, 1.0), gap, height), measure(((x0, y0), (x0, y1)), (-1.0, 0.0), gap, height)]
 
 
 def _title(drawing: Drawing, view: View, scaled: bool = False, text: str | None = None) -> None:
@@ -266,9 +290,9 @@ def _zone_divisions(drawing: Drawing, view: View, along: str, bounds: list[float
         points = ((x0, bound), (x1, bound)) if along == "x" else ((bound, y0), (bound, y1))
         view.entities.append(Polyline(DISTRIBUTION, points, dashed=True, color=ZONE_COLOR))
     if along == "x":
-        view.entities += _chain(bounds, ("y", x1), ((1.0, 0.0), gap), height)
+        view.entities += chain(bounds, ("y", x1), ((1.0, 0.0), gap), height)
     else:
-        view.entities += _chain(bounds, ("x", y0), ((0.0, -1.0), gap), height)
+        view.entities += chain(bounds, ("x", y0), ((0.0, -1.0), gap), height)
 
 
 def _column_dimensions(drawing: Drawing, view: View, columns: list[Polyline], box: tuple[float, float, float, float]) -> None:
@@ -278,9 +302,9 @@ def _column_dimensions(drawing: Drawing, view: View, columns: list[Polyline], bo
     height, gap = drawing.text_height(small=True), drawing.gap()
     for column in columns:
         cx0, cy0, cx1, cy1 = _box(column)
-        view.entities += _chain([cx0, cx1, x1], ("x", cy0), ((0.0, -1.0), 0.4 * gap), height)
+        view.entities += chain([cx0, cx1, x1], ("x", cy0), ((0.0, -1.0), 0.4 * gap), height)
         stops = [cy0, cy1, y1] if y1 - cy1 <= cy0 - y0 else [y0, cy0, cy1]
-        view.entities += _chain(stops, ("y", cx1), ((1.0, 0.0), 0.4 * gap), height)
+        view.entities += chain(stops, ("y", cx1), ((1.0, 0.0), 0.4 * gap), height)
 
 
 Box = tuple[float, float, float, float]
@@ -336,10 +360,10 @@ def _plan_bar(drawing: Drawing, view: View, chosen: tuple[Marked, tuple[float, .
         return (along, across) if horizontal else (across, along)
 
     middle = _representative(zone, horizontal)
-    legs, fields, centre = _bar_shape(drawing, view, item, (middle, at))
+    legs, centre = _bar_shape(drawing, view, item, (middle, at))
     for foot, tip, outward in legs:
         direction = (outward, 0.0) if horizontal else (0.0, outward)
-        view.entities.append(_dim((foot, tip), direction, 0.4 * gap, height))
+        view.entities.append(measure((foot, tip), direction, 0.4 * gap, height))
     x0, y0, x1, y1 = box
     if plan:  # planta trapezoidal o en T/L (D-164): la línea dentro del tramo de la barra, que está en el concreto
         x0, x1 = place.span if horizontal else (x0, x1)
@@ -356,18 +380,18 @@ def _plan_bar(drawing: Drawing, view: View, chosen: tuple[Marked, tuple[float, .
         half = (place.span[1] - place.span[0]) / 2
         centre = _free_middle((centre - half, centre + half), blocked)
     view.entities.append(Text(LABELS, at(centre, middle - leg * 0.4 * height), text, height, align="center",
-                              rotation=0.0 if horizontal else 90.0, fields=tuple(fields)))
+                              rotation=0.0 if horizontal else 90.0, marks=label_marks([item])))
 
 
 Leg = tuple[Point, Point, float]  # pata dibujada: (pie, punta, sentido hacia afuera a lo largo de la barra)
 
 
 def _bar_shape(drawing: Drawing, view: View, item: Marked,
-               place_at: tuple[float, Callable[[float, float], Point]]) -> tuple[list[Leg], list[int], float]:
+               place_at: tuple[float, Callable[[float, float], Point]]) -> tuple[list[Leg], float]:
     """Dibuja la barra representativa en la abscisa transversal middle (place_at = (middle, at), con at(a lo largo, a
-    través) -> punto) y devuelve sus patas, los índices de las polilíneas que miden la longitud de corte (para el rótulo)
-    y el centro de la barra a lo largo. Una sola pieza: con las dimensiones de su cartilla (D-158). Empalmada: los tramos
-    de la longitud comercial, desplazados y traslapados, con las patas de la primera y la última pieza."""
+    través) -> punto) y devuelve sus patas y el centro de la barra a lo largo. Una sola pieza: con las dimensiones de su
+    cartilla (D-158), con su marca si mide la longitud de corte. Empalmada: los tramos de la longitud comercial,
+    desplazados y traslapados, con las patas de la primera y la última pieza."""
     middle, at = place_at
     run, place = item.run, item.place
     horizontal = place.along == "x"
@@ -384,9 +408,8 @@ def _bar_shape(drawing: Drawing, view: View, item: Marked,
         if last:
             points.append(at(end, middle + leg * last))
             legs.append((at(end, middle), at(end, middle + leg * last), 1.0))
-        fields = [len(view.entities)] if drawn_is_cut(item.pieces[0]) else []
-        view.entities.append(Polyline(item.layer, tuple(points)))
-        return legs, fields, (start + end) / 2
+        view.entities.append(Polyline(item.layer, tuple(points), mark=measured_mark(item, tuple(points))))
+        return legs, (start + end) / 2
     first, _, _ = piece_legs(item.pieces[0])
     _, _, last = piece_legs(item.pieces[-1])
     segments = [(start + a, start + b) for a, b in splice_spans(run, item.stock)]
@@ -404,7 +427,7 @@ def _bar_shape(drawing: Drawing, view: View, item: Marked,
     for (_, end), (begin, _) in zip(segments, segments[1:], strict=False):
         view.entities.append(Text(LABELS, at((begin + end) / 2, middle + leg * 1.4 * height), f"traslapo {metres(end - begin)}",
                                   height, align="center", rotation=0.0 if horizontal else 90.0))
-    return legs, [], (place.span[0] + place.span[1]) / 2
+    return legs, (place.span[0] + place.span[1]) / 2
 
 
 # Dónde va la línea de distribución de las barras a lo largo de x (distribuidas en y), como fracción del ancho desde −X
@@ -525,13 +548,15 @@ def section_view(drawing: Drawing, names: tuple[str, str], cut: tuple[str, float
     """Corte o alzado (names = nombre y título) paralelo a X (cut = ("x", y)) o a Y (cut = ("y", x)), como los planos de
     despiece (D-158): el concreto, las barras paralelas al plano con las patas de su cartilla y sus cotas, las barras
     cortadas por zonas con el rótulo de cada zona arriba (las superiores) o abajo (las inferiores), las divisiones de las
-    zonas, los estribos y los pasadores con su rótulo a la derecha. frame = (concreto, el primero la base; arranques de
-    columna con su símbolo de corte; caras de las columnas para la cadena de arriba; si lleva título). Cotas: arriba, la
-    cadena de los bordes y las caras de las columnas; abajo, la de las zonas y el largo total."""
+    zonas, los estribos y los pasadores con su rótulo a la derecha. frame = (concreto, el primero la base; lo que se
+    dibuja alrededor: arranques de columna con su símbolo de corte y, bajo la base, los pilotes con sus cotas; caras de
+    las columnas para la cadena de arriba; si lleva título). Cotas: arriba, la cadena de los bordes y las caras de las
+    columnas; abajo, la de las zonas y el largo total, debajo de lo que haya bajo la base (D-166)."""
     axis, at = cut
     concrete, stubs, faces, titled_view = frame
     view = View(*names, [*concrete, *stubs])
     x0, y0, x1, y1 = _box(concrete[0])
+    floor = min(y0, View("", "", list(stubs)).bounds()[1]) if stubs else y0  # lo más bajo bajo la base (los pilotes)
     middle = (y0 + y1) / 2
     height, gap = drawing.text_height(small=True), drawing.gap()
     anchors: list[tuple[Point, Marked]] = []
@@ -543,7 +568,7 @@ def section_view(drawing: Drawing, names: tuple[str, str], cut: tuple[str, float
         if place.along == axis:
             _parallel_bar(drawing, view, item, (at, middle))
         elif place.along in ("x", "y"):
-            spans = _cut_zones(drawing, view, item, (at, middle, (y0, y1), levels))
+            spans = _cut_zones(drawing, view, item, (at, middle, (floor, y1), levels))
             if place.level < middle:
                 cut_zones += spans
         else:
@@ -557,10 +582,10 @@ def section_view(drawing: Drawing, names: tuple[str, str], cut: tuple[str, float
     for bound in bounds[1:-1]:
         view.entities.append(Polyline(DISTRIBUTION, ((bound, y0), (bound, y1)), dashed=True, color=ZONE_COLOR))
     if len(bounds) > _PAIR:
-        view.entities += _chain(bounds, ("x", y0), ((0.0, -1.0), 0.5 * gap), height)
-    view.entities.append(_dim(((x0, y0), (x1, y0)), (0.0, -1.0), gap if len(bounds) > _PAIR else 0.5 * gap, height))
+        view.entities += chain(bounds, ("x", floor), ((0.0, -1.0), 0.5 * gap), height)
+    view.entities.append(measure(((x0, floor), (x1, floor)), (0.0, -1.0), gap if len(bounds) > _PAIR else 0.5 * gap, height))
     if faces:
-        view.entities += _chain([x0, *faces, x1], ("x", y1), ((0.0, 1.0), 0.4 * gap), height)
+        view.entities += chain([x0, *faces, x1], ("x", y1), ((0.0, 1.0), 0.4 * gap), height)
     if titled_view:
         _title(drawing, view)
     return view
@@ -574,18 +599,20 @@ def _parallel_bar(drawing: Drawing, view: View, item: Marked, cut: tuple[float, 
     if min(abs(position - at) for position in place.positions) > max(_gap(place.positions), run.diameter):
         return
     up = 1.0 if place.level < middle else -1.0
-    first, _, _ = piece_legs(item.pieces[0])
+    first, straight, _ = piece_legs(item.pieces[0])
     _, _, last = piece_legs(item.pieces[-1])
     (start, end), z = place.span, place.level
+    if len(item.pieces) == 1:  # el tramo A de la cartilla, como en planta: la barra mide su longitud de corte (D-166)
+        end = start + straight
     points: list[Point] = [(start, z), (end, z)]
     height, gap = drawing.text_height(small=True), drawing.gap()
     if first:
         points.insert(0, (start, z + up * first))
-        view.entities.append(_dim(((start, z), (start, z + up * first)), (-1.0, 0.0), 0.4 * gap, height))
+        view.entities.append(measure(((start, z), (start, z + up * first)), (-1.0, 0.0), 0.4 * gap, height))
     if last:
         points.append((end, z + up * last))
-        view.entities.append(_dim(((end, z), (end, z + up * last)), (1.0, 0.0), 0.4 * gap, height))
-    view.entities.append(Polyline(item.layer, tuple(points)))
+        view.entities.append(measure(((end, z), (end, z + up * last)), (1.0, 0.0), 0.4 * gap, height))
+    view.entities.append(Polyline(item.layer, tuple(points), mark=measured_mark(item, tuple(points))))
 
 
 def _cut_zones(drawing: Drawing, view: View, item: Marked,
@@ -609,7 +636,7 @@ def _cut_zones(drawing: Drawing, view: View, item: Marked,
         levels[upper] += 1
         landing = (zone[0], top + 1.2 * gap + rise) if upper else (zone[0], bottom - 1.8 * gap - rise)
         count = round(len(zone) * run.count / len(place.positions))
-        view.entities.append(Leader(DIMENSIONS, landing, label_text([item], count, zone), height, (target,)))
+        view.entities.append(Leader(DIMENSIONS, landing, label_text([item], count, zone), height, (target,), label_marks([item])))
     return spans
 
 
@@ -638,11 +665,13 @@ def _dowels(item: Marked, axis: str, at: float) -> tuple[list[Entity], Point | N
     along, across = (0, 1) if axis == "x" else (1, 0)
     if abs(centre[across] - at) > offset[across] + 1e-6:
         return [], None
-    leg = piece_legs(item.pieces[0])[0] if item.pieces else 0.0  # la pata de la cartilla (D-158)
+    # La pata y el fuste de la cartilla (D-158, D-166): así el pasador dibujado mide su longitud de corte.
+    leg, straight, _ = piece_legs(item.pieces[0]) if len(item.pieces) == 1 else (0.0, place.span[1] - place.span[0], 0.0)
     entities: list[Entity] = []
     for side in (-1.0, 1.0):
         u = centre[along] + side * offset[along]
-        entities.append(Polyline(item.layer, ((u - side * leg, place.span[0]), (u, place.span[0]), (u, place.span[1]))))
+        points = ((u - side * leg, place.span[0]), (u, place.span[0]), (u, place.span[0] + straight))
+        entities.append(Polyline(item.layer, points, mark=measured_mark(item, points)))
     return entities, (centre[along] + offset[along], (place.span[0] + place.span[1]) / 2)
 
 

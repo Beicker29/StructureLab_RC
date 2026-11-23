@@ -24,16 +24,15 @@ El usuario elige entre:
 2. `.dli` en DL-NET con elementos tipo y estribos (D-159, D-160, D-161): abrir el del diseño por tipologías desde ETABS
    y revisar que el total de cada grupo multiplique por N (`10  5  24  9  14  5  3`) y que la longitud y el peso de cada
    estribo coincidan con la cartilla (L = 2·(b + h) + 2·g; en el de una rama, L = h + 2·g).
+3. DXF de cabezales (D-166): abrirlo en AutoCAD y revisar los pilotes, sus cotas, el cuadro de pilotes y que los campos
+   L de los alzados (MULTILEADER) se actualicen al estirar una barra.
 
 ## Cimentaciones
 
 ### Cabezales sobre pilotes
 
 1. Diseño de cabezales de varias columnas.
-2. Dibujo más completo del cabezal (la posición de la columna en la planta y en el DXF ya está, D-143): cotas de los
-   pilotes, cuadro de pilotes, cotas de empotramiento y recubrimiento inferior en los cortes, cotas de los recortes y
-   pilotes en la planta de localización. En espera del plano de referencia del usuario, como en D-158.
-3. Cobertura de oráculo: estados límite CRSI 4 a 6 con varias columnas, valor del perímetro común, importación con
+2. Cobertura de oráculo: estados límite CRSI 4 a 6 con varias columnas, valor del perímetro común, importación con
    `column_station` y desarrollo con varias columnas (pendiente de la auditoría de D-145).
 
 ### Tipos nuevos, uno por vez (D-052, D-055)

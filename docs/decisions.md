@@ -3715,6 +3715,73 @@
   - Prueba: el punto N = 2 de la curva cuesta lo mismo que el diseño por tipologías con N = 2 (aisladas 36 454 589.61
     más combinada 19 317 402.21 = 55 771 991.82 en la copia de `pruebas/` del ACI).
 
+### D-166: dibujo completo del cabezal, campos L en los alzados y capas del concreto
+
+- **Fecha:** 2026-11-23
+- **Pedido del usuario:**
+  - El dibujo del cabezal que faltaba en la hoja de ruta: cotas de los pilotes, cuadro de pilotes, empotramiento y
+    recubrimiento inferior en los cortes, cotas de los recortes y pilotes en la planta de localización.
+  - Guiarse por el plano de despiece de cabezales de referencia (`references/Despiece de cabezales.dxf`, local) en cómo
+    se muestran y acotan los pilotes, sin cambiar la presentación del refuerzo, que sigue igual a la de las zapatas
+    (D-158). No dibujar el refuerzo de los pilotes.
+  - En los alzados de zapatas y cabezales, el campo L ligado a la polilínea, como en las plantas.
+  - Una capa `ZAPATA` para el contorno del concreto de las zapatas (aislada y variantes de la combinada) y otra para los
+    cabezales; hasta ahora iban en la capa `0`.
+- **Hallazgos en la referencia:**
+  - Pilotes a trazos con una marca en el centro; cota de diámetro (`Ø.50`, DIMENSION de diámetro) en un pilote.
+  - Cadenas de los centros (`.50 1.25 .50`) y de los bordes de los pilotes (`.25 .50 .75 .50 .25`); cotas del eje de la
+    columna al centro de los pilotes (`.625`).
+  - El corte pasa por una fila de pilotes y los muestra bajo el cabezal con corte ondulado, con las dos cadenas dentro
+    de la franja de los pilotes, y acota el recubrimiento `.075`.
+  - Sus rótulos de alzado (MULTILEADER) llevan el campo como el MTEXT de la planta: `ACAD_FIELD/TEXT` con un hijo
+    `AcObjProp .Length`. En el plano de zapatas los 24 apuntan a la misma polilínea, un error de copia.
+  - No trae cuadro de pilotes ni cabezales con recortes.
+- **Decisiones del usuario (consulta del 2026-11-23):**
+  1. Los cortes siguen por las columnas (arranque y pasadores, como las zapatas) y los pilotes de esa dirección se ven
+     en proyección bajo el cabezal, con el empotramiento a trazos dentro del concreto.
+  2. Cuadro de pilotes con nombre, x, y (respecto al centroide del cabezal), sección y empotramiento, en el DXF, el SVG
+     y la memoria.
+  3. Pilotes a trazos en todas las plantas, con nombre solo en la de geometría.
+- **Capas (fase 0):** `ZAPATA` y `CABEZAL` en el modelo de dibujo y en la plantilla, regenerada con
+  `tools/make_dxf_template.py` (la única diferencia con la anterior son esas dos capas). La capa `0` queda para las
+  columnas y sus arranques.
+- **Campos L en los alzados (fase 1):**
+  - El ligado pasa de índices dentro de la vista (`Text.fields`) a marcas: `Polyline.mark` se llena cuando la polilínea
+    mide la longitud de corte de su marca (`measured_mark`), y `Text.marks` y `Leader.marks` llevan la marca de cada L.
+  - El DXF liga los campos al terminar cada elemento: a la polilínea de la misma vista o, para las barras cortadas de
+    un corte, a la de la planta.
+  - Las barras paralelas al corte y los pasadores se dibujan ahora con la A de la cartilla, como en planta, para que
+    midan la longitud de corte. Antes usaban el tramo exacto, hasta 1 cm distinto por el redondeo de D-147.
+  - Quedan con texto fijo las barras empalmadas y los estribos.
+- **Cabezal (fases 2 a 5):** lo descrito en [cabezales.md](formatos/cabezales.md#dibujo-d-138-d-166).
+  - El modelo de dibujo suma `Circle.dashed` y `Dimension.kind` (`diameter`, que el DXF escribe como DIMENSION de
+    diámetro con `%%c` y el SVG como línea con flechas).
+  - El prefijo es `Ø` (Latin-1), porque la memoria PDF usa las fuentes base, que no tienen `∅` ni `□`; el pilote
+    cuadrado se escribe `.40x.40`.
+  - `section_view` baja la cadena de las zonas, el largo total y los rótulos inferiores por debajo de lo que se dibuja
+    bajo la base. En las zapatas no hay nada debajo y no cambian.
+  - `footing_views` conserva su firma y el cabezal entra por `isolated_views` con su capa y los pilotes de cada corte.
+- **Diferencias:**
+  - Ningún cálculo cambia; los `resultado.json` son iguales.
+  - Cambian los `drawing.json`:
+    - de zapatas y cabezales, por la capa, las marcas y las barras de los cortes;
+    - de los cabezales, además, por los pilotes, las cotas y el cuadro.
+  - Cambia la memoria de los cabezales por la figura del cuadro de pilotes.
+- **Riesgos:**
+  - El campo en el MULTILEADER se escribe a mano, como el del MTEXT; ezdxf lo lee sin errores de auditoría, pero no se
+    probó en AutoCAD.
+  - En los cabezales con recortes, las plantas del refuerzo siguen cargadas (una marca por longitud). No se tocó, por
+    el pedido de no cambiar la presentación del refuerzo.
+- **Control** (`tests/test_drawing.py`):
+  - capas del contorno en zapatas, combinadas, trapecio, T y cabezal;
+  - cada rótulo de planta y de corte ligado a una polilínea que mide su L;
+  - campos en MTEXT y MULTILEADER en el DXF de zapatas y cabezales;
+  - pilotes en las plantas, la cota de diámetro y las cadenas;
+  - cotas de los recortes y recubrimiento corrido;
+  - pilotes en los cortes, el empotramiento y el recubrimiento inferior, con las cotas de abajo debajo de los pilotes;
+  - cuadro de pilotes;
+  - planta de localización con el contorno recortado y los pilotes.
+
 ## Consultas abiertas
 
 ### C-017: presión del suelo bajo una combinada trapezoidal o en planta T (fase B de D-163)

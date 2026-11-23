@@ -10,9 +10,11 @@ cortada.
   que miden en metros con dos decimales (tres si la medida no es múltiplo de 1 cm).
 - Líneas de distribución (capa de proyecciones): DIMENSION sin texto con el estilo DIM-75 de la plantilla (escalado a la
   escala) y flechas cerradas en los dos extremos, como el plano de referencia (D-158).
-- Rótulos de las barras en planta: MTEXT; cada L ligada a una polilínea (Text.fields) se escribe como un campo de
-  AutoCAD con su longitud (\\AcObjProp ... .Length, dos decimales), como el plano de referencia (D-158).
-- Rótulos de los cortes: MULTILEADER con una línea a cada barra. Barras cortadas y marcas de las barras: el bloque BARRA
+- Rótulos de las barras: en planta MTEXT y en los cortes MULTILEADER con una línea a cada barra. Cada L se escribe como
+  un campo de AutoCAD (\\AcObjProp ... .Length, dos decimales), como el plano de referencia, ligado a la polilínea de su
+  marca (Text.marks y Leader.marks con Polyline.mark) en el mismo elemento: la de la misma vista o, para las barras
+  cortadas de un corte, la de la planta (D-158, D-166).
+- Barras cortadas y marcas de las barras: el bloque BARRA
   escalado al radio del punto, en la capa de su diámetro. Columnas en planta: sombreado sólido en su capa y contorno en
   la del concreto. Títulos y escala con el estilo de texto ARIAL de la plantilla.
 - Composición, como el plano de referencia (D-158): por elemento, arriba las plantas del refuerzo inferior y superior,
@@ -28,6 +30,7 @@ from typing import Any
 
 from structurelab_rc.drawing.model import (
     BASE_SCALE,
+    DIAMETER,
     DIMENSIONS,
     DISTRIBUTION,
     LABELS,
@@ -64,7 +67,7 @@ _MLEADER_STYLE = "LEADER"  # la clave del estilo de multileader que usa la plant
 _CM = 10.0  # mm
 _ROUND_OFF = 0.05  # mm
 _PLANS = "planta_"  # las plantas del refuerzo: la fila de arriba de cada elemento
-_SIDE = ("geometria", "cartilla")  # a la derecha de cada elemento (D-158)
+_SIDE = ("geometria", "cartilla", "cuadro_pilotes")  # a la derecha de cada elemento (D-158, D-166)
 _FIELD_FORMAT = "%lu2%pr2"  # decimal con dos decimales, como el plano de referencia
 _UPRIGHT = 90.0  # grados: una cota con el sentido entre −90° y 90° tiene el texto derecho
 _BOTTOM_CENTER = 8  # MTEXT: punto de inserción abajo al centro
@@ -136,6 +139,8 @@ class _Writer:
         self.ratio = drawing.scale / BASE_SCALE  # los tamaños de la plantilla (a 1:50) a la escala del dibujo
         self.leader_style = document.mleader_styles.get(_MLEADER_STYLE)
         self.dx, self.dy = 0.0, 0.0
+        self.bars: dict[tuple[str, str], Any] = {}  # (vista o "" para el elemento, marca) -> polilínea escrita
+        self.labels: list[tuple[Any, str, tuple[str, ...], str]] = []  # (entidad escrita, texto, marcas, vista)
 
     def element(self, element: str, views: list[View], left: float) -> tuple[float, float, float, float]:
         """Las vistas de un elemento desde la abscisa left (mm), como el plano de referencia (D-158): arriba las plantas
@@ -174,17 +179,37 @@ class _Writer:
             right = max(right, left + block + gap + (x1 - x0))
             bottom = min(bottom, stack + gap)
         self.dx, self.dy = 0.0, 0.0
+        self.link()
         return left, bottom, right, 0.0
 
     def place(self, view: View, shift: tuple[float, float]) -> None:
-        """Las entidades de una vista desplazadas shift (mm); los rótulos ligados a polilíneas, con sus campos."""
+        """Las entidades de una vista desplazadas shift (mm); anota las barras con marca y los rótulos con marcas, que
+        link() liga al terminar el elemento."""
         self.dx, self.dy = shift
-        written: dict[int, Any] = {}
-        for index, entity in enumerate(view.entities):
-            if isinstance(entity, Text) and entity.fields:
-                self.label(entity, [written[number] for number in entity.fields if number in written])
-            else:
-                written[index] = self.entity(entity)
+        for entity in view.entities:
+            written = self.entity(entity)
+            if isinstance(entity, Polyline) and entity.mark:
+                self.bars.setdefault((view.name, entity.mark), written)
+                self.bars.setdefault(("", entity.mark), written)
+            elif isinstance(entity, (Text, Leader)) and entity.marks:
+                self.labels.append((written, entity.text, entity.marks, view.name))
+
+    def link(self) -> None:
+        """Liga cada L de los rótulos del elemento a la longitud de la polilínea de su marca (D-158, D-166): la de la misma
+        vista si la hay (la barra representativa en planta, la paralela al corte, el pasador) y si no, la del elemento (la
+        barra de la planta, para las barras cortadas de un corte). Sin polilínea para alguna L (empalmes, estribos), el
+        rótulo queda con su texto."""
+        for written, text, marks, view in self.labels:
+            polylines = [self.bars.get((view, mark), self.bars.get(("", mark))) for mark in marks]
+            head, found, tail = text.partition("L=")
+            values, _, rest = tail.partition(" ")
+            count = len(values.split("+"))
+            if not found or count != len(polylines) or any(polyline is None for polyline in polylines):
+                continue
+            code = head + "L=" + "+".join(f"%<\\_FldIdx {index}>%" for index in range(count)) + (f" {rest}" if rest else "")
+            _length_fields(self.document, written, polylines, code)
+        self.bars.clear()
+        self.labels.clear()
 
     def attributes(self, layer: str) -> dict[str, Any]:
         """La capa y la escala del tipo de línea: los trazos de la plantilla (HIDDEN2, a 1:50) a la escala del dibujo."""
@@ -218,18 +243,6 @@ class _Writer:
                                                          "insert": self.point(text.at), "rotation": text.rotation,
                                                          "attachment_point": attachment})
 
-    def label(self, text: Text, polylines: list[Any]) -> None:
-        """Un rótulo de barra con cada L como campo de AutoCAD ligado a la longitud de su polilínea (D-158). El texto
-        guardado es el del modelo (la longitud de la cartilla), el que AutoCAD muestra hasta reevaluar el campo."""
-        head, found, tail = text.text.partition("L=")
-        values, _, rest = tail.partition(" ")
-        lengths = values.split("+")
-        mtext = self.mtext(text, text.text)
-        if not found or len(lengths) != len(polylines):
-            return
-        code = head + "L=" + "+".join(f"%<\\_FldIdx {index}>%" for index in range(len(lengths))) + (f" {rest}" if rest else "")
-        _length_fields(self.document, mtext, polylines, code)
-
     def shape(self, entity: Polyline) -> Any:
         if entity.filled:  # columna: sombreado en su capa y contorno en la del concreto
             hatch = self.space.add_hatch(color=256, dxfattribs={"layer": entity.layer})  # 256: color de la capa
@@ -242,7 +255,8 @@ class _Writer:
         if entity.filled:  # barra cortada o marca de barra: el bloque de la plantilla
             attributes = {"layer": entity.layer, "xscale": radius, "yscale": radius}
             return self.space.add_blockref(_BAR_BLOCK, self.point(entity.center), dxfattribs=attributes)
-        return self.space.add_circle(self.point(entity.center), radius, dxfattribs={"layer": entity.layer})
+        attributes = {**self.attributes(entity.layer), **({"linetype": _DASHED} if entity.dashed else {})}
+        return self.space.add_circle(self.point(entity.center), radius, dxfattribs=attributes)
 
     def entity(self, entity: Entity) -> Any:
         if isinstance(entity, Line):
@@ -258,8 +272,19 @@ class _Writer:
         return self.dimension(entity)
 
     def dimension(self, dimension: Dimension) -> Any:
-        """Una cota (o, en la capa de proyecciones, una línea de distribución: sin texto y con flechas, D-158)."""
+        """Una cota (o, en la capa de proyecciones, una línea de distribución: sin texto y con flechas, D-158; o la del
+        diámetro de un pilote, D-166)."""
         start, end = dimension.start, dimension.end
+        if dimension.kind == "diameter":
+            centre = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+            radius = math.hypot(end[0] - start[0], end[1] - start[1]) / 2 * _M_PER_MM
+            diameter = self.space.add_diameter_dim(center=self.point(centre), radius=radius,
+                                                   angle=math.degrees(math.atan2(end[1] - start[1], end[0] - start[0])),
+                                                   text=dimension.text.replace(DIAMETER, "%%c"),  # Ø de AutoCAD
+                                                   dimstyle=self.dimstyle,
+                                                   dxfattribs=self.attributes(dimension.layer))
+            diameter.render()
+            return diameter.dimension
         base, _ = dimension_line(dimension)
         angle = math.degrees(math.atan2(end[1] - start[1], end[0] - start[0]))
         if not -_UPRIGHT < angle <= _UPRIGHT:  # la misma línea en el otro sentido: el texto queda legible, no al revés
@@ -278,7 +303,7 @@ class _Writer:
             built.dimension.dxf.text_midpoint = self.point(((first[0] + second[0]) / 2, (first[1] + second[1]) / 2))
         return built.dimension
 
-    def leader(self, leader: Leader) -> None:
+    def leader(self, leader: Leader) -> Any:
         """MULTILEADER con el estilo de la plantilla: el texto a la derecha de at y una línea a cada barra con la flecha
         cerrada (D-158). La flecha, la separación del texto y el quiebre van a la escala del dibujo; ezdxf no copia la
         flecha al contexto de la entidad (la deja en 4.0) si no se fija aquí."""
@@ -296,11 +321,11 @@ class _Writer:
         return builder.multileader
 
 
-def _length_fields(document: Any, mtext: Any, polylines: list[Any], code: str) -> None:
-    """Liga un MTEXT a la longitud de cada polilínea con campos de AutoCAD, como el plano de referencia (D-158): en su
-    diccionario de extensión, ACAD_FIELD/TEXT es un campo "_text" con el texto code (cada %<\\_FldIdx i>% es un valor) y
-    un campo hijo AcObjProp por polilínea (\\AcObjProp Object(...).Length, formato %lu2%pr2). ezdxf no trae API para los
-    campos: se escriben como objetos con sus etiquetas."""
+def _length_fields(document: Any, label: Any, polylines: list[Any], code: str) -> None:
+    """Liga un MTEXT o un MULTILEADER a la longitud de cada polilínea con campos de AutoCAD, como el plano de referencia
+    (D-158, D-166, los dos igual): en su diccionario de extensión, ACAD_FIELD/TEXT es un campo "_text" con el texto code
+    (cada %<\\_FldIdx i>% es un valor) y un campo hijo AcObjProp por polilínea (\\AcObjProp Object(...).Length, formato
+    %lu2%pr2). ezdxf no trae API para los campos: se escriben como objetos con sus etiquetas."""
     from ezdxf.entities import DXFTagStorage  # noqa: PLC0415 - dependencia opcional
     from ezdxf.lldxf.extendedtags import ExtendedTags  # noqa: PLC0415 - dependencia opcional
     from ezdxf.lldxf.types import DXFTag  # noqa: PLC0415 - dependencia opcional
@@ -315,7 +340,7 @@ def _length_fields(document: Any, mtext: Any, polylines: list[Any], code: str) -
     def value_tags(name: str, kind: int, value: list[tuple[int, Any]]) -> list[tuple[int, Any]]:
         return [(6, name), (93, 2), (90, kind), *value, (94, 0), (300, ""), (302, ""), (304, "ACVALUE_END")]
 
-    fields = mtext.new_extension_dict().dictionary.add_new_dict("ACAD_FIELD")
+    fields = label.new_extension_dict().dictionary.add_new_dict("ACAD_FIELD")
     parent = document.entitydb.next_handle()
     children = [document.entitydb.next_handle() for _ in polylines]
     for child, polyline in zip(children, polylines, strict=True):

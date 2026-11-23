@@ -51,7 +51,8 @@ def view_svg(view: View, scale: float) -> tuple[str, float]:
             parts.append(f'<{tag} points="{points}" {paint}{dash}/>')
         elif isinstance(entity, Circle):
             paint = f'fill="{color}"' if entity.filled else stroke
-            parts.append(f'<circle cx="{entity.center[0]:.1f}" cy="{-entity.center[1]:.1f}" r="{entity.radius:.1f}" {paint}/>')
+            dash = f' stroke-dasharray="{6 * scale:.0f} {3 * scale:.0f}"' if entity.dashed else ""
+            parts.append(f'<circle cx="{entity.center[0]:.1f}" cy="{-entity.center[1]:.1f}" r="{entity.radius:.1f}" {paint}{dash}/>')
         elif isinstance(entity, Text):
             anchor = {"left": "start", "center": "middle", "right": "end"}[entity.align]
             (x, y), rotate = entity.at, ""
@@ -67,8 +68,7 @@ def view_svg(view: View, scale: float) -> tuple[str, float]:
             parts.append(f'<text x="{x + entity.height * 0.3:.1f}" y="{-y + entity.height * 0.35:.1f}" font-size="{entity.height:.1f}" '
                          f'fill="{color}">{escape(entity.text)}</text>')
         elif isinstance(entity, Dimension):
-            distribution = entity.layer == DISTRIBUTION
-            parts += _distribution_svg(entity, stroke, color, scale) if distribution else _dimension_svg(entity, stroke, color)
+            parts += _any_dimension_svg(entity, stroke, color, scale)
     parts.append("</svg>")
     return "\n".join(parts) + "\n", aspect
 
@@ -80,6 +80,26 @@ def _distribution_svg(dimension: Dimension, stroke: str, color: str, scale: floa
     parts = [f'<line x1="{sx:.1f}" y1="{-sy:.1f}" x2="{ex:.1f}" y2="{-ey:.1f}" {stroke} {dash}/>']
     parts += [_arrow((sx, sy), (ex, ey), color, _ARROW * scale), _arrow((ex, ey), (sx, sy), color, _ARROW * scale)]
     return parts
+
+
+def _any_dimension_svg(dimension: Dimension, stroke: str, color: str, scale: float) -> list[str]:
+    """Una cota de diámetro (D-166), una línea de distribución (D-158) o una cota lineal."""
+    if dimension.kind == "diameter":
+        return _diameter_svg(dimension, stroke, color, scale)
+    if dimension.layer == DISTRIBUTION:
+        return _distribution_svg(dimension, stroke, color, scale)
+    return _dimension_svg(dimension, stroke, color)
+
+
+def _diameter_svg(dimension: Dimension, stroke: str, color: str, scale: float) -> list[str]:
+    """Una cota de diámetro (D-166): la línea entre los dos puntos opuestos del círculo, con una flecha en cada uno, y el
+    texto encima del centro."""
+    (sx, sy), (ex, ey) = dimension.start, dimension.end
+    mid = ((sx + ex) / 2, (sy + ey) / 2)
+    return [f'<line x1="{sx:.1f}" y1="{-sy:.1f}" x2="{ex:.1f}" y2="{-ey:.1f}" {stroke}/>',
+            _arrow((sx, sy), (ex, ey), color, PAPER_ARROW * scale), _arrow((ex, ey), (sx, sy), color, PAPER_ARROW * scale),
+            f'<text x="{mid[0]:.1f}" y="{-mid[1] - dimension.height * 0.3:.1f}" font-size="{dimension.height:.1f}" fill="{color}" '
+            f'text-anchor="middle">{escape(dimension.text)}</text>']
 
 
 def _arrow(tip: tuple[float, float], toward: tuple[float, float], color: str, size: float) -> str:
