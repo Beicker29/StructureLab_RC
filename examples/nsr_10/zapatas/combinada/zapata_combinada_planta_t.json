@@ -1,5 +1,5 @@
 {
-  "description": "Ejemplo de zapata combinada en planta T con la viga en la Y global (D-094, D-164): ZCT2 de tres tramos a lo largo de Y (3.0 m de 2.6 m de ancho, 2.0 m de 1.6 m y 2.0 m de 2.2 m), centrados en X = 0, bajo dos columnas; la barra que cruza el tramo angosto queda en dos. Datos ilustrativos.",
+  "description": "Ejemplo de zapata combinada en planta T con la viga en la Y global (D-094, D-164): ZCT2 de dos tramos a lo largo de Y (3.5 m de 2.6 m de ancho bajo C1 y 3.5 m de 2.0 m bajo C2), centrados en X = 0. Datos ilustrativos.",
   "profile": "nsr-10",
   "seismic": {
     "level": "DES",
@@ -229,19 +229,14 @@
         "shape": "stepped",
         "parts": [
           {
-            "length": 3000,
-            "low": -1300,
-            "high": 1300
+            "length": 3500.0,
+            "low": -1300.0,
+            "high": 1300.0
           },
           {
-            "length": 2000,
-            "low": -800,
-            "high": 800
-          },
-          {
-            "length": 2000,
-            "low": -1100,
-            "high": 1100
+            "length": 3500.0,
+            "low": -1000.0,
+            "high": 1000.0
           }
         ]
       }

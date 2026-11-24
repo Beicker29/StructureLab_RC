@@ -81,13 +81,15 @@
       "#3",
       "#4"
     ],
-    "shape": "inverted_t",
     "web_margin": 50.0,
     "web_step": 50.0,
     "web_max": 1500.0,
     "beam_h_min": 700.0,
     "beam_h_step": 100.0,
-    "beam_h_max": 1200.0
+    "beam_h_max": 1200.0,
+    "shapes": [
+      "inverted_t"
+    ]
   },
   "columns": [
     {

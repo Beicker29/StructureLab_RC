@@ -203,7 +203,9 @@
       "#3",
       "#4"
     ],
-    "shape": "rectangular"
+    "shapes": [
+      "rectangular"
+    ]
   },
   "combined_pairs": [
     {

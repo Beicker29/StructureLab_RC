@@ -152,10 +152,41 @@ class Geometry:
     center: tuple[float, float]
     beam: tuple[float, float] | None = None
     cross: float | None = None  # la resultante transversal: el ancho se centra en ella dentro de los linderos (D-154)
+    # Planta trapezoidal o en T/L (D-169): plan en el sistema de la planta (a desde el borde negativo a lo largo de la
+    # dirección principal, t desde cross) y start, la coordenada global del borde negativo. length y width son su caja.
+    plan: dict[str, Any] | None = None
+    start: float | None = None
 
     @property
     def total_height(self) -> float:
         return self.h if self.beam is None else self.beam[1]
+
+    @property
+    def shape(self) -> str:
+        """La forma: rectangular, inverted_t, trapezoid o stepped (D-169)."""
+        if self.beam is not None:
+            return "inverted_t"
+        return "rectangular" if self.plan is None else str(self.plan["shape"])
+
+    @property
+    def shape_text(self) -> str:
+        """La forma en palabras, para el resumen y la descripción del proyecto diseñado (D-169)."""
+        if self.plan is None:
+            return "en T invertida" if self.beam is not None else "rectangular"
+        if self.plan["shape"] == "trapezoid":
+            return "trapezoidal"
+        return "en planta I" if len(self.plan["parts"]) > _TWO_PARTS else "en planta T o L"
+
+    @property
+    def area(self) -> float:
+        """Área de la base: el rectángulo o la planta (D-169), en mm²."""
+        plan = self.plan
+        if plan is None:
+            return self.length * self.width
+        if plan["shape"] == "trapezoid":
+            ends = (plan["start"], plan["end"])
+            return plan["length"] * sum(end["high"] - end["low"] for end in ends) / 2
+        return sum(part["length"] * (part["high"] - part["low"]) for part in plan["parts"])
 
 
 @dataclass
@@ -264,6 +295,7 @@ def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any
     principal, _ = ctx.axes()
     swap = principal == "y"
     lx, ly = (geometry.width, geometry.length) if swap else (geometry.length, geometry.width)
+    transverse = "x" if swap else "y"
 
     def ended(item: dict[str, Any], end: str | None) -> dict[str, Any]:  # cada grupo con su extremo declarado (D-134)
         return {**item, "end": end}
@@ -272,6 +304,10 @@ def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any
     for column in ctx.project.columns:
         item: dict[str, Any] = {"id": column.id, "cx": column.cx, "cy": column.cy,
                                 "x": round(column.x - geometry.center[0], 6), "y": round(column.y - geometry.center[1], 6)}
+        if geometry.plan is not None:  # en el sistema de la planta (D-164, D-169), en ejes globales
+            assert geometry.start is not None and geometry.cross is not None
+            along_t = (round(getattr(column, principal) - geometry.start, 6), round(getattr(column, transverse) - geometry.cross, 6))
+            item["x"], item["y"] = along_t if not swap else (along_t[1], along_t[0])
         if column.id in reinforcement["dowels"]:
             item["dowels"] = ended(reinforcement["dowels"][column.id], ends.dowels)
         if column.id in reinforcement["bands"]:
@@ -289,6 +325,10 @@ def _footing_data(ctx: Context, geometry: Geometry, reinforcement: dict[str, Any
         "bottom": _declared({"first": "x", "x": ended(reinforcement["bottom_x"], ends.bottom),
                              "y": ended(reinforcement["bottom_y"], ends.bottom)}, swap),
     }
+    if geometry.plan is not None:  # la planta declarada; lx y ly se calculan (D-164)
+        data.pop("lx")
+        data.pop("ly")
+        data["plan"] = geometry.plan
     if geometry.beam is not None:  # T invertida (D-106, D-113): el refuerzo de la viga va en beam
         data["bottom"] = _declared({"first": "y", "x": ended(reinforcement["mat_x"], ends.bottom),
                                     "y": ended(reinforcement["bottom_y"], ends.bottom)}, swap)
@@ -1131,7 +1171,7 @@ def _concrete_floor(ctx: Context, fc: float, geometry: Geometry) -> float:
     """Cota inferior del costo con esta geometría: solo el concreto (en la T, con el alma)."""
     columns = sum(column.cx * column.cy for column in ctx.project.columns)
     stem = 0.0 if geometry.beam is None else geometry.beam[0] * geometry.length * (geometry.beam[1] - geometry.h)
-    volume = (geometry.length * geometry.width * geometry.h + stem + columns * ctx.design.pedestal_height) / _MM3_PER_M3
+    volume = (geometry.area * geometry.h + stem + columns * ctx.design.pedestal_height) / _MM3_PER_M3
     return volume * ctx.design.prices.concrete(fc)
 
 
@@ -1181,7 +1221,153 @@ def _at_height(ctx: Context, fc: float, extra: int, h: float) -> CombinedSolutio
     "soil" si el ancho no alcanza para el suelo, "h" si falta espesor."""
     if ctx.design.shape == "inverted_t":
         return _at_beam_height(ctx, fc, extra, h)
+    if ctx.design.shape in PLAN_SHAPES:
+        return _plan_sized(ctx, fc, h, extra)
     return _sized(ctx, fc, geometry_for(ctx, h, extra))
+
+
+PLAN_SHAPES = ("trapezoid", "stepped")
+_SPLITS = (0.25, 0.5, 0.75)  # posiciones del límite de la T/L en la luz libre entre las columnas extremas (D-169)
+_I_SPLITS = (0.2, 0.35)  # en la I, cada límite a esa fracción de la luz libre desde su columna extrema (D-169)
+_TWO_PARTS = 2
+
+
+def _plan_sized(ctx: Context, fc: float, h: float, extra: int) -> CombinedSolution | str:
+    """Planta trapezoidal o en T/L (D-169): con el largo mínimo que cubre las columnas (más extra pasos), dentro de los
+    linderos, los anchos que llevan el centroide a la resultante con el área que pide el suelo, subiendo el área de a un
+    paso hasta que cumpla la revisión geotécnica y el refuerzo; en la T/L, con cada posición del límite entre tramos, y se
+    queda con la de menor costo."""
+    design = ctx.design
+    step = design.plan_step
+    principal, transverse = ctx.axes()
+    first, last = _faces(ctx, principal)
+    length = math.ceil(round((last - first) / step, 9)) * step + extra * step
+    along = _fit(ctx, principal, length, (first + last) / 2, shrink=True)
+    if along is None or along[1] - along[0] > design.plan_max:
+        return "plan"
+    resultant = dict(zip(("x", "y"), placement(ctx, h), strict=True))
+    splits: tuple[tuple[float, ...] | None, ...] = (None,)
+    if design.shape == "stepped":  # la T/L (un límite) y la I (dos, con el tramo central más angosto)
+        ordered = sorted(_coordinate(column, principal) for column in ctx.project.columns)
+        inner = (ordered[0][0] + ordered[0][1] / 2 - along[0], ordered[-1][0] - ordered[-1][1] / 2 - along[0])
+        clear = inner[1] - inner[0]
+        def on_step(value: float) -> float:  # los límites entre tramos, al paso de la planta
+            return round(value / step) * step
+
+        splits = tuple(dict.fromkeys(
+            (*((on_step(inner[0] + fraction * clear),) for fraction in _SPLITS),
+             *((on_step(inner[0] + fraction * clear), on_step(inner[1] - fraction * clear)) for fraction in _I_SPLITS))))
+    loads = placement_loads(ctx)
+    best: CombinedSolution | str = "soil"
+    for split in splits:
+        frame = (along, resultant[principal], resultant[transverse], split)
+        mean = max(_cover_width(ctx, resultant[transverse]), sum(load.p for load in loads) / ctx.project.soil.allowable_pressure
+                   / (along[1] - along[0]))
+        mean = math.ceil(round(mean / step, 9)) * step
+        while mean <= design.plan_max:
+            geometry = _plan_geometry(ctx, h, frame, mean)
+            if (geometry is not None and isinstance(best, CombinedSolution)
+                    and _concrete_floor(ctx, fc, geometry) >= best.cost):
+                break  # ni el concreto de esta planta (ni el de las más anchas) alcanza el mejor costo (D-136)
+            if geometry is not None and _soil_ok(ctx, geometry):
+                result = reinforce(ctx, fc, geometry)
+                if result != "width":
+                    best = _better(best, result)
+                    break
+            mean += step
+    return best
+
+
+def _better(best: CombinedSolution | str, result: CombinedSolution | str) -> CombinedSolution | str:
+    """La solución de menor costo; sin solución todavía, la falla más informativa (la de la estructura antes que la del
+    suelo)."""
+    if isinstance(result, CombinedSolution):
+        return result if not isinstance(best, CombinedSolution) or result.cost < best.cost else best
+    return best if isinstance(best, CombinedSolution) or result == "soil" else result
+
+
+def plan_widths(length: float, xbar: float, area: float, split: tuple[float, ...] | None,
+                need: float) -> list[float] | None:
+    """Los anchos que dan el área y ponen el centroide en x̄ (desde el borde negativo), sin redondear (D-169): el
+    trapecio (split None: A = L·(B1 + B2)/2 y x̄ = L·(B1 + 2B2)/(3·(B1 + B2))), dos tramos con el límite en s
+    (A = b1·s + b2·(L − s) y A·x̄ = b1·s²/2 + b2·(L − s)·(L + s)/2) o la I con límites s1 y s2 y el tramo central del
+    ancho need (los dos extremos salen de las mismas dos condiciones). None si la I no queda más ancha en los extremos
+    que en el centro."""
+    if split is None:
+        total = 2 * area / length
+        second = total * (3 * xbar / length - 1)
+        return [total - second, second]
+    if len(split) == 1:
+        (s,) = split
+        second = 2 * area * (xbar - s / 2) / (length * (length - s))
+        return [(area - second * (length - s)) / s, second]
+    s1, s2 = split
+    lengths = (s1, s2 - s1, length - s2)
+    centres = (s1 / 2, (s1 + s2) / 2, (s2 + length) / 2)
+    rest = area - need * lengths[1]  # lo que aportan los extremos al área y al momento
+    moment = area * xbar - need * lengths[1] * centres[1]
+    # b1·l1 + b2·l2 = rest y b1·l1·c1 + b2·l2·c2 = moment
+    second = (moment - rest * centres[0]) / (lengths[2] * (centres[2] - centres[0]))
+    first = (rest - second * lengths[2]) / lengths[0]
+    if min(first, second) <= need:
+        return None
+    return [first, need, second]
+
+
+def _cover_width(ctx: Context, cross: float) -> float:
+    """El ancho que cubre las columnas centrado en cross (como la rectangular)."""
+    _, transverse = ctx.axes()
+    return max(2 * abs(t - cross) + c for t, c in (_coordinate(column, transverse) for column in ctx.project.columns))
+
+
+def _plan_geometry(ctx: Context, h: float, frame: tuple[tuple[float, float], float, float, tuple[float, ...] | None],
+                   mean: float) -> Geometry | None:
+    """La planta con el ancho medio mean (área = mean × largo): los anchos que ponen el centroide en la resultante a lo
+    largo (las fórmulas del trapecio o de los dos tramos), no menores que el que cubre las columnas y al paso de la
+    planta; centrada en la resultante transversal o, si cruza un lindero transversal, con ese lado recto en él (D-169).
+    None si no cabe entre los linderos."""
+    (low, high), along_resultant, cross, split = frame
+    step = ctx.design.plan_step
+    length = high - low
+    xbar = along_resultant - low
+    need = _cover_width(ctx, cross)
+    area = mean * length
+    widths = plan_widths(length, xbar, area, split, need)
+    if widths is None:
+        return None
+    widths = [math.ceil(round(max(width, need) / step, 9)) * step for width in widths]
+    if max(widths) > ctx.design.plan_max:
+        return None
+    _, transverse = ctx.axes()
+    limits = side_limits(ctx.project.columns)
+    low_limit, high_limit = limits.get(f"-{transverse}"), limits.get(f"+{transverse}")  # type: ignore[call-overload]
+    # Simétrica respecto a su eje, que se corre lo mínimo para quedar dentro de los linderos transversales, como la
+    # rectangular (D-154); si aun así no cabe, el lado que cruza queda recto en el lindero (trapecio de lado recto o L).
+    shift = 0.0
+    if low_limit is not None:
+        shift = max(shift, max(low_limit - (cross - width / 2) for width in widths))
+    if high_limit is not None:
+        shift = min(shift, min(high_limit - (cross + width / 2) for width in widths)) if shift == 0.0 else shift
+    edges = []
+    for width in widths:
+        bottom, top = shift - width / 2, shift + width / 2
+        if high_limit is not None and cross + top > high_limit + _TOUCH:
+            bottom, top = high_limit - cross - width, high_limit - cross
+        if low_limit is not None and cross + bottom < low_limit - _TOUCH:
+            return None  # no cabe entre los linderos
+        edges.append({"low": round(bottom, 6), "high": round(top, 6)})
+    if split is None:
+        plan = {"shape": "trapezoid", "length": length, "start": edges[0], "end": edges[1]}
+    else:
+        bounds = (0.0, *split, length)
+        plan = {"shape": "stepped", "parts": [{"length": round(b - a, 6), **edge}
+                                              for a, b, edge in zip(bounds[:-1], bounds[1:], edges, strict=True)]}
+    bottom, top = min(edge["low"] for edge in edges), max(edge["high"] for edge in edges)
+    principal, _ = ctx.axes()
+    middle, side = (low + high) / 2, cross + (bottom + top) / 2
+    center = (middle, side) if principal == "x" else (side, middle)
+    geometry = Geometry(length, top - bottom, h, center, None, cross, plan, low)
+    return geometry if _footing(ctx, geometry, _placeholder(ctx)) is not None else None
 
 
 def _sized(ctx: Context, fc: float, geometry: Geometry | None) -> CombinedSolution | str:
@@ -1261,16 +1447,33 @@ _FAILURES = {"plan": "el largo necesario pasa de plan_max o la base no cabe entr
              "h": "ningun espesor hasta h_max aprueba la verificacion estructural"}
 
 
-PENDING_SHAPES = {
-    "trapezoid": "el diseno de la zapata combinada trapezoidal no esta implementado (D-164); se verifica con plan",
-    "stepped": "el diseno de la zapata combinada en planta T o L no esta implementado (D-164); se verifica con plan",
-}
-
-
 def design_for_fc(ctx: Context, fc: float) -> FcOption:
-    """La zapata de menor costo con este f'c entre el largo mínimo con solución y los _EXTRA_LENGTHS siguientes."""
-    if ctx.design.shape in PENDING_SHAPES:  # se declara, pero su diseño no está implementado (D-164, D-165)
-        return FcOption(fc, None, PENDING_SHAPES[ctx.design.shape])
+    """La zapata de menor costo con este f'c entre las formas permitidas (shapes, D-169): cada una con su búsqueda; si
+    ninguna tiene solución, los motivos de cada forma."""
+    if len(ctx.design.shapes) == 1:
+        return _design_shape(ctx, fc)
+    return _cheapest(fc, ctx.design.shapes,
+                     [_design_shape(replace(ctx, project=_shape_project(ctx.project, shape)), fc) for shape in ctx.design.shapes])
+
+
+def _shape_project(project: CombinedDesignProject, shape: str) -> CombinedDesignProject:
+    """El proyecto que diseña una sola de las formas permitidas (D-169)."""
+    return project.model_copy(update={"combined_design": project.combined_design.model_copy(update={"shapes": (shape,)})})
+
+
+def _cheapest(fc: float, shapes: Sequence[str], options: Sequence[FcOption]) -> FcOption:
+    """La de menor costo entre las búsquedas de cada forma; si ninguna tiene solución, los motivos de cada una (D-169)."""
+    if len(options) == 1:
+        return options[0]
+    solved = [option for option in options if option.solution is not None]
+    if solved:
+        return min(solved, key=lambda option: option.solution.cost if option.solution is not None else math.inf)
+    return FcOption(fc, None, "; ".join(f"{shape}: {option.failure}" for shape, option in zip(shapes, options, strict=True)))
+
+
+def _design_shape(ctx: Context, fc: float) -> FcOption:
+    """La zapata de una forma, de menor costo con este f'c, entre el largo mínimo con solución y los _EXTRA_LENGTHS
+    siguientes."""
     best: CombinedSolution | None = None
     failure = "h"
     extra, remaining = 0, None
@@ -1295,6 +1498,8 @@ def _length_floor(ctx: Context, fc: float, extra: int) -> float:
     """Cota inferior del costo de cualquier solución con este largo: el concreto con el menor espesor (en la T, el menor
     alto de viga y el alma mínima) y el ancho mínimo del suelo; infinito si el largo no cabe (D-136)."""
     design = ctx.design
+    if design.shape in PLAN_SHAPES:  # la planta se busca aparte (D-169): sin cota, se prueban los largos extra
+        return 0.0
     beam = None
     if design.shape == "inverted_t":
         assert design.beam_h_min is not None
@@ -1315,11 +1520,21 @@ def _task_in_worker(task: Task) -> FcOption:
 
 
 def design_tasks(tasks: Sequence[Task], workers: int = 1) -> tuple[FcOption, ...]:
-    """Las búsquedas de design_for_fc, en orden; workers las reparte entre procesos (no cambia el resultado)."""
-    if workers > 1 and len(tasks) > 1:
-        with ProcessPoolExecutor(max_workers=min(workers, len(tasks))) as pool:
-            return tuple(pool.map(_task_in_worker, tasks))
-    return tuple(_task_in_worker(task) for task in tasks)
+    """Las búsquedas de design_for_fc, en orden; workers las reparte entre procesos (no cambia el resultado). Con varias
+    formas permitidas, cada forma es una búsqueda aparte y se queda la de menor costo (D-169)."""
+    singles = [(_shape_project(project, shape), bars, fc, anchor) for project, bars, fc, anchor in tasks
+               for shape in project.combined_design.shapes]
+    if workers > 1 and len(singles) > 1:
+        with ProcessPoolExecutor(max_workers=min(workers, len(singles))) as pool:
+            options = tuple(pool.map(_task_in_worker, singles))
+    else:
+        options = tuple(_task_in_worker(task) for task in singles)
+    chosen, start = [], 0
+    for project, _, fc, _ in tasks:
+        shapes = project.combined_design.shapes
+        chosen.append(_cheapest(fc, shapes, options[start:start + len(shapes)]))
+        start += len(shapes)
+    return tuple(chosen)
 
 
 def combined_result(ctx: Context, options: tuple[FcOption, ...]) -> CombinedDesignResult:
@@ -1358,7 +1573,7 @@ def designed_project(ctx: Context, solution: CombinedSolution) -> dict[str, Any]
     project = ctx.project
     materials = project.materials
     g = solution.geometry
-    shape = ""
+    shape = "" if g.plan is None else f" {g.shape_text} (caja de la planta)"  # D-169
     if g.beam is not None:  # T invertida (D-113)
         deep = ", de gran altura (deep_beam, D-089: sin puntal-tensor)" if solution.data.get("deep_beam") else ""
         shape = f" en T invertida con viga de {g.beam[0]:g} × {g.beam[1]:g} mm{deep}"

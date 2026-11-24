@@ -26,6 +26,10 @@ El usuario elige entre:
    estribo coincidan con la cartilla (L = 2·(b + h) + 2·g; en el de una rama, L = h + 2·g).
 3. DXF de cabezales (D-166): abrirlo en AutoCAD y revisar los pilotes, sus cotas, el cuadro de pilotes y que los campos
    L de los alzados (MULTILEADER) se actualicen al estirar una barra.
+4. Combinadas no rectangulares (D-164, D-167, D-169): abrir en DL-NET y en AutoCAD el `.dli` y el DXF de
+   `zapata_combinada_trapecio`, `_planta_l`, `_planta_t`, `_planta_i`, `_trapecio_estribos`, `zapata_t_invertida_trapecio`
+   y el diseño de `diseno_combinada_formas`: las marcas de las barras y los estribos de longitud variable (una por
+   medida), la piel inclinada y las cotas de la planta.
 
 ## Cimentaciones
 
@@ -40,8 +44,9 @@ El usuario elige entre:
 Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica); después, su diseño, despiece y dibujo.
 
 1. Medianera con viga de amarre (pausada; las preguntas abiertas se reformulan al empezar).
-2. Zapatas combinadas trapezoidal y en planta T o L (D-164): la verificación, la entrada desde ETABS, el despiece y el
-   dibujo ya están; faltan el diseño y su ubicación en la planta de localización.
+2. Zapatas combinadas trapezoidal y en planta T, L o I (D-164, D-167, D-169): falta su ubicación en la planta de
+   localización y el diseño de la T invertida no rectangular (el diseño de `shapes` trapezoid y stepped propone la
+   zarpa de la combinada sin alma).
 3. Zapata corrida bajo un muro (los criterios se revisan al empezar).
 4. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
 5. Losas de cimentación.

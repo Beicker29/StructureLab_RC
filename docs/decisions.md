@@ -3844,7 +3844,63 @@
   (datos supuestos).
 - **Consulta del usuario sobre `loads_source` en la aislada:** no existe porque el tipo de zapata agrupa muchos nudos y
   sus cargas salen siempre de los Excel (D-055); `loads_source` es de la combinada (D-084), donde cada columna es una.
-  Queda abierta hasta que el usuario diga qué caso necesita (por ejemplo, las mayoradas declaradas para todo el tipo).
+  El usuario propuso uniformar la fuente de cargas en todas las plantillas (un solo `loads_source` y validador, con
+  `loads_overrides` previsto en la aislada); tras el inventario decidió no implementarlo.
+
+### D-169: diseño de la combinada trapezoidal y en planta T, L o I; formas permitidas (`shapes`)
+
+- **Fecha:** 2026-11-24
+- **Decisiones del usuario:**
+  - Largos: el mínimo que cubre las columnas y los siguientes, y gana el de menor costo, como en la rectangular.
+  - T/L: varias posiciones del límite entre tramos y gana la de menor costo.
+  - Lo demás, las recomendaciones:
+    - los anchos ponen el centroide de la planta en la resultante, con el área que pide el suelo;
+    - la forma es simétrica y se corre dentro de los linderos;
+    - el proyecto diseñado declara la planta en `plan`, con t = 0 en la resultante transversal;
+    - funciona dentro de las tipologías y de la curva.
+  - También la planta en I (pregunta del usuario): dos límites, el tramo central más angosto.
+  - Elección de la forma (opción B): `combined_design.shapes` es la lista de formas permitidas; el diseño busca cada una
+    y se queda con la de menor costo. `stepped` prueba la T/L y la I. `shapes` reemplaza a `shape`, sin las dos claves.
+- **Anchos:**
+  - Trapecio: A = L·(B1 + B2)/2 y x̄ = L·(B1 + 2B2)/(3·(B1 + B2)).
+  - Dos tramos con el límite en s: A = b1·s + b2·(L − s) y A·x̄ = b1·s²/2 + b2·(L − s)·(L + s)/2.
+  - I: el tramo central con el ancho que cubre las columnas; los extremos, de las mismas dos condiciones. Sin I si un
+    extremo no queda más ancho que el centro.
+  - Cada ancho cubre las columnas, al paso de la planta, hasta `plan_max`. El ancho medio empieza en el del suelo
+    (ΣP/qa/L) y crece de a un paso hasta que pasan la revisión geotécnica y el refuerzo.
+- **Posiciones de los límites:** T/L al 25, 50 y 75 % de la luz libre entre las columnas extremas; I al 20 y 35 % desde
+  cada una. Al paso de la planta.
+- **Linderos:** la planta es simétrica respecto a su eje, que se corre lo mínimo para quedar dentro de los linderos
+  transversales (D-154). Si aun así cruza uno, ese lado queda recto en él. El primer intento, con el lado recto por
+  extremo, corría el centroide y daba anchos de 9.4 m.
+- **Código:**
+  - `design/footing/combined.py`: `_plan_sized`, `_plan_geometry`, `plan_widths`. Poda por el costo del concreto solo,
+    como en el espesor (D-136).
+  - `design_tasks` reparte cada forma como una búsqueda aparte entre los procesos y se queda la de menor costo
+    (`_cheapest`); con una sola forma, igual que antes.
+  - El resumen agrega `shape` y `plan`, y cada f'c su `shape`.
+  - `model/design.py`: `shapes` (lista no vacía, sin repetidos). El campo `shape` se rechaza diciendo que se reemplazó.
+    Los campos de la T se exigen si `inverted_t` está en `shapes`.
+  - Se quita la respuesta "no implementado" de D-165 en el diseño, las tipologías y la curva.
+- **Control:**
+  - Oráculo `derive_plan_widths.py` (`tests/oracles/mechanics/plan_widths.json`). Plantea ∫dA = A y ∫x dA = A·x̄ como
+    sistema lineal con las integrales de cada pieza (trapecio como dos triángulos, tramos como rectángulos), sin las
+    fórmulas cerradas. Casos: trapecio, trapecio muy inclinado, dos tramos, dos tramos con el límite cerca de un
+    extremo, e I.
+  - Pruebas: la I sin extremos más anchos no existe; con varias formas gana la de menor costo y, sin solución, salen
+    los motivos de cada forma.
+- **Ejemplos:**
+  - `diseno_combinada_formas.json` en `combinada/` y `pruebas/`, en los dos perfiles: el de `diseno_combinada.json`
+    con f'c = 21 MPa y `shapes` = rectangular, trapezoid y stepped. En NSR-10 gana la planta en T o L (3.9 m de 1.7 m
+    y 2.5 m de 1.8 m, h = 700 mm). Costo 10.54 millones, frente a 10.56 del trapecio y 10.93 de la rectangular. Cumple.
+  - `shape` → `shapes` en los ejemplos de la T invertida y de la curva de tipologías (carpeta y `pruebas/`, cambio de
+    formato registrado aquí). Sus salidas no cambian.
+  - Verificación (D-164): el `zapata_combinada_planta_t.json` anterior era una I (tres tramos). Pasa a llamarse
+    `zapata_combinada_planta_i.json` (ZCI1). Se agrega una T real de dos tramos (2.6 m bajo C1 y 2.0 m bajo C2, ZCT2).
+- **Tiempo:** cada planta escalonada cuesta lo de un trapecio, unas cinco veces la rectangular. El ejemplo usa un solo
+  f'c.
+- **Pendiente:** el diseño de la T invertida con zarpa no rectangular (D-167) y la ubicación de estas formas en la planta
+  de localización.
 
 ## Consultas abiertas
 

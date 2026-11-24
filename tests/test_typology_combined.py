@@ -12,7 +12,7 @@ from pydantic import ValidationError
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing import combined
-from structurelab_rc.design.footing.mixed import combined_part, design_with_pairs, designed_with_pairs, pair_costs
+from structurelab_rc.design.footing.mixed import design_with_pairs, designed_with_pairs, pair_costs
 from structurelab_rc.design.footing.typologies import design_typologies
 from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.domain.footing.drawing import location_views
@@ -207,13 +207,3 @@ def test_etabs_template_with_curve_runs_the_curve() -> None:
     """D-165: una plantilla de diseño de ETABS con bloque curve es una curva costo-N desde ETABS."""
     for name in ("curva_tipologias_aisladas_etabs.json", "curva_tipologias_combinadas_etabs.json"):
         assert run_plan(frozen("nsr_10", "zapatas", name)).kind == "etabs_curve"
-
-
-def test_pending_combined_shapes_can_be_declared_but_not_designed() -> None:
-    """D-165: la trapezoidal y la de planta en T o L se pueden declarar en combined_design.shape (D-164), pero el diseño
-    responde, antes de diseñar, que no está implementado."""
-    project = _imported()
-    for shape, word in (("trapezoid", "trapezoidal"), ("stepped", "planta T o L")):
-        pairs = [{**pair, "combined_design": {**pair["combined_design"], "shape": shape}} for pair in project["combined_footings"]]
-        part = combined_part(_context({**project, "combined_footings": pairs}))
-        assert isinstance(part, str) and word in part and "no esta implementado" in part

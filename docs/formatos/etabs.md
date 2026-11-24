@@ -49,7 +49,7 @@ van en zapata combinada; los demás nudos siguen por tipologías aisladas:
 | `combined_pairs[].id` | texto | Identificador de la zapata combinada. |
 | `combined_pairs[].etabs_unique_names` | - | Los Unique Name de sus dos nudos. Deben estar en `columns[]` (de allí sale su sección) y no en `exclude_unique_names`; un nudo no puede estar en dos pares. Salen de las tipologías aisladas. |
 | `combined_pairs[].principal_direction` | texto | `x` o `y`: el eje global de la viga que une las columnas (D-094). |
-| `combined_pairs[].design` | objeto | Opcional: lo propio del par sobre `combined_design` (por ejemplo `placement_case`, `shape` y los campos de la T). |
+| `combined_pairs[].design` | objeto | Opcional: lo propio del par sobre `combined_design` (por ejemplo `placement_case`, `shapes` y los campos de la T). |
 | `combined_pairs[].property_lines` | mm | Opcional (D-154): los linderos de cada columna del par, por Unique Name: `{"276": {"+y": 0}, "288": {"-x": 300}}`, como `property_lines` de las columnas del diseño de la combinada. |
 | `combined_design` | objeto | Obligatorio con pares: el bloque del diseño de la combinada (D-107, D-110, D-113) común a todos los pares, sin `fc_options` ni `prices`, que se toman de `design` (un solo f'c para toda la cimentación). |
 | `min_clear_spacing` | mm | Opcional (D-156): separación libre mínima entre zapatas vecinas; pasa al proyecto, que avisa los pares más cercanos con sus nudos. También en la plantilla de verificación. |

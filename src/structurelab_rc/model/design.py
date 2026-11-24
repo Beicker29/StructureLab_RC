@@ -213,28 +213,47 @@ def _check_drawing(detailing: DetailingSettings | None, drawing: DrawingSettings
         raise ValueError("drawing requiere detailing: el dibujo rotula las marcas de la cartilla (D-126)")
 
 
+CombinedShape = Literal["rectangular", "inverted_t", "trapezoid", "stepped"]
+
+
 class CombinedDesign(DesignLimits):
     """Límites del diseño de una zapata combinada (D-107). plan_max limita el largo y el ancho. Los
     linderos (medianería) se declaran en cada columna (property_lines, D-154); sin ellos, la base se centra en la
     resultante. placement_case es el caso de servicio sin sismo
     cuya resultante ubica la base (D-108); sin él, el de servicio sin sismo de mayor carga total. stirrup_bars son las
     barras permitidas para estribos de la viga larga (D-110): con ellas, el cortante y la torsión pueden tomarlos estribos
-    en lugar de un espesor mayor; sin ellas no se proponen estribos. shape = "inverted_t" diseña una T invertida (D-113):
+    en lugar de un espesor mayor; sin ellas no se proponen estribos. shapes (D-169) son las formas permitidas; el diseño
+    prueba cada una y elige la de menor costo. inverted_t diseña una T invertida (D-113):
     h_min, h_step y h_max son los del espesor de la zarpa; beam_h_* los del alto total de la viga, y el alma parte de la
-    columna más ancha más web_margin a cada lado y crece de a web_step hasta web_max (D-136). shape = "trapezoid" o
-    "stepped" (planta en T o L, D-164) se puede declarar, pero el diseño responde que no está implementado (D-165)."""
+    columna más ancha más web_margin a cada lado y crece de a web_step hasta web_max (D-136). trapezoid y stepped son las
+    plantas trapezoidal y escalonada (T, L o I, D-164, D-169)."""
 
     min_steel_exception: bool  # D-123: si el diseño y la verificación admiten la excepción de 4/3 del As,min
     placement_case: str | None = Field(None, min_length=1)
     stirrup_bars: tuple[str, ...] = ()  # D-110: barras para estribos de la viga larga; sin ellas, no se proponen
-    # D-113; trapezoid y stepped (T o L, D-164) se declaran, pero su diseño todavía no está implementado (D-165)
-    shape: Literal["rectangular", "inverted_t", "trapezoid", "stepped"] = "rectangular"
+    # D-169: las formas que el diseño puede proponer; prueba cada una y se queda con la de menor costo. inverted_t (D-113)
+    # pide sus límites del alma; trapezoid y stepped (T, L o I, D-164) son plantas no rectangulares.
+    shapes: tuple[CombinedShape, ...] = Field(("rectangular",), min_length=1)
     web_margin: NonNegativeFloat | None = None  # T invertida: margen del alma a cada lado de la columna más ancha, mm
     web_step: PositiveFloat | None = None  # T invertida: paso del ancho del alma, mm
     web_max: PositiveFloat | None = None  # T invertida: ancho máximo del alma que prueba la búsqueda, mm (D-136)
     beam_h_min: PositiveFloat | None = None  # T invertida: alto total de la viga, mm
     beam_h_step: PositiveFloat | None = None
     beam_h_max: PositiveFloat | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _old_shape(cls, data: Any) -> Any:
+        """shape (una sola forma) se reemplazó por shapes, la lista de las formas permitidas (D-169)."""
+        if isinstance(data, dict) and "shape" in data:
+            raise ValueError(f"combined_design.shape se reemplazó por shapes, la lista de las formas que el diseño puede "
+                             f"proponer, por ejemplo shapes = [\"{data['shape']}\"] (D-169)")
+        return data
+
+    @property
+    def shape(self) -> CombinedShape:
+        """La forma que se diseña: la única de shapes (el diseño prueba cada una con su propio bloque, D-169)."""
+        return self.shapes[0]
 
     @model_validator(mode="before")
     @classmethod
@@ -251,9 +270,11 @@ class CombinedDesign(DesignLimits):
             raise ValueError("combined_design.ends necesita skin: cómo terminan las barras de piel que se diseñen (D-134)")
         if self.stirrup_bars and self.ends.stirrups is None:
             raise ValueError("combined_design.ends necesita stirrups (hook90, hook135 o hook180) si hay stirrup_bars (D-134)")
+        if len(set(self.shapes)) != len(self.shapes):
+            raise ValueError("combined_design.shapes repite una forma (D-169)")
         t_fields = ("web_margin", "web_step", "web_max", "beam_h_min", "beam_h_step", "beam_h_max")
         declared = [name for name in t_fields if getattr(self, name) is not None]
-        if self.shape == "inverted_t":
+        if "inverted_t" in self.shapes:
             missing = [name for name in t_fields if name not in declared]
             if missing:
                 raise ValueError(f"la T invertida necesita {', '.join(missing)} en combined_design (D-113)")
@@ -263,7 +284,7 @@ class CombinedDesign(DesignLimits):
             if self.beam_h_min <= self.h_min:
                 raise ValueError("beam_h_min debe superar h_min (el espesor de la zarpa)")
         elif declared:
-            raise ValueError(f"{', '.join(declared)} solo se declaran con shape = 'inverted_t' (D-113)")
+            raise ValueError(f"{', '.join(declared)} solo se declaran con inverted_t en shapes (D-113, D-169)")
         return self
 
 

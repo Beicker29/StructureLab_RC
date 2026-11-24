@@ -1,6 +1,6 @@
 # Zapata combinada, perfil aci-318-25
 
-Zapatas combinadas de dos o más columnas: rectangulares, con verificación (D-080 a D-083, D-163) y diseño (D-107), con las cargas declaradas y desde ETABS; trapezoidales y en planta T o L, con verificación, despiece y dibujo (D-164). Los campos de entrada y de salida están en [docs/formatos/zapatas.md](../../../../docs/formatos/zapatas.md).
+Zapatas combinadas de dos o más columnas: rectangulares, con verificación (D-080 a D-083, D-163) y diseño (D-107), con las cargas declaradas y desde ETABS; trapezoidales y en planta T, L o I, con verificación, despiece y dibujo (D-164) y diseño (D-169). Los campos de entrada y de salida están en [docs/formatos/zapatas.md](../../../../docs/formatos/zapatas.md).
 
 | Ejemplo | Qué muestra |
 | --- | --- |
@@ -8,9 +8,11 @@ Zapatas combinadas de dos o más columnas: rectangulares, con verificación (D-0
 | `zapata_combinada_trapecio.json` | Zapata combinada trapezoidal (D-164): ZCTR1 de 7.0 m, de 2.6 m de ancho en −X a 1.6 m en +X, con el lado −Y recto (lindero), bajo dos columnas; la planta se declara desde el borde −X y la línea de referencia Y = 0. Presión de Bellos sobre la planta, desarrollo de las barras x con las que alcanzan a desarrollarse y barras de longitud variable con una marca por cada longitud. Datos ilustrativos. |
 | `zapata_combinada_trapecio_estribos.json` | La planta de `zapata_combinada_trapecio.json` con h = 1.0 m, estribos y refuerzo superficial (D-167): cada estribo mide el ancho local y cada medida es una marca; la piel va por cada cara larga, inclinada en el lado oblicuo. Datos ilustrativos. |
 | `zapata_combinada_planta_l.json` | Zapata combinada en planta L (D-164): ZCL1 de dos tramos de 3.5 m, de 2.6 m y 1.8 m de ancho, alineados por el borde −Y, bajo dos columnas. Datos ilustrativos. |
-| `zapata_combinada_planta_t.json` | Zapata combinada en planta T con la viga en la Y global (D-094, D-164): ZCT2 de tres tramos a lo largo de Y (2.6, 1.6 y 2.2 m de ancho), centrados en X = 0; la barra que cruza el tramo angosto queda en dos. Datos ilustrativos. |
+| `zapata_combinada_planta_t.json` | Zapata combinada en planta T con la viga en la Y global (D-094, D-164): ZCT2 de dos tramos a lo largo de Y (3.5 m de 2.6 m de ancho bajo C1 y 3.5 m de 2.0 m bajo C2), centrados en X = 0. Datos ilustrativos. |
+| `zapata_combinada_planta_i.json` | Zapata combinada en planta I con la viga en la Y global (D-094, D-164): ZCI1 de tres tramos a lo largo de Y (2.6 m de ancho bajo C1, 1.6 m en el centro y 2.2 m bajo C2), centrados en X = 0; la barra que cruza el tramo angosto queda en dos. Datos ilustrativos. |
 | `zapata_combinada_etabs.json` | Zapatas combinadas desde los mismos Excel (D-084): ZC-A toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos y ZC-B solo las de servicio, con las mayoradas escritas en la plantilla; las dos con barras superiores transversales (top.y, D-097, D-099). **Datos supuestos.** |
 | `diseno_combinada.json` | Diseño de la zapata combinada (D-107): las columnas y cargas de `zapata_combinada.json` (posiciones con origen en C1); el diseño ubica la base en la resultante de D+L y elige dimensiones, f'c (21 o 28 MPa) y refuerzo de menor costo; C1 con linderos (D-154): al ras en −x y a 600 mm en −y, con barras en gancho de 90°. |
+| `diseno_combinada_formas.json` | Diseño entre varias formas (D-169): las columnas, cargas y linderos de `diseno_combinada.json`, con f'c = 21 MPa y `shapes` = rectangular, trapezoid y stepped; prueba cada forma (en la escalonada, la T o L con el límite en varias posiciones y la I) y se queda con la de menor costo: sale en planta T o L, de 3.9 m de 1.7 m de ancho y 2.5 m de 1.8 m. |
 | `diseno_combinada_etabs.json` | Diseño de zapata combinada desde los Excel de `examples/etabs/zapatas/` (D-112): las dos columnas de ZC-A de `zapata_combinada_etabs.json` toman sus cargas de ETABS; la base se ubica con SERVICIO 1 (D+L) (`placement_case`); la columna exterior al ras de su lindero en la dirección principal (D-154), con barras en gancho de 90°. **Datos supuestos.** |
 
 Estos archivos son **para iterar**: se pueden cambiar libremente para probar parámetros. Las pruebas, las huellas y la CI
@@ -29,8 +31,10 @@ structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_trape
 structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_trapecio_estribos.json
 structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_planta_l.json
 structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_planta_t.json
+structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_planta_i.json
 structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_etabs.json
 structurelab-rc run examples/aci_318_25/zapatas/combinada/diseno_combinada.json
+structurelab-rc run examples/aci_318_25/zapatas/combinada/diseno_combinada_formas.json
 structurelab-rc run examples/aci_318_25/zapatas/combinada/diseno_combinada_etabs.json
 ```
 

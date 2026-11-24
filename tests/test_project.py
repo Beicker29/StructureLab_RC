@@ -42,12 +42,13 @@ def _id(path: Path) -> str:
     return f"{_profile(path)}-{_element(path)}-{path.stem}"
 # Los ejemplos <tipo>_etabs.json son plantillas de importación de ETABS (D-073, D-098); diseno_*.json y curva_*.json,
 # proyectos de diseño por tipologías (D-069, D-096); el resto son proyectos de verificación.
+_COMBINED_NAMES = ("diseno_combinada.json", "diseno_combinada_formas.json", "diseno_t_invertida.json")
 TEMPLATES = [path for path in _ALL if path.stem.endswith("_etabs")]
 EXAMPLES = [path for path in _ALL if path not in TEMPLATES and not path.name.startswith(("diseno_", "curva_"))]
 # Diseño por tipologías y su curva; los de cabezales (D-141) se prueban en test_pile_cap_design.py.
 DESIGN_EXAMPLES = [path for path in _ALL if path not in TEMPLATES and path.name.startswith(("diseno_", "curva_"))
-                   and path.name not in ("diseno_combinada.json", "diseno_t_invertida.json") and _element(path) != "cabezales"]
-COMBINED_DESIGNS = [path for path in _ALL if path.name in ("diseno_combinada.json", "diseno_t_invertida.json")]
+                   and path.name not in _COMBINED_NAMES and _element(path) != "cabezales"]
+COMBINED_DESIGNS = [path for path in _ALL if path.name in _COMBINED_NAMES]
 _LEVELS = {"ordinary": "DMI", "intermediate": "DMO", "special": "DES"}
 BARS = load_engine().bars
 BASE: dict[str, Any] = {

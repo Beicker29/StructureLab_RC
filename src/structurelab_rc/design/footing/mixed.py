@@ -287,10 +287,6 @@ def combined_part(ctx: Context, workers: int = 1) -> CombinedPart | str:
     curva costo–N (D-165, en la curva su costo es constante en cada f'c). Devuelve el error si hay más familias que
     combined_typologies (antes de diseñar)."""
     count = ctx.design.combined_typologies
-    shapes = {own.design.shape for own in pair_contexts(ctx)}
-    pending = sorted(combined.PENDING_SHAPES[shape] for shape in shapes if shape in combined.PENDING_SHAPES)
-    if pending:  # la forma se declara, pero su diseño no está implementado (D-164, D-165)
-        return "; ".join(pending)
     if count is not None:
         kinds = len({family_key(own) for own in pair_contexts(ctx)})  # antes de diseñar: las familias no dependen del diseño
         if kinds > count:

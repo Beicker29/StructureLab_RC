@@ -290,9 +290,12 @@ def test_inverted_t_input_is_validated() -> None:
                             ({"beam_h_min": 200.0, "beam_h_max": 900.0}, "beam_h_min debe superar h_min")):
         with pytest.raises(ValidationError, match=message):
             CombinedDesignProject.model_validate({**data, "combined_design": {**block, **change}})
-    rectangular = {**block, "shape": "rectangular"}
-    with pytest.raises(ValidationError, match="solo se declaran con shape"):
+    rectangular = {**block, "shapes": ["rectangular"]}
+    with pytest.raises(ValidationError, match="solo se declaran con inverted_t en shapes"):
         CombinedDesignProject.model_validate({**data, "combined_design": rectangular})
+    with pytest.raises(ValidationError, match="se reemplazó por shapes"):  # el formato anterior (D-169)
+        CombinedDesignProject.model_validate({**data, "combined_design": {**{k: v for k, v in block.items() if k != "shapes"},
+                                                                          "shape": "inverted_t"}})
 
 
 @pytest.mark.parametrize(("name", "values", "group", "kind"), [
@@ -490,3 +493,46 @@ def test_verification_template_rejects_property_lines() -> None:
     footing["columns"][0] = {**footing["columns"][0], "property_lines": {"-x": 0.0}}
     with pytest.raises(ValidationError, match="los linderos son del diseño"):
         EtabsFootingTemplate.model_validate(template)
+
+
+PLAN_WIDTHS = json.loads((ORACLES / "mechanics" / "plan_widths.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("case", PLAN_WIDTHS["cases"], ids=[case["id"] for case in PLAN_WIDTHS["cases"]])
+def test_plan_widths_match_the_oracle(case: dict[str, Any]) -> None:
+    """Los anchos de la planta trapezoidal, en T/L o en I dan el área y el centroide pedidos (D-169)."""
+    split = None if case["split"] is None else tuple(case["split"])
+    widths = design.plan_widths(case["length"], case["xbar"], case["area"], split, case["need"])
+    assert widths == pytest.approx(case["widths"], rel=PLAN_WIDTHS["tolerance_rel"])
+
+
+def test_i_plan_needs_wider_ends() -> None:
+    """La I no existe si los extremos no quedan más anchos que el tramo central (D-169)."""
+    assert design.plan_widths(7000.0, 3500.0, 7.0e6, (1500.0, 5500.0), 1200.0) is None
+
+
+def test_several_shapes_keep_the_cheapest(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Con varias formas en shapes, el diseño de cada f'c es el de la forma de menor costo; sin solución, los motivos de
+    cada forma (D-169)."""
+    data = json.loads(frozen("nsr_10", "zapatas", "diseno_combinada_formas.json").read_text(encoding="utf-8"))
+    ctx = _context(data)
+    assert ctx.design.shapes == ("rectangular", "trapezoid", "stepped")
+    costs = {"rectangular": 3.0, "trapezoid": 1.0, "stepped": 2.0}
+
+    def single(shape_ctx: design.Context, fc: float) -> design.FcOption:
+        (shape,) = shape_ctx.design.shapes
+        return design.FcOption(fc, _Solved(costs[shape], shape), None)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(design, "_design_shape", single)
+    chosen = design.design_for_fc(ctx, 21.0)
+    assert chosen.solution.shape == "trapezoid"  # type: ignore[union-attr]
+    monkeypatch.setattr(design, "_design_shape",
+                        lambda shape_ctx, fc: design.FcOption(fc, None, f"falla {shape_ctx.design.shapes[0]}"))
+    failed = design.design_for_fc(ctx, 21.0)
+    assert failed.solution is None
+    assert failed.failure == "rectangular: falla rectangular; trapezoid: falla trapezoid; stepped: falla stepped"
+
+
+class _Solved:
+    def __init__(self, cost: float, shape: str) -> None:
+        self.cost, self.shape = cost, shape

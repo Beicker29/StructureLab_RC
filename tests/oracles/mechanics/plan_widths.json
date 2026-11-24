@@ -1,0 +1,74 @@
+{
+  "description": "Anchos de la planta trapezoidal o escalonada con el área y el centroide pedidos (D-169), por un sistema lineal con las integrales de cada pieza.",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "trapecio",
+      "length": 6400.0,
+      "xbar": 3450.0,
+      "area": 11200000.0,
+      "split": null,
+      "need": 1300.0,
+      "widths": [
+        1339.8437500000002,
+        2160.1562499999995
+      ]
+    },
+    {
+      "id": "trapecio-inclinado",
+      "length": 7000.0,
+      "xbar": 4200.0,
+      "area": 14000000.0,
+      "split": null,
+      "need": 1000.0,
+      "widths": [
+        800.0000000000007,
+        3199.9999999999995
+      ]
+    },
+    {
+      "id": "dos-tramos",
+      "length": 6500.0,
+      "xbar": 3600.0,
+      "area": 11000000.0,
+      "split": [
+        3000.0
+      ],
+      "need": 1200.0,
+      "widths": [
+        1297.4358974358975,
+        2030.7692307692307
+      ]
+    },
+    {
+      "id": "dos-tramos-corto",
+      "length": 6500.0,
+      "xbar": 2900.0,
+      "area": 10500000.0,
+      "split": [
+        1800.0
+      ],
+      "need": 1200.0,
+      "widths": [
+        2243.5897435897436,
+        1374.795417348609
+      ]
+    },
+    {
+      "id": "i",
+      "length": 7000.0,
+      "xbar": 3300.0,
+      "area": 13000000.0,
+      "split": [
+        1500.0,
+        5300.0
+      ],
+      "need": 1200.0,
+      "widths": [
+        3025.925925925926,
+        1200.0,
+        2294.7712418300653
+      ]
+    }
+  ]
+}

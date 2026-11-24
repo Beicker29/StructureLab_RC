@@ -212,14 +212,16 @@ def _combined_summary(result: CombinedDesignResult, placement: str) -> dict[str,
     g = best.geometry
     beam = {} if g.beam is None else {"web [mm]": g.beam[0], "beam height [mm]": g.beam[1],
                                       "deep_beam": bool(best.data.get("deep_beam"))}
-    return {"fc [MPa]": best.fc, "length [mm]": g.length, "width [mm]": g.width, "h [mm]": g.h, **beam,
+    plan = {} if g.plan is None else {"plan": g.plan}  # la planta trapezoidal o escalonada (D-169)
+    return {"fc [MPa]": best.fc, "shape": g.shape, "length [mm]": g.length, "width [mm]": g.width, "h [mm]": g.h, **beam, **plan,
             "base_center [mm]": [round(g.center[0], 1), round(g.center[1], 1)], "placement_case": placement,
             "reinforcement": best.reinforcement,
             **({"property_line_gaps [mm]": best.property_gaps} if best.property_gaps else {}),  # D-154
             "concrete [m3]": round(best.concrete, 3), "steel [kg]": round(best.steel, 1), "cost": round(best.cost, 2),
             "cost_basis": result.cost_basis,
             "by_fc": [{"fc [MPa]": option.fc,
-                       **({"cost": round(option.solution.cost, 2), "length [mm]": option.solution.geometry.length,
+                       **({"cost": round(option.solution.cost, 2), "shape": option.solution.geometry.shape,
+                           "length [mm]": option.solution.geometry.length,
                            "width [mm]": option.solution.geometry.width, "h [mm]": option.solution.geometry.h}
                           if option.solution is not None else {"cost": None, "failure": option.failure})}
                       for option in result.options]}
@@ -236,7 +238,7 @@ def _design_combined(path: Path, output: Path, workers: int | None) -> int:
     (output / "resumen.json").write_text(json.dumps(_combined_summary(result, result.placement), indent=2, ensure_ascii=False) + "\n",
                                          encoding="utf-8")
     g = result.best.geometry
-    print(f"f'c = {result.best.fc:g} MPa; {g.length:g} x {g.width:g} x {g.h:g} mm; centroide de la base en "
+    print(f"f'c = {result.best.fc:g} MPa; {g.shape_text}; {g.length:g} x {g.width:g} x {g.h:g} mm; centroide de la base en "
           f"({g.center[0]:.1f}, {g.center[1]:.1f}) mm; costo {result.best.cost:.2f} (acero: {result.cost_basis})")
     print(f"Proyecto escrito en {output / 'proyecto.json'}; verifiquelo o genere su memoria con report")
     return 0

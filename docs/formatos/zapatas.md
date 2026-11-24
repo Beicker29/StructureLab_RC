@@ -390,7 +390,7 @@ El diseño del N elegido se obtiene con `design-footings` y se reverifica con `r
 
 ## Diseño de la zapata combinada (`diseno_combinada.json`, comando `design-combined`, D-107)
 
-Diseña una zapata combinada rectangular de dos o más columnas alineadas (D-163): ubica la base, propone largo, ancho, espesor, f'c y todo el
+Diseña una zapata combinada de dos o más columnas alineadas (D-163), rectangular, en T invertida, trapezoidal o escalonada (`shapes`, D-169): ubica la base, propone largo, ancho, espesor, f'c y todo el
 refuerzo, y elige la solución de menor costo que aprueba la verificación de la combinada. `concrete` no declara `fc`:
 f'c es una variable del diseño. `soil` es igual que en la
 verificación. Las columnas deben tener los mismos casos de carga, con al menos un caso de servicio sin sismo y casos
@@ -412,7 +412,7 @@ mayorados.
 | `combined_design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `combined_design.min_steel_exception` | sí/no | Obligatorio (D-123): lo mismo para la zapata que se diseña; el diseño parte del As,min con o sin la excepción y lo escribe en `proyecto.json`. |
 | `combined_design.stirrup_bars` | - | Opcional (D-110): barras permitidas para estribos cerrados de la viga larga, por ejemplo `["#3", "#4"]`. Con ellas, el cortante (y en la T, la torsión del alma, con Aℓ en la piel) pueden tomarlos estribos en lugar de un espesor mayor; gana lo más barato. Sin ellas no se proponen estribos. En la combinada rectangular la torsión es de placa (D-118): la toman las barras x e y. |
-| `combined_design.shape` | texto | El tipo de combinada: `rectangular` (por defecto) o `inverted_t` (D-113): con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa. `trapezoid` y `stepped` (planta en T o L, D-164) se pueden declarar, pero su diseño todavía no existe: el diseño y la curva responden que no está implementado (D-165). En el diseño por tipologías y en la curva, cada par puede cambiarlo en su `design`. |
+| `combined_design.shapes` | lista | Las formas permitidas (D-169), por defecto `["rectangular"]`: `rectangular`, `inverted_t` (D-113: con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa), `trapezoid` y `stepped` (planta en T o L, o en I, D-164). Con varias, el diseño busca cada una y se queda con la de menor costo; sin solución, da el motivo de cada forma. Reemplaza al campo `shape` anterior, que ahora se rechaza con un mensaje. En el diseño por tipologías y en la curva, cada par puede cambiarlo en su `design`. |
 | `combined_design.web_margin`, `combined_design.web_step`, `combined_design.web_max` | mm | Solo con `inverted_t`: el alma parte de la columna más ancha (respecto a la resultante transversal) más `web_margin` a cada lado y crece de a `web_step`. El alma crece hasta `web_max`, obligatorio con la T (D-136). |
 | `combined_design.beam_h_min`, `combined_design.beam_h_step`, `combined_design.beam_h_max` | mm | Solo con `inverted_t`: alto total de la viga; `beam_h_min` debe superar `h_min`. |
 | `combined_design.placement_case` | texto | Opcional (D-108): el caso de servicio sin sismo cuya resultante ubica la base, por ejemplo `"D+L"`. Debe existir en todas las columnas, ser de servicio y no tener sismo. Sin él, se usa el de servicio sin sismo de mayor carga total. |
@@ -440,7 +440,7 @@ Búsqueda (cada solución la aprueba `combined_footing_checks`; el diseño no ti
    fallas de dimensiones de la sección, punzonamiento y deformación unitaria (y el cortante sin `stirrup_bars`) piden
    más espesor. Si un band o las barras y no se desarrollan, se prueba el ancho siguiente. Las barras superiores faltan solo si
    el perfil permite concreto simple con el nivel sísmico (D-072) o no hay momento negativo.
-5. **T invertida** (`shape: inverted_t`, D-113): el alto de la viga es la variable de la bisección; para cada alto, la
+5. **T invertida** (`inverted_t`, D-113): el alto de la viga es la variable de la bisección; para cada alto, la
    zarpa parte de `h_min` y crece si fallan las aletas (cortante, deformación unitaria, concreto simple o altura
    mínima) y el alma parte de la mínima y crece si fallan las dimensiones de la sección. El refuerzo de la viga va en
    sus capas (D-106): la superior por dentro de los estribos y la inferior en el alma por dentro del estribo y, si el ala
@@ -448,7 +448,18 @@ Búsqueda (cada solución la aprueba `combined_footing_checks`; el diseño no ti
    aletas. Si la luz libre entre columnas sobre el alto es ≤ 4 (ACI 9.9.1.1, NSR-10 C.11.7.1), la propuesta se declara
    `deep_beam` y se revisa con los criterios de D-089, sin puntal-tensor (D-109). La solución pasa también la
    validación de entrada del proyecto.
-6. **f'c:** se repite para cada f'c de la lista y gana el de menor costo. Si nada cumple, termina con FAIL y el motivo de
+6. **Trapezoidal y escalonada** (`trapezoid`, `stepped`, D-169): el largo es el menor que cubre las columnas (y los
+   mayores, como en la rectangular), dentro de los linderos. Los anchos ponen el centroide de la planta en la
+   resultante a lo largo, con el área del ancho medio: el trapecio con A = L·(B1 + B2)/2 y x̄ = L·(B1 + 2B2)/(3·(B1 +
+   B2)); la T o L con un límite s entre dos tramos (A = b1·s + b2·(L − s), A·x̄ = b1·s²/2 + b2·(L − s)·(L + s)/2); la I
+   con dos límites, el tramo central del ancho que cubre las columnas y los extremos de las mismas dos condiciones.
+   Cada ancho cubre las columnas y va al paso de la planta, hasta `plan_max`. La planta es simétrica respecto a la
+   resultante transversal y se corre lo mínimo para quedar dentro de los linderos; si aun así cruza uno, ese lado queda
+   recto en él. El ancho medio crece de a un paso hasta que cumple la revisión geotécnica y el refuerzo. La escalonada
+   prueba la T o L con el límite al 25, 50 y 75 % de la luz libre entre las columnas extremas y la I con los límites al
+   20 y 35 % desde cada una (al paso de la planta), y se queda con la de menor costo. El refuerzo sigue el punto 4 sobre
+   la planta (D-164). El proyecto diseñado declara la planta en `plan`, con t = 0 en la resultante transversal.
+7. **f'c:** se repite para cada f'c de la lista y gana el de menor costo. Si nada cumple, termina con FAIL y el motivo de
    cada f'c, sin ampliar los límites.
 
 Salida: `proyecto.json` (un proyecto de verificación con la zapata `ZC1` en ejes globales, con las posiciones de las
@@ -457,14 +468,16 @@ columnas respecto al centroide de la base; lo verifica `run`, `verify` o `report
 | Campo | Unidad | Descripción |
 | --- | --- | --- |
 | `fc [MPa]` | MPa | f'c elegido. |
-| `length [mm]`, `width [mm]`, `h [mm]` | mm | Largo (dirección principal), ancho y espesor (el de la zarpa en la T). |
+| `shape` | texto | La forma elegida entre `shapes` (D-169). |
+| `plan` | objeto | Solo en la trapezoidal o la escalonada: la planta diseñada, como en `plan` de la verificación. |
+| `length [mm]`, `width [mm]`, `h [mm]` | mm | Largo (dirección principal), ancho (en la planta, el de su caja) y espesor (el de la zarpa en la T). |
 | `web [mm]`, `beam height [mm]`, `deep_beam` | mm, -, - | Solo en la T: ancho del alma, alto total de la viga y si se declaró de gran altura. |
 | `base_center [mm]` | mm | Centroide de la base en los ejes globales de las columnas de entrada. |
 | `placement_case` | texto | El caso que ubicó la base; la descripción de `proyecto.json` (y la memoria) dice además si se declaró o se eligió por la regla. |
 | `reinforcement` | objeto | Refuerzo en ejes de la viga: `bottom_x`, `bottom_y`, `top_x`, `top_y`, `skin`, `stirrups` (null si no hay), `bands`, `band_tops` (band superior, null si no hace falta, D-119) y `dowels` por columna. En la T: `top_x` y `bottom_x` son las capas superior e inferior de la viga (separación), `mat_x` las barras x de la zarpa y `bottom_y` las de las aletas. |
 | `concrete [m3]`, `steel [kg]`, `cost` | m³, kg, moneda | Cantidades y costo: con `detailing`, el acero de la cartilla (ganchos, empalmes por la longitud comercial, longitudes redondeadas); sin él, barras rectas de borde a borde menos el recubrimiento y pasadores hasta la malla inferior (D-127). |
 | `cost_basis` | texto | `cartilla` o `estimado (barras rectas, sin ganchos ni traslapos)` (D-127). |
-| `by_fc` | lista | Cada f'c: `cost`, dimensiones, o `cost` null y `failure`. |
+| `by_fc` | lista | Cada f'c: `cost`, `shape`, dimensiones, o `cost` null y `failure`. |
 
 `--workers N` reparte los f'c entre procesos (por defecto, los núcleos del equipo); no cambia el resultado. `run`
 reconoce el ejemplo por el bloque `combined_design`, diseña y genera la memoria de verificación de la zapata diseñada.
