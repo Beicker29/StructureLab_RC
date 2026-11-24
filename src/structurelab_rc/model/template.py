@@ -93,11 +93,33 @@ class EtabsTemplate(_Input):
     etabs_files: BeamEtabsFiles | None = None
 
 
+class TemplateFootingColumn(Column):
+    """La columna del tipo de zapata con los nudos de ETABS en que va (D-055, D-168): etabs_unique_names, como en la
+    zapata combinada, en la columna."""
+
+    etabs_unique_names: tuple[str, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _check_names(self) -> Self:
+        if len(set(self.etabs_unique_names)) != len(self.etabs_unique_names):
+            raise ValueError("la columna del tipo de zapata repite un Unique Name")
+        return self
+
+
 class TemplateFooting(_Input):
-    """Tipo de zapata: sus dimensiones y mallas se aplican a cada nudo de apoyo de ETABS listado (D-055)."""
+    """Tipo de zapata: sus dimensiones y mallas se aplican a cada nudo de apoyo de ETABS que lista su columna
+    (column.etabs_unique_names, D-055, D-168)."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _names_in_column(cls, data: Any) -> Any:
+        """Los Unique Name van en la columna desde D-168: la lista al nivel de la zapata se rechaza con dónde va."""
+        if isinstance(data, dict) and "etabs_unique_names" in data:
+            raise ValueError(f"el tipo de zapata '{data.get('id', '')}' declara etabs_unique_names en la zapata: van en "
+                             "column.etabs_unique_names, como en la zapata combinada (D-168)")
+        return data
 
     id: str = Field(min_length=1)
-    etabs_unique_names: tuple[str, ...] = Field(min_length=1)
     quantity: PositiveInt  # D-159: por nudo; el tipo (su grupo) suma la de sus nudos
     lx: PositiveFloat
     ly: PositiveFloat
@@ -107,15 +129,9 @@ class TemplateFooting(_Input):
     pedestal_height: NonNegativeFloat
     surcharge_dead_kNm2: NonNegativeFloat
     surcharge_live_kNm2: NonNegativeFloat
-    column: Column
+    column: TemplateFootingColumn
     bottom: Mat
     top: Mat | None
-
-    @model_validator(mode="after")
-    def _check_names(self) -> Self:
-        if len(set(self.etabs_unique_names)) != len(self.etabs_unique_names):
-            raise ValueError(f"el tipo de zapata '{self.id}' repite un Unique Name")
-        return self
 
 
 class LoadsSource(_Input):
@@ -244,7 +260,7 @@ class EtabsFootingTemplate(_Input):
     def _check_names(self) -> Self:
         if not self.footings and not self.combined_footings:
             raise ValueError("la plantilla debe tener al menos una zapata aislada (footings) o combinada (combined_footings)")
-        names = [name for footing in self.footings for name in footing.etabs_unique_names]
+        names = [name for footing in self.footings for name in footing.column.etabs_unique_names]
         names += [column.etabs_unique_name for footing in self.combined_footings for column in footing.columns]
         if len(set(names)) != len(names):
             raise ValueError("un Unique Name aparece en dos zapatas")

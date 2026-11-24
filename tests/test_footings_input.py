@@ -154,7 +154,7 @@ def _template(**changes: Any) -> EtabsFootingTemplate:
     footing = {key: value for key, value in _footing().items() if key not in {"id", "loads"}}
     data = {"description": "t", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "ejemplo"},
             "concrete": CONCRETE, "reinforcement_steel": STEEL, "soil": SOIL,
-            "footings": [{"id": "Z1", "etabs_unique_names": ["10"], **footing}]}
+            "footings": [{"id": "Z1", **footing, "column": {**footing["column"], "etabs_unique_names": ["10"]}}]}
     data.update(changes)
     return EtabsFootingTemplate.model_validate(data)
 
@@ -187,7 +187,8 @@ def test_listed_combination_missing_and_joint_are_reported() -> None:
     combinaciones."""
     service = Table(HEADERS, UNITS, (_row("S1", "", (0.0, 0.0, 500.0, 0.0, 0.0)),))
     factored = Table(HEADERS, UNITS, (_row("U1", "", (0.0, 0.0, 700.0, 0.0, 0.0)),))
-    template = _template(footings=[{**_template().footings[0].model_dump(mode="json"), "etabs_unique_names": ["10", "99"]}])
+    base = _template().footings[0].model_dump(mode="json")
+    template = _template(footings=[{**base, "column": {**base["column"], "etabs_unique_names": ["10", "99"]}}])
 
     with pytest.raises(EtabsImportError) as raised:
         build_footing_project(template, (service, factored), COMBOS)
@@ -361,3 +362,12 @@ def test_example_combined_template_imports() -> None:
     assert summary.footings == 2 and "footings" not in project
     assert all(len(column["loads"]) == 19 for column in first["columns"])  # 9 de servicio y 10 mayorados de ETABS
     assert all(len(column["loads"]) == 11 for column in second["columns"])  # 9 de servicio de ETABS y 2 escritos
+
+
+def test_isolated_unique_names_go_in_the_column() -> None:
+    """D-168: en la plantilla de zapatas aisladas los Unique Name van en column.etabs_unique_names, como en la combinada;
+    la lista al nivel de la zapata se rechaza diciendo dónde va."""
+    assert _template().footings[0].column.etabs_unique_names == ("10",)
+    footing = {key: value for key, value in _footing().items() if key not in {"id", "loads"}}
+    with pytest.raises(ValidationError, match="column.etabs_unique_names"):
+        _template(footings=[{"id": "Z1", "etabs_unique_names": ["10"], **footing}])

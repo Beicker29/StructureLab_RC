@@ -210,14 +210,15 @@ def build_footing_project(
     las zapatas combinadas con las cargas de sus dos nudos (D-084). Un Excel puede omitirse (None) si ningún grupo pide
     cargas de su tipo. Con la tabla de coordenadas (D-130), cada zapata aislada lleva la ubicación de su nudo y el tipo
     (su grupo), y cada columna de las combinadas la suya."""
-    groups: list[Group] = [(footing.id, footing.etabs_unique_names, BOTH) for footing in template.footings]
+    groups: list[Group] = [(footing.id, footing.column.etabs_unique_names, BOTH) for footing in template.footings]
     groups += [(footing.id, tuple(column.etabs_unique_name for column in footing.columns), footing.etabs_kinds())
                for footing in template.combined_footings]
     service, factored = tables
     joints, skipped, ignored = joint_loads(combinations, {"service": service, "factored": factored}, groups)
     locations = locations_by_joint(coordinates, [name for _, names, _ in groups for name in names])
     isolated = {footing.id for footing in template.footings}
-    bases = {footing.id: footing.model_dump(mode="json", exclude={"id", "etabs_unique_names"}) for footing in template.footings}
+    bases = {footing.id: footing.model_dump(mode="json", exclude={"id": True, "column": {"etabs_unique_names"}})
+             for footing in template.footings}
     footings = [{"id": f"{joint.group}-{joint.label}", **bases[joint.group], "loads": joint.loads,
                  "typology": joint.group, **_located(locations, joint.unique_name)}
                 for joint in joints if joint.group in isolated]

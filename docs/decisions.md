@@ -3831,6 +3831,21 @@
     larga. Ejemplo `zapata_combinada_trapecio_estribos.json` en `combinada/` y `pruebas/`, en los dos perfiles (h = 1.0 m,
     estribos #4 de 4 ramas c/250, piel #4 c/150): cumple y genera memoria, cartilla, `.dli`, DXF (sin errores) y SVG.
 
+### D-168: los Unique Name de las zapatas aisladas de ETABS van en la columna
+
+- **Fecha:** 2026-11-24
+- **Pedido del usuario:** en la plantilla de verificación de zapatas aisladas desde ETABS, `etabs_unique_names` va dentro
+  de `column`, como en la zapata combinada (cada columna con su `etabs_unique_name`).
+- **Cambio de formato, sin respaldo del anterior:** `footings[].column.etabs_unique_names` (`TemplateFootingColumn`). La
+  lista al nivel de la zapata se rechaza diciendo dónde va. El importador lee los nudos de la columna y no los pasa al
+  proyecto.
+- **Ejemplos:** los cuatro `zapata_centrica_etabs.json` de `aislada/` (los dos perfiles y su copia de `pruebas/`, cambio
+  registrado aquí). Las salidas son las mismas: la huella no cambia. El ejemplo ya daba FAIL con el formato anterior
+  (datos supuestos).
+- **Consulta del usuario sobre `loads_source` en la aislada:** no existe porque el tipo de zapata agrupa muchos nudos y
+  sus cargas salen siempre de los Excel (D-055); `loads_source` es de la combinada (D-084), donde cada columna es una.
+  Queda abierta hasta que el usuario diga qué caso necesita (por ejemplo, las mayoradas declaradas para todo el tipo).
+
 ## Consultas abiertas
 
 ### C-017: presión del suelo bajo una combinada trapezoidal o en planta T (fase B de D-163)
