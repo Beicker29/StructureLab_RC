@@ -13,7 +13,7 @@ from structurelab_rc.domain.footing.service import combined_service_checks, serv
 from structurelab_rc.domain.footing.shear import shear_checks
 from structurelab_rc.domain.footing.spacing import combined_min_spacing_checks, footing_min_spacing_checks
 from structurelab_rc.domain.status import Status
-from structurelab_rc.errors import blocked, incomplete
+from structurelab_rc.errors import incomplete
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import Footing, Soil
 
@@ -45,21 +45,7 @@ def combined_footing_checks(basis: Basis, footing: CombinedFooting, soil: Soil) 
     # La T invertida no tiene punzonamiento ni franjas: sus aletas y columnas se revisan aparte (D-093).
     own = inverted_t_checks if footing.beam is not None else column_checks
     return declared_checks(footing, [*service, *equilibrium_checks(footing, soil), *long_beam_checks(basis, footing, soil, cases),
-                                     *own(basis, footing, soil, cases), *combined_min_spacing_checks(basis, footing),
-                                     *_plan_blocked(footing)])
-
-
-PLAN_PENDING = "Estribos y refuerzo superficial en planta no rectangular"
-
-
-def _plan_blocked(footing: CombinedFooting) -> list[Check]:
-    """En una planta trapezoidal o en T/L los estribos y el refuerzo superficial no están implementados (D-164): si se
-    declaran, BLOCKED, y las verificaciones de la viga se hacen sin ellos."""
-    declared = [name for name, value in (("stirrups", footing.stirrups), ("skin", footing.skin)) if value is not None]
-    if footing.plan is None or not declared:
-        return []
-    error = blocked(f"{' y '.join(declared)} en la planta trapezoidal o en T/L: no implementado (D-164)", member=footing.id)
-    return [Check(PLAN_PENDING, Status.BLOCKED, (error,), member=footing.id)]
+                                     *own(basis, footing, soil, cases), *combined_min_spacing_checks(basis, footing)])
 
 
 def footing_checks(basis: Basis, footing: Footing, soil: Soil) -> list[Check]:

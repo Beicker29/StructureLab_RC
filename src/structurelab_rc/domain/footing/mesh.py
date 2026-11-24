@@ -89,9 +89,8 @@ def band_limits(footing: FootingBody, direction: str) -> tuple[float, float] | N
 
 
 def stirrup_diameter(footing: FootingBody | CombinedFooting, bars: Sequence[RebarSpec]) -> float:
-    """Diámetro de los estribos de la zapata combinada (0 si no los tiene, es una zapata aislada o su planta es
-    trapezoidal o en T/L, donde no se usan, D-164)."""
-    if not isinstance(footing, CombinedFooting) or footing.stirrups is None or footing.plan is not None:
+    """Diámetro de los estribos de la zapata combinada (0 si no los tiene o es una zapata aislada)."""
+    if not isinstance(footing, CombinedFooting) or footing.stirrups is None:
         return 0.0
     return next(bar.diameter_mm for bar in bars if bar.designation == footing.stirrups.designation)
 

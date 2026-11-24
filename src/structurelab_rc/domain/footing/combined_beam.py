@@ -108,6 +108,7 @@ class BeamCase:
     lx: float
     ly: float
     line: float = 0.0  # carga lineal hacia abajo del alma de la T invertida, mayorada (N/mm, D-093)
+    line_y: float = 0.0  # su ordenada: el eje del alma (D-167); su carga tuerce la viga si no es 0
     outline: tuple[Point, ...] | None = None  # planta trapezoidal o en T/L (D-164); sin ella, el rectángulo lx × ly
     breadth: Callable[[float], float] | None = None  # ancho local B(x) de esa planta
     # El cuerpo libre de cada x ya integrado (D-165): V, M y T de la misma x lo comparten.
@@ -155,7 +156,8 @@ class BeamCase:
     def torque(self, x: float) -> float:
         """T(x) del cuerpo libre a la izquierda, respecto al eje X (D-088)."""
         _, _, sy = self._left(x)
-        return sy - sum(column.torque for column in self.columns if column.x < x)
+        stem = self.line * self._span(x) * self.line_y  # el alma fuera del eje X (D-167)
+        return sy - stem - sum(column.torque for column in self.columns if column.x < x)
 
     def twist(self, x: float) -> float:
         """Momento torsor de placa por unidad de ancho, mxy = T(x)/B, uniforme en el ancho (decisión del usuario, D-118)."""
@@ -196,7 +198,8 @@ def _beam_case(footing: CombinedFooting, soil: Soil, pressure: FactoredCase, loa
         low, high = footing.across(x)
         return high - low
 
-    return BeamCase(pressure, tuple(columns), footing.lx, footing.ly, line, footing.outline, breadth)
+    axis = footing.web_axis if footing.beam is not None else 0.0
+    return BeamCase(pressure, tuple(columns), footing.lx, footing.ly, line, axis, footing.outline, breadth)
 
 
 def span_label(first: str, second: str, count: int) -> str:
@@ -259,9 +262,11 @@ def shear_sections(beam: BeamCase, depth: float, depth_at: Callable[[float], flo
     return sections
 
 
-def _skin_layers(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], bars: Sequence[RebarSpec]) -> list[BarLayer]:
+def skin_layers(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], bars: Sequence[RebarSpec],
+                 width: float | None = None) -> list[BarLayer]:
     """Refuerzo superficial (D-083): una barra en cada cara lateral, a la separación vertical declarada desde la capa
-    inferior hacia arriba, sin llegar a la capa superior (o al recubrimiento si no hay barras superiores)."""
+    inferior hacia arriba, sin llegar a la capa superior (o al recubrimiento si no hay barras superiores). width: el
+    ancho de la sección (ly; en una planta trapezoidal o en T/L, el local, D-167)."""
     if footing.skin is None:
         return []
     spec = next(bar for bar in bars if bar.designation == footing.skin.designation)
@@ -272,8 +277,9 @@ def _skin_layers(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], b
     layers = []
     depth = bottom.depth - footing.skin.spacing
     while depth > limit + _TOUCH:
+        breadth = footing.ly if width is None else width
         layers.append(BarLayer(depth=depth, role="skin", bars=(BarPosition(designation=spec.designation, x=inset),
-                                                               BarPosition(designation=spec.designation, x=footing.ly - inset))))
+                                                               BarPosition(designation=spec.designation, x=breadth - inset))))
         depth -= footing.skin.spacing
     return layers
 
@@ -293,9 +299,9 @@ def beam_member(footing: CombinedFooting, rows: tuple[BarRow, BarRow | None], ba
     layers = [BarLayer(depth=bottom.depth, role="flexure", bars=placed(bottom))]
     if top is not None:
         layers.insert(0, BarLayer(depth=footing.h - top.depth, role="flexure", bars=placed(top)))
-    if footing.plan is not None:  # sin estribos ni piel en la planta no rectangular (BLOCKED aparte, D-164)
-        return Section(bw=high - low, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=None)
-    layers += _skin_layers(footing, rows, bars)
+    # La piel en las dos caras laterales y los estribos, con el ancho de la sección (en una planta no rectangular, el
+    # local: cada estribo mide el ancho donde va, D-167).
+    layers += skin_layers(footing, rows, bars, high - low)
     return Section(bw=high - low, h=footing.h, cover=footing.cover), ReinforcementLayout(layers=tuple(layers), stirrups=footing.stirrups)
 
 
@@ -338,13 +344,21 @@ def _widest(footing: CombinedFooting, low: float, high: float) -> float:
     return max(footing.across(x)[1] - footing.across(x)[0] for x in points)
 
 
-def flange_width(profile: Profile, footing: CombinedFooting) -> float | None:
+def flange_width(profile: Profile, footing: CombinedFooting, at: float | None = None) -> float | None:
     """Ancho efectivo del ala de la T invertida (D-093): el de viga aislada del perfil, sin pasar de la base; None si
-    el ala no cuenta (hf < 0.5bw) o no hay viga."""
+    el ala no cuenta (hf < 0.5bw) o no hay viga. En una planta trapezoidal o en T/L (D-167), sin pasar del ancho local,
+    centrado en el alma (el alma más dos veces su menor distancia a un borde), en la sección at o, sin ella, el más
+    angosto de todo el largo."""
     if footing.beam is None:
         return None
     width = profile.flexure.isolated_flange_width(footing.beam.width, footing.h)
-    return None if width is None else min(width, footing.ly)
+    if width is None:
+        return None
+    if footing.plan is None:
+        return min(width, footing.ly)
+    low, high = footing.across(at) if at is not None else footing.across(*footing.x_range)
+    face_low, face_high = footing.web_faces
+    return min(width, footing.beam.width + 2 * min(face_low - low, high - face_high))
 
 
 def covered_width(profile: Profile, footing: CombinedFooting) -> float:
@@ -373,7 +387,9 @@ def spread_bottom_layer(profile: Profile, footing: CombinedFooting, bars: Sequen
     if half <= beam.width / 2 + _EDGE:  # solo el alma: por dentro del estribo, como en las vigas
         reach = half - footing.cover - stirrup_diameter(footing, bars) - db / 2
     else:
-        reach = half - (footing.cover if half >= footing.ly / 2 - _EDGE else 0.0) - db / 2
+        low, high = footing.across(*footing.x_range)  # el borde más cercano al eje del alma (±ly/2 en la rectangular)
+        edge = min(footing.web_axis - low, high - footing.web_axis)
+        reach = half - (footing.cover if half >= edge - _EDGE else 0.0) - db / 2
     count = len(names)
     xs = [beam.width / 2] if count == 1 else [beam.width / 2 - reach + 2 * reach * index / (count - 1) for index in range(count)]
     return layer.model_copy(update={"bars": tuple(BarPosition(designation=name, x=x) for name, x in zip(names, xs, strict=True))})
@@ -388,7 +404,8 @@ def _bars_within(layer: BarLayer, low: float, high: float) -> BarLayer | None:
     return layer.model_copy(update={"bars": kept}) if kept else None
 
 
-def _t_beam_member(profile: Profile, footing: CombinedFooting, bars: Sequence[RebarSpec]) -> tuple[Section, ReinforcementLayout]:
+def _t_beam_member(profile: Profile, footing: CombinedFooting, bars: Sequence[RebarSpec],
+                   at: float | None = None) -> tuple[Section, ReinforcementLayout]:
     """La viga de la T invertida volteada (D-093, D-106): alma bw × H con el ala (la zarpa) arriba; x desde la cara −Y
     del alma, profundidades desde la cara inferior de la zapata. Las capas declaradas en beam (desde la cara superior,
     aquí volteadas) y las barras x de la malla de la zarpa fuera del ancho cubierto por la capa inferior; de unas y otras
@@ -396,7 +413,8 @@ def _t_beam_member(profile: Profile, footing: CombinedFooting, bars: Sequence[Re
     beam = footing.beam
     assert beam is not None
     total, web = footing.total_height, beam.width
-    width = flange_width(profile, footing)
+    width = flange_width(profile, footing, at)  # en una planta no rectangular, el de la sección at (D-167)
+    axis = footing.web_axis
     reach = (width if width is not None else web) / 2
     low, high = web / 2 - reach, web / 2 + reach
     layers = []
@@ -407,8 +425,8 @@ def _t_beam_member(profile: Profile, footing: CombinedFooting, bars: Sequence[Re
             layers.append(own.model_copy(update={"depth": total - layer.depth}))
     zarpa = mat_rows(footing, footing.bottom, bars)["x"]
     outside = covered_width(profile, footing) / 2
-    extra = tuple(BarPosition(designation=zarpa.designation, x=y + web / 2) for y in zarpa.positions
-                  if outside + _EDGE < abs(y) <= reach + _EDGE)
+    extra = tuple(BarPosition(designation=zarpa.designation, x=y - axis + web / 2) for y in zarpa.positions
+                  if outside + _EDGE < abs(y - axis) <= reach + _EDGE)
     if extra:
         layers.append(BarLayer(depth=footing.h - zarpa.depth, role="flexure", bars=extra))
     layers.sort(key=lambda layer: layer.depth)
@@ -439,7 +457,7 @@ def t_beam_rows(profile: Profile, footing: CombinedFooting, bars: Sequence[Rebar
         own = [bar for bar in placed if abs(bar.depth - (total - depth_from_top)) <= _EDGE]
         designation = own[0].designation if own else beam.bottom_layer.designations()[0]
         spec = next(bar for bar in bars if bar.designation == designation)
-        positions = tuple(sorted(bar.x - beam.width / 2 for bar in own))
+        positions = tuple(sorted(bar.x - beam.width / 2 + footing.web_axis for bar in own))  # desde el centroide (D-167)
         depth = depth_from_top if depth_from_top > total / 2 else total - depth_from_top
         return BarRow("x", designation, spec.diameter_mm, spec.area_mm2, depth, beam.width, positions, None, ())
 
@@ -455,7 +473,7 @@ def long_beam_member(footing: CombinedFooting, bars: Sequence[RebarSpec], profil
     planta trapezoidal o en T/L, la sección en la abscisa at (D-164)."""
     if footing.beam is not None:
         assert profile is not None
-        section, layout = _t_beam_member(profile, footing, bars)
+        section, layout = _t_beam_member(profile, footing, bars, at if footing.plan is not None else None)
     else:
         rows = (mat_rows(footing, footing.bottom, bars)["x"], top_rows(footing, bars).get("x"))
         section, layout = beam_member(footing, rows, bars, at)
@@ -624,6 +642,7 @@ def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, give
     if footing.beam is None:
         return _plate_station_checks(basis, footing, member, given)
     beam, section, has_top = given
+    member = member_at(basis, footing, member, section.x)  # en una planta no rectangular, la sección en x (D-167)
     # La nota lleva el signo del momento físico (D-095); la T invertida va volteada: su momento cambia de signo (D-093).
     section = replace(section, label=f"{section.label}, {moment_sign(beam.moment(section.x))}")
     moment = beam.moment(section.x) * (-1.0 if footing.beam is not None else 1.0)

@@ -194,6 +194,8 @@ def _labels(drawing: Drawing, view: View, anchors: list[tuple[Point, Marked]], m
     marks: dict[str, tuple[str, ...]] = {}
     for anchor, item in anchors:
         group = [other for other in marked if other.number == item.number]
+        if item.place.along == "estribo":  # en un corte, solo los estribos de esa sección (anidados): su ancho (D-167)
+            group = [other for other in group if other.place == item.place]
         text = texts.setdefault(item.number, label_text(group))
         marks.setdefault(text, label_marks(group))
         grouped.setdefault(text, []).append(anchor)
@@ -563,6 +565,9 @@ def section_view(drawing: Drawing, names: tuple[str, str], cut: tuple[str, float
     drawn: set[Placement] = set()
     cut_zones: list[tuple[float, ...]] = []
     levels = {True: 0, False: 0}  # rótulos ya puestos arriba (True) y abajo: cada uno a su altura
+    # En un corte, solo los estribos más cercanos a él (en una planta no rectangular los hay de varios anchos, D-167).
+    hoops = [item.place for item in marked if item.place.along == "estribo" and item.place.positions]
+    nearest = min(hoops, key=lambda place: min(abs(x - at) for x in place.positions), default=None)
     for item in marked:
         place = item.place
         if place.along == axis:
@@ -572,6 +577,8 @@ def section_view(drawing: Drawing, names: tuple[str, str], cut: tuple[str, float
             if place.level < middle:
                 cut_zones += spans
         else:
+            if place.along == "estribo" and axis != "x" and place != nearest:
+                continue
             entities, anchor = _stirrup(item, axis, drawn) if place.along == "estribo" else _dowels(item, axis, at)
             view.entities += entities
             if anchor is not None:
@@ -626,21 +633,26 @@ def _cut_zones(drawing: Drawing, view: View, item: Marked,
     if not place.span[0] <= at <= place.span[1]:
         return []
     radius = drawing.paper(_DOT)
-    view.entities += [Circle(item.layer, (position, place.level), radius) for position in place.positions]
+    # Una barra inclinada en planta (D-167) corta el plano en su y en at.
+    shift = place.slope * (at - (place.span[0] + place.span[1]) / 2)
+    positions = tuple(position + shift for position in place.positions)
+    view.entities += [Circle(item.layer, (position, place.level), radius) for position in positions]
     height, gap = drawing.text_height(small=True), drawing.gap()
-    spans = zones(place.positions)
+    spans = zones(positions)
     upper = place.level > middle
     for zone in spans:
         target = (zone[min(1, len(zone) - 1)], place.level)
         rise = 1.6 * height * levels[upper]  # cada rótulo a su altura, para que no se monten
         levels[upper] += 1
         landing = (zone[0], top + 1.2 * gap + rise) if upper else (zone[0], bottom - 1.8 * gap - rise)
-        count = round(len(zone) * run.count / len(place.positions))
+        count = round(len(zone) * run.count / len(positions))
         view.entities.append(Leader(DIMENSIONS, landing, label_text([item], count, zone), height, (target,), label_marks([item])))
     return spans
 
 
 def _stirrup(item: Marked, axis: str, drawn: set[Placement]) -> tuple[list[Entity], Point | None]:
+    """Los estribos en el alzado (una línea por estribo) o, en un corte, el estribo de la sección (el corte elige el grupo
+    más cercano, D-167)."""
     run, place = item.run, item.place
     assert run.stirrup is not None
     width, height = run.stirrup

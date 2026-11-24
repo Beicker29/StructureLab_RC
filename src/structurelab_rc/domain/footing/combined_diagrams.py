@@ -207,30 +207,34 @@ def flange_envelope(basis: Basis, footing: CombinedFooting, cases: Cases) -> Env
     """Las dos aletas de la T invertida, por metro, en la sección x que gobierna el momento de las aletas en cada caso."""
     assert footing.beam is not None
     depth = mat_rows(footing, footing.bottom, basis.bars)["y"].depth
-    face, edge = footing.beam.width / 2, footing.ly / 2
-    offsets = sorted({*_cantilever_points(0.0, edge - face), *([depth] if depth < edge - face else [])})
-    left = [-(face + offset) for offset in reversed(offsets)]  # del borde −Y a la cara −Y de la viga
-    right = [face + offset for offset in offsets]  # de la cara +Y de la viga al borde +Y
+    face_low, face_high = footing.web_faces
+    # Las aletas en su largo más corto a lo largo de la viga (en la rectangular, (ly − bw)/2 de cada lado; D-167).
+    low_edge, high_edge = footing.across(*footing.x_range)
+    spans = (face_low - low_edge, high_edge - face_high)
+    left = [face_low - offset for offset in reversed(sorted({*_cantilever_points(0.0, spans[0]),
+                                                              *([depth] if depth < spans[0] else [])}))]
+    right = [face_high + offset for offset in sorted({*_cantilever_points(0.0, spans[1]), *([depth] if depth < spans[1] else [])})]
     samples, names = [], []
     for pressure, _ in cases:
         flanges = Flanges(footing, pressure, depth)
         x = flanges.governing("moment")[0]
         own = []
         for y in left:
-            shear, moment = flanges.section(x, -1.0, -y - face)
+            shear, moment = flanges.section(x, -1.0, face_low - y)
             own.append((y, moment * STRIP, shear * STRIP))
         for y in right:
-            shear, moment = flanges.section(x, 1.0, y - face)
+            shear, moment = flanges.section(x, 1.0, y - face_high)
             own.append((y, moment * STRIP, -shear * STRIP))
         samples.append(own)
         names.append(pressure.case)
     segments = [(0, len(left) - 1), (len(left), len(left) + len(right) - 1)]
-    marks = [(-face, "cara -Y de la viga"), (face, "cara +Y de la viga")]
+    marks = [(face_low, "cara -Y de la viga"), (face_high, "cara +Y de la viga")]
     count = len(cases)
-    sections = [(_fixed(-face, count), "cara -Y de la viga"), (_fixed(face, count), "cara +Y de la viga")]
-    if depth < edge - face:
-        sections += [(_fixed(-(face + depth), count), "a d de la cara -Y de la viga"),
-                     (_fixed(face + depth, count), "a d de la cara +Y de la viga")]
+    sections = [(_fixed(face_low, count), "cara -Y de la viga"), (_fixed(face_high, count), "cara +Y de la viga")]
+    if depth < spans[0]:
+        sections.append((_fixed(face_low - depth, count), "a d de la cara -Y de la viga"))
+    if depth < spans[1]:
+        sections.append((_fixed(face_high + depth, count), "a d de la cara +Y de la viga"))
     return _envelope("Aletas de la zarpa (por metro)", samples, names, (marks, segments, True),
                      sorted(sections, key=lambda item: item[0][0]))
 

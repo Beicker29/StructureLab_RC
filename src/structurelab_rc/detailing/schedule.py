@@ -44,13 +44,15 @@ class Placement:
     de su eje y span el inicio y el fin de su eje a lo largo de along); "estribo" (positions, las abscisas x de los
     estribos; level, la z de su cara inferior exterior; cross, la y de su centro); "z" (pasadores de una columna:
     positions, el centro (x, y) de la columna; span, la z del pie y del extremo superior; cross, la distancia del eje de
-    la columna a los pasadores que se dibujan, en x y en y, que es esquemática)."""
+    la columna a los pasadores que se dibujan, en x y en y, que es esquemática). slope: en barras x, su pendiente en
+    planta; positions es su y en el centro de span (la piel por un lado oblicuo de una planta trapezoidal, D-167)."""
 
     along: str
     positions: tuple[float, ...]
     level: float
     span: tuple[float, float]
     cross: tuple[float, float] = (0.0, 0.0)
+    slope: float = 0.0  # barras x inclinadas en planta (la piel por un lado oblicuo, D-167): dy/dx desde el centro de span
 
 
 @dataclass(frozen=True)

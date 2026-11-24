@@ -207,6 +207,8 @@ def combined_footing_data(footing: CombinedFooting, soil: Soil, checks: list[Che
     columns = [_declared_column(column, rotated) for column in footing.columns]
     reinforcement = footing.model_dump(mode="json", include={"bottom", "top", "stirrups", "skin"})
     geometry = _geometry(footing, {"beam", "principal_direction", "plan"})
+    if isinstance(geometry.get("beam"), dict) and geometry["beam"].get("axis") is None:
+        geometry["beam"].pop("axis", None)  # solo con plan (D-167)
     if footing.plan is None:
         geometry.pop("plan", None)
     else:

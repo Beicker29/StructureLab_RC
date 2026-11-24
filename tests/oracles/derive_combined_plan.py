@@ -106,31 +106,53 @@ def _footing(f: dict) -> dict:
     return {**f, "pieces": moved, "centroid": centroid, "area": area, "columns": columns}
 
 
+def _web(g: dict) -> tuple[float, float, float] | None:
+    """T invertida (D-167): (eje del alma desde el centroide, su ancho, su alto sobre la zarpa); None sin viga."""
+    beam = g.get("beam")
+    if beam is None:
+        return None
+    axis = beam.get("axis", g["centroid"][1] + 0.0) - g["centroid"][1]
+    return axis, beam["width"], beam["height"] - g["h"]
+
+
 def _case(g: dict, case: str) -> dict:
     h, hp, hf = g["h"], g["pedestal_height"], g["fill_height"]
+    web = _web(g)
+    stem = 0.0 if web is None else web[2]
+    height = h + stem + hp  # brazo de los cortantes de las columnas: el alto total (en la T, el de la viga)
     loads = [next(load for load in column["loads"] if load["case"] == case) for column in g["columns"]]
     fd, fl = loads[0]["dead_factor"], loads[0]["live_factor"]
     dead_area = GAMMA_F * hf + g["surcharge_dead_kNm2"] * 1e-3
+    displaced = GAMMA_F * max(hf - stem, 0.0) + g["surcharge_dead_kNm2"] * 1e-3  # sobre la viga, en la T
     live_area = g["surcharge_live_kNm2"] * 1e-3
     w = fd * (GAMMA_C * h + dead_area) + fl * live_area
     n = w * g["area"]
     mx = my = 0.0
+    xs = [p[0] for piece in g["pieces"] for p in piece]
+    line = 0.0
+    if web is not None:  # el alma: su concreto menos el relleno que desplaza, en (centro del largo, eje del alma)
+        line = fd * web[1] * (GAMMA_C * stem - GAMMA_F * min(stem, hf))
+        weight = line * (max(xs) - min(xs))
+        n += weight
+        my += weight * (max(xs) + min(xs)) / 2
+        mx -= weight * web[0]
     columns = []
     for column, load in zip(g["columns"], loads, strict=True):
         area = column["cx"] * column["cy"]
-        force = load["P_kN"] * 1e3 + fd * (GAMMA_C * area * hp - dead_area * area) - fl * live_area * area
+        force = load["P_kN"] * 1e3 + fd * (GAMMA_C * area * hp - displaced * area) - fl * live_area * area
         vx, vy = load["Vx_kN"] * 1e3, load["Vy_kN"] * 1e3
-        mx += load["Mx_kNm"] * 1e6 - column["y"] * force - (h + hp) * vy
-        my += load["My_kNm"] * 1e6 + (h + hp) * vx + column["x"] * force
+        mx += load["Mx_kNm"] * 1e6 - column["y"] * force - height * vy
+        my += load["My_kNm"] * 1e6 + height * vx + column["x"] * force
         n += force
         columns.append({"id": column["id"], "x": column["x"], "y": column["y"], "cx": column["cx"], "cy": column["cy"],
-                        "force": force, "couple": load["My_kNm"] * 1e6 + (h + hp) * vx,
-                        "torque": force * column["y"] - load["Mx_kNm"] * 1e6 + (h + hp) * vy})
+                        "force": force, "couple": load["My_kNm"] * 1e6 + height * vx,
+                        "torque": force * column["y"] - load["Mx_kNm"] * 1e6 + height * vy})
     xs = [p[0] for piece in g["pieces"] for p in piece]
     ys = [p[1] for piece in g["pieces"] for p in piece]
     scale = max(max(xs) - min(xs), max(ys) - min(ys))
     plane = _PP._newton(g["pieces"], my / n, -mx / n, scale, n)
-    return {"plane": plane, "w": w, "n": n, "ex": my / n, "ey": -mx / n, "columns": sorted(columns, key=lambda c: c["x"])}
+    return {"plane": plane, "w": w, "n": n, "ex": my / n, "ey": -mx / n, "columns": sorted(columns, key=lambda c: c["x"]),
+            "line": line, "start": min(xs)}
 
 
 def _beam(g: dict, state: dict, x: float) -> tuple[float, float, float]:
@@ -138,12 +160,42 @@ def _beam(g: dict, state: dict, x: float) -> tuple[float, float, float]:
     left = [piece for piece in left if len(piece) >= 3]
     force, sx, sy = _net(left, state["plane"], state["w"]) if left else (0.0, 0.0, 0.0)
     shear, moment, torque = force, x * force - sx, sy
+    web = _web(g)
+    if web is not None:  # la carga lineal del alma a la izquierda de x, en su eje (D-167)
+        span = max(x - state["start"], 0.0)
+        shear -= state["line"] * span
+        moment -= state["line"] * span**2 / 2
+        torque -= state["line"] * span * web[0]
     for column in state["columns"]:
         if column["x"] < x:
             shear -= column["force"]
             moment -= column["force"] * (x - column["x"]) - column["couple"]
             torque -= column["torque"]
     return shear, moment, torque
+
+
+def _flange(g: dict, state: dict, x: float, side: float) -> float:
+    """Momento por unidad de largo de la aleta side en la cara del alma, en x (D-167): de la cara al borde local, la
+    presión de la línea (recortada en cero) menos w, por su distancia a la cara."""
+    web = _web(g)
+    assert web is not None
+    axis, width, _ = web
+    low, high = _across(g["plan"], g["centroid"], x)
+    face = axis + side * width / 2
+    p0, gx, gy = state["plane"]
+    a = p0 + gx * x
+    y0, y1 = (face, high) if side > 0 else (low, face)
+    root = None if gy == 0 else -a / gy
+    lo, hi = y0, y1
+    if root is not None:
+        lo, hi = (max(lo, root), hi) if gy > 0 else (lo, min(hi, root))
+    force = first = 0.0
+    if hi > lo and (root is not None or a > 0):
+        force = a * (hi - lo) + gy * (hi**2 - lo**2) / 2
+        first = a * (hi**2 - lo**2) / 2 + gy * (hi**3 - lo**3) / 3
+    w, length = state["w"], y1 - y0
+    lever = side * (first - face * force)
+    return lever - w * length**2 / 2
 
 
 def _y_depth(g: dict) -> float:
@@ -318,6 +370,19 @@ CASES = [
                                                    {"length": 3500.0, "low": -1300.0, "high": 300.0}]},
                    [_column("C1", 600.0, 0.0, 900.0, 1250.0), _column("C2", 6300.0, -500.0, 650.0, 900.0, my=-25.0)]),
      []),
+    ("t-invertida-trapecio", "T invertida (D-167) con zarpa trapezoidal de 9 m (3.6 m a 2.5 m, lado −y recto) y alma de 1.0 m "
+                             "con su eje en t = 0, fuera del centroide: peso del alma excéntrico y aletas hasta los bordes "
+                             "locales",
+     {**_plan_footing({"shape": "trapezoid", "length": 9000.0, "start": {"low": -1800.0, "high": 1800.0},
+                       "end": {"low": -1800.0, "high": 700.0}},
+                      [{**_column("C1", 1800.0, 0.0, 1000.0, 1400.0, my=40.0), "cx": 600.0, "cy": 600.0},
+                       {**_column("C2", 7200.0, 0.0, 1100.0, 1500.0, mx=-30.0), "cx": 600.0, "cy": 600.0}]),
+      "h": 600.0, "top": None,
+      "beam": {"width": 1000.0, "height": 1700.0, "axis": 0.0,
+               "layers": [{"depth": 105.0, "role": "flexure", "bars": ["#9"] * 9, "end": "straight"},
+                          {"depth": 1590.0, "role": "flexure", "bars": ["#8"] * 15, "end": "straight"}],
+               "stirrups": {"designation": "#4", "legs": 4, "spacing": 200.0, "closed": True, "end": "hook135"}}},
+     []),
     ("planta-t", "planta en T de tres tramos (2.6, 1.6 y 2.2 m), centrados; columna sobre el escalón",
      _plan_footing({"shape": "stepped", "parts": [{"length": 3000.0, "low": -1300.0, "high": 1300.0},
                                                    {"length": 2000.0, "low": -800.0, "high": 800.0},
@@ -336,11 +401,13 @@ def main() -> None:
         xs = sorted({*(c["x"] + side * c["cx"] / 2 for c in state["columns"] for side in (-1, 1)),
                      *(min(p[0] for piece in g["pieces"] for p in piece) + k * 700.0 for k in range(1, 10))})
         beam = [{"x": x, "V": v, "M": m, "T": t} for x in xs for v, m, t in [_beam(g, state, x)]]
-        strips = [_strip(g, state, index) for index in range(len(g["columns"]))]
+        strips = [] if "beam" in g else [_strip(g, state, index) for index in range(len(g["columns"]))]
+        flanges = ([{"x": x, "side": side, "M": _flange(g, state, x, side)} for x in xs for side in (-1.0, 1.0)]
+                   if "beam" in g else [])
         depth = (_y_depth(g) + _y_depth(g) + BARS[g["bottom"]["y"]["designation"]][0] / 2
                  + BARS[g["bottom"]["x"]["designation"]][0] / 2) / 2  # d promedio de las dos direcciones
         cases.append({"id": case_id, "description": text, "footing": footing, "centroid": list(g["centroid"]), "area": g["area"],
-                      "plane": list(state["plane"]), "beam": beam, "strips": strips,
+                      "plane": list(state["plane"]), "beam": beam, "strips": strips, "flanges": flanges,
                       "punching": [_punching(g, index, depth) for index in punched],
                       "overturning": _overturning(g, "D+L")})
     data = {"description": "Combinada trapezoidal y en planta T o L (D-164): presión de Bellos sobre la planta, cuerpo libre de "

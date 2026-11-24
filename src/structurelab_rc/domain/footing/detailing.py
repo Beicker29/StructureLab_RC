@@ -29,7 +29,13 @@ from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.beam.geometry import placed_bars
 from structurelab_rc.domain.development import BarAnchorage, lap_splice
 from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
-from structurelab_rc.domain.footing.combined_beam import beam_member, covered_width, extreme_moments
+from structurelab_rc.domain.footing.combined_beam import (
+    beam_member,
+    covered_width,
+    extreme_moments,
+    skin_layers,
+    spread_bottom_layer,
+)
 from structurelab_rc.domain.footing.combined_columns import (
     band_row,
     band_top_row,
@@ -43,7 +49,7 @@ from structurelab_rc.domain.footing.connection import bar_anchorage
 from structurelab_rc.domain.footing.flexure import FaceMoments, face_moments
 from structurelab_rc.domain.footing.inverted_t import flange_envelope
 from structurelab_rc.domain.footing.loads import combined_factored_cases, factored_cases
-from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, positions_within, top_rows
+from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, positions_within, stirrup_diameter, top_rows
 from structurelab_rc.errors import StructuredError
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedColumn, CombinedFooting
@@ -169,12 +175,23 @@ def _placed_dowels(run: BarRun | None, column: Column | CombinedColumn, top_embe
                                             (column.cx / 2 - cover, column.cy / 2 - cover)))
 
 
-def _stirrup_runs(basis: Basis, stirrups: Stirrups | None, frame: tuple[float, float, float], along: float) -> list[BarRun]:
-    """Estribos cerrados de una viga de ancho × alto × recubrimiento, repartidos en el largo along, con el gancho de cierre
-    que declaran (D-134): los de dos ramas anidados para las ramas que haya."""
+def _stations(stirrups: Stirrups | None, span: tuple[float, float], cover: float) -> tuple[float, ...]:
+    """Las abscisas de los estribos a lo largo de span, desde el recubrimiento, a su separación."""
+    if stirrups is None:
+        return ()
+    count = math.floor((span[1] - span[0] - 2 * cover) / stirrups.spacing + 1e-6) + 1
+    return tuple(span[0] + cover + index * stirrups.spacing for index in range(count))
+
+
+def _stirrup_runs(basis: Basis, stirrups: Stirrups | None, frame: tuple[float, float, float],
+                  layout: tuple[tuple[float, ...], float, tuple[float, float]]) -> list[BarRun]:
+    """Estribos cerrados de una viga de ancho × alto × recubrimiento, con el gancho de cierre que declaran (D-134): los de
+    dos ramas anidados para las ramas que haya. layout = (abscisas, ordenada del centro, largo de la viga): todo el largo
+    en la rectangular; en una planta trapezoidal o en T/L, los de un mismo ancho (D-167); en la T, centrados en el alma."""
     if stirrups is None:
         return []
     width, height, cover = frame
+    stations, cross, span = layout
     spec = _spec(basis.bars, stirrups.designation)
     db = spec.diameter_mm
     detailing = basis.profile.detailing
@@ -184,11 +201,10 @@ def _stirrup_runs(basis: Basis, stirrups: Stirrups | None, frame: tuple[float, f
         return [BarRun("estribos", stirrups.designation, db, spec.mass_kg_m, 0, 0.0,
                        note=f"el perfil no define el gancho de {angle}° para esta barra")]
     hook = Hook(angle, detailing.stirrup_bend_diameter(db), extension)
-    count = math.floor((along - 2 * cover) / stirrups.spacing + 1e-6) + 1
+    count = len(stations)
     outer_width, outer_height = width - 2 * cover, height - 2 * cover
     gap = (outer_width - db) / max(stirrups.legs - 1, 1)
-    stations = tuple(-along / 2 + cover + index * stirrups.spacing for index in range(count))
-    place = Placement("estribo", stations, cover, (-along / 2, along / 2))
+    place = Placement("estribo", stations, cover, span, (0.0, cross))
     runs = []
     for pair in range(max(stirrups.legs // 2, 1)):
         closed = (outer_width - 2 * pair * gap, outer_height)
@@ -316,6 +332,48 @@ class _CombinedRatios:
         return min(ratios)
 
 
+def _plan_stirrup_runs(basis: Basis, footing: CombinedFooting) -> list[BarRun]:
+    """Estribos de una planta trapezoidal o en T/L (D-167, decisión del usuario): cada estribo cerrado mide el ancho local
+    en su abscisa, con las ramas declaradas repartidas en él; los de la misma medida van juntos y cada medida distinta es
+    una marca aparte, porque se piden y se arman distinto."""
+    span = footing.x_range
+    groups: dict[tuple[float, float], list[float]] = {}
+    for x in _stations(footing.stirrups, span, footing.cover):
+        low, high = footing.across(x)
+        groups.setdefault((round(high - low, 1), round((low + high) / 2, 1)), []).append(x)
+    runs = []
+    for (width, centre), stations in groups.items():
+        runs += _stirrup_runs(basis, footing.stirrups, (width, footing.h, footing.cover), (tuple(stations), centre, span))
+    return runs
+
+
+def _plan_skin_runs(basis: Basis, footing: CombinedFooting, rows: tuple[BarRow, BarRow | None]) -> list[BarRun]:
+    """Refuerzo superficial de una planta trapezoidal o en T/L (D-167, decisión del usuario): en cada nivel, una barra por
+    cada cara larga (los lados no transversales del contorno), con su largo real menos el recubrimiento de cada extremo;
+    en el trapecio va inclinada, paralela al lado oblicuo. Las caras cortas de los escalones no llevan piel."""
+    assert footing.skin is not None
+    spec = _spec(basis.bars, footing.skin.designation)
+    depths = [layer.depth for layer in skin_layers(footing, rows, basis.bars)]
+    hooks = _hooks(basis, spec.diameter_mm, footing.skin.end)
+    outline, cover = footing.outline, footing.cover
+    inset = cover + stirrup_diameter(footing, basis.bars) + spec.diameter_mm / 2  # por dentro del estribo, como en la rectangular
+    runs = []
+    for (x1, y1), (x2, y2) in zip(outline, (*outline[1:], outline[0]), strict=True):
+        if x1 == x2:
+            continue  # cara transversal (extremo o escalón): la planta las declara exactas
+        edge = math.hypot(x2 - x1, y2 - y1)
+        length = edge - 2 * cover
+        low, high = sorted((x1, x2))
+        # La barra corrida hacia adentro (contorno antihorario: la normal izquierda), con su pendiente en planta.
+        middle = (y1 + y2) / 2 + inset * (x2 - x1) / edge
+        slope = (y2 - y1) / (x2 - x1)
+        for depth in depths:  # una corrida por nivel, para el dibujo; la cartilla las reúne por largo
+            runs.append(BarRun(SKIN, spec.designation, spec.diameter_mm, spec.mass_kg_m, 1, length, hooks,
+                               note=f"{len(depths)} niveles en cada cara lateral",
+                               placement=Placement("x", (middle,), footing.h - depth, (low + cover, high - cover), slope=slope)))
+    return runs
+
+
 def plan_chords(footing: CombinedFooting, direction: str, position: float) -> list[tuple[float, float]]:
     """Los tramos de una barra x (en y = position) o y (en x = position) dentro de una planta trapezoidal o en T/L, de
     borde a borde menos el recubrimiento a lo largo de la barra, como en el cabezal con esquinas recortadas (D-141,
@@ -392,7 +450,9 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
             runs += _plan_runs(basis, footing, band_top, (f"band superior columna {labels[column.id]}", across,
                                                           _hooks(basis, band_top.diameter, column.band_top.end)),
                                (column.band_top.spacing, False, geometry, ratios.strip(index, band_top, False)))
-    if footing.skin is not None and footing.plan is None:  # sin piel ni estribos en planta no rectangular (D-164)
+    if footing.skin is not None and footing.plan is not None:  # la piel por cada cara larga, inclinada en el trapecio (D-167)
+        runs += _plan_skin_runs(basis, footing, (bottom["x"], tops.get("x")))
+    elif footing.skin is not None:
         section, layout = beam_member(footing, (bottom["x"], tops.get("x")), bars)
         skin = [bar for bar in placed_bars(layout, section, bars) if bar.role == "skin"]
         depths = sorted({round(bar.depth, 1) for bar in skin})
@@ -402,7 +462,9 @@ def combined_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[Ba
             runs.append(BarRun(SKIN, spec.designation, spec.diameter_mm, spec.mass_kg_m, len(ys), along,
                                _hooks(basis, spec.diameter_mm, footing.skin.end), note=f"{len(depths)} niveles en cada cara lateral",
                                placement=Placement("x", ys, h - depth, (-along / 2, along / 2))))
-    runs += _stirrup_runs(basis, footing.stirrups if footing.plan is None else None, (footing.ly, h, cover), footing.lx)
+    whole = (-footing.lx / 2, footing.lx / 2)
+    runs += (_stirrup_runs(basis, footing.stirrups, (footing.ly, h, cover), (_stations(footing.stirrups, whole, cover), 0.0, whole))
+             if footing.plan is None else _plan_stirrup_runs(basis, footing))
     embed = h - cover - bottom["x"].diameter - bottom["y"].diameter
     runs += [_placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, labels[column.id]), column,
                             (h, embed), cover) for column in footing.columns]
@@ -458,7 +520,9 @@ def _t_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[BarRun]:
     h, cover, bars = footing.h, footing.cover, basis.bars
     along, across = footing.lx - 2 * cover, footing.ly - 2 * cover
     section = Section(bw=beam.width, h=beam.height, cover=cover)
-    placed = placed_bars(ReinforcementLayout(layers=beam.layers, stirrups=beam.stirrups), section, bars)
+    # La capa inferior declarada solo con sus barras se reparte en el ancho cubierto, como en el cálculo (D-114, D-167).
+    layers = tuple(spread_bottom_layer(basis.profile, footing, bars) if layer is beam.bottom_layer else layer for layer in beam.layers)
+    placed = placed_bars(ReinforcementLayout(layers=layers, stirrups=beam.stirrups), section, bars)
     rows = mat_rows(footing, footing.bottom, bars)
     cases, failures = combined_factored_cases(footing, soil)
     valid = bool(cases) and not failures
@@ -473,6 +537,7 @@ def _t_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[BarRun]:
     for bar in placed:
         groups.setdefault((bar.role, round(bar.depth, 1), bar.designation), []).append(bar.x)
     stirrup = 0.0 if beam.stirrups is None else _spec(bars, beam.stirrups.designation).diameter_mm
+    beam_span = footing.x_range  # el alma va de borde a borde (D-167)
     runs: list[BarRun | None] = []
     ends = {round(layer.depth, 1): layer.end or "straight" for layer in beam.layers}  # la T exige end en cada capa (D-134)
     for (role, depth, designation), xs in groups.items():
@@ -481,11 +546,13 @@ def _t_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[BarRun]:
         hooks = _hooks(basis, spec.diameter_mm, ends[min(ends, key=lambda own: abs(own - depth))])
         ratio = (lower_ratio if depth > beam.height / 2 else upper_ratio) if role == "flexure" else None
         run = _layer_run(basis, (name, spec, len(xs), hooks), (sorted(xs), depth, beam.height, cover + stirrup), (along, ratio))
-        ys = tuple(x - beam.width / 2 for x in sorted(xs))
-        runs.append(replace(run, placement=Placement("x", ys, beam.height - depth, (-along / 2, along / 2))))
-    runs += _stirrup_runs(basis, beam.stirrups, (beam.width, beam.height, cover), footing.lx)
+        ys = tuple(x - beam.width / 2 + footing.web_axis for x in sorted(xs))  # desde el centroide (D-167)
+        runs.append(replace(run, placement=Placement("x", ys, beam.height - depth, (beam_span[0] + cover, beam_span[1] - cover))))
+    runs += _stirrup_runs(basis, beam.stirrups, (beam.width, beam.height, cover),
+                          (_stations(beam.stirrups, beam_span, cover), footing.web_axis, beam_span))
     half = covered_width(basis.profile, footing) / 2
-    outside = BarRow(**{**rows["x"].__dict__, "positions": tuple(y for y in rows["x"].positions if abs(y) > half + 1e-6)})
+    outside = BarRow(**{**rows["x"].__dict__,
+                        "positions": tuple(y for y in rows["x"].positions if abs(y - footing.web_axis) > half + 1e-6)})
     geometry = (h, cover)
 
     def flange_ratio(row: BarRow, spacing: float, bottom: bool) -> float | None:
@@ -495,19 +562,20 @@ def _t_runs(basis: Basis, footing: CombinedFooting, soil: Soil) -> list[BarRun]:
         moment = flanges[0 if bottom else 1] * _PER_METRE
         return splice_ratio(basis, (_PER_METRE, h, row.depth), per_metre, moment)
 
-    runs.append(_row_run(basis, outside, ("zarpa, malla inferior x", along, _hooks(basis, outside.diameter, footing.bottom.x.end)),
-                         (footing.bottom.x.spacing, True, geometry, None)))
-    runs.append(_row_run(basis, rows["y"], ("zarpa, malla inferior y (aletas)", across,
-                                            _hooks(basis, rows["y"].diameter, footing.bottom.y.end)),
-                         (footing.bottom.y.spacing, True, geometry, flange_ratio(rows["y"], footing.bottom.y.spacing, True))))
+    # En una planta trapezoidal o en T/L, cada barra de la zarpa de borde a borde (D-164, D-167).
+    runs += _plan_runs(basis, footing, outside, ("zarpa, malla inferior x", along, _hooks(basis, outside.diameter, footing.bottom.x.end)),
+                       (footing.bottom.x.spacing, True, geometry, None))
+    runs += _plan_runs(basis, footing, rows["y"], ("zarpa, malla inferior y (aletas)", across,
+                                                   _hooks(basis, rows["y"].diameter, footing.bottom.y.end)),
+                       (footing.bottom.y.spacing, True, geometry, flange_ratio(rows["y"], footing.bottom.y.spacing, True)))
     if footing.top is not None:
         for direction, row in top_rows(footing, bars).items():
             bar_set = getattr(footing.top, direction)
             length = along if direction == "x" else across
             ratio = flange_ratio(row, bar_set.spacing, False) if direction == "y" else None
-            runs.append(_row_run(basis, row, (f"zarpa, malla superior {direction}", length,
-                                              _hooks(basis, row.diameter, bar_set.end)),
-                                 (bar_set.spacing, False, geometry, ratio)))
+            hooks = _hooks(basis, row.diameter, bar_set.end)
+            runs += _plan_runs(basis, footing, row, (f"zarpa, malla superior {direction}", length, hooks),
+                               (bar_set.spacing, False, geometry, ratio))
     embed = footing.total_height - cover - rows["y"].diameter
     labels = column_labels(footing)
     runs += [_placed_dowels(_dowel_run(basis, column.dowels, embed, footing.pedestal_height, labels[column.id]), column,

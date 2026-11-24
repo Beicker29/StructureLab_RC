@@ -3785,6 +3785,52 @@
   - cuadro de pilotes;
   - planta de localización con el contorno recortado y los pilotes.
 
+### D-167: T invertida con zarpa trapezoidal o en planta T/L (pendiente de D-164)
+
+- **Fecha:** 2026-11-24
+- **Decisiones del usuario** (las recomendaciones):
+  - La zarpa con planta trapezoidal o en T/L y el alma de ancho constante a todo lo largo.
+  - `beam.axis`: la coordenada t del eje del alma en el sistema de la planta; sin ella, el centroide. Se valida que las
+    columnas quepan en el alma y el alma en la planta en todo su largo.
+  - Aletas: voladizos de las caras del alma a los bordes locales en cada x, en la x que gobierna. Ala efectiva: la regla
+    del perfil (ACI 6.3.2.2, NSR-10 C.8.12.4) sin pasar del ancho local, centrada en el alma, en cada sección.
+  - Alcance: verificación, despiece, dibujo y ejemplos; el diseño de las formas no rectangulares sigue pendiente.
+- **Código:**
+  - `CombinedFooting.web_axis` y `web_faces`.
+  - El peso del alma va en (centro del largo, eje del alma): da momento en la resultante (`combined_resultant`) y
+    torsión en la viga (`BeamCase.line_y`) si el alma no está en el centroide.
+  - `flange_width(..., at)` limita el ala con el ancho local. `_t_beam_member` arma la sección de cada x. `Flanges` mide
+    las aletas hasta los bordes locales y guarda su largo; el desarrollo de las barras y usa el de la x donde rige el
+    momento. El aplastamiento toma la columna respecto al centro del alma. El ala a tracción se mide desde el eje del alma.
+  - Despiece: las barras de la viga y los estribos centrados en el largo real y en el eje del alma; la malla de la zarpa
+    de borde a borde (D-164). Dibujo: las caras del alma, el corte en T con los bordes locales y el alzado por el eje.
+  - El desarrollo de la opción A (D-164) no compara el As requerido en la T: su sección es una T y su flexión ya se
+    revisa con ella.
+- **Error corregido (anterior, D-114):** con la capa inferior de la viga declarada solo con sus barras, el despiece y el
+  dibujo las ponían dentro del alma (separación de 26 mm en el ejemplo), aunque el cálculo las reparte en el ancho
+  cubierto. Ahora `_t_runs` usa `spread_bottom_layer`, como el cálculo. Los ejemplos anteriores declaran posiciones
+  explícitas y no cambian.
+- **Control:**
+  - Oráculo `derive_combined_plan.py`, caso "t-invertida-trapecio": trapecio con el lado −y recto y el alma en t = 0, fuera
+    del centroide. Compara el peso del alma en la resultante, el plano de presión, V, M y T de la viga (con la torsión
+    del alma), el momento de cada aleta en la cara del alma en varias x y el volcamiento.
+  - La misma T con la viga en la Y global da las mismas verificaciones.
+  - Las T rectangulares no cambian (la huella de sus ejemplos es la misma; la salida omite `axis` si no se declara).
+- **Ejemplo:** `zapata_t_invertida_trapecio.json` en `t_invertida/` y `pruebas/`, en los dos perfiles: zarpa de 9.0 m de
+  3.6 a 2.6 m, alma de 1.0 × 1.7 m con `beam.axis` = 0 y la capa inferior declarada solo con sus barras. Cumple y genera
+  la memoria, la cartilla, el `.dli`, el DXF (sin errores en ezdxf) y los SVG.
+- **Estribos y refuerzo superficial en la combinada trapezoidal o en planta T/L** (decisiones del usuario, dudas 1 a 3):
+  - Cada estribo cerrado mide el ancho local en su abscisa, con las ramas declaradas; la viga revisa el cortante con
+    ellos en el ancho local de cada sección (se quita el `BLOCKED` de D-164).
+  - Una marca por cada medida distinta, "porque son distintos y se deben pedir diferente; de lo contrario no se pueden
+    armar" (`_plan_stirrup_runs`: los estribos de la misma medida van juntos).
+  - La piel va por cada cara larga con su largo real, inclinada en el trapecio; las caras de los escalones no llevan
+    (`_plan_skin_runs`). `Placement.slope` dibuja la barra inclinada en su y en cada corte.
+  - Dibujo: en cada corte, solo el grupo de estribos más cercano, con su rótulo (antes, todos los anchos).
+  - Prueba: los estribos miden el ancho local en cada abscisa y hay varias medidas; la piel tiene el largo de cada cara
+    larga. Ejemplo `zapata_combinada_trapecio_estribos.json` en `combinada/` y `pruebas/`, en los dos perfiles (h = 1.0 m,
+    estribos #4 de 4 ramas c/250, piel #4 c/150): cumple y genera memoria, cartilla, `.dli`, DXF (sin errores) y SVG.
+
 ## Consultas abiertas
 
 ### C-017: presión del suelo bajo una combinada trapezoidal o en planta T (fase B de D-163)

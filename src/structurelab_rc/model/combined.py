@@ -52,6 +52,7 @@ class FoundationBeam(_Input):
     layers: tuple[BarLayer, ...] = Field(min_length=1)
     stirrups: Stirrups | None = None
     bottom_width: PositiveFloat | None = None
+    axis: float | None = None  # D-167: con plan, la coordenada t del eje del alma; sin ella, el centroide de la planta
 
     @model_validator(mode="after")
     def _check_layers(self) -> Self:
@@ -300,9 +301,6 @@ class CombinedFooting(RectangularBase, _Input):
             low, high = self.across(x0, x1) if first_x <= x0 and x1 <= last_x else (math.inf, -math.inf)
             if x0 < first_x or x1 > last_x or column.y - column.cy / 2 < low or column.y + column.cy / 2 > high:
                 raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' se sale de la base")
-        if self.plan is not None and self.beam is not None:
-            raise ValueError(f"la zapata combinada '{self.id}': la T invertida con planta trapezoidal o en T/L no está "
-                             "implementada (D-164)")
         ordered = sorted(self.columns, key=lambda column: column.x)
         if any(first.x + first.cx / 2 >= second.x - second.cx / 2 for first, second in zip(ordered, ordered[1:], strict=False)):
             # Se compara en ejes de la viga; el mensaje nombra el eje global en que la escribió el usuario (D-094).
@@ -336,12 +334,19 @@ class CombinedFooting(RectangularBase, _Input):
             raise ValueError(f"la viga de la zapata combinada '{self.id}' debe ser más alta que la zarpa y más angosta que la base")
         if beam.bottom_width is not None and beam.bottom_width > self.ly:
             raise ValueError(f"bottom_width de la zapata combinada '{self.id}' no puede superar el ancho de la base")
+        if beam.axis is not None and self.plan is None:
+            raise ValueError(f"beam.axis de la zapata combinada '{self.id}' solo se declara con plan: sin ella el alma va centrada")
+        low_face, high_face = self.web_faces
+        if self.plan is not None:  # el alma cabe en la planta en todo su largo (D-167)
+            low, high = self.across(*self.x_range)
+            if low_face < low - 1e-6 or high_face > high + 1e-6:
+                raise ValueError(f"el alma de la zapata combinada '{self.id}' se sale de la planta en algún tramo (D-167)")
         misplaced = [name for name, value in (("stirrups", self.stirrups), ("skin", self.skin)) if value]
         if misplaced:
             raise ValueError(f"la zapata combinada en T invertida '{self.id}' declara el refuerzo de la viga en beam (layers y "
                              f"stirrups), no en {', '.join(misplaced)} (D-106)")
         for column in self.columns:
-            if abs(column.y) + column.cy / 2 > beam.width / 2:
+            if column.y - column.cy / 2 < low_face - 1e-6 or column.y + column.cy / 2 > high_face + 1e-6:
                 raise ValueError(f"la columna '{column.id}' de la zapata combinada '{self.id}' se sale del ancho de la viga")
             if column.band is not None or column.band_top is not None:
                 raise ValueError(f"la zapata combinada en T invertida '{self.id}' no usa band ni band_top (columna '{column.id}')")
@@ -437,6 +442,22 @@ class CombinedFooting(RectangularBase, _Input):
                 values = _crossings(self.outline, min(max(side, first + _NUDGE), last - _NUDGE))
                 low, high = max(low, min(values)), min(high, max(values))
         return low, high
+
+    @cached_property
+    def web_axis(self) -> float:
+        """Ordenada del eje del alma de la T invertida en ejes de la viga, desde el centroide (0 sin plan o sin axis,
+        D-167): beam.axis está en el sistema de la planta y se lleva al centroide y, con la viga en la Y global, se refleja
+        como toda la planta (Y de la viga = −X global)."""
+        if self.plan is None or self.beam is None or self.beam.axis is None:
+            return 0.0
+        offset = self.beam.axis - self.plan.area_centroid()[2]
+        return offset if self.principal_direction == "x" else -offset
+
+    @property
+    def web_faces(self) -> tuple[float, float]:
+        """Caras −Y y +Y del alma en ejes de la viga (D-167)."""
+        assert self.beam is not None
+        return self.web_axis - self.beam.width / 2, self.web_axis + self.beam.width / 2
 
     @property
     def total_height(self) -> float:

@@ -42,12 +42,10 @@ Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica
 1. Medianera con viga de amarre (pausada; las preguntas abiertas se reformulan al empezar).
 2. Zapatas combinadas trapezoidal y en planta T o L (D-164): la verificación, la entrada desde ETABS, el despiece y el
    dibujo ya están; faltan el diseño y su ubicación en la planta de localización.
-3. Pendientes de D-164: T invertida trapezoidal; estribos y refuerzo superficial en la combinada trapezoidal o en planta
-   T o L.
-4. Zapata corrida bajo un muro (los criterios se revisan al empezar).
-5. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
-6. Losas de cimentación.
-7. Muros.
+3. Zapata corrida bajo un muro (los criterios se revisan al empezar).
+4. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
+5. Losas de cimentación.
+6. Muros.
 
 ### Diseño de zapatas
 

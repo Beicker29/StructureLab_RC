@@ -4,6 +4,7 @@ por los lados de la envolvente; y la planta declarada con la viga en la Y global
 
 import copy
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -13,9 +14,11 @@ from pydantic import ValidationError
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.footing.base import column_vertical
-from structurelab_rc.domain.footing.checks import PLAN_PENDING, combined_footing_checks
+from structurelab_rc.domain.footing.checks import combined_footing_checks
 from structurelab_rc.domain.footing.combined_beam import beam_case
 from structurelab_rc.domain.footing.combined_columns import strip_cantilever, strip_edges, strip_limits, strip_load, transverse_bottom
+from structurelab_rc.domain.footing.detailing import combined_runs
+from structurelab_rc.domain.footing.inverted_t import Flanges
 from structurelab_rc.domain.footing.loads import combined_factored_cases
 from structurelab_rc.domain.footing.mesh import mat_rows
 from structurelab_rc.domain.footing.service import combined_service_checks
@@ -60,7 +63,24 @@ def test_plan_geometry_pressure_and_beam_match_oracle(case: dict[str, Any]) -> N
         assert beam.torque(x) == pytest.approx(item["T"], rel=TOLERANCE, abs=1e-7 * scale), x
 
 
-@pytest.mark.parametrize("case", CASES, ids=_ids(CASES))
+STRIPPED = [case for case in CASES if case["strips"]]  # la T invertida no tiene franjas (D-093)
+T_CASES = [case for case in CASES if case["flanges"]]
+
+
+@pytest.mark.parametrize("case", T_CASES, ids=_ids(T_CASES))
+def test_plan_inverted_t_flanges_match_oracle(case: dict[str, Any]) -> None:
+    """D-167: T invertida en planta trapezoidal con el alma fuera del centroide; cada aleta, de la cara del alma al borde
+    local en x, frente al oráculo."""
+    footing = CombinedFooting.model_validate(case["footing"])
+    cases, _ = combined_factored_cases(footing, SOIL)
+    pressure, _ = next((pressure, loads) for pressure, loads in cases if pressure.case == "U1")
+    flanges = Flanges(footing, pressure, 500.0)
+    scale = max(abs(item["M"]) for item in case["flanges"])
+    for item in case["flanges"]:
+        assert flanges.moment(item["x"], item["side"]) == pytest.approx(item["M"], rel=TOLERANCE, abs=1e-7 * scale), item
+
+
+@pytest.mark.parametrize("case", STRIPPED, ids=_ids(STRIPPED))
 def test_plan_strips_match_oracle(case: dict[str, Any]) -> None:
     footing = CombinedFooting.model_validate(case["footing"])
     cases, _ = combined_factored_cases(footing, SOIL)
@@ -108,8 +128,9 @@ def _along_y(data: dict[str, Any]) -> dict[str, Any]:
             load["Vx_kN"], load["Vy_kN"] = load["Vy_kN"], load["Vx_kN"]
             load["Mx_kNm"], load["My_kNm"] = -load["My_kNm"], -load["Mx_kNm"]
     for name in ("bottom", "top"):
-        mat = turned[name]
-        turned[name] = {"first": "y" if mat["first"] == "x" else "x", "x": mat["y"], "y": mat["x"]}
+        mat = turned.get(name)
+        if mat is not None:
+            turned[name] = {"first": "y" if mat["first"] == "x" else "x", "x": mat.get("y"), "y": mat.get("x")}
     return turned
 
 
@@ -139,11 +160,28 @@ def test_plan_rejects_declared_sizes_and_columns_outside() -> None:
         CombinedFooting.model_validate(data)
 
 
-def test_plan_stirrups_are_blocked() -> None:
-    """D-164: estribos y refuerzo superficial no están implementados en planta no rectangular."""
-    data = {**copy.deepcopy(CASES[0]["footing"]),
-            "stirrups": {"designation": "#4", "legs": 4, "spacing": 200.0, "closed": True, "end": "hook135"}}
+def test_plan_stirrups_and_skin_follow_the_local_width() -> None:
+    """D-167 (decisiones del usuario): cada estribo mide el ancho local en su abscisa, y cada medida distinta es un grupo
+    aparte (una marca); la piel va por cada cara larga con su largo real, inclinada en el trapecio; las caras
+    transversales no llevan. La viga revisa el cortante con esos estribos en el ancho local, sin BLOCKED."""
+    data = {**copy.deepcopy(CASES[0]["footing"]), "h": 1000.0,
+            "stirrups": {"designation": "#4", "legs": 4, "spacing": 300.0, "closed": True, "end": "hook135"},
+            "skin": {"designation": "#4", "spacing": 250.0, "end": "straight"}}
     footing = CombinedFooting.model_validate(data)
     basis = Basis(PROFILES["aci-318-25"], MATERIALS, BARS, "special")
-    blocked = [check for check in combined_footing_checks(basis, footing, SOIL) if check.name == PLAN_PENDING]
-    assert [check.status for check in blocked] == [Status.BLOCKED]
+    checks = combined_footing_checks(basis, footing, SOIL)
+    assert all(check.status is not Status.BLOCKED for check in checks)
+    runs = combined_runs(basis, footing, SOIL)
+    outer = [run for run in runs if run.group == "estribos" and run.stirrup is not None and run.placement is not None]
+    for run in outer:
+        if run.stirrup[0] < max(other.stirrup[0] for other in outer if other.placement == run.placement):  # type: ignore[index]
+            continue  # los anidados
+        for x in run.placement.positions:  # type: ignore[union-attr]
+            low, high = footing.across(x)
+            assert run.stirrup[0] == pytest.approx(high - low - 2 * footing.cover, abs=0.2)  # type: ignore[index]
+    widths = {round(run.stirrup[0]) for run in outer}  # type: ignore[index]
+    assert len(widths) > 2  # el trapecio: varias medidas, cada una su grupo
+    skin = [run for run in runs if run.group.startswith("piel")]
+    long_faces = [(a, b) for a, b in zip(footing.outline, (*footing.outline[1:], footing.outline[0]), strict=True) if a[0] != b[0]]
+    lengths = sorted({round(math.hypot(b[0] - a[0], b[1] - a[1]) - 2 * footing.cover, 1) for a, b in long_faces})
+    assert sorted({round(run.length, 1) for run in skin}) == lengths

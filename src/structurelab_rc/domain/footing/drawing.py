@@ -210,16 +210,19 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
     # La planta trapezoidal o en T/L con su contorno real (D-164); el rectángulo, como siempre.
     concrete = [rectangle(FOOTING, (-lx / 2, -ly / 2), (lx / 2, ly / 2)) if footing.plan is None
                 else Polyline(FOOTING, footing.outline, closed=True)]
-    if beam is not None:
-        concrete += [Polyline(FOOTING, ((-lx / 2, side * beam.width / 2), (lx / 2, side * beam.width / 2))) for side in (-1, 1)]
+    if beam is not None:  # las caras del alma, de borde a borde (en una planta no rectangular, en su eje, D-167)
+        concrete += [Polyline(FOOTING, ((first, face), (last, face))) for face in footing.web_faces]
     columns = [(column.id, column_rectangle((column.x - column.cx / 2, column.y - column.cy / 2),
                                             (column.x + column.cx / 2, column.y + column.cy / 2))) for column in footing.columns]
-    if beam is None:
-        cross = rectangle(FOOTING, (-ly / 2, 0.0), (ly / 2, h))
-    else:
-        half = beam.width / 2
-        cross = Polyline(FOOTING, ((-ly / 2, 0.0), (ly / 2, 0.0), (ly / 2, h), (half, h), (half, top), (-half, top),
-                                   (-half, h), (-ly / 2, h)), closed=True)
+    def cross_at(low: float, high: float) -> Polyline:
+        """El corte transversal entre los bordes low y high: rectángulo o T con el alma en su eje (D-167)."""
+        if beam is None:
+            return rectangle(FOOTING, (low, 0.0), (high, h))
+        face_low, face_high = footing.web_faces
+        return Polyline(FOOTING, ((low, 0.0), (high, 0.0), (high, h), (face_high, h), (face_high, top), (face_low, top),
+                                  (face_low, h), (low, h)), closed=True)
+
+    cross = cross_at(-ly / 2, ly / 2)
     elevation = [rectangle(FOOTING, (first, 0.0), (last, top))]
     stubs = [shape for column in footing.columns for shape in _stub(drawing, column.x, column.cx, (top, pedestal))]
     faces = [face for column in footing.columns for face in (column.x - column.cx / 2, column.x + column.cx / 2)]
@@ -238,13 +241,13 @@ def combined_views(drawing: Drawing, footing: CombinedFooting, runs: list[BarRun
         geometry_view(drawing, ("geometria", f"Planta de geometria {footing.id}"), (plan_concrete[0], plan_concrete[1:]), shapes,
                       (footing.cover, note)),
         *_plans(drawing, (footing.id, ""), (plan_concrete, plan_columns), plan_marked, h / 2 if beam is None else top / 2),
-        section_view(drawing, ("alzado", "Alzado longitudinal A-A"), ("x", 0.0), marked, (elevation, stubs, faces, False)),
+        section_view(drawing, ("alzado", "Alzado longitudinal A-A"), ("x", footing.web_axis if beam is not None else 0.0), marked,
+                     (elevation, stubs, faces, False)),
     ]
     for column in footing.columns:  # solo en el SVG y la memoria (D-150)
         stub = _stub(drawing, column.y, column.cy, (top, pedestal))
-        if footing.plan is not None:  # el ancho local de la base en la columna (D-164)
-            low, high = footing.across(column.x)
-            cross = rectangle(FOOTING, (low, 0.0), (high, h))
+        if footing.plan is not None:  # el ancho local de la base en la columna (D-164, D-167)
+            cross = cross_at(*footing.across(column.x))
         section = section_view(drawing, (f"corte_{column.id}", f"Corte transversal por {column.id}"), ("y", column.x), marked,
                                ([cross], stub, [column.y - column.cy / 2, column.y + column.cy / 2], True))
         section.dxf = False

@@ -844,7 +844,9 @@ def x_development(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
             crossing = [y for y in row.positions if low < y < high
                         and (span := bar_extent(footing, y, x))[0] + footing.cover <= x <= span[1] - footing.cover]
             passing = developed(basis, footing, (row, end, spacing, label == "inferiores"), x, crossing)
-            needed = steel_required(basis, (width, footing.h, row.depth), moment, footing.min_steel_exception)
+            # En la T invertida la sección es una T: su flexión ya se revisa con ella (D-093, D-167); aquí, solo el anclaje.
+            needed = (None if footing.beam is not None
+                      else steel_required(basis, (width, footing.h, row.depth), moment, footing.min_steel_exception))
             provided = len(passing) * row.bar_area
             if needed is not None and provided < needed:
                 checks.append(Check(name, Status.FAIL, clause=basis.profile.development.clauses()["tension"], demand=needed,

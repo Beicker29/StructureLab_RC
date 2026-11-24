@@ -1,0 +1,455 @@
+{
+  "description": "Ejemplo de zapata combinada en T invertida trapezoidal (D-167): ZTT1 con zarpa de 9.0 m, de 3.6 m de ancho en el extremo -X a 2.6 m en el +X, alma de 1.0 x 1.7 m con su eje declarado en t = 0 (beam.axis), bajo dos columnas de 600 x 600 mm; la planta se declara desde el borde -X y la linea de referencia Y = 0. Aletas hasta los bordes locales; la capa inferior de la viga se reparte en el ala efectiva mas angosta del largo. Datos ilustrativos.",
+  "profile": "nsr-10",
+  "seismic": {
+    "level": "DES",
+    "justification": "Capacidad especial de disipación de energía (DES) declarada por el ingeniero para este ejemplo."
+  },
+  "concrete": {
+    "fc": 28.0,
+    "type": "normalweight",
+    "max_aggregate": 19.0,
+    "unit_weight_kNm3": 24.0
+  },
+  "reinforcement_steel": {
+    "fy": 420.0,
+    "fyt": 420.0,
+    "coating": "uncoated"
+  },
+  "soil": {
+    "allowable_pressure_kPa": 250.0,
+    "min_contact_fraction": 0.5,
+    "unit_weight_fill_kNm3": 18.0,
+    "friction_coefficient": 0.45,
+    "adhesion_kPa": 0.0,
+    "passive_coefficient": 3.0,
+    "cohesion_kPa": 0.0,
+    "passive_factor": 0.5,
+    "sliding_safety_factor": 1.5,
+    "sliding_safety_factor_seismic": 1.1,
+    "overturning_safety_factor": 2.0,
+    "overturning_safety_factor_seismic": 1.5,
+    "seismic_bearing_factor": 1.33
+  },
+  "combined_footings": [
+    {
+      "id": "ZTT1",
+      "quantity": 1,
+      "min_steel_exception": false,
+      "principal_direction": "x",
+      "plan": {
+        "shape": "trapezoid",
+        "length": 9000.0,
+        "start": {
+          "low": -1800.0,
+          "high": 1800.0
+        },
+        "end": {
+          "low": -1300.0,
+          "high": 1300.0
+        }
+      },
+      "h": 600.0,
+      "cover": 75.0,
+      "fill_height": 1500.0,
+      "pedestal_height": 0.0,
+      "surcharge_dead_kNm2": 2.0,
+      "surcharge_live_kNm2": 5.0,
+      "columns": [
+        {
+          "id": "C1",
+          "cx": 600.0,
+          "cy": 600.0,
+          "x": 1800.0,
+          "y": 0.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 8,
+            "end": "hook90"
+          },
+          "loads": [
+            {
+              "case": "D+L",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "P_kN": 900.0,
+              "Vx_kN": 6.0,
+              "Vy_kN": 4.0,
+              "Mx_kNm": -10.0,
+              "My_kNm": 15.0
+            },
+            {
+              "case": "D+0.7EX",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 0.0,
+              "P_kN": 700.0,
+              "Vx_kN": 40.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 90.0,
+              "seismic": true
+            },
+            {
+              "case": "1.2D+1.6L",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.6,
+              "P_kN": 1250.0,
+              "Vx_kN": 8.0,
+              "Vy_kN": 6.0,
+              "Mx_kNm": -14.0,
+              "My_kNm": 21.0
+            },
+            {
+              "case": "1.2D+L+EX",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.0,
+              "P_kN": 1080.0,
+              "Vx_kN": 60.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 130.0,
+              "seismic": true
+            },
+            {
+              "case": "0.9D+EX",
+              "kind": "factored",
+              "dead_factor": 0.9,
+              "live_factor": 0.0,
+              "P_kN": 560.0,
+              "Vx_kN": 55.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 125.0,
+              "seismic": true
+            }
+          ]
+        },
+        {
+          "id": "C2",
+          "cx": 600.0,
+          "cy": 600.0,
+          "x": 7200.0,
+          "y": 0.0,
+          "dowels": {
+            "designation": "#6",
+            "count": 8,
+            "end": "hook90"
+          },
+          "loads": [
+            {
+              "case": "D+L",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 1.0,
+              "P_kN": 1300.0,
+              "Vx_kN": -5.0,
+              "Vy_kN": 6.0,
+              "Mx_kNm": 12.0,
+              "My_kNm": -18.0
+            },
+            {
+              "case": "D+0.7EX",
+              "kind": "service",
+              "dead_factor": 1.0,
+              "live_factor": 0.0,
+              "P_kN": 1000.0,
+              "Vx_kN": 45.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 100.0,
+              "seismic": true
+            },
+            {
+              "case": "1.2D+1.6L",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.6,
+              "P_kN": 1820.0,
+              "Vx_kN": -7.0,
+              "Vy_kN": 8.0,
+              "Mx_kNm": 17.0,
+              "My_kNm": -25.0
+            },
+            {
+              "case": "1.2D+L+EX",
+              "kind": "factored",
+              "dead_factor": 1.2,
+              "live_factor": 1.0,
+              "P_kN": 1560.0,
+              "Vx_kN": 65.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 145.0,
+              "seismic": true
+            },
+            {
+              "case": "0.9D+EX",
+              "kind": "factored",
+              "dead_factor": 0.9,
+              "live_factor": 0.0,
+              "P_kN": 800.0,
+              "Vx_kN": 60.0,
+              "Vy_kN": 0.0,
+              "Mx_kNm": 0.0,
+              "My_kNm": 140.0,
+              "seismic": true
+            }
+          ]
+        }
+      ],
+      "bottom": {
+        "first": "y",
+        "x": {
+          "designation": "#8",
+          "spacing": 100.0,
+          "end": "straight"
+        },
+        "y": {
+          "designation": "#6",
+          "spacing": 150.0,
+          "end": "straight"
+        }
+      },
+      "beam": {
+        "width": 1000,
+        "height": 1700,
+        "layers": [
+          {
+            "depth": 105.3,
+            "role": "flexure",
+            "bars": [
+              {
+                "designation": "#9",
+                "x": 105.3
+              },
+              {
+                "designation": "#9",
+                "x": 203.0
+              },
+              {
+                "designation": "#9",
+                "x": 302.0
+              },
+              {
+                "designation": "#9",
+                "x": 401.0
+              },
+              {
+                "designation": "#9",
+                "x": 500.0
+              },
+              {
+                "designation": "#9",
+                "x": 599.0
+              },
+              {
+                "designation": "#9",
+                "x": 698.0
+              },
+              {
+                "designation": "#9",
+                "x": 797.0
+              },
+              {
+                "designation": "#9",
+                "x": 894.7
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 243.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 393.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 543.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 693.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 843.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 993.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 1143.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 1293.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 1443.2,
+            "role": "skin",
+            "bars": [
+              {
+                "designation": "#6",
+                "x": 100.45
+              },
+              {
+                "designation": "#6",
+                "x": 899.55
+              }
+            ],
+            "end": "straight"
+          },
+          {
+            "depth": 1593.2,
+            "role": "flexure",
+            "bars": [
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8",
+              "#8"
+            ],
+            "end": "straight"
+          }
+        ],
+        "stirrups": {
+          "designation": "#5",
+          "legs": 4,
+          "spacing": 150.0,
+          "closed": true,
+          "end": "hook135"
+        },
+        "axis": 0.0
+      }
+    }
+  ],
+  "detailing": {
+    "stock_length_mm": 6000.0
+  },
+  "drawing": {
+    "scale": 50.0
+  }
+}

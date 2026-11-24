@@ -178,7 +178,7 @@ los dos perfiles.
 | `skin` | | Refuerzo superficial en las caras largas (`designation`, `spacing` vertical, `end`), al recubrimiento de la cara, desde la capa inferior hacia arriba; se exige con h > 900 mm (D-083). |
 | `min_steel_exception` | sí/no | Obligatorio (D-123): si el As,min de flexión admite la excepción de 4/3 del As requerido por análisis (ACI 9.6.1.3, NSR-10 C.10.5.3) en la viga de la dirección principal, en las franjas y en la viga de la T; sin él, la entrada es inválida. No aplica a las mallas ni a las aletas, que usan el mínimo de losa. |
 | `deep_beam` | sí/no | La viga de la dirección principal es de gran altura (declarado por el usuario): se verifican los criterios de vigas altas como en las vigas (D-089). |
-| `beam` | mm | T invertida (D-093, D-106): `width` (bw) y `height` (H, altura total desde la base) de la viga centrada en Y sobre la zarpa de espesor `h`; `layers`, las capas de la viga como en las vigas (`depth` desde la cara superior de la viga, `role` flexure/skin/torsion, `bars` con x desde la cara −Y del alma, o solo la lista de barras, por ejemplo `["#6", "#6", "#6", "#6"]`, D-114, y `end`, obligatorio en cada capa, D-134); `stirrups`, sus estribos, con su gancho de cierre `end`; `bottom_width` (opcional), el ancho centrado en el alma que cubre la capa de flexión más profunda, que puede salir del alma sobre la zarpa (por defecto, el ala efectiva). Con solo la lista de barras, la capa inferior se reparte a igual separación en ese ancho (al recubrimiento si llega al borde de la base; por dentro del estribo si el ala no cuenta) y las demás capas entre las esquinas del estribo, como en las vigas. Las columnas deben caber en bw; `stirrups` y `skin` de la zapata no se usan (van en `beam`); `top` es la malla superior de la zarpa; `band` no aplica. La malla `bottom` es la de la zarpa: sus barras x van solo fuera del ancho cubierto y las y son las de las aletas. |
+| `beam` | mm | T invertida (D-093, D-106): `width` (bw) y `height` (H, altura total desde la base) de la viga centrada en Y sobre la zarpa de espesor `h`; `layers`, las capas de la viga como en las vigas (`depth` desde la cara superior de la viga, `role` flexure/skin/torsion, `bars` con x desde la cara −Y del alma, o solo la lista de barras, por ejemplo `["#6", "#6", "#6", "#6"]`, D-114, y `end`, obligatorio en cada capa, D-134); `stirrups`, sus estribos, con su gancho de cierre `end`; `bottom_width` (opcional), el ancho centrado en el alma que cubre la capa de flexión más profunda, que puede salir del alma sobre la zarpa (por defecto, el ala efectiva). Con solo la lista de barras, la capa inferior se reparte a igual separación en ese ancho (al recubrimiento si llega al borde de la base; por dentro del estribo si el ala no cuenta) y las demás capas entre las esquinas del estribo, como en las vigas. Las columnas deben caber en bw; `stirrups` y `skin` de la zapata no se usan (van en `beam`); `top` es la malla superior de la zarpa; `band` no aplica. La malla `bottom` es la de la zarpa: sus barras x van solo fuera del ancho cubierto y las y son las de las aletas. Con `plan` (D-167), `axis` (opcional) es la coordenada t del eje del alma en el sistema de la planta (sin ella, el centroide); el alma va de borde a borde y debe caber en la planta en todo su largo. |
 
 **Torsión de placa (D-118).** Mx, Vy y la posición en Y de las columnas producen la torsión T(x) de la combinada
 rectangular. Se diseña como de placa, por Wood-Armer, con mxy = T/B uniforme en el ancho:
@@ -255,8 +255,18 @@ Con `plan`, el cálculo:
   cada tramo y el ancho de cada lado transversal; el alzado con el largo real y cada corte con el ancho de la base en la
   columna.
 
-No implementado todavía: estribos y refuerzo superficial (si se declaran, `BLOCKED` y la viga se revisa sin ellos), la T
-invertida con esta planta (entrada inválida), el diseño y la planta de localización (la zapata no se ubica en ella).
+- **Estribos y refuerzo superficial (D-167):** cada estribo cerrado mide el ancho local en su abscisa, con las ramas
+  declaradas repartidas en él, y el cortante de cada sección se revisa con ellos en el ancho local. Cada medida
+  distinta es una marca aparte (se piden y se arman distinto). La piel va por cada cara larga con su largo real
+  (inclinada, paralela al lado oblicuo, en el trapecio); las caras cortas de los escalones no llevan. En cada corte se
+  dibuja el estribo de esa sección.
+
+No implementado todavía: el diseño y la planta de localización (la zapata no se ubica en ella).
+
+**T invertida con `plan` (D-167).** La zarpa sigue la planta y el alma, de ancho constante, va de borde a borde con su
+eje en `beam.axis`. Las aletas van de las caras del alma a los bordes locales en cada x. El ala efectiva es la del
+perfil sin pasar del ancho local, centrada en el alma, en cada sección; la capa inferior de la viga se reparte en la más
+angosta del largo. Si el alma no está en el centroide, su peso da momento en la resultante y torsión en la viga.
 
 ## Diseño por tipologías (`diseno_*.json`, comando `design-footings`)
 

@@ -90,25 +90,33 @@ _GOVERNING: dict[tuple[str, FactoredCase, float, str], tuple[float, float, float
 
 
 class Flanges:
-    """Cargas de las dos aletas de un caso: momento en la cara, cortante a d y momento a d, por unidad de longitud."""
+    """Cargas de las dos aletas de un caso: momento en la cara, cortante a d y momento a d, por unidad de longitud. En una
+    planta trapezoidal o en T/L (D-167), cada aleta va de la cara del alma (que puede no estar en y = 0) al borde local en
+    la x de la sección."""
 
     def __init__(self, footing: CombinedFooting, pressure: FactoredCase, depth: float) -> None:
         assert footing.beam is not None
-        self.pressure = pressure
+        self.footing, self.pressure = footing, pressure
         self.key = footing.geometry_key
-        self.face, self.edge, self.depth = footing.beam.width / 2, footing.ly / 2, depth
-        self.half = footing.lx / 2
+        self.faces, self.depth = footing.web_faces, depth
+        self.range = footing.x_range
+
+    def cantilever(self, x: float, side: float) -> float:
+        """Largo de la aleta side en x: de la cara del alma al borde local."""
+        low, high = self.footing.across(x)
+        return high - self.faces[1] if side > 0 else self.faces[0] - low
 
     def _beyond(self, x: float, side: float, at: float) -> tuple[float, float]:
         """(∫(q − w) dy, ∫(q − w)·(distancia a la sección) dy) entre la sección a `at` de la cara y el borde."""
-        start = self.face + at
-        if start >= self.edge:
+        low, high = self.footing.across(x)
+        section = self.faces[1] + at if side > 0 else self.faces[0] - at
+        if (side > 0 and section >= high) or (side < 0 and section <= low):
             return 0.0, 0.0
-        y0, y1 = (start, self.edge) if side > 0 else (-self.edge, -start)
+        y0, y1 = (section, high) if side > 0 else (low, section)
         force, first = self.pressure.pressure.along_y(x, y0, y1)
-        length = self.edge - start
+        length = y1 - y0
         w = self.pressure.net_load
-        lever = first - start * force if side > 0 else -start * force - first
+        lever = side * (first - section * force)  # respecto a la sección, positivo hacia el borde
         return force - w * length, lever - w * length**2 / 2
 
     def moment(self, x: float, side: float) -> float:
@@ -140,7 +148,7 @@ class Flanges:
     def _governing(self, kind: str) -> tuple[float, float, float]:
         options = []
         for side in (1.0, -1.0):
-            x, value = _maximize(self._function(kind, side), -self.half, self.half)
+            x, value = _maximize(self._function(kind, side), *self.range)
             options.append((x, value, side))
         return max(options, key=lambda item: item[1])
 
@@ -258,7 +266,7 @@ def _tension_flange(basis: Basis, footing: CombinedFooting, bottom: BarRow) -> l
     if spread >= width:
         return [Check(TENSION_FLANGE, Status.PASS, clause=clause, member=footing.id, values=values,
                       note="El ala efectiva cabe en el ancho de reparto")]
-    outer = [y for y in bottom.positions if abs(y) > spread / 2]
+    outer = [y for y in bottom.positions if abs(y - footing.web_axis) > spread / 2]  # desde el eje del alma (D-167)
     return [Check(TENSION_FLANGE, Status.PASS if outer else Status.FAIL, clause=clause, member=footing.id, values=values,
                   note=f"{len(outer)} barras inferiores de la direccion principal en las zonas exteriores del ala, fuera de "
                        f"{spread:.0f} mm")]
@@ -274,10 +282,15 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
     per_metre = _per_metre(row, footing.bottom.y.spacing)
     checks: list[Check] = []
     largest = negative = 0.0
+    spans = {"moment": math.inf, "negative": math.inf}  # largo de la aleta donde rige cada momento (D-167)
     for pressure, _ in cases:
         flanges = Flanges(footing, pressure, row.depth)
         checks += _flexure(basis, footing, (row, top), flanges)
         checks.append(_shear(basis, footing, row, per_metre, flanges))
+        for kind in spans:
+            x, value, side = flanges.governing(kind)
+            if value > (largest if kind == "moment" else negative):
+                spans[kind] = flanges.cantilever(x, side)
         largest = max(largest, flanges.governing("moment")[1])
         negative = max(negative, flanges.governing("negative")[1])
     strength = rectangular_strength(profile, basis.materials, RectangularSection(STRIP, footing.h), (SteelLayer(row.depth, per_metre),))
@@ -285,7 +298,9 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
         checks.append(replace(net_tensile_strain_check(STRAIN, profile.footing.clauses()["net_tensile_strain"], profile,
                                                        basis.materials, strength.state.extreme_strain), member=footing.id))
     checks += outside_checks(basis, footing, row, (MINIMUM, SPACING))
-    cantilever = (footing.ly - footing.beam.width) / 2
+    # De la cara del alma al borde donde rige el momento: (ly − bw)/2 en la rectangular (D-167).
+    whole = (footing.ly - footing.beam.width) / 2
+    cantilever = spans["moment"] if footing.plan is not None and math.isfinite(spans["moment"]) else whole
     excess = steel_excess(basis, (STRIP, footing.h, row.depth), per_metre, largest * STRIP) if largest > 0 else 1.0
     checks.append(bar_development_check(basis, footing, row, (footing.bottom.y.end, footing.bottom.y.spacing, "bottom", excess,
                                                               cantilever - footing.cover),
@@ -295,8 +310,9 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
         # Las barras superiores de la aleta, a tracción con el momento negativo, desde la cara de la viga (D-114).
         top_metre = _per_metre(top, footing.top.y.spacing)
         excess = steel_excess(basis, (STRIP, footing.h, top.depth), top_metre, negative * STRIP)
+        upper = spans["negative"] if footing.plan is not None and math.isfinite(spans["negative"]) else whole
         checks.append(bar_development_check(basis, footing, top, (footing.top.y.end, footing.top.y.spacing, "top", excess,
-                                                                  cantilever - footing.cover),
+                                                                  upper - footing.cover),
                                             (DEVELOPMENT_TOP, "Desde la cara de la viga hasta el borde de la zarpa")))
     checks += _tension_flange(basis, footing, bottom["x"])
     checks += x_development(basis, footing, soil, t_beam_rows(profile, footing, basis.bars), cases)
@@ -307,8 +323,10 @@ def inverted_t_checks(basis: Basis, footing: CombinedFooting, soil: Soil, cases:
     checks.append(Check(DEPTH, Status.PASS if measured >= profile.footing.min_depth() else Status.FAIL, clause=clauses["min_depth"],
                         demand=profile.footing.min_depth(), capacity=measured, unit="mm", member=footing.id))
     surface = (footing.lx, footing.beam.width, footing.total_height)
+    middle = sum(footing.x_range) / 2  # el alma va de borde a borde; su centro y su eje, el origen de surface (D-167)
     for index, column in enumerate(footing.columns):
-        support = Support(column.cx, column.cy, column.x, column.y, column.dowels, f"Columna {column.id}", surface)
+        support = Support(column.cx, column.cy, column.x - middle, column.y - footing.web_axis, column.dowels, f"Columna {column.id}",
+                          surface)
         dowels, area = dowel_checks(basis, footing, support, (first, second))
         loads = [(pressure.case, loads[index].p) for pressure, loads in cases]
         checks += [*dowels, *bearing_checks(basis, footing, support, (loads, area))]

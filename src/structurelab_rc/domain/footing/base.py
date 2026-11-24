@@ -85,11 +85,16 @@ def combined_resultant(footing: CombinedFooting, soil: Soil, loads: tuple[Footin
     case = loads[0]
     height = footing.total_height + footing.pedestal_height
     slab = soil.unit_weight_concrete * footing.area * footing.h
-    # El alma de la T invertida va centrada a todo lo largo: suma a N sin momento (D-093).
+    # El alma de la T invertida va a todo lo largo, en (centro del largo, eje del alma): en la rectangular, el centroide
+    # (D-093); en una planta trapezoidal o en T/L puede no serlo y su peso da momento (D-167).
     stem = stem_line_load(footing, soil) * footing.lx
     n = (case.dead_factor * (slab + stem + _dead_per_area(footing, soil) * footing.area)
          + case.live_factor * footing.surcharge_live * footing.area)
     mx = my = 0.0
+    if stem and footing.plan is not None:
+        middle = sum(footing.x_range) / 2
+        my += case.dead_factor * stem * middle
+        mx -= case.dead_factor * stem * footing.web_axis
     weight = n
     for column, load in zip(footing.columns, loads, strict=True):
         vertical = column_vertical(footing, soil, column, load)

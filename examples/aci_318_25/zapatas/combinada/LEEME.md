@@ -6,6 +6,7 @@ Zapatas combinadas de dos o más columnas: rectangulares, con verificación (D-0
 | --- | --- |
 | `zapata_combinada.json` | Ejemplo de zapata combinada: ZC1 rectangular de 7.0 × 2.6 m bajo dos columnas (C1 de 500 × 500 mm cerca del borde −X y C2 de 550 × 550 mm desplazada 150 mm en Y), con cargas de servicio y mayoradas, sismo en X, refuerzo transversal (band) bajo cada columna y barras superiores transversales #5 c/300 (top.y, D-097, D-099). La torsión de la viga larga queda bajo φTth (D-088). Datos ilustrativos (D-080 a D-083). |
 | `zapata_combinada_trapecio.json` | Zapata combinada trapezoidal (D-164): ZCTR1 de 7.0 m, de 2.6 m de ancho en −X a 1.6 m en +X, con el lado −Y recto (lindero), bajo dos columnas; la planta se declara desde el borde −X y la línea de referencia Y = 0. Presión de Bellos sobre la planta, desarrollo de las barras x con las que alcanzan a desarrollarse y barras de longitud variable con una marca por cada longitud. Datos ilustrativos. |
+| `zapata_combinada_trapecio_estribos.json` | La planta de `zapata_combinada_trapecio.json` con h = 1.0 m, estribos y refuerzo superficial (D-167): cada estribo mide el ancho local y cada medida es una marca; la piel va por cada cara larga, inclinada en el lado oblicuo. Datos ilustrativos. |
 | `zapata_combinada_planta_l.json` | Zapata combinada en planta L (D-164): ZCL1 de dos tramos de 3.5 m, de 2.6 m y 1.8 m de ancho, alineados por el borde −Y, bajo dos columnas. Datos ilustrativos. |
 | `zapata_combinada_planta_t.json` | Zapata combinada en planta T con la viga en la Y global (D-094, D-164): ZCT2 de tres tramos a lo largo de Y (2.6, 1.6 y 2.2 m de ancho), centrados en X = 0; la barra que cruza el tramo angosto queda en dos. Datos ilustrativos. |
 | `zapata_combinada_etabs.json` | Zapatas combinadas desde los mismos Excel (D-084): ZC-A toma de ETABS las cargas de servicio y las mayoradas de sus dos nudos y ZC-B solo las de servicio, con las mayoradas escritas en la plantilla; las dos con barras superiores transversales (top.y, D-097, D-099). **Datos supuestos.** |
@@ -25,6 +26,7 @@ Cada ejemplo deja en `results/aci_318_25/zapatas/combinada/<ejemplo>/` el `resul
 ```console
 structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada.json
 structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_trapecio.json
+structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_trapecio_estribos.json
 structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_planta_l.json
 structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_planta_t.json
 structurelab-rc run examples/aci_318_25/zapatas/combinada/zapata_combinada_etabs.json
