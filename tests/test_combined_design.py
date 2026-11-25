@@ -291,7 +291,7 @@ def test_inverted_t_input_is_validated() -> None:
         with pytest.raises(ValidationError, match=message):
             CombinedDesignProject.model_validate({**data, "combined_design": {**block, **change}})
     rectangular = {**block, "shapes": ["rectangular"]}
-    with pytest.raises(ValidationError, match="solo se declaran con inverted_t en shapes"):
+    with pytest.raises(ValidationError, match="solo se declaran con una forma con alma en shapes"):
         CombinedDesignProject.model_validate({**data, "combined_design": rectangular})
     with pytest.raises(ValidationError, match="se reemplazó por shapes"):  # el formato anterior (D-169)
         CombinedDesignProject.model_validate({**data, "combined_design": {**{k: v for k, v in block.items() if k != "shapes"},
@@ -536,3 +536,45 @@ def test_several_shapes_keep_the_cheapest(monkeypatch: pytest.MonkeyPatch) -> No
 class _Solved:
     def __init__(self, cost: float, shape: str) -> None:
         self.cost, self.shape = cost, shape
+
+
+def test_web_shapes_need_the_web_limits() -> None:
+    """D-170: inverted_t_trapezoid e inverted_t_stepped piden los límites del alma (web_*, beam_h_*), como inverted_t; sin
+    una forma con alma no se declaran."""
+    data = json.loads(frozen("nsr_10", "zapatas", "diseno_t_invertida_formas.json").read_text(encoding="utf-8"))
+    for shape in ("inverted_t_trapezoid", "inverted_t_stepped"):
+        no_web = json.loads(json.dumps(data))
+        no_web["combined_design"]["shapes"] = [shape]
+        del no_web["combined_design"]["web_step"]
+        with pytest.raises(ValidationError, match="web_step"):
+            CombinedDesignProject.model_validate(no_web)
+    plain = json.loads(json.dumps(data))
+    plain["combined_design"]["shapes"] = ["trapezoid"]
+    with pytest.raises(ValidationError, match="forma con alma"):
+        CombinedDesignProject.model_validate(plain)
+
+
+@pytest.mark.parametrize("shape", ["inverted_t_stepped", "inverted_t_trapezoid"])
+def test_non_rectangular_t_puts_the_web_on_the_column_line(shape: str) -> None:
+    """D-170: la T invertida trapezoidal o en planta T/L sale con su planta y su alma; el eje del alma (beam.axis, en el
+    sistema de la planta) es la línea de las columnas, que quedan dentro del alma; la zapata diseñada aprueba la
+    verificación (D-167)."""
+    data = json.loads(frozen("nsr_10", "zapatas", "diseno_t_invertida_formas.json").read_text(encoding="utf-8"))
+    data["combined_design"]["shapes"] = [shape]
+    ctx = _context(data)
+    option = design.design_for_fc(ctx, 21.0)
+    assert option.solution is not None, option.failure
+    solution = option.solution
+    g = solution.geometry
+    assert g.shape == shape and g.plan is not None and g.beam is not None
+    assert g.plan["shape"] == shape.removeprefix("inverted_t_")
+    columns = ctx.project.columns
+    line = sum(column.y for column in columns) / len(columns)  # la dirección principal es x: la transversal, y
+    beam = solution.data["beam"]
+    assert beam["axis"] == pytest.approx(line - (g.cross or 0.0), abs=1e-3)
+    web = g.beam[0]
+    for column in columns:  # cada columna dentro del alma
+        assert abs(column.y - line) + column.cy / 2 <= web / 2 + 1e-6
+    footing = CombinedFooting.model_validate(solution.data)
+    checks = combined_footing_checks(ctx.basis(21.0), footing, ctx.project.soil)
+    assert all(check.status is Status.PASS for check in checks)

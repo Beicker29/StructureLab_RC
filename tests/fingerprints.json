@@ -149,6 +149,11 @@
     "resultado.json": "7206f1d5157a3f3562cf049bb66ff1d96305258c227fbb118cb88eb1fb180670",
     "memoria.txt": "087cee1fb0aa20ef3ae48091cb736219b01db6f2ae4b7bfc3d6c976b8355e307"
   },
+  "examples/aci_318_25/zapatas/t_invertida/pruebas/diseno_t_invertida_formas.json": {
+    "proyecto.json": "4dccba6540e7264ce04df512f3cff3ec623f7c301decdd474255f83552e3eb3b",
+    "resultado.json": "72c1458db3ca32c0b0ca00c035e3b275e230328a21df5382aaafb1e61f550763",
+    "memoria.txt": "dc1cc1b68b6abbafd0b35c6069706f84e592ba306de356ccc57ec5205de22829"
+  },
   "examples/aci_318_25/zapatas/t_invertida/pruebas/zapata_t_invertida_etabs.json": {
     "resultado.json": "95a4b696e830e1b8853b79aeac8abaf27531b70571715742033cdc78ce03fdfe",
     "memoria.txt": "05e18e01286f253db0ae4e7b3e7a9973ec60fa2bc94ad3ba5128928cdc4b53c0",
@@ -318,6 +323,11 @@
   "examples/nsr_10/zapatas/t_invertida/pruebas/diseno_t_invertida_etabs.json": {
     "resultado.json": "3bf46a4714e716199f4d0b64f77293300ef9ba6ae55caac05eafeef0aac09541",
     "memoria.txt": "b4cc38bbf8354fc41177052d81c5a0c9c6ddce5688723e4e626324de02f0886d"
+  },
+  "examples/nsr_10/zapatas/t_invertida/pruebas/diseno_t_invertida_formas.json": {
+    "proyecto.json": "e607577610e9a5ca60fd6fa4dc145024ea6ae725dfcd193ddcb2820670218d18",
+    "resultado.json": "4ac1ba12a3f9764bc4b7a2bd218d186f2ff915be59dcd4586f7333c663da2009",
+    "memoria.txt": "83b3b11461d5ed018a5409bbb0d89c2a029e9f8622ea40ffbfbeb8e1930f231d"
   },
   "examples/nsr_10/zapatas/t_invertida/pruebas/zapata_t_invertida_etabs.json": {
     "resultado.json": "b377231bca1c2052bd182a92d23a8a595dab30402ad4dd54519c5262e3eca39a",

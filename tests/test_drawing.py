@@ -511,6 +511,28 @@ def test_location_plan_draws_the_piles_of_each_pile_cap(tmp_path: Path) -> None:
     assert sum(1 for entity in entities if entity["layer"] == PILES and entity.get("dashed")) == len(cap["piles"])
 
 
+@pytest.mark.parametrize(("name", "word"), [("zapata_combinada_trapecio.json", "trapecio"),
+                                            ("zapata_combinada_planta_l.json", "T/L"), ("zapata_combinada_planta_i.json", "I")])
+def test_location_plan_places_non_rectangular_combined_footings(name: str, word: str, tmp_path: Path) -> None:
+    """D-170: la combinada trapezoidal o en planta T, L o I entra en la planta de localización con su contorno real en ejes
+    globales (los mismos vértices de su planta), y el cuadro de tipologías dice la forma, el largo y los anchos."""
+    data = json.loads(frozen("nsr_10", "zapatas", name).read_text(encoding="utf-8"))
+    footing = data["combined_footings"][0]
+    for index, column in enumerate(footing["columns"]):
+        column["location"] = {"x": 20000.0 + 5000.0 * index, "y": 8000.0, "story": "Base", "joint": str(index + 1)}
+    path = tmp_path / "ubicada.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    combined = load_project(path).combined_footings[0]
+    output = tmp_path / "salida"
+    report_file(path, output)
+    model = json.loads((output / "salida_drawing.json").read_text(encoding="utf-8"))
+    views = model["elements"]["localizacion"]
+    outlines = [e for view in views for e in view["entities"] if e["type"] == "polyline" and e["layer"] == FOOTING]
+    assert len(outlines) == 1 and len(outlines[0]["points"]) == len(combined.outline)
+    table = next(view for view in views if view["name"] == "cuadro_tipologias")
+    assert any(text.startswith(f"{word} ") for text in _texts(table))
+
+
 def test_template_layers_match_the_drawing_model() -> None:
     """D-150: la plantilla trae cada capa del modelo de dibujo con su color ACI (drawing/model.py es la fuente)."""
     ezdxf = pytest.importorskip("ezdxf")

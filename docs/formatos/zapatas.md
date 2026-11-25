@@ -261,7 +261,8 @@ Con `plan`, el cálculo:
   (inclinada, paralela al lado oblicuo, en el trapecio); las caras cortas de los escalones no llevan. En cada corte se
   dibuja el estribo de esa sección.
 
-No implementado todavía: el diseño y la planta de localización (la zapata no se ubica en ella).
+El diseño (D-169, D-170) y la planta de localización (D-170) están más abajo, en el diseño de la combinada y en el
+dibujo.
 
 **T invertida con `plan` (D-167).** La zarpa sigue la planta y el alma, de ancho constante, va de borde a borde con su
 eje en `beam.axis`. Las aletas van de las caras del alma a los bordes locales en cada x. El ala efectiva es la del
@@ -412,9 +413,9 @@ mayorados.
 | `combined_design.dowel_bars` | - | Barras permitidas para los pasadores. |
 | `combined_design.min_steel_exception` | sí/no | Obligatorio (D-123): lo mismo para la zapata que se diseña; el diseño parte del As,min con o sin la excepción y lo escribe en `proyecto.json`. |
 | `combined_design.stirrup_bars` | - | Opcional (D-110): barras permitidas para estribos cerrados de la viga larga, por ejemplo `["#3", "#4"]`. Con ellas, el cortante (y en la T, la torsión del alma, con Aℓ en la piel) pueden tomarlos estribos en lugar de un espesor mayor; gana lo más barato. Sin ellas no se proponen estribos. En la combinada rectangular la torsión es de placa (D-118): la toman las barras x e y. |
-| `combined_design.shapes` | lista | Las formas permitidas (D-169), por defecto `["rectangular"]`: `rectangular`, `inverted_t` (D-113: con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa), `trapezoid` y `stepped` (planta en T o L, o en I, D-164). Con varias, el diseño busca cada una y se queda con la de menor costo; sin solución, da el motivo de cada forma. Reemplaza al campo `shape` anterior, que ahora se rechaza con un mensaje. En el diseño por tipologías y en la curva, cada par puede cambiarlo en su `design`. |
-| `combined_design.web_margin`, `combined_design.web_step`, `combined_design.web_max` | mm | Solo con `inverted_t`: el alma parte de la columna más ancha (respecto a la resultante transversal) más `web_margin` a cada lado y crece de a `web_step`. El alma crece hasta `web_max`, obligatorio con la T (D-136). |
-| `combined_design.beam_h_min`, `combined_design.beam_h_step`, `combined_design.beam_h_max` | mm | Solo con `inverted_t`: alto total de la viga; `beam_h_min` debe superar `h_min`. |
+| `combined_design.shapes` | lista | Las formas permitidas (D-169), por defecto `["rectangular"]`: `rectangular`, `inverted_t` (D-113: con la T, `h_min`, `h_step` y `h_max` son los del espesor de la zarpa), `trapezoid` y `stepped` (planta en T o L, o en I, D-164), e `inverted_t_trapezoid` e `inverted_t_stepped` (la T invertida con esas plantas, D-170). Con varias, el diseño busca cada una y se queda con la de menor costo; sin solución, da el motivo de cada forma. Reemplaza al campo `shape` anterior, que ahora se rechaza con un mensaje. En el diseño por tipologías y en la curva, cada par puede cambiarlo en su `design`. |
+| `combined_design.web_margin`, `combined_design.web_step`, `combined_design.web_max` | mm | Solo con una forma con alma (`inverted_t`, `inverted_t_trapezoid`, `inverted_t_stepped`): el alma parte de la columna más ancha más `web_margin` a cada lado y crece de a `web_step` (respecto a la resultante transversal en la T rectangular y a la línea de las columnas en la no rectangular, D-170). El alma crece hasta `web_max`, obligatorio con la T (D-136). |
+| `combined_design.beam_h_min`, `combined_design.beam_h_step`, `combined_design.beam_h_max` | mm | Solo con una forma con alma: alto total de la viga; `beam_h_min` debe superar `h_min`. |
 | `combined_design.placement_case` | texto | Opcional (D-108): el caso de servicio sin sismo cuya resultante ubica la base, por ejemplo `"D+L"`. Debe existir en todas las columnas, ser de servicio y no tener sismo. Sin él, se usa el de servicio sin sismo de mayor carga total. |
 
 Búsqueda (cada solución la aprueba `combined_footing_checks`; el diseño no tiene fórmulas propias):
@@ -459,7 +460,13 @@ Búsqueda (cada solución la aprueba `combined_footing_checks`; el diseño no ti
    prueba la T o L con el límite al 25, 50 y 75 % de la luz libre entre las columnas extremas y la I con los límites al
    20 y 35 % desde cada una (al paso de la planta), y se queda con la de menor costo. El refuerzo sigue el punto 4 sobre
    la planta (D-164). El proyecto diseñado declara la planta en `plan`, con t = 0 en la resultante transversal.
-7. **f'c:** se repite para cada f'c de la lista y gana el de menor costo. Si nada cumple, termina con FAIL y el motivo de
+7. **T invertida trapezoidal y escalonada** (`inverted_t_trapezoid`, `inverted_t_stepped`, D-170): la búsqueda del
+   punto 5 (alto de la viga, zarpa y alma) con la planta del punto 6 en cada zarpa y alma. El alma va sobre la línea de
+   las columnas (`beam.axis` en el proyecto diseñado), con el ancho mínimo que las cubre más `web_margin` a cada lado;
+   ningún ancho de la planta baja del alma más el recubrimiento a cada lado, y la planta que no contiene el alma en todo
+   su largo se descarta (D-167). La verificación es la de la T no rectangular (D-167: peso del alma excéntrico, aletas
+   hasta los bordes locales, ala efectiva con el ancho local).
+8. **f'c:** se repite para cada f'c de la lista y gana el de menor costo. Si nada cumple, termina con FAIL y el motivo de
    cada f'c, sin ampliar los límites.
 
 Salida: `proyecto.json` (un proyecto de verificación con la zapata `ZC1` en ejes globales, con las posiciones de las
@@ -678,17 +685,25 @@ agrega el elemento `localizacion`, que va en el SVG, el DXF y el modelo de dibuj
 - **Una planta por nivel** (`localizacion_<nivel>.svg`), en ejes globales.
   - Cada zapata aislada se dibuja a escala, centrada en su nudo menos el desplazamiento de su columna, con la
     columna, el tipo (`typology`) y el nudo.
-  - La combinada se ubica por sus columnas: el centro de la base es el promedio de lo que da cada una. Si
-    difieren en más de 10 mm (la distancia de ETABS no cuadra con la declarada), el plano lo avisa.
-- **El cuadro de tipologías** (`localizacion_cuadro_tipologias.svg`): tipo, lx × ly × h, mallas inferior y superior en
-  ejes globales, y cantidad.
+  - La combinada se ubica por sus columnas, dos o más: el centroide de la base es el promedio de lo que da cada una. Si
+    difieren en más de 10 mm (la mayor distancia entre ellas; la distancia de ETABS no cuadra con la declarada), el
+    plano lo avisa. Cada zapata va con su contorno real: el rectángulo, el recortado del cabezal o la planta
+    trapezoidal, en T, L o I de la combinada y de la T invertida (D-166, D-170).
+  - La separación mínima entre vecinas (`min_clear_spacing`, D-156) se mide entre los contornos reales (D-170): una
+    zapata en la muesca de una L se mide hasta el borde de la muesca, no hasta la caja que contiene la L.
+- **El cuadro de tipologías** (`localizacion_cuadro_tipologias.svg`): tipo, dimensiones, mallas inferior y superior en
+  ejes globales, y cantidad. Las dimensiones son lx × ly × h; en la combinada trapezoidal o escalonada, la forma, el
+  largo, el ancho de cada extremo o tramo en orden y h (`trapecio 6.00 x 1.80-3.00 x 0.80`, `T/L 6.00 x 2.40-1.20 x
+  0.80`, `I 7.00 x 2.60-1.20-2.60 x 0.80`); en la T invertida, además, `; viga b x h` (h, el de la zarpa).
 
 Capas de la plantilla y una por diámetro de barra (D-150; `drawing/model.py` es la fuente de los colores y una prueba la
 compara con la plantilla):
 
 | Capa | Color (ACI) | Grosor (mm) | Contenido |
 | --- | --- | --- | --- |
-| `0` | 7 | 0.35 | Contorno de la zapata, el alma, los pedestales y las columnas; arranque de las columnas en los cortes. |
+| `0` | 7 | 0.35 | Los pedestales y las columnas; arranque de las columnas en los cortes. |
+| `ZAPATA` | 7 | 0.35 | Contorno del concreto de las zapatas aisladas, combinadas y T invertidas, y el alma (D-166). |
+| `CABEZAL` | 7 | 0.35 | Contorno del concreto de los cabezales (D-166). |
 | `ACH ESTRUCTURA` | 252 | 0.18 | Relleno sólido de las columnas en planta. |
 | `Borde_<barra>` | uno por diámetro | 0.35 | Todas las barras de ese diámetro (`Borde_#5`): en planta, paralelas al corte, cortadas, estribos y pasadores. Color por el número de la barra: #4 (32), #5 (170), #6 (14), #7 (190) y #8 (220), los de la plantilla; #3 (4), #9 (130), #10 (150), #11 (50), #14 (6), #18 (3); otra barra, gris (251). |
 | `DIM` | 1 | 0.18 | Cotas y rótulos de los cortes con sus líneas de llamada. |

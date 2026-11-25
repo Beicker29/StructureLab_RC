@@ -213,7 +213,11 @@ def _check_drawing(detailing: DetailingSettings | None, drawing: DrawingSettings
         raise ValueError("drawing requiere detailing: el dibujo rotula las marcas de la cartilla (D-126)")
 
 
-CombinedShape = Literal["rectangular", "inverted_t", "trapezoid", "stepped"]
+CombinedShape = Literal["rectangular", "inverted_t", "trapezoid", "stepped", "inverted_t_trapezoid", "inverted_t_stepped"]
+WEB_SHAPES = ("inverted_t", "inverted_t_trapezoid", "inverted_t_stepped")  # las formas con alma (D-113, D-170)
+# La planta de cada forma no rectangular (D-169, D-170): trapezoidal o escalonada (T, L o I), con o sin alma.
+PLAN_OF: dict[str, str] = {"trapezoid": "trapezoid", "stepped": "stepped", "inverted_t_trapezoid": "trapezoid",
+                           "inverted_t_stepped": "stepped"}
 
 
 class CombinedDesign(DesignLimits):
@@ -226,7 +230,8 @@ class CombinedDesign(DesignLimits):
     prueba cada una y elige la de menor costo. inverted_t diseña una T invertida (D-113):
     h_min, h_step y h_max son los del espesor de la zarpa; beam_h_* los del alto total de la viga, y el alma parte de la
     columna más ancha más web_margin a cada lado y crece de a web_step hasta web_max (D-136). trapezoid y stepped son las
-    plantas trapezoidal y escalonada (T, L o I, D-164, D-169)."""
+    plantas trapezoidal y escalonada (T, L o I, D-164, D-169); inverted_t_trapezoid e inverted_t_stepped, la T invertida
+    con esas plantas y el alma sobre la línea de las columnas (D-170), con los límites del alma de inverted_t."""
 
     min_steel_exception: bool  # D-123: si el diseño y la verificación admiten la excepción de 4/3 del As,min
     placement_case: str | None = Field(None, min_length=1)
@@ -274,17 +279,18 @@ class CombinedDesign(DesignLimits):
             raise ValueError("combined_design.shapes repite una forma (D-169)")
         t_fields = ("web_margin", "web_step", "web_max", "beam_h_min", "beam_h_step", "beam_h_max")
         declared = [name for name in t_fields if getattr(self, name) is not None]
-        if "inverted_t" in self.shapes:
+        if any(shape in WEB_SHAPES for shape in self.shapes):
             missing = [name for name in t_fields if name not in declared]
             if missing:
-                raise ValueError(f"la T invertida necesita {', '.join(missing)} en combined_design (D-113)")
+                raise ValueError(f"la T invertida necesita {', '.join(missing)} en combined_design (D-113, D-170)")
             assert self.beam_h_min is not None and self.beam_h_max is not None
             if self.beam_h_max < self.beam_h_min:
                 raise ValueError("beam_h_max debe ser al menos beam_h_min")
             if self.beam_h_min <= self.h_min:
                 raise ValueError("beam_h_min debe superar h_min (el espesor de la zarpa)")
         elif declared:
-            raise ValueError(f"{', '.join(declared)} solo se declaran con inverted_t en shapes (D-113, D-169)")
+            raise ValueError(f"{', '.join(declared)} solo se declaran con una forma con alma en shapes (inverted_t, "
+                             f"inverted_t_trapezoid o inverted_t_stepped; D-113, D-169, D-170)")
         return self
 
 

@@ -6,6 +6,7 @@ from collections.abc import Iterator
 Point = tuple[float, float]
 
 _TOLERANCE = 1e-12
+_NEAR = 1e-6  # mm: un punto a menos de esto del borde está sobre él
 _MIN_VERTICES = 3
 
 
@@ -108,6 +109,51 @@ def contains(point: Point, polygon: tuple[Point, ...]) -> bool:
         if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1):
             inside = not inside
     return inside
+
+
+def _point_segment(point: Point, a: Point, b: Point) -> float:
+    """Distancia de un punto a un segmento."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = dx * dx + dy * dy
+    t = 0.0 if length == 0 else max(0.0, min(1.0, ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / length))
+    return math.hypot(point[0] - a[0] - t * dx, point[1] - a[1] - t * dy)
+
+
+def _crossing(p: Point, q: Point, a: Point, b: Point) -> bool:
+    """Si los segmentos pq y ab se cruzan propiamente (cada uno corta al otro en su interior)."""
+    d1, d2, d3, d4 = _cross(a, b, p), _cross(a, b, q), _cross(p, q, a), _cross(p, q, b)
+    return d1 * d2 < 0 and d3 * d4 < 0
+
+
+def _boundary_distance(point: Point, polygon: tuple[Point, ...]) -> float:
+    return min(_point_segment(point, a, b) for a, b in _edges(polygon))
+
+
+def _probes(polygon: tuple[Point, ...]) -> list[Point]:
+    """Los vértices y los puntos medios de los lados: si alguno queda en el interior del otro polígono, se traslapan."""
+    return [*polygon, *(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) for a, b in _edges(polygon))]
+
+
+def _strictly_within(point: Point, polygon: tuple[Point, ...]) -> bool:
+    """Dentro del polígono y no sobre su borde (a más de 1e-6 mm)."""
+    return contains(point, polygon) and _boundary_distance(point, polygon) > _NEAR
+
+
+def separation(first: tuple[Point, ...], second: tuple[Point, ...]) -> float:
+    """La separación libre entre dos polígonos simples (convexos o no, D-170): sin traslapo, la distancia mínima entre
+    sus bordes (cero si se tocan); traslapados (un vértice o el punto medio de un lado de uno en el interior del otro, o
+    dos lados que se cruzan), negativa: menos el menor traslapo de sus cajas en un eje (en dos rectángulos alineados con
+    los ejes, el traslapo exacto)."""
+    overlapping = (any(_strictly_within(p, second) for p in _probes(first))
+                   or any(_strictly_within(p, first) for p in _probes(second))
+                   or any(_crossing(p, q, a, b) for p, q in _edges(first) for a, b in _edges(second)))
+    if overlapping:
+        xs_a, ys_a = [p[0] for p in first], [p[1] for p in first]
+        xs_b, ys_b = [p[0] for p in second], [p[1] for p in second]
+        overlap_x = min(max(xs_a), max(xs_b)) - max(min(xs_a), min(xs_b))
+        overlap_y = min(max(ys_a), max(ys_b)) - max(min(ys_a), min(ys_b))
+        return -min(overlap_x, overlap_y)
+    return min(min(_boundary_distance(p, second) for p in first), min(_boundary_distance(p, first) for p in second))
 
 
 def segment_inside(start: Point, end: Point, polygon: tuple[Point, ...]) -> list[tuple[Point, Point]]:

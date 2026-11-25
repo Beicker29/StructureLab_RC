@@ -3900,7 +3900,63 @@
 - **Tiempo:** cada planta escalonada cuesta lo de un trapecio, unas cinco veces la rectangular. El ejemplo usa un solo
   f'c.
 - **Pendiente:** el diseño de la T invertida con zarpa no rectangular (D-167) y la ubicación de estas formas en la planta
-  de localización.
+  de localización. Resueltos en D-170.
+
+### D-170: combinadas no rectangulares en la planta de localización y diseño de la T invertida no rectangular
+
+- **Fecha:** 2026-11-25
+- **Pedido del usuario:** cerrar las combinadas no rectangulares (opción A): su ubicación en la planta de localización y
+  el diseño de la T invertida trapezoidal o escalonada, que D-169 dejó pendientes.
+- **Decisiones del usuario (consulta del 2026-11-25, las recomendaciones):**
+  1. Formas nuevas en `combined_design.shapes`: `inverted_t_trapezoid` e `inverted_t_stepped`. Cada una es su propia
+     búsqueda y el diseño se queda con la más barata de las permitidas. Los límites del alma (`web_*`, `beam_h_*`) se
+     exigen si hay alguna forma con alma.
+  2. El eje del alma va sobre la línea de las columnas, que quedan dentro de ella; la planta sigue a la resultante y el
+     alma puede quedar excéntrica, como verifica D-167.
+  3. La separación mínima entre zapatas vecinas (D-156) se mide entre los contornos reales.
+  4. En el cuadro de tipologías, la forma, el largo, los anchos y h (`trapecio 6.00 x 1.80-3.00 x 0.80`); con alma,
+     además la viga.
+- **Planta de localización:**
+  - `Footprint` lleva el contorno en ejes globales: el rectángulo, el recortado del cabezal (`PileCap.outline`) o la
+    planta de la combinada (`CombinedFooting.outline`, origen en el centroide, girado si la viga va en la Y global).
+    Cada zapata se dibuja con su contorno.
+  - `mechanics/polygon.separation`: distancia mínima entre los bordes de dos polígonos simples (convexos o no). Hay
+    traslapo si un vértice o el punto medio de un lado de uno queda en el interior del otro, o si dos lados se cruzan;
+    entonces el valor es negativo, el menor traslapo de las cajas en un eje. En dos rectángulos alineados con los ejes
+    da lo mismo que la fórmula anterior, así que las salidas existentes no cambian.
+  - Corrección de paso: `combined_footprint` suponía dos columnas y fallaba con tres o más (D-163). La diferencia entre
+    columnas es ahora la mayor distancia entre los centros que da cada una.
+  - El motor ya no excluye las combinadas no rectangulares de la planta de localización ni del aviso de vecinas.
+  - Cuadro de tipologías: en la T invertida rectangular, las dimensiones pasan de `lx x ly x alto total` a
+    `lx x ly x h; viga b x h`, como en la no rectangular.
+- **Diseño de la T invertida no rectangular:**
+  - `_at_beam_height` recorre el alto de la viga, la zarpa y el alma como en la T rectangular (D-113). Con planta,
+    cada zarpa y alma se dimensionan con `_plan_sized` (D-169), que recibe el alma.
+  - `_plan_geometry` no deja ningún ancho por debajo del alma más el recubrimiento a cada lado. La planta que no
+    contiene el alma se descarta por la validación de D-167.
+  - `web_minimum` cubre las columnas respecto a su línea (en la rectangular, respecto a la resultante transversal, como
+    antes).
+  - El proyecto diseñado declara `plan` y `beam.axis` (la línea de las columnas en el sistema de la planta, t desde la
+    resultante transversal). La descripción dice la forma ("en T invertida en planta T o L con viga de … sobre la línea
+    de las columnas").
+- **Ejemplo:** `diseno_t_invertida_formas.json` en `t_invertida/` de los dos perfiles y en `pruebas/`. Usa los datos
+  de `diseno_t_invertida.json` con el lindero de C1 de `diseno_combinada_formas.json` y `shapes` con las tres formas con
+  alma. En NSR-10 elige la T invertida en planta T/L: 6.1 m con tramos de 1.4 y 1.9 m, alma de 800 × 1000 mm, zarpa
+  de 300 mm, f'c = 21 MPa; costo 8.05 millones; PASS. Tarda unos 50 s con los dos f'c.
+- **Control:**
+  - `tests/test_typology_combined.py`: la separación entre contornos (la muesca de una L, una esquina, un traslapo);
+  - `tests/test_drawing.py`: trapecio, L e I ubicados en la planta de localización con su contorno real y su texto en
+    el cuadro;
+  - `tests/test_combined_design.py`:
+    - los límites del alma exigidos;
+    - las dos formas con alma con solución, el alma sobre la línea de las columnas y las columnas dentro de ella;
+    - la zapata diseñada aprueba todas las revisiones de D-167, verificadas aparte con `combined_footing_checks`.
+  - El reparto de anchos sigue cubierto por el oráculo de D-169 (`derive_plan_widths.py`) y la T no rectangular por el
+    de D-167.
+- **Diferencias:**
+  - Ningún cálculo de verificación cambia.
+  - Cambia el texto del cuadro de tipologías de la T rectangular ubicada.
+  - Se suma el ejemplo nuevo a la huella.
 
 ## Consultas abiertas
 

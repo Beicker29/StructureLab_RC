@@ -19,7 +19,7 @@ EXAMPLES = frozen_all()
 
 
 _COMBINED_DESIGNS = {"diseno_combinada.json": "combined_design", "diseno_combinada_formas.json": "combined_design",
-                     "diseno_t_invertida.json": "combined_design",
+                     "diseno_t_invertida.json": "combined_design", "diseno_t_invertida_formas.json": "combined_design",
                      "diseno_combinada_etabs.json": "etabs_combined_design", "diseno_t_invertida_etabs.json": "etabs_combined_design"}
 
 

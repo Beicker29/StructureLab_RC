@@ -139,21 +139,46 @@ def test_location_plan_warns_when_footings_overlap(tmp_path: Path) -> None:
     assert any(text.startswith(f"ADVERTENCIA: se traslapan {first['id']} (nudo") and second["id"] in text for text in texts)
 
 
+def _square(name: str, story: str, centre: tuple[float, float], side: float = 2000.0) -> Any:
+    """Una huella cuadrada de lado side centrada en centre."""
+    from structurelab_rc.domain.footing.neighbors import Footprint
+
+    (x, y), half = centre, side / 2
+    outline = ((x - half, y - half), (x + half, y - half), (x + half, y + half), (x - half, y + half))
+    return Footprint(name, story, (name,), centre, outline)
+
+
 def test_clear_distance_between_footprints() -> None:
     """D-156: separación libre entre bordes: en un eje, en diagonal y negativa si se traslapan."""
-    from structurelab_rc.domain.footing.neighbors import Footprint, clear_distance, close_neighbors
+    from structurelab_rc.domain.footing.neighbors import clear_distance, close_neighbors
 
-    a = Footprint("A", "N1", ("1",), (0.0, 0.0), (2000.0, 2000.0))
-    side = Footprint("B", "N1", ("2",), (2500.0, 0.0), (2000.0, 2000.0))  # 500 mm en x
-    corner = Footprint("C", "N1", ("3",), (2300.0, 2400.0), (2000.0, 2000.0))  # 300 y 400 mm: 500 en diagonal
-    inside = Footprint("D", "N1", ("4",), (1800.0, 0.0), (2000.0, 2000.0))  # 200 mm de traslapo
-    other = Footprint("E", "N2", ("5",), (0.0, 0.0), (2000.0, 2000.0))  # otro nivel
+    a = _square("A", "N1", (0.0, 0.0))
+    side = _square("B", "N1", (2500.0, 0.0))  # 500 mm en x
+    corner = _square("C", "N1", (2300.0, 2400.0))  # 300 y 400 mm: 500 en diagonal
+    inside = _square("D", "N1", (1800.0, 0.0))  # 200 mm de traslapo
+    other = _square("E", "N2", (0.0, 0.0))  # otro nivel
     assert clear_distance(a, side) == pytest.approx(500.0)
     assert clear_distance(a, corner) == pytest.approx(500.0)
     assert clear_distance(a, inside) == pytest.approx(-200.0)
     names = {(item.first.name, item.second.name) for item in close_neighbors([a, side, corner, inside, other], 600.0)}
     assert ("A", "B") in names and ("A", "C") in names and ("A", "D") in names and not any("E" in pair for pair in names)
     assert {(item.first.name, item.second.name) for item in close_neighbors([a, side, inside], None)} == {("A", "D"), ("B", "D")}
+
+
+def test_clear_distance_follows_the_real_outline() -> None:
+    """D-170: entre contornos reales: una aislada en la muesca de una planta en L no avisa por la caja que contiene la L;
+    se mide hasta el borde de la muesca."""
+    from structurelab_rc.domain.footing.neighbors import Footprint, clear_distance
+
+    # L de 6 m × 3 m con la muesca de 3 m × 1.5 m arriba a la derecha.
+    ell = Footprint("L", "N1", ("1",), (0.0, 0.0), ((0.0, 0.0), (6000.0, 0.0), (6000.0, 1500.0), (3000.0, 1500.0),
+                                                     (3000.0, 3000.0), (0.0, 3000.0)))
+    notch = _square("A", "N1", (4600.0, 2400.0), 1000.0)  # bordes en x = 4100 y y = 1900: a 400 mm de la L
+    assert clear_distance(ell, notch) == pytest.approx(400.0)
+    corner = _square("B", "N1", (3600.0, 2100.0), 600.0)  # esquina en (3300, 1800): a 300 de la cara x = 3000
+    assert clear_distance(ell, corner) == pytest.approx(300.0)
+    over = _square("C", "N1", (2900.0, 2000.0), 400.0)  # se mete 100 mm en el brazo vertical de la L
+    assert clear_distance(ell, over) < 0
 
 
 def test_close_footings_are_reported_with_their_joints(tmp_path: Path) -> None:

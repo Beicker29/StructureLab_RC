@@ -299,8 +299,6 @@ def _detailing(
         assert soil is not None
         add(footing, footing_runs(basis, footing, face_envelope(footing, soil)),
             sum(footing.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9, footing_views)
-    # La planta de localización de la trapezoidal o en T/L llega después (D-164): por ahora no se ubica.
-    rectangular = [combined for combined in project.combined_footings if combined.plan is None]
     for combined in project.combined_footings if soil is not None else ():
         assert soil is not None
         add(combined, combined_runs(basis, combined, soil), sum(combined.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9,
@@ -313,8 +311,8 @@ def _detailing(
         if drawing is not None and unit.members[0] == member.id:  # un despiece por tipo
             drawing.views[unit.name] = draw(drawing, unit.name, list(unit.rows), unit.quantity)
     if drawing is not None:
-        located = location_views(drawing, [*project.footings, *project.pile_caps], rectangular,  # D-130, D-138, D-164
-                                 project.min_clear_spacing)  # D-156
+        located = location_views(drawing, [*project.footings, *project.pile_caps],  # D-130, D-138
+                                 project.combined_footings, project.min_clear_spacing)  # D-156, D-170: todas las formas
         if located:
             drawing.views[LOCATION] = located
     return found, warnings, drawing
@@ -411,8 +409,8 @@ def _close_footings(project: Project | None) -> list[dict[str, Any]]:
     """Los pares de zapatas del mismo nivel más cercanos que min_clear_spacing o traslapados (D-156), con sus nudos."""
     if project is None:
         return []
-    placed = footprints([*project.footings, *project.pile_caps],  # la planta no rectangular, pendiente (D-164)
-                        [combined for combined in project.combined_footings if combined.plan is None])
+    # Entre contornos reales: también la combinada trapezoidal o en planta T, L o I (D-170).
+    placed = footprints([*project.footings, *project.pile_caps], project.combined_footings)
     minimum = project.min_clear_spacing
     return [{"first": item.first.name, "second": item.second.name, "story": item.first.story,
              "joints": [*item.first.joints, *item.second.joints], "clear [mm]": round(item.clear, 1),

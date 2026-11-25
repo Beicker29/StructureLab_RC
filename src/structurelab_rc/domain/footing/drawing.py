@@ -70,6 +70,7 @@ _BREAK_MARGIN = 0.25
 _BREAK_AT = 0.15
 _BREAK_STEP = 2.0
 _BREAK_RISE = 4.0
+_TWO_PARTS = 2  # una planta escalonada de dos tramos es una T o una L; de más, una I (D-169)
 _MISMATCH = 10.0  # mm: diferencia entre la base que ubica cada columna de una combinada a partir de la cual se avisa
 _TABLE = (("Tipo", 24.0), ("Dimensiones lx x ly x h (m)", 50.0), ("Malla inferior", 56.0), ("Malla superior", 56.0),
           ("Cant.", 12.0))
@@ -276,19 +277,40 @@ def _mat_text(mat: Mat | None, swap: bool = False) -> str:
     return "; ".join(f"{axis} {bar_set.designation} C/{metres(bar_set.spacing)}" for axis, bar_set in sets.items())
 
 
-def _outline(drawing: Drawing, centre: tuple[float, float], size: tuple[float, float],
-             columns: list[tuple[tuple[float, float], tuple[float, float], str]], named: tuple[str, str]) -> list[Entity]:
-    """Contorno de la base de tamaño size centrada en centre, las columnas (centro, tamaño, nudo) y el rótulo del tipo;
-    named = (rótulo, capa del contorno: ZAPATA o CABEZAL, D-166)."""
+def _outline(drawing: Drawing, footprint: Footprint, columns: list[tuple[tuple[float, float], tuple[float, float], str]],
+             named: tuple[str, str]) -> list[Entity]:
+    """El contorno real de la base en ejes globales (el rectángulo, el recortado del cabezal o la planta trapezoidal, en
+    T, L o I, D-166, D-170), las columnas (centro, tamaño, nudo) y el rótulo del tipo encima; named = (rótulo, capa del
+    contorno: ZAPATA o CABEZAL)."""
     label, layer = named
-    (x, y), (width, depth) = centre, size
-    entities: list[Entity] = [rectangle(layer, (x - width / 2, y - depth / 2), (x + width / 2, y + depth / 2))]
+    x0, _, x1, y1 = footprint.box
+    entities: list[Entity] = [Polyline(layer, footprint.outline, closed=True)]
     small = drawing.text_height(small=True)
     for (cx, cy), (bx, by), joint in columns:
         entities.append(column_rectangle((cx - bx / 2, cy - by / 2), (cx + bx / 2, cy + by / 2)))
         entities.append(Text(LABELS, (cx, cy - by / 2 - 1.5 * small), joint, small, align="center"))
-    entities.append(Text(LABELS, (x, y + depth / 2 + 0.5 * small), label, drawing.text_height(), align="center"))
+    entities.append(Text(LABELS, ((x0 + x1) / 2, y1 + 0.5 * small), label, drawing.text_height(), align="center"))
     return entities
+
+
+def _combined_dimensions(footing: CombinedFooting) -> str:
+    """Las dimensiones de una combinada en el cuadro de tipologías (D-170): la rectangular "lx x ly x h"; la trapezoidal o
+    en planta T/L o I, la forma, el largo, el ancho de cada extremo o tramo en orden y h ("trapecio 6.00 x 1.80-3.00 x
+    0.80"); con alma, además "viga b x h" (h, el de la zarpa)."""
+    plan = footing.plan
+    if plan is None:
+        text = f"{metres(footing.lx)} x {metres(footing.ly)} x {metres(footing.h)}"
+    elif plan.shape == "trapezoid":
+        assert plan.length is not None and plan.start is not None and plan.end is not None
+        widths = "-".join(metres(edge.high - edge.low) for edge in (plan.start, plan.end))
+        text = f"trapecio {metres(plan.length)} x {widths} x {metres(footing.h)}"
+    else:
+        parts = plan.parts or ()
+        name = "T/L" if len(parts) <= _TWO_PARTS else "I"
+        widths = "-".join(metres(part.high - part.low) for part in parts)
+        text = f"{name} {metres(sum(part.length for part in parts))} x {widths} x {metres(footing.h)}"
+    beam = footing.beam
+    return text if beam is None else f"{text}; viga {metres(beam.width)} x {metres(beam.height)}"
 
 
 def _isolated_place(drawing: Drawing, footing: FootingBody) -> _Placed:
@@ -302,10 +324,8 @@ def _isolated_place(drawing: Drawing, footing: FootingBody) -> _Placed:
     columns = [((centre[0] + column.offset_x, centre[1] + column.offset_y), (column.cx, column.cy),
                 location.joint if column is first else str(getattr(column, "id", "")))
                for column in footing.all_columns]
-    entities = _outline(drawing, centre, (footing.lx, footing.ly), columns,
-                        (typology, PILE_CAP if isinstance(footing, PileCap) else FOOTING))
-    if isinstance(footing, PileCap):  # D-166: el contorno real (con recortes) y los pilotes a trazos, sin nombre
-        entities[0] = Polyline(PILE_CAP, tuple((centre[0] + x, centre[1] + y) for x, y in footing.outline), closed=True)
+    entities = _outline(drawing, footprint, columns, (typology, PILE_CAP if isinstance(footing, PileCap) else FOOTING))
+    if isinstance(footing, PileCap):  # D-166: los pilotes a trazos, sin nombre
         size = footing.pile.size
         for pile in footing.piles:
             at = (centre[0] + pile.x, centre[1] + pile.y)
@@ -323,21 +343,21 @@ def _combined_place(drawing: Drawing, footing: CombinedFooting) -> _Placed:
     rotated = footing.principal_direction == "y"
     footprint = combined_footprint(footing)
     assert footprint is not None
-    centre, size, mismatch = footprint.centre, footprint.size, footprint.mismatch
+    mismatch = footprint.mismatch
     columns = []
     for column in footing.columns:
         location = column.location
         assert location is not None
         columns.append(((location.x, location.y), (column.cy, column.cx) if rotated else (column.cx, column.cy), location.joint))
     typology = footing.typology or footing.id  # el tipo de combinada (D-157)
-    entities = _outline(drawing, centre, size, columns, (typology, FOOTING))
+    entities = _outline(drawing, footprint, columns, (typology, FOOTING))
     if mismatch > _MISMATCH:
         small = drawing.text_height(small=True)
-        entities.append(Text(LABELS, (centre[0], centre[1] - size[1] / 2 - 3 * small),
+        x0, y0, x1, _ = footprint.box
+        entities.append(Text(LABELS, ((x0 + x1) / 2, y0 - 3 * small),
                              f"ADVERTENCIA: las columnas de ETABS ubican la base a {_metres_text(mismatch)} entre si", small,
                              align="center"))
-    row = [typology, f"{metres(size[0])} x {metres(size[1])} x {metres(footing.total_height)}", _mat_text(footing.bottom, rotated),
-           "ver despiece"]
+    row = [typology, _combined_dimensions(footing), _mat_text(footing.bottom, rotated), "ver despiece"]
     return _Placed(footprint.story, typology, row, footing.quantity, entities, footprint)
 
 
