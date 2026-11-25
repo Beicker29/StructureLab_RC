@@ -53,7 +53,12 @@ Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica
 2. Zapata corrida bajo un muro (los criterios se revisan al empezar).
 3. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
 4. Losas de cimentación.
-5. Muros.
+5. Muros de contención, con su verificación, su diseño, su despiece y su dibujo:
+   - tipo sótano: apoyado en la losa o el entrepiso superior y en la cimentación;
+   - en voladizo (cantilever): empotrado en su zapata, con la estabilidad al volcamiento y al deslizamiento.
+
+   El empuje de tierras, la sobrecarga, el nivel freático y el sismo se definen al empezar (los criterios se revisan
+   entonces).
 
 ### Zapata combinada en dos direcciones
 
