@@ -14,8 +14,7 @@ neutras que después reutilizan las vigas.
 El usuario elige entre:
 
 1. Cerrar lo pendiente de cabezales (ver [Cabezales](#cabezales-sobre-pilotes)).
-2. Seguir con el diseño de zapatas (ver [Diseño de zapatas](#diseño-de-zapatas)).
-3. El siguiente tipo de cimentación (ver [Tipos nuevos](#tipos-nuevos-uno-por-vez-d-052-d-055)).
+2. El siguiente tipo de cimentación (ver [Tipos nuevos](#tipos-nuevos-uno-por-vez-d-052-d-055)).
 
 ## Validaciones del usuario
 
@@ -55,28 +54,6 @@ Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica
 3. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
 4. Losas de cimentación.
 5. Muros.
-
-### Diseño de zapatas
-
-1. Rapidez del diseño por tipologías, siguiente paso. Lo hecho está en D-171: medición por etapas (`run --profile`),
-   registro de costos y costeo en paralelo de los pares nuevos, y cota por planta rigurosa, con resultados idénticos:
-   `diseno_tipologias_etabs` bajó de 574 s a 448 s. Se mide con `structurelab-rc run
-   examples/nsr_10/zapatas/tipologias/diseno_tipologias_etabs.json --profile`.
-
-   Lo que más pesa, de mayor a menor (tiempos de este PC, 16 procesos, con la medición de D-171):
-   - los rediseños con barrido de los grupos que propone el MILP en cada iteración (tareas `refine`): cada uno resuelve
-     la flexión con raíces (`required_area`, ya guardada en memoria, D-124) y verifica cada malla candidata;
-   - los tipos de los grupos de pares de combinadas (unos 70 s): todas las posiciones de la base de cada grupo en
-     cada f'c;
-   - el catálogo inicial de `milp_iter` (unos 48 s) y los diseños individuales (unos 26 s);
-   - la memoria PDF (unos 21 s): dibujo de celdas e incrustación de las figuras SVG en fpdf.
-
-   Vías sin cambiar ningún número, por probar:
-   - guardar las presiones del suelo por planta y espesor (hoy se recalculan para cada malla candidata);
-   - ordenar las búsquedas de los grupos de combinadas de la más larga a la más corta en el pool.
-
-   Vía que cambiaría los últimos decimales y se consulta antes: la fórmula cerrada del bloque de compresión en lugar de
-   las raíces en `required_area`.
 
 ### Zapata combinada en dos direcciones
 

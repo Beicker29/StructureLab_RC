@@ -4021,7 +4021,8 @@
   - Solo cambia el tiempo de las iteraciones guardado en el resumen del diseño.
   - Con la primera versión de la cota por planta, que sumaba la malla superior obligatoria, el total era 343 s. La
     diferencia es el precio de la cota rigurosa.
-- **Lo que queda** (hoja de ruta, "Diseño de zapatas"):
+- **Lo que queda** (el usuario decidió el 2026-11-25 no seguir por ahora con la rapidez del diseño por tipologías y
+  quitarlo de la hoja de ruta; queda aquí como registro):
   - los rediseños con barrido de los grupos (tareas `refine`), los tipos de combinadas (~72 s), el catálogo inicial
     (~48 s) y la memoria PDF (~21 s);
   - el área requerida por raíces (`required_area`) ya está guardada en memoria (D-124) y sus llamadas restantes son
