@@ -165,6 +165,24 @@ class CurveSettings(_Input):
         return tuple(sorted(counts))
 
 
+class TypologyAlerts(_Input):
+    """Umbrales de las alertas de tipologías atípicas (D-172), sin valores por defecto: solo alertan en la memoria y en
+    dos tablas, no cambian el diseño. fa_threshold: A(P, M)/A(P, 0) de la planta por suelo de la columna;
+    eccentricity_threshold: e/B en cada dirección (B/6 = 0.1667); min_relative_p: P_min/P_max de servicio; tukey_k: el k
+    del límite Q3 + k·IQR; z_threshold: el z robusto (x − mediana)/(1.4826·MAD); small_typology_max_columns: columnas de
+    una tipología atípica pequeña; min_typologies_for_statistics: tipologías mínimas para la estadística; pareto_fraction:
+    la fracción de las columnas que más consumen en la concentración."""
+
+    fa_threshold: float = Field(gt=1.0)
+    eccentricity_threshold: float = Field(gt=0.0, le=0.5)
+    min_relative_p: float = Field(ge=0.0, lt=1.0)
+    tukey_k: NonNegativeFloat
+    z_threshold: PositiveFloat
+    small_typology_max_columns: PositiveInt
+    min_typologies_for_statistics: int = Field(ge=2)
+    pareto_fraction: float = Field(gt=0.0, le=1.0)
+
+
 class FootingDesignProject(_Input):
 
     @model_validator(mode="before")
@@ -185,9 +203,14 @@ class FootingDesignProject(_Input):
     drawing: DrawingSettings | None = None  # D-127: pasa al proyecto diseñado; requiere detailing (D-126)
     combined_footings: tuple["DesignPair", ...] = ()  # D-153: pares de columnas en zapata combinada, una por par
     min_clear_spacing: PositiveFloat | None = None  # D-156: separación libre mínima entre zapatas vecinas (mm); solo avisa
+    typology_alerts: TypologyAlerts | None = None  # D-172: alertas de tipologías atípicas; sin él, no se calculan
 
     @model_validator(mode="after")
     def _check(self) -> Self:
+        if self.typology_alerts is not None and self.curve is not None:
+            raise ValueError("typology_alerts es del diseño por tipologías; la curva costo-N no lo usa (D-172)")
+        if self.typology_alerts is not None and not self.columns:
+            raise ValueError("typology_alerts necesita columnas aisladas (columns): alerta sobre sus tipologías (D-172)")
         ids = [column.id for column in self.columns]
         ids += [column.id for pair in self.combined_footings for column in pair.columns]
         if len(ids) != len(set(ids)):

@@ -4038,6 +4038,61 @@
     - la parte de los pasadores de la cota no pasa del empotramiento.
   - las pruebas de la medición existentes y la equivalencia del diseño en uno y varios procesos.
 
+### D-172: alertas de tipologías atípicas en el diseño por tipologías
+
+- **Fecha:** 2026-11-25
+- **Pedido del usuario:** algunas zapatas, aun céntricas, crecen mucho por el momento de volcamiento, y al agrupar
+  por tipologías salen tipologías muy grandes para pocas columnas. Tomar el resultado de la corrida del diseño por
+  tipologías y, con unas métricas, reportar y alertar en la memoria qué tipologías parecen atípicas.
+- **Alcance (decisión del usuario):**
+  - solo el diseño por tipologías de zapatas; no la curva costo–N, la combinada suelta ni los cabezales;
+  - solo alerta: no cambia el diseño ni vuelve a diseñar. La solución la decide el analista en el `.json`: declarar las
+    columnas en `combined_pairs` (D-153) o quitarlas con `exclude_unique_names` (D-111) y tratarlas aparte;
+  - sin alternativas calculadas (costo sin momento, zapata rectangular, vecinas, combinada del par ni costo de la viga
+    centradora), y sin fase posterior para ellas en la hoja de ruta.
+- **Configuración:** sección opcional `typology_alerts`, con claves en inglés como el resto de la entrada (decisión del
+  usuario): `fa_threshold`, `eccentricity_threshold`, `min_relative_p`, `tukey_k`, `z_threshold`,
+  `small_typology_max_columns`, `min_typologies_for_statistics` y `pareto_fraction`, todos obligatorios y validados.
+  - Sin la sección no se calcula nada y ninguna salida cambia; el importador de ETABS la pasa al proyecto de diseño solo
+    si se declara.
+  - Con `curve` es error: la curva no entrega un diseño elegido sobre el cual alertar.
+- **Métricas** (`design/footing/alerts.py`):
+  - Lee las tipologías elegidas y los diseños individuales de cada columna en el f'c elegido, que la búsqueda ya
+    calculaba y descartaba: ahora quedan en `DesignResult.singles`, sin recalcular.
+  - Por columna, con su zapata individual:
+    - e/B = |ex|/lx y |ey|/ly máximos de los casos de servicio y la menor fracción en contacto, con la misma revisión
+      del suelo (`service_checks`);
+    - FA = A(P, M)/A(P, 0). Es el único cálculo extra: la planta por suelo (`soil_plan`, la primera de la búsqueda de
+      `design_group` que cumple `_soil_ok`) con los casos de la columna y con Mx = My = 0 (Vx y Vy se conservan), en el
+      espesor del diseño individual. No diseña mallas;
+    - candidata si FA ≥ umbral, si e/B > umbral en alguna dirección, si un caso de servicio no tiene equilibrio, si
+      P ≤ 0 (levantamiento) o si P_min < `min_relative_p`·P_max de servicio.
+  - Por tipología aislada (los tipos de combinadas no entran):
+    - área y volumen de una zapata, columnas, costo y candidatas;
+    - atípica por Tukey (Q3 + k·IQR, cuartiles inclusivos) o por z robusto ((x − mediana)/(1.4826·MAD)), en área y en
+      volumen, solo la cola alta. Con menos tipologías que el mínimo no se calcula ninguno; con MAD = 0 no hay z. La
+      memoria dice por qué;
+    - pequeña: atípica y con pocas columnas; sobrecosto por agrupación: su costo menos la suma de los diseños
+      individuales de sus columnas; señalada: atípica y con al menos una candidata.
+  - Concentración: la parte del concreto y del costo de las aisladas que consume la fracción de columnas que más consume
+    (hacia arriba, al menos una), con el costo de cada columna en su tipología (`column_cost`).
+- **Salidas:** `tipologias_estadistica.csv`, `alertas_columnas.csv` (columnas candidatas, con el nudo de ETABS para
+  editar el `.json`), `alertas_tipologias.json` y, con `run`, una sección al final de la memoria TXT y PDF
+  (`reporting/alerts.py`) con las tres notas del usuario, los parámetros, el resumen, las tipologías señaladas y las
+  candidatas. `resultado.json` no cambia. Una corrida sin la sección borra las alertas de una anterior en la misma
+  carpeta.
+- **Comprobación:**
+  - `run --profile` de `diseno_tipologias_etabs` (NSR-10, 67 aisladas, este PC, 16 procesos) con la sección: 446.9 s
+    en total, de los que las alertas toman 0.3 s. `proyecto.json`, `resultado.json` y `cartilla.csv` son idénticos byte a
+    byte a los de la corrida sin la sección (D-171), el modelo de dibujo difiere solo en el nombre de la carpeta y la
+    memoria es la misma con la sección al final. Con los datos supuestos del ejemplo no hay columnas candidatas ni
+    tipologías atípicas (límite de Tukey del área 17.8 m², la mayor tipología 15.2 m²; mayor z robusto 1.4);
+  - el proyecto diseñado y la verificación son idénticos con y sin la sección;
+  - la huella no cambia: la copia de `pruebas/` no trae la sección;
+  - `tests/test_typology_alerts.py`: columna con momento grande (candidata por FA y su tipología señalada), sin momentos
+    (ninguna candidata y FA = 1), estabilidad, Tukey y z con valores conocidos, MAD = 0, pocas tipologías, sobrecosto y
+    concentración, memoria y CSV, validación, `run` con y sin la sección e importación de ETABS.
+
 ## Consultas abiertas
 
 ### C-017: presión del suelo bajo una combinada trapezoidal o en planta T (fase B de D-163)

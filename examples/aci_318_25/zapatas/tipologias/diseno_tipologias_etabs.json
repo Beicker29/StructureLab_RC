@@ -239,5 +239,15 @@
       }
     }
   ],
-  "min_clear_spacing": 500.0
+  "min_clear_spacing": 500.0,
+  "typology_alerts": {
+    "fa_threshold": 1.5,
+    "eccentricity_threshold": 0.1667,
+    "min_relative_p": 0.1,
+    "tukey_k": 1.5,
+    "z_threshold": 3.0,
+    "small_typology_max_columns": 3,
+    "min_typologies_for_statistics": 4,
+    "pareto_fraction": 0.1
+  }
 }

@@ -34,6 +34,9 @@ El usuario elige entre:
 5. Rapidez del diseño por tipologías (D-171): correr en el PC personal `structurelab-rc run
    examples/nsr_10/zapatas/tipologias/diseno_tipologias_etabs.json --profile` y comparar `medicion.json` con los tiempos
    de este PC.
+6. Alertas de tipologías atípicas (D-172): con un proyecto real, revisar si los umbrales de `typology_alerts` señalan
+   las tipologías que el ingeniero considera atípicas (`tipologias_estadistica.csv`, `alertas_columnas.csv` y la sección
+   final de la memoria) y ajustarlos en la plantilla.
 
 ## Cimentaciones
 

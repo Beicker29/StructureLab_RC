@@ -250,8 +250,10 @@ def build_footing_design_project(
     paired = {name for pair in template.combined_pairs for name in pair.etabs_unique_names}
     columns = [{"id": joint.label, "cx": sections[joint.group].cx, "cy": sections[joint.group].cy,
                 **_located(locations, joint.unique_name), "loads": joint.loads} for joint in joints if joint.unique_name not in paired]
+    # D-172: typology_alerts pasa solo si se declara, para que sin él el proyecto de diseño quede igual que antes.
+    absent = {"typology_alerts"} if template.typology_alerts is None else set()
     project = template.model_dump(mode="json", exclude={"columns", "etabs_files", "exclude_unique_names", "combined_design",
-                                                        "combined_pairs"})
+                                                        "combined_pairs", *absent})
     project["columns"] = columns
     if template.combined_pairs:
         project["combined_footings"] = _design_pairs(template, {joint.unique_name: joint for joint in joints}, sections, locations)

@@ -326,6 +326,7 @@ class EtabsFootingDesignTemplate(_Input):
     combined_pairs: tuple[TemplateCombinedPair, ...] = ()  # D-153
     min_clear_spacing: PositiveFloat | None = None  # D-156: pasa al proyecto de diseño
     curve: dict[str, Any] | None = None  # D-165: la curva costo–N desde ETABS; pasa al proyecto y se valida con él
+    typology_alerts: dict[str, Any] | None = None  # D-172: pasa al proyecto de diseño y se valida con él
     etabs_files: FootingEtabsFiles | None = None
     detailing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él
     drawing: dict[str, float] | None = None  # D-127: pasa al proyecto de diseño y se valida con él

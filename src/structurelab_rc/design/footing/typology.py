@@ -309,6 +309,19 @@ def _soil_ok(ctx: Context, columns: Sequence[DesignColumn], typology: Typology) 
     return True
 
 
+def soil_plan(ctx: Context, column: DesignColumn, fc: float, h: float) -> tuple[float, float] | None:
+    """La planta por suelo de la columna con el espesor h (D-172): la primera de la búsqueda de design_group (desde
+    _initial_size, en el orden de _plans y con la forma pedida) que cumple lo que depende solo de la planta y del espesor
+    (_soil_ok: presión, contacto, deslizamiento y volcamiento de servicio y equilibrio de los casos mayorados); None si
+    ninguna hasta plan_max. No diseña mallas."""
+    initial = _initial_size(ctx, [column])
+    bars = {"designation": ctx.design.bars[0], "spacing": ctx.design.spacing_step * 4, "end": ctx.design.ends.bottom}
+    for plan in _plans(ctx, [column], (initial, initial)):
+        if _soil_ok(ctx, [column], Typology(fc, plan[0], plan[1], h, {"first": "x", "x": bars, "y": bars}, None)):
+            return plan
+    return None
+
+
 def _top_related(check: Check) -> bool:
     """Verificaciones que dependen solo de la malla superior (o, sin ella, del concreto simple): separables de la inferior,
     cuya altura efectiva, cortante, punzonamiento y anclaje de pasadores no dependen de la superior (D-076)."""

@@ -320,6 +320,7 @@ zapatas vecinas.
 | `design.iter_max` | - | Con `milp_iter`: iteraciones por f'c (por defecto 10). |
 | `design.iter_time_limit_s` | s | Con `milp_iter`: tiempo por f'c (por defecto 600). |
 | `curve.n` | - | Solo en el ejemplo de la curva costo-N (`curva_*.json`, D-096): los valores de N, como lista o como texto (`"1-6"`, `"2,4,6"`, `"1-4,8"`). Con `curve`, `run` corre la curva en lugar del diseño; `typology-curve --n` lo reemplaza. |
+| `typology_alerts` | objeto | Opcional (D-172): las [alertas de tipologías atípicas](#alertas-de-tipologías-atípicas-typology_alerts-d-172). Sin él, no se calculan y ninguna salida cambia. No se declara con `curve`. |
 
 Cada tipología se diseña con la planta (la primera viable y dos más), el espesor y las mallas de menor costo que aprueban
 todas las verificaciones (D-069, D-076). Los tramos de la tabla usan el menor espesor con solución; los diseños
@@ -370,6 +371,50 @@ agrega el detalle por tarea de arriba.
 `structurelab-rc run <ejemplo> --profile` (D-171) escribe `medicion.json` en la carpeta de salida de cada ejemplo: el
 total (`total_s`) y el tiempo de cada etapa de la corrida completa (importación de ETABS, las del diseño, verificación,
 despiece y modelo de dibujo, figuras, dibujo SVG y DXF, memoria TXT y PDF, `.dli`), sin cambiar ninguna salida.
+
+### Alertas de tipologías atípicas (`typology_alerts`, D-172)
+
+Métricas sobre el resultado del diseño por tipologías para alertar al analista. Solo leen el resultado: no cambian
+`proyecto.json`, `tipologias.json`, `resultado.json`, la cartilla ni el dibujo, y no vuelven a diseñar. La solución la
+decide el analista en el proyecto: declarar las columnas en zapata combinada (`combined_pairs`, D-153) o quitarlas del
+diseño por tipologías (`exclude_unique_names`, D-111) y tratarlas aparte. Todos los campos son obligatorios:
+
+| Campo | Unidad | Descripción |
+| --- | --- | --- |
+| `fa_threshold` | - | Umbral del factor de amplificación FA = A(P, M)/A(P, 0) (> 1). |
+| `eccentricity_threshold` | - | Umbral de e/B en cada dirección (B/6 = 0.1667). |
+| `min_relative_p` | - | P_min/P_max de servicio por debajo del cual la carga axial es baja. |
+| `tukey_k` | - | k del límite de Tukey Q3 + k·IQR. |
+| `z_threshold` | - | Umbral del z robusto (x − mediana)/(1.4826·MAD). |
+| `small_typology_max_columns` | - | Columnas, como máximo, de una tipología atípica pequeña. |
+| `min_typologies_for_statistics` | - | Tipologías mínimas para calcular la estadística (≥ 2). |
+| `pareto_fraction` | - | Fracción de las columnas que más consumen, para la concentración (0 a 1). |
+
+- **Por columna**, con la zapata de su diseño individual (el que la búsqueda ya calculó):
+  - e/B = |ex|/lx y |ey|/ly máximos de los casos de servicio, con su caso, y la menor fracción en contacto (la misma
+    revisión del suelo);
+  - FA: el área de la planta por suelo con sus casos sobre la de los mismos casos con Mx = My = 0 (Vx y Vy se
+    conservan), en el espesor del diseño individual. La planta por suelo es la primera de la búsqueda que cumple
+    presión, contacto, deslizamiento, volcamiento y equilibrio, sin diseñar mallas;
+  - es candidata si FA ≥ `fa_threshold`, si e/B > `eccentricity_threshold` en alguna dirección, si un caso de servicio
+    no tiene equilibrio con el suelo, si P ≤ 0 (levantamiento) o si P_min < `min_relative_p`·P_max en los casos de
+    servicio.
+- **Por tipología aislada** (los tipos de combinadas no entran):
+  - área y volumen de una zapata, columnas, costo y candidatas;
+  - atípica por área o por volumen si supera el límite de Tukey (cuartiles inclusivos) o el umbral del z robusto. Con
+    menos tipologías que `min_typologies_for_statistics`, ninguno se calcula; con MAD = 0, el z no se define. La
+    memoria dice por qué;
+  - pequeña: atípica y con ≤ `small_typology_max_columns` columnas;
+  - sobrecosto por agrupación: su costo menos la suma de los diseños individuales de sus columnas;
+  - señalada: atípica y con al menos una candidata.
+- **Concentración:** la parte del concreto y del costo de las aisladas que consume la fracción `pareto_fraction` de las
+  columnas que más consumen (hacia arriba, al menos una), con el costo de cada columna en su tipología.
+
+Salidas, en la carpeta de salida: `tipologias_estadistica.csv` (una fila por tipología), `alertas_columnas.csv` (una
+fila por columna candidata: columna, nudo de ETABS, tipología, P de servicio, FA, e/B con su caso, contacto y motivos),
+`alertas_tipologias.json` (los mismos datos con los parámetros, la estadística y la concentración) y, con `run`, una
+sección al final de la memoria TXT y PDF con los parámetros, el resumen, las tipologías señaladas y las candidatas. Una
+corrida sin la sección borra las alertas que hubiera dejado una anterior en la misma carpeta.
 
 ### Curva costo–N (comando `typology-curve`, D-078)
 

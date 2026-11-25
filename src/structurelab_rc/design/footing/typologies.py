@@ -136,6 +136,10 @@ class DesignResult:
     cost_basis: str = ""  # de dónde sale el acero del costo (COST_BASIS, D-127)
     combined: tuple[Any, ...] = ()  # las zapatas combinadas de los pares (design/footing/mixed.PairDesign, D-153)
     combined_cost: float = 0.0  # su costo en el f'c elegido; cost es el de las aisladas
+    # D-172: los diseños individuales de cada columna en el f'c elegido, que la búsqueda ya calculó; los leen las alertas
+    # de tipologías atípicas. No son resultado del diseño: no entran en la comparación.
+    singles: dict[str, GroupDesign] = field(default_factory=dict, compare=False, repr=False)
+    alerts: Any = field(default=None, compare=False, repr=False)  # D-172: design/footing/alerts.AlertsResult, si se piden
 
 
 def _duplicates(ctx: Context, typologies: Sequence[TypologyResult]) -> tuple[Duplicate, ...]:
@@ -207,6 +211,7 @@ class _FcSolution:
     shifts: list[Shift]
     milp: MilpInfo | None = None
     iterations: tuple[Iteration, ...] = ()
+    singles: dict[str, GroupDesign] = field(default_factory=dict)  # los diseños individuales del f'c (D-172)
 
 
 @dataclass(frozen=True)
@@ -241,7 +246,7 @@ def _from_tables(ctx: Context, tables: _Tables, run: Runner) -> _FcSolution | st
         solution = _milp(ctx, tables, solution, run)
         if isinstance(solution, str):
             return solution
-    return _refine(ctx, tables, solution, run)
+    return replace(_refine(ctx, tables, solution, run), singles=tables.singles)
 
 
 def _refine(ctx: Context, tables: _Tables, solution: _FcSolution, run: Runner) -> _FcSolution:
@@ -496,7 +501,7 @@ def _iterate(ctx: Context, state: _Catalog, run: Runner) -> _FcSolution | str:
         return f"f'c = {fc:g} MPa: no hay {groups} tipologías del catálogo que cubran todas las columnas"
     best = _refined(ctx, fc, singles, best, run)
     total = sum(group.cost for group, _ in best)
-    return _FcSolution(total, best, total, [], iterations=tuple(iterations))
+    return _FcSolution(total, best, total, [], iterations=tuple(iterations), singles=singles)
 
 
 def _cost_new_pairs(state: _Catalog, run: Runner) -> None:
@@ -691,7 +696,8 @@ def _design(ctx: Context, run: Runner, solve: Solver = _for_fc, extra: Mapping[f
     return DesignResult(fc, typologies, solution.total, cost_before_reassignment=solution.before, reassigned=moves,
                         options=tuple(options), distinct_count=_distinct_count([item.design.typology for item in typologies]),
                         duplicates=_duplicates(ctx, typologies), method=ctx.design.method, milp=solution.milp,
-                        iterations=solution.iterations, cost_basis=COST_BASIS[ctx.project.detailing is not None])
+                        iterations=solution.iterations, cost_basis=COST_BASIS[ctx.project.detailing is not None],
+                        singles=solution.singles)
 
 
 def designed_project(ctx: Context, result: DesignResult) -> dict[str, Any]:

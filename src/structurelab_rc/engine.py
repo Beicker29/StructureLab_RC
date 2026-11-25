@@ -5,13 +5,14 @@ import os
 import sys
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
 from structurelab_rc import __version__
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing import combined as combined_design
+from structurelab_rc.design.footing.alerts import typology_alerts
 from structurelab_rc.design.footing.assignment import available as solver_available
 from structurelab_rc.design.footing.mixed import combined_part, design_with_pairs, designed_with_pairs
 from structurelab_rc.design.footing.profiling import DESIGN_STAGES, Stage, profile_typologies, stage_times
@@ -73,6 +74,7 @@ from structurelab_rc.model.template import (
     EtabsPileCapDesignTemplate,
     EtabsPileCapTemplate,
 )
+from structurelab_rc.reporting.alerts import alerts_document
 from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_document, curve_svg
 from structurelab_rc.reporting.document import report_documents
 from structurelab_rc.reporting.figures import diagram_figures, pressure_figures
@@ -372,6 +374,7 @@ def run_stages() -> tuple[Stage, ...]:
     own = sys.modules[__name__]
     return (*DESIGN_STAGES,
             (own, "design_with_pairs", "diseño por tipologías (total)"),
+            (own, "typology_alerts", "alertas de tipologías atípicas (D-172)"),
             (own, "_run", "verificación (con la validación)"),
             (own, "build_results", "resultado.json (armado)"),
             (own, "_detailing", "despiece, cartilla y modelo de dibujo"),
@@ -384,9 +387,10 @@ def run_stages() -> tuple[Stage, ...]:
             (own, "_dli_file", ".dli de DL-NET"))
 
 
-def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
+def report_file(path: Path, output: Path, *, full: bool = False, alerts: dict[str, Any] | None = None) -> Report:
     """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050), con
-    las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
+    las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095). alerts: las alertas de
+    tipologías atípicas del diseño (D-172, alerts_data), que van al final de la memoria; no cambian resultado.json."""
     project, checks, analyses = _run(path)
     results = build_results(project, checks, __version__, (_combined_diagrams(project, checks), analyses))
     close = _close_footings(project)  # D-156: zapatas más cercanas que la mínima o traslapadas
@@ -401,6 +405,8 @@ def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     diagram_files = diagram_figures(results, output)
     drawing_paths, drawings = ([], {}) if drawing is None else _drawing_files(drawing, output)
     documents = report_documents(results, full=full, figures=figures, diagrams=diagram_files, drawings=drawings)
+    if alerts is not None:
+        documents.append(alerts_document(alerts))
     text = render_text(documents)
     result_path, memoir_path, pdf_path = output / "resultado.json", output / "memoria.txt", output / "memoria.pdf"
     result_path.write_text(json.dumps(results, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
@@ -622,7 +628,10 @@ def _design_footings(
     if result.fc is None:
         failure = check_from_errors(CHECK_NAME, [invalid_input(f"Sin solucion dentro de los limites: {result.failure}")])
         return None, result, failure, measurement
-    return designed_with_pairs(ctx, result), result, validation, measurement
+    project = designed_with_pairs(ctx, result)
+    if ctx.project.typology_alerts is not None:  # D-172: solo leen el resultado; el proyecto diseñado ya está armado
+        result = replace(result, alerts=typology_alerts(ctx, result))
+    return project, result, validation, measurement
 
 
 

@@ -37,6 +37,7 @@ from structurelab_rc.engine import (
     validate_file,
     verify_file,
 )
+from structurelab_rc.reporting.alerts import alerts_data, columns_csv, typologies_csv
 from structurelab_rc.reporting.units import display
 from structurelab_rc.setup import load_engine
 
@@ -127,7 +128,32 @@ def _iterations(items: Sequence[Iteration]) -> list[dict[str, Any]]:
              "seconds": round(item.seconds, 1)} for item in items]
 
 
+_ALERTS_JSON = "alertas_tipologias.json"
+_ALERT_FILES = (_ALERTS_JSON, "tipologias_estadistica.csv", "alertas_columnas.csv")  # D-172
+
+
+def _write_alerts(output: Path, result: DesignResult) -> None:
+    """Las alertas de tipologías atípicas (D-172), si el proyecto las pide: sus datos y las dos tablas."""
+    if result.alerts is None:
+        return
+    data = alerts_data(result.alerts)
+    (output / _ALERTS_JSON).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (output / "tipologias_estadistica.csv").write_text(typologies_csv(data), encoding="utf-8", newline="\n")
+    (output / "alertas_columnas.csv").write_text(columns_csv(data), encoding="utf-8", newline="\n")
+    flagged = [row["name"] for row in data["typologies"] if row["flagged"]]
+    print(f"Alertas (D-172): {len(data['candidates'])} columnas candidatas; tipologias senaladas: "
+          f"{', '.join(flagged) or 'ninguna'} (ver {output / 'tipologias_estadistica.csv'})")
+
+
+def _alerts(output: Path) -> dict[str, Any] | None:
+    """Las alertas que escribió el diseño de esta corrida (D-172), para la memoria; None si no las pidió."""
+    path = output / _ALERTS_JSON
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
 def _design_footings(path: Path, output: Path, workers: int | None, profile: bool, method: str | None) -> int:
+    for name in _ALERT_FILES:  # D-172: las de una corrida anterior no deben llegar a la memoria de esta
+        (output / name).unlink(missing_ok=True)
     processes = workers or os.cpu_count() or 1
     measurement = None
     if profile:
@@ -174,6 +200,7 @@ def _design_footings(path: Path, output: Path, workers: int | None, profile: boo
         summary["total_cost"] = round(result.cost + result.combined_cost, 2)
     (output / "tipologias.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     _print_typologies(result, close)
+    _write_alerts(output, result)
     print(f"Proyecto escrito en {output / 'proyecto.json'}; verifiquelo o genere su memoria con report")
     return 0
 
@@ -297,8 +324,8 @@ def _git_sha() -> str:
     return "desconocido"
 
 
-def _report(project: Path, output: Path, full: bool) -> int:
-    report = report_file(project, output, full=full)
+def _report(project: Path, output: Path, full: bool, alerts: dict[str, Any] | None = None) -> int:
+    report = report_file(project, output, full=full, alerts=alerts)
     print(f"Resultado: {report.status}")
     for path in report.files:
         print(f"  {path}")
@@ -380,8 +407,8 @@ def _run_example(plan: RunPlan, workers: int | None, full: bool) -> int:
         "combined_design": lambda: _design_combined(path, out, workers),
         "pile_cap_design": lambda: _design_pile_caps(path, out),
     }
-    if plan.kind in designs:  # diseña y verifica el proyecto diseñado
-        return designs[plan.kind]() or _report(out / "proyecto.json", out, full)
+    if plan.kind in designs:  # diseña y verifica el proyecto diseñado (con las alertas del diseño por tipologías, D-172)
+        return designs[plan.kind]() or _report(out / "proyecto.json", out, full, _alerts(out) if plan.kind == "design" else None)
     return _run_etabs(plan, workers, full)
 
 
@@ -404,8 +431,9 @@ def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
         return code
     if plan.kind == "etabs_curve":  # la curva costo-N con los pares de ETABS (D-165)
         return _typology_curve(imported, out, None, workers, None)
-    if plan.kind in designs:  # diseña y verifica el proyecto diseñado
-        return designs[plan.kind](imported) or _report(out / "proyecto.json", out, full)
+    if plan.kind in designs:  # diseña y verifica el proyecto diseñado (con las alertas del diseño por tipologías, D-172)
+        alerts = (lambda: _alerts(out)) if plan.kind == "etabs_design" else (lambda: None)
+        return designs[plan.kind](imported) or _report(out / "proyecto.json", out, full, alerts())
     return _report(imported, out, full)
 
 
