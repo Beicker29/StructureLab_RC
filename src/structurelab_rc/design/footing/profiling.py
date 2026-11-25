@@ -8,15 +8,22 @@ tipología elegida cubriría más barato.
 
 Con milp_iter (E3b, D-077) los lotes no siguen ese orden: cada uno se registra por el tipo de sus tareas (single, design,
 covers, refine) y por f'c se resume el tiempo de cada tipo, junto con las iteraciones del resultado.
+
+Etapas (D-171): stage_times cronometra, mientras dura un bloque, las funciones de cada etapa en el proceso principal
+(llamadas y tiempo de pared; una etapa anidada cuenta también dentro de la que la llama) y las restaura al salir.
+DESIGN_STAGES son las del diseño por tipologías con sus combinadas; el motor agrega las de run (verificación, memoria,
+dibujo).
 """
 
+import functools
 import random
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from concurrent.futures import ProcessPoolExecutor
+from contextlib import contextmanager
 from typing import Any
 
-from structurelab_rc.design.footing import typologies
+from structurelab_rc.design.footing import mixed, typologies
 from structurelab_rc.design.footing.typologies import DesignResult, Task, _design, _run, _start_worker
 from structurelab_rc.design.footing.typology import (
     _DOWEL_PREFIX,
@@ -38,6 +45,60 @@ SAMPLE_SEED = 20261109
 # Orden de los lotes de _for_fc; un lote vacío, y el de coberturas de la reasignación (D-074), se identifican por él.
 _NEXT = {"single": "covers", "covers": "design", "design": "reassign"}
 Timed = Callable[[list[Task]], list[tuple[float, Any]]]
+
+
+Stage = tuple[Any, str, str]  # (módulo dueño de la función, nombre de la función, nombre de la etapa)
+DESIGN_STAGES: tuple[Stage, ...] = (
+    (mixed, "design_pairs", "combinadas: diseño de cada par"),
+    (mixed, "group_designs", "combinadas: tipos de los grupos de pares"),
+    (mixed, "grouping", "combinadas: reparto en tipos"),
+    (mixed, "design_typologies", "aisladas: búsqueda de los tipos (total)"),
+    (typologies, "_singles", "aisladas: diseños individuales"),
+    (typologies, "_tables", "aisladas: tabla de tramos (dp, milp)"),
+    (typologies, "_new_catalog", "aisladas: catálogo inicial (milp_iter)"),
+    (typologies, "_extend", "aisladas: coberturas de los candidatos nuevos (milp_iter)"),
+    (typologies, "_cost_new_pairs", "aisladas: costeo de los pares nuevos (procesos)"),
+    (typologies, "_pair_costs", "aisladas: matriz de costos (proceso principal)"),
+    (typologies, "assign", "aisladas: MILP"),
+    (typologies, "_refined", "aisladas: refinado de los grupos"),
+    (typologies, "_reassign", "aisladas: reasignación (dp)"),
+)
+
+
+@contextmanager
+def stage_times(stages: Sequence[Stage]) -> Iterator[dict[str, dict[str, float]]]:
+    """Mientras dura el bloque, cada función de stages cuenta sus llamadas y su tiempo de pared en el proceso principal
+    bajo el nombre de su etapa (una llamada recursiva no se cuenta dos veces); al salir se restauran. No cambia el
+    resultado; el trabajo que corre en otros procesos se ve como el tiempo que la etapa espera por él."""
+    times: dict[str, dict[str, float]] = {label: {"calls": 0, "seconds": 0.0} for _, _, label in stages}
+    originals = []
+    for owner, name, label in stages:
+        original = getattr(owner, name)
+        originals.append((owner, name, original))
+        setattr(owner, name, _timer(original, times[label]))
+    try:
+        yield times
+    finally:
+        for owner, name, original in reversed(originals):
+            setattr(owner, name, original)
+
+
+def _timer(function: Callable[..., Any], record: dict[str, float]) -> Callable[..., Any]:
+    depth = [0]
+
+    @functools.wraps(function)
+    def timed(*args: Any, **kwargs: Any) -> Any:
+        depth[0] += 1
+        start = time.perf_counter()
+        try:
+            return function(*args, **kwargs)
+        finally:
+            depth[0] -= 1
+            if depth[0] == 0:
+                record["calls"] += 1
+                record["seconds"] += time.perf_counter() - start
+
+    return timed
 
 
 def _pair(ctx: Context, typology: Typology, index: int) -> dict[str, Any]:
@@ -91,7 +152,7 @@ def _profile(ctx: Context, execute: Timed, workers: int) -> tuple[DesignResult, 
         if iterative:  # por el tipo de sus tareas; un lote vacío no se registra
             if tasks:
                 kind = tasks[0][0]
-                fc = tasks[0][1].fc if kind == "covers" else tasks[0][1]
+                fc = tasks[0][1].fc if kind in ("covers", "cost") else tasks[0][1]
                 batches.append({"kind": kind, "fc": fc, "start": start, "end": end, "times": [t for t, _ in timed],
                                 "results": [result for _, result in timed]})
             return [result for _, result in timed]
@@ -165,7 +226,7 @@ def _iterative_stages(ctx: Context, fc: float, batches: list[dict[str, Any]], en
     if not own:
         stage.update(failure="sin lotes medidos", candidates=[])
         return stage
-    for kind in ("single", "design", "covers", "refine"):
+    for kind in ("single", "design", "covers", "refine", "cost"):
         mine = [batch for batch in own if batch["kind"] == kind]
         times = [t for batch in mine for t in batch["times"]]
         stage[kind] = {"batches": len(mine), "count": len(times), "sum_s": sum(times), "max_s": max(times, default=0.0),
@@ -173,7 +234,7 @@ def _iterative_stages(ctx: Context, fc: float, batches: list[dict[str, Any]], en
     later = [batch["start"] for batch in batches if batch["start"] > own[-1]["end"]]
     wall = min(later, default=end) - own[0]["start"]
     stage["wall_s"] = wall
-    stage["main_s"] = wall - sum(stage[kind]["batch_s"] for kind in ("single", "design", "covers", "refine"))
+    stage["main_s"] = wall - sum(stage[kind]["batch_s"] for kind in ("single", "design", "covers", "refine", "cost"))
     stage["candidates"] = [result.typology for batch in own if batch["kind"] in ("single", "design", "refine")
                            for result in batch["results"] if result is not None]
     return stage

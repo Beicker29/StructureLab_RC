@@ -360,6 +360,17 @@ n(n+1)/2, porque no depende de N), tiempo del proceso principal entre lotes (`ma
 muestra fija de 500 pares columna–candidato con la extrapolación a la matriz completa de cobertura, y las tipologías
 repetidas y columnas reasignables de la solución. No cambia `proyecto.json` ni `tipologias.json`.
 
+Además (D-171), `medicion.json` lleva `design_wall_s` y `stages`: el tiempo de pared y las llamadas de cada etapa del
+diseño en el proceso principal (combinadas: diseño de cada par, tipos de los grupos y reparto; aisladas: diseños
+individuales, tabla de tramos, catálogo inicial y coberturas de `milp_iter`, costeo de los pares nuevos, matriz de
+costos, MILP, refinado y reasignación; una etapa anidada cuenta también dentro de la que la llama). Con pares
+(`combined_footings`), el diseño es el mismo de siempre, con las combinadas, y solo se miden las etapas; sin ellos, se
+agrega el detalle por tarea de arriba.
+
+`structurelab-rc run <ejemplo> --profile` (D-171) escribe `medicion.json` en la carpeta de salida de cada ejemplo: el
+total (`total_s`) y el tiempo de cada etapa de la corrida completa (importación de ETABS, las del diseño, verificación,
+despiece y modelo de dibujo, figuras, dibujo SVG y DXF, memoria TXT y PDF, `.dli`), sin cambiar ninguna salida.
+
 ### Curva costo–N (comando `typology-curve`, D-078)
 
 `structurelab-rc typology-curve <proyecto de diseño> --output <carpeta> [--n 1-12] [--workers N] [--method ...]` diseña

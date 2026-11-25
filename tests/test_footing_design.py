@@ -5,9 +5,11 @@ import json
 import math
 import random
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from frozen_examples import frozen
 from pydantic import ValidationError
 
 from structurelab_rc.cli import main
@@ -15,7 +17,7 @@ from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing import typologies as typologies_impl
 from structurelab_rc.design.footing import typology as typology_module
 from structurelab_rc.design.footing.grouping import partition, reassign
-from structurelab_rc.design.footing.profiling import profile_typologies
+from structurelab_rc.design.footing.profiling import profile_typologies, stage_times
 from structurelab_rc.design.footing.typologies import (
     CurvePoint,
     DesignResult,
@@ -249,7 +251,111 @@ def test_cli_profile_writes_the_measurement_without_changing_the_design(tmp_path
     assert measurement["environment"]["workers"] == 1 and measurement["fc"][0]["fc"] == 21.0
 
 
-def test_design_takes_the_least_thickness_for_its_plan_and_mats() -> None:
+def test_stage_times_counts_calls_and_restores_the_functions() -> None:
+    """D-171: stage_times cuenta las llamadas y el tiempo de una etapa (las recursivas una vez) y deja la función como
+    estaba al salir."""
+    def countdown(n: int) -> int:
+        return 0 if n == 0 else holder.countdown(n - 1)
+
+    holder = SimpleNamespace(countdown=countdown)
+    with stage_times([(holder, "countdown", "cuenta")]) as times:
+        holder.countdown(3)
+        holder.countdown(1)
+    assert times["cuenta"]["calls"] == 2 and times["cuenta"]["seconds"] >= 0.0
+    assert holder.countdown is countdown
+
+
+def test_pair_costs_are_computed_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    """D-171: con el registro de costos, un par columna–candidato ya costeado no se vuelve a costear y el costo es el
+    mismo."""
+    typologies = typologies_impl
+    ctx = _context(_project(typologies=1, columns=2))
+    design = design_group(ctx, list(ctx.project.columns), 21.0)
+    assert design is not None
+    dowels = [[design.dowels[column.id]] for column in ctx.project.columns]
+    calls: list[int] = []
+    original = typologies.column_cost
+
+    def counted(*args: Any, **kwargs: Any) -> Any:
+        calls.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(typologies, "column_cost", counted)
+    known: dict[tuple[int, int], tuple[float, float, float]] = {}
+    first = typologies._pair_costs(ctx, [design.typology], dowels, known)
+    assert len(calls) == 2
+    assert typologies._pair_costs(ctx, [design.typology], dowels, known) == first and len(calls) == 2
+    assert typologies._pair_costs(ctx, [design.typology], dowels) == first
+
+
+def test_run_profile_writes_the_stages(tmp_path: Path) -> None:
+    """D-171: run --profile escribe medicion.json con el total y el tiempo de cada etapa, sin cambiar las salidas."""
+    source = frozen("nsr_10", "zapatas", "zapata_centrica.json")
+    assert main(["run", str(source), "--output", str(tmp_path / "a")]) in (0, 1)
+    assert main(["run", str(source), "--output", str(tmp_path / "b"), "--profile"]) in (0, 1)
+    for name in ("resultado.json", "memoria.txt"):
+        assert (tmp_path / "a" / name).read_bytes() == (tmp_path / "b" / name).read_bytes()
+    measurement = json.loads((tmp_path / "b" / "medicion.json").read_text(encoding="utf-8"))
+    assert measurement["total_s"] > 0
+    assert measurement["stages"]["verificación (con la validación)"]["calls"] == 1
+    assert "memoria TXT" in measurement["stages"]
+
+
+@pytest.mark.parametrize("profile", ["nsr_10", "aci_318_25"])
+def test_plan_floor_is_below_every_solution_of_the_plan(profile: str) -> None:
+    """D-171: la cota por planta (con el espesor inicial) no pasa del costo de ninguna solución de esa planta con un
+    espesor mayor o igual, ni la cota de cada espesor (D-076) del costo de su solución; y crece con h. Plantas y espesores
+    del ejemplo de diseño por tipologías (las cuatro primeras plantas de dos columnas)."""
+    data = json.loads(frozen(profile, "zapatas", "diseno_tipologias.json").read_text(encoding="utf-8"))
+    data.pop("combined_footings", None)
+    ctx = _context(data)
+    fc = ctx.design.fc_options[0]
+    heights = typology_module._heights(ctx, ctx.design.h_min)
+    checked = 0
+    for column in ctx.project.columns[:2]:
+        group = [column]
+        size = typology_module._initial_size(ctx, group)
+        for plan in itertools.islice(typology_module._plans(ctx, group, (size, size)), 4):
+            start = typology_module._plan_floor(ctx, group, fc, plan, heights[0])
+            previous = 0.0
+            for h in heights:
+                floor = typology_module._plan_floor(ctx, group, fc, plan, h)
+                assert floor >= previous - 1e-9  # crece con h
+                previous = floor
+                result = typology_module._at_height(ctx, group, fc, plan, h)
+                if isinstance(result, GroupDesign):
+                    assert start <= result.cost and floor <= result.cost
+                    assert typology_module._lower_bound(ctx, group, fc, plan, h) <= result.cost
+                    checked += 1
+    assert checked
+
+
+def test_plan_floor_does_not_depend_on_the_top_mesh(monkeypatch: pytest.MonkeyPatch) -> None:
+    """D-171: la cota por planta no usa los momentos negativos (si la malla superior es obligatoria), que podrían dejar
+    de serlo al crecer h: sigue igual aunque los momentos negativos no se puedan calcular."""
+    ctx = _context(_project(typologies=1, columns=1))
+    group = [ctx.project.columns[0]]
+    plan, h = (2400.0, 2400.0), 500.0
+    expected = typology_module._plan_floor(ctx, group, 21.0, plan, h)
+
+    def unavailable(*args: Any, **kwargs: Any) -> Any:
+        raise AssertionError("la cota por planta no debe pedir los momentos negativos")
+
+    monkeypatch.setattr(typology_module, "_demands", unavailable)
+    assert typology_module._plan_floor(ctx, group, 21.0, plan, h) == expected
+
+
+def test_dowel_floor_is_inside_the_footing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """D-171: la parte de los pasadores que suma la cota es la de dentro de la zapata, h − recubrimiento − 2·db_máx, que
+    no pasa del empotramiento costeado en ninguna solución (aunque el perfil no defina el empalme a compresión)."""
+    ctx = _context(_project(typologies=1, columns=1))
+    design = design_group(ctx, list(ctx.project.columns), 21.0)
+    assert design is not None
+    t = design.typology
+    largest = max(ctx.spec(name).diameter_mm for name in ctx.design.bars)
+    inside = t.h - ctx.design.cover - 2 * largest
+    dbx, dby = ctx.spec(t.bottom["x"]["designation"]).diameter_mm, ctx.spec(t.bottom["y"]["designation"]).diameter_mm
+    assert inside <= t.h - ctx.design.cover - dbx - dby  # el empotramiento de footing_runs
     ctx = _context(_project(typologies=1, columns=1))
     column = ctx.project.columns[0]
     design = design_group(ctx, [column], 21.0)

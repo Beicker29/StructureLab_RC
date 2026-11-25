@@ -2,6 +2,7 @@
 
 import json
 import os
+import sys
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -13,7 +14,7 @@ from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.design.footing import combined as combined_design
 from structurelab_rc.design.footing.assignment import available as solver_available
 from structurelab_rc.design.footing.mixed import combined_part, design_with_pairs, designed_with_pairs
-from structurelab_rc.design.footing.profiling import profile_typologies
+from structurelab_rc.design.footing.profiling import DESIGN_STAGES, Stage, profile_typologies, stage_times
 from structurelab_rc.design.footing.typologies import DesignResult, typology_curve
 from structurelab_rc.design.footing.typology import Context
 from structurelab_rc.design.pile_cap import search as pile_cap_design
@@ -365,6 +366,24 @@ def _clear_outputs(output: Path) -> None:
         path.unlink(missing_ok=True)
 
 
+def run_stages() -> tuple[Stage, ...]:
+    """Las etapas de una corrida completa para run --profile (D-171): las del diseño por tipologías y las de la
+    verificación, el despiece, el dibujo y la memoria."""
+    own = sys.modules[__name__]
+    return (*DESIGN_STAGES,
+            (own, "design_with_pairs", "diseño por tipologías (total)"),
+            (own, "_run", "verificación (con la validación)"),
+            (own, "build_results", "resultado.json (armado)"),
+            (own, "_detailing", "despiece, cartilla y modelo de dibujo"),
+            (own, "pressure_figures", "figuras de presión"),
+            (own, "diagram_figures", "diagramas de la combinada"),
+            (own, "_drawing_files", "dibujo: SVG y DXF"),
+            (own, "report_documents", "memoria: contenido"),
+            (own, "render_text", "memoria TXT"),
+            (own, "write_pdf", "memoria PDF"),
+            (own, "_dli_file", ".dli de DL-NET"))
+
+
 def report_file(path: Path, output: Path, *, full: bool = False) -> Report:
     """Escribe resultado.json, memoria.txt y, si fpdf2 está instalado, memoria.pdf en la carpeta de salida (D-050), con
     las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095)."""
@@ -588,9 +607,16 @@ def _design_footings(
     ctx, validation = _design_context(path, method)
     if ctx is None:
         return None, None, validation, None
-    measurement = None
-    if profile:
-        result, measurement = profile_typologies(ctx, workers)
+    measurement: dict[str, Any] | None = None
+    if profile:  # D-171: la misma corrida, con el tiempo de cada etapa; el detalle por tarea, solo sin combinadas
+        begin = time.perf_counter()
+        detail: dict[str, Any] = {}
+        with stage_times(DESIGN_STAGES) as stages:
+            if ctx.project.combined_footings:
+                result = design_with_pairs(ctx, workers)
+            else:
+                result, detail = profile_typologies(ctx, workers)
+        measurement = {"design_wall_s": time.perf_counter() - begin, "stages": stages, **detail}
     else:
         result = design_with_pairs(ctx, workers)  # las tipologías y las combinadas de los pares, un solo f'c (D-153)
     if result.fc is None:

@@ -6,6 +6,7 @@ import json
 import os
 import platform
 import sys
+import time
 from collections.abc import Callable, Sequence
 from dataclasses import replace
 from pathlib import Path
@@ -13,6 +14,7 @@ from typing import Any
 
 from structurelab_rc import __version__
 from structurelab_rc.design.footing.combined import CombinedDesignResult
+from structurelab_rc.design.footing.profiling import stage_times
 from structurelab_rc.design.footing.typologies import DesignResult, Iteration, MilpInfo
 from structurelab_rc.design.pile_cap.search import summary as pile_cap_summary
 from structurelab_rc.domain.check import Check
@@ -30,6 +32,7 @@ from structurelab_rc.engine import (
     profile_footings,
     report_file,
     run_plan,
+    run_stages,
     typology_curve_file,
     validate_file,
     verify_file,
@@ -338,9 +341,10 @@ def _typology_curve(path: Path, output: Path, counts: list[int] | None, workers:
     return 0
 
 
-def _run_one(path: Path, output: Path | None, workers: int | None, full: bool) -> int:
+def _run_one(path: Path, output: Path | None, workers: int | None, full: bool, profile: bool = False) -> int:
     """Un ejemplo de punta a punta (D-096): importa de ETABS si es una plantilla, diseña si es un diseño por tipologías y
-    deja en una sola carpeta resultado.json, memoria.txt, memoria.pdf y las figuras (o la curva costo-N)."""
+    deja en una sola carpeta resultado.json, memoria.txt, memoria.pdf y las figuras (o la curva costo-N). Con profile
+    (D-171), además medicion.json con el tiempo de cada etapa (no cambia los resultados)."""
     try:
         plan = run_plan(path, output)
     except RunError as error:
@@ -348,6 +352,25 @@ def _run_one(path: Path, output: Path | None, workers: int | None, full: bool) -
         return 1
     out = plan.output
     print(f"Ejemplo: {path} ({RUN_KINDS[plan.kind]}); salida en {out}")
+    if not profile:
+        return _run_example(plan, workers, full)
+    begin = time.perf_counter()
+    with stage_times((*run_stages(), (sys.modules[__name__], "_import_etabs_footings", "importación de ETABS"))) as stages:
+        code = _run_example(plan, workers, full)
+    total = time.perf_counter() - begin
+    processes = workers or os.cpu_count() or 1
+    data = {"environment": _environment(processes), "project": str(path), "total_s": total,
+            "stages": {label: {"calls": int(item["calls"]), "seconds": round(item["seconds"], 3)}
+                       for label, item in stages.items() if item["calls"]}}
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "medicion.json").write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Medicion escrita en {out / 'medicion.json'} (total {total:.1f} s)")
+    return code
+
+
+def _run_example(plan: RunPlan, workers: int | None, full: bool) -> int:
+    """El ejemplo de un plan de run: verifica, diseña y verifica, corre la curva o importa de ETABS."""
+    path, out = plan.path, plan.output
     if plan.kind == "project":
         return _report(path, out, full)
     if plan.kind == "curve":
@@ -386,18 +409,18 @@ def _run_etabs(plan: RunPlan, workers: int | None, full: bool) -> int:
     return _report(imported, out, full)
 
 
-def _run(target: Path, output: Path | None, workers: int | None, full: bool) -> int:
+def _run(target: Path, output: Path | None, workers: int | None, full: bool, profile: bool = False) -> int:
     """Un ejemplo, o todos los de una carpeta (cada uno en su carpeta de salida; con --output, debajo de ella). Las
     copias congeladas de las pruebas (subcarpetas pruebas/, D-098) se corren solo si se pide esa carpeta."""
     if not target.is_dir():
-        return _run_one(target, output, workers, full)
+        return _run_one(target, output, workers, full, profile)
     examples = sorted(path for path in target.rglob("*.json")
                       if not {"results", "pruebas"} & set(path.relative_to(target).parts[:-1]))
     codes = []
     for path in examples:
         own = None if output is None else output / path.parent.relative_to(target) / path.stem
         print(f"\n=== {path}")
-        codes.append((path, _run_one(path, own, workers, full)))
+        codes.append((path, _run_one(path, own, workers, full, profile)))
     print("\nResumen (0: cumple; 1: no cumple o error):")
     for path, code in codes:
         print(f"  {code}  {path}")
@@ -410,6 +433,18 @@ def _tolerant_console() -> None:
     for stream in (sys.stdout, sys.stderr):
         if isinstance(stream, io.TextIOWrapper):
             stream.reconfigure(errors="replace")
+
+
+def _add_run(commands: Any) -> None:
+    """El subcomando run (D-096) y sus opciones."""
+    runner = commands.add_parser("run", help="corre un ejemplo de punta a punta (o todos los de una carpeta): resultado.json, "
+                                             "memorias PDF y TXT y figuras (D-096)")
+    runner.add_argument("target", type=Path, help="ejemplo JSON (proyecto, diseno, curva o plantilla de ETABS) o carpeta")
+    runner.add_argument("--output", type=Path, help="carpeta de salida (por defecto results/<perfil>/<elemento>/<nombre>)")
+    runner.add_argument("--workers", type=int, help="procesos en paralelo para el diseno y la curva")
+    runner.add_argument("--full", action="store_true", help="incluye en la memoria el detalle de todas las estaciones")
+    runner.add_argument("--profile", action="store_true",
+                        help="escribe ademas medicion.json con el tiempo de cada etapa (D-171; no cambia los resultados)")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -459,12 +494,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     curve.add_argument("--n", type=_counts, help="valores de N, por ejemplo 1-12 o 2,4,6 (por defecto, de 1 a 12 o al numero de columnas)")
     curve.add_argument("--workers", type=int, help="procesos en paralelo (por defecto, los nucleos del equipo; 1: sin paralelo)")
     curve.add_argument("--method", choices=("dp", "milp", "milp_iter"), help="reemplaza design.method")
-    runner = commands.add_parser("run", help="corre un ejemplo de punta a punta (o todos los de una carpeta): resultado.json, "
-                                             "memorias PDF y TXT y figuras (D-096)")
-    runner.add_argument("target", type=Path, help="ejemplo JSON (proyecto, diseno, curva o plantilla de ETABS) o carpeta")
-    runner.add_argument("--output", type=Path, help="carpeta de salida (por defecto results/<perfil>/<elemento>/<nombre>)")
-    runner.add_argument("--workers", type=int, help="procesos en paralelo para el diseno y la curva")
-    runner.add_argument("--full", action="store_true", help="incluye en la memoria el detalle de todas las estaciones")
+    _add_run(commands)
     reporter = commands.add_parser("report", help="verifica un proyecto y escribe resultado.json, memoria.txt y memoria.pdf")
     reporter.add_argument("project", type=Path, help="ruta del archivo JSON")
     reporter.add_argument("--output", type=Path, required=True, help="carpeta de salida, por ejemplo results/mi_proyecto")
@@ -472,7 +502,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     commands_by_name: dict[str, Callable[[], int]] = {
         "report": lambda: _report(args.project, args.output, args.full),
-        "run": lambda: _run(args.target, args.output, args.workers, args.full),
+        "run": lambda: _run(args.target, args.output, args.workers, args.full, args.profile),
         "design-footings": lambda: _design_footings(args.project, args.output, args.workers, args.profile, args.method),
         "design-combined": lambda: _design_combined(args.project, args.output, args.workers),
         "design-pile-caps": lambda: _design_pile_caps(args.project, args.output),

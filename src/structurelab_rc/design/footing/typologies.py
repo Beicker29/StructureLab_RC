@@ -177,6 +177,9 @@ def _run(ctx: Context, task: Task) -> Any:
     if kind == "covers":
         typology, index = args
         return covers(ctx, typology, columns[index])
+    if kind == "cost":  # D-171: el costo de un par columna–candidato, con sus pasadores, en un proceso del pool
+        typology, index, dowels = args
+        return column_cost(ctx, typology, columns[index], dowels)
     # "design": tramo de la tabla, búsqueda rápida; "refine": grupo elegido, con el barrido de espesores (D-076).
     fc, indices, start = args
     return design_group(ctx, [columns[index] for index in indices], fc, start=start, sweep=kind == "refine")
@@ -369,13 +372,25 @@ def _milp(ctx: Context, tables: _Tables, dp: _FcSolution, run: Runner) -> _FcSol
 
 
 def _pair_costs(
-    ctx: Context, catalog: Sequence[Typology], dowels: Sequence[Sequence[dict[str, Any] | None]]
+    ctx: Context, catalog: Sequence[Typology], dowels: Sequence[Sequence[dict[str, Any] | None]],
+    known: dict[tuple[int, int], tuple[float, float, float]] | None = None,
 ) -> tuple[list[list[int | None]], list[list[int | None]]]:
     """Costo (pesos enteros) y acero (gramos enteros) de cada columna con cada candidato del catálogo; None si no la cubre
-    (dowels[i][j] son los pasadores con que el candidato j cubre la columna i)."""
+    (dowels[i][j] son los pasadores con que el candidato j cubre la columna i). known guarda el costo de cada par (i, j)
+    ya calculado (D-171): en milp_iter el catálogo solo crece y los pasadores de un par no cambian, así que cada par se
+    costea una vez en todas las iteraciones y en todos los N de la curva; el número es el mismo."""
     columns = ctx.project.columns
-    pairs = [[None if (found := dowels[i][j]) is None else column_cost(ctx, catalog[j], columns[i], found) for j in range(len(catalog))]
-             for i in range(len(columns))]
+    cache = {} if known is None else known
+
+    def cost_of(i: int, j: int) -> tuple[float, float, float] | None:
+        found = dowels[i][j]
+        if found is None:
+            return None
+        if (i, j) not in cache:
+            cache[(i, j)] = column_cost(ctx, catalog[j], columns[i], found)
+        return cache[(i, j)]
+
+    pairs = [[cost_of(i, j) for j in range(len(catalog))] for i in range(len(columns))]
     cost = [[None if pair is None else round(pair[0]) for pair in row] for row in pairs]
     steel = [[None if pair is None else round(pair[2] * _G_PER_KG) for pair in row] for row in pairs]
     return cost, steel
@@ -410,6 +425,7 @@ class _Catalog:
     keys: set[Any] = field(default_factory=set)
     dowels: list[list[dict[str, Any] | None]] = field(default_factory=list)
     redesigned: set[tuple[int, ...]] = field(default_factory=set)
+    costs: dict[tuple[int, int], tuple[float, float, float]] = field(default_factory=dict)  # (i, j) ya costeados (D-171)
 
 
 def _new_catalog(ctx: Context, fc: float, run: Runner) -> _Catalog | str:
@@ -456,7 +472,8 @@ def _iterate(ctx: Context, state: _Catalog, run: Runner) -> _FcSolution | str:
     best: Chosen | None = None
     best_total = math.inf
     while True:
-        cost, steel = _pair_costs(ctx, state.catalog, state.dowels)
+        _cost_new_pairs(state, run)
+        cost, steel = _pair_costs(ctx, state.catalog, state.dowels, state.costs)
         result = assign(cost, steel, groups, start, design.milp_time_limit)
         if not result.choice:
             break
@@ -480,6 +497,15 @@ def _iterate(ctx: Context, state: _Catalog, run: Runner) -> _FcSolution | str:
     best = _refined(ctx, fc, singles, best, run)
     total = sum(group.cost for group, _ in best)
     return _FcSolution(total, best, total, [], iterations=tuple(iterations))
+
+
+def _cost_new_pairs(state: _Catalog, run: Runner) -> None:
+    """Costea en los procesos los pares columna–candidato cubiertos que aún no tienen costo (D-171): los del catálogo
+    inicial y, en cada iteración, solo los de los candidatos nuevos. Mismo cálculo que _pair_costs (column_cost)."""
+    missing = [(i, j) for i, row in enumerate(state.dowels) for j, found in enumerate(row)
+               if found is not None and (i, j) not in state.costs]
+    tasks: list[Task] = [("cost", state.catalog[j], i, state.dowels[i][j]) for i, j in missing]
+    state.costs.update(zip(missing, run(tasks), strict=True))
 
 
 def _proposals(ctx: Context, fc: float, singles: dict[str, GroupDesign], chosen: Chosen) -> list[Task]:

@@ -3958,6 +3958,86 @@
   - Cambia el texto del cuadro de tipologías de la T rectangular ubicada.
   - Se suma el ejemplo nuevo a la huella.
 
+### D-171: medición por etapas y rapidez del diseño por tipologías sin cambiar resultados
+
+- **Fecha:** 2026-11-25
+- **Pedido del usuario:** bajar los tiempos del diseño por tipologías (opción C de la hoja de ruta) y completar
+  `--profile` con las etapas de las combinadas, **sin perder la capacidad de encontrar la mejor opción** en el diseño por
+  tipologías y en la curva costo–N.
+- **Criterio:** solo cambios que dejan los resultados idénticos (la huella sin regenerar es el control). Una mejora que
+  cambie un número, o que pode candidatos, se consulta antes.
+- **Medición (fase 1):**
+  - `profiling.stage_times` cronometra, mientras dura un bloque, las funciones de cada etapa en el proceso principal
+    (llamadas y tiempo de pared) y las restaura al salir.
+  - `design-footings --profile` corre ahora el mismo diseño que sin el flag (antes medía solo las aisladas e ignoraba
+    los pares) y agrega `stages`.
+  - `run --profile` escribe `medicion.json` con todas las etapas de la corrida (importación, diseño, verificación,
+    despiece, dibujo, memoria TXT y PDF, `.dli`).
+- **Lo que mostró** (`diseno_tipologias_etabs`, 67 aisladas, N = 6, tres f'c, tres pares en un tipo; 16 procesos; 574 s):
+  - la búsqueda de las aisladas, 462 s; dentro de ella, los rediseños con barrido de los grupos que propone el MILP
+    (tareas `refine`), unos 375 s de pared y unos 1 700 a 2 200 s de CPU por f'c;
+  - los tipos de los grupos de pares, 74 s;
+  - la memoria PDF, 21 s;
+  - el costeo de los pares columna–candidato, 26 s en serie: `milp_iter` recalculaba la matriz completa en cada
+    iteración aunque el catálogo solo crece.
+- **Cambios (fase 2):**
+  1. **Registro de costos:** `_Catalog.costs` guarda el costo de cada par (columna, candidato) y `_pair_costs` lo reusa.
+     Cada par se costea una vez en todas las iteraciones y en todos los N de la curva, que conserva el catálogo.
+  2. **Pares nuevos en los procesos:** la tarea `cost` (`_cost_new_pairs`) costea en el pool solo los pares que aún no
+     tienen costo. Es el mismo `column_cost`.
+  3. **Cota por planta en `design_group`** (`_plan_floor`): si la cota de una planta con su espesor inicial supera el
+     mejor costo por más de una tolerancia relativa (1e-6), su búsqueda se salta y la planta cuenta como explorada.
+     - El reemplazo exige un costo estrictamente menor y con empate no se salta, así que una planta saltada nunca habría
+       ganado y se exploran las mismas plantas; la tolerancia evita que un redondeo en el último decimal descarte un
+       empate.
+     - La cota se usa para todos los espesores desde el inicial, así que solo suma términos que crecen con h: el concreto,
+       la malla inferior mínima (cuantía·ancho·h, la misma de `footing_rules`) y los pasadores mínimos.
+     - No suma la malla superior obligatoria de la cota de D-076: lo es solo si hay momento negativo con ese espesor, y
+       no se puede garantizar que siga siéndolo al crecer h. En el modelo el momento negativo no bajó con h en ningún
+       caso probado (con contacto total el peso nuevo y la presión se compensan; con contacto parcial crece), pero la
+       cota no depende de eso.
+  4. **Corrección de la cota de D-076 (`_lower_bound`), término de los pasadores.** Tomaba el largo h − recubrimiento.
+     - El largo que se costea con la cartilla es empotramiento + pedestal + empalme a compresión, con empotramiento =
+       h − recubrimiento − db_x − db_y. Ese cálculo está bien y no cambia.
+     - Si el perfil no define el empalme a compresión y el pie es recto, ese largo es solo el empotramiento, menor que
+       h − recubrimiento, y la cota dejaba de ser un límite inferior.
+     - La cota toma ahora h − recubrimiento − 2·db_máx (los dos diámetros mayores de las mallas permitidas), que no pasa
+       del empotramiento en ninguna solución y sigue creciendo con h. Vale para las dos cotas (función común
+       `_floor_steel`).
+     - Solo puede podar menos, nunca de más. Ningún ejemplo cambia (huella sin regenerar).
+- **Resultado** (mismo ejemplo, este PC, 16 procesos), con `proyecto.json`, `resultado.json`, `memoria.txt` y
+  `cartilla.csv` idénticos:
+
+  | Etapa | Antes (s) | Después (s) |
+  | --- | --- | --- |
+  | Aisladas: búsqueda de los tipos | 461.9 | 338.6 |
+  | — costeo columna–candidato | 25.9 (serie) | 4.1 (procesos) |
+  | — refinado de los grupos | 5.7 | 1.6 |
+  | Combinadas: diseño de cada par | 12.6 | 12.5 |
+  | Combinadas: tipos de los grupos | 73.5 | 72.5 |
+  | Memoria PDF | 21.3 | 20.8 |
+  | **Total** | **573.7** | **448.4 (−22 %)** |
+
+  - Solo cambia el tiempo de las iteraciones guardado en el resumen del diseño.
+  - Con la primera versión de la cota por planta, que sumaba la malla superior obligatoria, el total era 343 s. La
+    diferencia es el precio de la cota rigurosa.
+- **Lo que queda** (hoja de ruta, "Diseño de zapatas"):
+  - los rediseños con barrido de los grupos (tareas `refine`), los tipos de combinadas (~72 s), el catálogo inicial
+    (~48 s) y la memoria PDF (~21 s);
+  - el área requerida por raíces (`required_area`) ya está guardada en memoria (D-124) y sus llamadas restantes son
+    distintas; la fórmula cerrada del bloque cambiaría los últimos decimales y se consulta antes.
+- **Control:**
+  - la huella sin regenerar y la suite completa;
+  - `tests/test_footing_design.py`:
+    - `stage_times` cuenta y restaura;
+    - un par costeado no se vuelve a costear y da el mismo costo;
+    - `run --profile` escribe las etapas sin cambiar las salidas;
+    - en las cuatro primeras plantas de dos columnas del ejemplo de tipologías de los dos perfiles, y en todos sus
+      espesores, la cota por planta y la de D-076 no pasan del costo de ninguna solución, y la cota crece con h;
+    - la cota por planta no pide los momentos negativos;
+    - la parte de los pasadores de la cota no pasa del empotramiento.
+  - las pruebas de la medición existentes y la equivalencia del diseño en uno y varios procesos.
+
 ## Consultas abiertas
 
 ### C-017: presión del suelo bajo una combinada trapezoidal o en planta T (fase B de D-163)

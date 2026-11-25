@@ -40,6 +40,7 @@ _MAT_TRIES = 12
 _DOWELS_MIN = 4
 _DOWEL_PREFIX = "Pasadores"
 _EXTRA_PLANS = 2  # plantas mayores que se exploran después de la primera viable
+_BOUND_TOLERANCE = 1e-6  # relativa: la cota por planta descarta solo si supera el mejor costo por más que esto (D-171)
 _MM3_PER_M3 = 1e9
 
 
@@ -402,9 +403,30 @@ def _lower_bound(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan:
     permitido, D-072), su acero mínimo en las direcciones con momento negativo. Todo lo que se suma está en cualquier
     solución con este espesor, así que la poda no pierde el óptimo; crece con h."""
     design = ctx.design
+    steel, per_direction, provisional = _floor_steel(ctx, columns, fc, plan, h)
+    if not ctx.profile.plain.permitted_in_foundations(ctx.project.seismic.level):
+        negative = _demands(ctx, columns, provisional, -1.0)
+        steel += len(columns) * sum(per_direction[direction] for direction, moment in negative.items() if moment > 0)
+    return _concrete_cost(ctx, provisional, columns) + steel * design.prices.steel_per_kg
+
+
+def _floor_steel(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tuple[float, float],
+                 h: float) -> tuple[float, dict[str, float], Typology]:
+    """El acero de la cota (kg): la malla inferior mínima de las dos direcciones y los pasadores mínimos de cada columna;
+    el acero mínimo por dirección (para la malla superior obligatoria) y la tipología provisional de la planta.
+
+    Cada término queda por debajo del acero que se costea en cualquier solución con este espesor:
+    - malla inferior: el As de cada dirección cumple As,min = cuantía·ancho·h (footing_rules) y cada barra mide al menos
+      el largo de borde a borde menos el recubrimiento (la cartilla redondea hacia arriba y suma ganchos y empalmes);
+    - pasadores: el largo costeado es empotramiento + pedestal + empalme a compresión (y el pie), con el empotramiento
+      h − recubrimiento − db_x − db_y (domain/footing/detailing.footing_runs). Sin empalme definido por el perfil y con
+      pie recto puede quedar en el empotramiento solo, así que la cota toma la parte dentro de la zapata con los dos
+      diámetros mayores de las mallas: h − recubrimiento − 2·db_máx ≤ empotramiento (D-171)."""
+    design = ctx.design
     lx, ly = plan
     ratio = ctx.profile.footing.min_reinforcement_ratio(ctx.project.materials.fy)
     unit = min(ctx.spec(designation).mass_kg_m / ctx.spec(designation).area_mm2 for designation in design.bars)
+    inside = max(h - design.cover - 2 * max(ctx.spec(designation).diameter_mm for designation in design.bars), 0.0)
     # Barras x: As,min con el ancho ly y largo lx − 2r; barras y: ancho lx y largo ly − 2r (kg por zapata).
     per_direction = {"x": ratio * h * ly * (lx - 2 * design.cover) * unit / 1000,
                      "y": ratio * h * lx * (ly - 2 * design.cover) * unit / 1000}
@@ -413,11 +435,21 @@ def _lower_bound(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan:
     provisional = Typology(fc, lx, ly, h, {"first": "x", "x": bars, "y": bars}, None)
     for column in columns:
         steel += min(option["count"] * ctx.spec(option["designation"]).mass_kg_m
-                     for option in _dowel_options(ctx, provisional, column)) * (h - design.cover) / 1000
-    if not ctx.profile.plain.permitted_in_foundations(ctx.project.seismic.level):
-        negative = _demands(ctx, columns, provisional, -1.0)
-        steel += len(columns) * sum(per_direction[direction] for direction, moment in negative.items() if moment > 0)
-    return _concrete_cost(ctx, provisional, columns) + steel * design.prices.steel_per_kg
+                     for option in _dowel_options(ctx, provisional, column)) * inside / 1000
+    return steel, per_direction, provisional
+
+
+def _plan_floor(ctx: Context, columns: Sequence[DesignColumn], fc: float, plan: tuple[float, float], h: float) -> float:
+    """Cota inferior del costo de cualquier solución de la planta con espesor h o mayor (D-171), para saltar una planta
+    entera en design_group con el valor en su espesor inicial.
+
+    Por eso solo usa términos que crecen con h: el concreto (proporcional a h), la malla inferior mínima (cuantía·ancho·h)
+    y los pasadores mínimos (la parte dentro de la zapata, h − recubrimiento − 2·db_máx); los pasadores candidatos de
+    cada columna dependen de la planta y de las cargas, no de h. No suma la malla superior obligatoria de _lower_bound:
+    lo es solo si hay momento negativo con ese espesor, y al crecer h el peso propio puede llevar la base a contacto
+    total y anularlo, de modo que con un espesor mayor la solución puede no llevar malla superior."""
+    steel, _, provisional = _floor_steel(ctx, columns, fc, plan, h)
+    return _concrete_cost(ctx, provisional, columns) + steel * ctx.design.prices.steel_per_kg
 
 
 def _heights(ctx: Context, h_start: float) -> list[float]:
@@ -485,7 +517,13 @@ def design_group(
     extra = None
     search = _for_plan if sweep else _quick_plan
     for plan in _plans(ctx, columns, lower):
-        result = search(ctx, columns, fc, plan, h_start)
+        # D-171: si la cota de la planta (válida para todo espesor desde h_start) supera el mejor costo, con una tolerancia
+        # relativa para el redondeo, ninguna solución suya gana (el reemplazo exige un costo menor): se salta su búsqueda y
+        # cuenta como explorada. Con empate no se salta.
+        if best is not None and _plan_floor(ctx, columns, fc, plan, h_start) > best.cost * (1 + _BOUND_TOLERANCE):
+            result: GroupDesign | bool = True
+        else:
+            result = search(ctx, columns, fc, plan, h_start)
         if isinstance(result, GroupDesign) and (best is None or result.cost < best.cost):
             best = result
         if best is not None:
