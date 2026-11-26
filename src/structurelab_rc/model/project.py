@@ -9,6 +9,7 @@ from structurelab_rc.model.footing import Footing, Soil
 from structurelab_rc.model.layout import internal
 from structurelab_rc.model.pile_cap import PileCap, PileCapSoil
 from structurelab_rc.model.reinforcement import ReinforcementLayout
+from structurelab_rc.model.retaining_wall import RetainingSoil, RetainingWall
 
 N_PER_KN = 1e3
 NMM_PER_KNM = 1e6
@@ -163,6 +164,8 @@ class Project(_Input):
     combined_footings: tuple[CombinedFooting, ...] = ()
     pile_soil: PileCapSoil | None = None
     pile_caps: tuple[PileCap, ...] = ()
+    retaining_soil: RetainingSoil | None = None  # D-173: el suelo de los muros de contención
+    retaining_walls: tuple[RetainingWall, ...] = ()  # D-173: muros de contención en voladizo
     detailing: DetailingSettings | None = None  # D-125: sin él no se despieza
     drawing: DrawingSettings | None = None  # D-126: sin él no se dibuja; requiere detailing
     min_clear_spacing: PositiveFloat | None = None  # D-156: separación libre mínima entre zapatas vecinas (mm); solo avisa
@@ -180,8 +183,16 @@ class Project(_Input):
     @model_validator(mode="after")
     def _check_content(self) -> Self:
         any_footing = bool(self.footings or self.combined_footings)
-        if not self.members and not any_footing and not self.pile_caps:
-            raise ValueError("el proyecto debe tener al menos un miembro, una zapata o un cabezal")
+        if self.retaining_walls and self.retaining_soil is None:
+            raise ValueError("los muros de contención requieren los datos de su suelo (retaining_soil, D-173)")
+        if self.retaining_soil is not None and not self.retaining_walls:
+            raise ValueError("retaining_soil solo se declara con muros de contención (D-173)")
+        coulomb = [wall.id for wall in self.retaining_walls if wall.earth_pressure.method == "coulomb"]
+        if coulomb and self.retaining_soil is not None and self.retaining_soil.cohesion is None:
+            raise ValueError(f"los muros {', '.join(coulomb)} usan Coulomb: declare la cohesion c' del relleno en "
+                             "retaining_soil (D-173)")
+        if not self.members and not any_footing and not self.pile_caps and not self.retaining_walls:
+            raise ValueError("el proyecto debe tener al menos un miembro, una zapata, un cabezal o un muro de contención")
         if self.pile_caps and (self.footings or self.combined_footings):
             raise ValueError("un proyecto no mezcla zapatas y cabezales: cada uno lleva su suelo (soil)")
         if self.pile_caps and self.pile_soil is None:
@@ -193,9 +204,10 @@ class Project(_Input):
         if self.soil is not None and not any_footing:
             raise ValueError("soil solo se declara con zapatas")
         ids = ([member.id for member in self.members] + [footing.id for footing in self.footings]
-               + [footing.id for footing in self.combined_footings] + [cap.id for cap in self.pile_caps])
+               + [footing.id for footing in self.combined_footings] + [cap.id for cap in self.pile_caps]
+               + [wall.id for wall in self.retaining_walls])
         if len(ids) != len(set(ids)):
-            raise ValueError("los identificadores de miembros, zapatas y cabezales deben ser únicos")
+            raise ValueError("los identificadores de miembros, zapatas, cabezales y muros deben ser únicos")
         if self.drawing is not None and self.detailing is None:
             raise ValueError("drawing requiere detailing: el dibujo rotula las marcas de la cartilla (D-126)")
         return self

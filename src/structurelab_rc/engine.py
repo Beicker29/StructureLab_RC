@@ -34,6 +34,7 @@ from structurelab_rc.domain.pile_cap.checks import cap_analysis, pile_cap_checks
 from structurelab_rc.domain.pile_cap.drawing import pile_cap_views
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis
 from structurelab_rc.domain.pile_cap.outline import bar_span
+from structurelab_rc.domain.retaining_wall.checks import retaining_wall_checks
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.drawing.dxf import write_dxf
@@ -229,6 +230,9 @@ def _run(path: Path) -> tuple[Project | None, tuple[Check, ...], Analyses]:
         for cap in project.pile_caps:
             analyses[cap.id] = cap_analysis(basis, cap, project.pile_soil)
             checks.extend(pile_cap_checks(basis, cap, project.pile_soil, analyses[cap.id]))
+    if project.retaining_soil is not None:  # D-173
+        for wall in project.retaining_walls:
+            checks.extend(retaining_wall_checks(wall, project.retaining_soil))
     return project, tuple(checks), analyses
 
 

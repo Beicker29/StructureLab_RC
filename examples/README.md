@@ -28,6 +28,8 @@ examples/
 │   │   ├── tipologias/        diseño por tipologías (con combinadas, D-153) y curva costo–N (D-155)
 │   │   ├── combinada/         combinada de dos columnas y su diseño, ETABS
 │   │   └── t_invertida/       T invertida y su diseño, ETABS
+│   ├── muros/
+│   │   └── voladizo/          muro de contención en voladizo (D-173, en construcción)
 │   └── vigas/                 rectangular, T, de gran altura, ETABS
 └── etabs/                     Excel de ETABS compartidos por los dos perfiles (cabezales/, zapatas/, vigas/)
 ```
@@ -44,9 +46,11 @@ esa carpeta (los comandos están en cada `LEEME.md`).
 | --- | --- |
 | `aci_318_25/cabezales` | [LEEME.md](aci_318_25/cabezales/LEEME.md) |
 | `aci_318_25/zapatas` | [LEEME.md](aci_318_25/zapatas/LEEME.md) |
+| `aci_318_25/muros` | [LEEME.md](aci_318_25/muros/LEEME.md) |
 | `aci_318_25/vigas` | [LEEME.md](aci_318_25/vigas/LEEME.md) |
 | `nsr_10/cabezales` | [LEEME.md](nsr_10/cabezales/LEEME.md) |
 | `nsr_10/zapatas` | [LEEME.md](nsr_10/zapatas/LEEME.md) |
+| `nsr_10/muros` | [LEEME.md](nsr_10/muros/LEEME.md) |
 | `nsr_10/vigas` | [LEEME.md](nsr_10/vigas/LEEME.md) |
 | `etabs/cabezales` | [LEEME.md](etabs/cabezales/LEEME.md) (Excel compartidos) |
 | `etabs/zapatas` | [LEEME.md](etabs/zapatas/LEEME.md) (Excel compartidos) |

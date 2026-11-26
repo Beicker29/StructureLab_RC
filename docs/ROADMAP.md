@@ -13,8 +13,9 @@ neutras que después reutilizan las vigas.
 
 El usuario elige entre:
 
-1. Cerrar lo pendiente de cabezales (ver [Cabezales](#cabezales-sobre-pilotes)).
-2. El siguiente tipo de cimentación (ver [Tipos nuevos](#tipos-nuevos-uno-por-vez-d-052-d-055)).
+1. Muro de contención en voladizo, fase A (en curso, ver [Muros de contención](#muros-de-contención-d-173)).
+2. Cerrar lo pendiente de cabezales (ver [Cabezales](#cabezales-sobre-pilotes)).
+3. El siguiente tipo de cimentación (ver [Tipos nuevos](#tipos-nuevos-uno-por-vez-d-052-d-055)).
 
 ## Validaciones del usuario
 
@@ -53,12 +54,6 @@ Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica
 2. Zapata corrida bajo un muro (los criterios se revisan al empezar).
 3. Zapatas escalonadas, rotadas y con pedestal de sección distinta a la columna.
 4. Losas de cimentación.
-5. Muros de contención, con su verificación, su diseño, su despiece y su dibujo:
-   - tipo sótano: apoyado en la losa o el entrepiso superior y en la cimentación;
-   - en voladizo (cantilever): empotrado en su zapata, con la estabilidad al volcamiento y al deslizamiento.
-
-   El empuje de tierras, la sobrecarga, el nivel freático y el sismo se definen al empezar (los criterios se revisan
-   entonces).
 
 ### Zapata combinada en dos direcciones
 
@@ -71,6 +66,46 @@ Cada tipo entra primero con su verificación (y su entrada desde ETABS si aplica
 1. Suelo bajo nivel freático: subpresión en la base, pesos sumergidos y pasiva con γ' (D-092). Antes de implementarlo,
    consultar cómo se declara, qué revisiones afecta y con qué presión se compara qa. El pedestal no aporta pasiva por
    decisión del usuario.
+
+## Muros de contención (D-173)
+
+Categoría propia, como zapatas o vigas (`examples/<perfil>/muros/<tipología>/`, `docs/formatos/muros.md`). Referencia de
+los ejemplos: ACI MNL-17(21), capítulo 12 (en unidades inglesas, pasados a SI); empujes según B. M. Das, *Principles of
+Geotechnical Engineering* SI, 8.ª ed., 2014, capítulo 13, sin simplificaciones.
+
+### Voladizo
+
+1. Fase A, verificación del muro declarado (ejemplo 2 del manual): empuje activo o en reposo (Ka o Ko, calculado con
+   Rankine o Coulomb a partir de los datos declarados, o declarado), estabilidad al volcamiento y al deslizamiento con
+   la pasiva declarada, presiones bajo la base, pantalla como losa en una dirección (flexión, cortante, mínimos,
+   separaciones y retracción), talón con carga neta y factor del relleno declarado, puntera y desarrollo de los
+   pasadores. Cada caso declara sus factores de carga.
+2. Fase A2: sobrecarga, relleno inclinado, muro sin puntera o sin talón y llave de cortante (ejemplos 3 a 6 del manual).
+3. Fase B: diseño de menor costo, cada solución verificada.
+4. Fase C: despiece (cartilla por metro y por la longitud del muro, corte de barras en la pantalla).
+5. Fase D: dibujo (corte transversal en DXF y SVG).
+
+### Pendientes del voladizo (después de las fases A a D)
+
+1. Sismo:
+   - empuje sísmico del relleno por Mononobe–Okabe (Das §13.13);
+   - fuerza sísmica de la masa de la pantalla (y de la zapata y el relleno que se mueven con el muro);
+   - cómo combinar el empuje de Mononobe–Okabe con la inercia de la masa de la pantalla (simultáneos o con un factor de
+     combinación), según NSR-10 Título H y la referencia que se adopte. Consultar antes de implementar.
+2. Nivel freático en el relleno y bajo la base (subpresión y pesos sumergidos).
+3. Carga axial en la pantalla (hoy se desprecia, del lado de la seguridad).
+4. Relleno cohesivo (c' > 0, con la grieta de tracción); la primera fase exige relleno granular.
+
+### Sótano
+
+1. Muro de sótano apoyado en la losa o el entrepiso superior y en la cimentación (ejemplo 1 del manual), con su
+   verificación, diseño, despiece y dibujo. Los criterios se revisan al empezar.
+
+### Gravedad
+
+1. Muro de gravedad con Rankine sobre el trasdós virtual o con Coulomb sobre su cara (casos 2 y 3 de la decisión 9 de
+   D-173, Das 2016 §13.3, fig. 13.4b y c), con su verificación, diseño, despiece y dibujo. Sus ejemplos van en
+   `examples/<perfil>/muros/gravedad/`, con los de iterar afuera y la copia congelada en `pruebas/`, como el voladizo.
 
 ## Vigas
 

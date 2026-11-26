@@ -59,8 +59,32 @@ class UnitWeighted(Protocol):
     def unit_weight_fill(self) -> float: ...
 
 
-class Soil(_Input):
-    """Datos del suelo y de los pesos propios; obligatorios salvo passive_factor (D-052, puntos 3 y 5; D-070).
+class BearingSoil(_Input):
+    """Lo común del suelo bajo una base apoyada en él, la zapata (Soil) o el muro de contención (RetainingSoil, D-173): el
+    peso unitario del concreto, la presión admisible, la fracción mínima de la base en contacto, el coeficiente de
+    fricción μ en la base y los factores de seguridad mínimos al deslizamiento y al volcamiento (de los casos sin sismo)."""
+
+    allowable_pressure: PositiveFloat = Field(validation_alias="allowable_pressure_kPa")
+    min_contact_fraction: float = Field(gt=0, le=1)
+    unit_weight_concrete: PositiveFloat = Field(validation_alias="unit_weight_concrete_kNm3")
+    friction_coefficient: NonNegativeFloat
+    sliding_safety_factor: PositiveFloat
+    overturning_safety_factor: PositiveFloat
+
+    @field_validator("allowable_pressure")
+    @classmethod
+    def _bearing_kpa_to_mpa(cls, value: float) -> float:
+        return value * MPA_PER_KPA
+
+    @field_validator("unit_weight_concrete")
+    @classmethod
+    def _concrete_kn_m3_to_n_mm3(cls, value: float) -> float:
+        return value * N_MM3_PER_KN_M3
+
+
+class Soil(BearingSoil):
+    """Datos del suelo y de los pesos propios de las zapatas; obligatorios salvo passive_factor (D-052, puntos 3 y 5;
+    D-070).
 
     Estabilidad (D-070): friction_coefficient es μ en la interfaz suelo–zapata y adhesion la adherencia c_a sobre el
     área en contacto; passive_coefficient (Kp) y cohesion (c) dan el empuje pasivo sobre el espesor de la zapata, que
@@ -69,18 +93,12 @@ class Soil(_Input):
     en los casos marcados seismic (D-079; 1.0, sin aumento, si no se declara).
     """
 
-    allowable_pressure: PositiveFloat = Field(validation_alias="allowable_pressure_kPa")
-    min_contact_fraction: float = Field(gt=0, le=1)
-    unit_weight_concrete: PositiveFloat = Field(validation_alias="unit_weight_concrete_kNm3")
     unit_weight_fill: NonNegativeFloat = Field(validation_alias="unit_weight_fill_kNm3")
-    friction_coefficient: NonNegativeFloat
     adhesion: NonNegativeFloat = Field(validation_alias="adhesion_kPa")
     passive_coefficient: NonNegativeFloat
     cohesion: NonNegativeFloat = Field(validation_alias="cohesion_kPa")
     passive_factor: float = Field(default=0.5, ge=0, le=1)
-    sliding_safety_factor: PositiveFloat
     sliding_safety_factor_seismic: PositiveFloat
-    overturning_safety_factor: PositiveFloat
     overturning_safety_factor_seismic: PositiveFloat
     seismic_bearing_factor: float = Field(default=1.0, ge=1.0)
 
@@ -89,12 +107,12 @@ class Soil(_Input):
         incluye sismo (D-079)."""
         return self.allowable_pressure * (self.seismic_bearing_factor if seismic else 1.0)
 
-    @field_validator("allowable_pressure", "adhesion", "cohesion")
+    @field_validator("adhesion", "cohesion")
     @classmethod
     def _kpa_to_mpa(cls, value: float) -> float:
         return value * MPA_PER_KPA
 
-    @field_validator("unit_weight_concrete", "unit_weight_fill")
+    @field_validator("unit_weight_fill")
     @classmethod
     def _kn_m3_to_n_mm3(cls, value: float) -> float:
         return value * N_MM3_PER_KN_M3

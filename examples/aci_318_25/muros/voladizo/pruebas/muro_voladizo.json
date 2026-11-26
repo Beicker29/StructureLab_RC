@@ -1,0 +1,95 @@
+{
+  "description": "Muro de contención en voladizo con relleno horizontal: el ejemplo 2 del manual ACI MNL-17(21), capítulo 12, pasado a SI (relleno de 15 ft sobre el terreno final y 3 ft bajo él; pantalla de 15 in, base de 24 in, puntera de 2 ft 6 in y talón de 5 ft 6 in). Unidades: mm, MPa, kPa y kN/m3; ángulos en grados.",
+  "profile": "aci-318-25",
+  "seismic": {
+    "level": "special",
+    "justification": "Pórtico especial (equivalente a DES) declarado por el ingeniero para este ejemplo; el sismo del muro está pendiente (D-173)."
+  },
+  "concrete": {
+    "fc": 31.03,
+    "type": "normalweight",
+    "unit_weight_kNm3": 23.56
+  },
+  "reinforcement_steel": {
+    "fy": 413.7,
+    "fyt": 413.7,
+    "coating": "uncoated"
+  },
+  "retaining_soil": {
+    "unit_weight_backfill": 17.28,
+    "friction_angle": 35.0,
+    "friction_coefficient": 0.5,
+    "allowable_pressure_kPa": 143.64,
+    "min_contact_fraction": 1.0,
+    "sliding_safety_factor": 1.5,
+    "overturning_safety_factor": 2.0
+  },
+  "retaining_walls": [
+    {
+      "id": "M1",
+      "quantity": 1,
+      "stem_height": 4876.8,
+      "stem_thickness": 381.0,
+      "toe": 762.0,
+      "heel": 1676.4,
+      "base_thickness": 609.6,
+      "backfill_height": 4876.8,
+      "stem_cover": 50.8,
+      "base_cover": 76.2,
+      "earth_pressure": {
+        "state": "active",
+        "method": "rankine"
+      },
+      "stem": {
+        "back": {
+          "designation": "#7",
+          "spacing": 228.6,
+          "end": "hook90"
+        },
+        "front": {
+          "designation": "#5",
+          "spacing": 457.2,
+          "end": "straight"
+        },
+        "horizontal": {
+          "designation": "#5",
+          "spacing": 457.2,
+          "end": "straight"
+        }
+      },
+      "base": {
+        "top": {
+          "designation": "#7",
+          "spacing": 114.3,
+          "end": "straight"
+        },
+        "bottom": {
+          "designation": "#7",
+          "spacing": 228.6,
+          "end": "straight"
+        },
+        "longitudinal": {
+          "designation": "#7",
+          "spacing": 355.6,
+          "end": "straight"
+        }
+      },
+      "cases": [
+        {
+          "case": "D+H",
+          "kind": "service",
+          "dead_factor": 1.0,
+          "fill_factor": 1.0,
+          "earth_factor": 1.0
+        },
+        {
+          "case": "1.2D+1.6H",
+          "kind": "factored",
+          "dead_factor": 1.2,
+          "fill_factor": 1.6,
+          "earth_factor": 1.6
+        }
+      ]
+    }
+  ]
+}

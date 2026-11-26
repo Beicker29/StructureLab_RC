@@ -12,6 +12,7 @@ from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.footing import BarSet, Dowels, FootingBody
 from structurelab_rc.model.project import Member, Project, Station
 from structurelab_rc.model.reinforcement import BarPosition, BarSpacing, Stirrups
+from structurelab_rc.model.retaining_wall import RetainingWall
 
 CHECK_NAME = "Validacion de entrada"
 
@@ -74,17 +75,18 @@ def _bar_set_errors(name: str, bar_set: BarSet, specs: dict[str, RebarSpec], whe
         yield invalid_input(f"La separacion de {name} no deja espacio libre", **where)
 
 
-def _layers_errors(layers: list[tuple[str, list[tuple[str, BarSet]]]], h: float, cover: float, specs: dict[str, RebarSpec],
-                   where: dict[str, str]) -> Iterator[StructuredError]:
-    """Barras del catálogo con separación libre positiva, y las capas y los recubrimientos dentro del espesor h. layers:
-    (nombre de la malla, [(dirección de las barras, barras)])."""
+def _layers_errors(layers: list[tuple[str, list[tuple[str, BarSet]]]], section: tuple[str, float, float],
+                   specs: dict[str, RebarSpec], where: dict[str, str]) -> Iterator[StructuredError]:
+    """Barras del catálogo con separación libre positiva, y las mallas y los recubrimientos dentro del espesor. layers:
+    (nombre de la malla, [(dirección de las barras, barras)]); section: (la pieza, su espesor h, el recubrimiento libre)."""
+    part, h, cover = section
     thickness = 2 * cover
     for name, bar_sets in layers:
         for direction, bar_set in bar_sets:
             yield from _bar_set_errors(f"las barras {direction} de la malla {name}", bar_set, specs, where)
         thickness += sum(specs[bar_set.designation].diameter_mm for _, bar_set in bar_sets if bar_set.designation in specs)
     if thickness >= h:
-        yield invalid_input("Las mallas y los recubrimientos no caben en el espesor de la zapata", **where)
+        yield invalid_input(f"Las mallas y los recubrimientos no caben en el espesor de {part}", **where)
 
 
 def _dowel_errors(dowels: Dowels | None, specs: dict[str, RebarSpec], where: dict[str, str]) -> Iterator[StructuredError]:
@@ -113,7 +115,7 @@ def _footing_errors(footing: FootingBody, specs: dict[str, RebarSpec], profile: 
     layers = [("inferior", [("x", footing.bottom.x), ("y", footing.bottom.y)])]
     if footing.top is not None:
         layers.append(("superior", [("x", footing.top.x), ("y", footing.top.y)]))
-    yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
+    yield from _layers_errors(layers, ("la zapata", footing.h, footing.cover), specs, where)
     for column in footing.all_columns:
         yield from _dowel_errors(column.dowels, specs, where)
 
@@ -128,7 +130,7 @@ def _combined_errors(footing: CombinedFooting, specs: dict[str, RebarSpec], prof
         top: list[tuple[str, BarSet]] = [(direction, bars) for direction, bars in (("x", footing.top.x), ("y", footing.top.y))
                                          if bars is not None]
         layers.append(("superior", top))
-    yield from _layers_errors(layers, footing.h, footing.cover, specs, where)
+    yield from _layers_errors(layers, ("la zapata", footing.h, footing.cover), specs, where)
     for column in footing.columns:
         if column.band is not None:
             yield from _bar_set_errors(f"el refuerzo transversal bajo la columna '{column.id}'", column.band, specs, where)
@@ -185,6 +187,21 @@ def _catalogued(footing: CombinedFooting, specs: dict[str, RebarSpec]) -> bool:
     return names <= set(specs)
 
 
+def _wall_errors(wall: RetainingWall, specs: dict[str, RebarSpec]) -> Iterator[StructuredError]:
+    """Lo mismo para un muro de contención (D-173): en la pantalla y en la base, una malla en cada cara (las barras
+    principales de esa cara y las que corren en la otra dirección, que van en las dos)."""
+    where = {"member": wall.id}
+    stem, base = wall.stem, wall.base
+    yield from _layers_errors([("de la cara del relleno de la pantalla", [("verticales", stem.back),
+                                                                          ("horizontales", stem.horizontal)]),
+                               ("de la cara exterior de la pantalla", [("verticales", stem.front),
+                                                                       ("horizontales", stem.horizontal)])],
+                              ("la pantalla", wall.stem_thickness, wall.stem_cover), specs, where)
+    yield from _layers_errors([("superior de la base", [("transversales", base.top), ("longitudinales", base.longitudinal)]),
+                               ("inferior de la base", [("transversales", base.bottom), ("longitudinales", base.longitudinal)])],
+                              ("la base", wall.base_thickness, wall.base_cover), specs, where)
+
+
 def validate_project(project: Project, bars: Sequence[RebarSpec]) -> Check:
     profile = PROFILES.get(project.profile)
     if profile is None:
@@ -201,4 +218,6 @@ def validate_project(project: Project, bars: Sequence[RebarSpec]) -> Check:
         errors.extend(_combined_errors(combined, specs, profile))
     for cap in project.pile_caps:  # el cabezal tiene las mallas, la columna y los pasadores de la zapata (D-138)
         errors.extend(_footing_errors(cap, specs, profile))
+    for wall in project.retaining_walls:  # D-173
+        errors.extend(_wall_errors(wall, specs))
     return check_from_errors(CHECK_NAME, errors)
