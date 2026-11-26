@@ -12,7 +12,7 @@ from structurelab_rc.codes.registry import Profile
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, invalid_input
-from structurelab_rc.mechanics.flexure import CompressionStrip, FlexureState, SteelLayer, flexure_state
+from structurelab_rc.mechanics.flexure import CompressionStrip, FlexureState, SteelLayer, cracked_steel_stress, flexure_state
 from structurelab_rc.mechanics.materials import ConcreteBlock, SteelModel
 from structurelab_rc.mechanics.roots import find_root
 from structurelab_rc.model.project import Materials
@@ -59,6 +59,38 @@ def yield_strain(profile: Profile, materials: Materials) -> float:
 
 def flexure_phi(profile: Profile, materials: Materials, extreme_strain: float) -> float:
     return profile.flexure.strength_reduction_moment(extreme_strain, yield_strain(profile, materials))
+
+
+def service_steel_stress(profile: Profile, fc: float, moment: float,
+                         section: tuple[tuple[CompressionStrip, ...], tuple[SteelLayer, ...]]) -> float:
+    """fs de servicio de la capa más alejada de la cara comprimida (sección fisurada elástica) con n = Es/Ec del perfil;
+    section = (franjas, capas) desde la cara comprimida. El momento, en valor absoluto."""
+    assumptions = profile.strength_assumptions
+    strips, layers = section
+    return cracked_steel_stress(abs(moment), strips, layers, assumptions.steel_modulus() / assumptions.concrete_modulus(fc))
+
+
+@dataclass(frozen=True)
+class CrackLimit:
+    """La separación máxima por control de agrietamiento y el fs con que sale: fs calculado si da la mayor separación;
+    None si la da fs = 2/3·fy."""
+
+    spacing: float
+    fs: float | None
+
+    @property
+    def note(self) -> str:
+        return "fs de servicio calculado (seccion fisurada elastica)" if self.fs is not None else "fs = 2/3 fy"
+
+
+def crack_limit(profile: Profile, fy: float, cc: float, fs: float | None) -> CrackLimit:
+    """La mayor de las dos separaciones que permite el perfil (ACI 24.3.2.1; NSR-10 C.10.6.4): con el fs calculado con el
+    momento sin mayorar y con fs = 2/3·fy (decisión del usuario, D-174). Sin fs calculado, la de 2/3·fy."""
+    estimated = profile.flexure.crack_control_spacing(fy, cc)
+    if fs is None:
+        return CrackLimit(estimated, None)
+    computed = profile.flexure.crack_control_spacing(fy, cc, fs)
+    return CrackLimit(computed, fs) if computed > estimated else CrackLimit(estimated, None)
 
 
 def rectangular_strength(

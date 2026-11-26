@@ -10,7 +10,14 @@ from structurelab_rc.domain.check import Check, check_from_errors
 from structurelab_rc.domain.flexure_strength import flexure_phi, material_models, net_tensile_strain_check
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError, incomplete, invalid_input
-from structurelab_rc.mechanics.flexure import FlexureState, SteelLayer, compression_strips, flexure_state
+from structurelab_rc.mechanics.flexure import (
+    CompressionStrip,
+    FlexureState,
+    SteelLayer,
+    compression_strips,
+    cracked_steel_stress,
+    flexure_state,
+)
 from structurelab_rc.mechanics.materials import NoEquilibrium
 from structurelab_rc.mechanics.roots import find_root
 from structurelab_rc.mechanics.section import SectionState, SteelPoint, biaxial_state, force_centroid, section_state
@@ -59,13 +66,41 @@ def nominal_flexure(
     models = material_models(profile, materials)
     if isinstance(models, StructuredError):
         return models
-    top_in_compression = demands.mu >= 0
+    strips, from_face = _from_compressed_face(section, layers, top_in_compression=demands.mu >= 0)
+    return flexure_state(strips, from_face, *models, demands.pu)
+
+
+def _from_compressed_face(section: Section, layers: tuple[SteelLayer, ...], *,
+                          top_in_compression: bool) -> tuple[tuple[CompressionStrip, ...], tuple[SteelLayer, ...]]:
+    """Las franjas de la sección y las capas con sus profundidades desde la cara comprimida."""
     # Con bf = bw el valor de hf no afecta el resultado.
     bf = section.bw if section.bf is None else section.bf
     hf = section.h / 2 if section.hf is None else section.hf
     strips = compression_strips(section.bw, section.h, bf, hf, flange_in_compression=top_in_compression)
-    from_face = tuple(layer if top_in_compression else SteelLayer(section.h - layer.depth, layer.area) for layer in layers)
-    return flexure_state(strips, from_face, *models, demands.pu)
+    return strips, tuple(layer if top_in_compression else SteelLayer(section.h - layer.depth, layer.area) for layer in layers)
+
+
+def service_stress(given: StationInput, mu: float) -> float | None:
+    """fs de la capa de flexión más cercana a la cara en tracción con el momento de servicio de la estación (sección
+    fisurada elástica; ACI 24.3.2.1, NSR-10 C.10.6.4). None sin momento de servicio del signo de Mu (las vigas, que
+    reciben solo fuerzas mayoradas): queda fs = 2/3·fy."""
+    service = given.service_mu
+    if service is None or service * mu <= 0:
+        return None
+    layers = steel_layers(given.station.layout, given.bars)
+    if isinstance(layers, StructuredError) or not layers:
+        return None
+    section = _from_compressed_face(given.member.section, layers, top_in_compression=service > 0)
+    return service_steel_stress(given.profile, given.materials.fc, service, section)
+
+
+def _crack_limit(given: StationInput, mu: float, cc: float) -> tuple[CrackLimit, tuple[tuple[str, float], ...]]:
+    """La separación máxima por agrietamiento (la mayor entre fs calculado y 2/3·fy, D-174) y, si hay momento de servicio,
+    Ms y el fs calculado para la memoria."""
+    fs = service_stress(given, mu)
+    limit = crack_limit(given.profile, given.materials.fy, cc, fs)
+    values = () if fs is None or given.service_mu is None else (("Ms", given.service_mu), ("fs calculado", fs))
+    return limit, values
 
 
 def section_states(given: StationInput) -> tuple[SectionState, SectionState] | StructuredError:
@@ -242,6 +277,7 @@ def skin_check(given: StationInput) -> Check | None:
     half = section.h / 2
     # Las barras de torsión en las caras laterales también sirven de piel (decisión del usuario, D-090).
     in_zone = [bar for bar in placed if bar.role in SIDE_ROLES and (bar.depth >= half if bottom else bar.depth <= half)]
+    fs = service_stress(given, mu)
     worst: tuple[float, float, float, str] | None = None  # razón, s, s máx, cara
     for name, own in (("izquierda", [bar for bar in in_zone if bar.x <= section.bw / 2]),
                       ("derecha", [bar for bar in in_zone if bar.x > section.bw / 2])):
@@ -250,20 +286,22 @@ def skin_check(given: StationInput) -> Check | None:
                                   f"{profile.flexure.skin_reinforcement_depth():.0f} mm)")
             return Check(SKIN, Status.FAIL, (error,), clause)
         cc = min(min(bar.x, section.bw - bar.x) - bar.diameter / 2 for bar in own)
-        limit = profile.flexure.crack_control_spacing(materials.fy, cc)
+        limit = profile.flexure.crack_control_spacing(materials.fy, cc, fs)
         gap = _face_gaps([bar.depth for bar in own], start, half)
         if worst is None or gap / limit > worst[0]:
             worst = (gap / limit, gap, limit, name)
     assert worst is not None
     _, gap, limit, name = worst
     return Check(SKIN, Status.PASS if gap <= limit else Status.FAIL, clause=clause, demand=gap, capacity=limit, unit="mm",
+                 values=_stress_values(given, fs),
                  note=f"Gobierna la cara lateral {name}; zona de h/2 desde la cara {'inferior' if bottom else 'superior'}")
 
 
 def _crack_check(given: StationInput, mu: float) -> Check:
     """Separación de las barras de flexión de la capa más cercana a la cara en tracción frente al control de
-    agrietamiento del perfil (ACI 24.3.2, NSR-10 C.10.6.4), con fs = (2/3)·fy. Con una sola barra en esa capa, s es
-    el ancho de la cara en tracción (NSR-10 C.10.6.4; en ACI, la misma lectura, D-081)."""
+    agrietamiento del perfil (ACI 24.3.2, NSR-10 C.10.6.4), con fs calculado con el momento de servicio de la estación
+    (las zapatas combinadas) o, sin él (las vigas), fs = (2/3)·fy. Con una sola barra en esa capa, s es el ancho de la
+    cara en tracción (NSR-10 C.10.6.4; en ACI, la misma lectura, D-081)."""
     profile, materials, section = given.profile, given.materials, given.member.section
     clause = profile.flexure.clauses()["crack_spacing"]
     if mu == 0:
@@ -280,9 +318,10 @@ def _crack_check(given: StationInput, mu: float) -> Check:
     else:
         spacing = max(b - a for a, b in zip(positions, positions[1:], strict=False))
         note = f"Cara {'inferior' if bottom else 'superior'} en traccion"
-    limit = profile.flexure.crack_control_spacing(materials.fy, cc)
+    fs = service_stress(given, mu)
+    limit = profile.flexure.crack_control_spacing(materials.fy, cc, fs)
     return Check(CRACK_SPACING, Status.PASS if spacing <= limit else Status.FAIL, clause=clause, demand=spacing, capacity=limit,
-                 unit="mm", values=(("cc", cc), ("barras", float(len(positions)))), note=note)
+                 unit="mm", values=(("cc", cc), ("barras", float(len(positions))), *_stress_values(given, fs)), note=note)
 
 
 def _strain_check(name: str, profile: Profile, materials: Materials, strain: float | None) -> Check:

@@ -81,11 +81,12 @@ from structurelab_rc.domain.footing.inverted_t import SPACING as T_SPACING
 from structurelab_rc.domain.footing.inverted_t import STRAIN as T_STRAIN
 from structurelab_rc.domain.footing.inverted_t import TENSION_FLANGE as T_TENSION_FLANGE
 from structurelab_rc.domain.footing.inverted_t import Flanges
-from structurelab_rc.domain.footing.loads import FactoredCase, combined_factored_cases
+from structurelab_rc.domain.footing.loads import FactoredCase, combined_factored_cases, combined_service_cases
 from structurelab_rc.domain.footing.mesh import mat_rows, top_rows, uniform_positions
 from structurelab_rc.domain.footing.service import combined_service_checks
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
+from structurelab_rc.mechanics.flexure import CompressionStrip, SteelLayer, cracked_steel_stress
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.design import (
@@ -96,7 +97,7 @@ from structurelab_rc.model.design import (
     CombinedDesignProject,
     side_limits,
 )
-from structurelab_rc.model.footing import FootingLoad
+from structurelab_rc.model.footing import FootingLoad, Soil
 from structurelab_rc.model.layout import public
 from structurelab_rc.model.project import Materials, Project
 
@@ -641,29 +642,46 @@ def _cornered(options: list[dict[str, Any]], width: float, inset: float) -> list
 
 
 def _bar_group(given: tuple[Context, Materials], spread: Spread, depth_of: Callable[[float], float],
-               moment: float, compression: float | None = None) -> list[dict[str, Any]]:
+               moments: tuple[float, float], compression: float | None = None) -> list[dict[str, Any]]:
     """Opciones de un grupo de barras que ya cumplen los límites del perfil que la verificación revisa en él: el acero
     mínimo de losa en todo el grupo y, si hay momento (viga larga y franjas, revisadas como vigas, D-081 y D-082), el
     As,min de vigas (con la excepción de 4/3 solo si se declara, D-123; con el ancho del alma) y la separación de
-    control de fisuración con el recubrimiento. compression es el ancho a compresión de la T, si difiere del de reparto
-    (D-113)."""
+    control de fisuración con el recubrimiento, que topa la separación. moments = (Mu, Ms): el mayor mayorado y el mayor
+    de servicio del grupo; con Ms el tope usa el fs del As requerido del grupo (D-174), el mayor que puede tener una
+    opción, que lleva al menos ese acero; sin él, 2/3·fy. compression es el ancho a compresión de la T, si difiere del de
+    reparto (D-113)."""
     ctx, materials = given
     profile = ctx.profile
+    moment, service = moments
     specs = [ctx.spec(designation) for designation in ctx.design.bars]
     minimum = profile.footing.min_reinforcement_ratio(materials.fy) * spread.width * spread.h
     if moment > 0:
         depth = depth_of(specs[0].diameter_mm)
         web = min(spread.width, compression or spread.width)
+        section = RectangularSection(compression or spread.width, spread.h)
+        needed = required_area(profile, materials, section, depth, moment) or 0.0
         beam = profile.flexure.min_flexural_reinforcement(materials.fc, materials.fy, web, depth)
         if ctx.design.min_steel_exception:  # D-123: la excepción de 4/3 del As requerido, si se declara
-            section = RectangularSection(compression or spread.width, spread.h)
-            beam = profile.flexure.effective_min_reinforcement(beam, required_area(profile, materials, section, depth, moment) or 0.0)
+            beam = profile.flexure.effective_min_reinforcement(beam, needed)
         minimum = max(minimum, beam)
-        crack = math.floor(profile.flexure.crack_control_spacing(materials.fy, ctx.design.cover) / spread.step) * spread.step
-        spread = replace(spread, max_spacing=min(spread.max_spacing, crack))
+        crack = _crack_spacing(given, (section.width, spread.h), (depth, max(needed, minimum)), service)
+        spread = replace(spread, max_spacing=min(spread.max_spacing, math.floor(crack / spread.step) * spread.step))
     if compression is not None:  # el As requerido se calcula con el ancho de compresión, no con el de reparto
         return _options(_compressed_options(given, spread, depth_of, (moment, minimum, compression)), ctx, spread)
     return _options(bar_options((profile, materials, specs), spread, depth_of, (moment, minimum)), ctx, spread)
+
+
+def _crack_spacing(given: tuple[Context, Materials], section: tuple[float, float], layer: tuple[float, float], service: float) -> float:
+    """La separación de control de fisuración de un grupo (D-174): con su momento de servicio, el fs de la sección
+    rectangular fisurada (ancho a compresión × h) con layer = (d, As); sin él, 2/3·fy. Con el recubrimiento del diseño."""
+    ctx, materials = given
+    assumptions = ctx.profile.strength_assumptions
+    fs = None
+    if service > 0:
+        width, h = section
+        ratio = assumptions.steel_modulus() / assumptions.concrete_modulus(materials.fc)
+        fs = cracked_steel_stress(service, (CompressionStrip(width, 0.0, h),), (SteelLayer(*layer),), ratio)
+    return ctx.profile.flexure.crack_control_spacing(materials.fy, ctx.design.cover, fs)
 
 
 def _compressed_options(given: tuple[Context, Materials], spread: Spread, depth_of: Callable[[float], float],
@@ -700,6 +718,23 @@ def _strip_moments(ctx: Context, footing: CombinedFooting, cases: Cases, depth: 
     return result
 
 
+def _plate_moments(ctx: Context, footing: CombinedFooting, cases: Cases, given: tuple[float, float]) -> dict[str, float]:
+    """Los mayores momentos de los grupos de la combinada rectangular en los casos dados (mayorados o de servicio): los de
+    la viga larga (Wood-Armer), los de las franjas de cada columna y los de la torsión de placa fuera de ellas por el
+    largo; given = (d de las barras y, largo). Sin casos, ceros."""
+    depth, length = given
+    positive, negative = extreme_moments(footing, ctx.project.soil, cases)
+    twist = _outside_twist(ctx, footing, cases, depth) * length  # torsión de placa fuera de las franjas (D-118)
+    strips = _strip_moments(ctx, footing, cases, depth)
+    result = {"bottom_x": positive[0], "top_x": negative[0], "bottom_y": twist}
+    for column, moments in zip(footing.columns, strips, strict=True):
+        result[f"band:{column.id}"] = max(max(moments, default=0.0), 0.0)
+        result[f"band_top:{column.id}"] = max(-min(moments, default=0.0), 0.0)
+    negative_strip = max((-min(moments, default=0.0) for moments in strips), default=0.0)
+    result["top_y"] = max(negative_strip, twist, 0.0)
+    return result
+
+
 def _outside_twist(ctx: Context, footing: CombinedFooting, cases: Cases, depth: float) -> float:
     """El mayor |mxy| fuera de las franjas en todos los casos (N·mm/mm, D-118): el momento por unidad de largo de las
     barras y inferiores y superiores allí."""
@@ -725,26 +760,29 @@ def _t_groups(ctx: Context, fc: float, geometry: Geometry) -> dict[str, Group] |
     h, cover, step = geometry.h, design.cover, design.spacing_step
     long_spacing = math.floor(profile.footing.combined_max_bar_spacing(h) / step) * step
     slab_spacing = math.floor(profile.footing.max_bar_spacing(h) / step) * step
-    positive, negative = extreme_moments(footing, soil, cases)
     first = ctx.spec(design.bars[0]).diameter_mm
     stirrup = _stirrup_diameter(ctx)
     width = covered(ctx, geometry)
-    flange = max(Flanges(footing, pressure, h - cover - first / 2).governing("moment")[1] for pressure, _ in cases)
-    hogging = max(Flanges(footing, pressure, h - cover - first / 2).governing("negative")[1] for pressure, _ in cases)
+    factored = _t_moments(footing, soil, cases, (h - cover - first / 2, geometry.length))
+    service = _t_moments(footing, soil, combined_service_cases(footing, soil), (h - cover - first / 2, geometry.length))
+
+    def moments(name: str) -> tuple[float, float]:
+        return factored[name], service[name]
+
     top = Spread(web, height, cover + stirrup, step, long_spacing)
     bottom = Spread(width, height, cover if width >= geometry.width else 0.0, step, long_spacing)
     groups = {
-        "top_x": Group(_bar_group((ctx, materials), top, lambda db: height - cover - stirrup - db / 2, negative[0], width)),
+        "top_x": Group(_bar_group((ctx, materials), top, lambda db: height - cover - stirrup - db / 2, moments("top_x"), width)),
         "bottom_x": Group(_placed(ctx, geometry, _bar_group((ctx, materials), bottom, lambda db: height - cover - first - db / 2,
-                                                            positive[0], web), first)),
+                                                            moments("bottom_x"), web), first)),
         "mat_x": Group(_bar_group((ctx, materials), Spread(geometry.width, h, cover, step, long_spacing),
-                                  lambda db: h - cover - first - db / 2, 0.0)),
+                                  lambda db: h - cover - first - db / 2, (0.0, 0.0))),
         "bottom_y": Group(_bar_group((ctx, materials), Spread(geometry.length, h, cover, step, slab_spacing),
-                                     lambda db: h - cover - db / 2, max(flange, 0.0) * geometry.length)),
+                                     lambda db: h - cover - db / 2, moments("bottom_y"))),
         # Malla superior de la zarpa (D-114): las barras y que toman el momento negativo de las aletas, solo si el concreto
         # simple no alcanza o no se permite (D-072); d desde la cara inferior.
         "top_y": Group(_bar_group((ctx, materials), Spread(geometry.length, h, cover, step, slab_spacing),
-                                  lambda db: h - cover - db / 2, max(hogging, 0.0) * geometry.length), optional=True),
+                                  lambda db: h - cover - db / 2, moments("top_y")), optional=True),
         "skin": Group(_skin_options(ctx, height), optional=height <= profile.flexure.skin_reinforcement_depth()),
     }
     for column in footing.columns:
@@ -754,6 +792,17 @@ def _t_groups(ctx: Context, fc: float, geometry: Geometry) -> dict[str, Group] |
         frame = StirrupFrame(web, height, cover, step, along_max)
         groups["stirrups"] = Group(stirrup_options([ctx.spec(name) for name in design.stirrup_bars], frame), optional=True)
     return groups
+
+
+def _t_moments(footing: CombinedFooting, soil: Soil, cases: Cases, given: tuple[float, float]) -> dict[str, float]:
+    """Los mayores momentos de los grupos de la T invertida en los casos dados (mayorados o de servicio): los de la viga
+    (inferiores y superiores) y los de las aletas por su largo; given = (d de las aletas, largo). Sin casos, ceros."""
+    depth, length = given
+    positive, negative = extreme_moments(footing, soil, cases)
+    flange = max((Flanges(footing, pressure, depth).governing("moment")[1] for pressure, _ in cases), default=0.0)
+    hogging = max((Flanges(footing, pressure, depth).governing("negative")[1] for pressure, _ in cases), default=0.0)
+    return {"top_x": negative[0], "bottom_x": positive[0], "bottom_y": max(flange, 0.0) * length,
+            "top_y": max(hogging, 0.0) * length}
 
 
 def _placed(ctx: Context, geometry: Geometry, options: list[dict[str, Any]], aleta_db: float) -> list[dict[str, Any]]:
@@ -785,7 +834,6 @@ def _groups(ctx: Context, fc: float, geometry: Geometry) -> dict[str, Group] | N
     h, cover, step = geometry.h, design.cover, design.spacing_step
     long_spacing = math.floor(profile.footing.combined_max_bar_spacing(h) / step) * step
     slab_spacing = math.floor(profile.footing.max_bar_spacing(h) / step) * step
-    positive, negative = extreme_moments(footing, ctx.project.soil, cases)
     along = Spread(geometry.width, h, cover, step, long_spacing)  # barras x: repartidas en el ancho
     across = Spread(geometry.length, h, cover, step, slab_spacing)  # barras y: repartidas en el largo
     first = ctx.spec(design.bars[0]).diameter_mm
@@ -798,24 +846,26 @@ def _groups(ctx: Context, fc: float, geometry: Geometry) -> dict[str, Group] | N
 
     plain = profile.plain.permitted_in_foundations(ctx.project.seismic.level)
     lateral = cover + _stirrup_diameter(ctx)  # los estribos encierran las barras x por los lados (mesh)
-    twist = _outside_twist(ctx, footing, cases, inner(first))  # torsión de placa fuera de las franjas (D-118)
-    groups = {"bottom_x": Group(_cornered(_bar_group((ctx, materials), along, outer, positive[0]), geometry.width, lateral)),
-              "bottom_y": Group(_bar_group((ctx, materials), across, inner, twist * geometry.length)),
-              "top_x": Group(_cornered(_bar_group((ctx, materials), along, outer, negative[0]), geometry.width, lateral),
-                             optional=plain or negative[0] <= 0)}
-    strips = _strip_moments(ctx, footing, cases, inner(first))
-    for column, moments in zip(footing.columns, strips, strict=True):
+    factored = _plate_moments(ctx, footing, cases, (inner(first), geometry.length))
+    service = _plate_moments(ctx, footing, combined_service_cases(footing, ctx.project.soil), (inner(first), geometry.length))
+
+    def moments(name: str) -> tuple[float, float]:
+        return factored[name], service[name]
+
+    groups = {"bottom_x": Group(_cornered(_bar_group((ctx, materials), along, outer, moments("bottom_x")), geometry.width, lateral)),
+              "bottom_y": Group(_bar_group((ctx, materials), across, inner, moments("bottom_y"))),
+              "top_x": Group(_cornered(_bar_group((ctx, materials), along, outer, moments("top_x")), geometry.width, lateral),
+                             optional=plain or factored["top_x"] <= 0)}
+    for column in footing.columns:
         low, high = strip_limits(footing, column, inner(first))
         strip = Spread(high - low, h, 0.0, step, slab_spacing)
-        groups[f"band:{column.id}"] = Group(_bar_group((ctx, materials), strip, inner, max(max(moments, default=0.0), 0.0)))
+        groups[f"band:{column.id}"] = Group(_bar_group((ctx, materials), strip, inner, moments(f"band:{column.id}")))
         # Band superior (D-119): las barras superiores de la franja, para su momento negativo de Wood-Armer; solo si una
         # falla de la franja lo pide (mientras tanto, top.y o concreto simple).
         groups[f"band_top:{column.id}"] = Group(_bar_group((ctx, materials), strip, lambda db: h - cover - db / 2,
-                                                           max(-min(moments, default=0.0), 0.0)), optional=True)
+                                                           moments(f"band_top:{column.id}")), optional=True)
         groups[f"dowels:{column.id}"] = Group(_dowel_options(ctx, column.cx * column.cy))
-    negative_strip = max((-min(moments, default=0.0) for moments in strips), default=0.0)
-    hogging = max(negative_strip, twist * geometry.length, 0.0)
-    groups["top_y"] = Group(_bar_group((ctx, materials), across, inner, hogging), optional=plain or hogging <= 0)
+    groups["top_y"] = Group(_bar_group((ctx, materials), across, inner, moments("top_y")), optional=plain or factored["top_y"] <= 0)
     groups["skin"] = Group(_skin_options(ctx, h), optional=h <= profile.flexure.skin_reinforcement_depth())
     if design.stirrup_bars:
         depth = outer(first)
@@ -842,14 +892,14 @@ def _dowel_options(ctx: Context, area: float) -> list[dict[str, Any]]:
 
 
 def _skin_options(ctx: Context, h: float) -> list[dict[str, Any]]:
-    """Refuerzo superficial de menor a mayor peso por unidad de altura: cada designación a separaciones desde la de
-    control de fisuración con el recubrimiento a la cara lateral (la que revisa el perfil, D-083) o h/2 si es menor."""
+    """Refuerzo superficial de menor a mayor peso por unidad de altura: cada designación a separaciones desde h/2. El
+    control de fisuración lo decide la verificación (D-083) con el fs de servicio de las barras de flexión, que aquí aún
+    no se conocen (D-174); si no cumple, la corrección de separación reduce la separación."""
     step = ctx.design.spacing_step
-    crack = ctx.profile.flexure.crack_control_spacing(ctx.project.materials.fy, ctx.design.cover)
     options = []
     for designation in ctx.design.bars:
         spec = ctx.spec(designation)
-        spacing = math.floor(min(crack, h / 2) / step) * step
+        spacing = math.floor(h / 2 / step) * step
         while spacing >= _SKIN_MIN_SPACING:
             options.append({"designation": designation, "spacing": spacing, "_area": spec.area_mm2 / spacing,
                             "_diameter": spec.diameter_mm, "_clear": spacing, "_spacing": spacing, "_per_m": spec.area_mm2 / spacing,

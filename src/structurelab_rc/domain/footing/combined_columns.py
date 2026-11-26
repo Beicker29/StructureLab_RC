@@ -38,7 +38,7 @@ from structurelab_rc.domain.footing.combined_beam import BeamCase, bar_extent, b
 from structurelab_rc.domain.footing.connection import Support, bar_anchorage, bearing_checks, dowel_checks
 from structurelab_rc.domain.footing.declared import DIRECTIONS, PRINCIPAL, SECONDARY
 from structurelab_rc.domain.footing.flexure import plain_resists, plain_strip_check
-from structurelab_rc.domain.footing.loads import FactoredCase, remembered
+from structurelab_rc.domain.footing.loads import FactoredCase, combined_service_cases, remembered, service_moment
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, positions_within, stirrup_diameter, top_rows, uniform_positions
 from structurelab_rc.domain.footing.shear import PunchedColumn, punching_checks, transferred_load
 from structurelab_rc.domain.shear_strength import two_way_shear
@@ -428,10 +428,37 @@ def strip_moments(moment: float, width: float, twist: float) -> list[float]:
     return [value for value in (design.bottom.y * width, design.top.y * width) if value != 0] or [moment]
 
 
+StripService = tuple[Callable[[float, float], tuple[float, float]], float]  # la carga de la franja y su |mxy|
+
+
+def _strip_services(footing: CombinedFooting, soil: Soil, given: tuple[int, float], limits: tuple[float, float]) -> list[StripService]:
+    """La carga de la franja y su torsión de placa en cada caso de servicio, con el mismo reparto de los mayorados
+    (D-174); given = (índice de la columna, d)."""
+    index, depth = given
+    column = footing.columns[index]
+    services = []
+    for pressure, loads in combined_service_cases(footing, soil):
+        load, _ = strip_load(footing, pressure, column, (column_vertical(footing, soil, column, loads[index]), depth))
+        services.append((load, strip_twist(footing, soil, (pressure, loads), limits)))
+    return services
+
+
+def _strip_service_moment(footing: CombinedFooting, services: list[StripService], at: tuple[float, str, float],
+                          moment: float) -> float | None:
+    """El momento de diseño de servicio en la sección y de la franja (Wood-Armer, del signo de moment); at = (y, nombre
+    de la sección, ancho de la franja)."""
+    y, label, width = at
+    side = 1.0 if label.endswith("+Y") else -1.0
+    values = (value for load, twist in services
+              for value in strip_moments(strip_cantilever(footing, load, y, side)[0], width, twist))
+    return service_moment(moment, values)
+
+
 def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tuple[BarRow, int], cases: Cases) -> list[Check]:
     row, index = rows
     column = footing.columns[index]
     x0, x1 = strip_limits(footing, column, row.depth)
+    services = _strip_services(footing, soil, (index, row.depth), (x0, x1))
     top, _ = strip_top(footing, column, row.depth, basis.bars)  # el band superior o top.y (D-119)
     has_top = top is not None and bool(positions_within(top, (x0, x1)))
     member = strip_member(footing, column, strip_rows(basis, footing, column, row))
@@ -462,7 +489,9 @@ def _strip_checks(basis: Basis, footing: CombinedFooting, soil: Soil, rows: tupl
                                                                                   vu=abs(shear + torsion_shear), v3=0.0, tu=0.0))
                 # Las caras laterales de la franja quedan dentro del concreto: sin refuerzo superficial (D-083). El
                 # cortante, con el ancho efectivo de cortante (D-151).
-                given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False)
+                service = _strip_service_moment(footing, services, (y, label, x1 - x0), moment)
+                given = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, side_faces=False,
+                                     service_mu=service)
                 sheared_given = replace(given, member=sheared_member,
                                         station=station.model_copy(update={"layout": sheared_member.stations[0].layout}))
                 flexure_values = _strip_values(physical, moment, (x1 - x0, twist))

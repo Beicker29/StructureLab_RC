@@ -12,7 +12,7 @@ from structurelab_rc.domain.flexure_strength import RectangularSection, net_tens
 from structurelab_rc.domain.shear_strength import concrete_lambda
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError
-from structurelab_rc.mechanics.flexure import SteelLayer, cracked_steel_stress
+from structurelab_rc.mechanics.flexure import CompressionStrip, SteelLayer, cracked_steel_stress
 from structurelab_rc.model.footing import BarSet
 
 STRIP = 1000.0  # mm: la franja de muro de las verificaciones
@@ -89,7 +89,8 @@ def service_stress(basis: Basis, slab: Slab, moment: float | None) -> float | No
     assumptions = basis.profile.strength_assumptions
     bars = steel(basis, slab)
     ratio = assumptions.steel_modulus() / assumptions.concrete_modulus(basis.materials.fc)
-    return cracked_steel_stress(moment, STRIP, bars.depth, bars.area, ratio)
+    strips = (CompressionStrip(STRIP, 0.0, slab.thickness),)
+    return cracked_steel_stress(moment, strips, (SteelLayer(bars.depth, bars.area),), ratio)
 
 
 def reinforcement_checks(basis: Basis, slab: Slab, given: tuple[float, float, float | None],

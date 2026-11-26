@@ -4,7 +4,7 @@ La carga neta hacia arriba es la presión del suelo (Bellos y Bakas 2017, con la
 pesos y las sobrecargas) menos las cargas uniformes sobre la zapata fuera de la columna: fd·(γc·h + γf·hf + qD) + fl·qL.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any
 
@@ -127,7 +127,7 @@ def factored_cases(footing: Footing, soil: Soil) -> tuple[list[FactoredCase], li
 
 Combined = tuple[list[tuple[FactoredCase, tuple[FootingLoad, ...]]], list[Check]]
 _MEMO_SIZE = 256  # geometrías recordadas por proceso (D-165)
-_COMBINED: dict[tuple[str, Soil], Combined] = {}
+_COMBINED: dict[tuple[str, Soil, str], Combined] = {}
 
 
 def remembered(memo: dict[Any, Any], key: Any, compute: Callable[[], Any]) -> Any:
@@ -144,13 +144,28 @@ def combined_factored_cases(footing: CombinedFooting, soil: Soil) -> Combined:
     """Lo mismo para una zapata combinada (D-080): cada caso mayorado con la presión de la resultante de las columnas
     (su carga es la suma de las dos) y las cargas de cada columna. Dependen solo de la geometría y las cargas: se recuerdan
     por geometry_key (D-165), y el diseño los reutiliza mientras prueba refuerzos sobre la misma planta."""
-    return remembered(_COMBINED, (footing.geometry_key, soil), lambda: _combined_cases(footing, soil))  # type: ignore[no-any-return]
+    return remembered(_COMBINED, (footing.geometry_key, soil, "factored"),  # type: ignore[no-any-return]
+                      lambda: _combined_cases(footing, soil, "factored"))
 
 
-def _combined_cases(footing: CombinedFooting, soil: Soil) -> Combined:
+def combined_service_cases(footing: CombinedFooting, soil: Soil) -> list[tuple[FactoredCase, tuple[FootingLoad, ...]]]:
+    """Los casos de servicio con la misma carga neta de los mayorados (sus factores declarados), para el fs del control
+    de agrietamiento (D-174); los que no tienen equilibrio con el suelo se omiten (los revisa la presión de servicio)."""
+    cases, _ = remembered(_COMBINED, (footing.geometry_key, soil, "service"), lambda: _combined_cases(footing, soil, "service"))
+    return cases  # type: ignore[no-any-return]
+
+
+def service_moment(moment: float, values: Iterable[float]) -> float | None:
+    """De los momentos de servicio de una sección, el del signo del momento mayorado con mayor valor absoluto (D-174);
+    None si ninguno tracciona esa cara (el agrietamiento toma entonces fs = 2/3·fy)."""
+    own = [value for value in values if value * moment > 0]
+    return max(own, key=abs) if own else None
+
+
+def _combined_cases(footing: CombinedFooting, soil: Soil, kind: str) -> Combined:
     cases, failures = [], []
     for loads in footing.cases():
-        if loads[0].kind != "factored":
+        if loads[0].kind != kind:
             continue
         result = _factored(footing, soil, combined_load(loads), combined_resultant(footing, soil, loads))
         if isinstance(result, Check):

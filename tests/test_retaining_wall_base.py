@@ -14,7 +14,7 @@ from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.retaining_wall import base as names
 from structurelab_rc.domain.retaining_wall.base import base_checks
 from structurelab_rc.domain.retaining_wall.thrust import stability_thrust
-from structurelab_rc.mechanics.flexure import cracked_steel_stress
+from structurelab_rc.mechanics.flexure import CompressionStrip, SteelLayer, cracked_steel_stress
 from structurelab_rc.model.project import Materials
 from structurelab_rc.model.retaining_wall import RetainingSoil, RetainingWall
 from structurelab_rc.setup import load_engine
@@ -96,5 +96,6 @@ def test_the_manual_example_2_development() -> None:
 def test_the_manual_toe_service_stress() -> None:
     """ACI MNL-17(21), ejemplo 2: con Ms = 7500 ft·lb/ft, N.° 7 cada 9 in y d = 20.56 in, fs = 5858 psi (n = 7.6)."""
     lb_ft = 1.3558179e3 / 0.3048  # ft·lb/ft → N·mm/m
-    fs = cracked_steel_stress(7500 * lb_ft, 1000.0, 20.56 * 25.4, 0.8 * 645.16 / 0.3048, 200000 / (4700 * 31.03**0.5))
+    fs = cracked_steel_stress(7500 * lb_ft, (CompressionStrip(1000.0, 0.0, 609.6),), (SteelLayer(20.56 * 25.4, 0.8 * 645.16 / 0.3048),),
+                              200000 / (4700 * 31.03**0.5))
     assert fs == pytest.approx(5858 * 0.00689476, rel=1e-2)

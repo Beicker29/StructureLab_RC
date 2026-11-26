@@ -12,7 +12,8 @@ from structurelab_rc.model.project import Materials, Member, Station
 class StationInput:
     """foundation: la viga es la dirección larga de una zapata combinada (D-081): Vc y Av,min de cimentación.
     side_faces: la sección tiene caras laterales libres, donde va el refuerzo superficial; las franjas transversales de la
-    zapata combinada no las tienen (D-083)."""
+    zapata combinada no las tienen (D-083). service_mu: el momento de servicio de la estación (N·mm, con el signo de Mu),
+    para el fs del control de agrietamiento; sin él (las vigas, que reciben solo fuerzas mayoradas), fs = 2/3·fy."""
 
     profile: Profile
     materials: Materials
@@ -21,3 +22,4 @@ class StationInput:
     bars: Sequence[RebarSpec]
     foundation: bool = False
     side_faces: bool = True
+    service_mu: float | None = None

@@ -1,0 +1,77 @@
+{
+  "description": "Esfuerzo de servicio del acero en la sección fisurada elástica, en forma cerrada (N, mm, MPa).",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "rectangular-manual",
+      "description": "ejemplo 2 del manual ACI: puntera de 24 in, N.° 7 cada 9 in, Ms = 7500 ft·lb/ft (fs = 5858 psi)",
+      "bw": 1000.0,
+      "bf": 1000.0,
+      "hf": 609.6,
+      "h": 609.6,
+      "n": 7.63908337282682,
+      "moment": 33361660.92519685,
+      "layers": [
+        [
+          522.224,
+          1693.3333333333335
+        ]
+      ],
+      "expected": {
+        "c": 104.01661157449253,
+        "Icr": 2637522477.113624,
+        "fs": 40.40959015804753
+      }
+    },
+    {
+      "id": "t-eje-en-el-ala",
+      "description": "T con el eje neutro dentro del ala",
+      "bw": 400.0,
+      "bf": 1500.0,
+      "hf": 150.0,
+      "h": 800.0,
+      "n": 8.0,
+      "moment": 400000000.0,
+      "layers": [
+        [
+          730.0,
+          2040.0
+        ],
+        [
+          670.0,
+          1020.0
+        ]
+      ],
+      "expected": {
+        "c": 136.78369819178113,
+        "Icr": 9342743670.167114,
+        "fs": 203.18358640704795
+      }
+    },
+    {
+      "id": "t-eje-en-el-alma",
+      "description": "T de ala delgada y mucho acero: el eje neutro baja al alma",
+      "bw": 300.0,
+      "bf": 900.0,
+      "hf": 100.0,
+      "h": 700.0,
+      "n": 7.5,
+      "moment": 350000000.0,
+      "layers": [
+        [
+          630.0,
+          4020.0
+        ],
+        [
+          570.0,
+          2010.0
+        ]
+      ],
+      "expected": {
+        "c": 221.03716538586275,
+        "Icr": 9763518088.0681,
+        "fs": 109.95293204547423
+      }
+    }
+  ]
+}

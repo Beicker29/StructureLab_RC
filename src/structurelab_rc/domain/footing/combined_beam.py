@@ -52,7 +52,7 @@ from structurelab_rc.domain.development import required_length
 from structurelab_rc.domain.footing.base import column_vertical, stem_line_load
 from structurelab_rc.domain.footing.connection import bar_anchorage
 from structurelab_rc.domain.footing.flexure import plain_principal_check, plain_resists
-from structurelab_rc.domain.footing.loads import FactoredCase, remembered
+from structurelab_rc.domain.footing.loads import FactoredCase, combined_service_cases, remembered, service_moment
 from structurelab_rc.domain.footing.mesh import BarRow, mat_rows, stirrup_diameter, top_rows
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError
@@ -588,10 +588,11 @@ def _plate_note(beam: BeamCase, x: float) -> str:
 
 
 def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member,
-                          given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
+                          given: tuple[BeamCase, CriticalSection, bool], services: Sequence[BeamCase]) -> list[Check]:
     """Combinada rectangular (D-118): la flexión con los momentos de Wood-Armer de cada cara (una estación por cara con
     momento) y, si la sección es a d de una cara, el cortante de vigas una sola vez, sin torsión de vigas (la toman los
-    momentos de placa); en la cara de una viga alta, los límites de la sección (D-149)."""
+    momentos de placa); en la cara de una viga alta, los límites de la sección (D-149). El agrietamiento usa el momento
+    de Wood-Armer de servicio de la misma cara (D-174)."""
     beam, section, has_top = given
     z = section.x - footing.x_range[0]
     member = member_at(basis, footing, member, section.x)
@@ -603,7 +604,8 @@ def _plate_station_checks(basis: Basis, footing: CombinedFooting, member: Member
         station = Station.model_construct(z=z, layout=member.stations[0].layout, case=beam.case,
                                           demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(section.x), v3=0.0,
                                                                           tu=0.0))
-        given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
+        service = service_moment(moment, (value for own in services for value in own.plate_moments(section.x)))
+        given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, service_mu=service)
         plate = f"; {_plate_note(beam, section.x)}" if twisted else ""
         values = _plate_values(beam, section.x, moment)
         first = index == 0
@@ -638,9 +640,10 @@ def _plate_values(beam: BeamCase, x: float, moment: float) -> tuple[tuple[str, f
             ("my", 0.0), ("mxy", beam.twist(x)), ("mx* inf", design.bottom.x), ("mx* sup", design.top.x))
 
 
-def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, given: tuple[BeamCase, CriticalSection, bool]) -> list[Check]:
+def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, given: tuple[BeamCase, CriticalSection, bool],
+                    services: Sequence[BeamCase]) -> list[Check]:
     if footing.beam is None:
-        return _plate_station_checks(basis, footing, member, given)
+        return _plate_station_checks(basis, footing, member, given, services)
     beam, section, has_top = given
     member = member_at(basis, footing, member, section.x)  # en una planta no rectangular, la sección en x (D-167)
     # La nota lleva el signo del momento físico (D-095); la T invertida va volteada: su momento cambia de signo (D-093).
@@ -652,7 +655,8 @@ def _station_checks(basis: Basis, footing: CombinedFooting, member: Member, give
     station = Station.model_construct(z=z, layout=member.stations[0].layout, case=beam.case,
                                       demands=Demands.model_construct(pu=0.0, mu=moment, m2=0.0, vu=beam.shear(section.x), v3=0.0,
                                                                       tu=beam.torque(section.x)))
-    given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True)
+    service = service_moment(moment, (-own.moment(section.x) for own in services))  # volteado, como Mu (D-093)
+    given_station = StationInput(basis.profile, basis.materials, member, station, basis.bars, foundation=True, service_mu=service)
     if moment < 0 and not has_top:
         # Sin barras superiores: flexión de concreto simple (D-072) y el cortante (y la torsión) de vigas.
         flexure = plain_principal_check(basis, footing, -moment, (section.label, beam.case, _sentence(section.label)))
@@ -709,11 +713,12 @@ def long_beam_checks(
     has_top = footing.beam is not None or top_rows(footing, basis.bars).get("x") is not None
     member = long_beam_member(footing, basis.bars, basis.profile)
     depth = beam_depth(footing, basis.bars)  # d de las barras inferiores desde la cara superior de la viga
+    services = [beam_case(footing, soil, pressure, loads) for pressure, loads in combined_service_cases(footing, soil)]
     checks = []
     for pressure, loads in cases:
         beam = beam_case(footing, soil, pressure, loads)
         for critical in critical_sections(beam, depth, footing.beam is None, beam_depth_at(basis, footing, member, beam)):
-            checks += _station_checks(basis, footing, member, (beam, critical, has_top))
+            checks += _station_checks(basis, footing, member, (beam, critical, has_top), services)
     checks.append(_spacing_check(basis, footing, footing.bottom.x.spacing, BARS["bottom"]))
     # En la T invertida las barras superiores son de la viga: su separación la controla la fisuración de vigas (D-093).
     if footing.top is not None and footing.top.x is not None and footing.beam is None:

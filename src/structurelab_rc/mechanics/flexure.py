@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from structurelab_rc.mechanics.materials import ConcreteBlock, SteelModel
 from structurelab_rc.mechanics.polygon import Point
+from structurelab_rc.mechanics.roots import find_root
 from structurelab_rc.mechanics.section import SteelPoint, section_state
 
 
@@ -82,9 +83,24 @@ def flexure_state(
     )
 
 
-def cracked_steel_stress(moment: float, width: float, depth: float, area: float, modular_ratio: float) -> float:
-    """Esfuerzo del acero en tracción de una sección rectangular fisurada elástica, solo con ese acero: ρ = As/(b·d),
-    k = √((ρn)² + 2ρn) − ρn, j = 1 − k/3 y fs = M/(As·j·d). En N, mm y MPa."""
-    rho_n = area / (width * depth) * modular_ratio
-    k = math.sqrt(rho_n**2 + 2 * rho_n) - rho_n
-    return moment / (area * (1 - k / 3) * depth)
+def cracked_steel_stress(moment: float, strips: tuple[CompressionStrip, ...], layers: tuple[SteelLayer, ...],
+                         modular_ratio: float) -> float:
+    """Esfuerzo de la capa de acero más alejada de la cara comprimida en la sección fisurada elástica (concreto lineal
+    sin tracción, acero transformado n·As). Solo cuentan las capas en tracción; el acero comprimido se desprecia, del lado
+    de la seguridad. El eje neutro c iguala el momento estático del concreto comprimido al del acero en tracción;
+    Icr = Σ b·[(c − y0)³ − (c − y1)³]/3 + n·Σ As·(d − c)² y fs = n·M·(d_max − c)/Icr. Con una sección rectangular y una
+    capa es fs = M/(As·j·d), con j = 1 − k/3. Distancias desde la cara comprimida; en N, mm y MPa."""
+
+    def compressed(c: float) -> list[tuple[float, float, float]]:
+        return [(strip.width, strip.start, min(c, strip.end)) for strip in strips if strip.start < c]
+
+    def balance(c: float) -> float:
+        concrete = sum(width * (top - start) * (c - (start + top) / 2) for width, start, top in compressed(c))
+        steel = modular_ratio * sum(layer.area * (layer.depth - c) for layer in layers if layer.depth > c)
+        return concrete - steel
+
+    deepest = max(layer.depth for layer in layers)
+    c = find_root(balance, (0.0, deepest), (balance(0.0), balance(deepest)), lambda _: deepest * 1e-13)
+    inertia = (sum(width * ((c - start) ** 3 - (c - top) ** 3) / 3 for width, start, top in compressed(c))
+               + modular_ratio * sum(layer.area * (layer.depth - c) ** 2 for layer in layers if layer.depth > c))
+    return modular_ratio * moment * (deepest - c) / inertia
