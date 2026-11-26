@@ -4,8 +4,8 @@ Copia de los ejemplos de la carpeta de arriba que leen las pruebas, las huellas 
 (D-098). No se usa para iterar: para probar parámetros se cambian los archivos de la carpeta de arriba. Cambia solo con
 un cambio de cálculo o de formato registrado en `docs/decisions.md`, con su huella actualizada.
 
-Mientras la fase A del muro está en construcción (D-173), cada etapa que agrega verificaciones cambia esta huella; el
-cambio queda registrado en la D-173. Para correrla:
+Mientras la fase A del muro está en construcción (D-173), cada etapa que cambia el resultado o la memoria cambia esta
+huella; el cambio queda registrado en la D-173. Para correrla:
 
 ```console
 structurelab-rc run examples/aci_318_25/muros/voladizo/pruebas

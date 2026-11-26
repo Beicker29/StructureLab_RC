@@ -57,7 +57,7 @@
     "cabezal_dos_columnas_drawing.json": "6611d2ec8443277b45372483a699fa85ff92c0e5faec1777969e095182f0c1a0"
   },
   "examples/aci_318_25/muros/voladizo/pruebas/muro_voladizo.json": {
-    "resultado.json": "2700eef4e46cd57bbea3e378149b36318088b55749bee21d69770c0dfbf675f4",
+    "resultado.json": "5fce79b12d8e094a20fa66bf394dfc0ad69c6eaa3f25d3755a65fb43db409297",
     "memoria.txt": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
   },
   "examples/aci_318_25/vigas/pruebas/viga_alta.json": {

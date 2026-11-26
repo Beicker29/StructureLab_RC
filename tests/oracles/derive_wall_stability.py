@@ -35,9 +35,9 @@ def _coulomb(beta: float, phi: float, delta: float, alpha: float) -> float:
     return math.sin(b + p) ** 2 / (math.sin(b) ** 2 * math.sin(b - d) * (1 + root) ** 2)
 
 
-def _thrust(wall: dict, soil: dict) -> tuple[float, float, float, float, float]:
+def thrust(wall: dict, soil: dict) -> tuple[float, float, float, float, float]:
     """Sin factores: P_h, P_v, la x de P_a y el suelo que cuenta como peso con su x (kN/m y m, desde el borde de la
-    puntera)."""
+    puntera). También lo usa derive_wall_base.py."""
     t, toe, heel, hb, hf = (wall[key] / 1e3 for key in ("stem_thickness", "toe", "heel", "base_thickness", "backfill_height"))
     width, height = toe + t + heel, hb + hf
     gamma_s, phi = soil["unit_weight_backfill"], soil["friction_angle"]
@@ -76,7 +76,7 @@ def _expected(wall: dict, soil: dict, case: dict) -> dict:
     t, hs, toe, heel, hb, hf = (wall[key] / 1e3 for key in ("stem_thickness", "stem_height", "toe", "heel", "base_thickness",
                                                            "backfill_height"))
     width, height = toe + t + heel, hb + hf
-    ph, pv, x_p, soil_weight, soil_x = _thrust(wall, soil)
+    ph, pv, x_p, soil_weight, soil_x = thrust(wall, soil)
     y_p = height / 3
     stem = GAMMA_C * t * hs * case["dead_factor"]
     base = GAMMA_C * width * hb * case["dead_factor"]

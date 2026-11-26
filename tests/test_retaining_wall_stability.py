@@ -12,7 +12,7 @@ from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.check import Check
 from structurelab_rc.domain.footing.service import BEARING, CONTACT
 from structurelab_rc.domain.footing.stability import OVERTURNING, SLIDING
-from structurelab_rc.domain.retaining_wall.checks import PENDING, THRUST, retaining_wall_checks
+from structurelab_rc.domain.retaining_wall.checks import THRUST, retaining_wall_checks
 from structurelab_rc.domain.retaining_wall.stability import stability_checks
 from structurelab_rc.domain.retaining_wall.thrust import stability_thrust
 from structurelab_rc.model.retaining_wall import RetainingSoil, RetainingWall
@@ -93,7 +93,7 @@ def test_the_manual_wall_by_the_production_route() -> None:
     own = RetainingWall.model_validate(wall(**item["wall"], cases=[item["case"]]))
     soil = RetainingSoil.model_validate(internal_soil(**item["soil"]))
     checks = {check.name: check for check in retaining_wall_checks(basis(), own, soil)}
-    assert THRUST not in checks and str(checks[PENDING].status) == "BLOCKED"
+    assert THRUST not in checks
     assert _value(checks[BEARING], "H") == pytest.approx(70.48, abs=0.005)
     assert _value(checks[BEARING], "N") == pytest.approx(225.5, abs=0.05)
     assert (_value(checks[OVERTURNING], "FS"), _value(checks[SLIDING], "FS")) == (pytest.approx(2.94, abs=0.005),

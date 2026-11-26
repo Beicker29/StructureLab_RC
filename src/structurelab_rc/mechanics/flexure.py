@@ -80,3 +80,11 @@ def flexure_state(
         nominal_moment=state.mn3,
         layers=tuple(LayerState(bar.depth, bar.area, bar.strain, bar.stress) for bar in state.bars),
     )
+
+
+def cracked_steel_stress(moment: float, width: float, depth: float, area: float, modular_ratio: float) -> float:
+    """Esfuerzo del acero en tracción de una sección rectangular fisurada elástica, solo con ese acero: ρ = As/(b·d),
+    k = √((ρn)² + 2ρn) − ρn, j = 1 − k/3 y fs = M/(As·j·d). En N, mm y MPa."""
+    rho_n = area / (width * depth) * modular_ratio
+    k = math.sqrt(rho_n**2 + 2 * rho_n) - rho_n
+    return moment / (area * (1 - k / 3) * depth)

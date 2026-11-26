@@ -1,9 +1,8 @@
 # Muro de contención en voladizo, perfil aci-318-25
 
-Muro de contención en voladizo (D-173). En construcción: hoy se validan la entrada y el empuje (la teoría declarada y si
-vale para el muro, decisión 9); la estabilidad, las presiones, la pantalla, el talón y la puntera llegan en las etapas
-siguientes de la fase A, y mientras tanto el muro queda BLOCKED (nunca PASS sin verificarse). Los campos de entrada y de
-salida están en [docs/formatos/muros.md](../../../../docs/formatos/muros.md).
+Muro de contención en voladizo (D-173, fase A): se verifican el empuje, la estabilidad, las presiones, la pantalla y la
+base (talón, puntera, longitudinal y desarrollo). La memoria del muro llega en la etapa siguiente. Los campos de entrada
+y de salida están en [docs/formatos/muros.md](../../../../docs/formatos/muros.md).
 
 | Ejemplo | Qué muestra |
 | --- | --- |

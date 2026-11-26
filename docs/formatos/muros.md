@@ -91,9 +91,9 @@ Ko actúa sobre AB, horizontal. El coeficiente declarado actúa siempre sobre AB
 
 ## Verificaciones
 
-Hoy se verifican el empuje, la estabilidad y las presiones (casos de servicio) y la pantalla (casos mayorados). El talón,
-la puntera y el desarrollo de los pasadores llegan en la etapa 4; mientras tanto una verificación queda BLOCKED y el muro
-nunca da PASS.
+Se verifican el empuje, la estabilidad y las presiones (casos de servicio), la pantalla y la base (casos mayorados). El
+agrietamiento usa fs calculado con el mayor momento de servicio (sección fisurada elástica, n = Es/Ec con Ec = 4700√f'c);
+sin casos de servicio, fs = 2/3·fy. Si la fórmula del empuje no vale, solo queda el empuje BLOCKED.
 
 ### Estabilidad y presiones (casos de servicio)
 
@@ -120,6 +120,31 @@ pantalla y H la altura del relleno sobre la base; la carga axial se desprecia.
 | Dimensiones de la sección por cortante (Vu ≤ φ(Vc + 0.66√f'c·bw·d)) | 22.5.1.2 | C.11.4.7.9 |
 | Refuerzo horizontal: la mitad de la cuantía en cada cara | 24.4.3.2 (0.0018), separación 24.4.3.3 | C.14.3.3 (0.0020 o 0.0025), separación C.14.3.5 |
 | Verticales de la cara exterior: la mitad de la retracción | 24.4.3.2, separación 24.4.3.3 | C.7.12.2.1, separación C.7.12.2.2 |
+
+### Base (casos mayorados, por franja de 1 m)
+
+La base es una zapata en una dirección. Las cargas de cada caso mayorado son las de la estabilidad con sus factores, y la
+presión del suelo es la de Bellos y Bakas con la resultante mayorada.
+
+- Talón: carga neta = su concreto + el suelo que cuenta como peso + la componente vertical del empuje − la presión. Momento
+  y cortante en la cara de la pantalla (la junta se abre); barras superiores (`base.top`).
+- Puntera: la presión − su concreto (el suelo sobre ella no cuenta). Momento en la cara exterior de la pantalla y cortante a d
+  de ella; barras inferiores (`base.bottom`).
+- Un momento de signo contrario (tracción en la otra cara) queda BLOCKED: no está en la fase A.
+
+| Verificación | ACI 318-25 | NSR-10 |
+| --- | --- | --- |
+| Flexión talón y puntera (φMn ≥ Mu) | 13.3.2.1, 7.5.1.1(a) y 13.2.7.1 | C.15.4.1 y C.15.4.2 |
+| Deformación neta de tracción | 13.3.2.1 y 7.3.3.1 | C.10.3.5 |
+| Cortante talón (en la cara), Vc de las zapatas | 13.3.2.1, 7.5.1.1(b) y 13.2.6.2(a); R13.3.6.3 | C.15.5.1 y C.11.2 |
+| Cortante puntera (a d de la cara), Vc de las zapatas | 13.2.6.2(a) y 13.2.7.2 | C.15.5.1, C.15.5.2 y C.11.2 |
+| Dimensiones de la sección por cortante | 22.5.1.2 | C.11.4.7.9 |
+| Acero mínimo (0.0018·Ag) y separación máxima (3h y 450 mm) | 13.3.2.1, 7.6.1.1 y 7.7.2.3 | C.10.5.4 y C.7.12.2.1 |
+| Separación por agrietamiento (fs de servicio) | 7.7.2.2 y 24.3.2 | C.10.6.4 |
+| Longitudinal: retracción sobre la sección de la base, barras en cada cara | 24.4.3.2 y 24.4.3.3 | C.7.12.2.1 y C.7.12.2.2 |
+| Altura sobre las barras inferiores ≥ 150 mm | 13.3.1.2 | C.15.7 |
+| Desarrollo de las barras de la pantalla en la base (disponible: espesor − recubrimiento) | 25.4.3 o 25.4.2 | C.12.5 o C.12.2 |
+| Desarrollo de las barras superiores del talón y las inferiores de la puntera (el lado más corto de la cara de la pantalla − recubrimiento) | 25.4.2 o 25.4.3 | C.12.2 o C.12.5 |
 
 ## Entrada
 

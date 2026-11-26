@@ -4244,6 +4244,30 @@
         - Más el límite de dimensiones de la sección, el mismo de las vigas: Vu ≤ φ(Vc + 0.66√f'c·bw·d) (ACI 22.5.1.2;
           NSR-10 C.11.4.7.9), con `profile.shear.max_steel_shear`.
         - Se desprecian la carga axial de la pantalla y la tracción por flujo plástico y retracción (ACI 22.5.1.8).
+  13. **Base (etapa 4)** (decisiones del usuario del 2026-11-26): zapata en una dirección por franja de 1 m, con las cargas
+      de la estabilidad del caso mayorado y la presión de Bellos con su resultante mayorada (como D-057).
+      - Talón con la carga neta de la decisión 5 (su concreto, el suelo que cuenta como peso, con la corrección de la
+        opción b, y Pv, menos la presión). Momento y cortante en la cara de la pantalla, como el manual (la junta se abre,
+        ACI R13.3.6.3).
+      - Puntera con la presión del caso mayorado menos su concreto: momento en la cara y cortante a d (ACI 13.2.7.1 y
+        13.2.7.2; NSR-10 C.15.4.2 y C.15.5.2). El manual usa la presión de servicio por 1.6 y no coincide.
+      - Vc de las zapatas (ACI 13.2.6.2(a); NSR-10 el mayor de C.11.2.1 y C.11.2.2, D-030): ACI R13.3.6.1.1 dice que
+        13.3.6.1.1 no aplica a la zapata del muro. Más el límite de la sección (22.5.1.2; C.11.4.7.9).
+      - Mínimos y separaciones de la zapata en una dirección, altura mínima, longitudinal de retracción sobre la sección
+        de la base (las barras de `base.longitudinal` en cada cara) y desarrollo como el manual: las barras de la pantalla
+        dentro de la base (espesor − recubrimiento); las superiores del talón y las inferiores de la puntera a cada lado de
+        la cara (el lado más corto − recubrimiento). Las funciones de desarrollo son las de las zapatas.
+      - Agrietamiento con fs calculado (también en la pantalla): fs = Ms/(As·j·d), sección fisurada elástica con
+        n = Es/Ec (Ec = 4700√f'c, ACI 19.2.2.1(b); NSR-10 C.8.5.1) y el mayor momento de servicio de los casos declarados;
+        sin ellos, 2/3·fy (ACI 24.3.2.1; NSR-10 C.10.6.4). Con 2/3·fy la puntera del ejemplo no cumplía (228.6 > 195 mm);
+        el manual calcula fs (5858 psi) y su separación permitida es 95 in. `crack_control_spacing` recibe fs opcional.
+      - Un momento de signo contrario al de la pieza queda BLOCKED (fuera de la fase A).
+      - Ejemplo 2: ℓd de las barras superiores del talón 779 mm (manual 30.5 in = 775 mm) y de las inferiores de la puntera
+        600 mm (23.5 in = 597 mm); longitudinal requerido 3094 mm² (4.8 in²). ℓdh de los ganchos de arranque 275 mm frente a
+        15.0 in del manual (318-19; aquí la ecuación del 318-25, D-066). Talón: Vu = 112.2 kN/m y Mu = 115.3 kN·m/m con la
+        carga neta (el manual, sin la presión: 17 470 lb/ft = 255 kN/m y 48 000 ft·lb/ft = 213.5 kN·m/m). Puntera: Vu = 40.4
+        kN/m y Mu = 46.8 kN·m/m (manual: 3148 lb/ft = 45.9 kN/m y 11 930 ft·lb/ft = 53.1 kN·m/m).
+      - Oráculo `tests/oracles/<perfil>/derived_wall_base.json` (ejemplo 2, Coulomb con talón corto y contacto parcial).
       - Refuerzo horizontal repartido por partes iguales entre las dos caras, como el manual: cada cara con la mitad de
         la cuantía del perfil (ACI 24.4.3.2, separación 24.4.3.3; NSR-10 C.14.3.3, separación C.14.3.5). No se aplica la
         regla de dos capas de C.14.3.4: C.14.1.2 remite el voladizo solo a C.10 y C.14.3.3.
@@ -4269,7 +4293,8 @@
   dos entradas del muro. Las separaciones de 18 in del manual (horizontal y vertical exterior) quedan en 450 mm en los
   ejemplos: pasadas a SI eran 457.2 mm y el ACI 318M fija 450 mm (24.4.3.3), el equivalente métrico de las 18 in; con ellas
   el ejemplo ACI cumple como en el manual y el NSR-10 da FAIL solo por la cuantía horizontal de C.14.3.3 (fy = 413.7 MPa
-  < 420).
+  < 420). Etapa 4 (base): el muro ya no queda BLOCKED por etapas pendientes; cambia la entrada ACI del muro (de BLOCKED a
+  PASS); la NSR-10 no cambia (sigue FAIL por C.14.3.3 y la memoria aún no lista las verificaciones del muro).
 - **Supuestos de la fase A, como el manual:** pantalla de espesor constante (la variable, después; 13.3.6.3 pide revisarla
   en toda la altura); el peso del suelo sobre la puntera no estabiliza (puede erosionarse o retirarse); la pasiva, si
   cuenta, actúa sobre el espesor de la base, desde su cara superior; cálculo por metro de muro.

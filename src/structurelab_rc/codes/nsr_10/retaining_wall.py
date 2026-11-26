@@ -2,7 +2,8 @@
 refuerzo horizontal mínimo de C.14.3.3 (D-173). Lo que coincide con otras piezas del perfil se toma de ellas con su
 numeral: el As mínimo de C.10.5.4 (que remite a C.7.12.2.1) y su separación máxima (3h y 450 mm) son los de las zapatas
 de espesor uniforme; la retracción y temperatura (C.7.12.2.1 y C.7.12.2.2), la de las zapatas; la separación por
-agrietamiento (C.10.6.4), la de las vigas."""
+agrietamiento (C.10.6.4), la de las vigas. La base es una zapata (C.15): sus reglas son las de las zapatas; aquí solo
+van los numerales propios."""
 
 from structurelab_rc.codes.nsr_10 import footing, shear
 
@@ -23,6 +24,10 @@ def clauses() -> dict[str, str]:
                       "(seccion en la union, D-173)",
         "stem_horizontal": "C.14.3.3 y C.14.3.5",
         "stem_front": "C.7.12.2.1 y C.7.12.2.2",
+        "base_strength": "C.15.4.1 y C.15.4.2 (cara del muro)",
+        "base_net_tensile_strain": "C.10.3.5",
+        "base_crack_spacing": "C.10.6.4",
+        "heel_shear": "C.15.5.1 y C.11.2; en la cara de la pantalla (D-173)",
     }
 
 

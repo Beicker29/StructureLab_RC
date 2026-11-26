@@ -1,0 +1,412 @@
+{
+  "description": "Base del muro en voladizo (D-173, etapa 4): talón con carga neta, puntera, agrietamiento con fs de servicio, mínimos, longitudinal y desarrollo, con fórmulas cerradas escritas aquí.",
+  "unit_weight_concrete_kNm3": 23.56,
+  "fc": 31.03,
+  "fy": 413.7,
+  "section_clause": "C.11.4.7.9",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "manual-ejemplo-2",
+      "description": "el ejemplo 2 del manual con la base de 24 in (Rankine; el paquete usa Chu sobre AC, equivalente)",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 762.0,
+        "heel": 1676.4,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "stem_cover": 50.8,
+        "base_cover": 76.2,
+        "earth_pressure": {
+          "state": "active",
+          "method": "rankine"
+        },
+        "stem": {
+          "back": {
+            "designation": "#7",
+            "spacing": 228.6,
+            "end": "hook90"
+          },
+          "front": {
+            "designation": "#5",
+            "spacing": 450.0,
+            "end": "straight"
+          },
+          "horizontal": {
+            "designation": "#5",
+            "spacing": 450.0,
+            "end": "straight"
+          }
+        },
+        "base": {
+          "top": {
+            "designation": "#7",
+            "spacing": 114.3,
+            "end": "straight"
+          },
+          "bottom": {
+            "designation": "#7",
+            "spacing": 228.6,
+            "end": "straight"
+          },
+          "longitudinal": {
+            "designation": "#7",
+            "spacing": 355.6,
+            "end": "straight"
+          }
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 143.64,
+        "min_contact_fraction": 0.5,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0
+      },
+      "service": {
+        "case": "D+H",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "fill_factor": 1.0,
+        "earth_factor": 1.0
+      },
+      "factored": {
+        "case": "1.2D+1.6H",
+        "kind": "factored",
+        "dead_factor": 1.2,
+        "fill_factor": 1.6,
+        "earth_factor": 1.6
+      },
+      "expected": {
+        "heel": {
+          "Mu": 115324788.69345471,
+          "phiMn": 624960458.6449782,
+          "et": 0.02144045843594755,
+          "Vu": 112241.9128064382,
+          "phiVc": 371078.59572015086,
+          "section": 1811256.3972881436,
+          "As": 3385.8267716535433,
+          "d": 522.3,
+          "Ms": 69826923.82206851,
+          "fs": 43.37577235020209,
+          "crack": 1936.5649404882272,
+          "As_min": 1097.28,
+          "spacing_max": 450.0,
+          "flexure": "PASS",
+          "shear": "PASS",
+          "crack_status": "PASS"
+        },
+        "toe": {
+          "Mu": 46840045.26748771,
+          "phiMn": 320848820.11400044,
+          "et": 0.045880916871895105,
+          "Vu": 40412.72485666294,
+          "phiVc": 370954.8882826649,
+          "section": 1811132.6898506577,
+          "As": 1692.9133858267717,
+          "d": 522.3,
+          "Ms": 31300875.24713091,
+          "fs": 37.91686115819752,
+          "crack": 2215.373251745007,
+          "As_min": 1097.28,
+          "spacing_max": 450.0,
+          "flexure": "PASS",
+          "shear": "PASS",
+          "crack_status": "PASS"
+        },
+        "longitudinal": {
+          "required": 3093.671232,
+          "provided": 6136.714285714285,
+          "spacing_max": 450.0
+        },
+        "depth": 522.3,
+        "development": {
+          "dowel": [
+            276.9854072901337,
+            533.4
+          ],
+          "heel": [
+            779.3961676995107,
+            1066.8
+          ],
+          "toe": [
+            599.5355136150081,
+            685.8
+          ]
+        }
+      }
+    },
+    {
+      "id": "talon-corto-coulomb",
+      "description": "talón corto con Coulomb: la cuña y la componente vertical del empuje cargan el talón",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 762.0,
+        "heel": 1200.0,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "stem_cover": 50.8,
+        "base_cover": 76.2,
+        "earth_pressure": {
+          "state": "active",
+          "method": "coulomb",
+          "wall_friction_angle": 20.0
+        },
+        "stem": {
+          "back": {
+            "designation": "#7",
+            "spacing": 228.6,
+            "end": "hook90"
+          },
+          "front": {
+            "designation": "#5",
+            "spacing": 450.0,
+            "end": "straight"
+          },
+          "horizontal": {
+            "designation": "#5",
+            "spacing": 450.0,
+            "end": "straight"
+          }
+        },
+        "base": {
+          "top": {
+            "designation": "#7",
+            "spacing": 114.3,
+            "end": "straight"
+          },
+          "bottom": {
+            "designation": "#7",
+            "spacing": 228.6,
+            "end": "straight"
+          },
+          "longitudinal": {
+            "designation": "#7",
+            "spacing": 355.6,
+            "end": "straight"
+          }
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 143.64,
+        "min_contact_fraction": 0.5,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0,
+        "cohesion": 0.0
+      },
+      "service": {
+        "case": "D+H",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "fill_factor": 1.0,
+        "earth_factor": 1.0
+      },
+      "factored": {
+        "case": "1.2D+1.6H",
+        "kind": "factored",
+        "dead_factor": 1.2,
+        "fill_factor": 1.6,
+        "earth_factor": 1.6
+      },
+      "expected": {
+        "heel": {
+          "Mu": 88386111.13031098,
+          "phiMn": 624960458.6449782,
+          "et": 0.02144045843594755,
+          "Vu": 120161.70511330313,
+          "phiVc": 379787.295990837,
+          "section": 1819965.09755883,
+          "As": 3385.8267716535433,
+          "d": 522.3,
+          "Ms": 53120340.546281524,
+          "fs": 32.99781334449255,
+          "crack": 2545.623224274038,
+          "As_min": 1097.28,
+          "spacing_max": 450.0,
+          "flexure": "PASS",
+          "shear": "PASS",
+          "crack_status": "PASS"
+        },
+        "toe": {
+          "Mu": 51689294.551228,
+          "phiMn": 320848820.11400044,
+          "et": 0.045880916871895105,
+          "Vu": 45406.3307448925,
+          "phiVc": 370954.8882826649,
+          "section": 1811132.6898506577,
+          "As": 1692.9133858267717,
+          "d": 522.3,
+          "Ms": 34257502.11497912,
+          "fs": 41.498422681946685,
+          "crack": 2024.1733196414484,
+          "As_min": 1097.28,
+          "spacing_max": 450.0,
+          "flexure": "PASS",
+          "shear": "PASS",
+          "crack_status": "PASS"
+        },
+        "longitudinal": {
+          "required": 2570.92704,
+          "provided": 5099.780652418447,
+          "spacing_max": 450.0
+        },
+        "depth": 522.3,
+        "development": {
+          "dowel": [
+            276.9854072901337,
+            533.4
+          ],
+          "heel": [
+            779.3961676995107,
+            1066.8
+          ],
+          "toe": [
+            599.5355136150081,
+            685.8
+          ]
+        }
+      }
+    },
+    {
+      "id": "contacto-parcial",
+      "description": "puntera y talón cortos con Ka declarado: presión triangular, el talón sin presión en su extremo",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 300.0,
+        "heel": 1300.0,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "stem_cover": 50.8,
+        "base_cover": 76.2,
+        "earth_pressure": {
+          "state": "active",
+          "method": "declared",
+          "coefficient": 0.25
+        },
+        "stem": {
+          "back": {
+            "designation": "#7",
+            "spacing": 228.6,
+            "end": "hook90"
+          },
+          "front": {
+            "designation": "#5",
+            "spacing": 450.0,
+            "end": "straight"
+          },
+          "horizontal": {
+            "designation": "#5",
+            "spacing": 450.0,
+            "end": "straight"
+          }
+        },
+        "base": {
+          "top": {
+            "designation": "#7",
+            "spacing": 114.3,
+            "end": "straight"
+          },
+          "bottom": {
+            "designation": "#7",
+            "spacing": 228.6,
+            "end": "straight"
+          },
+          "longitudinal": {
+            "designation": "#7",
+            "spacing": 355.6,
+            "end": "straight"
+          }
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 143.64,
+        "min_contact_fraction": 0.5,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0
+      },
+      "service": {
+        "case": "D+H",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "fill_factor": 1.0,
+        "earth_factor": 1.0
+      },
+      "factored": {
+        "case": "1.2D+1.6H",
+        "kind": "factored",
+        "dead_factor": 1.2,
+        "fill_factor": 1.6,
+        "earth_factor": 1.6
+      },
+      "expected": {
+        "heel": {
+          "Mu": 120857457.16360219,
+          "phiMn": 624960458.6449782,
+          "et": 0.02144045843594755,
+          "Vu": 151334.60198111276,
+          "phiVc": 377367.18825315125,
+          "section": 1817544.9898211444,
+          "As": 3385.8267716535433,
+          "d": 522.3,
+          "Ms": 75841449.4765179,
+          "fs": 47.1119342960817,
+          "crack": 1782.9877133061439,
+          "As_min": 1097.28,
+          "spacing_max": 450.0,
+          "flexure": "PASS",
+          "shear": "PASS",
+          "crack_status": "PASS"
+        },
+        "toe": {
+          "Mu": 17574868.62878563,
+          "phiMn": 320848820.11400044,
+          "et": 0.045880916871895105,
+          "Vu": 0.0,
+          "phiVc": 370954.8882826649,
+          "section": 1811132.6898506577,
+          "As": 1692.9133858267717,
+          "d": 522.3,
+          "Ms": 11276586.298788179,
+          "fs": 13.66008949122839,
+          "crack": 6149.3008558940455,
+          "As_min": 1097.28,
+          "spacing_max": 450.0,
+          "flexure": "PASS",
+          "shear": "PASS",
+          "crack_status": "PASS"
+        },
+        "longitudinal": {
+          "required": 2173.71168,
+          "provided": 4311.850393700787,
+          "spacing_max": 450.0
+        },
+        "depth": 522.3,
+        "development": {
+          "dowel": [
+            276.9854072901337,
+            533.4
+          ],
+          "heel": [
+            779.3961676995107,
+            604.8
+          ],
+          "toe": [
+            599.5355136150081,
+            223.8
+          ]
+        }
+      }
+    }
+  ]
+}

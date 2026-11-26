@@ -1,7 +1,8 @@
 """Muros de contención en voladizo según ACI CODE-318-25 (13.1.1(j), 13.3.6): la pantalla es una losa en una dirección
 del capítulo 7 (13.3.6.1). Lo que coincide con otras piezas del perfil se toma de ellas con su numeral: el As mínimo de
 losa (7.6.1.1) y la separación máxima (7.7.2.3) son los de la zapata combinada en una dirección; la retracción y
-temperatura (24.4.3.2 y 24.4.3.3), la de las zapatas; la separación por agrietamiento (24.3.2), la de las vigas."""
+temperatura (24.4.3.2 y 24.4.3.3), la de las zapatas; la separación por agrietamiento (24.3.2), la de las vigas. La base
+es una zapata en una dirección (13.3.2.1): sus reglas son las de las zapatas; aquí solo van los numerales propios."""
 
 from structurelab_rc.codes.aci_318_25 import footing, shear
 
@@ -18,6 +19,10 @@ def clauses() -> dict[str, str]:
         "stem_shear": "7.5.1.1(b), 22.5.1.1 (Vs = 0), 22.5.1.5, 22.5.3.1, mayor de 13.3.6.1.1 y Tabla 22.5.5.1, 13.3.6.3 y 7.6.3.1",
         "stem_horizontal": "7.6.4.1, 24.4.3.2 y 24.4.3.3",
         "stem_front": "7.6.4.1, 24.4.3.2 y 24.4.3.3",
+        "base_strength": "13.3.2.1, 7.5.1.1(a) y 13.2.7.1 (cara del muro)",
+        "base_net_tensile_strain": "13.3.2.1 y 7.3.3.1",
+        "base_crack_spacing": "7.7.2.2 y 24.3.2",
+        "heel_shear": "13.3.2.1, 7.5.1.1(b) y 13.2.6.2(a); en la cara de la pantalla (R13.3.6.3, D-173)",
     }
 
 

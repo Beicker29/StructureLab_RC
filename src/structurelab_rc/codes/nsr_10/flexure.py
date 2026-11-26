@@ -64,10 +64,11 @@ def effective_min_reinforcement(as_min: float, as_analysis: float) -> float:
     return min(as_min, _EXEMPTION_FACTOR * as_analysis)
 
 
-def crack_control_spacing(fy: float, cc: float) -> float:
-    """C.10.6.4, ecuación (C.10-4): 380·(280/fs) − 2.5·cc, no mayor que 300·(280/fs), con fs = (2/3)·fy y cc la menor
-    distancia de la superficie del refuerzo a la cara en tracción; en mm."""
-    fs = _SERVICE_STRESS * fy
+def crack_control_spacing(fy: float, cc: float, fs: float | None = None) -> float:
+    """C.10.6.4, ecuación (C.10-4): 380·(280/fs) − 2.5·cc, no mayor que 300·(280/fs), con cc la menor distancia de la
+    superficie del refuerzo a la cara en tracción; en mm. fs (MPa) es el esfuerzo calculado con el momento no mayorado
+    (C.10.6.4); sin él, se permite fs = (2/3)·fy."""
+    fs = _SERVICE_STRESS * fy if fs is None else fs
     return min(_CRACK_SPACING * _CRACK_STRESS / fs - _CRACK_COVER * cc, _CRACK_SPACING_CAP * _CRACK_STRESS / fs)
 
 

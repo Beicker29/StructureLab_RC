@@ -1,5 +1,7 @@
 """Suposiciones de diseño para resistencia según NSR-10 Título C (C.10.2, C.8.5 y C.8.6)."""
 
+import math
+
 _FC_MIN = 17.0
 _FC_UPPER_PLATEAU = 28.0
 
@@ -26,6 +28,11 @@ def beta1(fc: float) -> float | None:
 def steel_modulus() -> float:
     """C.8.5.2, en MPa."""
     return 200_000.0
+
+
+def concrete_modulus(fc: float) -> float:
+    """C.8.5.1: Ec = 4700·√f'c para concreto de peso normal, en MPa (el liviano no está implementado, D-028)."""
+    return 4700.0 * math.sqrt(fc)
 
 
 def concrete_lambda(concrete: str) -> float | None:

@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from wall_inputs import basis, internal_soil, wall
 
-from structurelab_rc.domain.retaining_wall.checks import PENDING, THRUST, retaining_wall_checks
+from structurelab_rc.domain.retaining_wall.checks import THRUST, retaining_wall_checks
 from structurelab_rc.domain.retaining_wall.thrust import (
     COHESIVE,
     COHESIVE_COULOMB,
@@ -187,11 +187,12 @@ def test_gravity_and_cantilever_with_the_same_heel_take_the_same_plane() -> None
         assert cantilever.force == pytest.approx(0.5 * coefficient * 18e-6 * gravity.height**2)
 
 
-def test_a_wall_is_never_pass_before_it_is_verified() -> None:
-    """Mientras la fase A está en construcción, la última verificación queda BLOCKED; con la fórmula que no vale, el
-    empuje lo dice."""
+def test_an_invalid_formula_blocks_the_whole_wall() -> None:
+    """Con la fórmula que vale, el muro se verifica sin la revisión del empuje; con la que no vale, solo queda el empuje
+    BLOCKED con su motivo."""
     own, granular = _example(1500.0)
     checks = retaining_wall_checks(basis(), own, granular)
-    assert checks[-1].name == PENDING and checks[-1].status is Status.BLOCKED and THRUST not in [check.name for check in checks]
+    assert THRUST not in [check.name for check in checks]
     cohesive = retaining_wall_checks(basis(), own, granular.model_copy(update={"cohesion": 0.01}))
-    assert [check.name for check in cohesive] == [THRUST, PENDING] and cohesive[0].errors[0].message == COHESIVE
+    assert [check.name for check in cohesive] == [THRUST] and cohesive[0].status is Status.BLOCKED
+    assert cohesive[0].errors[0].message == COHESIVE
