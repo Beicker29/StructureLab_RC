@@ -5,9 +5,8 @@ import math
 from typing import Any
 
 import pytest
-from wall_inputs import internal_soil, wall
+from wall_inputs import basis, internal_soil, wall
 
-from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.retaining_wall.checks import PENDING, THRUST, retaining_wall_checks
 from structurelab_rc.domain.retaining_wall.thrust import (
     COHESIVE,
@@ -192,7 +191,7 @@ def test_a_wall_is_never_pass_before_it_is_verified() -> None:
     """Mientras la fase A está en construcción, la última verificación queda BLOCKED; con la fórmula que no vale, el
     empuje lo dice."""
     own, granular = _example(1500.0)
-    checks = retaining_wall_checks(PROFILES["aci-318-25"], own, granular)
+    checks = retaining_wall_checks(basis(), own, granular)
     assert checks[-1].name == PENDING and checks[-1].status is Status.BLOCKED and THRUST not in [check.name for check in checks]
-    cohesive = retaining_wall_checks(PROFILES["aci-318-25"], own, granular.model_copy(update={"cohesion": 0.01}))
+    cohesive = retaining_wall_checks(basis(), own, granular.model_copy(update={"cohesion": 0.01}))
     assert [check.name for check in cohesive] == [THRUST, PENDING] and cohesive[0].errors[0].message == COHESIVE

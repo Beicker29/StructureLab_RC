@@ -236,7 +236,7 @@
     "cabezal_dos_columnas_drawing.json": "6611d2ec8443277b45372483a699fa85ff92c0e5faec1777969e095182f0c1a0"
   },
   "examples/nsr_10/muros/voladizo/pruebas/muro_voladizo.json": {
-    "resultado.json": "830dc6c2449537ed0748dfc582b8299c3d739f38c67dc6b67cd29823ab4eca97",
+    "resultado.json": "82296d8684f777715146694b5733c6cd850622a0f5da21cb9e5357a10498ec5c",
     "memoria.txt": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
   },
   "examples/nsr_10/vigas/pruebas/viga_alta.json": {

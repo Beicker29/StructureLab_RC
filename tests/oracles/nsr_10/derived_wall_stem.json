@@ -1,0 +1,273 @@
+{
+  "description": "Pantalla del muro en voladizo (D-173): flexión, cortante, mínimos, separaciones y refuerzo de distribución, con fórmulas cerradas escritas aquí.",
+  "strength_clause": "C.14.1.2 y C.10",
+  "section_clause": "C.11.4.7.9",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "manual-ejemplo-2",
+      "description": "la pantalla del ejemplo 2 del manual (N.° 7 cada 9 in), 1.6H",
+      "wall": {
+        "stem_thickness": 381.0,
+        "backfill_height": 4876.8,
+        "stem_cover": 50.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "rankine"
+        },
+        "stem": {
+          "back": {
+            "designation": "#7",
+            "spacing": 228.6,
+            "end": "straight"
+          },
+          "front": {
+            "designation": "#5",
+            "spacing": 457.2,
+            "end": "straight"
+          },
+          "horizontal": {
+            "designation": "#5",
+            "spacing": 457.2,
+            "end": "straight"
+          }
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0
+      },
+      "fc": 31.03,
+      "fy": 413.7,
+      "earth_factor": 1.6,
+      "expected": {
+        "Mu": 144834044.3403149,
+        "Vu": 89095.74578021339,
+        "As": 1692.9133858267717,
+        "d": 319.09999999999997,
+        "phiMn": 192767300.11400044,
+        "et": 0.02686387243695525,
+        "phiVc": 226635.4678364893,
+        "Vc_table": 290054.62075431127,
+        "section": 1106514.342966389,
+        "section_status": "PASS",
+        "As_min": 685.8000000000001,
+        "spacing_max": 450.0,
+        "crack": 258.7868020304569,
+        "horizontal_each_face": 476.25,
+        "horizontal": 435.2580927384077,
+        "horizontal_max": 450.0,
+        "front_required": 342.90000000000003,
+        "front": 435.2580927384077,
+        "front_max": 450.0,
+        "flexure": "PASS",
+        "strain": "PASS",
+        "minimum": "PASS",
+        "spacing": "PASS",
+        "crack_status": "PASS",
+        "shear": "PASS",
+        "horizontal_status": "FAIL",
+        "front_status": "PASS"
+      }
+    },
+    {
+      "id": "coulomb",
+      "description": "Coulomb sobre la cara con δ' = 20°",
+      "wall": {
+        "stem_thickness": 381.0,
+        "backfill_height": 4876.8,
+        "stem_cover": 50.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "coulomb",
+          "wall_friction_angle": 20.0
+        },
+        "stem": {
+          "back": {
+            "designation": "#7",
+            "spacing": 228.6,
+            "end": "straight"
+          },
+          "front": {
+            "designation": "#5",
+            "spacing": 457.2,
+            "end": "straight"
+          },
+          "horizontal": {
+            "designation": "#5",
+            "spacing": 457.2,
+            "end": "straight"
+          }
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0
+      },
+      "fc": 31.03,
+      "fy": 413.7,
+      "earth_factor": 1.6,
+      "expected": {
+        "Mu": 123062283.72179866,
+        "Vu": 75702.68437610645,
+        "As": 1692.9133858267717,
+        "d": 319.09999999999997,
+        "phiMn": 192767300.11400044,
+        "et": 0.02686387243695525,
+        "phiVc": 226635.4678364893,
+        "Vc_table": 290054.62075431127,
+        "section": 1106514.342966389,
+        "section_status": "PASS",
+        "As_min": 685.8000000000001,
+        "spacing_max": 450.0,
+        "crack": 258.7868020304569,
+        "horizontal_each_face": 476.25,
+        "horizontal": 435.2580927384077,
+        "horizontal_max": 450.0,
+        "front_required": 342.90000000000003,
+        "front": 435.2580927384077,
+        "front_max": 450.0,
+        "flexure": "PASS",
+        "strain": "PASS",
+        "minimum": "PASS",
+        "spacing": "PASS",
+        "crack_status": "PASS",
+        "shear": "PASS",
+        "horizontal_status": "FAIL",
+        "front_status": "PASS"
+      }
+    },
+    {
+      "id": "delgada",
+      "description": "pantalla de 250 mm con N.° 5 cada 300 mm: no alcanza la flexión y la separación pasa la de agrietamiento",
+      "wall": {
+        "stem_thickness": 250.0,
+        "backfill_height": 4876.8,
+        "stem_cover": 50.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "rankine"
+        },
+        "stem": {
+          "back": {
+            "designation": "#5",
+            "spacing": 300.0,
+            "end": "straight"
+          },
+          "front": {
+            "designation": "#4",
+            "spacing": 450.0,
+            "end": "straight"
+          },
+          "horizontal": {
+            "designation": "#4",
+            "spacing": 450.0,
+            "end": "straight"
+          }
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0
+      },
+      "fc": 31.03,
+      "fy": 413.7,
+      "earth_factor": 1.6,
+      "expected": {
+        "Mu": 144834044.3403149,
+        "Vu": 89095.74578021339,
+        "As": 663.3333333333334,
+        "d": 191.25,
+        "phiMn": 45949882.17221427,
+        "et": 0.04267974582865248,
+        "phiVc": 135832.1316945427,
+        "Vc_table": 171782.69547038455,
+        "section": 663180.4076851204,
+        "section_status": "PASS",
+        "As_min": 450.0,
+        "spacing_max": 450.0,
+        "crack": 258.7868020304569,
+        "horizontal_each_face": 312.5,
+        "horizontal": 286.6666666666667,
+        "horizontal_max": 450.0,
+        "front_required": 225.0,
+        "front": 286.6666666666667,
+        "front_max": 450.0,
+        "flexure": "FAIL",
+        "strain": "PASS",
+        "minimum": "PASS",
+        "spacing": "PASS",
+        "crack_status": "FAIL",
+        "shear": "PASS",
+        "horizontal_status": "FAIL",
+        "front_status": "PASS"
+      }
+    },
+    {
+      "id": "cuantia-alta",
+      "description": "pantalla de 300 mm con N.° 7 cada 90 mm (ρw = 0.018, controlada por tracción): en el ACI gobierna la fila (c) de la Tabla 22.5.5.1",
+      "wall": {
+        "stem_thickness": 300.0,
+        "backfill_height": 4876.8,
+        "stem_cover": 50.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "rankine"
+        },
+        "stem": {
+          "back": {
+            "designation": "#7",
+            "spacing": 90.0,
+            "end": "straight"
+          },
+          "front": {
+            "designation": "#4",
+            "spacing": 450.0,
+            "end": "straight"
+          },
+          "horizontal": {
+            "designation": "#4",
+            "spacing": 450.0,
+            "end": "straight"
+          }
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0
+      },
+      "fc": 31.03,
+      "fy": 413.7,
+      "earth_factor": 1.6,
+      "expected": {
+        "Mu": 144834044.3403149,
+        "Vu": 89095.74578021339,
+        "As": 4300.0,
+        "d": 238.1,
+        "phiMn": 327211823.5494853,
+        "et": 0.005772936713294336,
+        "phiVc": 169106.5650011536,
+        "Vc_table": 222919.04361365232,
+        "section": 825637.9350056322,
+        "section_status": "PASS",
+        "As_min": 540.0,
+        "spacing_max": 450.0,
+        "crack": 258.7868020304569,
+        "horizontal_each_face": 375.0,
+        "horizontal": 286.6666666666667,
+        "horizontal_max": 450.0,
+        "front_required": 270.0,
+        "front": 286.6666666666667,
+        "front_max": 450.0,
+        "flexure": "PASS",
+        "strain": "PASS",
+        "minimum": "PASS",
+        "spacing": "PASS",
+        "crack_status": "PASS",
+        "shear": "PASS",
+        "horizontal_status": "FAIL",
+        "front_status": "PASS"
+      }
+    }
+  ]
+}

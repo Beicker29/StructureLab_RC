@@ -4,6 +4,11 @@ pasado a SI (relleno de 110 pcf y 35°, μ = 0.5, qa = 3000 psf; pantalla de 15 
 
 from typing import Any
 
+from structurelab_rc.codes.registry import PROFILES
+from structurelab_rc.domain.basis import Basis
+from structurelab_rc.model.project import Materials
+from structurelab_rc.setup import load_engine
+
 CONCRETE_WEIGHT = 23.56  # kN/m³ (150 pcf), en concrete.unit_weight_kNm3 (D-139)
 
 
@@ -31,6 +36,12 @@ def wall(**change: Any) -> dict[str, Any]:
             "cases": [{"case": "D+H", "kind": "service", "dead_factor": 1.0, "fill_factor": 1.0, "earth_factor": 1.0},
                       {"case": "1.2D+1.6H", "kind": "factored", "dead_factor": 1.2, "fill_factor": 1.6, "earth_factor": 1.6}],
             **change}
+
+
+def basis(profile: str = "aci-318-25") -> Basis:
+    """La base de cálculo del proyecto de project(): sus materiales y el catálogo de barras."""
+    materials = Materials(fc=31.0, fy=420.0, fyt=420.0, concrete="normalweight", coating="uncoated")
+    return Basis(PROFILES[profile], materials, load_engine().bars, "none" if profile == "aci-318-25" else "DMI")
 
 
 def project(**change: Any) -> dict[str, Any]:

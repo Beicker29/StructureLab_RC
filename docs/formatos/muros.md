@@ -89,6 +89,38 @@ BLOCKED con el motivo.
 
 Ko actúa sobre AB, horizontal. El coeficiente declarado actúa siempre sobre AB, inclinado α.
 
+## Verificaciones
+
+Hoy se verifican el empuje, la estabilidad y las presiones (casos de servicio) y la pantalla (casos mayorados). El talón,
+la puntera y el desarrollo de los pasadores llegan en la etapa 4; mientras tanto una verificación queda BLOCKED y el muro
+nunca da PASS.
+
+### Estabilidad y presiones (casos de servicio)
+
+| Verificación | Qué se revisa |
+| --- | --- |
+| Presión admisible del suelo | q_max (Bellos y Bakas, sin tracción) ≤ qa |
+| Contacto con el suelo | Fracción de la base en contacto ≥ `min_contact_fraction` |
+| Deslizamiento | FS·P_h ≤ μ·N + Pp (la pasiva solo si se declara) |
+| Volcamiento | FS·Mo ≤ Mr, alrededor del borde de la puntera (sin pasiva) |
+
+### Pantalla (casos mayorados, por franja de 1 m)
+
+Sección crítica en la unión con la base. Vu = factor del empuje·P_h y Mu = Vu·H/3, con P_h el empuje sobre la cara de la
+pantalla y H la altura del relleno sobre la base; la carga axial se desprecia.
+
+| Verificación | ACI 318-25 | NSR-10 |
+| --- | --- | --- |
+| Flexión pantalla (φMn ≥ Mu) | 13.3.6.1 y 7.5.1.1(a) | C.14.1.2 y C.10 |
+| Deformación neta de tracción | 7.3.3.1 (controlada por tracción) | C.10.3.5 (εt ≥ 0.004) |
+| Acero mínimo (0.0018·Ag) | 7.6.1.1 | C.10.5.4 y C.7.12.2.1 |
+| Separación máxima (3h y 450 mm) | 7.7.2.3 | C.10.5.4 |
+| Separación por agrietamiento | 24.3.2 | C.10.6.4 |
+| Cortante sin refuerzo de cortante (Vn = Vc, φVc ≥ Vu, √f'c ≤ 8.3 MPa); Vc, el mayor de los dos procedimientos del perfil | 22.5.1.1, 22.5.1.5, 22.5.3.1, mayor de 13.3.6.1.1 y Tabla 22.5.5.1 (fila (c)), 13.3.6.3 y 7.6.3.1 | C.11.1.1, C.11.1.2, mayor de C.11.2.1.1 y C.11.2.2.1, C.11.4.6.1(a) y C.11.4.7.1 |
+| Dimensiones de la sección por cortante (Vu ≤ φ(Vc + 0.66√f'c·bw·d)) | 22.5.1.2 | C.11.4.7.9 |
+| Refuerzo horizontal: la mitad de la cuantía en cada cara | 24.4.3.2 (0.0018), separación 24.4.3.3 | C.14.3.3 (0.0020 o 0.0025), separación C.14.3.5 |
+| Verticales de la cara exterior: la mitad de la retracción | 24.4.3.2, separación 24.4.3.3 | C.7.12.2.1, separación C.7.12.2.2 |
+
 ## Entrada
 
 Un proyecto con muros declara `retaining_soil` y `retaining_walls`; usa `concrete` y `reinforcement_steel` del proyecto. El

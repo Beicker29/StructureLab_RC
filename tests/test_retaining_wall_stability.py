@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from wall_inputs import internal_soil, wall
+from wall_inputs import basis, internal_soil, wall
 
 from structurelab_rc.codes.registry import PROFILES
 from structurelab_rc.domain.check import Check
@@ -92,7 +92,7 @@ def test_the_manual_wall_by_the_production_route() -> None:
     item = next(case for case in _oracle("aci_318_25")["cases"] if case["id"] == "manual-ejemplo-2")
     own = RetainingWall.model_validate(wall(**item["wall"], cases=[item["case"]]))
     soil = RetainingSoil.model_validate(internal_soil(**item["soil"]))
-    checks = {check.name: check for check in retaining_wall_checks(PROFILES["aci-318-25"], own, soil)}
+    checks = {check.name: check for check in retaining_wall_checks(basis(), own, soil)}
     assert THRUST not in checks and str(checks[PENDING].status) == "BLOCKED"
     assert _value(checks[BEARING], "H") == pytest.approx(70.48, abs=0.005)
     assert _value(checks[BEARING], "N") == pytest.approx(225.5, abs=0.05)

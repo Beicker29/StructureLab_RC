@@ -11,6 +11,7 @@ from structurelab_rc.codes.aci_318_25 import flexure as aci_flexure
 from structurelab_rc.codes.aci_318_25 import footing as aci_footing
 from structurelab_rc.codes.aci_318_25 import pile_cap as aci_pile_cap
 from structurelab_rc.codes.aci_318_25 import plain as aci_plain
+from structurelab_rc.codes.aci_318_25 import retaining_wall as aci_retaining_wall
 from structurelab_rc.codes.aci_318_25 import seismic as aci_seismic
 from structurelab_rc.codes.aci_318_25 import shear as aci_shear
 from structurelab_rc.codes.aci_318_25 import strength_assumptions as aci_strength_assumptions
@@ -23,6 +24,7 @@ from structurelab_rc.codes.nsr_10 import flexure as nsr_flexure
 from structurelab_rc.codes.nsr_10 import footing as nsr_footing
 from structurelab_rc.codes.nsr_10 import pile_cap as nsr_pile_cap
 from structurelab_rc.codes.nsr_10 import plain as nsr_plain
+from structurelab_rc.codes.nsr_10 import retaining_wall as nsr_retaining_wall
 from structurelab_rc.codes.nsr_10 import seismic as nsr_seismic
 from structurelab_rc.codes.nsr_10 import shear as nsr_shear
 from structurelab_rc.codes.nsr_10 import strength_assumptions as nsr_strength_assumptions
@@ -298,6 +300,26 @@ class PileCap(Protocol):
     def corner_depth_limit(self) -> float: ...
 
 
+class RetainingWall(Protocol):
+    def clauses(self) -> dict[str, str]: ...
+
+    def stem_min_reinforcement_ratio(self, fy: float) -> float: ...
+
+    def stem_max_spacing(self, h: float) -> float: ...
+
+    def stem_concrete_shear(
+        self, *, fc: float, lam: float, bw: float, d: float, h: float, rho_w: float, vu: float, mu: float
+    ) -> float: ...
+
+    def stem_horizontal_ratio(self, fy: float, db: float) -> float: ...
+
+    def stem_horizontal_max_spacing(self, h: float) -> float: ...
+
+    def stem_front_ratio(self, fy: float) -> float: ...
+
+    def stem_front_max_spacing(self, h: float) -> float: ...
+
+
 @dataclass(frozen=True)
 class Profile:
     id: str
@@ -313,11 +335,13 @@ class Profile:
     deep_beam: DeepBeam
     detailing: Detailing
     pile_cap: PileCap
+    retaining_wall: RetainingWall
 
 
 PROFILES = {
     "aci-318-25": Profile("aci-318-25", aci_strength_assumptions, aci_flexure, aci_shear, aci_torsion, aci_seismic, aci_footing,
-                          aci_development, aci_bearing, aci_plain, aci_deep_beam, aci_detailing, aci_pile_cap),
+                          aci_development, aci_bearing, aci_plain, aci_deep_beam, aci_detailing, aci_pile_cap,
+                          aci_retaining_wall),
     "nsr-10": Profile("nsr-10", nsr_strength_assumptions, nsr_flexure, nsr_shear, nsr_torsion, nsr_seismic, nsr_footing,
-                      nsr_development, nsr_bearing, nsr_plain, nsr_deep_beam, nsr_detailing, nsr_pile_cap),
+                      nsr_development, nsr_bearing, nsr_plain, nsr_deep_beam, nsr_detailing, nsr_pile_cap, nsr_retaining_wall),
 }

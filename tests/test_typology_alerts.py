@@ -1,6 +1,7 @@
 """Alertas de tipologías atípicas del diseño por tipologías (D-172): solo leen el resultado y no lo cambian."""
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +39,7 @@ def _loads(p: float, m: float, low: float | None = None) -> list[dict[str, Any]]
     return cases
 
 
-def _project(columns: list[tuple[float, float, float | None]], typologies: int, alerts: bool = True) -> dict[str, Any]:
+def _project(columns: Sequence[tuple[float, float, float | None]], typologies: int, alerts: bool = True) -> dict[str, Any]:
     """Columnas de 400 × 400 con (P, My, P baja) en kN y kN·m, un f'c y la DP (rápida)."""
     return public({
         "description": "prueba", "profile": "nsr-10", "seismic": {"level": "DES", "justification": "prueba"},
@@ -60,7 +61,7 @@ def _project(columns: list[tuple[float, float, float | None]], typologies: int, 
     })
 
 
-def _alerts(columns: list[tuple[float, float, float | None]], typologies: int) -> Any:
+def _alerts(columns: Sequence[tuple[float, float, float | None]], typologies: int) -> Any:
     project = FootingDesignProject.model_validate(_project(columns, typologies))
     ctx = Context(project, PROFILES[project.profile], load_engine().bars)
     result = design_with_pairs(ctx)

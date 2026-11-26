@@ -48,12 +48,12 @@
         },
         "front": {
           "designation": "#5",
-          "spacing": 457.2,
+          "spacing": 450.0,
           "end": "straight"
         },
         "horizontal": {
           "designation": "#5",
-          "spacing": 457.2,
+          "spacing": 450.0,
           "end": "straight"
         }
       },

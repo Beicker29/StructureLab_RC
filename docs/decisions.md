@@ -4225,6 +4225,37 @@
          Structures*, y AASHTO LRFD §3.11.5.3), por verificar antes de citarlas.
   10. Relleno granular (c' = 0) en la primera fase (ver las precisiones del punto 9 sobre `cohesion`).
   11. Ko calculado por Jaky o por Mayne y Kulhawy, con el método y el OCR declarados.
+  12. **Pantalla (etapa 3), como el ejemplo 2 del manual ACI** (decisión del usuario del 2026-11-26): losa en una
+      dirección por franja de 1 m, con Mu y Vu en la unión con la base (ACI 13.3.6.3; en la NSR-10, la misma sección,
+      como el manual), del empuje sobre la cara de la pantalla por el factor del empuje; la carga axial se desprecia.
+      - As mínimo de flexión: 0.0018·Ag como el manual (ACI 7.6.1.1; NSR-10 C.10.5.4, que remite a C.7.12.2.1, y no
+        C.10.5.1, el de vigas). Separación máxima 3h y 450 mm (ACI 7.7.2.3; NSR-10 C.10.5.4) y de agrietamiento (ACI
+        24.3.2; NSR-10 C.10.6.4).
+      - Cortante sin refuerzo de cortante, coherente con todo el capítulo de cortante de cada perfil por separado
+        (decisión del usuario del 2026-11-26): Vn = Vc con Vs = 0 y φVc ≥ Vu.
+        - ACI: 22.5.1.1, λ de 19.2.4 (22.5.1.5), √f'c ≤ 8.3 MPa (22.5.3.1), sin refuerzo de cortante Vu ≤ φVc (7.6.3.1).
+          Vc es el mayor de los dos procedimientos permitidos (decisión del usuario): 0.17λ√f'c·bw·d de 13.3.6.1.1 y la
+          Tabla 22.5.5.1 sin Av,min (fila (c), con λs y ρw, sin carga axial; 22.5.1.3), con `shear.concrete_shear`, la de
+          las vigas. En las pantallas usuales gobierna 13.3.6.1.1; la tabla gobierna solo con ρw ≳ 0.017 (λs = 1). El
+          manual usa la fórmula del 318-19, por eso su φVc es mayor.
+        - NSR-10, por separado y con el mismo criterio: el mayor de C.11.2.1.1 (ec. C.11-3) y C.11.2.2.1 (ec. C.11-5,
+          con Vu·d/Mu ≤ 1), la Vc de vigas que ya usan las zapatas (D-030). C.11.1.1 (ec. C.11-2), √f'c ≤ 8.3 MPa
+          (C.11.1.2); como losa no exige Av,min (C.11.4.6.1(a)), pero con Vu > φVc lo necesitaría (C.11.4.7.1).
+        - Más el límite de dimensiones de la sección, el mismo de las vigas: Vu ≤ φ(Vc + 0.66√f'c·bw·d) (ACI 22.5.1.2;
+          NSR-10 C.11.4.7.9), con `profile.shear.max_steel_shear`.
+        - Se desprecian la carga axial de la pantalla y la tracción por flujo plástico y retracción (ACI 22.5.1.8).
+      - Refuerzo horizontal repartido por partes iguales entre las dos caras, como el manual: cada cara con la mitad de
+        la cuantía del perfil (ACI 24.4.3.2, separación 24.4.3.3; NSR-10 C.14.3.3, separación C.14.3.5). No se aplica la
+        regla de dos capas de C.14.3.4: C.14.1.2 remite el voladizo solo a C.10 y C.14.3.3.
+      - Verticales de la cara exterior: la mitad del refuerzo de retracción y temperatura del perfil (ACI 24.4.3.2;
+        NSR-10 C.7.12.2.1), con su separación (24.4.3.3; C.7.12.2.2), como el manual las compara con lo de cada cara.
+      - Lo que coincide con otras piezas del perfil se toma de ellas (el mínimo y la separación de la losa de las
+        zapatas, la retracción, el agrietamiento de las vigas); `codes/<perfil>/retaining_wall.py` define solo el Vc de la
+        pantalla y el refuerzo horizontal de la NSR-10.
+      - Oráculo `tests/oracles/<perfil>/derived_wall_stem.json`: el ejemplo 2 da Mu = 144.83 kN·m/m (manual: 32 560 ft·lb/ft),
+        Vu = 89.10 kN/m (6105 lb/ft) y φMn = 192.8 kN·m/m con N.° 7 cada 9 in (manual: 517 in·kip/ft, con d redondeado a
+        12.5 in). Con la NSR-10, el refuerzo horizontal del manual (N.° 5 cada 18 in) no cumple C.14.3.3: fy = 413.7 MPa
+        (60 ksi) es menor que 420, así que la cuantía es 0.0025 y no 0.0020.
 - **Organización:** `examples/<perfil>/muros/voladizo/`, `docs/formatos/muros.md`, `model/retaining_wall.py`,
   `codes/<perfil>/retaining_wall.py` (los dos perfiles, con los mismos nombres), los empujes en `mechanics/earth_pressure.py`,
   el cálculo en `domain/retaining_wall/` y la memoria en `reporting/`. Fases: A (verificación del muro declarado, ejemplo
@@ -4233,7 +4264,12 @@
   (decisión del usuario; los muros de gravedad irán igual en `gravedad/`). `muro_voladizo.json` es el ejemplo 2 del
   manual en SI. Mientras la fase A está en construcción, el muro queda BLOCKED (nunca PASS sin verificarse) y la huella
   de su copia congelada cambia en cada etapa que agrega verificaciones; cada cambio se registra aquí. Etapa 1 (modelo,
-  validación y empuje): huella inicial, solo las dos entradas nuevas.
+  validación y empuje): huella inicial, solo las dos entradas nuevas. Etapa 2 (estabilidad y presiones): la huella no
+  cambió (`resultado.json` aún no lista las verificaciones del muro, solo el estado). Etapa 3 (pantalla): cambian las
+  dos entradas del muro. Las separaciones de 18 in del manual (horizontal y vertical exterior) quedan en 450 mm en los
+  ejemplos: pasadas a SI eran 457.2 mm y el ACI 318M fija 450 mm (24.4.3.3), el equivalente métrico de las 18 in; con ellas
+  el ejemplo ACI cumple como en el manual y el NSR-10 da FAIL solo por la cuantía horizontal de C.14.3.3 (fy = 413.7 MPa
+  < 420).
 - **Supuestos de la fase A, como el manual:** pantalla de espesor constante (la variable, después; 13.3.6.3 pide revisarla
   en toda la altura); el peso del suelo sobre la puntera no estabiliza (puede erosionarse o retirarse); la pasiva, si
   cuenta, actúa sobre el espesor de la base, desde su cara superior; cálculo por metro de muro.
