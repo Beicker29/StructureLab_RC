@@ -4132,65 +4132,96 @@
   7. Ejemplos y oráculo como en zapatas y vigas: los datos del manual pasados a SI (no las constantes), comparados con
      tolerancia y con cada diferencia anotada (redondeo de la conversión, Vc de 13.3.6.1.1 frente al 318-19).
   8. Datos geotécnicos declarados, sin valores por defecto (qa, μ, factores de seguridad, pesos unitarios, ángulos).
-  9. Teoría de presión lateral y plano de empuje (ajustada el 2026-11-26 con Das 2016, §12.3–12.6, §12.8 y §13.3–13.7).
-     La versión anterior usaba Coulomb sobre el trasdós virtual del voladizo con el δ' declarado (fricción
-     suelo–concreto), lo que es incorrecto: ese plano está dentro del relleno y ahí no hay concreto. Queda así:
+  9. Teoría de presión lateral y plano de empuje (Das 2016, §12.3–12.6, §12.8 y §13.3–13.7; ajustes del usuario del
+     2026-11-26). Historia: la primera versión usaba Coulomb sobre el trasdós virtual del voladizo con el δ' declarado
+     (incorrecto: ese plano está dentro del relleno); después el plano se asignó por tipo de muro (incorrecto: en un muro
+     de gravedad con talón la cuña atravesaría el concreto del talón); después Rankine con talón corto quedaba BLOCKED y
+     Coulomb con talón corto usaba AC con δ = φ'. Los ajustes finales reemplazan todo lo anterior sobre el talón corto:
      - **Principio general.** La teoría (Rankine o Coulomb) se declara por muro y se usa en todos sus cálculos
        (estabilidad, pantalla y, cuando exista, sismo); el programa nunca cambia de teoría. Cualquier teoría puede
-       declararse para cualquier tipo de muro (casos 1 a 4). El programa solo reporta como no válida la verificación que
-       sale del rango de validez de la fórmula, sin sustituir la teoría:
-       - Rankine en voladizo con talón corto (θ_v < η);
-       - Coulomb con c' > 0 (la ec. 12.26 es para c' = 0);
-       - α > φ' (no hay solución con ninguna teoría).
-     - **δ' depende del plano.** En la ec. 12.26, δ' es la inclinación de P_a respecto a la normal al plano donde actúa
-       (fig. 12.12): en una cara de concreto, el δ' declarado (fricción suelo–concreto, tabla de §13.3); en un plano
-       vertical dentro del suelo, δ' = α (estado de Rankine del talud infinito); en el plano de rotura dentro del suelo
-       (AC), δ' = φ'. En el código, `delta_prima` es el declarado y `delta_mob` el de los planos dentro del suelo.
-     - **Convenciones.** A: esquina inferior del extremo del talón (cara inferior de la zapata). B: el punto de la
-       superficie del relleno sobre A; AB es el trasdós virtual vertical, de altura H'. C: la corona de la pantalla, en la
-       cara contra el relleno. α: inclinación del relleno respecto a la horizontal. φ' y γ: ángulo de fricción interna
-       efectivo y peso unitario del relleno. β (`beta_coulomb`): ángulo del plano de empuje respecto a la horizontal,
-       medido abajo, del lado del muro (fig. 12.12); 90° es vertical y β < 90° significa que el relleno se apoya sobre el
-       plano. θ de Chu (`theta_chu`, §12.4): inclinación respecto a la vertical; es otra variable y no se comparte con β.
-       η (ec. 13.1) = 45° + α/2 − φ'/2 − ½·asin(sin α / sin φ'). θ_v: inclinación de AC respecto a la vertical,
-       atan(Δx_AC/Δy_AC).
-     - **Ka de Coulomb (ec. 12.26):** Ka = sin²(β + φ') / {sin²β · sin(β − δ') · [1 + √(sin(φ' + δ')·sin(φ' − α) /
-       (sin(β − δ')·sin(α + β)))]²}. P_a forma con la horizontal el ángulo 90° − β + δ':
-       P_h = P_a·cos(90° − β + δ') y P_v = P_a·sin(90° − β + δ').
-     - **Caso 1, voladizo con Rankine** (Das §13.3, fig. 13.4a): plano AB vertical; Ka de Rankine y, con α ≠ 0, Rankine
-       con relleno inclinado (§12.4–12.5) con θ = 0. P_a = ½·Ka·γ·H'², a H'/3, inclinado α: P_h = P_a·cos α,
-       P_v = P_a·sin α. Fuerzas de la estabilidad: P_a, W_s (todo el relleno sobre el talón) y W_c (el concreto). Si
-       θ_v < η (la línea AC corta la pantalla), se reporta «talón corto: supuesto de Rankine no válido (Das §13.3)». La
-       pantalla, con Rankine sobre su cara.
-     - **Caso 2, gravedad con Rankine** (Das §13.3, fig. 13.4b): plano AB vertical por el extremo del talón, Ka y P_a como
-       en el caso 1. Fuerzas: P_a, W_s (el suelo entre la cara del muro y AB) y W_c. η se reporta como información; Das no
-       lo exige en gravedad.
-     - **Caso 3, gravedad con Coulomb** (Das §13.3, fig. 13.4c): plano en la cara real del muro contra el relleno, con β
-       según la convención; δ' declarado (suelo–concreto); Ka con la ec. 12.26. P_a = ½·Ka·γ·H², a H/3, con sus
-       componentes. Fuerzas: solo P_a y W_c (sin suelo sobre el muro).
-     - **Caso 4, voladizo con Coulomb: extensión aprobada por el usuario, no está en Das.** Se calculan η y θ_v y se
-       clasifica el talón:
-       - 4a, talón largo (θ_v ≥ η): plano AB, β = 90°, δ' = α. Fuerzas: P_a, W_s y W_c. Coulomb se reduce exactamente a
-         Rankine: con β = 90° y δ' = α, la ec. 12.26 da Ka = cos α·(cos α − √(cos²α − cos²φ'))/(cos α +
-         √(cos²α − cos²φ')). Debe dar lo mismo que el caso 1.
-       - 4b, talón corto (θ_v < η): plano AC, β_AC = 90° − θ_v, δ' = φ' (rotura suelo contra suelo). Se modela como un
-         muro de gravedad equivalente con trasdós AC y se reutiliza la rutina del caso 3. P_a = ½·Ka·γ·H², con H la
-         altura vertical de AC, a H/3. Fuerzas: P_a, W_cuña (el suelo del triángulo entre la pantalla, la cara superior del
-         talón y AC) y W_c (todo el concreto). Hipótesis: AC atraviesa una parte pequeña del concreto del talón cerca de
-         A; se toma W_c completo, como en la fig. 13.4a.
-       - La pantalla (4a y 4b), con Coulomb sobre su cara y el δ' declarado.
+       declararse para cualquier tipo de muro. **El plano de empuje lo define el talón, no el tipo de muro:** la misma
+       regla vale para gravedad, semigravedad y voladizo, en una sola función. El programa solo reporta como no válida
+       (BLOCKED) la verificación que sale del rango de validez de la fórmula, sin sustituir la teoría: c' > 0 con Coulomb
+       (la ec. 12.26 es para c' = 0), α > φ' (no hay solución con ninguna teoría) y Ko con talud.
+     - **Definiciones**, iguales para todo muro. A: extremo del talón, en la cara inferior de la base. B: el punto de la
+       superficie del relleno sobre A; AB es el trasdós virtual vertical, de altura H'. C: la corona de la cara del muro
+       en contacto con el relleno (la pantalla en el voladizo; la cara trasera en gravedad). θ_v: inclinación de AC
+       respecto a la vertical, atan(Δx_AC/Δy_AC). η (ec. 13.1) = 45° + α/2 − φ'/2 − ½·asin(sin α / sin φ'). **Talón
+       largo: θ_v ≥ η; talón corto: θ_v < η.** α: inclinación del relleno respecto a la horizontal; φ' y γ: ángulo de
+       fricción interna efectivo y peso unitario del relleno. β (`beta_coulomb`): ángulo del plano de empuje respecto a la
+       horizontal, medido abajo, del lado del muro (fig. 12.12). θ de Chu (`theta_chu`): inclinación respecto a la
+       vertical, positiva como en la fig. 12.8; es otra variable y no se comparte con β.
+     - **Rankine:**
+
+       | Talón | Plano | Qué se hace | Pesos |
+       | --- | --- | --- | --- |
+       | Largo | AB vertical | Ka de Rankine (con α); P_a inclinado α, a H'/3 | W_s (el suelo entre el muro y AB) y W_c |
+       | Corto | AC | Rankine generalizado de Chu (Das §12.4, ec. 12.13 a 12.17) con θ = +θ_v (el relleno apoyado sobre AC, como en la fig. 12.8); P_a inclinado β'_a (ec. 12.15) respecto a la normal a AC, es decir, θ_v + β'_a respecto a la horizontal; H = altura vertical de AC, a H/3 | W_cuña (el suelo entre AC y el muro) y W_c |
+
+       - Justificación: con θ_v ≤ η se cumple β'_a ≤ φ', así que el campo de Rankine es admisible sobre AC; la pantalla
+         queda del lado del muro respecto a AC y no obstruye el campo. Con θ_v = η, β'_a = φ'.
+       - Propiedad: Chu en AC más W_cuña equivale exactamente a Rankine en AB más W_s (el triángulo ABC está en
+         equilibrio dentro del campo de Rankine). Por eso el ejemplo 2 del manual ACI (θ_v = 16.99° < η = 27.5°) se
+         reproduce por la ruta normal, sin excepciones: P_h = 70.48 kN/m, N = 225.5 kN/m, FS = 2.94 y 1.60, q_max ≈
+         131.5 kPa. Rankine es continuo en θ_v = η. Para que la equivalencia sea exacta (decisiones del usuario del
+         2026-11-26):
+         - **opción 2:** como A está en la cara inferior de la base, AC atraviesa el concreto del talón cerca de A. La
+           cuña de concreto entre AC y AB, por debajo de la cara superior del talón (área ½·h_base·(talón − x_AC), con
+           x_AC la abscisa de AC en esa cara), está del lado del relleno: P_a ya la cuenta como suelo y W_c como
+           concreto. Se descuenta γ·(esa cuña), en su centroide, del peso del lado del muro (con W_c completo, el
+           ejemplo del manual daba N 0.98 kN/m más alto, +0.43 %);
+         - **opción (b):** el suelo sobre el talón lleva siempre el factor del relleno declarado (`fill_factor`). La
+           parte que P_a contiene con Chu (el triángulo ABC, ½·talón·H', con centroide a 2/3 del talón) va con el factor
+           del empuje dentro de P_a y se corrige con (fill_factor − earth_factor) en su centroide. Con factores distintos
+           (por ejemplo 0.9 y 1.0) la ruta de Chu daba N 3.9 % más alto que la de AB.
+       - Se eliminan el BLOCKED de Rankine con talón corto y la separación entre núcleo y producción que se había creado
+         para ese caso.
+     - **Coulomb** (decisión del usuario del 2026-11-26, a la vista del estudio de continuidad; Ka con la ec. 12.26,
+       P_a = ½·Ka·γ·H², a H/3, formando con la horizontal el ángulo 90° − β + δ):
+
+       | Talón | Plano | β | δ | Pesos | Trazabilidad |
+       | --- | --- | --- | --- | --- | --- |
+       | Sin talón | La cara real del muro | El de la cara (fig. 12.12) | δ' declarado (suelo–concreto) | Solo W_c | Das §13.3, fig. 13.4c |
+       | Corto (θ_v < η) | AC, dentro del suelo | 90° − θ_v | φ' (rotura suelo contra suelo) | W_cuña (con el descuento de la cuña de concreto de la opción 2) y W_c | Extensión aprobada, no está en Das |
+       | Largo (θ_v ≥ η) | AB vertical | 90° | α | W_s y W_c; se reduce exactamente a Rankine | Extensión aprobada, no está en Das |
+
+       - Se probó tratar el talón corto como sin talón (la cara con δ', H = H', sin el suelo del talón): el suelo sobre el
+         talón, el mayor peso estabilizador del voladizo, quedaba sin sumar. En el muro del manual el FS al volcamiento
+         era 1.13 y el de deslizamiento 0.89 (con Rankine, 2.94 y 1.60), y en θ_v = η el FS al volcamiento saltaba de
+         1.66 a 6.02 con 2 mm de talón. Se descartó.
+       - La cuña de concreto del talón entre AC y AB, por debajo de la cara superior del talón, se descuenta como en
+         Rankine (opción 2): P_a la cuenta como suelo y W_c como concreto. El triángulo ABC no se corrige al factor del
+         relleno (opción b): con Coulomb, P_a no se descompone en el de AB más el peso del triángulo.
+       - Con el talón largo, la ec. 12.26 con β = 90° y δ = α da Ka = cos α·(cos α − √(cos²α − cos²φ'))/(cos α +
+         √(cos²α − cos²φ')), el de Rankine.
+     - **Continuidad de Coulomb** (estudio del 2026-11-26; muro del ejemplo 2, φ' = 35°, δ' = 20°, por metro; el talón
+       largo empieza en 2856.4 mm; sin talón, con la puntera alargada a 2600 mm para que el muro se sostenga):
+
+       | Talón (mm) | Plano | δ | P_h (kN/m) | P_v (kN/m) | FS volcamiento | FS deslizamiento | q_max (kPa) |
+       | --- | --- | --- | --- | --- | --- | --- | --- |
+       | 2855.4 | AC | 35° | 70.49 | 135.37 | 6.012 | 2.425 | 99.5 |
+       | 2857.4 | AB | 0° | 70.49 | 0.00 | 6.018 | 2.426 | 99.4 |
+       | 1676.4 (el del manual) | AC | 35° | 67.18 | 85.96 | 3.201 | 1.727 | 125.1 |
+       | 0 (puntera de 2600 mm) | cara | 20° | 59.90 | 21.80 | 2.291 | 0.905 | 50.0 |
+       | 1 (puntera de 2600 mm) | AC | 35° | 53.22 | 37.28 | 3.054 | 1.164 | 51.8 |
+
+       En θ_v = η el paso de AC a AB es continuo (FS 0.1 %). Entre sin talón y corto queda un salto (P_h −11 %, FS al
+       volcamiento +33 %) que viene del cambio de δ' a φ' y no se reduce al crecer la proyección. Sin tolerancia: el
+       voladizo de la fase A exige talón, y el salto se revisa con los muros de gravedad.
+     - **Pesos, una sola regla.** El suelo del lado del relleno respecto al plano de empuje ya está en P_a y no se suma;
+       el del lado del muro se suma como peso, con W_c.
+     - **Sin cambios.** La pantalla, con la teoría declarada sobre su cara (con Coulomb, δ'). La teoría declarada nunca
+       se sustituye. La clasificación del talón y el plano, en una sola función, independiente del tipo de muro.
      - **Precisiones del usuario (2026-11-26):** la teoría, el coeficiente y el δ' declarado se declaran en cada muro
        (`retaining_walls[].earth_pressure`); en el suelo quedan φ', γ y los demás datos del relleno. Con Coulomb se
        declara la cohesión c' del relleno (`cohesion`, en kPa; el nombre no lleva la unidad); con c' ≠ 0 el método no la
        soporta. Con Rankine, c' > 0 queda «relleno cohesivo no implementado» hasta su fase. Una verificación no válida
-       queda BLOCKED con el motivo (no se puede verificar con la teoría declarada; FAIL diría que el muro falla). Ko
-       actúa sobre el plano AB, horizontal (δ' = 0), como el caso 1, y solo con relleno horizontal (las ec. 13.5 y 13.7
-       son para α = 0); con α ≠ 0, la verificación es no válida.
-     - **Pendientes de este punto** (documentados, sin implementar):
-       - sismo (Mononobe–Okabe) en el caso 4: η cambia con k_h y k_v, y un talón largo en estática puede ser corto en
-         sismo. Falta deducir y validar el η sísmico; mientras tanto, el caso 4 con sismo se reporta como «no
-         implementado»;
-       - referencias que respalden el caso 4b (por ejemplo, Clayton et al., *Earth Pressure and Earth-Retaining
+       queda BLOCKED con el motivo (FAIL diría que el muro falla). Ko actúa sobre el plano AB, horizontal (δ = 0), y solo
+       con relleno horizontal (las ec. 13.5 y 13.7 son para α = 0).
+     - **Pendientes de este punto:**
+       - el salto de Coulomb entre sin talón y talón corto, con los muros de gravedad;
+       - sismo (Mononobe–Okabe) con talón: η sísmico por deducir y validar; mientras tanto, «no implementado»;
+       - referencias que respalden Coulomb con talón (por ejemplo, Clayton et al., *Earth Pressure and Earth-Retaining
          Structures*, y AASHTO LRFD §3.11.5.3), por verificar antes de citarlas.
   10. Relleno granular (c' = 0) en la primera fase (ver las precisiones del punto 9 sobre `cohesion`).
   11. Ko calculado por Jaky o por Mayne y Kulhawy, con el método y el OCR declarados.

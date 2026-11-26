@@ -10,6 +10,8 @@ Coeficientes de empuje de un relleno granular (c' = 0), de B. M. Das, *Principle
 
 - Rankine activo con relleno inclinado α sobre un plano vertical (θ = 0): Ka = cos α·(cos α − √(cos²α − cos²φ'))/
   (cos α + √(cos²α − cos²φ')); con α = 0, tan²(45° − φ'/2). El empuje es paralelo al talud.
+- Rankine generalizado de Chu (§12.4, ec. 12.14, 12.15 y 12.17): Ka y la inclinación β'_a del empuje respecto a la
+  normal a un plano inclinado θ respecto a la vertical.
 - Coulomb activo (ec. 12.26): β es el ángulo del plano respecto a la horizontal, medido abajo, del lado del muro, y δ'
   la inclinación del empuje respecto a la normal al plano.
 - En reposo: Jaky, Ko = 1 − sen φ' (ec. 13.5), y Mayne y Kulhawy, Ko = (1 − sen φ')·OCR^(sen φ') (ec. 13.7).
@@ -30,6 +32,26 @@ def rankine_active_coefficient(phi: float, alpha: float) -> float:
     """Ka de Rankine sobre un plano vertical con relleno granular inclinado α (Das 2016, §12.4 con θ = 0)."""
     root = math.sqrt(math.cos(alpha) ** 2 - math.cos(phi) ** 2)
     return math.cos(alpha) * (math.cos(alpha) - root) / (math.cos(alpha) + root)
+
+
+def _chu_psi(phi: float, alpha: float, theta: float) -> float:
+    """ψ_a (Das 2016, ec. 12.14) = asen(sen α / sen φ') − α + 2θ."""
+    return math.asin(math.sin(alpha) / math.sin(phi)) - alpha + 2 * theta
+
+
+def chu_active_coefficient(phi: float, alpha: float, theta: float) -> float:
+    """Ka de Rankine generalizado de Chu (Das 2016, ec. 12.17) sobre un plano inclinado θ respecto a la vertical (positivo
+    como en la fig. 12.8), con relleno granular inclinado α."""
+    psi = _chu_psi(phi, alpha, theta)
+    root = math.sqrt(1 + math.sin(phi) ** 2 - 2 * math.sin(phi) * math.cos(psi))
+    return math.cos(alpha - theta) * root / (math.cos(theta) ** 2 * (math.cos(alpha) + math.sqrt(math.sin(phi) ** 2
+                                                                                                 - math.sin(alpha) ** 2)))
+
+
+def chu_inclination(phi: float, alpha: float, theta: float) -> float:
+    """β'_a (Das 2016, ec. 12.15): la inclinación del empuje de Chu respecto a la normal al plano."""
+    psi = _chu_psi(phi, alpha, theta)
+    return math.atan(math.sin(phi) * math.sin(psi) / (1 - math.sin(phi) * math.cos(psi)))
 
 
 def coulomb_active_coefficient(beta: float, phi: float, delta: float, alpha: float) -> float:

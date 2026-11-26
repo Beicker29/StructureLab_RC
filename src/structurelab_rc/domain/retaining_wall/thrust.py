@@ -1,25 +1,31 @@
-"""Empuje del relleno sobre el muro en voladizo (D-173, decisión 9): el plano donde actúa, el coeficiente, el empuje y
-sus componentes, y si la teoría declarada no vale para el muro (BLOCKED, sin sustituirla).
+"""Empuje del relleno sobre el muro (D-173, decisión 9): el plano donde actúa, el coeficiente, el empuje y sus
+componentes, por unidad de ancho.
 
-Coordenadas de la sección por unidad de ancho, en mm: x desde el borde de la puntera hacia el talón, y desde la cara
-inferior de la base hacia arriba. A = (ancho de la base, 0), el extremo inferior del talón; C, el punto de la cara de la
-pantalla contra el relleno en la superficie del relleno (la corona, si el relleno llega a ella).
+El plano lo define el talón, no el tipo de muro (thrust_plane, una sola función para gravedad, semigravedad y voladizo).
+A es el extremo del talón en la cara inferior de la base; B, el punto de la superficie del relleno sobre A (AB, el
+trasdós virtual vertical, de altura H'); C, la corona de la cara del muro en contacto con el relleno. Talón largo:
+θ_v ≥ η (ec. 13.1); corto: θ_v < η; sin talón: proyección nula.
 
-- Rankine (caso 1) y el coeficiente declarado: plano vertical AB, empuje inclinado α (paralelo al talud). Con talón
-  corto (θ_v < η) el supuesto de Rankine no vale (Das 2016, §13.3).
-- Coulomb (caso 4, extensión aprobada por el usuario, no Das): talón largo (θ_v ≥ η), plano AB con β = 90° y δ' = α,
-  que da lo mismo que Rankine; talón corto, plano AC con β = 90° − θ_v y δ' = φ', con la cuña de suelo entre la
-  pantalla, el talón y AC.
-- En reposo: plano AB, empuje horizontal; solo con relleno horizontal.
+- Rankine: talón largo, AB con Ka de Rankine, inclinado α (Das fig. 13.4a y b); talón corto, AC con el Rankine
+  generalizado de Chu (§12.4, ec. 12.13 a 12.17) con θ = +θ_v, inclinado β'_a respecto a la normal a AC. Chu en AC más la
+  cuña equivale exactamente a Rankine en AB más el suelo sobre el talón.
+- Coulomb (ec. 12.26): sin talón, la cara real con el δ' declarado (Das fig. 13.4c); talón corto, AC con β = 90° − θ_v y
+  δ = φ' (rotura suelo contra suelo), con la cuña; talón largo, AB con β = 90° y δ = α, que da lo mismo que Rankine.
+- El coeficiente declarado y Ko actúan siempre sobre AB (Ko horizontal).
+- Pesos: el suelo del lado del muro respecto al plano se suma (con AB, todo el que está entre la cara y AB; con AC, la
+  cuña entre la cara, la cara superior del talón y AC; con la cara, ninguno); el del lado del relleno ya está en P_a.
 
-Sobre la cara de la pantalla actúa la misma teoría: Rankine o el coeficiente declarado inclinados α, Coulomb con β = 90°
-y el δ' declarado (suelo–concreto) y el reposo horizontal.
+Las verificaciones no válidas por la fórmula (α > φ', c' > 0, Ko con talud) anulan el empuje y lo marcan en blocked.
+Sobre la cara de la pantalla actúa la misma teoría: Coulomb con β = 90° y el δ' declarado; Rankine o el declarado
+inclinados α; el reposo, horizontal.
 """
 
 import math
 from dataclasses import dataclass
 
 from structurelab_rc.mechanics.earth_pressure import (
+    chu_active_coefficient,
+    chu_inclination,
     coulomb_active_coefficient,
     jaky_at_rest_coefficient,
     mayne_kulhawy_at_rest_coefficient,
@@ -27,134 +33,168 @@ from structurelab_rc.mechanics.earth_pressure import (
     rankine_wedge_angle,
     thrust,
 )
-from structurelab_rc.model.retaining_wall import RetainingSoil, RetainingWall
+from structurelab_rc.model.retaining_wall import EarthPressure, RetainingSoil, RetainingWall
 
 VERTICAL = math.pi / 2
-SHORT_HEEL = "talón corto: supuesto de Rankine no válido (Das §13.3)"
 COHESIVE_COULOMB = "Coulomb con c' > 0: la ec. 12.26 de Das es para c' = 0"
 COHESIVE = "relleno cohesivo (c' > 0) no implementado (D-173)"
 STEEP = "α > φ': el relleno no tiene solución con ninguna teoría"
 SLOPED_AT_REST = "Ko con relleno inclinado: las ec. 13.5 y 13.7 de Das son para α = 0"
+NO_HEEL, SHORT, LONG = "sin talón", "corto", "largo"
+
+
+@dataclass(frozen=True)
+class Backfill:
+    """La geometría del relleno detrás del muro, sea cual sea su tipo: la proyección del talón, H' (de A a la superficie
+    del relleno), la profundidad del relleno sobre la cara superior del talón y β de la cara del muro en contacto con el
+    relleno (90°, vertical). Longitudes en mm, ángulos en radianes."""
+
+    projection: float
+    height: float
+    depth: float
+    face_beta: float = VERTICAL
+
+
+@dataclass(frozen=True)
+class Plane:
+    """El plano de empuje (decisión 9): heel (sin talón, corto o largo), name (la cara, AC o AB), β y δ (rad; P_a forma
+    con la horizontal el ángulo 90° − β + δ; en AC con Chu, δ = β'_a), su altura vertical (mm), el punto de aplicación de
+    P_a (dx desde el pie de la cara hacia A, y desde A, en mm), el suelo del lado del muro (área en mm², con su dx), η,
+    θ_v (rad) y el suelo sobre el talón que P_a contiene (área en mm², con su dx): en AC con Chu, el triángulo ABC, que
+    lleva el factor del relleno y no el del empuje (opción b de la decisión 9)."""
+
+    heel: str
+    name: str
+    beta: float
+    delta: float
+    height: float
+    point: tuple[float, float]
+    soil_area: float
+    soil_dx: float
+    eta: float
+    theta_v: float
+    inside_area: float = 0.0
+    inside_dx: float = 0.0
+
+
+def thrust_plane(backfill: Backfill, pressure: EarthPressure, phi: float, alpha: float) -> Plane:
+    """El plano de empuje que corresponde al talón y a la teoría declarada; la misma función para todo tipo de muro."""
+    projection, height, depth = backfill.projection, backfill.height, backfill.depth
+    eta = rankine_wedge_angle(phi, alpha)
+    theta_v = math.atan(projection / height)
+    heel = NO_HEEL if projection <= 0 else (SHORT if theta_v < eta else LONG)
+    coulomb = pressure.method == "coulomb"
+    if coulomb and heel == NO_HEEL:  # la cara real, con el δ' declarado (Das fig. 13.4c)
+        assert pressure.wall_friction_angle is not None
+        return Plane(heel, "cara", backfill.face_beta, pressure.wall_friction_angle, height,
+                     (height / 3 / math.tan(backfill.face_beta), height / 3), 0.0, 0.0, eta, theta_v)
+    if heel == SHORT and pressure.method in ("rankine", "coulomb"):
+        # AC, de A (dx = proyección, y = 0) a C (0, H'): con Rankine, Chu (δ = β'_a); con Coulomb, δ = φ' (rotura suelo
+        # contra suelo). Del lado del muro: la cuña de suelo entre la cara, la cara superior del talón y AC, menos la cuña
+        # de concreto del talón entre AC y AB (por debajo de la cara superior del talón), que P_a ya cuenta como suelo y
+        # W_c como concreto (opción 2 de la decisión 9).
+        edge = projection * depth / height  # donde AC corta la cara superior del talón
+        base = height - depth
+        wedge, wedge_dx = 0.5 * edge * depth, edge / 3
+        sliver, sliver_dx = 0.5 * base * (projection - edge), (2 * projection + edge) / 3
+        area = wedge - sliver
+        # Con Chu, P_a contiene el triángulo ABC, que se corrige al factor del relleno (opción b de la decisión 9).
+        inside, delta = (0.0, phi) if coulomb else (0.5 * projection * height, chu_inclination(phi, alpha, theta_v))
+        return Plane(heel, "AC", VERTICAL - theta_v, delta, height, (2 * projection / 3, height / 3), area,
+                     (wedge * wedge_dx - sliver * sliver_dx) / area, eta, theta_v, inside, 2 * projection / 3)
+    # AB: Rankine, Coulomb con talón largo, el coeficiente declarado o Ko; el suelo entre la cara y AB (relleno horizontal
+    # en la fase A).
+    delta = 0.0 if pressure.state == "at_rest" else alpha
+    return Plane(heel, "AB", VERTICAL, delta, height, (projection, height / 3), projection * depth, projection / 2, eta,
+                 theta_v)
 
 
 @dataclass(frozen=True)
 class Thrust:
-    """El empuje sobre un plano, por unidad de ancho: case (1, 4a, 4b o reposo), el plano (AB, AC o la cara de la
-    pantalla), el coeficiente, β y δ' del plano (rad), la altura vertical del plano (mm), el empuje y sus componentes
-    horizontal y vertical (N/mm), su punto de aplicación (x, y) en mm, el suelo que cuenta como peso (N/mm, con su x), η y
-    θ_v (rad; None donde no aplican) y blocked, el motivo si la teoría declarada no vale ("" si vale)."""
+    """El empuje sobre el plano, por unidad de ancho: el plano (Plane), el coeficiente, el empuje y sus componentes
+    horizontal y vertical (N/mm), su punto (x, y) en mm en la sección del muro, el peso del suelo del lado del muro (N/mm,
+    con su x), el del suelo sobre el talón que P_a contiene (N/mm, con su x; la estabilidad lo corrige al factor del
+    relleno) y blocked, el motivo si la fórmula no vale (empuje nulo; "" si vale)."""
 
-    case: str
-    plane: str
+    plane: Plane
     coefficient: float
-    beta: float
-    delta: float
-    height: float
     force: float
     horizontal: float
     vertical: float
     point: tuple[float, float]
     soil_weight: float
     soil_x: float
-    eta: float | None
-    theta_v: float | None
+    inside_weight: float
+    inside_x: float
     blocked: str = ""
 
 
-def _blocked(wall: RetainingWall, soil: RetainingSoil, alpha: float) -> str:
-    """Lo que invalida la teoría declarada antes de calcular (decisión 9)."""
-    pressure = wall.earth_pressure
-    cohesion = soil.cohesion or 0.0
+def _blocked(pressure: EarthPressure, soil: RetainingSoil, alpha: float) -> str:
+    """Lo que invalida la fórmula de la teoría declarada (decisión 9)."""
     if alpha > soil.friction_angle:
         return STEEP
-    if cohesion > 0:
+    if (soil.cohesion or 0.0) > 0:
         return COHESIVE_COULOMB if pressure.method == "coulomb" else COHESIVE
     if pressure.state == "at_rest" and alpha != 0:
         return SLOPED_AT_REST
     return ""
 
 
-def _coefficient(wall: RetainingWall, soil: RetainingSoil, alpha: float) -> float:
-    """El coeficiente de la teoría declarada sobre un plano vertical en el suelo (Rankine, reposo o el declarado)."""
-    pressure = wall.earth_pressure
+def _coefficient(pressure: EarthPressure, phi: float, plane: Plane, alpha: float) -> float:
+    """El coeficiente de la teoría declarada sobre el plano."""
     if pressure.method == "declared":
         assert pressure.coefficient is not None
         return pressure.coefficient
     if pressure.method == "jaky":
-        return jaky_at_rest_coefficient(soil.friction_angle)
+        return jaky_at_rest_coefficient(phi)
     if pressure.method == "mayne_kulhawy":
         assert pressure.ocr is not None
-        return mayne_kulhawy_at_rest_coefficient(soil.friction_angle, pressure.ocr)
-    return rankine_active_coefficient(soil.friction_angle, alpha)
+        return mayne_kulhawy_at_rest_coefficient(phi, pressure.ocr)
+    if pressure.method == "coulomb":
+        return coulomb_active_coefficient(plane.beta, phi, plane.delta, alpha)
+    if plane.name == "AC":
+        return chu_active_coefficient(phi, alpha, plane.theta_v)
+    return rankine_active_coefficient(phi, alpha)
+
+
+def _thrust(pressure: EarthPressure, soil: RetainingSoil, plane: Plane, given: tuple[float, float, str]) -> Thrust:
+    """El empuje ½·K·γ·H² sobre el plano, con sus componentes (forma con la horizontal el ángulo 90° − β + δ), en la
+    sección del muro. given = (x del pie de la cara, α, motivo de BLOCKED)."""
+    face, alpha, blocked = given
+    gamma = soil.unit_weight_backfill
+    coefficient = force = 0.0
+    if not blocked:
+        coefficient = _coefficient(pressure, soil.friction_angle, plane, alpha)
+        force = thrust(coefficient, gamma, plane.height)
+    angle = VERTICAL - plane.beta + plane.delta
+    return Thrust(plane, coefficient, force, force * math.cos(angle), force * math.sin(angle),
+                  (face + plane.point[0], plane.point[1]), gamma * plane.soil_area, face + plane.soil_dx,
+                  gamma * plane.inside_area, face + plane.inside_dx, blocked)
 
 
 def stability_thrust(wall: RetainingWall, soil: RetainingSoil, alpha: float = 0.0) -> Thrust:
-    """El empuje para la estabilidad, con el caso que corresponde a la teoría declarada y al talón (decisión 9). alpha
-    es la inclinación del relleno: 0 en la fase A (la fase A2 la declara)."""
-    gamma, phi = soil.unit_weight_backfill, soil.friction_angle
-    ax, height = wall.base_width, wall.retained_height
-    cx = wall.toe + wall.stem_thickness
-    blocked = _blocked(wall, soil, alpha)
-    eta = None if blocked == STEEP else rankine_wedge_angle(phi, alpha)
-    theta_v = math.atan((ax - cx) / height)
-    short = eta is not None and theta_v < eta
-    heel_soil = gamma * wall.heel * wall.backfill_height  # el relleno sobre el talón (horizontal en la fase A)
-    heel_x = cx + wall.heel / 2
+    """El empuje para la estabilidad del voladizo: el plano de thrust_plane con la proyección del talón, H' y el relleno
+    sobre el talón. alpha es la inclinación del relleno: 0 en la fase A (la fase A2 la declara)."""
     pressure = wall.earth_pressure
-    if pressure.method == "coulomb" and short and not blocked:
-        # 4b: gravedad equivalente con trasdós AC (δ' = φ', rotura suelo contra suelo) y la cuña entre la pantalla, el
-        # talón y AC; AC corta el talón en edge_x, a la altura de su cara superior.
-        beta = VERTICAL - theta_v
-        coefficient = coulomb_active_coefficient(beta, phi, phi, alpha)
-        edge_x = ax + (cx - ax) * wall.base_thickness / height
-        wedge = gamma * 0.5 * (edge_x - cx) * wall.backfill_height
-        return Thrust("4b", "AC", coefficient, beta, phi, height, *_force(coefficient, (beta, phi), (gamma, height), blocked),
-                      (ax + (cx - ax) / 3, height / 3), wedge, (2 * cx + edge_x) / 3, eta, theta_v, blocked)
-    if pressure.state == "at_rest":
-        case, delta, coefficient = "reposo", 0.0, 0.0 if blocked else _coefficient(wall, soil, alpha)
-    else:
-        coulomb = pressure.method == "coulomb"
-        case = "4a" if coulomb else "1"
-        delta = alpha  # plano vertical dentro del suelo: δ' = α (Rankine del talud infinito)
-        if blocked == STEEP:
-            coefficient = 0.0
-        else:  # 4a: la ec. 12.26 con β = 90° y δ' = α, que se reduce exactamente a Rankine
-            coefficient = coulomb_active_coefficient(VERTICAL, phi, alpha, alpha) if coulomb else _coefficient(wall, soil, alpha)
-        if not coulomb and short and not blocked:
-            blocked = SHORT_HEEL
-    return Thrust(case, "AB", coefficient, VERTICAL, delta, height, *_force(coefficient, (VERTICAL, delta), (gamma, height), blocked),
-                  (ax, height / 3), heel_soil, heel_x, eta, theta_v, blocked)
+    blocked = _blocked(pressure, soil, alpha)
+    plane = thrust_plane(Backfill(wall.heel, wall.retained_height, wall.backfill_height), pressure, soil.friction_angle,
+                         0.0 if blocked == STEEP else alpha)
+    return _thrust(pressure, soil, plane, (wall.toe + wall.stem_thickness, alpha, blocked))
 
 
 def stem_thrust(wall: RetainingWall, soil: RetainingSoil, alpha: float = 0.0) -> Thrust:
     """El empuje sobre la cara de la pantalla (para su diseño), con la misma teoría: Coulomb con β = 90° y el δ' declarado
     (suelo–concreto); Rankine o el declarado inclinados α; el reposo, horizontal. Su altura es la del relleno sobre la
     base."""
-    gamma, phi = soil.unit_weight_backfill, soil.friction_angle
-    height, cx = wall.backfill_height, wall.toe + wall.stem_thickness
-    blocked = _blocked(wall, soil, alpha)
     pressure = wall.earth_pressure
-    if blocked:
-        coefficient, delta = 0.0, 0.0
-    elif pressure.method == "coulomb":
+    blocked = _blocked(pressure, soil, alpha)
+    if pressure.method == "coulomb":
         assert pressure.wall_friction_angle is not None
         delta = pressure.wall_friction_angle
-        coefficient = coulomb_active_coefficient(VERTICAL, phi, delta, alpha)
     else:
         delta = 0.0 if pressure.state == "at_rest" else alpha
-        coefficient = _coefficient(wall, soil, alpha)
-    case = "reposo" if pressure.state == "at_rest" else ("4" if pressure.method == "coulomb" else "1")
-    return Thrust(case, "cara de la pantalla", coefficient, VERTICAL, delta, height,
-                  *_force(coefficient, (VERTICAL, delta), (gamma, height), blocked), (cx, wall.base_thickness + height / 3),
-                  0.0, cx, None, None, blocked)
-
-
-def _force(coefficient: float, plane: tuple[float, float], soil: tuple[float, float], blocked: str) -> tuple[float, float, float]:
-    """El empuje ½·K·γ·H² y sus componentes horizontal y vertical: forma con la horizontal el ángulo 90° − β + δ'
-    (decisión 9). plane = (β, δ'); soil = (γ, H). Nulo si la teoría no vale."""
-    if blocked:
-        return 0.0, 0.0, 0.0
-    beta, delta = plane
-    force = thrust(coefficient, *soil)
-    angle = VERTICAL - beta + delta
-    return force, force * math.cos(angle), force * math.sin(angle)
+    height = wall.backfill_height
+    eta = rankine_wedge_angle(soil.friction_angle, 0.0 if blocked == STEEP else alpha)
+    plane = Plane(NO_HEEL, "cara de la pantalla", VERTICAL, delta, height, (0.0, wall.base_thickness + height / 3), 0.0, 0.0,
+                  eta, 0.0)
+    return _thrust(pressure, soil, plane, (wall.toe + wall.stem_thickness, alpha, blocked))

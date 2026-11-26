@@ -232,7 +232,7 @@ def _run(path: Path) -> tuple[Project | None, tuple[Check, ...], Analyses]:
             checks.extend(pile_cap_checks(basis, cap, project.pile_soil, analyses[cap.id]))
     if project.retaining_soil is not None:  # D-173
         for wall in project.retaining_walls:
-            checks.extend(retaining_wall_checks(wall, project.retaining_soil))
+            checks.extend(retaining_wall_checks(profile, wall, project.retaining_soil))
     return project, tuple(checks), analyses
 
 

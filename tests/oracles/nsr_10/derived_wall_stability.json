@@ -1,0 +1,370 @@
+{
+  "description": "Estabilidad y presiones del muro en voladizo con casos de servicio (D-173). Empuje de Rankine, Coulomb (ec. 12.26) o Jaky escritos aquí; presión trapezoidal o triangular cerrada.",
+  "unit_weight_concrete_kNm3": 23.56,
+  "bearing_clause": "C.15.2.2",
+  "stability_clause": "Titulo H (remision), factores declarados (D-070)",
+  "tolerance_rel": 1e-09,
+  "cases": [
+    {
+      "id": "manual-ejemplo-2",
+      "description": "el ejemplo 2 del manual con la base de 24 in: cumple todo",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 762.0,
+        "heel": 1676.4,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "rankine"
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 143.64,
+        "min_contact_fraction": 1.0,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0
+      },
+      "case": {
+        "case": "D+H",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "fill_factor": 1.0,
+        "earth_factor": 1.0
+      },
+      "expected": {
+        "N_kN": 225.540710208,
+        "H_kN": 70.47612703317661,
+        "Mr_kNm": 378.66738501210244,
+        "Mo_kNm": 128.8867411182734,
+        "equilibrium": true,
+        "R_kN": 112.770355104,
+        "Pp_kN": 0.0,
+        "e_m": -0.3022252400620966,
+        "q_max_kPa": 131.446961832491,
+        "q_toe_kPa": 131.446961832491,
+        "q_heel_kPa": 28.545029518860353,
+        "contact": 1.0,
+        "FS_overturning": 2.937985565672864,
+        "FS_sliding": 1.6001213439398196,
+        "bearing": "PASS",
+        "contact_status": "PASS",
+        "sliding": "PASS",
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "pasiva",
+      "description": "la pasiva frente a la puntera suma al deslizamiento",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 762.0,
+        "heel": 1676.4,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "rankine"
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 143.64,
+        "min_contact_fraction": 1.0,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0,
+        "passive_coefficient": 3.69,
+        "unit_weight_front": 17.28
+      },
+      "case": {
+        "case": "D+H",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "fill_factor": 1.0,
+        "earth_factor": 1.0
+      },
+      "expected": {
+        "N_kN": 225.540710208,
+        "H_kN": 70.47612703317661,
+        "Mr_kNm": 378.66738501210244,
+        "Mo_kNm": 128.8867411182734,
+        "equilibrium": true,
+        "R_kN": 124.617945344256,
+        "Pp_kN": 11.847590240256002,
+        "e_m": -0.3022252400620966,
+        "q_max_kPa": 131.446961832491,
+        "q_toe_kPa": 131.446961832491,
+        "q_heel_kPa": 28.545029518860353,
+        "contact": 1.0,
+        "FS_overturning": 2.937985565672864,
+        "FS_sliding": 1.7682291946263187,
+        "bearing": "PASS",
+        "contact_status": "PASS",
+        "sliding": "PASS",
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "talon-corto-coulomb",
+      "description": "talón corto con Coulomb: plano AC con δ = φ', la cuña y la componente vertical",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 762.0,
+        "heel": 1200.0,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "coulomb",
+          "wall_friction_angle": 20.0
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 143.64,
+        "min_contact_fraction": 1.0,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0,
+        "cohesion": 0.0
+      },
+      "case": {
+        "case": "D+H",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "fill_factor": 1.0,
+        "earth_factor": 1.0
+      },
+      "expected": {
+        "N_kN": 191.25277350238918,
+        "H_kN": 64.12574477816479,
+        "Mr_kNm": 282.0576114644861,
+        "Mo_kNm": 117.27316205030777,
+        "equilibrium": true,
+        "R_kN": 95.62638675119459,
+        "Pp_kN": 0.0,
+        "e_m": -0.3098944588279666,
+        "q_max_kPa": 146.40540711789063,
+        "q_toe_kPa": 146.40540711789063,
+        "q_heel_kPa": 16.849201078771053,
+        "contact": 1.0,
+        "FS_overturning": 2.405133506534847,
+        "FS_sliding": 1.491232376044948,
+        "bearing": "FAIL",
+        "contact_status": "PASS",
+        "sliding": "FAIL",
+        "overturning": "PASS"
+      }
+    },
+    {
+      "id": "reposo-jaky",
+      "description": "Ko de Jaky: el empuje crece y el deslizamiento no cumple",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 762.0,
+        "heel": 1676.4,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "earth_pressure": {
+          "state": "at_rest",
+          "method": "jaky"
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 143.64,
+        "min_contact_fraction": 1.0,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0
+      },
+      "case": {
+        "case": "D+H",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "fill_factor": 1.0,
+        "earth_factor": 1.0
+      },
+      "expected": {
+        "N_kN": 225.540710208,
+        "H_kN": 110.89957282468973,
+        "Mr_kNm": 378.66738501210244,
+        "Mo_kNm": 202.8131387817926,
+        "equilibrium": true,
+        "R_kN": 112.770355104,
+        "Pp_kN": 0.0,
+        "e_m": -0.6299993150632003,
+        "q_max_kPa": 192.84383915115814,
+        "q_toe_kPa": 192.84383915115814,
+        "q_heel_kPa": 0.0,
+        "contact": 0.8296453340463925,
+        "FS_overturning": 1.8670752165593774,
+        "FS_sliding": 1.0168691567664343,
+        "bearing": "FAIL",
+        "contact_status": "FAIL",
+        "sliding": "FAIL",
+        "overturning": "FAIL"
+      }
+    },
+    {
+      "id": "contacto-parcial",
+      "description": "puntera corta y talón corto con Ka declarado: la resultante sale del tercio medio",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 300.0,
+        "heel": 1300.0,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "declared",
+          "coefficient": 0.25
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 400.0,
+        "min_contact_fraction": 0.5,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0
+      },
+      "case": {
+        "case": "D+H",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "fill_factor": 1.0,
+        "earth_factor": 1.0
+      },
+      "expected": {
+        "N_kN": 181.779818304,
+        "H_kN": 65.01726351360001,
+        "Mr_kNm": 195.46755799171203,
+        "Mo_kNm": 118.90357151367172,
+        "equilibrium": true,
+        "R_kN": 90.889909152,
+        "Pp_kN": 0.0,
+        "e_m": -0.5693092033957351,
+        "q_max_kPa": 287.7236314587907,
+        "q_toe_kPa": 287.7236314587907,
+        "q_heel_kPa": 0.0,
+        "contact": 0.6378457293350807,
+        "FS_overturning": 1.6439166250715762,
+        "FS_sliding": 1.3979350135674053,
+        "bearing": "PASS",
+        "contact_status": "PASS",
+        "sliding": "FAIL",
+        "overturning": "FAIL"
+      }
+    },
+    {
+      "id": "sin-equilibrio",
+      "description": "Ka declarado grande: la resultante sale de la base y las cuatro revisiones fallan",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 300.0,
+        "heel": 1300.0,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "declared",
+          "coefficient": 0.6
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 400.0,
+        "min_contact_fraction": 0.5,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0
+      },
+      "case": {
+        "case": "D+H",
+        "kind": "service",
+        "dead_factor": 1.0,
+        "fill_factor": 1.0,
+        "earth_factor": 1.0
+      },
+      "expected": {
+        "N_kN": 181.779818304,
+        "H_kN": 156.04143243264005,
+        "Mr_kNm": 195.46755799171203,
+        "Mo_kNm": 285.3685716328122,
+        "equilibrium": false,
+        "bearing": "FAIL",
+        "contact_status": "FAIL",
+        "sliding": "FAIL",
+        "overturning": "FAIL"
+      }
+    },
+    {
+      "id": "factores",
+      "description": "factores de servicio distintos de 1 en el peso y el empuje",
+      "wall": {
+        "stem_height": 4876.8,
+        "stem_thickness": 381.0,
+        "toe": 762.0,
+        "heel": 1676.4,
+        "base_thickness": 609.6,
+        "backfill_height": 4876.8,
+        "earth_pressure": {
+          "state": "active",
+          "method": "rankine"
+        }
+      },
+      "soil": {
+        "unit_weight_backfill": 17.28,
+        "friction_angle": 35.0,
+        "friction_coefficient": 0.5,
+        "allowable_pressure_kPa": 143.64,
+        "min_contact_fraction": 1.0,
+        "sliding_safety_factor": 1.5,
+        "overturning_safety_factor": 2.0
+      },
+      "case": {
+        "case": "0.9D+H",
+        "kind": "service",
+        "dead_factor": 0.9,
+        "fill_factor": 0.9,
+        "earth_factor": 1.0
+      },
+      "expected": {
+        "N_kN": 202.9866391872,
+        "H_kN": 70.47612703317661,
+        "Mr_kNm": 340.8006465108922,
+        "Mo_kNm": 128.8867411182734,
+        "equilibrium": true,
+        "R_kN": 101.4933195936,
+        "Pp_kN": 0.0,
+        "e_m": -0.36572042458969034,
+        "q_max_kPa": 128.03077055710753,
+        "q_toe_kPa": 128.03077055710753,
+        "q_heel_kPa": 15.962021659108693,
+        "contact": 1.0,
+        "FS_overturning": 2.6441870091055777,
+        "FS_sliding": 1.4401092095458377,
+        "bearing": "PASS",
+        "contact_status": "PASS",
+        "sliding": "FAIL",
+        "overturning": "PASS"
+      }
+    }
+  ]
+}
