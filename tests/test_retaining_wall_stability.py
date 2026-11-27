@@ -19,8 +19,8 @@ from structurelab_rc.model.retaining_wall import RetainingSoil, RetainingWall
 
 ORACLES = Path(__file__).parent / "oracles"
 FOLDERS = {"aci_318_25": "aci-318-25", "nsr_10": "nsr-10"}
-KN_M = 1.0  # kN/m = N/mm
-KNM_M = 1e3  # kN·m/m = N·mm/mm
+KN_M = 1e3  # kN/m → N por franja de 1 m (las revisiones se reportan por franja de 1 m)
+KNM_M = 1e6  # kN·m/m → N·mm por franja de 1 m
 KPA = 1e-3  # kPa = 1e-3 MPa
 
 
@@ -78,8 +78,8 @@ def test_the_manual_example_2_numbers() -> None:
     """ACI MNL-17(21), ejemplo 2 con la base de 24 in: ΣP = 15 450 lb/ft, FS = 2.94 y 1.60, q = 2746 y 596 psf."""
     item = next(case for case in _oracle("aci_318_25")["cases"] if case["id"] == "manual-ejemplo-2")
     checks = _checks("aci_318_25", item)
-    lb_ft, psf = 4.448222 / 0.3048, 0.0478803e-3  # N/m por lb/ft → N/mm con /1000; psf → MPa
-    assert _value(checks[BEARING], "N") == pytest.approx(15450 * lb_ft / 1e3, rel=2e-3)
+    lb_ft, psf = 4.448222 / 0.3048, 0.0478803e-3  # N/m por lb/ft (por franja de 1 m); psf → MPa
+    assert _value(checks[BEARING], "N") == pytest.approx(15450 * lb_ft, rel=2e-3)
     assert _value(checks[OVERTURNING], "FS") == pytest.approx(2.94, abs=0.005)
     assert _value(checks[SLIDING], "FS") == pytest.approx(1.60, abs=0.005)
     assert checks[BEARING].demand == pytest.approx(2746 * psf, rel=2e-3)
@@ -94,8 +94,8 @@ def test_the_manual_wall_by_the_production_route() -> None:
     soil = RetainingSoil.model_validate(internal_soil(**item["soil"]))
     checks = {check.name: check for check in retaining_wall_checks(basis(), own, soil)}
     assert THRUST not in checks
-    assert _value(checks[BEARING], "H") == pytest.approx(70.48, abs=0.005)
-    assert _value(checks[BEARING], "N") == pytest.approx(225.5, abs=0.05)
+    assert _value(checks[BEARING], "H") == pytest.approx(70.48e3, abs=5.0)  # N por franja de 1 m
+    assert _value(checks[BEARING], "N") == pytest.approx(225.5e3, abs=50.0)
     assert (_value(checks[OVERTURNING], "FS"), _value(checks[SLIDING], "FS")) == (pytest.approx(2.94, abs=0.005),
                                                                                   pytest.approx(1.60, abs=0.005))
     assert checks[BEARING].demand == pytest.approx(131.5e-3, abs=0.1e-3)

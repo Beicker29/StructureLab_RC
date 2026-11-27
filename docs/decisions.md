@@ -4268,6 +4268,17 @@
         carga neta (el manual, sin la presión: 17 470 lb/ft = 255 kN/m y 48 000 ft·lb/ft = 213.5 kN·m/m). Puntera: Vu = 40.4
         kN/m y Mu = 46.8 kN·m/m (manual: 3148 lb/ft = 45.9 kN/m y 11 930 ft·lb/ft = 53.1 kN·m/m).
       - Oráculo `tests/oracles/<perfil>/derived_wall_base.json` (ejemplo 2, Coulomb con talón corto y contacto parcial).
+  14. **Memoria (etapa 5):** `resultado.json` trae `retaining_soil` y `retaining_walls` (geometría, teoría declarada, los
+      empujes de la estabilidad y de la pantalla que el motor ya calculó, refuerzo, casos y verificaciones con su caso) y la
+      memoria del muro tiene los capítulos de las zapatas más el del empuje y los casos de carga y la tabla de la
+      resultante, las presiones y los FS de cada caso de servicio. Todo por franja de 1 m: las revisiones de estabilidad,
+      que se calculaban y reportaban por mm de muro, ahora se reportan por franja de 1 m como la pantalla y la base (el
+      cálculo no cambia; las pruebas pasan sus escalas de kN/m a N por franja). Formato en `docs/formatos/muros.md`
+      (Salida). El dibujo con el despiece y la cartilla, como las zapatas y los cabezales, sigue después de la fase A con
+      `references/Despiece muros voladizo.dxf` como guía (decisión del usuario: las dos láminas, geometría y detallado).
+  15. **Cierre de la fase A (2026-11-27):** el usuario la da por cerrada con su revisión pendiente. Cada etapa dejó su
+      oráculo (`derived_wall_stability`, `derived_wall_stem`, `derived_wall_base` y las pruebas del empuje) y la huella del
+      ejemplo está al día; la etapa 6 no agregó nada más.
       - Refuerzo horizontal repartido por partes iguales entre las dos caras, como el manual: cada cara con la mitad de
         la cuantía del perfil (ACI 24.4.3.2, separación 24.4.3.3; NSR-10 C.14.3.3, separación C.14.3.5). No se aplica la
         regla de dos capas de C.14.3.4: C.14.1.2 remite el voladizo solo a C.10 y C.14.3.3.
@@ -4294,7 +4305,8 @@
   ejemplos: pasadas a SI eran 457.2 mm y el ACI 318M fija 450 mm (24.4.3.3), el equivalente métrico de las 18 in; con ellas
   el ejemplo ACI cumple como en el manual y el NSR-10 da FAIL solo por la cuantía horizontal de C.14.3.3 (fy = 413.7 MPa
   < 420). Etapa 4 (base): el muro ya no queda BLOCKED por etapas pendientes; cambia la entrada ACI del muro (de BLOCKED a
-  PASS); la NSR-10 no cambia (sigue FAIL por C.14.3.3 y la memoria aún no lista las verificaciones del muro).
+  PASS); la NSR-10 no cambia (sigue FAIL por C.14.3.3 y la memoria aún no lista las verificaciones del muro). Etapa 5
+  (memoria): cambian las dos entradas del muro (el resultado y la memoria ya traen el muro).
 - **Supuestos de la fase A, como el manual:** pantalla de espesor constante (la variable, después; 13.3.6.3 pide revisarla
   en toda la altura); el peso del suelo sobre la puntera no estabiliza (puede erosionarse o retirarse); la pasiva, si
   cuenta, actúa sobre el espesor de la base, desde su cara superior; cálculo por metro de muro.
@@ -4334,6 +4346,10 @@
   cueste al menos lo del par más exigente diseñado solo. Con este cambio el tipo halló 18 097 588 y el par solo
   18 150 724: el tipo cumple bajo ese par, pero la búsqueda heurística del par solo no halló esa solución. La desigualdad
   no está garantizada; sí que el tipo cumple con los dos pares y que la agrupación con N = 2 es la menor.
+- **Corrección de presentación (con la etapa 5 de D-173):** `Ms` y `fs calculado` de las revisiones de fisuración de las
+  combinadas salían en `resultado.json` sin unidad (N·mm y MPa crudos); ahora `Ms [kN-m]` y `fs calculado [MPa]`, con su
+  descripción en la memoria. Cambian otra vez las huellas de las combinadas, las T invertidas y las tipologías; el
+  cálculo no cambia.
 
 ## Consultas abiertas
 

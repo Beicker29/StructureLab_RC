@@ -33,6 +33,7 @@ from structurelab_rc.mechanics.soil_pressure import footing_pressure
 from structurelab_rc.model.retaining_wall import RetainingSoil, RetainingWall, WallCase
 
 STRIP = 1.0  # mm: la franja de muro sobre la que se resuelve la presión (todo es por unidad de ancho)
+REPORT_STRIP = 1000.0  # mm: la franja de 1 m en que se reportan las revisiones, como la pantalla y la base
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,11 @@ class WallResultant:
     def x(self) -> float:
         """Distancia de la resultante al borde de la puntera (mm)."""
         return (self.resisting - self.overturning) / self.n
+
+    def scaled(self, width: float) -> "WallResultant":
+        """La misma resultante para un ancho de muro width (mm): fuerzas y momentos por width; x no cambia."""
+        return WallResultant(self.n * width, self.horizontal * width, self.resisting * width, self.overturning * width,
+                             self.passive * width, tuple((name, value * width) for name, value in self.parts))
 
 
 def wall_resultant(wall: RetainingWall, soil: RetainingSoil, case: WallCase, thrust: Thrust) -> WallResultant:
@@ -85,7 +91,10 @@ def stability_checks(profile: Profile, wall: RetainingWall, soil: RetainingSoil,
 
 def _case_checks(clauses: dict[str, str], wall: RetainingWall, soil: RetainingSoil,
                  given: tuple[WallCase, WallResultant]) -> list[Check]:
-    case, resultant = given
+    """Las cuatro revisiones de un caso; las fuerzas y momentos se reportan por franja de 1 m de muro, como la pantalla
+    y la base (el cálculo es por mm)."""
+    case, unit_resultant = given
+    resultant = unit_resultant.scaled(REPORT_STRIP)
     member, name = wall.id, case.case
     where = {"member": member, "case": name}
     width = wall.base_width
@@ -95,7 +104,7 @@ def _case_checks(clauses: dict[str, str], wall: RetainingWall, soil: RetainingSo
         if resultant.n <= 0:
             raise NoEquilibrium("la carga de servicio sobre el suelo no es de compresion")
         eccentricity = resultant.x - width / 2
-        pressure = footing_pressure(width, STRIP, resultant.n * STRIP, eccentricity, 0.0)
+        pressure = footing_pressure(width, STRIP, unit_resultant.n * STRIP, eccentricity, 0.0)
     except NoEquilibrium as error:
         failure = invalid_input(f"Sin equilibrio con el suelo: {error}", **where)
         return [Check(name, Status.FAIL, (failure,), clause, values=values, member=member, case=name)

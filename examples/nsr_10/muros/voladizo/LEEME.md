@@ -1,7 +1,7 @@
 # Muro de contención en voladizo, perfil nsr-10
 
 Muro de contención en voladizo (D-173, fase A): se verifican el empuje, la estabilidad, las presiones, la pantalla y la
-base (talón, puntera, longitudinal y desarrollo). La memoria del muro llega en la etapa siguiente. Con la NSR-10 el
+base (talón, puntera, longitudinal y desarrollo), con su memoria de cálculo. Con la NSR-10 el
 ejemplo da FAIL solo por el refuerzo horizontal de la pantalla (C.14.3.3: fy = 413.7 MPa < 420, cuantía 0.0025). Los
 campos de entrada y de salida están en [docs/formatos/muros.md](../../../../docs/formatos/muros.md).
 

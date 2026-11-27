@@ -17,14 +17,17 @@ from structurelab_rc.domain.footing.combined_beam import two_way_warning
 from structurelab_rc.domain.footing.combined_columns import BEAM_SHEAR
 from structurelab_rc.domain.footing.combined_diagrams import Envelope
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis
+from structurelab_rc.domain.retaining_wall.thrust import Thrust
 from structurelab_rc.domain.status import Status, aggregate
 from structurelab_rc.model.combined import COLUMNS, CombinedColumn, CombinedFooting, beam_to_global
 from structurelab_rc.model.footing import MPA_PER_KPA, N_MM3_PER_KN_M3, Footing, FootingBody, FootingLoad, RectangularBase, Soil
 from structurelab_rc.model.pile_cap import PileCap, PileCapSoil
 from structurelab_rc.model.project import Demands, Project
+from structurelab_rc.model.retaining_wall import RetainingSoil, RetainingWall
 from structurelab_rc.reporting.units import kN, kNm, kPa
 
 _DIGITS = 6
+_WALL_STRIP = 1000.0  # mm: la franja de 1 m en que se reportan los muros (D-173)
 # Unidad interna → (unidad de presentación, conversión).
 _UNITS = {"N*mm": ("kN-m", kNm), "N": ("kN", kN), "N/mm2": ("kPa", kPa), "area": ("m2", lambda area: area / 1e6),
           "N*mm/mm": ("kN-m/m", kN)}  # momento por unidad de ancho: 1 N·mm/mm = 1e-3 kN·m/m
@@ -47,7 +50,10 @@ _VALUE_UNITS = {"s": "mm", "db": "mm", "dagg": "mm", "bslab sin recortar": "mm",
                 # Torsión de placa (Wood-Armer, D-118, D-119): composición de Mu y Vu y los momentos por unidad de ancho.
                 "M flexion": "N*mm", "M torsion": "N*mm", "V flexion": "N", "V torsion": "N",
                 "mx": "N*mm/mm", "my": "N*mm/mm", "mxy": "N*mm/mm", "mx* inf": "N*mm/mm", "mx* sup": "N*mm/mm",
-                "my* inf": "N*mm/mm", "my* sup": "N*mm/mm"}
+                "my* inf": "N*mm/mm", "my* sup": "N*mm/mm",
+                # Muro de contención (D-173), por franja de 1 m: pesos, empuje, resultante y presiones; fisuración (D-174).
+                "W pantalla": "N", "W base": "N", "W suelo": "N", "Pv": "N", "H": "N", "Pp": "N", "e": "mm",
+                "x resultante": "mm", "q puntera": "N/mm2", "q talon": "N/mm2", "Ms": "N*mm", "fs calculado": "MPa"}
 # Valores con número: "esquina 3 v" (esfuerzo de punzonamiento en la esquina 3) y sus coordenadas (D-083).
 _CORNER_UNITS = {"x": "mm", "y": "mm", "v": "MPa"}
 
@@ -377,11 +383,67 @@ def envelope_data(envelope: Envelope) -> dict[str, Any]:
                          for section in envelope.sections]}
 
 
+WallThrusts = dict[str, tuple[Thrust, Thrust]]  # id del muro → empuje de la estabilidad y sobre la cara de la pantalla
+
+
+def _thrust_data(thrust: Thrust) -> dict[str, Any]:
+    """El empuje sin factores por franja de 1 m (D-173): el plano, el coeficiente, P_a y sus componentes, su punto
+    (desde el borde de la puntera y la cara inferior de la base) y el suelo que cuenta como peso."""
+    plane = thrust.plane
+    per_m = _WALL_STRIP
+    return {"plano": plane.name, "talon": plane.heel, "K [-]": significant(thrust.coefficient),
+            "Pa [kN]": significant(kN(thrust.force * per_m)), "Ph [kN]": significant(kN(thrust.horizontal * per_m)),
+            "Pv [kN]": significant(kN(thrust.vertical * per_m)), "x [mm]": significant(thrust.point[0]),
+            "y [mm]": significant(thrust.point[1]), "altura del plano [mm]": significant(plane.height),
+            "delta [deg]": significant(math.degrees(plane.delta)), "eta [deg]": significant(math.degrees(plane.eta)),
+            "theta_v [deg]": significant(math.degrees(plane.theta_v)),
+            "W suelo [kN]": significant(kN(thrust.soil_weight * per_m)), "invalida": thrust.blocked}
+
+
+def retaining_wall_data(wall: RetainingWall, checks: list[Check], thrusts: tuple[Thrust, Thrust] | None) -> dict[str, Any]:
+    """Un muro de contención (D-173): geometría, teoría del empuje declarada, refuerzo, casos, empujes calculados y sus
+    verificaciones, por franja de 1 m."""
+    pressure = wall.earth_pressure
+    data: dict[str, Any] = {
+        "id": wall.id, "quantity": wall.quantity, "status": _status(checks),
+        "geometry [mm]": {"stem_height": wall.stem_height, "stem_thickness": wall.stem_thickness, "toe": wall.toe,
+                          "heel": wall.heel, "base_thickness": wall.base_thickness, "backfill_height": wall.backfill_height,
+                          "stem_cover": wall.stem_cover, "base_cover": wall.base_cover, "base_width": wall.base_width,
+                          "retained_height": wall.retained_height},
+        "earth_pressure": {"state": pressure.state, "method": pressure.method, "coefficient": pressure.coefficient,
+                           "ocr": pressure.ocr,
+                           "wall_friction_angle [deg]": None if pressure.wall_friction_angle is None
+                           else significant(math.degrees(pressure.wall_friction_angle))},
+        "reinforcement": {"stem": wall.stem.model_dump(exclude_none=True), "base": wall.base.model_dump(exclude_none=True)},
+        "cases": [case.model_dump() for case in wall.cases],
+        # Como en las zapatas, cada verificación lleva su caso (None si vale para todo el muro).
+        "checks": [{**check_data(check), "case": check.case} for check in checks],
+    }
+    if thrusts is not None:
+        stability, stem = thrusts
+        data["thrust"] = {"estabilidad": _thrust_data(stability), "pantalla": _thrust_data(stem)}
+    return data
+
+
+def _retaining_soil_data(soil: RetainingSoil) -> dict[str, Any]:
+    """El suelo del muro (D-173), en unidades de presentación."""
+    return {"gamma relleno [kN/m3]": significant(soil.unit_weight_backfill / N_MM3_PER_KN_M3),
+            "phi [deg]": significant(math.degrees(soil.friction_angle)),
+            "c [kPa]": None if soil.cohesion is None else significant(soil.cohesion / MPA_PER_KPA),
+            "Kp [-]": soil.passive_coefficient,
+            "gamma frente [kN/m3]": None if soil.unit_weight_front is None else significant(soil.unit_weight_front / N_MM3_PER_KN_M3),
+            "gamma concreto [kN/m3]": significant(soil.unit_weight_concrete / N_MM3_PER_KN_M3),
+            "qa [kPa]": significant(soil.allowable_pressure / MPA_PER_KPA), "contacto minimo [-]": soil.min_contact_fraction,
+            "mu [-]": soil.friction_coefficient, "FS deslizamiento [-]": soil.sliding_safety_factor,
+            "FS volcamiento [-]": soil.overturning_safety_factor}
+
+
 def build_results(project: Project | None, checks: tuple[Check, ...], version: str,
-                  computed: tuple[Diagrams, dict[str, CapAnalysis]] | None = None) -> dict[str, Any]:
+                  computed: tuple[Diagrams, dict[str, CapAnalysis], WallThrusts] | None = None) -> dict[str, Any]:
     """Resultado completo; si la entrada no cargó, solo la validación. computed: lo que el motor ya calculó con el
-    dominio, los diagramas envolventes de las zapatas combinadas (D-095) y el análisis de cada cabezal (D-138)."""
-    diagrams, analyses = computed or ({}, {})
+    dominio, los diagramas envolventes de las zapatas combinadas (D-095), el análisis de cada cabezal (D-138) y los
+    empujes de cada muro (D-173)."""
+    diagrams, analyses, walls = computed or ({}, {}, {})
     validation, station_checks = checks[0], checks[1:]
     results: dict[str, Any] = {
         "software": {"name": "structurelab-rc", "version": version},
@@ -452,6 +514,11 @@ def build_results(project: Project | None, checks: tuple[Check, ...], version: s
         results["pile_caps"] = [pile_cap_data(cap, pile_soil, [check for check in station_checks if check.member == cap.id],
                                               analyses[cap.id])
                                 for cap in project.pile_caps]
+    if project.retaining_walls and project.retaining_soil is not None:
+        results["retaining_soil"] = _retaining_soil_data(project.retaining_soil)
+        results["retaining_walls"] = [retaining_wall_data(wall, [check for check in station_checks if check.member == wall.id],
+                                                          walls.get(wall.id))
+                                      for wall in project.retaining_walls]
     return results
 
 

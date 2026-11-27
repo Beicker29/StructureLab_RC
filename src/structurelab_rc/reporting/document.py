@@ -370,7 +370,8 @@ def _contact_lines(check: dict[str, Any]) -> list[tuple[str, str]]:
 # Subcapítulos de los requisitos técnicos (D-100, D-102): por palabras del nombre de la verificación (sin tilde), en
 # orden; la separación mínima va antes que las demás separaciones. El resto va en "Otros requisitos".
 _MINIMUM_WORDS = ("acero minimo", "refuerzo minimo", "refuerzo transversal minimo", "area minima", "cuantia",
-                  "refuerzo distribuido")
+                  "refuerzo distribuido", "refuerzo horizontal pantalla", "refuerzo vertical cara exterior",
+                  "refuerzo longitudinal base")  # las tres últimas, del muro (D-173); no las de torsión
 _SPACING_WORDS = ("separacion", "cortinas", "refuerzo superficial")
 _REQUIREMENT_SECTIONS = (
     ("Refuerzo mínimo", ()),
@@ -1406,6 +1407,154 @@ def pile_cap_document(results: dict[str, Any], cap: dict[str, Any], full: bool,
     return _assemble(head, chapters)
 
 
+_WALL_CONVENTIONS = (
+    "Muro de contención en voladizo de pantalla de espesor constante con relleno horizontal; cálculo por franja de 1 m de "
+    "muro (D-173). Cada caso declara sus factores: el del concreto (D), el del suelo sobre el talón y el del empuje (H); "
+    "la aplicación no genera combinaciones.",
+    "Empuje (Das 2016, decisión 9 de D-173): el plano lo define el talón (largo, corto o sin talón). Rankine en AB (talón "
+    "largo) o el de Chu en AC (talón corto); Coulomb (ec. 12.26) en la cara, en AC con δ = φ' o en AB; Ko y el coeficiente "
+    "declarado sobre AB. Sobre la cara de la pantalla actúa la misma teoría.",
+    "Estabilidad con los casos de servicio: volcamiento alrededor del borde de la puntera, Mr = ΣW·x + Pv·xP frente a "
+    "Mo = Ph·yP, sin pasiva; deslizamiento, R = μ·N + Pp (la pasiva solo si se declara, sobre el espesor de la base). "
+    "Presión lineal sin tracción de Bellos y Bakas (2017) con la resultante del caso. El suelo sobre la puntera no cuenta.",
+    "Pantalla: losa en una dirección empotrada en la base, con Mu = Ph·H/3 y Vu = Ph en la unión, del empuje sobre su "
+    "cara por el factor del empuje; la carga axial se desprecia. Vc, el mayor de los procedimientos permitidos del perfil.",
+    "Base: zapata en una dirección con las cargas del caso mayorado y la presión de su resultante. Talón con la carga "
+    "neta, momento y cortante en la cara de la pantalla; puntera con la presión menos su peso, momento en la cara y "
+    "cortante a d. Vc de las zapatas.",
+    "Agrietamiento: la mayor separación entre fs calculado con el mayor momento de servicio (sección fisurada elástica) y "
+    "fs = 2/3·fy (D-174).",
+)
+_WALL_LIMITATIONS = (
+    "Sismo (Mononobe–Okabe y la inercia de la pantalla), nivel freático, carga axial en la pantalla, relleno cohesivo, "
+    "relleno inclinado, sobrecarga, llave de cortante, pantalla de espesor variable y muro sin puntera o sin talón: falta "
+    "implementación (D-173).",
+)
+_WALL_DIMENSIONS = (("stem_height", "Altura de la pantalla sobre la base"), ("stem_thickness", "Espesor de la pantalla"),
+                    ("toe", "Puntera (desde la cara exterior de la pantalla)"),
+                    ("heel", "Talón (desde la cara del relleno de la pantalla)"), ("base_thickness", "Espesor de la base"),
+                    ("backfill_height", "Altura del relleno sobre la base"),
+                    ("stem_cover", "Recubrimiento libre de la pantalla"), ("base_cover", "Recubrimiento libre de la base"))
+_WALL_BARS = (("stem", "back", "Pantalla, verticales de la cara del relleno (flexión)"),
+              ("stem", "front", "Pantalla, verticales de la cara exterior"),
+              ("stem", "horizontal", "Pantalla, horizontales de cada cara"),
+              ("base", "top", "Base, transversales superiores (talón)"),
+              ("base", "bottom", "Base, transversales inferiores (puntera)"),
+              ("base", "longitudinal", "Base, longitudinales de cada cara"))
+_PRESSURE_STATES = {"active": "activo (Ka)", "at_rest": "en reposo (Ko)"}
+_PRESSURE_METHODS = {"rankine": "Rankine", "coulomb": "Coulomb (Das 2016, ec. 12.26)", "jaky": "Jaky (Das 2014, ec. 13.5)",
+                     "mayne_kulhawy": "Mayne y Kulhawy (Das 2014, ec. 13.7)", "declared": "declarado"}
+
+
+def _wall_geometry(results: dict[str, Any], wall: dict[str, Any]) -> list[Block]:
+    """Dimensiones declaradas, las calculadas, el suelo y el refuerzo del muro."""
+    g = wall["geometry [mm]"]
+    soil = results["retaining_soil"]
+    dimensions = [[text, number(g[key], "mm"), "mm"] for key, text in _WALL_DIMENSIONS]
+    derived = [["Ancho de la base (puntera + pantalla + talón)", number(g["base_width"], "mm"), "mm"],
+               ["Altura del empuje para la estabilidad (base + relleno)", number(g["retained_height"], "mm"), "mm"]]
+    optional = [("c [kPa]", "Cohesión del relleno (c')", "kPa"), ("Kp [-]", "Coeficiente de empuje pasivo frente a la puntera (Kp)", "–"),
+                ("gamma frente [kN/m3]", "Peso unitario del suelo del frente", "kN/m³")]
+    soil_rows = [["Peso unitario del relleno (γ)", number(soil["gamma relleno [kN/m3]"], "kN/m³"), "kN/m³"],
+                 ["Ángulo de fricción interna del relleno (φ')", number(soil["phi [deg]"], "°"), "°"],
+                 *([text, number(soil[key], unit), unit] for key, text, unit in optional if soil.get(key) is not None),
+                 ["Peso unitario del concreto (γc)", number(soil["gamma concreto [kN/m3]"], "kN/m³"), "kN/m³"],
+                 ["Presión admisible bruta (qa)", number(soil["qa [kPa]"], "kPa"), "kPa"],
+                 ["Fracción mínima de contacto", number(soil["contacto minimo [-]"], "–"), "–"],
+                 ["Coeficiente de fricción suelo–base (μ)", number(soil["mu [-]"], "–"), "–"],
+                 ["FS mínimo al deslizamiento", number(soil["FS deslizamiento [-]"], "–"), "–"],
+                 ["FS mínimo al volcamiento", number(soil["FS volcamiento [-]"], "–"), "–"]]
+    reinforcement = [[text, _bar_text(wall["reinforcement"][group][key])] for group, key, text in _WALL_BARS]
+    return [{"kind": "table", "headers": ["Dimensión (dato del usuario)", "Valor", "Unidad"], "rows": dimensions},
+            {"kind": "p", "text": "Propiedades calculadas a partir de las dimensiones (nunca declaradas):"},
+            {"kind": "table", "headers": ["Propiedad", "Valor", "Unidad"], "rows": derived},
+            {"kind": "table", "headers": ["Suelo y pesos (dato del usuario)", "Valor", "Unidad"], "rows": soil_rows},
+            {"kind": "table", "headers": ["Refuerzo", "Descripción"], "rows": reinforcement}]
+
+
+def _wall_actions(wall: dict[str, Any]) -> list[Block]:
+    """La teoría del empuje declarada, los empujes calculados (estabilidad y pantalla) y los casos de carga."""
+    pressure = wall["earth_pressure"]
+    theory = f"Empuje {_PRESSURE_STATES[pressure['state']]} por {_PRESSURE_METHODS[pressure['method']]}"
+    if pressure.get("coefficient") is not None:
+        theory += f", K = {number(pressure['coefficient'], '–')}"
+    if pressure.get("ocr") is not None:
+        theory += f", OCR = {number(pressure['ocr'], '–')}"
+    if pressure.get("wall_friction_angle [deg]") is not None:
+        theory += f", δ' suelo–concreto = {number(pressure['wall_friction_angle [deg]'], '°')}°"
+    blocks: list[Block] = [{"kind": "p", "text": f"{theory} (dato del usuario)."}]
+    thrust = wall.get("thrust")
+    if thrust is not None:
+        rows = []
+        for label, key in (("Estabilidad", "estabilidad"), ("Cara de la pantalla", "pantalla")):
+            own = thrust[key]
+            plane = f"{own['plano']} (talón {own['talon']})" if key == "estabilidad" else own["plano"]
+            rows.append([label, plane, number(own["K [-]"], "–"), number(own["Pa [kN]"], "kN"),
+                         number(own["Ph [kN]"], "kN"), number(own["Pv [kN]"], "kN"), number(own["altura del plano [mm]"], "mm"),
+                         number(own["delta [deg]"], "°")])
+        blocks += [{"kind": "h2", "text": "Empuje del relleno sin factores, por franja de 1 m"},
+                   {"kind": "table", "headers": ["Uso", "Plano", "K", "Pa (kN)", "Ph (kN)", "Pv (kN)", "Altura (mm)", "δ (°)"],
+                    "rows": rows},
+                   {"kind": "note", "text": f"Talón largo si θv ≥ η (Das 2016, ec. 13.1): θv = "
+                                            f"{number(thrust['estabilidad']['theta_v [deg]'], '°')}°, η = "
+                                            f"{number(thrust['estabilidad']['eta [deg]'], '°')}°. AB es el plano vertical por "
+                                            "el extremo del talón y AC el que une ese extremo con la corona de la pantalla. "
+                                            "δ es el ángulo de Pa con la normal al plano."}]
+        invalid = [own["invalida"] for own in thrust.values() if own["invalida"]]
+        blocks += [{"kind": "alert", "text": f"La fórmula del empuje no vale para este muro: {text}"} for text in invalid[:1]]
+    rows = [[case["case"], "servicio" if case["kind"] == "service" else "mayorado", f"{case['dead_factor']:.2f}",
+             f"{case['fill_factor']:.2f}", f"{case['earth_factor']:.2f}"] for case in wall["cases"]]
+    return [*blocks, {"kind": "h2", "text": "Casos de carga"},
+            {"kind": "table", "headers": ["Caso", "Tipo", "Factor del concreto (D)", "Factor del suelo sobre el talón",
+                                          "Factor del empuje (H)"], "rows": rows},
+            {"kind": "note", "text": "Servicio: estabilidad, presiones y momento de servicio del agrietamiento. Mayorados: "
+                                     "resistencia de la pantalla y de la base."}]
+
+
+def _wall_stability(wall: dict[str, Any]) -> list[Block]:
+    """La resultante, las presiones y los factores de seguridad de cada caso de servicio."""
+    by_case: dict[str, dict[str, dict[str, Any]]] = {}
+    for check in wall["checks"]:
+        if check.get("case") and classify(check["name"])[0] == "geotechnical":
+            by_case.setdefault(check["case"], {})[check["name"]] = check
+    rows = []
+    for case, checks in by_case.items():
+        values = next(iter(checks.values()))["values"]
+        sliding, overturning = checks.get("Deslizamiento", {}).get("values", {}), checks.get("Volcamiento", {}).get("values", {})
+        rows.append([case, number(values.get("N [kN]"), "kN"), number(values.get("H [kN]"), "kN"),
+                     number(values.get("e [mm]"), "mm"), number(values.get("q puntera [kPa]"), "kPa"),
+                     number(values.get("q talon [kPa]"), "kPa"), number(sliding.get("FS"), "–"), number(overturning.get("FS"), "–")])
+    if not rows:
+        return []
+    return [{"kind": "h2", "text": "Resultante, presiones y factores de seguridad por caso de servicio"},
+            {"kind": "table", "headers": ["Caso", "N (kN)", "Ph (kN)", "e (mm)", "q puntera (kPa)", "q talón (kPa)",
+                                          "FS deslizamiento", "FS volcamiento"], "rows": rows},
+            {"kind": "note", "text": "Por franja de 1 m. e es la excentricidad de la resultante respecto al centro de la base "
+                                     "(positiva hacia el talón); q, la presión de Bellos y Bakas (2017) en los bordes."}]
+
+
+def retaining_wall_document(results: dict[str, Any], wall: dict[str, Any], full: bool) -> list[Block]:
+    """Memoria de un muro de contención en voladizo (D-173)."""
+    items: list[Located] = [(f"caso {check['case']}" if check.get("case") else "todo el muro", check) for check in wall["checks"]]
+    counts = {kind: sum(1 for case in wall["cases"] if case["kind"] == kind) for kind in ("service", "factored")}
+    meta = [("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados"),
+            ("Franja de cálculo", "1 m de muro")]
+    head = [_title(f"Muro de contención {wall['id']}", results, meta, items, wall["status"]), _summary(items)]
+    chapters: list[tuple[str, Callable[[str], list[Block]]]] = [
+        ("Propiedades mecánicas de los materiales", lambda _: _materials(results)),
+        ("Propiedades geométricas, suelo y armado", lambda _: _wall_geometry(results, wall)),
+        ("Empuje del relleno y casos de carga", lambda _: _wall_actions(wall)),
+        (_CHAPTER_TITLES["geotechnical"], lambda n: [*_wall_stability(wall), *_chapter("geotechnical", n, items, full)]),
+        (_CHAPTER_TITLES["requirements"], lambda n: _requirements(items, n)),
+        (_CHAPTER_TITLES["flexure"], lambda n: _chapter("flexure", n, items, full)),
+        (_CHAPTER_TITLES["one_way"], lambda n: _chapter("one_way", n, items, full)),
+        (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, items, full)),
+        ("Índices DCR", lambda _: _dcr(items)),
+        ("Notas y limitaciones", lambda _: _notes(results, _WALL_CONVENTIONS, _WALL_LIMITATIONS)),
+    ]
+    return _assemble(head, chapters)
+
+
 def report_documents(results: dict[str, Any], *, full: bool = False, figures: dict[str, Path] | None = None,
                      diagrams: dict[str, list[Path]] | None = None,
                      drawings: dict[str, list[DrawingFigure]] | None = None) -> list[list[Block]]:
@@ -1423,6 +1572,7 @@ def report_documents(results: dict[str, Any], *, full: bool = False, figures: di
                                     _drawn(drawings, footing))
                   for footing in results.get("combined_footings", [])]
     documents += [pile_cap_document(results, cap, full, _drawn(drawings, cap)) for cap in results.get("pile_caps", [])]
+    documents += [retaining_wall_document(results, wall, full) for wall in results.get("retaining_walls", [])]
     return documents
 
 

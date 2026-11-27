@@ -35,6 +35,7 @@ from structurelab_rc.domain.pile_cap.drawing import pile_cap_views
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis
 from structurelab_rc.domain.pile_cap.outline import bar_span
 from structurelab_rc.domain.retaining_wall.checks import retaining_wall_checks
+from structurelab_rc.domain.retaining_wall.thrust import stability_thrust, stem_thrust
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
 from structurelab_rc.drawing.dxf import write_dxf
@@ -80,7 +81,7 @@ from structurelab_rc.reporting.curve import curve_csv, curve_data, curve_documen
 from structurelab_rc.reporting.document import report_documents
 from structurelab_rc.reporting.figures import diagram_figures, pressure_figures
 from structurelab_rc.reporting.pdf import write_pdf
-from structurelab_rc.reporting.results import Diagrams, build_results, detailing_csv, detailing_data
+from structurelab_rc.reporting.results import Diagrams, WallThrusts, build_results, detailing_csv, detailing_data
 from structurelab_rc.reporting.text import render_text
 from structurelab_rc.setup import dxf_template, load_engine
 
@@ -264,6 +265,14 @@ def _combined_diagrams(project: Project | None, checks: tuple[Check, ...]) -> Di
     return diagrams
 
 
+def _wall_thrusts(project: Project | None, checks: tuple[Check, ...]) -> WallThrusts:
+    """El empuje de la estabilidad y el de la cara de la pantalla de cada muro, para la memoria (D-173)."""
+    if project is None or project.retaining_soil is None or checks[0].status is Status.FAIL:
+        return {}
+    soil = project.retaining_soil
+    return {wall.id: (stability_thrust(wall, soil), stem_thrust(wall, soil)) for wall in project.retaining_walls}
+
+
 Draw = Callable[[Drawing, str, list[ScheduleRow], int], list[View]]
 
 
@@ -397,7 +406,8 @@ def report_file(path: Path, output: Path, *, full: bool = False, alerts: dict[st
     las figuras de presión y los diagramas de momento y cortante de las zapatas combinadas (D-095). alerts: las alertas de
     tipologías atípicas del diseño (D-172, alerts_data), que van al final de la memoria; no cambian resultado.json."""
     project, checks, analyses = _run(path)
-    results = build_results(project, checks, __version__, (_combined_diagrams(project, checks), analyses))
+    results = build_results(project, checks, __version__,
+                            (_combined_diagrams(project, checks), analyses, _wall_thrusts(project, checks)))
     close = _close_footings(project)  # D-156: zapatas más cercanas que la mínima o traslapadas
     if close:
         results["close_footings"] = close

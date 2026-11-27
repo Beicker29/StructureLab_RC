@@ -75,7 +75,8 @@ Geotechnical Engineering* SI, 8.ª ed., 2014, capítulo 13, sin simplificaciones
 
 ### Voladizo
 
-1. Fase A, verificación del muro declarado (ejemplo 2 del manual): empuje activo o en reposo (Ka o Ko, calculado con
+1. Fase A (cerrada el 2026-11-27, revisión del usuario pendiente), verificación del muro declarado (ejemplo 2 del
+   manual): empuje activo o en reposo (Ka o Ko, calculado con
    Rankine o Coulomb a partir de los datos declarados, o declarado), estabilidad al volcamiento y al deslizamiento con
    la pasiva declarada, presiones bajo la base, pantalla como losa en una dirección (flexión, cortante, mínimos,
    separaciones y retracción), talón con carga neta y factor del relleno declarado, puntera y desarrollo de los

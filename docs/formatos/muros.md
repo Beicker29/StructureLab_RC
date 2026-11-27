@@ -197,3 +197,23 @@ Cada grupo de barras es `{"designation", "spacing" (mm), "end"}`, como en las za
 
 La validación revisa que las barras estén en el catálogo, que su separación deje espacio libre y que el refuerzo de las
 dos caras y los recubrimientos quepan en el espesor de la pantalla y en el de la base.
+
+## Salida
+
+`resultado.json` trae `retaining_soil` (el suelo en unidades de presentación) y `retaining_walls`, una entrada por muro
+(D-173, etapa 5). Todo va por franja de 1 m de muro: fuerzas en kN y momentos en kN·m por metro.
+
+| Campo | Contenido |
+| --- | --- |
+| `id`, `quantity`, `status` | El muro, las veces que se construye y su estado agregado. |
+| `geometry [mm]` | Las dimensiones declaradas y las calculadas: `base_width` (puntera + pantalla + talón) y `retained_height` (base + relleno). |
+| `earth_pressure` | La teoría declarada: `state`, `method`, `coefficient`, `ocr` y `wall_friction_angle [deg]`. |
+| `thrust.estabilidad`, `thrust.pantalla` | El empuje sin factores: `plano` (cara, AC o AB), `talon` (sin talón, corto o largo), `K [-]`, `Pa [kN]`, `Ph [kN]`, `Pv [kN]`, su punto `x [mm]` e `y [mm]` (desde el borde de la puntera y la cara inferior de la base), `altura del plano [mm]`, `delta [deg]`, `eta [deg]`, `theta_v [deg]`, `W suelo [kN]` y `invalida` (el motivo si la fórmula no vale). |
+| `reinforcement` | El refuerzo declarado de la pantalla y de la base. |
+| `cases` | Los casos con sus factores. |
+| `checks` | Las verificaciones, cada una con su `case` (None si vale para todo el muro). |
+
+La memoria del muro tiene los capítulos de materiales; geometría, suelo y armado; empuje del relleno y casos de carga
+(la tabla de los empujes de la estabilidad y de la pantalla); revisión geotécnica (con la tabla de la resultante, las
+presiones y los factores de seguridad de cada caso de servicio); requisitos técnicos; flexión; cortante en una
+dirección; desarrollo; índices DCR, y notas y limitaciones.

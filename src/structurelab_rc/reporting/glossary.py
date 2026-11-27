@@ -94,6 +94,23 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Pasadores: anclaje", "development", "ℓdc", "espacio disponible"),
     ("Aplastamiento", "bearing", "Pu", "φBn"),
     ("Pasadores: compresion", "bearing", "As requerida", "As de pasadores"),
+    # Muro de contención en voladizo (D-173), por franja de 1 m: pantalla, talón y puntera como losas en una dirección.
+    ("Flexion pantalla", "flexure", "Mu", "φMn"),
+    ("Flexion talon", "flexure", "Mu", "φMn"),
+    ("Flexion puntera", "flexure", "Mu", "φMn"),
+    ("Deformacion neta de traccion", "requirements", "εt,min", "εt"),
+    ("Acero minimo", "requirements", "As,min", "As"),
+    ("Separacion por agrietamiento", "requirements", "s", "s,máx"),
+    ("Separacion", "requirements", "s", "s,máx"),
+    ("Cortante pantalla", "one_way", "Vu", "φVc"),
+    ("Cortante talon", "one_way", "Vu", "φVc"),
+    ("Cortante puntera", "one_way", "Vu", "φVc"),
+    ("Dimensiones de la seccion por cortante", "one_way", "Vu", "φ(Vc + 0.66√f'c·bw·d)"),
+    ("Refuerzo horizontal", "requirements", "As,min por cara", "As por cara"),
+    ("Refuerzo vertical cara exterior", "requirements", "As,min", "As"),
+    ("Refuerzo longitudinal", "requirements", "As,min", "As"),
+    ("Cargas de la base", "geotechnical", "", ""),
+    ("Empuje del relleno", "geotechnical", "", ""),
 )
 
 VALUES = {
@@ -238,6 +255,19 @@ VALUES = {
     "Ey": ("Distancia del centro del pilote al borde en Y", "Ey"),
     "R pilote": ("Reacción del pilote sobre el cabezal (compresión positiva)", "R"),
     "c columna": ("Lado medio de la columna, (cx + cy)/2", "c"),
+    # Muro de contención (D-173), por franja de 1 m, con los factores del caso; fisuración con fs calculado (D-174).
+    "W pantalla": ("Peso de la pantalla", "Wp"),
+    "W base": ("Peso de la base", "Wb"),
+    "W suelo": ("Peso del suelo que cuenta sobre el talón", "Ws"),
+    "Pv": ("Componente vertical del empuje", "Pv"),
+    "H": ("Componente horizontal del empuje", "Ph"),
+    "Pp": ("Empuje pasivo frente a la puntera", "Pp"),
+    "e": ("Excentricidad de la resultante respecto al centro de la base", "e"),
+    "x resultante": ("Distancia de la resultante al borde de la puntera", "xr"),
+    "q puntera": ("Presión del suelo en el borde de la puntera", "q puntera"),
+    "q talon": ("Presión del suelo en el extremo del talón", "q talón"),
+    "Ms": ("Momento de servicio", "Ms"),
+    "fs calculado": ("Esfuerzo de servicio del acero en la sección fisurada", "fs"),
 }
 
 # Palabras de los nombres de las verificaciones, escritas sin tilde en el dominio (identificadores estables).
@@ -248,7 +278,7 @@ _ACCENTS = {"Presion": "Presión", "Flexion": "Flexión", "Deformacion": "Deform
             "Validacion": "Validación", "distribucion": "distribución", "Area": "Área", "Retraccion": "Retracción",
             "cuantia": "cuantía", "fisuracion": "fisuración", "deformacion": "deformación",
             "Direccion": "Dirección", "flexion": "flexión", "torsion": "torsión", "tension": "tensión",
-            "ubicacion": "ubicación"}
+            "ubicacion": "ubicación", "talon": "talón"}
 
 
 def display(name: str) -> str:
