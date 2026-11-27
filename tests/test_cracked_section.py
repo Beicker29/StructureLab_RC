@@ -53,6 +53,7 @@ def test_combined_long_beam_cracking_uses_the_service_moment(profile: str) -> No
         x = check.z + footing.x_range[0]
         same_sign = [value for beam in services for value in beam.plate_moments(x) if value * ms > 0]
         assert ms == pytest.approx(max(same_sign, key=abs), rel=1e-12)
-        assert check.capacity == pytest.approx(basis.profile.flexure.crack_control_spacing(project.materials.fy,
-                                                                                          dict(check.values)["cc"],
-                                                                                          dict(check.values)["fs"]))
+        cc, fs = dict(check.values)["cc"], dict(check.values)["fs calculado"]
+        both = (basis.profile.flexure.crack_control_spacing(project.materials.fy, cc, fs),
+                basis.profile.flexure.crack_control_spacing(project.materials.fy, cc))
+        assert check.capacity == pytest.approx(max(both))  # la mayor de las dos permitidas (D-174)

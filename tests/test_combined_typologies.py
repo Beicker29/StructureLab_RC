@@ -132,8 +132,9 @@ def test_more_families_than_types_fails_before_designing(monkeypatch: pytest.Mon
 
 def test_type_of_two_pairs_passes_for_both(tmp_path: Path) -> None:
     """D-157 con dos pares reales de la misma familia: con N = 2, la agrupación es la mejor entre el tipo común y el
-    diseño de cada par (D-153); con N = 1, el tipo común cumple con los casos de los dos pares, cuesta al menos lo del
-    más exigente y se traslada bajo cada par con su refuerzo por columna en orden; su verificación pasa."""
+    diseño de cada par (D-153); con N = 1, el tipo común cumple con los casos de los dos pares y se traslada bajo cada
+    par con su refuerzo por columna en orden; su verificación pasa. No se exige que cueste al menos lo del par más
+    exigente: la búsqueda es heurística y el tipo puede hallar una solución que la del par solo no halló (D-174)."""
     ctx = _context(_two_pairs(2))
     pairs = mixed.design_pairs(ctx)
     assert len(mixed.families(pairs)) == 1
@@ -146,7 +147,6 @@ def test_type_of_two_pairs_passes_for_both(tmp_path: Path) -> None:
     assert two.cost == pytest.approx(min(one.cost, individual))
 
     (group,) = one.groups
-    assert group.solution.cost >= max(solution.cost for solution in alone if solution is not None) - 1e-6
     assert one.cost == pytest.approx(2 * group.solution.cost)
     chosen = mixed._chosen(pairs, FC, {FC: one})
     assert [design.typology for design in chosen] == ["ZCT1", "ZCT1"]

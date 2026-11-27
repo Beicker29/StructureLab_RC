@@ -50,7 +50,7 @@ from structurelab_rc.domain.beam.torsion import MIN_TRANSVERSE as TORSION_MIN_TR
 from structurelab_rc.domain.beam.torsion import SECTION as TORSION_SECTION
 from structurelab_rc.domain.beam.torsion import TRANSVERSE as TORSION_TRANSVERSE
 from structurelab_rc.domain.check import Check
-from structurelab_rc.domain.flexure_strength import RectangularSection, required_area
+from structurelab_rc.domain.flexure_strength import RectangularSection, required_area, service_steel_stress
 from structurelab_rc.domain.footing.base import column_vertical
 from structurelab_rc.domain.footing.checks import combined_footing_checks
 from structurelab_rc.domain.footing.combined_beam import SPACING as LONG_SPACING
@@ -86,7 +86,7 @@ from structurelab_rc.domain.footing.mesh import mat_rows, top_rows, uniform_posi
 from structurelab_rc.domain.footing.service import combined_service_checks
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import validate_project
-from structurelab_rc.mechanics.flexure import CompressionStrip, SteelLayer, cracked_steel_stress
+from structurelab_rc.mechanics.flexure import CompressionStrip, SteelLayer
 from structurelab_rc.model.catalog import RebarSpec
 from structurelab_rc.model.combined import CombinedFooting
 from structurelab_rc.model.design import (
@@ -123,12 +123,15 @@ _COLUMN = re.compile(r"columna (\S+?)(?=[\s,):]|$)", re.IGNORECASE)
 @dataclass(frozen=True)
 class Context:
     """Lo que no cambia durante la búsqueda. anchor fija el punto en que se centra la base (ejes globales, mm) en lugar de
-    la resultante: el de un tipo de combinadas (D-157)."""
+    la resultante: el de un tipo de combinadas (D-157). crack_basis, con qué fs topa la separación de las opciones el
+    control de fisuración: "service" (el calculado con el momento de servicio) o "two_thirds" (2/3·fy); el diseño corre
+    las dos y se queda con la de menor costo (D-174)."""
 
     project: CombinedDesignProject
     profile: Profile
     bars: Sequence[RebarSpec]
     anchor: tuple[float, float] | None = None
+    crack_basis: str = "service"
 
     @property
     def design(self) -> CombinedDesign:
@@ -269,6 +272,7 @@ class CombinedSolution:
     steel: float
     data: dict[str, Any] = field(repr=False)
     property_gaps: dict[str, float] = field(default_factory=dict)  # distancia del borde a cada lindero (D-154)
+    crack_basis: str = "service"  # el fs con que el diseño topó la fisuración (D-174)
 
 
 @dataclass(frozen=True)
@@ -664,7 +668,8 @@ def _bar_group(given: tuple[Context, Materials], spread: Spread, depth_of: Calla
         if ctx.design.min_steel_exception:  # D-123: la excepción de 4/3 del As requerido, si se declara
             beam = profile.flexure.effective_min_reinforcement(beam, needed)
         minimum = max(minimum, beam)
-        crack = _crack_spacing(given, (section.width, spread.h), (depth, max(needed, minimum)), service)
+        own = service if ctx.crack_basis == "service" else 0.0
+        crack = _crack_spacing(given, (section.width, spread.h), (depth, max(needed, minimum)), own)
         spread = replace(spread, max_spacing=min(spread.max_spacing, math.floor(crack / spread.step) * spread.step))
     if compression is not None:  # el As requerido se calcula con el ancho de compresión, no con el de reparto
         return _options(_compressed_options(given, spread, depth_of, (moment, minimum, compression)), ctx, spread)
@@ -675,12 +680,10 @@ def _crack_spacing(given: tuple[Context, Materials], section: tuple[float, float
     """La separación de control de fisuración de un grupo (D-174): con su momento de servicio, el fs de la sección
     rectangular fisurada (ancho a compresión × h) con layer = (d, As); sin él, 2/3·fy. Con el recubrimiento del diseño."""
     ctx, materials = given
-    assumptions = ctx.profile.strength_assumptions
     fs = None
     if service > 0:
         width, h = section
-        ratio = assumptions.steel_modulus() / assumptions.concrete_modulus(materials.fc)
-        fs = cracked_steel_stress(service, (CompressionStrip(width, 0.0, h),), (SteelLayer(*layer),), ratio)
+        fs = service_steel_stress(ctx.profile, materials.fc, service, ((CompressionStrip(width, 0.0, h),), (SteelLayer(*layer),)))
     return ctx.profile.flexure.crack_control_spacing(materials.fy, ctx.design.cover, fs)
 
 
@@ -1589,20 +1592,28 @@ def _length_floor(ctx: Context, fc: float, extra: int) -> float:
 
 
 Task = tuple[CombinedDesignProject, tuple[RebarSpec, ...], float, tuple[float, float] | None]
+CRACK_BASES = ("service", "two_thirds")  # los dos fs permitidos para la fisuración (D-174)
+CRACK_BASIS_TEXT = {"service": "fs calculado con el momento de servicio", "two_thirds": "fs = 2/3 fy"}
 
 
-def _task_in_worker(task: Task) -> FcOption:
-    """Una búsqueda (proyecto, barras, f'c, posición de la base o None) en un proceso del pool: el perfil (módulos) no se
-    copia entre procesos, se toma del registro."""
-    project, bars, fc, anchor = task
-    return design_for_fc(Context(project, PROFILES[project.profile], bars, anchor), fc)
+def _other(basis: str) -> str:
+    return next(own for own in CRACK_BASES if own != basis)
+
+
+def _task_in_worker(task: tuple[CombinedDesignProject, tuple[RebarSpec, ...], float, tuple[float, float] | None, str]) -> FcOption:
+    """Una búsqueda (proyecto, barras, f'c, posición de la base o None, base de la fisuración) en un proceso del pool: el
+    perfil (módulos) no se copia entre procesos, se toma del registro. La solución lleva la base con que se buscó."""
+    project, bars, fc, anchor, basis = task
+    option = design_for_fc(Context(project, PROFILES[project.profile], bars, anchor, basis), fc)
+    return option if option.solution is None else replace(option, solution=replace(option.solution, crack_basis=basis))
 
 
 def design_tasks(tasks: Sequence[Task], workers: int = 1) -> tuple[FcOption, ...]:
     """Las búsquedas de design_for_fc, en orden; workers las reparte entre procesos (no cambia el resultado). Con varias
-    formas permitidas, cada forma es una búsqueda aparte y se queda la de menor costo (D-169)."""
-    singles = [(_shape_project(project, shape), bars, fc, anchor) for project, bars, fc, anchor in tasks
-               for shape in project.combined_design.shapes]
+    formas permitidas, cada forma es una búsqueda aparte y se queda la de menor costo (D-169). Cada una corre con los dos
+    fs de la fisuración y se queda la de menor costo (decisión del usuario, D-174)."""
+    singles = [(_shape_project(project, shape), bars, fc, anchor, basis) for project, bars, fc, anchor in tasks
+               for shape in project.combined_design.shapes for basis in CRACK_BASES]
     if workers > 1 and len(singles) > 1:
         with ProcessPoolExecutor(max_workers=min(workers, len(singles))) as pool:
             options = tuple(pool.map(_task_in_worker, singles))
@@ -1611,8 +1622,14 @@ def design_tasks(tasks: Sequence[Task], workers: int = 1) -> tuple[FcOption, ...
     chosen, start = [], 0
     for project, _, fc, _ in tasks:
         shapes = project.combined_design.shapes
-        chosen.append(_cheapest(fc, shapes, options[start:start + len(shapes)]))
-        start += len(shapes)
+        per_shape = []
+        for _ in shapes:
+            own = options[start:start + len(CRACK_BASES)]
+            start += len(CRACK_BASES)
+            solved = [option for option in own if option.solution is not None]
+            per_shape.append(min(solved, key=lambda option: option.solution.cost if option.solution is not None else math.inf)
+                             if solved else own[0])
+        chosen.append(_cheapest(fc, shapes, per_shape))
     return tuple(chosen)
 
 
@@ -1662,8 +1679,10 @@ def designed_project(ctx: Context, solution: CombinedSolution) -> dict[str, Any]
         "description": f"{project.description} Diseño de la zapata combinada (D-107){shape}: {g.length:g} × {g.width:g} × {g.h:g} mm, "
                        f"f'c = {solution.fc:g} MPa, centroide de la base en ({g.center[0]:.1f}, {g.center[1]:.1f}) mm en las "
                        f"coordenadas de entrada de las columnas, sobre la resultante del caso {_placement_note(ctx)}"
-                       f"{_lines_note(solution)}, costo {solution.cost:.2f} (acero: {cost_basis(ctx)}, D-127). Las columnas del "
-                       "proyecto quedan respecto al centro de la base.",
+                       f"{_lines_note(solution)}, costo {solution.cost:.2f} (acero: {cost_basis(ctx)}, D-127). Control de "
+                       f"fisuración en el diseño: {CRACK_BASIS_TEXT[solution.crack_basis]}, el de menor costo entre ese y "
+                       f"{CRACK_BASIS_TEXT[_other(solution.crack_basis)]} (D-174). Las columnas del proyecto quedan respecto "
+                       "al centro de la base.",
         "profile": project.profile,
         "seismic": project.seismic.model_dump(),
         "materials": {"fc": solution.fc, "fy": materials.fy, "fyt": materials.fyt, "concrete": materials.concrete,

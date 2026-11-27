@@ -66,7 +66,7 @@ def test_base_matches_the_oracle(folder: str, case_id: str) -> None:
         close(checks[f"Dimensiones de la seccion por cortante {label}"].capacity, own["section"])
         assert checks[f"Dimensiones de la seccion por cortante {label}"].clause == oracle["section_clause"]
         close(dict(crack.values)["Ms"], own["Ms"])
-        close(dict(crack.values)["fs"], own["fs"])
+        close(dict(crack.values)["fs calculado"], own["fs"])
         close(crack.capacity, own["crack"])
         close(checks[f"Acero minimo {label}"].demand, own["As_min"])
         close(checks[f"Acero minimo {label}"].capacity, own["As"])

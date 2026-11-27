@@ -489,7 +489,10 @@ Búsqueda (cada solución la aprueba `combined_footing_checks`; el diseño no ti
    y fuera de las franjas, barras superiores y (si hacen falta),
    refuerzo superficial si h pasa el límite del perfil y pasadores de cada columna. Cada grupo empieza en la opción más
    liviana que ya cumple los límites del perfil (acero mínimo, As,min de vigas, separación máxima y de fisuración) y,
-   si una verificación suya falla, pasa a la más liviana que no repetiría la falla. Los momentos de las barras x, de
+   si una verificación suya falla, pasa a la más liviana que no repetiría la falla. La fisuración topa la separación con
+   fs = 2/3·fy o con el fs calculado con el momento de servicio del grupo (y su As requerido): el diseño corre las dos y
+   se queda con la de menor costo, y la descripción del proyecto diseñado dice cuál (D-174); la verificación toma la mayor
+   separación de las dos. La piel no se topa al proponerla: la decide la verificación. Los momentos de las barras x, de
    los band y de las barras y fuera de las franjas son los de Wood-Armer (D-118). Con `stirrup_bars`, las fallas de
    cortante, Av,min y separación de estribos de la viga larga las toman estribos (más ramas si falla la separación
    entre ramas a lo ancho); en la T, también la torsión del alma (barra mayor o menor separación si falla At/s en la

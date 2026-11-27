@@ -8,11 +8,17 @@ from dataclasses import dataclass, replace
 
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check, check_from_errors
-from structurelab_rc.domain.flexure_strength import RectangularSection, net_tensile_strain_check, rectangular_strength
+from structurelab_rc.domain.flexure_strength import (
+    RectangularSection,
+    crack_limit,
+    net_tensile_strain_check,
+    rectangular_strength,
+    service_steel_stress,
+)
 from structurelab_rc.domain.shear_strength import concrete_lambda
 from structurelab_rc.domain.status import Status
 from structurelab_rc.errors import StructuredError
-from structurelab_rc.mechanics.flexure import CompressionStrip, SteelLayer, cracked_steel_stress
+from structurelab_rc.mechanics.flexure import CompressionStrip, SteelLayer
 from structurelab_rc.model.footing import BarSet
 
 STRIP = 1000.0  # mm: la franja de muro de las verificaciones
@@ -82,32 +88,31 @@ def flexure_checks(basis: Basis, slab: Slab, demands: Sequence[tuple[str, float]
 
 
 def service_stress(basis: Basis, slab: Slab, moment: float | None) -> float | None:
-    """fs de las barras en tracción con el mayor momento de servicio (N·mm por franja), sección fisurada elástica con
-    n = Es/Ec del perfil; None sin momento de servicio positivo (el perfil toma entonces fs = 2/3·fy)."""
+    """fs de las barras en tracción con el mayor momento de servicio (N·mm por franja), sección fisurada elástica; None
+    sin momento de servicio positivo."""
     if moment is None or moment <= 0:
         return None
-    assumptions = basis.profile.strength_assumptions
     bars = steel(basis, slab)
-    ratio = assumptions.steel_modulus() / assumptions.concrete_modulus(basis.materials.fc)
-    strips = (CompressionStrip(STRIP, 0.0, slab.thickness),)
-    return cracked_steel_stress(moment, strips, (SteelLayer(bars.depth, bars.area),), ratio)
+    section = ((CompressionStrip(STRIP, 0.0, slab.thickness),), (SteelLayer(bars.depth, bars.area),))
+    return service_steel_stress(basis.profile, basis.materials.fc, moment, section)
 
 
 def reinforcement_checks(basis: Basis, slab: Slab, given: tuple[float, float, float | None],
                          clauses: tuple[str, str, str]) -> list[Check]:
     """Acero mínimo, separación máxima y separación por agrietamiento de las barras en tracción; given = (cuantía
     mínima sobre el área bruta, separación máxima en mm, del perfil, y el mayor momento de servicio en N·mm por franja o
-    None): el agrietamiento usa fs calculado con ese momento (decisión del usuario, D-173) o, sin él, 2/3·fy."""
+    None): el agrietamiento toma la mayor separación entre fs calculado con ese momento y 2/3·fy (D-174)."""
     profile, materials = basis.profile, basis.materials
     ratio, largest, moment = given
     minimum_clause, spacing_clause, crack_clause = clauses
     area, _ = per_strip(basis, slab.bars)
     minimum = ratio * STRIP * slab.thickness
     fs = service_stress(basis, slab, moment)
-    crack = profile.flexure.crack_control_spacing(materials.fy, slab.cover, fs)
+    limit = crack_limit(profile, materials.fy, slab.cover, fs)
+    crack = limit.spacing
     crack_values = (("cc", slab.cover), ("fy", materials.fy),
-                    *((("Ms", moment), ("fs", fs)) if fs is not None and moment is not None else ()))
-    crack_note = "fs con el momento de servicio, seccion fisurada elastica" if fs is not None else "fs = 2/3 fy"
+                    *((("Ms", moment), ("fs calculado", fs)) if fs is not None and moment is not None else ()))
+    crack_note = limit.note
     spacing, member = slab.bars.spacing, slab.member
     return [
         Check(f"Acero minimo {slab.part}", status(area >= minimum), clause=minimum_clause, demand=minimum, capacity=area,

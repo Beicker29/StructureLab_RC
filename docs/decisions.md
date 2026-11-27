@@ -4299,6 +4299,42 @@
   en toda la altura); el peso del suelo sobre la puntera no estabiliza (puede erosionarse o retirarse); la pasiva, si
   cuenta, actúa sobre el espesor de la base, desde su cara superior; cálculo por metro de muro.
 
+### D-174: control de agrietamiento con fs calculado
+
+- **Pedido del usuario (2026-11-26):** donde se revise el agrietamiento, usar fs calculado con el momento sin mayorar y no
+  solo el estimado 2/3·fy. Las vigas quedan como están: reciben solo fuerzas mayoradas y no hay momento de servicio.
+- **Referencia:** ACI 24.3.2.1 y NSR-10 C.10.6.4: fs se calcula con el momento no mayorado o se permite tomarlo como
+  2/3·fy. Los dos están permitidos.
+- **Decisiones del usuario:**
+  1. Verificación: la mayor de las dos separaciones máximas (con fs calculado y con 2/3·fy). La revisión dice cuál
+     gobernó y, si hay momento de servicio, lleva Ms y el fs calculado. Aplica a la fisuración y a la piel de las vigas de
+     las zapatas combinadas (viga larga y franjas) y a la pantalla, el talón y la puntera del muro. Sin momento de servicio
+     del signo de Mu (las vigas), 2/3·fy.
+  2. Diseño de combinadas (también el de tipologías, que usa la misma búsqueda): se corre con los dos fs como tope de la
+     separación de las opciones y se queda el de menor costo; la descripción del proyecto diseñado (en la memoria) dice
+     cuál se usó. Con fs calculado, el tope usa el As requerido del grupo (el mayor fs que puede tener una opción). La piel
+     ya no se topa al proponer: la decide la verificación.
+- **Cálculo:** sección fisurada elástica (concreto lineal sin tracción, acero transformado n·As, el acero comprimido no
+  cuenta, del lado de la seguridad): `mechanics.flexure.cracked_steel_stress` con franjas y capas, fs en la capa más
+  alejada de la cara comprimida; n = Es/Ec con Ec = 4700√f'c (ACI 19.2.2.1(b); NSR-10 C.8.5.1), concreto de peso normal.
+  Momento de servicio: el de los casos de servicio declarados con el mismo procedimiento que el mayorado (Wood-Armer en
+  la combinada rectangular, el momento volteado en la T, la carga de la franja en las franjas), el mayor del signo de Mu
+  en la misma sección. Helpers únicos: `domain.flexure_strength.service_steel_stress` y `crack_limit`.
+- **Control:** oráculo `tests/oracles/mechanics/cracked_section.json` (rectangular del manual con fs = 5858 psi, T con el
+  eje en el ala y en el alma); el muro (`derived_wall_base.json`) con la mayor de las dos separaciones; la prueba de que la
+  viga larga lleva el momento de servicio de su sección.
+- **Diferencias:** en los ejemplos de verificación ningún estado cambia; la separación permitida crece (de 1 a miles de
+  veces con momentos de servicio pequeños) y nunca baja. En los diseños se eligió 2/3·fy en los dos ejemplos ACI revisados:
+  `diseno_combinada` 11 105 453 (antes 11 092 302, +0.12 %, por el camino de la búsqueda heurística: el diseño anterior
+  sigue cumpliendo) y `diseno_t_invertida` 8 414 611 (antes 8 418 484, −0.05 %). Con fs calculado como tope salían
+  11 212 394 y 8 665 152. El diseño corre las dos búsquedas: tarda cerca del doble.
+- **Huellas:** cambian las de las combinadas, las T invertidas y las tipologías (verificación y diseño) en los dos
+  perfiles; las de vigas no cambian (sin momento de servicio, la revisión y su nota quedan como estaban).
+- **Prueba de tipologías (decisión del usuario):** `test_type_of_two_pairs_passes_for_both` ya no exige que el tipo común
+  cueste al menos lo del par más exigente diseñado solo. Con este cambio el tipo halló 18 097 588 y el par solo
+  18 150 724: el tipo cumple bajo ese par, pero la búsqueda heurística del par solo no halló esa solución. La desigualdad
+  no está garantizada; sí que el tipo cumple con los dos pares y que la agrupación con N = 2 es la menor.
+
 ## Consultas abiertas
 
 ### C-017: presión del suelo bajo una combinada trapezoidal o en planta T (fase B de D-163)

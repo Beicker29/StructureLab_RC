@@ -92,8 +92,8 @@ Ko actúa sobre AB, horizontal. El coeficiente declarado actúa siempre sobre AB
 ## Verificaciones
 
 Se verifican el empuje, la estabilidad y las presiones (casos de servicio), la pantalla y la base (casos mayorados). El
-agrietamiento usa fs calculado con el mayor momento de servicio (sección fisurada elástica, n = Es/Ec con Ec = 4700√f'c);
-sin casos de servicio, fs = 2/3·fy. Si la fórmula del empuje no vale, solo queda el empuje BLOCKED.
+agrietamiento toma la mayor separación entre fs calculado con el mayor momento de servicio (sección fisurada elástica,
+n = Es/Ec con Ec = 4700√f'c) y fs = 2/3·fy, los dos permitidos (D-174); sin casos de servicio, 2/3·fy. Si la fórmula del empuje no vale, solo queda el empuje BLOCKED.
 
 ### Estabilidad y presiones (casos de servicio)
 

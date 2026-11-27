@@ -13,7 +13,7 @@ kN, m y kPa para las cargas y en N y mm para las secciones:
    NSR-10 el mayor de 0.17·√f'c·b·d y (0.16·√f'c + 17·ρw·Vu·d/Mu)·b·d ≤ 0.29·√f'c·b·d. Límite de la sección
    φ(Vc + 0.66·√f'c·b·d).
 5. Agrietamiento con fs de servicio: n = 200000/(4700·√f'c), k = √((ρn)² + 2ρn) − ρn, j = 1 − k/3, fs = Ms/(As·j·d), con Ms
-   del caso de servicio en la cara; s ≤ min(380·280/fs − 2.5·cc, 300·280/fs).
+   del caso de servicio en la cara; s ≤ min(380·280/fs − 2.5·cc, 300·280/fs), la mayor entre ese fs y 2/3·fy (D-174).
 6. Mínimo 0.0018·b·h, separación ≤ min(3h, 450); longitudinal 0.0018·h·B frente a dos caras de barras a lo ancho, separación
    ≤ min(5h, 450); altura sobre las barras inferiores ≥ 150 mm.
 7. Desarrollo: barras de la pantalla con gancho de 90° en la base (disponible h − cc): ACI ℓdh = fy·ψcc/(4.2·√f'c)·db, NSR-10
@@ -124,7 +124,11 @@ def _crack(moment: float, area: float, depth: float, cover: float) -> tuple[floa
     rho_n = area / (STRIP * depth) * n
     k = math.sqrt(rho_n**2 + 2 * rho_n) - rho_n
     fs = moment / (area * (1 - k / 3) * depth)
-    return fs, min(380.0 * 280.0 / fs - 2.5 * cover, 300.0 * 280.0 / fs)
+
+    def spacing(stress: float) -> float:
+        return min(380.0 * 280.0 / stress - 2.5 * cover, 300.0 * 280.0 / stress)
+
+    return fs, max(spacing(fs), spacing(2 / 3 * FY))  # la mayor de las dos permitidas (D-174)
 
 
 def _straight(db: float, spacing: float, cover: float, below: float) -> float:
