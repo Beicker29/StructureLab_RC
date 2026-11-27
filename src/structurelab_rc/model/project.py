@@ -148,6 +148,14 @@ class DrawingSettings(_Input):
     scale: PositiveFloat
 
 
+def _check_wall_detailing(walls: tuple[RetainingWall, ...]) -> None:
+    """El despiece de un muro necesita su largo y el gancho de la corona (D-175)."""
+    for wall in walls:
+        missing = [name for name, value in (("length", wall.length), ("stem.crown_end", wall.stem.crown_end)) if value is None]
+        if missing:
+            raise ValueError(f"el despiece del muro '{wall.id}' requiere {' y '.join(missing)} (D-175)")
+
+
 class Project(_Input):
     """Vigas (members), zapatas aisladas (footings), zapatas combinadas (combined_footings, D-080), cabezales sobre
     pilotes (pile_caps, D-138) o varios; las zapatas requieren los datos del suelo (D-052) y los cabezales, el suyo
@@ -210,4 +218,6 @@ class Project(_Input):
             raise ValueError("los identificadores de miembros, zapatas, cabezales y muros deben ser únicos")
         if self.drawing is not None and self.detailing is None:
             raise ValueError("drawing requiere detailing: el dibujo rotula las marcas de la cartilla (D-126)")
+        if self.detailing is not None:
+            _check_wall_detailing(self.retaining_walls)
         return self

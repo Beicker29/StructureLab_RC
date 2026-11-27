@@ -94,11 +94,12 @@ class RetainingSoil(BearingSoil):
 class StemReinforcement(_Input):
     """El refuerzo de la pantalla: back, las barras verticales de la cara del relleno (las de flexión, que bajan a la
     base y terminan con su extremo); front, las verticales de la cara exterior; horizontal, las horizontales de cada
-    cara."""
+    cara. crown_end, el gancho de las verticales de las dos caras en la corona (D-175): obligatorio con despiece."""
 
     back: BarSet
     front: BarSet
     horizontal: BarSet
+    crown_end: Literal["hook90", "hook180"] | None = None
 
 
 class BaseReinforcement(_Input):
@@ -130,6 +131,8 @@ class RetainingWall(_Input):
 
     id: str = Field(min_length=1)
     quantity: PositiveInt  # D-159: las veces que se construye
+    typology: str | None = Field(default=None, min_length=1)  # D-159: el tipo de la cartilla y del despiece (D-175)
+    length: PositiveFloat | None = None  # mm, a lo largo del muro: las cantidades de la cartilla (D-175); obligatorio con despiece
     stem_height: PositiveFloat
     stem_thickness: PositiveFloat
     toe: NonNegativeFloat

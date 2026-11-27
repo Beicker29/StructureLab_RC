@@ -57,8 +57,9 @@
     "cabezal_dos_columnas_drawing.json": "6611d2ec8443277b45372483a699fa85ff92c0e5faec1777969e095182f0c1a0"
   },
   "examples/aci_318_25/muros/voladizo/pruebas/muro_voladizo.json": {
-    "resultado.json": "07a2fca8b7e98f831b79e164d6a06b6688fa242965c2309da925aa6bbddccad5",
-    "memoria.txt": "ee47c79e7cc3af09b78144626a0a51f298f8313de005c8b12b4fb8537952592b"
+    "resultado.json": "5a18ef46dcdef9a9e75cebf5486b71526f5b987a28d2df3fcf04907a317aabfc",
+    "memoria.txt": "80d0664e3ac9931c20166d20d9a45f97525910d98e018a9b6882c58083072e1f",
+    "muro_voladizo_drawing.json": "632e49ac7dfa4583a54ae3f0c60da3cd806da9079245e74ad961a2b63c37263a"
   },
   "examples/aci_318_25/vigas/pruebas/viga_alta.json": {
     "resultado.json": "3da4d3275a4874c36fe2049067afc56fc8a6222bd71d47b59772aa82ad1b9887",
@@ -236,8 +237,9 @@
     "cabezal_dos_columnas_drawing.json": "6611d2ec8443277b45372483a699fa85ff92c0e5faec1777969e095182f0c1a0"
   },
   "examples/nsr_10/muros/voladizo/pruebas/muro_voladizo.json": {
-    "resultado.json": "36b7ae1e7942dc723e9c6650f3f198316ec34c2ae9353715a00e9cfa7e6020d3",
-    "memoria.txt": "43d3dab98f6d2015aa54085a4a92342e8345e91b56c32723959e9a2973dd0347"
+    "resultado.json": "b01a1199e9f9513a166b47c1ee4aec349734c4dbda9f4d4f92d58547b47f2b98",
+    "memoria.txt": "7ce24d1169c14cd1f8670b4363fa85ef5b88b39c92880f0f9c51493e4b6ee9b2",
+    "muro_voladizo_drawing.json": "632e49ac7dfa4583a54ae3f0c60da3cd806da9079245e74ad961a2b63c37263a"
   },
   "examples/nsr_10/vigas/pruebas/viga_alta.json": {
     "resultado.json": "99e3654b0749aa7542a8fc4e71d3163348182c36d6b858b4d0ac46ffa032746e",

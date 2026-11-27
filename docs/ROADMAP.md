@@ -83,8 +83,15 @@ Geotechnical Engineering* SI, 8.ª ed., 2014, capítulo 13, sin simplificaciones
    pasadores. Cada caso declara sus factores de carga.
 2. Fase A2: sobrecarga, relleno inclinado, muro sin puntera o sin talón y llave de cortante (ejemplos 3 a 6 del manual).
 3. Fase B: diseño de menor costo, cada solución verificada.
-4. Fase C: despiece (cartilla por metro y por la longitud del muro, corte de barras en la pantalla).
-5. Fase D: dibujo (corte transversal en DXF y SVG).
+4. Fase C: despiece. Hecho para el muro verificado (D-175): cartilla con el largo declarado, marcas y empalmes.
+   Pendientes:
+   - **Prioritario (pedido del usuario): sacar el `.dli` de DL-NET del muro.** El motor lo escribe con la misma ruta de
+     las zapatas, pero no se ha generado ni revisado con la plantilla (`references/dlnet/plantilla.dli`, que no está en
+     este PC): comprobar que DL-NET lee las barras del muro (las verticales L-U y U, los grupos de las dos caras y los
+     empalmes de las horizontales y longitudinales) y agregar su prueba.
+   - El corte de barras en la pantalla (con el diseño).
+5. Fase D: dibujo. Hecho para el muro verificado (D-175): las láminas de geometría y de detallado del plano de muros de
+   referencia en DXF y SVG, en el formato de las zapatas.
 
 ### Pendientes del voladizo (después de las fases A a D)
 

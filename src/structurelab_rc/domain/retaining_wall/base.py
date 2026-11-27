@@ -67,16 +67,17 @@ def base_checks(basis: Basis, wall: RetainingWall, soil: RetainingSoil, thrust: 
         checks = [Check(LOADS, Status.INCOMPLETE, (error,), basis.profile.footing.clauses()["strength"], member=wall.id)]
     else:
         checks = _strength_checks(basis, wall, soil, (thrust, cases))
-    return checks + _detailing_checks(basis, wall, _service_moments(wall, soil, thrust))
+    return checks + _detailing_checks(basis, wall, base_moments(wall, soil, thrust, "service"))
 
 
-def _service_moments(wall: RetainingWall, soil: RetainingSoil, thrust: Thrust) -> dict[str, float | None]:
-    """El mayor momento de servicio del talón y de la puntera en la cara de la pantalla (N·mm por franja), para el
-    agrietamiento; None si no hay casos de servicio con equilibrio."""
+def base_moments(wall: RetainingWall, soil: RetainingSoil, thrust: Thrust, kind: str) -> dict[str, float | None]:
+    """El mayor momento del talón y de la puntera en la cara de la pantalla (N·mm por franja de 1 m) en los casos de
+    ese tipo: los de servicio para el agrietamiento y los mayorados para la clase de los empalmes del despiece (D-175);
+    None si no hay casos de ese tipo con equilibrio."""
     heel: list[float] = []
     toe: list[float] = []
     for case in wall.cases:
-        if case.kind != "service":
+        if case.kind != kind:
             continue
         try:
             pressure = _pressure(wall, soil, case, thrust)

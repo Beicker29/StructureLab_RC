@@ -1533,8 +1533,9 @@ def _wall_stability(wall: dict[str, Any]) -> list[Block]:
                                      "(positiva hacia el talón); q, la presión de Bellos y Bakas (2017) en los bordes."}]
 
 
-def retaining_wall_document(results: dict[str, Any], wall: dict[str, Any], full: bool) -> list[Block]:
-    """Memoria de un muro de contención en voladizo (D-173)."""
+def retaining_wall_document(results: dict[str, Any], wall: dict[str, Any], full: bool,
+                            drawings: list[DrawingFigure] | None = None) -> list[Block]:
+    """Memoria de un muro de contención en voladizo (D-173), con el despiece y sus vistas si se pidieron (D-175)."""
     items: list[Located] = [(f"caso {check['case']}" if check.get("case") else "todo el muro", check) for check in wall["checks"]]
     counts = {kind: sum(1 for case in wall["cases"] if case["kind"] == kind) for kind in ("service", "factored")}
     meta = [("Casos de carga", f"{counts['service']} de servicio y {counts['factored']} mayorados"),
@@ -1550,6 +1551,7 @@ def retaining_wall_document(results: dict[str, Any], wall: dict[str, Any], full:
         (_CHAPTER_TITLES["one_way"], lambda n: _chapter("one_way", n, items, full)),
         (_CHAPTER_TITLES["development"], lambda n: _chapter("development", n, items, full)),
         ("Índices DCR", lambda _: _dcr(items)),
+        *_detailing_chapter(wall, drawings),
         ("Notas y limitaciones", lambda _: _notes(results, _WALL_CONVENTIONS, _WALL_LIMITATIONS)),
     ]
     return _assemble(head, chapters)
@@ -1572,7 +1574,7 @@ def report_documents(results: dict[str, Any], *, full: bool = False, figures: di
                                     _drawn(drawings, footing))
                   for footing in results.get("combined_footings", [])]
     documents += [pile_cap_document(results, cap, full, _drawn(drawings, cap)) for cap in results.get("pile_caps", [])]
-    documents += [retaining_wall_document(results, wall, full) for wall in results.get("retaining_walls", [])]
+    documents += [retaining_wall_document(results, wall, full, _drawn(drawings, wall)) for wall in results.get("retaining_walls", [])]
     return documents
 
 

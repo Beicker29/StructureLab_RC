@@ -23,6 +23,8 @@ _WIDTH = 800.0  # px de ancho del SVG
 _MARGIN = 0.04  # fracción del tamaño de la vista
 _GRAY = "#a6a6a6"  # el ACI 252 de las divisiones de zona
 _ARROW = 3.75  # mm de papel: largo de la flecha de las líneas de distribución (el dimasz de DIM-75 a su escala)
+_PATTERN = 2.0  # mm de papel: separación del rayado del relleno del muro (D-175)
+_PATTERN_ID = "relleno"
 
 
 def view_svg(view: View, scale: float) -> tuple[str, float]:
@@ -48,6 +50,9 @@ def view_svg(view: View, scale: float) -> tuple[str, float]:
             if entity.color == ZONE_COLOR:  # las divisiones de zona, en gris (D-158)
                 stroke = stroke.replace(f'stroke="{color}"', f'stroke="{_GRAY}"')
             paint = f'fill="{color}" stroke="none"' if entity.filled else stroke
+            if entity.pattern:  # el relleno del muro (D-175): rayado diagonal en el color de la capa
+                parts.append(_pattern(color, weight * scale, _PATTERN * scale))
+                paint = stroke.replace('fill="none"', f'fill="url(#{_PATTERN_ID})"')
             parts.append(f'<{tag} points="{points}" {paint}{dash}/>')
         elif isinstance(entity, Circle):
             paint = f'fill="{color}"' if entity.filled else stroke
@@ -71,6 +76,13 @@ def view_svg(view: View, scale: float) -> tuple[str, float]:
             parts += _any_dimension_svg(entity, stroke, color, scale)
     parts.append("</svg>")
     return "\n".join(parts) + "\n", aspect
+
+
+def _pattern(color: str, weight: float, size: float) -> str:
+    """El rayado del relleno (D-175): líneas a 45° separadas size, en una definición que usa el sombreado."""
+    return (f'<defs><pattern id="{_PATTERN_ID}" patternUnits="userSpaceOnUse" width="{size:.1f}" height="{size:.1f}" '
+            f'patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="{size:.1f}" stroke="{color}" '
+            f'stroke-width="{weight:.1f}"/></pattern></defs>')
 
 
 def _distribution_svg(dimension: Dimension, stroke: str, color: str, scale: float) -> list[str]:

@@ -72,6 +72,7 @@ _FIELD_FORMAT = "%lu2%pr2"  # decimal con dos decimales, como el plano de refere
 _UPRIGHT = 90.0  # grados: una cota con el sentido entre −90° y 90° tiene el texto derecho
 _BOTTOM_CENTER = 8  # MTEXT: punto de inserción abajo al centro
 _BOTTOM_LEFT = 7
+_PATTERN_SCALE, _PATTERN_ANGLE = 0.03, 45.0  # el sombreado EARTH del relleno a 1:50, como el plano de muros de referencia (D-175)
 
 
 def available() -> bool:
@@ -248,6 +249,10 @@ class _Writer:
             hatch = self.space.add_hatch(color=256, dxfattribs={"layer": entity.layer})  # 256: color de la capa
             hatch.paths.add_polyline_path([self.point(p) for p in entity.points], is_closed=True)
             return self.polyline(OUTLINE, list(entity.points), closed=True)
+        if entity.pattern:  # relleno del muro (D-175): el patrón a la escala del dibujo, en su capa
+            hatch = self.space.add_hatch(color=256, dxfattribs={"layer": entity.layer})
+            hatch.set_pattern_fill(entity.pattern, scale=self.ratio * _PATTERN_SCALE, angle=_PATTERN_ANGLE)
+            hatch.paths.add_polyline_path([self.point(p) for p in entity.points], is_closed=True)
         return self.polyline(entity.layer, list(entity.points), closed=entity.closed, dashed=entity.dashed, color=entity.color)
 
     def circle(self, entity: Circle) -> Any:

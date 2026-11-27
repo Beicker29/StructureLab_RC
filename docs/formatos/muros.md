@@ -174,6 +174,8 @@ conservan sus nombres (`allowable_pressure_kPa`).
 | --- | --- | --- |
 | `id` | texto | Identificador, único en el proyecto. |
 | `quantity` | - | Veces que se construye (D-159). |
+| `typology` | - | Opcional: el tipo de la cartilla y del despiece (D-159), como en las zapatas. |
+| `length` | mm | Largo del muro: las cantidades de la cartilla (D-175). Obligatorio con `detailing`. |
 | `stem_height` | mm | Altura de la pantalla sobre la cara superior de la base. |
 | `stem_thickness` | mm | Espesor constante de la pantalla. |
 | `toe`, `heel` | mm | Puntera y talón: salientes de la base desde las caras exterior y del relleno de la pantalla (mayores que 0 en la fase A). |
@@ -188,6 +190,7 @@ conservan sus nombres (`allowable_pressure_kPa`).
 | `stem.back` | barras | Verticales de la cara del relleno (las de flexión), con el extremo de su pie en la base. |
 | `stem.front` | barras | Verticales de la cara exterior. |
 | `stem.horizontal` | barras | Horizontales de cada cara. |
+| `stem.crown_end` | - | Gancho de las verticales de las dos caras en la corona, `hook90` o `hook180` (D-175). Obligatorio con `detailing`; si se declara, se verifica que quepa en la pantalla. |
 | `base.top` | barras | Transversales superiores (flexión del talón). |
 | `base.bottom` | barras | Transversales inferiores (flexión de la puntera). |
 | `base.longitudinal` | barras | Paralelas al muro en cada cara. |
@@ -216,4 +219,41 @@ dos caras y los recubrimientos quepan en el espesor de la pantalla y en el de la
 La memoria del muro tiene los capítulos de materiales; geometría, suelo y armado; empuje del relleno y casos de carga
 (la tabla de los empujes de la estabilidad y de la pantalla); revisión geotécnica (con la tabla de la resultante, las
 presiones y los factores de seguridad de cada caso de servicio); requisitos técnicos; flexión; cortante en una
-dirección; desarrollo; índices DCR, y notas y limitaciones.
+dirección; desarrollo; índices DCR; despiece y cantidades (si se pide despiece), y notas y limitaciones.
+
+## Despiece y dibujo (D-175)
+
+Con `detailing` y `drawing`, como en las zapatas y los cabezales ([zapatas.md](zapatas.md#despiece-detailing-d-125)):
+la cartilla con marcas `<tipo>-01`, … (tipos y unidades, D-159), `cartilla.csv`, el `.dli`, el modelo de dibujo, un SVG
+por vista y el DXF sobre la plantilla, y el capítulo «Despiece y cantidades» de la memoria. Ganchos, empalmes por
+longitud comercial y su clase (D-129), longitudes de DL-NET (D-147) y formas (D-150), los de las zapatas.
+
+Barras (ejes: x de la puntera al talón, y a lo largo del muro, z desde la cara inferior de la base):
+
+| Grupo | Barras |
+| --- | --- |
+| Pantalla, verticales de la cara del relleno (`stem.back`) y de la cara exterior (`stem.front`) | Continuas desde la malla inferior de la base hasta la corona, con su `end` al pie (gancho hacia la puntera las del relleno y hacia el talón las exteriores) y `stem.crown_end` en la corona, hacia la otra cara; sin cortes (el corte a media altura queda para el diseño). |
+| Pantalla, horizontales de cada cara (`stem.horizontal`) | A lo largo del muro, por dentro de las verticales, de extremo a extremo menos el recubrimiento. |
+| Base, transversales superiores (`base.top`) e inferiores (`base.bottom`) | De la puntera al talón menos el recubrimiento. |
+| Base, longitudinales de cada cara (`base.longitudinal`) | A lo largo del muro, por dentro de las transversales. |
+
+Clase del empalme con el mayor momento mayorado de su grupo: la pantalla para las verticales del relleno, el talón para
+las superiores y la puntera para las inferiores; las de retracción, en clase B.
+
+Vistas de cada muro, las dos láminas del plano de muros de referencia en el formato de las zapatas (capas de la
+plantilla, una por diámetro, rótulos con la L ligada a su barra, cotas en metros), con el título `<id> H=<altura>` y la
+escala:
+
+- **Geometría:** el corte del concreto (capa `MURO`) y el relleno sobre el talón sombreado con el patrón EARTH (capa
+  `RELLENO`, como la referencia); cotas en cadena y una nota con el largo, los recubrimientos y el área de concreto por
+  metro.
+- **Detallado del refuerzo:** el corte con las verticales y las transversales con las patas de su cartilla, las
+  horizontales y las longitudinales como puntos, y el rótulo de cada grupo con su llamada.
+- **Barras despiezadas:** cada marca dibujada aparte con sus patas, la cota de su tramo y su rótulo.
+- **Alzado de la cara del relleno:** un tramo de hasta seis separaciones de las verticales, con quiebre.
+- **Cartilla** con el croquis de cada forma.
+
+| Capa | Color (ACI) | Grosor (mm) | Contenido |
+| --- | --- | --- | --- |
+| `MURO` | 7 | 0.35 | Contorno del concreto del muro. |
+| `RELLENO` | 34 | 0.13 | Relleno sobre el talón, sombreado EARTH a 45°, escala 0.03 a 1:50. |

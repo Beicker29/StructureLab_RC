@@ -4311,6 +4311,31 @@
   en toda la altura); el peso del suelo sobre la puntera no estabiliza (puede erosionarse o retirarse); la pasiva, si
   cuenta, actúa sobre el espesor de la base, desde su cara superior; cálculo por metro de muro.
 
+### D-175: despiece y dibujo del muro en voladizo
+
+- **Pedido del usuario (2026-11-27):** el despiece y el dibujo del muro verificado (el refuerzo declarado), con
+  `references/Despiece muros voladizo.dxf` como referencia pero en el formato de las zapatas, los cabezales y la T
+  invertida: marcas, cartilla, `.dli`, plano DXF, SVG y capítulo de la memoria.
+- **Decisiones del usuario:**
+  1. Cantidades con el largo declarado del muro (`length`, obligatorio con `detailing`); la memoria sigue por metro.
+  2. Verticales de la pantalla continuas desde la malla inferior hasta la corona, con el extremo declarado al pie y
+     empalmes por longitud comercial; sin cortes (quedan para el diseño, fase B).
+  3. Corona con el gancho declarado (`stem.crown_end`, 90° o 180°). La verificación revisa que quepa (su pata, la de la
+     cartilla, entre los recubrimientos de la pantalla) y el diseño probará el de 90° y, si no cabe, el de 180°.
+  4. Las dos láminas de la referencia: geometría (con el relleno sombreado) y detallado (corte con rótulos, barras
+     despiezadas y alzado de la cara del relleno), más la cartilla.
+- **Implementación:** `domain/retaining_wall/detailing.py` (las corridas, con los ganchos, el empalme y la clase de las
+  zapatas: `bar_hook`, `class_note`, `splice_ratio`, `lap_splice`), `domain/retaining_wall/drawing.py` (las vistas, con las
+  piezas neutras de `drawing/views.py`) y el motor (`_detailing`). Los momentos de la clase del empalme son los de la
+  verificación (`stem_moment`, `base_moments`). Modelo de dibujo: capas opcionales `MURO` y `RELLENO` (también en la
+  plantilla DXF) y `Polyline.pattern` (sombreado EARTH en el DXF, rayado en el SVG). `Placement` suma `"vertical"` y
+  `vertical` para las barras de la pantalla.
+- **Ejemplos:** `muro_voladizo.json` (de iterar y `pruebas/`, los dos perfiles) con 10 m de largo, la corona a 180° (la de
+  90° del N.° 7 mide .35 y no cabe en .279), despiece con 12 m de longitud comercial y dibujo a 1:50. Cambian las huellas
+  del muro.
+- **Control:** `tests/test_retaining_wall_detailing.py` con las cantidades, las dimensiones y las longitudes de corte
+  calculadas a mano (Tabla 25.3.1 y la convención de DL-NET) y la revisión del gancho de la corona.
+
 ### D-174: control de agrietamiento con fs calculado
 
 - **Pedido del usuario (2026-11-26):** donde se revise el agrietamiento, usar fs calculado con el momento sin mayorar y no

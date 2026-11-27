@@ -58,7 +58,7 @@ from structurelab_rc.mechanics.polygon import inset
 
 _LABEL_STEP = 1.8  # separación de los rótulos apilados, en alturas de texto
 _PAIR = 2  # con dos barras o menos (piel, caras opuestas) el rótulo no da separación
-_DOT = 0.293  # mm de papel: radio del punto de una barra cortada, fijo (a 1:50, los 14.7 mm de la plantilla, D-150)
+CUT_DOT = 0.293  # mm de papel: radio del punto de una barra cortada, fijo (a 1:50, los 14.7 mm de la plantilla, D-150)
 _ROW = 12.0  # mm de papel: alto de una fila de la cartilla
 _HEADER = 8.0  # mm de papel: alto del encabezado de la cartilla
 _COLUMNS = (("Marca", 18.0), ("Barra", 12.0), ("Cant.", 10.0), ("Forma", 46.0), ("A (m)", 14.0), ("B (m)", 14.0),
@@ -632,7 +632,7 @@ def _cut_zones(drawing: Drawing, view: View, item: Marked,
     run, place = item.run, item.place
     if not place.span[0] <= at <= place.span[1]:
         return []
-    radius = drawing.paper(_DOT)
+    radius = drawing.paper(CUT_DOT)
     # Una barra inclinada en planta (D-167) corta el plano en su y en at.
     shift = place.slope * (at - (place.span[0] + place.span[1]) / 2)
     positions = tuple(position + shift for position in place.positions)

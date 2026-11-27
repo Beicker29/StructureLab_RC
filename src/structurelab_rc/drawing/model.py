@@ -40,9 +40,14 @@ LAYERS: dict[str, tuple[str, int, float]] = {
     AXES: ("#7f8c8d", 9, 0.13),
     TABLE: ("#000000", 7, 0.18),
 }
-# Capas que solo aparecen si el dibujo las usa: los pilotes de los cabezales (D-138).
+# Capas que solo aparecen si el dibujo las usa: los pilotes de los cabezales (D-138); el concreto del muro de contención y
+# el relleno detrás de él (D-175).
 PILES = "PILOTES"
-OPTIONAL_LAYERS: dict[str, tuple[str, int, float]] = {PILES: ("#5d4037", 34, 0.25)}
+WALL = "MURO"
+BACKFILL = "RELLENO"
+OPTIONAL_LAYERS: dict[str, tuple[str, int, float]] = {PILES: ("#5d4037", 34, 0.25), WALL: ("#000000", 7, 0.35),
+                                                      BACKFILL: ("#8d6e63", 34, 0.13)}
+EARTH = "EARTH"  # patrón de sombreado del relleno (el de AutoCAD), como el plano de muros de referencia (D-175)
 BAR_PREFIX = "Borde_"
 # Colores de las capas de barras, por el número de la designación (#5 -> 5): (RGB, ACI), uno distinto por barra. De #4 a #8,
 # los de la plantilla (D-150); las demás conservan los de D-132. Una barra fuera de la tabla, gris.
@@ -109,6 +114,7 @@ class Polyline:
     color: int | None = None  # color ACI propio (el gris 252 de las divisiones de zona, D-158); None: el de la capa
     # Una barra dibujada que mide la longitud de corte de su marca de la cartilla (D-158, D-166): la marca; si no, "".
     mark: str = ""
+    pattern: str = ""  # cerrada y sombreada con ese patrón (el relleno del muro, EARTH, D-175): el DXF agrega el sombreado
 
 
 @dataclass(frozen=True)
@@ -250,6 +256,8 @@ class Drawing:
         """El modelo en JSON: capas, escala y las entidades de cada vista con su tipo, en mm redondeados a 0.1."""
         def entity(item: Entity) -> dict[str, Any]:
             data = asdict(item)
+            if isinstance(item, Polyline) and not item.pattern:  # solo el relleno del muro lo lleva (D-175)
+                del data["pattern"]
             return {"type": type(item).__name__.lower(), **_rounded(data)}
         return {"name": self.name, "scale": self.scale, "units": "mm",
                 "layers": {name: dict(zip(("color", "aci", "lineweight [mm]"), layer_style(name), strict=True)) for name in self.layers()},

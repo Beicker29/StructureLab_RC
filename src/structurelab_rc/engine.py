@@ -35,6 +35,8 @@ from structurelab_rc.domain.pile_cap.drawing import pile_cap_views
 from structurelab_rc.domain.pile_cap.loads import CapAnalysis
 from structurelab_rc.domain.pile_cap.outline import bar_span
 from structurelab_rc.domain.retaining_wall.checks import retaining_wall_checks
+from structurelab_rc.domain.retaining_wall.detailing import wall_concrete, wall_runs
+from structurelab_rc.domain.retaining_wall.drawing import wall_views
 from structurelab_rc.domain.retaining_wall.thrust import stability_thrust, stem_thrust
 from structurelab_rc.domain.status import Status
 from structurelab_rc.domain.validation import CHECK_NAME, validate_project
@@ -70,6 +72,7 @@ from structurelab_rc.model.loader import (
 from structurelab_rc.model.pile_cap import PileCap
 from structurelab_rc.model.pile_cap_design import PileCapDesignProject
 from structurelab_rc.model.project import Project
+from structurelab_rc.model.retaining_wall import RetainingWall
 from structurelab_rc.model.template import (
     EtabsCombinedDesignTemplate,
     EtabsFootingDesignTemplate,
@@ -286,16 +289,18 @@ def _detailing(
     name, analyses = given
     if project is None or project.detailing is None:
         return [], [], None
-    if not any(key in results for key in ("footings", "combined_footings", "pile_caps")):
+    kinds = ("footings", "combined_footings", "pile_caps", "retaining_walls")
+    if not any(key in results for key in kinds):
         return [], [], None
     bars = load_engine().bars
     basis = Basis(PROFILES[project.profile], project.materials, bars, project.seismic.level)
     stock = project.detailing.stock_length
     drawing = None if project.drawing is None else Drawing(name, project.drawing.scale)
-    entries = {entry["id"]: entry for key in ("footings", "combined_footings", "pile_caps") for entry in results.get(key, [])}
+    entries = {entry["id"]: entry for key in kinds for entry in results.get(key, [])}
     built: list[tuple[Member, float, Draw]] = []
 
-    def add(element: Footing | PileCap | CombinedFooting, runs: list[BarRun], concrete: float, views: Callable[..., list[View]]) -> None:
+    def add(element: Footing | PileCap | CombinedFooting | RetainingWall, runs: list[BarRun], concrete: float,
+            views: Callable[..., list[View]]) -> None:
         """La cartilla del elemento con las marcas de su tipo (typology o, sin él, id) y cómo dibujar su tipo."""
         typology = element.typology or element.id
         member = Member(element.id, typology, element.quantity, tuple(schedule(typology, runs, stock)))
@@ -320,6 +325,10 @@ def _detailing(
         assert soil is not None
         add(combined, combined_runs(basis, combined, soil), sum(combined.weights(soil)[:2]) / soil.unit_weight_concrete / 1e9,
             combined_views)
+    retaining = project.retaining_soil
+    for wall in project.retaining_walls if retaining is not None and "retaining_walls" in results else ():  # D-175
+        assert retaining is not None
+        add(wall, wall_runs(basis, wall, retaining), wall_concrete(wall), wall_views)
     found, warnings = units([member for member, _, _ in built])
     unit_of = {member: unit for unit in found for member in unit.members}
     for member, concrete, draw in built:

@@ -12,8 +12,10 @@ controlada; As mínimo de losa y separación máxima; separación por agrietamie
 separación; verticales de la cara exterior (la mitad del refuerzo de retracción) y su separación.
 """
 
+from structurelab_rc.detailing.schedule import hook_leg
 from structurelab_rc.domain.basis import Basis
 from structurelab_rc.domain.check import Check
+from structurelab_rc.domain.footing.detailing import bar_hook
 from structurelab_rc.domain.retaining_wall.slab import (
     STRIP,
     Slab,
@@ -41,32 +43,64 @@ HORIZONTAL_SPACING = "Separacion refuerzo horizontal pantalla"
 FRONT = "Refuerzo vertical cara exterior pantalla"
 FRONT_SPACING = "Separacion vertical cara exterior pantalla"
 SECTION_NOTE = "Union de la pantalla con la base"
+CROWN_BACK = "Gancho de la corona pantalla, cara del relleno"
+CROWN_FRONT = "Gancho de la corona pantalla, cara exterior"
+
+
+def stem_shears(wall: RetainingWall, thrust: Thrust, kind: str = "factored") -> list[tuple[str, float]]:
+    """(caso, Vu en la unión por franja de 1 m, en N) de cada caso de ese tipo; Mu = Vu·H/3 (thrust.plane.height/3)."""
+    return [(case.case, case.earth_factor * thrust.horizontal * STRIP) for case in wall.cases if case.kind == kind]
+
+
+def stem_moment(wall: RetainingWall, thrust: Thrust) -> float:
+    """El mayor Mu de la pantalla en la unión con la base por franja de 1 m (N·mm), el de su flexión; 0 sin casos
+    mayorados. Lo usa el despiece para la clase de los empalmes (D-175)."""
+    return max((vu * thrust.plane.height / 3 for _, vu in stem_shears(wall, thrust)), default=0.0)
 
 
 def stem_checks(basis: Basis, wall: RetainingWall, thrust: Thrust) -> list[Check]:
     """Las verificaciones de la pantalla con el empuje sobre su cara (thrust, sin factores, por mm de muro)."""
     rules, clauses = basis.profile.retaining_wall, basis.profile.retaining_wall.clauses()
     slab = Slab(PART, wall.stem_thickness, wall.stem_cover, wall.stem.back, wall.id, SECTION_NOTE)
-    cases = [case for case in wall.cases if case.kind == "factored"]
-    if not cases:
+    shears = stem_shears(wall, thrust)
+    if not shears:
         error = incomplete("La pantalla no tiene casos mayorados", member=wall.id)
         checks = [Check(FLEXURE, Status.INCOMPLETE, (error,), clauses["stem_strength"], member=wall.id)]
     else:
         arm = thrust.plane.height / 3  # sobre la cara superior de la base
-        shears = [(case.case, case.earth_factor * thrust.horizontal * STRIP) for case in cases]
         checks = [
             *flexure_checks(basis, slab, [(case, vu * arm) for case, vu in shears],
                             (clauses["stem_strength"], clauses["stem_net_tensile_strain"])),
             *shear_checks(basis, slab, [(case, vu, vu * arm) for case, vu in shears],
                           (rules.stem_concrete_shear, clauses["stem_shear"])),
         ]
-    service = [case.earth_factor * thrust.horizontal * STRIP * thrust.plane.height / 3
-               for case in wall.cases if case.kind == "service"]
+    service = [vu * thrust.plane.height / 3 for _, vu in stem_shears(wall, thrust, "service")]
     rule_values = (rules.stem_min_reinforcement_ratio(basis.materials.fy), rules.stem_max_spacing(wall.stem_thickness),
                    max(service, default=None))
     checks += reinforcement_checks(basis, slab, rule_values,
                                    (clauses["stem_min_reinforcement"], clauses["stem_spacing"], clauses["stem_crack_spacing"]))
-    return checks + _distribution_checks(basis, wall)
+    return checks + _distribution_checks(basis, wall) + _crown_checks(basis, wall)
+
+
+def _crown_checks(basis: Basis, wall: RetainingWall) -> list[Check]:
+    """El gancho declarado de la corona de las verticales de cada cara cabe en la pantalla (decisión del usuario, D-175):
+    su pata dibujada (la L del de 90° o el ancho exterior de la U del de 180°, la de la cartilla) frente al espesor menos
+    los dos recubrimientos. Sin gancho declarado, ninguna."""
+    crown = wall.stem.crown_end
+    if crown is None:
+        return []
+    clause = f"{basis.profile.detailing.clauses()['hook']}; cabe en la pantalla (D-175)"
+    room = wall.stem_thickness - 2 * wall.stem_cover
+    checks = []
+    for name, bars in ((CROWN_BACK, wall.stem.back), (CROWN_FRONT, wall.stem.front)):
+        _, diameter = per_strip(basis, bars)
+        hook = bar_hook(basis, diameter, crown)
+        assert hook is not None
+        leg = hook_leg(hook, diameter)
+        note = "" if leg <= room else "no cabe: use un gancho de 180 grados o una pantalla mas gruesa"
+        checks.append(Check(name, status(leg <= room), clause=clause, demand=leg, capacity=room, unit="mm",
+                            values=(("db", diameter),), note=note, member=wall.id))
+    return checks
 
 
 def _distribution_checks(basis: Basis, wall: RetainingWall) -> list[Check]:

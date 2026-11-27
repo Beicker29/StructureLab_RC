@@ -45,7 +45,12 @@ class Placement:
     estribos; level, la z de su cara inferior exterior; cross, la y de su centro); "z" (pasadores de una columna:
     positions, el centro (x, y) de la columna; span, la z del pie y del extremo superior; cross, la distancia del eje de
     la columna a los pasadores que se dibujan, en x y en y, que es esquemática). slope: en barras x, su pendiente en
-    planta; positions es su y en el centro de span (la piel por un lado oblicuo de una planta trapezoidal, D-167)."""
+    planta; positions es su y en el centro de span (la piel por un lado oblicuo de una planta trapezoidal, D-167).
+
+    Muro de contención (D-175), con x a través del muro (de la puntera al talón), y a lo largo y z desde la cara inferior
+    de la base: "vertical", las verticales de la pantalla (positions, sus y; level, la x de su eje; span, la z exterior del
+    pie y de la corona; cross, el sentido en x, ±1, de la pata del pie y de la de la corona); "y" con vertical, las
+    horizontales de la pantalla (positions, sus z; level, la x de su eje)."""
 
     along: str
     positions: tuple[float, ...]
@@ -53,6 +58,7 @@ class Placement:
     span: tuple[float, float]
     cross: tuple[float, float] = (0.0, 0.0)
     slope: float = 0.0  # barras x inclinadas en planta (la piel por un lado oblicuo, D-167): dy/dx desde el centro de span
+    vertical: bool = False  # barras a lo largo de y en una cara vertical (la pantalla del muro, D-175): positions son z
 
 
 @dataclass(frozen=True)

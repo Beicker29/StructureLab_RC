@@ -28,6 +28,7 @@
     {
       "id": "M1",
       "quantity": 1,
+      "length": 10000.0,
       "stem_height": 4876.8,
       "stem_thickness": 381.0,
       "toe": 762.0,
@@ -55,7 +56,8 @@
           "designation": "#5",
           "spacing": 450.0,
           "end": "straight"
-        }
+        },
+        "crown_end": "hook180"
       },
       "base": {
         "top": {
@@ -91,5 +93,11 @@
         }
       ]
     }
-  ]
+  ],
+  "detailing": {
+    "stock_length_mm": 12000
+  },
+  "drawing": {
+    "scale": 50
+  }
 }

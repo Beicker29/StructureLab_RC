@@ -109,6 +109,7 @@ CHECKS: tuple[tuple[str, str, str, str], ...] = (
     ("Refuerzo horizontal", "requirements", "As,min por cara", "As por cara"),
     ("Refuerzo vertical cara exterior", "requirements", "As,min", "As"),
     ("Refuerzo longitudinal", "requirements", "As,min", "As"),
+    ("Gancho de la corona", "requirements", "pata del gancho", "espacio entre recubrimientos máx"),  # D-175
     ("Cargas de la base", "geotechnical", "", ""),
     ("Empuje del relleno", "geotechnical", "", ""),
 )
